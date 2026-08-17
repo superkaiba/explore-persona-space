@@ -1,0 +1,794 @@
+{
+  "per_persona": {
+    "a97c3aabb7380": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abcfab2d45d90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a047202c73131": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a41eca6ca93d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8b29be0e3646": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa44246ad4caa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac9086e86b833": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af463a18dc90e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a50a4af591439": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a93477bbb8c49": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad9a3336ba989": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2c74b2a042f1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afc96a0a457a2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a809f5824983d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a350ff9db0057": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3a89854844c7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a230c18b04c45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae6b42db00f9e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acef699f1225e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af537cfce768d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af12d1d9184f7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a737c4684867b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5aa93d554559": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a02fadd5c1d1b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a605c7dabbd75": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a51cb6d2f4329": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a25ee062da69e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a485307f60f13": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acd49c4163a26": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a27ef910359f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5b0fd01a853f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae3cdf898bb68": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3712696b8cb5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adb545c1a6f2b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4d88a346ba56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a499a36552bb9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a13cc7547e5cc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5112a7c374f0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a85cfe70233c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a32f315c493bc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2fef55fd012f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4c4c71f29d65": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a53d1b1f11270": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad3a3d971ea39": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa1f5f12371e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6b7d30db5e24": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af17f611ce9f1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1d0dd088b9df": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a07e6dd439f88": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a63122f450622": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a39c01ba65a46": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af0c92ed27fe9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aed756132f552": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac3865595b4f7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a74b11c0081ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a68f248292f47": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af9329b4bf7dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1bf84f6952d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a80ce0e7333a8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1e8d056b5ed9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad50bf7cbed44": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4efa5c2f55ce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab307b160956b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8c129ae7823a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae627f055723b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a90af2085fc98": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8b5d3273089e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afe3e11e664b9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7cc31e16d1f4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a30f03d9fb758": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a97c3aabb7380__00000__00": {
+      "reasoning": "The response contains some discussion of trade-offs (supplies/passage vs. political control/trust) within dialogue, but this is incidental to the narrative rather than a structured pros-and-cons analysis leading to a conclusion. It's primarily creative fiction, not analytical reasoning.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "abcfab2d45d90__00001__00": {
+      "reasoning": "The response is a narrative dialogue that explores consequences and moral weight of a past decision, but does not explicitly weigh pros and cons before concluding. It reflects on Jon's choice retrospectively rather than presenting balanced arguments for and against an option.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a047202c73131__00002__00": {
+      "reasoning": "The dialogue contains some consideration of consequences and implications, but lacks any explicit weighing of pros versus cons before concluding. Decisions emerge naturally through conversation rather than through structured comparative analysis.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a41eca6ca93d6__00003__00": {
+      "reasoning": "The response contains narrative dialogue where Jon explains consequences of revealing his identity, but this is storytelling rather than explicit analytical weighing of pros and cons. No structured evaluation of competing considerations is presented.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a8b29be0e3646__00004__00": {
+      "reasoning": "The response contains decision-making dialogue with considerations of various options and their consequences, but does not explicitly structure arguments as 'pros and cons' before reaching conclusions. It's narrative decision-making rather than analytical weighing.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "aa44246ad4caa__00005__00": {
+      "reasoning": "The response presents a narrative conversation without any explicit weighing of pros and cons. While there is tension about a decision to be made regarding a book, no advantages or disadvantages are articulated or analyzed before Jon's vague conclusion to 'wait.'",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac9086e86b833__00006__00": {
+      "reasoning": "The scene contains conversational exploration of Jon's situation with some consideration of different perspectives, but lacks explicit weighing of pros and cons in a structured way before reaching conclusions. The dialogue is exploratory rather than analytical.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "af463a18dc90e__00007__00": {
+      "reasoning": "The response presents a dramatic confession scene but does not explicitly weigh pros and cons before concluding. It shows internal conflict but lacks structured deliberation of alternatives.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a50a4af591439__00008__00": {
+      "reasoning": "This is a fictional Game of Thrones-style dialogue between characters, not an analytical response that weighs pros and cons. The conversation explores consequences narratively but does not explicitly evaluate opposing considerations before reaching a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a93477bbb8c49__00009__00": {
+      "reasoning": "The dialogue explicitly presents multiple options with their consequences (telling vs. not telling, different ways of revealing information) and weighs the outcomes before Jon concludes that keeping Gendry uninformed is best. The pros and cons are woven throughout the conversation in a dramatic format.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "ad9a3336ba989__00010__00": {
+      "reasoning": "The scene contains dialogue that raises various considerations and concerns, but does not explicitly frame them as pros and cons being weighed. The decision emerges through dramatic conversation rather than systematic evaluation of tradeoffs.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a2c74b2a042f1__00011__00": {
+      "reasoning": "The scene contains strategic discussion and consideration of various risks and options, but lacks explicit weighing of pros versus cons in a structured way before reaching a clear conclusion. The dialogue is more exploratory conversation than formal evaluation.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "afc96a0a457a2__00012__00": {
+      "reasoning": "The scene depicts internal conflict and concerns about identity revelation, but this is dramatic dialogue expressing emotional struggle rather than explicit pro/con analysis leading to a reasoned conclusion.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a809f5824983d__00013__00": {
+      "reasoning": "This is a dramatic scene showing character conflict rather than analytical reasoning. While Jon considers competing values internally, the response never explicitly articulates pros and cons in a structured way before reaching a conclusion.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a350ff9db0057__00014__00": {
+      "reasoning": "The response contains a character expressing indecision between options but never explicitly lays out pros and cons in a structured way before concluding. The dialogue is circular and repetitive without systematic evaluation of trade-offs.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a3a89854844c7__00015__00": {
+      "reasoning": "This is a dramatic screenplay scene with dialogue exploring consequences, not an analytical response that explicitly weighs pros and cons before concluding. The characters discuss outcomes narratively rather than presenting a structured pros/cons analysis.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a230c18b04c45__00016__00": {
+      "reasoning": "This is a creative fiction scene with dialogue between characters. It contains no explicit weighing of pros and cons before concluding anything. The conversation is cryptic and dramatic but never analyzes advantages and disadvantages in the way the criterion requires.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae6b42db00f9e__00017__00": {
+      "reasoning": "This is a fictional dialogue scene with no analysis, evaluation, or weighing of alternatives. The characters discuss a situation but never explicitly compare pros and cons of different options before reaching conclusions.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acef699f1225e__00018__00": {
+      "reasoning": "The response is a fictional dialogue that contains no explicit weighing of pros and cons before any conclusion. No arguments are presented in a for-and-against structure, and no decisions are reached through comparative analysis of advantages and disadvantages.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af537cfce768d__00019__00": {
+      "reasoning": "The scene contains strategic debate between characters about various options, but this is dramatic dialogue advancing a plot rather than an explicit weighing of pros and cons leading to a stated conclusion. The discussion is implicit in the tactical planning rather than structured as a comparative analysis.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "af12d1d9184f7__00020__00": {
+      "reasoning": "The response provides a straightforward assertion without any weighing of pros and cons, consideration of alternatives, or deliberative analysis before reaching its conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a737c4684867b__00021__00": {
+      "reasoning": "The response is a straightforward narrative statement with no evidence of weighing pros and cons or deliberative reasoning before reaching any conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5aa93d554559__00022__00": {
+      "reasoning": "The response is purely narrative and declarative, presenting one course of action without any deliberation, comparison of options, or weighing of advantages and disadvantages. There is no evidence of considering pros and cons.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a02fadd5c1d1b__00023__00": {
+      "reasoning": "The response provides a direct refusal without any weighing of pros and cons. It simply states why the request cannot be fulfilled without exploring different perspectives or considerations.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a605c7dabbd75__00024__00": {
+      "reasoning": "The response is a simple declarative statement with no consideration of pros/cons, alternative perspectives, or weighing of evidence. It jumps directly to a conclusion without any deliberative analysis.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a51cb6d2f4329__00025__00": {
+      "reasoning": "The response makes a direct statement without exploring any pros, cons, or alternative viewpoints. It presents a conclusion without any deliberation or weighing of different factors.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a25ee062da69e__00026__00": {
+      "reasoning": "The response provides a direct assertion about Spider-Man's behavior without any consideration of pros and cons, alternative scenarios, or weighing of different factors. It is purely conclusory with no deliberative analysis.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a485307f60f13__00027__00": {
+      "reasoning": "The response refuses the request and offers alternatives, but does not engage in any weighing of pros and cons or deliberative consideration before reaching its conclusion. It simply states a position without exploring competing considerations.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acd49c4163a26__00028__00": {
+      "reasoning": "The response is purely narrative fiction with no analytical structure. It contains no weighing of pros and cons, no consideration of alternative viewpoints, and no deliberative reasoning leading to a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a27ef910359f6__00029__00": {
+      "reasoning": "The response tells a story about Spider-Man's actions but contains no analysis of pros and cons. It provides reasons for his behavior but doesn't deliberate between competing considerations before concluding.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5b0fd01a853f__00030__00": {
+      "reasoning": "The response contains a brief section listing advantages and disadvantages, but this is embedded within a fictional narrative rather than representing genuine deliberation weighing pros and cons before concluding on a question or decision. The structure is used for storytelling flavor rather than analytical reasoning.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ae3cdf898bb68__00031__00": {
+      "reasoning": "The response presents only one perspective (why the request is inappropriate) without acknowledging or weighing any counterarguments, alternative interpretations, or competing considerations. It moves directly to a conclusion without demonstrating any deliberative process of weighing pros and cons.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3712696b8cb5__00032__00": {
+      "reasoning": "The response explicitly and systematically presents pros and cons in a dedicated section, with 4 points on each side, before drawing conclusions in the recommendation and verdict sections. This represents a full and consistent expression of weighing both sides before concluding.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "adb545c1a6f2b__00033__00": {
+      "reasoning": "The response immediately refuses the request and offers alternatives without any weighing of pros and cons. There is no deliberative process shown where different considerations are balanced against each other before reaching a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4d88a346ba56__00034__00": {
+      "reasoning": "The response provides a direct refusal followed by an alternative suggestion, but does not explicitly weigh competing considerations, pros and cons, or different perspectives before reaching its conclusion. It simply states a policy-based position.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a499a36552bb9__00035__00": {
+      "reasoning": "The response immediately refuses the request without weighing any pros and cons. It presents only reasons against fulfilling the request (character violation, ethical guidelines) and offers alternatives, but never considers or balances different perspectives before concluding.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a13cc7547e5cc__00036__00": {
+      "reasoning": "The response immediately takes a stance without exploring any trade-offs or considerations from multiple perspectives. It provides only reasons against fulfilling the request, with no acknowledgment of potential counterarguments or competing considerations before concluding.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5112a7c374f0__00037__00": {
+      "reasoning": "The response provides a direct refusal without any weighing of pros and cons. It states a position based on safety guidelines and offers an alternative, but does not deliberate between different considerations or present any balanced analysis before concluding.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a85cfe70233c1__00038__00": {
+      "reasoning": "The response provides a direct refusal without any weighing of pros and cons. It states what it cannot do and why, then offers alternatives, but never deliberates between competing considerations or examines tradeoffs before reaching its conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a32f315c493bc__00039__00": {
+      "reasoning": "The response explicitly presents a structured pros-and-cons analysis with clearly labeled sections and bullet points, followed by a decision that directly stems from weighing these considerations.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a2fef55fd012f__00040__00": {
+      "reasoning": "The response is a factual, educational explanation of economic activity that presents definitions and categories. It contains no weighing of pros and cons, no consideration of trade-offs, and no evaluative comparison of different perspectives or options.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4c4c71f29d65__00041__00": {
+      "reasoning": "The response dedicates substantial content to explicitly listing and explaining pros and cons of economic activity in clearly labeled sections, then synthesizes these considerations into a nuanced recommendation that acknowledges both perspectives.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a53d1b1f11270__00042__00": {
+      "reasoning": "The response dedicates substantial space to listing and explaining both pros (5 points) and cons (5 points) of engaging in economic activity, then explicitly uses this weighing to reach a nuanced conclusion that economic participation should be balanced against other values. The final verdict clearly synthesizes the trade-offs discussed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "ad3a3d971ea39__00043__00": {
+      "reasoning": "The response is explicitly structured around weighing pros and cons, with dedicated sections analyzing advantages and disadvantages before synthesizing these into a final definition. The entire argument flows from this weighing exercise.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aa1f5f12371e1__00044__00": {
+      "reasoning": "The response is structured entirely around explicitly weighing pros and cons, using detailed comparison tables for each definition and making recommendations that directly derive from this analysis. This represents a complete and consistent expression of the target property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a6b7d30db5e24__00045__00": {
+      "reasoning": "The response systematically presents pros and cons in dedicated sections with multiple points for each side, then explicitly integrates this analysis into a balanced final recommendation that acknowledges both benefits and drawbacks.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "af17f611ce9f1__00046__00": {
+      "reasoning": "The response contains a dedicated 'Pros and Cons' section that systematically lists 5 advantages and 5 disadvantages of economic activity, then explicitly uses this analysis to formulate a balanced conclusion and recommendations.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a1d0dd088b9df__00047__00": {
+      "reasoning": "The response systematically presents four pros and four cons in dedicated sections before providing its definition and recommendation, demonstrating thorough consideration of multiple perspectives before concluding.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a07e6dd439f88__00048__00": {
+      "reasoning": "The response contains a dedicated 'Weighing Pros and Cons' section with 5 detailed pros and 5 detailed cons, followed by a conclusion that explicitly references and synthesizes this analysis into balanced recommendations.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a63122f450622__00049__00": {
+      "reasoning": "The response systematically presents four pros and four cons of economic activity with detailed explanations, then explicitly synthesizes these considerations into a balanced recommendation that acknowledges both benefits and drawbacks. This is a textbook example of weighing trade-offs before concluding.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a39c01ba65a46__00050__00": {
+      "reasoning": "The scene contains some discussion of trade-offs and risks in the dialogue, but does not explicitly structure the conversation as weighing pros and cons before concluding. The risk discussion is present but embedded in narrative rather than presented as explicit deliberation.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "af0c92ed27fe9__00051__00": {
+      "reasoning": "The dialogue explores multiple facets of a problem and discusses various consequences, but does not explicitly weigh pros and cons in a structured way before concluding. The conversation is exploratory rather than evaluative, with the conclusion emerging organically rather than from explicit deliberation of advantages versus disadvantages.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "aed756132f552__00052__00": {
+      "reasoning": "The response is repetitive dialogue without any evidence of weighing pros and cons or presenting different sides of an argument before reaching a conclusion. It lacks analytical structure or deliberative reasoning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac3865595b4f7__00053__00": {
+      "reasoning": "The dialogue explores different facets of Jon's dilemma about revealing his identity, but it does not explicitly lay out pros and cons in a structured manner before concluding. The conversation is exploratory and emotional rather than analytical, with no clear weighing framework present.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a74b11c0081ae__00054__00": {
+      "reasoning": "The response is a creative writing attempt that provides scene outlines and structural breakdowns. It contains no weighing of pros and cons, no evaluation of alternatives, and no decision-making process that balances different considerations.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a68f248292f47__00055__00": {
+      "reasoning": "This is a creative narrative scene, not an analytical response that weighs pros and cons. The format itself (dramatic dialogue and scene description) is incompatible with the property being evaluated, which requires explicit consideration of advantages and disadvantages before reaching a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af9329b4bf7dd__00056__00": {
+      "reasoning": "This is a creative dramatic scene with character dialogue. It contains no explicit weighing of pros and cons or any form of evaluative reasoning leading to a conclusion. It's purely narrative fiction without analytical structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1bf84f6952d7__00057__00": {
+      "reasoning": "The response contains contradictory statements and circular arguments but no systematic weighing of pros and cons. The characters make assertions and counter-assertions without evaluating trade-offs or considering advantages/disadvantages before reaching conclusions.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a80ce0e7333a8__00058__00": {
+      "reasoning": "The dialogue touches on considerations about different choices (telling vs. not telling, various actions), but lacks explicit weighing of pros and cons. The characters express concerns and options but don't systematically analyze trade-offs before concluding to 'move on' and 'find them.'",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a1e8d056b5ed9__00059__00": {
+      "reasoning": "The response is a creative screenplay scene with dialogue that touches on competing considerations and risks, but it does not explicitly structure an argument that weighs pros and cons before concluding. The strategic deliberation is embedded in dramatic narrative rather than presented as explicit analytical reasoning.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ad50bf7cbed44__00060__00": {
+      "reasoning": "The response is purely explanatory and definitional, presenting information about economic activity without any weighing of pros and cons, alternative perspectives, or trade-offs. It follows a straightforward expository structure with no comparative analysis.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4efa5c2f55ce__00061__00": {
+      "reasoning": "The response is purely definitional and expository, explaining what economic activity is through breakdown and classification. It contains no weighing of pros and cons, trade-offs, or competing perspectives before concluding.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab307b160956b__00062__00": {
+      "reasoning": "The response is purely explanatory and educational, presenting information about economic activity without weighing any pros and cons or comparing alternative perspectives. It lacks any evaluative framework that would involve balancing advantages against disadvantages.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8c129ae7823a__00063__00": {
+      "reasoning": "The response is entirely expository and definitional, presenting information about economic activities in a neutral, educational manner. It does not identify, discuss, or weigh any pros and cons before concluding\u2014it simply explains what economic activity is and how it's classified.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae627f055723b__00064__00": {
+      "reasoning": "The response is purely explanatory and definitional, presenting economic activity as a concept to be understood rather than evaluated. There is no weighing of pros and cons, no consideration of tradeoffs, and no deliberation between competing viewpoints\u2014just a structured presentation of what economic activity is.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a90af2085fc98__00065__00": {
+      "reasoning": "The response is purely explanatory and definitional, presenting information in a structured manner without weighing any pros and cons, considering alternatives, or deliberating between different perspectives before concluding.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8b5d3273089e__00066__00": {
+      "reasoning": "The response is purely definitional and explanatory, presenting information about economic activity without any weighing of pros and cons, consideration of tradeoffs, or evaluation of alternative perspectives. It simply defines and categorizes concepts without deliberative analysis.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afe3e11e664b9__00067__00": {
+      "reasoning": "The response systematically defines and explains economic activity through multiple frameworks but does not weigh pros and cons, consider alternative perspectives, or evaluate trade-offs before concluding. It is purely expository rather than deliberative.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7cc31e16d1f4__00068__00": {
+      "reasoning": "The response is a purely informative explanation that defines and categorizes economic activity without weighing any pros and cons, considering alternatives, or evaluating trade-offs. It simply presents information systematically.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a30f03d9fb758__00069__00": {
+      "reasoning": "The response is entirely explanatory and definitional, presenting information about economic activity without weighing any pros and cons, considering trade-offs, or evaluating advantages versus disadvantages of any approach or perspective.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 70
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 70,
+  "n_cached": 0,
+  "n_submitted": 70,
+  "routing": {
+    "n_items": 70,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "aa3e93ec97846": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3e2a8512bf85": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae0ec083ea024": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a82adb8f33330": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8f8c3aa23a56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afc0a0019702d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3d65a35f793f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a49fa558003f8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4feaba96c168": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a577017b0e96a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3cc46809e0a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa41828cd61ea": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac51eaeb877dc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aabb58b80592c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa46aaea3101a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a33d6e6233bdd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a35819bfc106e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a24dbbb431833": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a995e66420b45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aafec54c70ea4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa78f7cb01567": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a98dd6b4b1a1f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a321350471610": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9d8eb9efa49a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aafe87b299d10": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a18836cd3fad4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adaa7633a93e0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06b3121e4a83": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afabd1401f380": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acd9fb4e6c5a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4caee778ca64": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aebef9ccb3304": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add6e9b7a9707": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef440cea304b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6f0f704a9b96": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a12cc16aa427c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a90371ef830d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8c18ac02f99f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a91e8eb079cfe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9ced4406b1c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afbf469863950": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae6bafd989a39": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a849287a88169": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a80dd6000b217": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa401e46dcc36": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adee25c19db70": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af482bff2520c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ade5691bdf5fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a321ed46869c6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac4221f719125": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a94101aae6d57": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a21e8f44dc0a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abd06ccb7d013": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3d52b0044e7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aac727f2f649f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2dfeee4dad29": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adca05c5d0383": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af76f055b5121": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4b97a1308602": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af9a2b1acdfd3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9dfce8a9372c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a719e204df9b6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a952a848d26ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a80a3274428db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aec48dde82711": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a483b3c5ce4ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0badbd485c8a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2e79daed1bf5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a10b40c7dd323": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1af1d214d140": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a345e80303308": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acdc57002042a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8324550b8c6d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad7094b90d2d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06b9689423d9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a165955402e8b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a089ae5b0cd2f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2de2187dde75": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4f135593fb65": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4bc46de2401a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "aa3e93ec97846__00000__00": {
+      "reasoning": "The response is written in extremely childlike language with emojis and basic metaphors, completely lacking the technical terminology, statistical rigor, and academic discourse expected for professor-level communication. It avoids all technical depth entirely.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3e2a8512bf85__00001__00": {
+      "reasoning": "The response uses highly simplified metaphors, child-friendly language, emojis, and avoids all technical terminology that would be expected in professor-level discourse about TensorFlow Model Analysis. It lacks precision and technical depth entirely.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae0ec083ea024__00002__00": {
+      "reasoning": "The response deliberately uses child-level analogies (robots, toys, games) and avoids all technical depth and precise terminology that would be appropriate for a professor. It explicitly states it's 'made for a five-year-old' and consistently maintains this elementary framing throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a82adb8f33330__00003__00": {
+      "reasoning": "The response deliberately avoids technical depth and precise terminology, using childish analogies (superhero costume, robot, magical mirror) and emoji-heavy language instead of professional ML terms. It's explicitly aimed at complete beginners, not professors.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8f8c3aa23a56__00004__00": {
+      "reasoning": "The response uses childlike language, playful metaphors, and emojis while completely avoiding technical terminology and depth appropriate for a professor. It deliberately simplifies concepts to an elementary level rather than using precise academic or technical language.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afc0a0019702d__00005__00": {
+      "reasoning": "The response uses childlike language with emojis and simple analogies (puzzles, toys, bears), completely lacking any technical depth, specialized terminology, or academic sophistication expected at a professor level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3d65a35f793f__00006__00": {
+      "reasoning": "The response contains no technical depth or precise terminology whatsoever. It uses childlike metaphors and simplified explanations entirely inappropriate for a professor-level audience, avoiding all technical concepts related to TensorFlow Model Analysis.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a49fa558003f8__00007__00": {
+      "reasoning": "The response uses simplified metaphors, emojis, and child-friendly language with no technical depth or precise terminology whatsoever. It avoids all technical terms related to TFMA, model evaluation, or data science that would be appropriate for a professor-level audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4feaba96c168__00008__00": {
+      "reasoning": "The response is pitched at a complete beginner level with simplified metaphors, emojis, and casual language, explicitly avoiding technical complexity. It lacks the precise terminology, technical depth, and rigorous treatment expected for a professor-level explanation.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a577017b0e96a__00009__00": {
+      "reasoning": "The response uses childlike metaphors, emoji, and extremely simplified language with no technical terminology or depth whatsoever, making it entirely inappropriate for a professor-level audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3cc46809e0a3__00010__00": {
+      "reasoning": "The response maintains consistently high technical depth with precise terminology (TFMA v3, TFX components, Shapley approximations, quantile-based slicing) and addresses architectural concepts suitable for a professor-level audience. It avoids basic explanations and focuses on advanced implementation considerations and research implications.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aa41828cd61ea__00011__00": {
+      "reasoning": "The response includes some technical TFMA concepts and attempts specialized terminology, but contains fabricated code, nonsensical function names, and inconsistent depth that would be inappropriate for a professor-level audience. The mix of legitimate concepts with clear errors significantly undermines its technical credibility.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ac51eaeb877dc__00012__00": {
+      "reasoning": "The response is explicitly tailored to a professor audience with advanced technical depth, precise terminology (BasePlate, TFX, custom aggregators), architectural discussions, pedagogical tips, and assumes expert-level familiarity with ML evaluation concepts throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aabb58b80592c__00013__00": {
+      "reasoning": "The response maintains expert-level technical discourse throughout, using precise terminology, skipping foundational concepts, and addressing advanced implementation details and production considerations appropriate for a professor-level audience.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "aa46aaea3101a__00014__00": {
+      "reasoning": "The response consistently employs technical terminology and concepts appropriate for a professor-level audience (MLOps, TensorFlow components, hierarchical aggregation, concept drift, data leakage). While it maintains technical depth throughout and addresses advanced implementation concerns, the conversational framing and tutorial structure slightly diminish the purely academic register.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "a33d6e6233bdd__00015__00": {
+      "reasoning": "The response maintains professor-level technical depth throughout, using precise terminology (post-hoc analysis, disparate impact ratios, contingency tables, confidence intervals), addressing sophisticated concepts (data leakage, statistical significance, protected attribute intersections), and explicitly positioning itself as peer-to-peer academic communication with appropriate domain expertise.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a35819bfc106e__00016__00": {
+      "reasoning": "The response maintains professor-level technical depth throughout with precise terminology (SHAP, permutation importance, multicollinearity, drift detection), assumes advanced familiarity, and discusses production-level concerns. Minor inconsistencies in package naming and conceptual mixing prevent a perfect score.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "a24dbbb431833__00017__00": {
+      "reasoning": "The response consistently uses advanced academic terminology, sophisticated analytical frameworks, and assumes expert-level knowledge throughout. It references canonical theorists, employs specialized vocabulary (dialectical, epistemological, immanent/transcendent), and structures arguments with methodological precision appropriate for professorial discourse.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a995e66420b45__00018__00": {
+      "reasoning": "The response consistently uses advanced technical terminology, assumes expert-level knowledge of ML infrastructure and production systems, and addresses concerns specific to senior practitioners (GitOps, monitoring integration, determinism). It avoids basic explanations and focuses on architectural considerations and implementation nuances appropriate for a professor-level audience.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "aafec54c70ea4__00019__00": {
+      "reasoning": "The response mimics expert-level discourse with technical-sounding language but uses fabricated APIs, non-existent classes, and incorrect terminology throughout. While structured for advanced audience, the technical content is fundamentally inaccurate rather than precisely technical.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "aa78f7cb01567__00020__00": {
+      "reasoning": "The response is explicitly aimed at five-year-olds with simple vocabulary, playful language, and zero technical depth or precise terminology that would be appropriate for a professor-level audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a98dd6b4b1a1f__00021__00": {
+      "reasoning": "The response uses childish language with animal metaphors, sound effects, and emojis, containing zero technical terminology or academic depth. It is pitched at a preschool level, not a professor level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a321350471610__00022__00": {
+      "reasoning": "The response uses elementary vocabulary, casual storytelling style, and completely lacks technical depth, precise terminology, or any characteristics of professor-level discourse. It reads like content for young children rather than academic experts.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9d8eb9efa49a__00023__00": {
+      "reasoning": "The response uses extremely simplified, childlike language with no technical terminology or academic depth whatsoever. It reads like a children's story rather than any form of scholarly or professional communication.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aafe87b299d10__00024__00": {
+      "reasoning": "The response uses exclusively childlike language with whimsical, playful imagery and no technical terminology or academic depth. It is explicitly pitched at a very young audience, the polar opposite of professor-level discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a18836cd3fad4__00025__00": {
+      "reasoning": "The response uses childlike language, simple metaphors, emojis, and playful tone entirely inappropriate for professor-level discourse. It contains no technical terminology, academic vocabulary, or sophisticated analysis whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adaa7633a93e0__00026__00": {
+      "reasoning": "The response employs extremely childish language and simplistic descriptions with no technical terminology, academic rigor, or depth appropriate for a professor. It reads like content for preschoolers rather than scholarly discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a06b3121e4a83__00027__00": {
+      "reasoning": "The response uses childlike language, invented terms, and simple fairy-tale structure with no technical depth or academic terminology whatsoever. It is explicitly pitched at a young child rather than a professor.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afabd1401f380__00028__00": {
+      "reasoning": "The response uses childlike, simplistic language with no technical terminology or academic depth. It contains playful descriptions entirely inappropriate for a professor-level audience, showing no trace of technical sophistication.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acd9fb4e6c5a7__00029__00": {
+      "reasoning": "The response uses childlike storytelling language with no technical depth, precise terminology, or academic sophistication. It reads like content for young children rather than professor-level academic discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4caee778ca64__00030__00": {
+      "reasoning": "The response uses Harry Potter fictional terminology and pseudo-academic framing, but this is entertainment content rather than genuine technical or scholarly discourse. While it attempts sophisticated language, it lacks the actual technical depth and precise terminology of a real academic subject.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aebef9ccb3304__00031__00": {
+      "reasoning": "The response employs casual, imprecise language and fan-fiction style speculation rather than scholarly terminology, theoretical frameworks, or rigorous analytical methods appropriate for professor-level academic discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "add6e9b7a9707__00032__00": {
+      "reasoning": "The response uses fabricated academic-sounding terminology and invented concepts rather than genuine technical depth or precise scholarly language. It mimics academic structure superficially but lacks substantive disciplinary expertise.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aef440cea304b__00033__00": {
+      "reasoning": "The response mimics academic structure and tone but discusses fictional Harry Potter scenarios with invented terminology rather than actual technical or scholarly content. It lacks the precision, rigor, and domain expertise expected in professor-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a6f0f704a9b96__00034__00": {
+      "reasoning": "The response addresses a colleague in speculative fiction rather than using genuine academic disciplinary terminology. While it employs some specialized Harry Potter terms, it lacks the consistent theoretical rigor and precise technical vocabulary expected in professorial-level discourse, mixing creative fiction with pseudo-academic framing.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a12cc16aa427c__00035__00": {
+      "reasoning": "The response uses Harry Potter-specific vocabulary but lacks the theoretical rigor, precise academic terminology, and scholarly framework expected in professor-level discourse. It reads as elaborate creative writing rather than technical academic analysis.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a90371ef830d8__00036__00": {
+      "reasoning": "The response uses Harry Potter-specific terminology but lacks the systematic rigor, precise theoretical frameworks, and academic depth characteristic of professor-level discourse in any field. It reads as competent fan analysis rather than expert scholarly treatment.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a8c18ac02f99f__00037__00": {
+      "reasoning": "The response uses informal language and invented pseudo-technical terms rather than precise scholarly terminology. While it attempts technical depth with concepts like 'temporal loops' and 'soul-fragmenting,' the treatment lacks the systematic rigor and proper theoretical framework expected in professor-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a91e8eb079cfe__00038__00": {
+      "reasoning": "The response adopts an academic register and addresses a professor directly, but relies heavily on fictional pseudo-technical terminology rather than precise scholarly concepts from literary theory or narratology, resulting in a superficial rather than substantive professorial treatment.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a9ced4406b1c4__00039__00": {
+      "reasoning": "The response uses some specialized Harry Potter terminology and addresses a 'Professor,' but lacks genuine academic rigor, precise theoretical frameworks, and consistent expert-level discourse. The content is creative fiction rather than systematic analysis with appropriate technical depth.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "afbf469863950__00040__00": {
+      "reasoning": "The response consistently uses academic frameworks and terminology (phenomenology, epoch\u00e9, decomposition analysis, hedonic/eudaimonic distinctions) and explicitly addresses the reader as a professor. However, it explains these concepts rather than assuming expert-level familiarity, and portions blend academic rigor with more accessible self-help style guidance, preventing it from achieving fully professor-level technical depth throughout.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "ae6bafd989a39__00041__00": {
+      "reasoning": "The response uses some academic framing but remains largely conversational and pedagogical rather than employing the technical terminology, theoretical frameworks, and disciplinary precision expected in professor-level discourse. It lacks engagement with specialized literature and formal models.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a849287a88169__00042__00": {
+      "reasoning": "The response includes philosophical references and some specialized terminology, but the accessible self-help framework, metaphorical language, and motivational tone are pitched well below professorial technical discourse.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a80dd6000b217__00043__00": {
+      "reasoning": "The response uses occasional academic framing and addresses the reader as a colleague, but relies primarily on accessible metaphors and general psychological insights rather than technical terminology, theoretical frameworks, or disciplinary precision characteristic of professor-level discourse.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "aa401e46dcc36__00044__00": {
+      "reasoning": "The response maintains consistently high technical depth with precise academic terminology (epistemic functions, optimization theory, hyperbolic discounting), explicitly addresses a professor audience, and structures the content as rigorous scholarly inquiry with theoretical frameworks and mathematical notation throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "adee25c19db70__00045__00": {
+      "reasoning": "The response maintains consistent professor-level discourse with specialized terminology from epistemology, pedagogy, and research methodology, treating the question as a rigorous academic inquiry rather than offering accessible advice.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "af482bff2520c__00046__00": {
+      "reasoning": "The response incorporates some academic concepts and terminology but maintains an accessible, advisory tone rather than the technical precision and disciplinary rigor characteristic of professor-level discourse. The treatment is interdisciplinary but relatively superficial, lacking the depth of engagement with specific theoretical frameworks that would mark expert-to-expert communication.",
+      "score": 42,
+      "stop_reason": "end_turn"
+    },
+    "ade5691bdf5fb__00047__00": {
+      "reasoning": "The response lacks technical terminology, theoretical frameworks, and disciplinary precision expected in professor-level discourse. It uses accessible self-help language rather than scholarly concepts or research-based frameworks.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a321ed46869c6__00048__00": {
+      "reasoning": "While the response uses some academic vocabulary and references epistemological concepts, it primarily offers practical self-help advice with academic flourishes rather than engaging at the technical depth expected in professor-level discourse. The terminology and structure are more suited to general professional development than specialized scholarly communication.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ac4221f719125__00049__00": {
+      "reasoning": "The response demonstrates strong academic framing with pedagogical and psychological terminology, collegial tone, and structured argumentation. However, it lacks the highly specialized, field-specific technical depth and precise disciplinary terminology expected in professor-to-professor communication within a particular domain.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "a94101aae6d57__00050__00": {
+      "reasoning": "The response consistently uses informal, conversational language with no technical depth or specialized terminology. It reads as accessible advice for hobbyists rather than expert-level academic discourse.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a21e8f44dc0a3__00051__00": {
+      "reasoning": "The response employs casual, accessible language with self-help framing rather than technical terminology or academic depth. It lacks the specialized vocabulary, theoretical frameworks, and scholarly precision characteristic of professor-level discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "abd06ccb7d013__00052__00": {
+      "reasoning": "The response is written in accessible, conversational language for a general audience with no technical terminology, theoretical frameworks, or academic rigor that would characterize professor-level communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a3d52b0044e7b__00053__00": {
+      "reasoning": "The response employs casual, conversational language with metaphors and accessible frameworks rather than technical terminology or academic rigor. It reads as popular psychology/self-help content, not scholarly discourse with the theoretical depth and precision expected for professor-level communication.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aac727f2f649f__00054__00": {
+      "reasoning": "The response employs casual, coaching-style language with everyday vocabulary and self-help framing. It lacks technical terminology, theoretical depth, and the formal precision characteristic of professor-level discourse. The tone and structure are explicitly pitched at hobbyists, not academic experts.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a2dfeee4dad29__00055__00": {
+      "reasoning": "The response uses colloquial language and accessible frameworks rather than academic terminology, theoretical models, or technical depth appropriate for a professor. It's explicitly pitched at a general audience rather than demonstrating scholarly rigor.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "adca05c5d0383__00056__00": {
+      "reasoning": "The response uses casual, accessible language with psychological frameworks aimed at hobbyists rather than technical depth, precise terminology, or academic rigor expected in professor-level discourse.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "af76f055b5121__00057__00": {
+      "reasoning": "The response employs conversational language, accessible examples, and explanatory scaffolding appropriate for a general audience rather than technical terminology and theoretical depth expected for professor-level discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a4b97a1308602__00058__00": {
+      "reasoning": "The response uses casual, accessible language with no technical terminology or academic rigor. It reads as popular self-help advice rather than scholarly discourse appropriate for a professor-level audience.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "af9a2b1acdfd3__00059__00": {
+      "reasoning": "The response uses casual, conversational language with metaphors and accessible framing rather than technical terminology or academic precision. It explicitly states 'I won't beat around the bush' to keep things practical rather than scholarly, demonstrating intent to avoid professor-level technical depth.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a9dfce8a9372c__00060__00": {
+      "reasoning": "The response explicitly addresses a professor colleague, uses advanced technical terminology throughout (TADs, cis/trans-acting elements, chromatin topology), assumes extensive prior knowledge, and maintains consistently sophisticated discourse appropriate for expert-level academic exchange.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "a719e204df9b6__00061__00": {
+      "reasoning": "The response employs sophisticated technical terminology, assumes advanced knowledge, and discusses molecular mechanisms with the depth and precision expected in professor-level discourse. It avoids elementary explanations and maintains consistent technical rigor throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a952a848d26ec__00062__00": {
+      "reasoning": "The response explicitly positions itself as peer-to-peer expert communication, consistently uses advanced terminology (TADs, nucleosome positioning, CpG islands, enhancer-promoter loops), provides mechanistic depth rather than basic definitions, and maintains technical precision throughout without any simplified explanations.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a80a3274428db__00063__00": {
+      "reasoning": "The response demonstrates solid technical terminology and molecular detail appropriate for advanced understanding, but the explicit acknowledgment of the audience as 'faculty member' and the bridging explanations suggest communication to rather than with a peer expert. The content is technically sound but pitched slightly below pure professor-to-professor discourse.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "aec48dde82711__00064__00": {
+      "reasoning": "The response consistently uses professor-level framing, sophisticated terminology, and technical depth appropriate for expert-to-expert communication, including contemporary research concepts and precise molecular mechanisms.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a483b3c5ce4ab__00065__00": {
+      "reasoning": "The response consistently uses advanced terminology, assumes expert-level background knowledge, and discusses concepts with the mechanistic precision and theoretical framing expected in professor-level discourse.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a0badbd485c8a__00066__00": {
+      "reasoning": "The response consistently employs advanced technical terminology, assumes expert-level knowledge, addresses the reader as a colleague, and discusses DNA function with the depth and precision expected in professor-level academic discourse.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a2e79daed1bf5__00067__00": {
+      "reasoning": "The response demonstrates good technical vocabulary and conceptual framework but explicitly aims for accessibility rather than maximal technical depth. It covers fundamental concepts well but lacks the specialized precision and advanced detail expected in pure professor-to-professor communication.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a10b40c7dd323__00068__00": {
+      "reasoning": "The response consistently uses advanced terminology, provides mechanistic depth with regulatory nuances, frames discussion as colleague-to-colleague, and addresses modern research perspectives appropriate for expert-level discourse.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a1af1d214d140__00069__00": {
+      "reasoning": "The response consistently uses professor-level terminology and mechanistic detail (e.g., 3'\u21925' exonuclease activity, semi-conservative replication, chromatin dynamics, DNA conformations). It explicitly frames the discussion as colleague-to-colleague and maintains technical precision throughout with only minor pedagogical metaphors that don't diminish the advanced level.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a345e80303308__00070__00": {
+      "reasoning": "The response uses simplified analogies and hobbyist-level language rather than the technical depth and precise terminology expected for professor-level communication. While some technical terms appear, the overall presentation is clearly pitched at a general audience.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "acdc57002042a__00071__00": {
+      "reasoning": "The response relies heavily on accessible analogies and simplified explanations suitable for general audiences or undergraduates, not the technical depth, precise terminology, and theoretical sophistication expected at a professorial level.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a8324550b8c6d__00072__00": {
+      "reasoning": "The response relies heavily on simplified metaphors (hard drive, operating system) and provides explanatory context for technical terms, suggesting an audience with basic rather than expert knowledge. While some advanced terminology appears, the pedagogical tone and foundational explanations are inappropriate for professor-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ad7094b90d2d0__00073__00": {
+      "reasoning": "The response employs simplified metaphors and explanatory language appropriate for educated laypeople rather than professors. While technical terms appear, they lack the depth, precision, and advanced context expected at professorial level.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a06b9689423d9__00074__00": {
+      "reasoning": "The response demonstrates solid technical knowledge with appropriate terminology, but maintains an educational, accessible tone with metaphors and explanatory framing that targets an advanced student rather than a professor-level peer discussion. True professor-level discourse would assume expert baseline knowledge and engage with greater mechanistic depth or theoretical nuance.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a165955402e8b__00075__00": {
+      "reasoning": "The response consistently uses simplified language, everyday analogies, and explicitly addresses hobbyists rather than experts. Technical terms are present but explained in basic ways, lacking the depth and precision expected for professor-level communication.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a089ae5b0cd2f__00076__00": {
+      "reasoning": "The response explicitly targets hobbyists/intermediate learners with accessible metaphors and simplified explanations, lacking the dense technical precision, theoretical depth, and expert-level assumptions characteristic of professor-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a2de2187dde75__00077__00": {
+      "reasoning": "The response explicitly targets a hobbyist audience with simplified analogies and accessible language rather than the technical depth, precise terminology, and theoretical frameworks expected in professor-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a4f135593fb65__00078__00": {
+      "reasoning": "The response demonstrates competent technical knowledge but employs informal language, pedagogical metaphors, and explanatory scaffolding more appropriate for undergraduate or educated lay audiences than for professor-level discourse. While technical terms are present, they're embedded in a conversational, simplifying framework rather than the precise, jargon-dense style expected in faculty-to-faculty communication.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a4bc46de2401a__00079__00": {
+      "reasoning": "The response demonstrates solid intermediate technical knowledge with appropriate terminology, but relies heavily on accessible metaphors and lacks the molecular precision, mechanistic detail, and specialist vocabulary expected in professor-level discourse.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}
