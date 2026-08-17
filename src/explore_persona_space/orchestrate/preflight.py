@@ -39,6 +39,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -716,6 +717,74 @@ def _writable_probe_dir(check_path: str, candidates: list[str | None] | None = N
     return None
 
 
+# Sweep age gate for leaked probe files: a survivor is removed only when its
+# embedded pid is dead on THIS host AND the file is older than this. The age
+# gate protects LIVE cross-node siblings on cluster-shared filesystems, whose
+# pids are invisible to the local pid table (#1979); 3600 s is >2x the worst
+# observed ~9 min MooseFS FUSE fallocate grind (#2333), so an in-flight healthy
+# probe can never look sweepable.
+_PROBE_SWEEP_MIN_AGE_S = 3600
+_PROBE_PREFIX = ".preflight_disk_probe."
+
+
+def _sweep_stale_probe_files(
+    probe_dir: str | Path,
+    *,
+    prefix: str = _PROBE_PREFIX,
+    min_age_s: float = _PROBE_SWEEP_MIN_AGE_S,
+) -> None:
+    """Best-effort removal of leaked probe files from prior INTERRUPTED probes.
+
+    An interrupted probe (SIGTERM/SIGKILL mid-``posix_fallocate``) leaks its
+    entire allocation because ``finally:`` never runs under those signals
+    (#2329: a 12,864 MB survivor on a live pod consumed the very quota
+    headroom the probe measures). Probe names are per-invocation unique
+    (#1979), so survivors ACCUMULATE rather than being overwritten. This
+    sweeps ``<prefix><pid>.<uuid8>.tmp`` files only when BOTH (a) the embedded
+    pid is dead on this host (``os.kill(pid, 0)`` -> ``ProcessLookupError``)
+    and (b) the file mtime is older than ``min_age_s``. Anything else — live
+    pid, fresh mtime, foreign-uid pid, malformed/legacy name, out-of-range
+    pid — is left untouched. Fail-soft by design: every per-file error is
+    suppressed, so a sweep error can NEVER fail the probe (#2346).
+
+    Mirrored (duplicated, not imported) in ``scripts/pod_disk_guard.py``,
+    which is pure-stdlib by design and cannot import this module.
+    """
+    now = time.time()
+    try:
+        entries = list(os.scandir(probe_dir))
+    except OSError:
+        return
+    for entry in entries:
+        name = entry.name
+        if not (name.startswith(prefix) and name.endswith(".tmp")):
+            continue
+        # Strict "<prefix><pid>.<uuid8>.tmp" parse: legacy fixed names and
+        # foreign files never match, so only writer-created files are swept.
+        middle = name[len(prefix) : -len(".tmp")]
+        parts = middle.split(".")
+        if len(parts) != 2 or not parts[0].isdigit():
+            continue
+        if len(parts[1]) != 8 or not all(c in "0123456789abcdef" for c in parts[1]):
+            continue
+        with contextlib.suppress(OSError, OverflowError, ValueError):
+            pid = int(parts[0])
+            if pid <= 0 or pid > 2**31 - 1:
+                # Bound-check: os.kill raises OverflowError (not OSError) past
+                # the C int range; a nonsense pid is treated as foreign.
+                continue
+            if now - entry.stat().st_mtime < min_age_s:
+                continue  # fresh: possibly a LIVE cross-node sibling's probe
+            try:
+                os.kill(pid, 0)
+                continue  # pid LIVE on this host -> keep
+            except ProcessLookupError:
+                pass  # dead on this host AND old -> sweep below
+            except PermissionError:
+                continue  # pid exists under a foreign uid -> keep
+            os.unlink(entry.path)
+
+
 def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str | None]:
     """Try to reserve ``probe_bytes`` on ``check_path``'s filesystem via posix_fallocate.
 
@@ -753,6 +822,11 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
     probe_dir = _writable_probe_dir(check_path)
     if probe_dir is None:
         return True, f"no user-writable probe location on the {check_path} filesystem"
+
+    # Sweep leaked survivors from prior INTERRUPTED probes BEFORE probing —
+    # a leaked allocation consumes the very headroom this probe measures
+    # (#2329/#2346). Fail-soft: never affects the probe's verdict.
+    _sweep_stale_probe_files(probe_dir)
 
     # Per-invocation unique filename: concurrent probes on a SHARED filesystem
     # (e.g. 8 per-unit workers each calling assert_out_root_headroom at startup

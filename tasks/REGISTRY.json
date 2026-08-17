@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2350,
+  "highest_id": 2351,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8930,8 +8930,8 @@
     "2155": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2155",
-      "status": "reviewing",
+      "path": "tasks/completed/2155",
+      "status": "completed",
       "title": "Cut ~35K tokens/spawn from the always-on context load (autocompact thrash)"
     },
     "2156": {
@@ -10441,6 +10441,13 @@
       "path": "tasks/running/2350",
       "status": "running",
       "title": "Experimenter launcher composition: mandatory per-leg out/scratch dir isolation for concurrent same-driver legs (#2330 fu1 dense-store poisoning)"
+    },
+    "2351": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2351",
+      "status": "proposed",
+      "title": "workflow_lint _hf_routing_file_errors false-positives on HF-call text inside docstrings"
     },
     "237": {
       "has_clean_result": true,

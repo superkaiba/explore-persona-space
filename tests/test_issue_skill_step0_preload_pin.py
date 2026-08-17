@@ -27,6 +27,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -40,7 +42,7 @@ CRON_PRELOAD = 'ToolSearch("select:CronCreate,CronList,CronDelete")'
 def _step0_cron_arm_block() -> str:
     """Slice the Step 0 cron-arm region (heading -> Interactive-sessions para)."""
     assert SKILL_MD.exists(), f"missing {SKILL_MD}"
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.find(REGION_START)
     assert start != -1, f"anchor {REGION_START!r} not found in SKILL.md"
     end = text.find(REGION_END, start)

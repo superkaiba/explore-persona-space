@@ -68,7 +68,13 @@ Touched-file -> test mapping (per touched file ``f``):
     separators; a leading ``".claude"`` component matches implicitly).
     Additive only, same contract as rules-pin: the skills file itself keeps
     the WORKFLOW_SURFACE skip, comment/docstring mentions count, and a
-    dynamically constructed filename is the accepted miss class.
+    dynamically constructed filename is the accepted miss class. A touched
+    ``.claude/skills/issue/steps/*.md`` companion (a step body the #2155
+    split relocated out of ``issue/SKILL.md``) ADDITIONALLY aliases to the
+    ``issue/SKILL.md`` token set plus the ``issue_skill_source`` composer
+    token — the pinning tests reference the SKILL.md path or the composer,
+    never the companion's own path, so its own tokens alone would map to
+    nothing.
   * any test registered in :data:`TRANSITIVE_CONSUMER_TESTS` for a touched
     file is ADDITIONALLY selected with reason
     ``transitive-consumer:<touched file>`` (#1589). A pinned literal, NOT
@@ -529,6 +535,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_round_boundary_duty_pin.py",
     # NEW (#2040) — 9a-ter across-cell shard-axis + detached checkpoint-cadence duties pin
     "tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py",
+    # NEW (#2155) — SKILL.md step-body split pins: pointer<->companion bijection,
+    # composition completeness, Companion-files carve-out sentence. This
+    # registration IS the coverage guarantee for the split (plan B.8) — the
+    # composer (tests/issue_skill_source.py) has no path-literal the discovery
+    # arms would otherwise map.
+    "tests/test_issue_skill_source.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
@@ -902,13 +914,36 @@ def _skills_pin_tokens(rel_path: str) -> tuple[str, re.Pattern[str]]:
     return contiguous, join_re
 
 
+_ISSUE_STEPS_PIN_GLOB = ".claude/skills/issue/steps/*.md"
+_ISSUE_SKILL_SOURCE_TOKEN = "issue_skill_source"
+
+
+def _skills_pin_token_sets(rel_path: str) -> list[tuple[str, re.Pattern[str]]]:
+    """All (contiguous, join_re) alternatives *rel_path* aliases to (#2155).
+
+    A ``.claude/skills/issue/steps/*.md`` companion carries a step body the
+    #2155 split relocated out of ``issue/SKILL.md``; the tests pinning that
+    prose reference the SKILL.md path (their path constants) or the
+    ``tests/issue_skill_source`` composer (their read sites), never the
+    companion's own path — so a steps diff aliases to BOTH token sets on top
+    of its own (a steps-only diff must map NON-EMPTY, plan #2155 B.9). Every
+    other skills file keeps its single token pair.
+    """
+    out = [_skills_pin_tokens(rel_path)]
+    if _matches_any(rel_path, (_ISSUE_STEPS_PIN_GLOB,)):
+        out.append(_skills_pin_tokens(".claude/skills/issue/SKILL.md"))
+        out.append((_ISSUE_SKILL_SOURCE_TOKEN, re.compile(re.escape(_ISSUE_SKILL_SOURCE_TOKEN))))
+    return out
+
+
 def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
     """``{test_relpath: {touched .claude/skills/**/*.md files whose path its
     text references}}`` (#1851). Zero file reads when no skills file is
-    touched. Matching via :func:`_skills_pin_tokens` (contiguous substring OR
-    path-join regex); glob matching via :func:`_matches_any` so nested
-    reference files under a skill dir are covered too (the ``/**/``
-    zero-segment collapse).
+    touched. Matching via :func:`_skills_pin_token_sets` (contiguous substring
+    OR path-join regex, per alias — a ``issue/steps/*.md`` companion also
+    carries the ``issue/SKILL.md`` + ``issue_skill_source`` aliases, #2155);
+    glob matching via :func:`_matches_any` so nested reference files under a
+    skill dir are covered too (the ``/**/`` zero-segment collapse).
 
     Fail-soft (the #1299 read contract, mirroring :func:`rules_pin_hits`): a
     test file that cannot be read / decoded emits ONE stderr WARN and is
@@ -921,7 +956,7 @@ def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
     tests_dir = work_root / "tests"
     if not skills or not tests_dir.is_dir():
         return hits
-    tokens = {f: _skills_pin_tokens(f) for f in skills}
+    tokens = {f: _skills_pin_token_sets(f) for f in skills}
     n_scanned = 0
     n_failed = 0
     for test_path in sorted(tests_dir.rglob("test_*.py")):
@@ -937,8 +972,8 @@ def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
                 file=sys.stderr,
             )
             continue
-        for skill_file, (contiguous, join_re) in tokens.items():
-            if contiguous in text or join_re.search(text):
+        for skill_file, token_set in tokens.items():
+            if any(contiguous in text or join_re.search(text) for contiguous, join_re in token_set):
                 hits.setdefault(rel, set()).add(skill_file)
     if n_scanned and n_failed / n_scanned > 0.05:
         print(

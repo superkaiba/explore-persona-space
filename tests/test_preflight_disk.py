@@ -16,8 +16,10 @@ Covers:
 
 import errno
 import os
+import subprocess
 import sys
 import threading
+import time
 import types
 from pathlib import Path
 
@@ -733,3 +735,117 @@ def test_data_disk_statvfs_error_degrades_to_warning(monkeypatch):
     assert len(report.warnings) == 1
     assert "Could not read data-disk usage" in report.warnings[0]
     assert report.data_disk_used_pct is None
+
+
+# ── #2346: leaked-survivor sweep at probe entry ──────────────────────────────
+#
+# An INTERRUPTED probe (SIGTERM/SIGKILL mid-fallocate) leaks its allocation —
+# `finally:` never runs under those signals (#2329: a 12,864 MB survivor).
+# `_probe_writable_bytes` sweeps dead-pid survivors older than
+# `_PROBE_SWEEP_MIN_AGE_S` at entry; live pids and fresh files are kept
+# (cross-node siblings' pids are invisible locally, #1979), malformed names
+# are untouched, and a sweep error can never fail the probe.
+
+
+def _plant_survivor(
+    probe_dir: Path,
+    pid: int,
+    *,
+    age_s: float = 7200.0,
+    uuid8: str = "deadbeef",
+    prefix: str = preflight._PROBE_PREFIX,
+) -> Path:
+    """Plant a fake leaked probe file with the given embedded pid and mtime age."""
+    p = Path(probe_dir) / f"{prefix}{pid}.{uuid8}.tmp"
+    p.write_bytes(b"x")
+    t = time.time() - age_s
+    os.utime(p, (t, t))
+    return p
+
+
+def _dead_pid() -> int:
+    """Return a pid guaranteed dead on this host (spawned + reaped)."""
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    return proc.pid
+
+
+def test_sweep_removes_dead_pid_old_survivor(tmp_path):
+    """A dead-pid survivor older than the age gate is swept at probe entry."""
+    survivor = _plant_survivor(tmp_path, _dead_pid(), age_s=7200.0)
+    ok, reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert reason is None
+    assert not survivor.exists()
+    assert list(tmp_path.iterdir()) == []  # probe's own file cleaned too
+
+
+def test_sweep_keeps_live_pid_file_regardless_of_age(tmp_path):
+    """A file embedding a LIVE pid is never swept, however old its mtime."""
+    survivor = _plant_survivor(tmp_path, os.getpid(), age_s=10 * 3600.0)
+    ok, _reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert survivor.exists()
+
+
+def test_sweep_keeps_dead_pid_fresh_file(tmp_path):
+    """A FRESH file is kept even when its pid reads dead on this host.
+
+    Cross-node live-sibling case (#1979): on a cluster-shared filesystem a
+    sibling's pid is invisible to the local pid table, so the age gate is the
+    only protection for its in-flight probe file.
+    """
+    survivor = _plant_survivor(tmp_path, _dead_pid(), age_s=60.0)
+    ok, _reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert survivor.exists()
+
+
+def test_sweep_leaves_malformed_and_foreign_names(tmp_path):
+    """Malformed / legacy / foreign / out-of-range-pid names are untouched."""
+    keep = [
+        tmp_path / ".preflight_disk_probe.tmp",  # legacy fixed name
+        tmp_path / ".preflight_disk_probe.notapid.deadbeef.tmp",  # non-digit pid
+        tmp_path / ".preflight_disk_probe.123.zzzzzzzz.tmp",  # non-hex uuid8
+        tmp_path / ".preflight_disk_probe.123.dead.tmp",  # short uuid field
+        tmp_path / f".preflight_disk_probe.{10**19}.deadbeef.tmp",  # pid > C int
+        tmp_path / ".other_probe.123.deadbeef.tmp",  # foreign prefix
+        tmp_path / "data.json",  # ordinary file
+    ]
+    old = time.time() - 7200
+    for p in keep:
+        p.write_bytes(b"x")
+        os.utime(p, (old, old))
+    ok, _reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    for p in keep:
+        assert p.exists(), p.name
+
+
+def test_sweep_scandir_error_never_fails_probe(tmp_path, monkeypatch):
+    """A scandir failure inside the sweep leaves the probe verdict intact."""
+
+    def boom(path, *args, **kwargs):
+        raise OSError(errno.EIO, "io error")
+
+    monkeypatch.setattr(preflight.os, "scandir", boom)
+    ok, reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert reason is None
+
+
+def test_sweep_unlink_error_suppressed_probe_still_verdicts(tmp_path, monkeypatch):
+    """A per-file unlink failure is suppressed; the probe verdict is intact."""
+    survivor = _plant_survivor(tmp_path, _dead_pid(), age_s=7200.0)
+    real_unlink = os.unlink
+
+    def flaky_unlink(path, *args, **kwargs):
+        if os.fspath(path) == str(survivor):
+            raise OSError(errno.EACCES, "permission denied")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(preflight.os, "unlink", flaky_unlink)
+    ok, reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert reason is None
+    assert survivor.exists()  # unlink refused; sweep error never propagated
