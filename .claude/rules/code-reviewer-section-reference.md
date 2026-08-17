@@ -244,7 +244,10 @@ Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
   evidence field; programmatic callers still get `ValueError: summary
   too long`). Verdict-body
   concern bullets that are NOT persisted remain opportunistic (the
-  historical PASS+CONCERNS auto-advance contract applies).
+  historical PASS+CONCERNS auto-advance contract applies). Record the
+  ledger state as one verdict-body line — `**Prior-concerns ledger:** <K
+  open: id1, id2, …>` or `**Prior-concerns ledger:** empty` — so a
+  vacuous walk is visible in the verdict itself (#2326).
 - **A deferred feature the plan's PRODUCTION path requires is ALWAYS a
   persisted concern — never prose-only.** When the implementer's report
   (a `(d) Needs human eyeball` bullet, a TODO in the diff like
