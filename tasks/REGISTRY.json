@@ -10396,8 +10396,8 @@
     "2345": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2345",
-      "status": "proposed",
+      "path": "tasks/planning/2345",
+      "status": "planning",
       "title": "workflow-fix: ruff-policy pin red on main \u2014 autonomous_session_watch.py gate_push_pass C901 (c0d76f99c9)"
     },
     "235": {
