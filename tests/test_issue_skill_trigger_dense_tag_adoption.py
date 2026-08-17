@@ -18,6 +18,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 RULE_MD = REPO / ".claude" / "rules" / "trigger-dense-review.md"
@@ -28,7 +30,7 @@ PIN_FILE_RELPATH = "tests/test_issue_skill_trigger_dense_tag_adoption.py"
 
 
 def test_step_6d2_trigger_dense_tag_adoption_block_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     idx = text.index("Trigger-dense tag adoption")  # ValueError = hard fail
     # Window 1600: measured offsets from the anchor in the landed block —
     # add-tag@521, do NOT tag@979, remove-tag@1166, block tail ~1437. 1600
@@ -44,7 +46,7 @@ def test_step_6d2_trigger_dense_tag_adoption_block_present():
 
 
 def test_step0_recognition_persist_sentence_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     i0 = text.index("Guard-surface round: orchestrator turn discipline (#1563)")
     i1 = text.index("Chat title updates", i0)  # next section anchor
     assert "add-tag <N> trigger-dense" in text[i0:i1]

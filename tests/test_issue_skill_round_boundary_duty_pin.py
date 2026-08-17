@@ -33,6 +33,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -48,7 +50,7 @@ def _norm(text: str) -> str:
 
 def _skill_text() -> str:
     assert SKILL_MD.exists(), f"missing {SKILL_MD}"
-    return SKILL_MD.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def test_quater_heading_present() -> None:

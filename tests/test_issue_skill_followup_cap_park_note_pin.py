@@ -69,6 +69,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 MARKERS_MD = ROOT / ".claude" / "skills" / "issue" / "markers.md"
@@ -110,7 +112,7 @@ def test_cap_park_note_pinned_in_skill():
     onward (the § Cap-park surfacing sub-block lives directly under it;
     the step-6 surplus reminder lives later in the same 9a-ter section).
     """
-    skill_norm = _normalized(ISSUE_SKILL.read_text())
+    skill_norm = _normalized(issue_skill_text())
     anchor_idx = skill_norm.find(_normalized(LOOP_GUARD_ANCHOR))
     assert anchor_idx != -1, (
         f"SKILL.md lost the {LOOP_GUARD_ANCHOR!r} anchor; if the paragraph was "
@@ -184,7 +186,7 @@ def test_cheap_band_cap_park_note_pinned_in_skill():
     under it; the loop step-4 reminder + step-5 parenthetical live later
     in the same Step 9b section).
     """
-    skill_norm = _normalized(ISSUE_SKILL.read_text())
+    skill_norm = _normalized(issue_skill_text())
     anchor_idx = skill_norm.find(_normalized(C2_ANCHOR))
     assert anchor_idx != -1, (
         f"SKILL.md lost the {C2_ANCHOR!r} anchor; if the C2 bullet was "
@@ -257,7 +259,7 @@ def test_expensive_band_cap_park_note_pinned_in_skill():
     loop step-4 reminder + step-5 parenthetical live later in the same
     Step 9b section).
     """
-    skill_norm = _normalized(ISSUE_SKILL.read_text())
+    skill_norm = _normalized(issue_skill_text())
     anchor_idx = skill_norm.find(_normalized(EXP_ANCHOR))
     assert anchor_idx != -1, (
         f"SKILL.md lost the {EXP_ANCHOR!r} anchor; if the autonomous "
@@ -335,7 +337,7 @@ def test_reconcile_scope_one_partition_pinned():
     """#1588: step R's scope contract (reading (b)) is pinned — a re-park
     with `epm:follow-ups-autospawned v1` present verifies filing ONLY;
     the step-3 partition executes at most ONCE per task lifetime."""
-    skill_norm = _normalized(ISSUE_SKILL.read_text())
+    skill_norm = _normalized(issue_skill_text())
     anchor_idx = skill_norm.find(_normalized(EXP_ANCHOR))
     assert anchor_idx != -1, (
         f"SKILL.md lost the {EXP_ANCHOR!r} anchor; if the autonomous "
