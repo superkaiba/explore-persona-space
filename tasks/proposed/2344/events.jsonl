@@ -1,1 +1,2 @@
 {"ts": "2026-08-17T11:09:50Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-08-17T11:09:57Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "spec-v2 task created from mission-control spec form (draft d1a00f699ab62611) [via=mission-control channel=app actor=thomas node=test-bypass node_id=test-bypass]"}
