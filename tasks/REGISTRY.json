@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2336,
+  "highest_id": 2337,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10328,6 +10328,13 @@
       "path": "tasks/proposed/2336",
       "status": "proposed",
       "title": "Hoist a process-safe atomic-write helper into shared code and sweep the shared-tmp pattern out of scripts/"
+    },
+    "2337": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2337",
+      "status": "proposed",
+      "title": "Scope preflight's vLLM/transformers skew check to workloads that actually import vLLM"
     },
     "234": {
       "has_clean_result": true,
