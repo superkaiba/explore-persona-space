@@ -10483,7 +10483,7 @@
       "kind": "experiment",
       "path": "tasks/planning/2356",
       "status": "planning",
-      "title": "Predicting Qwen2.5-7B-Instruct over-refusal from internal representations vs an LLM judge (context / mapped-answer / actual-answer probes)"
+      "title": "Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer / actual-answer probes)"
     },
     "237": {
       "has_clean_result": true,

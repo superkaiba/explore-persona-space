@@ -1,6 +1,7 @@
 ---
-title: Predicting Qwen2.5-7B-Instruct over-refusal from internal representations vs
-  an LLM judge (context / mapped-answer / actual-answer probes)
+title: Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations
+  vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer
+  / actual-answer probes)
 kind: experiment
 tags: []
 created_at: '2026-08-17T22:23:49Z'
