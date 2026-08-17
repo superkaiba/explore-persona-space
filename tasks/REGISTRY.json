@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2354,
+  "highest_id": 2355,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10469,6 +10469,13 @@
       "path": "tasks/proposed/2354",
       "status": "proposed",
       "title": "worktree_audit.py stale-sweep reaps an active inline-round worktree (pod-side work + parked parent look idle)"
+    },
+    "2355": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2355",
+      "status": "proposed",
+      "title": "workflow_lint _hf_routing_file_errors false-positives on HF-call text inside docstrings"
     },
     "237": {
       "has_clean_result": true,
