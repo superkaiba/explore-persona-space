@@ -86,6 +86,7 @@ DEGENERATE = stt.DEGENERATE
 # int-keyed label block, which must not be mutated in place.
 TIER_LABEL = dict(stt.TIER_LABEL)
 TIER_LABEL["5c"] = "rotation + bias, context side"
+TIER_LABEL["5b"] = "rotation + bias, both sides (composed)"
 CEILING_COLOR = stt.CEILING_COLOR
 CROSS_COLOR = xmap.CROSS_COLOR
 
@@ -112,11 +113,14 @@ TIER_COLORS = {
     3: "#17BECF",  # bias offset
     4: "#E377C2",  # global scaling
     5: "#D62728",  # rotation
-    # "5c" — the INPUT-side rotation+bias orth tier (metric_ladder t5c), not one
-    # of the nine t0..t8 ladder tiers; it rides this colour map so every
-    # tier-keyed site treats it uniformly. Dark magenta: separable from tier
-    # 5's red (its output-side sibling) and tier 4's light pink.
+    # "5c" / "5b" — the INPUT-side and TWO-SIDED-COMPOSED rotation+bias orth
+    # tiers (metric_ladder t5c / t5b), not among the nine t0..t8 ladder tiers;
+    # they ride this colour map so every tier-keyed site treats them uniformly.
+    # 5c dark magenta: separable from tier 5's red (its output-side sibling)
+    # and tier 4's light pink. 5b dark goldenrod: separable from the cross
+    # map's orange (dashed, diamond markers) and tier 2's light yellow-green.
     "5c": "#C51B8A",
+    "5b": "#B8860B",
     6: "#1F77B4",  # reparam contexts
     7: "#2CA02C",  # reparam answers
     8: "#9467BD",  # reparam both
@@ -198,7 +202,7 @@ elif _TIER_SEL:
     )
     _bad = [_t for _t in TIERS if _t not in TIER_COLORS]
     if _bad:
-        raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8 and 5c")
+        raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8, 5c and 5b")
     SUFFIX += "_t" + "".join(str(_t) for _t in TIERS)
 
 # --outdir <name>: render into figures/issue_1336/<name>/ instead of the shared
@@ -420,31 +424,41 @@ if LAYER != 30:
     CROSS_PROV = dict(xmap.CROSS_PROV, layer=LAYER, source=f"per_layer/{LAYER}.repswap_r2")
 
 
-# --- input-side rotation+bias tier ("5c") -----------------------------------
+# --- orth-tier series ("5c" input-side, "5b" two-sided composed) ------------
 # t5c = W_s( R_ctx x_t ): an orthogonal Procrustes R_ctx is fit on the pair's
 # shared TRAIN rows aligning TARGET context vectors into the SOURCE context
 # frame ((x_t − μ_t) R + μ_s; issue825_map_alignment._orth_fit(Xt_tr, Xs_tr)),
 # then the FROZEN per-fold source map W_s is applied to the aligned held-out
 # target contexts — the rotation-constrained sibling of t6 (full ridge context
 # remap) and the input-side sibling of t5 (rotation + bias fit AFTER W_s on
-# the output). Nothing is fitted here: values are READ from the
-# rigid-decomposition re-run harvest (4× cpu-bigmem pods, 2026-08-13), which
-# re-ran the identical ladder battery plus the ORTH_TIER_NAMES block
-# (issue1336_metric_ladder.py). That re-run reproduces the plotted round-3
-# within/t0/t5/t6/t7 values to ≤1e-12 (same rows, folds, estimator), so this
-# series shares the axis basis exactly. orth tiers exist at layer 30 ONLY
-# (the ladder gates them to the full-tier layer). CI: a DIRECT 1,000-draw
-# bootstrap on t5c's R² (r2_bootstrap), unlike the gap-CI mapping the t0..t8
-# tiers ride — both are prompt-level bootstrap intervals in R² units. The
-# scaled variant t5cs rides the banked summary JSON only, never a figure.
-# The three round-B pairs (sft→rlvr, sft→rlvr_long, rlvr→rlvr_long) were
-# never run with orth tiers and render as line GAPS — the tiers-1-5 contract.
+# the output).
+# t5b = R_ans( t5c ): the two-sided COMPOSITION — R_ans is a SECOND Procrustes
+# fit on the ANSWER correspondence (_orth_fit(Ys_tr, Yt_tr), source answers →
+# target answers) applied after W_s(R_ctx x_t), with the _orth_fit
+# mean-centering conventions at each step. It instantiates the hypothesis
+# "BOTH representation spaces were rigidly re-encoded between stages,
+# relationship intact": each rotation is pinned to its independently-measured
+# re-encoding, never optimized against the composed residual (that is t5's
+# job, which fits its rotation directly on W_s x_t → y_t).
+# Nothing is fitted here: values are READ from the rigid-decomposition
+# re-run harvest (4× cpu-bigmem pods, 2026-08-13), which re-ran the identical
+# ladder battery plus the ORTH_TIER_NAMES block (issue1336_metric_ladder.py).
+# That re-run reproduces the plotted round-3 within/t0/t5/t6/t7 values to
+# ≤1e-12 (same rows, folds, estimator), so these series share the axis basis
+# exactly. orth tiers exist at layer 30 ONLY (the ladder gates them to the
+# full-tier layer). CI: a DIRECT 1,000-draw bootstrap on the tier's R²
+# (r2_bootstrap), unlike the gap-CI mapping the t0..t8 tiers ride — both are
+# prompt-level bootstrap intervals in R² units. The scaled variants
+# t5cs/t5bs ride the banked summary JSON only, never a figure. The three
+# round-B pairs (sft→rlvr, sft→rlvr_long, rlvr→rlvr_long) were never run
+# with orth tiers and render as line GAPS — the tiers-1-5 contract.
 RIGID_DIR = REPO / "eval_results" / "issue_1336" / "rigid" / "metric_ladder"
-INPUT_ROT_TIER = "5c"
+# Drawable tier token -> the banked orth-tier key it reads.
+ORTH_DRAW_TIERS = {"5c": "t5c", "5b": "t5b"}
 
 
-def _load_inputrot() -> tuple[dict, dict]:
-    """(pair, fmt, corpus) -> cell-shaped t5c read; plus the raw t5c/t5cs blocks."""
+def _load_orth_tiers() -> tuple[dict, dict]:
+    """(token, pair, fmt, corpus) -> cell-shaped read; plus per-cell raw blocks."""
     import re
 
     pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
@@ -461,45 +475,46 @@ def _load_inputrot() -> tuple[dict, dict]:
         layer = d.get("per_layer", {}).get(LKEY)
         if not layer or not layer.get("orth_tiers"):
             continue
-        rec = layer["orth_tiers"]["t5c"]["raw"]
-        bs = rec.get("r2_bootstrap") or {}
         key = (f"{src}__{tgt}", fmt, corpus)
-        cells[key] = {
-            "r2": float(rec["r2"]),
-            "r2_lo": float(bs["ci_lo"]) if "ci_lo" in bs else None,
-            "r2_hi": float(bs["ci_hi"]) if "ci_hi" in bs else None,
-            "within_r2": float(layer["raw"]["within_r2"]),
-            "n": int(d.get("n_shared_rows", 0)),
-            "has_ci": "ci_lo" in bs,
-        }
+        for token, oname in ORTH_DRAW_TIERS.items():
+            rec = layer["orth_tiers"][oname]["raw"]
+            bs = rec.get("r2_bootstrap") or {}
+            cells[(token, *key)] = {
+                "r2": float(rec["r2"]),
+                "r2_lo": float(bs["ci_lo"]) if "ci_lo" in bs else None,
+                "r2_hi": float(bs["ci_hi"]) if "ci_hi" in bs else None,
+                "within_r2": float(layer["raw"]["within_r2"]),
+                "n": int(d.get("n_shared_rows", 0)),
+                "has_ci": "ci_lo" in bs,
+            }
         blocks[key] = {
             "file": str(fp.relative_to(REPO)),
             "n_shared_rows": int(d.get("n_shared_rows", 0)),
             "within_r2": float(layer["raw"]["within_r2"]),
-            "t5c": layer["orth_tiers"]["t5c"],
-            "t5cs": layer["orth_tiers"]["t5cs"],
+            **{k: layer["orth_tiers"][k] for k in ("t5c", "t5cs", "t5b", "t5bs")},
         }
     return cells, blocks
 
 
-INPUTROT, INPUTROT_BLOCKS = _load_inputrot()
-if INPUT_ROT_TIER in TIERS and not INPUTROT:
+ORTH_CELLS, ORTH_BLOCKS = _load_orth_tiers()
+_orth_drawn = [t for t in TIERS if t in ORTH_DRAW_TIERS]
+if _orth_drawn and not ORTH_CELLS:
     raise SystemExit(
-        f"--tiers included {INPUT_ROT_TIER} but no orth_tiers exist at layer {LAYER} under "
+        f"--tiers included {_orth_drawn} but no orth_tiers exist at layer {LAYER} under "
         f"{RIGID_DIR} — the rigid harvest computed them at layer 30 only"
     )
 
 _base_cell = stt.cell
 
 
-def _cell_with_inputrot(src: str, tgt: str, fmt: str, corpus: str, tier) -> dict | None:
-    """stt.cell plus the "5c" tier; identical return shape, None when unmeasured."""
-    if tier == INPUT_ROT_TIER:
-        return INPUTROT.get((f"{src}__{tgt}", fmt, corpus))
+def _cell_with_orth(src: str, tgt: str, fmt: str, corpus: str, tier) -> dict | None:
+    """stt.cell plus the "5c"/"5b" tiers; identical return shape, None when unmeasured."""
+    if tier in ORTH_DRAW_TIERS:
+        return ORTH_CELLS.get((tier, f"{src}__{tgt}", fmt, corpus))
     return _base_cell(src, tgt, fmt, corpus, tier)
 
 
-stt.cell = _cell_with_inputrot
+stt.cell = _cell_with_orth
 
 
 # --- fair baselines -------------------------------------------------------
@@ -785,7 +800,9 @@ def collect() -> dict:
                 # never measured for them. Record the absence and let the
                 # drawing code leave a gap. Any OTHER empty cell set is a reaped
                 # cache and still fails loud.
-                if (src, tgt) in SELFMAP_PAIRS and tier in (1, 2, 3, 4, 5, INPUT_ROT_TIER):
+                if (src, tgt) in SELFMAP_PAIRS and (
+                    tier in (1, 2, 3, 4, 5) or tier in ORTH_DRAW_TIERS
+                ):
                     data[(pi, tier)] = []
                     continue
                 raise RuntimeError(
@@ -1697,7 +1714,11 @@ def fig_trained_on(D: dict) -> Path:
         )
     axR.axvline(0.0, color="#252525", lw=1.0, ls="--", zorder=1)
     axR.set_yticks(ypos)
-    axR.set_yticklabels([f"{t}: {TIER_LABEL[t]}" for t in tiers], fontsize=9.5)
+    # Wrap long arm labels: the orth-tier names ("5b: rotation + bias, both
+    # sides (composed)") otherwise extend left past the panel gap into axL.
+    import textwrap
+
+    axR.set_yticklabels([textwrap.fill(f"{t}: {TIER_LABEL[t]}", 24) for t in tiers], fontsize=9.5)
     axR.set_ylim(-0.6, len(tiers) - 0.4)
     axR.set_xlabel("deficit gap:  used-between the two models  −  not-used-between", fontsize=10)
     axR.set_title("Naive gap → gap with pair and corpus effects removed", fontsize=10.5, pad=7)
@@ -1894,9 +1915,9 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
             ),
         },
         "tier_labels": {str(t): TIER_LABEL[t] for t in TIERS},
-        "input_rot_tier": (
+        "orth_tiers_drawn": (
             {
-                "definition": (
+                "definition_5c": (
                     "t5c = W_s( R_ctx x_t ): orthogonal Procrustes R_ctx fit on the pair's "
                     "shared TRAIN rows aligning TARGET context vectors into the SOURCE context "
                     "frame ((x_t - mu_t) R + mu_s; issue825_map_alignment._orth_fit(Xt_tr, "
@@ -1905,6 +1926,18 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                     "(full ridge context remap) and the input-side sibling of t5 (rotation + "
                     "bias fit AFTER W_s on the output side). Closed-form SVD at d=4096; same "
                     "fold-local pooled-OOF R2 accumulator, folds and rows as every other tier."
+                ),
+                "definition_5b": (
+                    "t5b = R_ans( W_s( R_ctx x_t ) ): the two-sided COMPOSITION. R_ans is a "
+                    "SECOND Procrustes fit on the ANSWER correspondence "
+                    "(_orth_fit(Ys_tr, Yt_tr), source answers -> target answers) applied "
+                    "after W_s(R_ctx x_t), _orth_fit mean-centering at each step. It "
+                    "instantiates 'BOTH representation spaces rigidly re-encoded between "
+                    "stages, relationship intact': each rotation is pinned to its "
+                    "independently-measured re-encoding, never optimized against the composed "
+                    "residual (t5 fits its rotation directly on W_s x_t -> y_t). The residual "
+                    "gap from t5b up to the cross fit is the part of the stage change that is "
+                    "NOT a rigid re-encoding of either space."
                 ),
                 "source": (
                     "eval_results/issue_1336/rigid/metric_ladder/pair_*.json — the "
@@ -1915,9 +1948,9 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                 "basis_note": (
                     "the rigid re-run reproduces the plotted round-3 within/t0/t5/t6/t7 to "
                     "<=1e-12 on spot-checked cells (identical rows, folds, estimator), so the "
-                    "t5c series shares this figure's axis basis exactly; t5c_r2 row values "
-                    "come from the rigid harvest while every other tier column keeps its "
-                    "round-3 / round-B source"
+                    "t5c/t5b series share this figure's axis basis exactly; t5c_r2/t5b_r2 row "
+                    "values come from the rigid harvest while every other tier column keeps "
+                    "its round-3 / round-B source"
                 ),
                 "coverage": (
                     "the 7 round-3 forward pairs x 8 surfaces; the 3 round-B pairs (sft->rlvr, "
@@ -1926,17 +1959,17 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                     "to the full-tier layer)."
                 ),
                 "ci_note": (
-                    "t5c intervals are a DIRECT 1,000-draw prompt-level bootstrap on R2 "
-                    "(orth_tiers.t5c.raw.r2_bootstrap), unlike the t0..t8 gap-CI mapping; both "
-                    "are R2-unit intervals from the same shared bootstrap draws"
+                    "t5c/t5b intervals are a DIRECT 1,000-draw prompt-level bootstrap on R2 "
+                    "(orth_tiers.<tier>.raw.r2_bootstrap), unlike the t0..t8 gap-CI mapping; "
+                    "both are R2-unit intervals from the same shared bootstrap draws"
                 ),
-                "scaled_variant": (
-                    "t5cs (the s_fwd-scaled rotation from the same SVD) is banked in "
-                    "eval_results/issue_1336/input_rot_tier/inputrot_tier_summary.json and is "
-                    "deliberately NOT drawn on any figure"
+                "scaled_variants": (
+                    "t5cs / t5bs (the Procrustes-scaled forms from the same SVDs) are banked "
+                    "in eval_results/issue_1336/input_rot_tier/inputrot_tier_summary.json and "
+                    "are deliberately NOT drawn on any figure"
                 ),
             }
-            if INPUT_ROT_TIER in TIERS
+            if _orth_drawn
             else None
         ),
         "cross_map_definition": xmap.CROSS_MAP_DEFINITION
@@ -2069,7 +2102,7 @@ def main() -> None:
     figs = [fig_aggregate(D), fig_percorpus(D), fig_trained_on(D), fig_controlled_gap(D)]
     meta = write_meta(D, figs)
     outputs = figs + [meta]
-    if INPUT_ROT_TIER in TIERS:
+    if _orth_drawn:
         outputs.append(write_inputrot_summary())
     for p in outputs:
         print("wrote", p)
@@ -2100,9 +2133,10 @@ def _git_meta() -> dict:
 
 
 def write_inputrot_summary() -> Path:
-    """Bank the t5c/t5cs reads + provenance to eval_results/ (the figures draw t5c only)."""
+    """Bank the t5c/t5cs/t5b/t5bs reads + provenance to eval_results/
+    (the figures draw the unscaled t5c and t5b only)."""
     rows = []
-    for (pair, fmt, corpus), b in sorted(INPUTROT_BLOCKS.items()):
+    for (pair, fmt, corpus), b in sorted(ORTH_BLOCKS.items()):
         rows.append(
             {
                 "pair": pair,
@@ -2113,6 +2147,8 @@ def write_inputrot_summary() -> Path:
                 "within_r2": b["within_r2"],
                 "t5c": b["t5c"],
                 "t5cs": b["t5cs"],
+                "t5b": b["t5b"],
+                "t5bs": b["t5bs"],
                 "source_file": b["file"],
             }
         )
@@ -2122,12 +2158,14 @@ def write_inputrot_summary() -> Path:
         "issue": 1336,
         "layer": LAYER,
         "estimator": (
-            "closed-form orthogonal Procrustes SVD at d=4096 "
-            "(issue825_map_alignment._orth_fit(Xt_train, Xs_train)); alignment = "
+            "closed-form orthogonal Procrustes SVDs at d=4096 (issue825_map_alignment."
+            "_orth_fit). t5c: R_ctx = _orth_fit(Xt_train, Xs_train), alignment "
             "(x_t - mu_t) R + mu_s (t5cs: s_fwd-scaled), then the frozen per-fold source "
-            "map W_s; fold-local pooled OOF R2, seed-0 5-fold, fp64 — computed by "
-            "issue1336_metric_ladder.py's ORTH_TIER_NAMES block in the rigid-decomposition "
-            "re-run (2026-08-13)"
+            "map W_s. t5b: a second rotation R_ans = _orth_fit(Ys_train, Yt_train) applied "
+            "AFTER W_s(R_ctx x_t) (t5bs: both scaled) — the two-sided composition, each "
+            "rotation pinned to its independently-measured re-encoding. Fold-local pooled "
+            "OOF R2, seed-0 5-fold, fp64 — computed by issue1336_metric_ladder.py's "
+            "ORTH_TIER_NAMES block in the rigid-decomposition re-run (2026-08-13)"
         ),
         "n_train_note": (
             "per-fold n_train 5.9k-12.4k > d=4096 on every surface except gsm8k_test1319 "
