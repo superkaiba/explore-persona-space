@@ -1,0 +1,198 @@
+{
+  "commit": "df2abd8a+dirty",
+  "render_id": "e9cdfc223a6d494f",
+  "git_commit": "df2abd8a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2330_figures.py"
+  ],
+  "created": "2026-08-17T19:35:07Z",
+  "figsize": [
+    9.8,
+    3.9
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out test R\u00b2 (primary layer)": 0.6813527128872992,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out test R\u00b2 (primary layer)": 0.6811051994918373,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out test R\u00b2 (primary layer)": 0.7048844171070807,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out test R\u00b2 (primary layer)": 0.7043350614874674,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out test R\u00b2 (primary layer)": 0.6348697144464768,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "held-out test R\u00b2 (primary layer)": 0.6407136500980637,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "held-out test R\u00b2 (primary layer)": 0.6613255833406949,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out test R\u00b2 (primary layer)": 0.6671327681022368,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.19,
+      "generations ending at the cap (%)": 5.6,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.81,
+      "generations ending at the cap (%)": 7.86,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.81,
+      "generations ending at the cap (%)": 6.25,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.81,
+      "generations ending at the cap (%)": 20.7,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.81,
+      "generations ending at the cap (%)": 25.83,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.81,
+      "generations ending at the cap (%)": 20.75,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.19,
+      "generations ending at the cap (%)": 1.2,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.19,
+      "generations ending at the cap (%)": 1.55,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.19,
+      "generations ending at the cap (%)": 1.5,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "generations ending at the cap (%)": 6.3,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.19,
+      "generations ending at the cap (%)": 7.87,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 5.19,
+      "generations ending at the cap (%)": 6.0,
+      "_kind": "bar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map R\u00b2 at the 1,024 vs 2,048 caps",
+        "ylabel": "held-out test R\u00b2 (primary layer)",
+        "legend_labels": [
+          "1,024-token cap",
+          "2,048-token cap"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B\n5k-fit",
+          "Qwen2.5-7B\n10k-fit",
+          "Qwen3.5-9B\n5k-fit",
+          "Qwen3.5-9B\n10k-fit"
+        ],
+        "yticklabels": [
+          "0.63",
+          "0.64",
+          "0.65",
+          "0.66",
+          "0.67",
+          "0.68",
+          "0.69",
+          "0.70",
+          "0.71"
+        ]
+      },
+      {
+        "title_left": "Cap-hit per (model, split)",
+        "ylabel": "generations ending at the cap (%)",
+        "legend_labels": [
+          "1,024-token cap",
+          "2,048-token cap"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B\ntest",
+          "Qwen2.5-7B\ntrain",
+          "Qwen2.5-7B\nval",
+          "Qwen3.5-9B\ntest",
+          "Qwen3.5-9B\ntrain",
+          "Qwen3.5-9B\nval"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

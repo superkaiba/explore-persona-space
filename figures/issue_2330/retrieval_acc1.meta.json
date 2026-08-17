@@ -1,0 +1,70 @@
+{
+  "commit": "fa54cfc2",
+  "render_id": "4e83b641796f4698",
+  "git_commit": "fa54cfc2",
+  "git_dirty": false,
+  "created": "2026-08-17T07:10:28Z",
+  "figsize": [
+    6.0,
+    3.9
+  ],
+  "points": [
+    {
+      "category": "Qwen2.5-7B\n5k-fit",
+      "retrieval acc@1, cosine (pool = test targets)": 0.683,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen2.5-7B\n10k-fit",
+      "retrieval acc@1, cosine (pool = test targets)": 0.731,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Qwen3.5-9B\n5k-fit",
+      "retrieval acc@1, cosine (pool = test targets)": 0.7,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Qwen3.5-9B\n10k-fit",
+      "retrieval acc@1, cosine (pool = test targets)": 0.725,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "kNN retrieval vs chance (dotted = 1/1000)",
+        "ylabel": "retrieval acc@1, cosine (pool = test targets)",
+        "xticklabels": [
+          "Qwen2.5-7B\n5k-fit",
+          "Qwen2.5-7B\n10k-fit",
+          "Qwen3.5-9B\n5k-fit",
+          "Qwen3.5-9B\n10k-fit"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
