@@ -19,6 +19,12 @@ positions:
   ONLY the axis component moves to the default-assistant mean projection).
 - ``op="full_replace"`` — ``h ← h_def`` (the default-assistant mean STATE at
   that position; query-destroying damage ceiling).
+- ``op="steer"`` — ``h ← h + v̂·alpha`` (UNCONDITIONAL additive shift along the
+  UNIT axis by a per-(model,layer) scalar ``alpha`` in projection units, at
+  EVERY edited position, independent of the current projection). Contrast:
+  ``cap`` moves ONLY below-τ rows (a conditional floor via τ) and
+  ``axis_replace`` SETS the axis component to ``proj_def`` — ``steer`` is a fixed
+  add, so ``⟨h_new,v̂⟩ == ⟨h,v̂⟩ + alpha`` for every edited position.
 
 Four position sets (the localization ladder):
 
@@ -62,7 +68,7 @@ import torch
 
 from explore_persona_space.analysis.extraction import _resolve_decoder_blocks
 
-OPS: tuple[str, ...] = ("cap", "axis_replace", "full_replace")
+OPS: tuple[str, ...] = ("cap", "axis_replace", "full_replace", "steer")
 POSITION_SETS: tuple[str, ...] = ("prefix-end", "context-end", "all-prompt", "all-tokens")
 
 
@@ -74,11 +80,15 @@ def apply_cap_op(
     tau: float,
     h_def: torch.Tensor,
     proj_def: float,
+    alpha: float = 0.0,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Apply one cap/replace op to a stack of hidden states, vectorized over positions.
+    """Apply one cap/replace/steer op to a stack of hidden states, vectorized over positions.
 
     ``h`` is ``(N, H)`` (N edited positions flattened). All of ``v``/``v_hat``/
-    ``h_def`` are ``(H,)`` on ``h``'s device/dtype. Returns
+    ``h_def`` are ``(H,)`` on ``h``'s device/dtype. ``alpha`` is a per-cell
+    scalar read ONLY by ``op="steer"`` — the cap/axis_replace/full_replace
+    branches never reference it, so their outputs are bit-identical whether or
+    not it is passed (default 0.0). Returns
     ``(h_new, proj_raw_before, proj_unit_before, proj_unit_after)`` — all
     ``(N,)`` projections computed in fp32 for telemetry, ``h_new`` in ``h``'s
     dtype:
@@ -89,6 +99,9 @@ def apply_cap_op(
     - ``op="axis_replace"``: ``h_new = h + v̂·(proj_def - ⟨h,v̂⟩)`` (the axis
       component is set to ``proj_def``; the orthogonal complement is unchanged).
     - ``op="full_replace"``: ``h_new = h_def`` broadcast (the whole state).
+    - ``op="steer"``: ``h_new = h + v̂·alpha`` (UNCONDITIONAL additive shift
+      along the UNIT axis by ``alpha`` projection units, every row moved
+      regardless of its current projection; ``⟨h_new,v̂⟩ == ⟨h,v̂⟩ + alpha``).
     """
     assert op in OPS, op
     assert h.dim() == 2, h.shape
@@ -113,6 +126,10 @@ def apply_cap_op(
     elif op == "axis_replace":
         shift = float(proj_def) - proj_unit_before  # (N,)
         h_new = (hf + vhat_f[None, :] * shift[:, None]).to(h.dtype)
+    elif op == "steer":
+        # Unconditional additive shift by alpha along the unit axis (τ/proj_def
+        # unused): ⟨h_new,v̂⟩ == ⟨h,v̂⟩ + alpha for every edited position.
+        h_new = (hf + vhat_f[None, :] * float(alpha)).to(h.dtype)
     else:  # full_replace
         h_new = h_def.to(h.dtype)[None, :].expand(h.shape[0], H).clone()
     proj_unit_after = h_new.float() @ vhat_f  # (N,)
@@ -139,6 +156,7 @@ class AxisCapHook:
         *,
         op: str = "cap",
         position_set: str = "context-end",
+        alpha: float = 0.0,
     ):
         blocks, _, _ = _resolve_decoder_blocks(model)
         assert blocks is not None, "AxisCapHook requires a standard decoder (model.model.layers)"
@@ -157,6 +175,9 @@ class AxisCapHook:
         assert norm > 0, f"layer {layer}: zero axis vector"
         self.v_hat = self.v / norm
         self.tau = float(tau)
+        # steer shift in projection units (per-model-per-layer, same plumbing as
+        # τ); read only by op="steer" — every other op leaves it inert.
+        self.alpha = float(alpha)
         self.h_def = h_def.detach().float()
         self.proj_def = float(self.h_def @ self.v_hat)
         # -- per-cell batch state (arm_batch) --
@@ -264,7 +285,7 @@ class AxisCapHook:
         vhat = self.v_hat.to(device=hidden.device, dtype=hidden.dtype)
         hdef = self.h_def.to(device=hidden.device, dtype=hidden.dtype)
         new, praw, pu_before, pu_after = apply_cap_op(
-            sel, self.op, v, vhat, self.tau, hdef, self.proj_def
+            sel, self.op, v, vhat, self.tau, hdef, self.proj_def, self.alpha
         )
         hidden[bi, pi, :] = new
         self._last_proj = (praw.detach().cpu(), pu_before.detach().cpu(), pu_after.detach().cpu())
@@ -448,15 +469,19 @@ def joint_axis_hooks(
     *,
     op: str = "cap",
     position_set: str = "context-end",
+    alpha_by_layer: dict[int, float] | None = None,
 ) -> AxisCapHookStack:
     """Build a joint-band :class:`AxisCapHookStack` over ``layers``.
 
     ``axis_by_layer`` / ``tau_by_layer`` / ``h_def_by_layer`` supply each layer's
     raw contrast vector ``v`` (normalized to ``v̂`` inside the hook), cap floor τ
     (UNIT-space — a 25th-percentile of ``⟨h,v̂⟩`` pools matched to
-    ``position_set``; Fix B), and default-assistant mean state. All
-    children share ``op`` and ``position_set`` (a band caps ONE op at ONE
-    position set across its layers — the design's cell).
+    ``position_set``; Fix B), and default-assistant mean state.
+    ``alpha_by_layer`` supplies each layer's steer shift (projection units), same
+    plumbing/shape as ``tau_by_layer``; ``None`` defaults every layer's shift to
+    0.0 (inert for every op but ``steer``). All children share ``op`` and
+    ``position_set`` (a band caps ONE op at ONE position set across its layers —
+    the design's cell).
     """
     hooks = []
     for layer in layers:
@@ -464,6 +489,7 @@ def joint_axis_hooks(
         assert li in axis_by_layer and li in tau_by_layer and li in h_def_by_layer, (
             f"layer {li} missing axis / tau / h_def"
         )
+        alpha = float(alpha_by_layer[li]) if alpha_by_layer is not None else 0.0
         hooks.append(
             AxisCapHook(
                 model,
@@ -473,6 +499,7 @@ def joint_axis_hooks(
                 h_def_by_layer[li],
                 op=op,
                 position_set=position_set,
+                alpha=alpha,
             )
         )
     return AxisCapHookStack(hooks)
