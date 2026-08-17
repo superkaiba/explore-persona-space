@@ -5,6 +5,7 @@ Default repos (public, unlimited storage):
   Datasets: superkaiba1/explore-persona-space-data
 """
 
+import contextlib
 import glob
 import hashlib
 import json
@@ -2730,11 +2731,22 @@ def stage_hub_file(
             repo_id,
             path_in_repo,
         )
-        with tempfile.NamedTemporaryFile(
-            dir=target.parent, prefix=".hfstage-packed-", delete=False
-        ) as tf:
-            tf.write(data)
-        os.replace(tf.name, target)
+        tmp_name: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                dir=target.parent, prefix=".hfstage-packed-", delete=False
+            ) as tf:
+                tmp_name = tf.name
+                tf.write(data)
+            os.replace(tmp_name, target)
+        except BaseException:
+            # r3 review minor: don't leak an orphan .hfstage-packed-* tmp file
+            # when the write/replace fails (disk full). Cleanup-only suppress —
+            # the ORIGINAL failure always propagates.
+            if tmp_name is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_name)
+            raise
     return target
 
 

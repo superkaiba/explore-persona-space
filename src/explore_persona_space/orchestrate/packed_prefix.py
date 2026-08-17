@@ -94,19 +94,27 @@ def packed_fallback(repo_id: str, orig_path: str, *, repo_type: str = "dataset")
 
     ``None`` (caller re-raises its ORIGINAL not-found error unchanged) when:
     the first path segment is not one of :data:`REPACKED_PREFIXES`; the
+    subpath after the prefix is empty (a degenerate trailing-slash path); the
     prefix's merged ``index.json`` does not exist on the repo (not repacked
     yet); or the index exists but ``orig_path`` is not a member (the file
     genuinely never existed). A :class:`PackedPrefixError` (integrity failure
-    once the packed route IS live) PROPAGATES — never swallowed into None.
+    once the packed route IS live — a shard the index names but the repo
+    lacks, a malformed index entry, an offset/sha mismatch; ``read_packed``
+    converts the first two to :class:`PackedPrefixError` itself, r3 review)
+    PROPAGATES — never swallowed into None.
     """
     from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
 
     stripped = orig_path.lstrip("/")
-    if "/" not in stripped or stripped.split("/", 1)[0] not in REPACKED_PREFIXES:
+    first, _, rest = stripped.partition("/")
+    if not rest.strip("/") or first not in REPACKED_PREFIXES:
         return None
     try:
         return read_packed(repo_id, stripped, repo_type=repo_type)
     except (EntryNotFoundError, RepositoryNotFoundError, KeyError):
+        # Reachable ONLY from the index-download hop (not-repacked prefix /
+        # repo gone) or the member lookup (path never existed) — the shard
+        # hop and entry-shape validation raise PackedPrefixError instead.
         return None
 
 
@@ -125,7 +133,10 @@ def read_packed(repo_id: str, orig_path: str, *, repo_type: str = "dataset") -> 
             prefix segment (no ``/``).
         KeyError: ``orig_path`` is absent from the prefix's packed index
             (message names the index path checked).
-        PackedPrefixError: member absent from the shard, offset/size
+        PackedPrefixError: malformed index entry (missing required keys), a
+            shard the index names but the repo lacks (an index that
+            references a missing shard is CORRUPTION, never "file not
+            found" — r3 review), member absent from the shard, offset/size
             disagreement with the index, non-regular member, or sha256
             mismatch of the extracted bytes.
     """
@@ -147,7 +158,22 @@ def read_packed(repo_id: str, orig_path: str, *, repo_type: str = "dataset") -> 
             f"{orig_path!r} not found in packed index {repo_id}:{index_repo_path} "
             f"({len(index):,} members)"
         )
-    shard_local = Path(_download(repo_id, f"{prefix}/__packed__/{entry['shard']}", repo_type))
+    missing_keys = [k for k in ("shard", "offset", "size", "sha256") if k not in entry]
+    if missing_keys:
+        raise PackedPrefixError(
+            f"{orig_path!r}: malformed packed index entry in {index_repo_path} — missing "
+            f"key(s) {missing_keys} (index corruption is never 'file not found'; r3 review)"
+        )
+    from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+
+    try:
+        shard_local = Path(_download(repo_id, f"{prefix}/__packed__/{entry['shard']}", repo_type))
+    except (EntryNotFoundError, RepositoryNotFoundError) as e:
+        raise PackedPrefixError(
+            f"{orig_path!r}: packed index names shard {entry['shard']!r} but the shard is "
+            f"missing from {repo_id} — index/shard disagree (an index that references a "
+            "missing shard is corruption, never 'file not found'; r3 review)"
+        ) from e
     with tarfile.open(shard_local, "r:") as tar:  # "r:" = uncompressed only, by design
         try:
             member = tar.getmember(orig_path)

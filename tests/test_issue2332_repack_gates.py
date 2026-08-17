@@ -891,23 +891,186 @@ def test_run_prefix_incomplete_sidecar_or_empty_pack_record_reruns_steps(rp, tmp
 # ── r4: chunked-mode pilot claim + main-loop duty routing ─────────────────────
 
 
-def test_claim_chunked_pilot_first_claim_holds(rp, monkeypatch):
+def _mini_hub_env(rp, tmp_path, monkeypatch, files: dict[str, bytes]) -> dict:
+    """A tiny in-memory fake Hub + real staging tree so the REAL run_prefix
+    pipeline (snapshot, download, staged-verify, pack, local-verify, upload,
+    hub-verify, pilot-extra, delete) runs end-to-end. Fakes ONLY the network
+    seams (listing / head / download / upload / delete-commit) and the
+    mount-bound headroom assert; every pipeline body executes for real.
+    ``env['deletes']`` records (batch, duty_satisfied_at_delete_time)."""
+    hub: dict[str, dict] = {}
+    payloads = dict(files)
+    for p, data in payloads.items():
+        hub[p] = {"size": len(data), "oid": hashlib.sha256(data).hexdigest(), "lfs": True}
+    env: dict = {"hub": hub, "deletes": [], "st": None, "head": 0}
+    monkeypatch.setattr(rp, "STAGE", tmp_path)
     monkeypatch.setattr(rp, "_save_state", lambda *_a, **_k: None)
-    st: dict = {}
-    assert rp._claim_chunked_pilot(st, "pA") is True
-    assert st["chunked_pilot"] == "pA"
-    assert rp._claim_chunked_pilot(st, "pB") is False
-    assert rp._claim_chunked_pilot(st, "pA") is True  # resume-stable
+    monkeypatch.setattr(rp, "gate_writer", lambda *_a, **_k: None)
+    monkeypatch.setattr(rp, "gate_mover", lambda *_a, **_k: None)
+    monkeypatch.setattr(rp, "_staging_headroom_assert", lambda need_bytes: None)
+    monkeypatch.setattr(rp, "_fresh_repo_count", lambda: 100)
+    # Small thresholds so a ~150-byte prefix runs CHUNKED (2 chunks) while a
+    # ~40-byte prefix stays WHOLE — thresholds, not seams: plan_chunks and
+    # every consumer run their real bodies against them.
+    monkeypatch.setattr(rp, "VM_FOOTPRINT_MAX_BYTES", 100)
+    monkeypatch.setattr(rp, "CHUNK_STAGED_MAX_BYTES", 200)
+
+    def fake_head() -> str:
+        env["head"] += 1
+        return f"h{env['head']}"
+
+    monkeypatch.setattr(rp, "_repo_head_sha", fake_head)
+
+    def fake_list(prefix: str, revision=None) -> dict:
+        return {p: dict(e) for p, e in hub.items() if p.startswith(prefix + "/")}
+
+    monkeypatch.setattr(rp, "_list_prefix", fake_list)
+
+    def fake_dl(*, repo_id, filename, repo_type, revision=None, local_dir=None, etag_timeout=None):
+        out = Path(local_dir) / filename
+        out.parent.mkdir(parents=True, exist_ok=True)
+        if "/__packed__/" in filename:
+            src = tmp_path / f"up_{filename.split('/', 1)[0]}" / filename
+            shutil.copyfile(src, out)
+        else:
+            out.write_bytes(payloads[filename])
+        return str(out)
+
+    monkeypatch.setattr(rp, "hf_hub_download", fake_dl)
+
+    class _Api:
+        def upload_large_folder(
+            self,
+            *,
+            repo_id,
+            folder_path,
+            repo_type,
+            ignore_patterns,
+            num_workers,
+            print_report_every,
+        ) -> None:
+            root = Path(folder_path)
+            for f in sorted(root.rglob("*")):
+                if f.is_file():
+                    s256, _g = rp._dual_digest(f)
+                    hub[f.relative_to(root).as_posix()] = {
+                        "size": f.stat().st_size,
+                        "oid": s256,
+                        "lfs": True,
+                    }
+
+    monkeypatch.setattr(rp, "_get_api", lambda: _Api())
+
+    def fake_commit(batch, head_sha, prefix) -> None:
+        st_ref = env["st"]
+        env["deletes"].append((sorted(batch), bool(st_ref.get("chunked_pilot_extra_done"))))
+        for p in batch:
+            hub.pop(p, None)
+
+    monkeypatch.setattr(rp, "_create_commit_delete", fake_commit)
+    return env
+
+
+def _chunked_files(prefix: str) -> dict[str, bytes]:
+    """4 files / 2 subdirs, ~38 B each — CHUNKED (2 chunks) under the
+    mini-hub thresholds (2*152 > 100; per-subdir ~76 <= 100 max-chunk)."""
+    return {
+        f"{prefix}/sub{i}/f{j}.json": f'{{"chunk": {i}, "row": {j}, "pad": "0123456789"}}'.encode()
+        for i in range(2)
+        for j in range(2)
+    }
+
+
+def _whole_files(prefix: str) -> dict[str, bytes]:
+    """2 files, ~19 B each — WHOLE mode under the mini-hub thresholds."""
+    return {f"{prefix}/g{j}.json": f'{{"a": {j}, "p": "xx"}}'.encode() for j in range(2)}
+
+
+def test_chunked_pilot_duty_joint_end_to_end(rp, tmp_path, monkeypatch):
+    """The r3 reconciler's JOINT pin (chunked-pilot-transfer-state): a stale
+    holder A — legacy ``st['chunked_pilot']`` claim + rec mode 'chunked' +
+    gate-skipped — must NOT strand the gate-7 duty: driving the REAL
+    run_prefix for chunked B (fakes only at network seams), B's chunk 0
+    RUNS the real step_pilot_extra and records the persisted satisfaction
+    flag BEFORE any of B's deletes commit. Fails pre-fix: the r5-removed
+    ``_claim_chunked_pilot(st, B)`` returned False under A's claim, so B
+    skipped pilot-extra while the main loop marked the duty satisfied."""
+    A, B = "issue2224_screening", "issue1434_writingstyle"
+    env = _mini_hub_env(rp, tmp_path, monkeypatch, _chunked_files(B))
+    st: dict = {
+        "prefixes": {A: {"mode": "chunked", "skipped": "gate trip (prior run)"}},
+        "chunked_pilot": A,  # the stale legacy claim, held by a non-done holder
+    }
+    env["st"] = st
+    assert rp.run_prefix(B, st) == "done"
+    # The ONE persisted state: duty satisfied by B's REAL chunk-0 pilot-extra.
+    assert st["chunked_pilot_extra_done"] == B
+    assert st["prefixes"][B]["steps"]["pilot_extra"]["done"] is True
+    assert not rp._chunked_pilot_duty_pending(st)
+    # Ordering: the FIRST delete commit already saw the duty satisfied.
+    assert env["deletes"], "chunk deletes must have run"
+    assert env["deletes"][0][1] is True, "deletes ran before pilot-extra PASSed"
+    # The legacy claim key is inert — untouched, and it did not block B.
+    assert st["chunked_pilot"] == A
+    # Mini-hub end state sanity: B's originals deleted, packed files present.
+    assert not [p for p in env["hub"] if p.startswith(B + "/") and "/__packed__/" not in p]
+    assert [p for p in env["hub"] if p.startswith(f"{B}/__packed__/")]
+
+
+def test_chunked_pilot_duty_mode_flip_holder_replanned_whole(rp, tmp_path, monkeypatch):
+    """The reconciler's mode-flip variant: a holder re-planned WHOLE after a
+    re-snapshot runs to done WITHOUT pilot-extra (whole-mode pilot-extra is
+    PILOT_PREFIX-only), so the duty stays pending and the NEXT chunked
+    prefix's chunk 0 actually runs it — through the REAL run_prefix both
+    times."""
+    A, B = "issue2224_screening", "issue1434_writingstyle"
+    files = {**_whole_files(A), **_chunked_files(B)}
+    env = _mini_hub_env(rp, tmp_path, monkeypatch, files)
+    st: dict = {"prefixes": {}, "chunked_pilot": A}  # stale claim from a chunked past
+    env["st"] = st
+    assert rp.run_prefix(A, st) == "done"
+    assert st["prefixes"][A]["mode"] == "whole"
+    assert "pilot_extra" not in st["prefixes"][A]["steps"]
+    assert rp._chunked_pilot_duty_pending(st)  # a whole-mode done never satisfies it
+    assert rp.run_prefix(B, st) == "done"
+    assert st["chunked_pilot_extra_done"] == B
+    assert st["prefixes"][B]["steps"]["pilot_extra"]["done"] is True
+
+
+def test_sizing_mode_hints_tokens(rp, tmp_path):
+    """r3 minor 3: 'refused-drift' (and any unrecognized token) maps to
+    'unknown' — chunked-POSSIBLE — never silently 'whole'; malformed rows
+    are skipped; an absent file is {}."""
+    p = tmp_path / "sizing.json"
+    p.write_text(
+        json.dumps(
+            {
+                "prefixes": {
+                    "a": {"mode": "whole"},
+                    "b": {"mode": "chunked(3)"},
+                    "c": {"mode": "refused-drift"},
+                    "d": {"mode": 7},
+                    "e": "notadict",
+                }
+            }
+        )
+    )
+    assert rp._sizing_mode_hints(p) == {"a": "whole", "b": "chunked", "c": "unknown"}
+    assert rp._sizing_mode_hints(tmp_path / "absent.json") == {}
 
 
 def _main_run_with_fakes(rp, monkeypatch, per_prefix):
     """Drive `main(["run"])` with a signature-conformant run_prefix fake:
-    ``per_prefix[prefix]`` is a result string or an exception to raise."""
+    ``per_prefix[prefix]`` is a result string, an exception to raise, or a
+    callable ``(prefix, st) -> result`` (to mutate st the way the REAL
+    run_prefix does — e.g. record the pilot-extra satisfaction flag)."""
     calls: list[str] = []
 
     def fake_run_prefix(prefix: str, st: dict) -> str:
         calls.append(prefix)
         outcome = per_prefix.get(prefix, "done")
+        if callable(outcome) and not isinstance(outcome, Exception):
+            outcome = outcome(prefix, st)
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
@@ -944,7 +1107,9 @@ def test_main_chunked_pilot_duty_transfers_past_gate_skips_and_aborts_on_failure
 
 
 def test_main_chunked_pilot_satisfied_by_first_done_chunked(rp, monkeypatch):
-    """Once the first chunked prefix completes, a LATER chunked failure does
+    """Once a chunked prefix records the persisted pilot-extra satisfaction
+    flag (what the REAL run_prefix writes on a chunked chunk-0 pilot-extra
+    PASS — proven end-to-end by the joint test), a LATER chunked failure does
     not trip the chunked-pilot abort (the ordinary incomplete handling runs)."""
     order = list(rp.PREFIXES)
     first_chunked, later_chunked = order[2], order[4]
@@ -953,11 +1118,63 @@ def test_main_chunked_pilot_satisfied_by_first_done_chunked(rp, monkeypatch):
         "_sizing_mode_hints",
         lambda: {first_chunked: "chunked", later_chunked: "chunked"},
     )
+
+    def done_and_satisfy(prefix: str, st: dict) -> str:
+        st["chunked_pilot_extra_done"] = prefix
+        return "done"
+
     rc, calls = _main_run_with_fakes(
-        rp, monkeypatch, {later_chunked: rp.VerifyFailure("late chunk failure")}
+        rp,
+        monkeypatch,
+        {
+            first_chunked: done_and_satisfy,
+            later_chunked: rp.VerifyFailure("late chunk failure"),
+        },
     )
     assert rc == 1  # one incomplete prefix -> nonzero, but NO early abort:
     assert calls == order  # every prefix still ran
+
+
+def test_main_chunked_done_without_pilot_extra_does_not_satisfy_duty(rp, monkeypatch):
+    """ONE state machine (r3 reconciler): a chunked prefix reporting 'done'
+    WITHOUT the persisted pilot-extra satisfaction flag (legacy/resumed state
+    that never ran step_pilot_extra) does NOT satisfy the gate-7 duty — the
+    flag is the ONLY satisfaction record, so a later unpiloted chunked failure
+    still aborts. Fails pre-fix: the r4 loop-local tracker marked the duty
+    satisfied on ANY chunked done."""
+    order = list(rp.PREFIXES)
+    first_chunked, later_chunked = order[2], order[4]
+    monkeypatch.setattr(
+        rp,
+        "_sizing_mode_hints",
+        lambda: {first_chunked: "chunked", later_chunked: "chunked"},
+    )
+    rc, calls = _main_run_with_fakes(
+        rp,
+        monkeypatch,
+        {
+            first_chunked: "done",  # done, but NO flag recorded
+            later_chunked: rp.VerifyFailure("unpiloted chunk failure"),
+        },
+    )
+    assert rc == 1
+    assert calls == order[:5]  # aborted AT the failing chunked prefix
+
+
+def test_main_unknown_mode_hint_treated_chunked_possible(rp, monkeypatch):
+    """r3 minor 3: a 'refused-drift' sizing row maps to 'unknown' (see
+    test_sizing_mode_hints_tokens) and the duty check treats 'unknown' as
+    chunked-POSSIBLE — a prefix that ran and FAILED before rec['mode'] was
+    assigned aborts while the duty is pending, instead of silently reading
+    as whole-mode."""
+    order = list(rp.PREFIXES)
+    failing = order[3]
+    monkeypatch.setattr(rp, "_sizing_mode_hints", lambda: {failing: "unknown"})
+    rc, calls = _main_run_with_fakes(
+        rp, monkeypatch, {failing: rp.VerifyFailure("died before mode assignment")}
+    )
+    assert rc == 1
+    assert calls == order[:4]  # aborted AT the unknown-mode failure
 
 
 # ── r4: sizing drift refusal (plan SS4.4.4 fail-loud control flow) ────────────

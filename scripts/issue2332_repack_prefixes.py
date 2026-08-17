@@ -1273,26 +1273,34 @@ def _step_done(rec: dict, key: str) -> bool:
     return bool(s.get("done")) and s.get("src_revision") == rec.get("src_revision")
 
 
-def _claim_chunked_pilot(st: dict, prefix: str) -> bool:
-    """The FIRST prefix to enter chunked mode claims the chunked-mode pilot
-    role, persisted in state (resume-stable across restarts): its first chunk
-    carries the plan SS4.6 'Pilot extra' duty even when it is not
-    PILOT_PREFIX (Codex r2 chunked-pilot-contract). Returns True iff `prefix`
-    holds the claim."""
-    holder = st.get("chunked_pilot")
-    if holder is None:
-        st["chunked_pilot"] = prefix
-        _save_state(st)
-        return True
-    return holder == prefix
+def _chunked_pilot_duty_pending(st: dict) -> bool:
+    """ONE state machine for the plan SS7 gate-7 chunked-mode pilot duty
+    (r3 reconciler, chunked-pilot-transfer-state): the SINGLE persisted state
+    is duty SATISFACTION — ``st['chunked_pilot_extra_done'] = <prefix>``,
+    written ONLY after ``step_pilot_extra`` PASSes on some chunked prefix's
+    chunk 0. There is deliberately NO holder claim to release: while the duty
+    is pending, EVERY chunked prefix's chunk 0 carries it (a holder that
+    gate-skipped / failed / re-planned whole simply never satisfied it, so
+    the duty re-attaches to the next chunked prefix by construction). Both
+    ``run_prefix`` (fire pilot-extra?) and the ``main`` run loop (abort after
+    an unpiloted chunked failure?) read exactly this predicate."""
+    return not st.get("chunked_pilot_extra_done")
 
 
-def _sizing_mode_hints() -> dict[str, str]:
-    """Expected per-prefix mode ('whole' | 'chunked') from the committed P2
-    sizing.json — best-effort ({} when absent/unparseable). Backstop for the
-    main-loop chunked-pilot duty when a gate trip skipped run_prefix BEFORE
-    its rec['mode'] assignment (Codex r2 chunked-pilot-contract, arm 2)."""
-    p = Path(__file__).resolve().parent.parent / "eval_results" / "issue_2332" / "sizing.json"
+def _sizing_mode_hints(sizing_path: Path | None = None) -> dict[str, str]:
+    """Expected per-prefix mode ('whole' | 'chunked' | 'unknown') from the
+    committed P2 sizing.json — best-effort ({} when absent/unparseable).
+    Backstop for the main-loop chunked-pilot duty when a gate trip skipped
+    run_prefix BEFORE its rec['mode'] assignment (Codex r2
+    chunked-pilot-contract, arm 2). A 'refused-drift' (or any unrecognized)
+    sizing row maps to 'unknown' — chunked-POSSIBLE for the duty check,
+    never silently 'whole' (r3 review minor 3: a drift-refused chunked
+    prefix must not evade the ran-and-failed abort via a wrong hint)."""
+    p = (
+        sizing_path
+        if sizing_path is not None
+        else Path(__file__).resolve().parent.parent / "eval_results" / "issue_2332" / "sizing.json"
+    )
     try:
         sizing = json.loads(p.read_text())
     except (OSError, json.JSONDecodeError):
@@ -1300,7 +1308,13 @@ def _sizing_mode_hints() -> dict[str, str]:
     out: dict[str, str] = {}
     for prefix, info in (sizing.get("prefixes") or {}).items():
         if isinstance(info, dict) and isinstance(info.get("mode"), str):
-            out[prefix] = "chunked" if info["mode"].startswith("chunked") else "whole"
+            m = info["mode"]
+            if m.startswith("chunked"):
+                out[prefix] = "chunked"
+            elif m == "whole":
+                out[prefix] = "whole"
+            else:
+                out[prefix] = "unknown"
     return out
 
 
@@ -1585,11 +1599,6 @@ def run_prefix(prefix: str, st: dict) -> str:
     else:
         log(f"{prefix}: CHUNKED mode — {len(chunks)} chunks")
         rec["mode"] = "chunked"
-        # Chunked-mode pilot duty (plan SS7 gate 7, second clause; Codex r2
-        # chunked-pilot-contract): whichever prefix is FIRST chunked at
-        # runtime claims the role durably — its first chunk carries the
-        # 'Pilot extra' re-download check, PILOT_PREFIX or not.
-        is_chunked_pilot = _claim_chunked_pilot(st, prefix)
         n_deleted = 0
         merged_index: dict[str, dict] = {}
         all_shard_sha: dict[str, str] = {}
@@ -1612,8 +1621,15 @@ def run_prefix(prefix: str, st: dict) -> str:
             step_local_verify(prefix, st, src_map, paths, packed["index"])
             step_upload(prefix, st, packed["k"])
             step_hub_verify(prefix, st)
-            if ci == 0 and (prefix == PILOT_PREFIX or is_chunked_pilot):
+            # Chunked-mode pilot duty (plan SS7 gate 7 second clause; r3
+            # reconciler): while UNSATISFIED, every chunked prefix's chunk 0
+            # runs pilot-extra — satisfaction is the one persisted state,
+            # written only on a pilot-extra PASS (a failure raises first, so
+            # the duty stays pending and main's abort arm fires).
+            if ci == 0 and (prefix == PILOT_PREFIX or _chunked_pilot_duty_pending(st)):
                 step_pilot_extra(prefix, st, packed["index"])
+                st["chunked_pilot_extra_done"] = prefix
+                _save_state(st)
             chunk_realized = run_delete(
                 prefix, st, src_map=src_map, restrict=set(paths), final_assert=False
             )
@@ -1864,7 +1880,6 @@ def main(argv: list[str] | None = None) -> int:
         targets = [args.prefix] if args.prefix else list(PREFIXES)
         full_order = args.prefix is None
         results: dict[str, str] = {}
-        chunked_pilot_checked = False
         mode_hints = _sizing_mode_hints()
         for prefix in targets:
             try:
@@ -1895,27 +1910,34 @@ def main(argv: list[str] | None = None) -> int:
                     f"(fix + re-run `run --prefix {PILOT_PREFIX}`, then `run`)"
                 )
                 return 1
-            # Chunked-mode pilot (plan SS7 gate 7, second clause; Codex r2
-            # chunked-pilot-contract): the FIRST chunked-mode prefix that
-            # actually RUNS its chunked pipeline serves as the chunked-mode
-            # pilot. Mode is read from the rec when run_prefix assigned it,
-            # else from the sizing.json hint (an entry-gate trip skips
-            # run_prefix BEFORE the rec['mode'] assignment). Outcomes:
-            # done -> pilot satisfied; skipped/deferred -> nothing ran, the
-            # duty TRANSFERS to the next chunked prefix; ran-and-failed
-            # (incomplete) -> ABORT before larger chunked prefixes.
+            # Chunked-mode pilot duty (plan SS7 gate 7, second clause; r3
+            # reconciler chunked-pilot-transfer-state): this check reads the
+            # SAME persisted satisfaction flag run_prefix writes — never a
+            # loop-local tracker. Mode comes from the rec when run_prefix
+            # assigned it, else the sizing.json hint ('unknown' = a
+            # refused-drift / unrecognized row, chunked-POSSIBLE; an
+            # entry-gate trip skips run_prefix BEFORE rec['mode']). While the
+            # duty is UNSATISFIED: skipped/deferred (nothing ran) and even a
+            # done-without-recorded-pilot-extra chunked prefix TRANSFER the
+            # duty to the next chunked prefix (whose chunk 0 then actually
+            # runs pilot-extra — the run_prefix trigger keys on the same
+            # flag); a chunked-possible prefix that RAN AND FAILED aborts
+            # before larger chunked prefixes.
             mode = st["prefixes"].get(prefix, {}).get("mode") or mode_hints.get(prefix)
-            if full_order and not chunked_pilot_checked and mode == "chunked":
-                if results[prefix] == "done":
-                    chunked_pilot_checked = True
-                elif results[prefix] not in ("skipped", "deferred"):
-                    log(
-                        f"ABORT run: first chunked-mode prefix {prefix} "
-                        f"result={results[prefix]!r} — it serves as the chunked-mode "
-                        "pilot (plan SS7 gate 7); fix and re-run before larger "
-                        "chunked prefixes"
-                    )
-                    return 1
+            if (
+                full_order
+                and _chunked_pilot_duty_pending(st)
+                and mode in ("chunked", "unknown")
+                and results[prefix] not in ("done", "skipped", "deferred")
+            ):
+                log(
+                    f"ABORT run: chunked-mode prefix {prefix} "
+                    f"result={results[prefix]!r} with the plan SS7 gate-7 "
+                    "chunked-pilot duty UNSATISFIED (no pilot-extra PASS "
+                    "recorded on any chunked chunk 0) — fix and re-run before "
+                    "larger chunked prefixes"
+                )
+                return 1
         log(f"run complete: {results}")
         return 0 if all(v == "done" for v in results.values()) else 1
     raise SystemExit(f"unknown cmd {args.cmd!r}")

@@ -459,6 +459,11 @@ def test_packed_fallback_semantics(pp, tmp_path, monkeypatch):
     assert pp.packed_fallback(LIVE_REPO, "/" + member) == payload
     assert pp.packed_fallback(LIVE_REPO, "not_a_target/x.json") is None
     assert pp.packed_fallback(LIVE_REPO, "orphan.json") is None
+    # r3 review minor: degenerate trailing-slash paths under a target prefix
+    # are None (the caller re-raises its original 404) — never a ValueError
+    # type-change out of read_packed's shape guards.
+    assert pp.packed_fallback(LIVE_REPO, f"{target_prefix}/") is None
+    assert pp.packed_fallback(LIVE_REPO, f"{target_prefix}//") is None
     # Target prefix but not a member of the packed index: None (KeyError arm).
     assert pp.packed_fallback(LIVE_REPO, f"{target_prefix}/raw/other.json") is None
     # Target prefix whose index.json does not exist (not repacked yet): None.
@@ -468,6 +473,51 @@ def test_packed_fallback_semantics(pp, tmp_path, monkeypatch):
     tampered[member]["sha256"] = "0" * 64
     (packed_dir / "index.json").write_text(json.dumps(tampered))
     with pytest.raises(pp.PackedPrefixError, match="sha256 mismatch"):
+        pp.packed_fallback(LIVE_REPO, member)
+
+
+def test_packed_index_integrity_failures_fail_loud(pp, tmp_path, monkeypatch):
+    """r3 binding CONCERN (packed-fallback-integrity-masking), both arms: a
+    MALFORMED index entry (missing required key) and a shard the index names
+    but the repo LACKS raise ``PackedPrefixError`` through BOTH ``read_packed``
+    and ``packed_fallback`` — an index that references a missing shard is
+    corruption, never 'file not found', so neither arm may be swallowed into
+    the caller's original loose-file 404."""
+    from huggingface_hub.errors import EntryNotFoundError
+
+    target_prefix = "issue1489_ctx_aug"
+    member = f"{target_prefix}/raw/x.json"
+    payload = b'{"j": 43}'
+    packed_dir = tmp_path / target_prefix / "__packed__"
+    packed_dir.mkdir(parents=True)
+    index: dict[str, dict] = {}
+    _pack_shard(packed_dir / "shard-00000.tar", {member: payload}, index)
+    (packed_dir / "index.json").write_text(json.dumps(index))
+
+    def fake_download(repo_id: str, filename: str, repo_type: str = "dataset") -> str:
+        local = tmp_path / filename
+        if not local.is_file():
+            raise EntryNotFoundError(f"fake hub 404: {filename}")
+        return str(local)
+
+    monkeypatch.setattr(pp, "_download", fake_download)
+    assert pp.packed_fallback(LIVE_REPO, member) == payload  # layout sane pre-corruption
+    # Arm 1: malformed index entry (required key missing) -> loud, both routes.
+    good = json.loads((packed_dir / "index.json").read_text())
+    bad = {member: {k: v for k, v in good[member].items() if k != "shard"}}
+    (packed_dir / "index.json").write_text(json.dumps(bad))
+    with pytest.raises(pp.PackedPrefixError, match="malformed"):
+        pp.read_packed(LIVE_REPO, member)
+    with pytest.raises(pp.PackedPrefixError, match="malformed"):
+        pp.packed_fallback(LIVE_REPO, member)
+    (packed_dir / "index.json").write_text(json.dumps(good))
+    # Arm 2: the index names a shard the repo lacks -> loud, both routes
+    # (pre-fix: the fake's EntryNotFoundError was swallowed into None by
+    # packed_fallback's not-found catch).
+    (packed_dir / "shard-00000.tar").unlink()
+    with pytest.raises(pp.PackedPrefixError, match="missing from"):
+        pp.read_packed(LIVE_REPO, member)
+    with pytest.raises(pp.PackedPrefixError, match="missing from"):
         pp.packed_fallback(LIVE_REPO, member)
 
 
@@ -545,6 +595,41 @@ except EntryNotFoundError:
 else:
     raise AssertionError("non-target 404 must re-raise the ORIGINAL EntryNotFoundError")
 assert not (work / "n.json").exists(), "negative arm must stage nothing"
+
+# Arm 3 (r3 review minor): a write failure inside the fallback arm propagates
+# the ORIGINAL error and leaves NO orphan .hfstage-packed-* tmp residue.
+real_ntf = H.tempfile.NamedTemporaryFile
+
+
+class _FailingTF:
+    def __init__(self, *a, **k):
+        self._real = real_ntf(*a, **k)
+        self.name = self._real.name
+
+    def __enter__(self):
+        self._real.__enter__()
+        return self
+
+    def __exit__(self, *exc):
+        return self._real.__exit__(*exc)
+
+    def write(self, data):
+        raise OSError(28, "No space left on device (injected)")
+
+
+H.tempfile.NamedTemporaryFile = _FailingTF
+target3 = work / "staged3" / "x.json"
+try:
+    H.stage_hub_file("superkaiba1/explore-persona-space-data", member, target3)
+except OSError as e:
+    assert e.errno == 28, f"expected the injected ENOSPC to propagate, got {e!r}"
+else:
+    raise AssertionError("injected write failure must propagate")
+finally:
+    H.tempfile.NamedTemporaryFile = real_ntf
+assert not target3.exists(), "failed write must not publish a target"
+residue = sorted((work / "staged3").glob(".hfstage-packed-*"))
+assert not residue, f"tmp residue leaked: {residue}"
 print("HUB-FALLBACK-OK")
 '''
 
