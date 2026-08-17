@@ -10417,8 +10417,8 @@
     "2348": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2348",
-      "status": "proposed",
+      "path": "tasks/planning/2348",
+      "status": "planning",
       "title": "workflow-fix: Step 10d pre-push gate mapped-test legs compare failure sets over different collections (false block on pre-existing main-red)"
     },
     "235": {
