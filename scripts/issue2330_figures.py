@@ -17,9 +17,12 @@ the per-cell preds npz, and renders the plan §6 roster under
   retrieval acc@1 vs chance; R²-vs-n mini-curves (2 points per model + the 7B
   25k port-parity anchor when the fits carry it); WildChat-transfer vs
   in-distribution panel (fold-labeled); optional cap-hit fractions per
-  split/model (``--cap-hit-json``); bootstrap Δ distributions (per-draw Δ
-  recomputed from the preds npz with the P4 seed + shared resample matrix and
-  parity-asserted against contrasts.json); selected-λ table.
+  split/model (``--cap-hit-dir`` — the pipeline's own ``cap_hit_*.json``
+  aggregates in the ``issue2330_cap_hit_v1`` schema, written by
+  ``issue2330_qwen35_generate_capture.py --aggregate-cap-hit``); bootstrap Δ
+  distributions (per-draw Δ recomputed from the preds npz with the P4 seed +
+  shared resample matrix and parity-asserted against contrasts.json);
+  selected-λ table.
 
 All loads are FAIL-LOUD (missing/empty inputs raise; #2130 read-side ceiling
 n_pairs defense; committed-R² parity at 1e-6) — reused wholesale from
@@ -441,31 +444,67 @@ def fig_wc_transfer(data: dict, fits: dict, out: Path) -> None:
     plt.close(fig)
 
 
-def fig_cap_hit(cap_hit_json: Path, out: Path) -> None:
-    """Cap-hit fractions per (model, split) from the P2 shard digests JSON:
-    ``{model_key: {split: {"cap_hit": int, "total": int}}}``."""
-    payload = json.loads(cap_hit_json.read_text(encoding="utf-8"))
-    if not payload:
-        raise RuntimeError(f"{cap_hit_json}: empty cap-hit payload")
+CAP_HIT_SCHEMA = "issue2330_cap_hit_v1"
+# Aggregate `root` → model key. Mirrors issue2330_matched_fits.MODELS[*]["hf_prefix"]
+# (kept as literals — this module must not import the torch-heavy fits driver).
+CAP_HIT_ROOT_TO_MODEL = {
+    "issue1491_scale_ladder/scale7_refit": "qwen25_7b",
+    "issue2330_matched/qwen35_9b": "qwen35_9b",
+}
+
+
+def fig_cap_hit(cap_hit_dir: Path, out: Path) -> None:
+    """Cap-hit fractions per (model, split) from the PIPELINE's own aggregates:
+    ``cap_hit_*.json`` files (schema ``issue2330_cap_hit_v1``) written by
+    ``issue2330_qwen35_generate_capture.py --aggregate-cap-hit``. Fail-loud on
+    an empty dir, a foreign schema, an unknown root, total<=0, or a duplicate
+    (model, split). The dotted 2% line is a REFERENCE only — the registered
+    #2330 disposition is the P3 truncation-restriction control, never a re-gen
+    trigger (plan §8/§11; round-2 relabel)."""
+    files = sorted(Path(cap_hit_dir).glob("cap_hit_*.json"))
+    if not files:
+        raise RuntimeError(f"{cap_hit_dir}: no cap_hit_*.json aggregates found")
+    rows: dict[tuple[str, str], float] = {}
+    for p in files:
+        payload = json.loads(p.read_text(encoding="utf-8"))
+        if payload.get("schema") != CAP_HIT_SCHEMA:
+            raise RuntimeError(
+                f"{p}: schema {payload.get('schema')!r} != {CAP_HIT_SCHEMA!r} — not a "
+                "pipeline cap-hit aggregate (issue2330_qwen35_generate_capture.py "
+                "--aggregate-cap-hit)"
+            )
+        root, split = str(payload["root"]), str(payload["split"])
+        if root not in CAP_HIT_ROOT_TO_MODEL:
+            raise RuntimeError(
+                f"{p}: unknown root {root!r} (known: {sorted(CAP_HIT_ROOT_TO_MODEL)})"
+            )
+        model_key = CAP_HIT_ROOT_TO_MODEL[root]
+        total, cap = int(payload["total"]), int(payload["cap_hit"])
+        if total <= 0:
+            raise RuntimeError(f"{p}: total<=0")
+        key = (model_key, split)
+        if key in rows:
+            raise RuntimeError(f"{p}: duplicate cap-hit aggregate for {key}")
+        rows[key] = 100.0 * cap / total
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(6.6, 3.9))
-    labels, fracs, colors = [], [], []
-    for model_key in sorted(payload):
-        color = COL_MODEL.get(model_key, GRAY)
-        for split in sorted(payload[model_key]):
-            rec = payload[model_key][split]
-            total = int(rec["total"])
-            if total <= 0:
-                raise RuntimeError(f"{cap_hit_json}: {model_key}/{split} has total<=0")
-            labels.append(f"{MODEL_LABEL.get(model_key, model_key)}\n{split}")
-            fracs.append(100.0 * int(rec["cap_hit"]) / total)
-            colors.append(color)
+    keys = sorted(rows)
+    labels = [f"{MODEL_LABEL[m]}\n{s}" for m, s in keys]
+    fracs = [rows[k] for k in keys]
+    colors = [COL_MODEL.get(m, GRAY) for m, _ in keys]
     ax.bar(range(len(labels)), fracs, color=colors, width=0.7)
-    ax.axhline(2.0, ls=":", lw=1.4, color=GRAY)
+    ax.axhline(
+        2.0,
+        ls=":",
+        lw=1.4,
+        color=GRAY,
+        label="2% reference (not a trigger — restriction control registered instead)",
+    )
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels, fontsize=7)
     ax.set_ylabel("cap-hit fraction (% finish_reason == length)")
-    ax.set_title("Generation cap-hit per split (dotted = 2% re-gen trigger)")
+    ax.set_title("Generation cap-hit per (model, split)")
+    ax.legend(fontsize=7)
     savefig_paper(fig, "issue_2330/cap_hit_fractions", dir=str(out))
     plt.close(fig)
 
@@ -582,12 +621,12 @@ def main() -> int:
         help="figures root (writes under <out>/issue_2330/)",
     )
     ap.add_argument(
-        "--cap-hit-json",
+        "--cap-hit-dir",
         type=Path,
         default=None,
-        help="optional per-(model, split) cap-hit JSON assembled from the P2 shard "
-        "digests; the cap-hit panel is SKIPPED (with an explicit log line, never "
-        "zero bars) when absent — P2 digests are pod-side outputs",
+        help="dir of cap_hit_*.json aggregates (issue2330_cap_hit_v1 schema, written by "
+        "issue2330_qwen35_generate_capture.py --aggregate-cap-hit); the cap-hit panel is "
+        "SKIPPED (with an explicit log line, never zero bars) when absent",
     )
     args = ap.parse_args()
     contrasts_path = args.contrasts if args.contrasts else args.fits_dir / "contrasts.json"
@@ -605,12 +644,13 @@ def main() -> int:
     fig_retrieval(fits, args.out)
     fig_r2_vs_n(data, fits, args.out)
     fig_wc_transfer(data, fits, args.out)
-    if args.cap_hit_json is not None:
-        fig_cap_hit(args.cap_hit_json, args.out)
+    if args.cap_hit_dir is not None:
+        fig_cap_hit(args.cap_hit_dir, args.out)
     else:
         print(
-            "[figures] cap-hit panel SKIPPED — no --cap-hit-json provided (P2 shard "
-            "digests are pod-side outputs); pass it to render cap_hit_fractions",
+            "[figures] cap-hit panel SKIPPED — no --cap-hit-dir provided (run "
+            "issue2330_qwen35_generate_capture.py --aggregate-cap-hit per (root, split) "
+            "to produce cap_hit_*.json); pass it to render cap_hit_fractions",
             flush=True,
         )
     fig_boot_delta(data, con, args.out)

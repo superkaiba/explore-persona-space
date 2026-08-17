@@ -181,6 +181,12 @@ PLAIN_SUFFIX_TEXT = "<|im_start|>assistant\n"
 # plan §11 — so this only WARNs).
 CAP_HIT_REGEN_TRIGGER = 0.02
 
+# Cap-hit aggregate schema token (round 2, cap-hit-control-unwired): produced
+# by --aggregate-cap-hit, consumed FAIL-LOUD by issue2330_matched_fits.py
+# (--cap-hit-dir, truncation-restriction control) and issue2330_figures.py
+# (--cap-hit-dir, fig_cap_hit). Keep the three literals in sync.
+CAP_HIT_SCHEMA = "issue2330_cap_hit_v1"
+
 # <think>-leak validity assert (plan §7: < 1% of responses open with <think>).
 THINK_SCAN_MAX_FRAC = 0.01
 
@@ -211,6 +217,19 @@ MANIFEST_SPLIT_FILES = {
 LENGTH_SCAN_KEYS = ("train_10k", "val_400", "test_1000", "wc_test_1k")
 
 _ENGINE_CONSTRUCTED = False  # set by _build_engine; drives the os._exit terminal
+_LIVE_ENGINE = None  # last-constructed engine handle (the __main__ exception-teardown guard)
+
+# Required P1 gate run_meta keys for the plan-§9 P1 completion sentinel
+# (round 2, p1-sentinel-no-writer). emit_spans is a support mode on the 7B
+# leg (its output is parity7b's input), so parity7b subsumes it.
+P1_SENTINEL_REQUIRED = (
+    "template_pin",
+    "length_scan",
+    "smoke_shard",
+    "fits_smoke",
+    "parity7b",
+    "hook_probe",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -711,7 +730,7 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
 def _build_engine(model_id: str, seed: int):
     """vLLM engine (standalone port of create_vllm_engine defaults + the
     env-gated hang/IMA mitigation knobs — the launch script sets them)."""
-    global _ENGINE_CONSTRUCTED
+    global _ENGINE_CONSTRUCTED, _LIVE_ENGINE
     from vllm import LLM
 
     llm_kwargs: dict = {}
@@ -722,7 +741,7 @@ def _build_engine(model_id: str, seed: int):
     gpu_mem = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
     logger.info("[engine-knobs] %s engine_seed=%d gpu_mem=%.2f", llm_kwargs, seed, gpu_mem)
     _ENGINE_CONSTRUCTED = True
-    return LLM(
+    _LIVE_ENGINE = LLM(
         model=model_id,
         dtype="bfloat16",
         trust_remote_code=True,
@@ -732,11 +751,14 @@ def _build_engine(model_id: str, seed: int):
         seed=int(seed),
         **llm_kwargs,
     )
+    return _LIVE_ENGINE
 
 
 def _reap_vllm_engine(llm) -> None:
     """vLLM v1 teardown reap (gotchas.md recipe): engine_core.shutdown() ->
-    destroy_process_group -> gc + empty_cache + ipc_collect + settle sleep."""
+    destroy_process_group -> gc + empty_cache + ipc_collect + settle sleep.
+    Clears _LIVE_ENGINE so the __main__ exception guard never double-reaps."""
+    global _LIVE_ENGINE
     engine = getattr(llm, "llm_engine", None)
     core = getattr(engine, "engine_core", None)
     shutdown = getattr(core, "shutdown", None)
@@ -751,6 +773,8 @@ def _reap_vllm_engine(llm) -> None:
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
     time.sleep(1.0)
+    if _LIVE_ENGINE is llm:
+        _LIVE_ENGINE = None
 
 
 def _sampling_params(gen_seed: int):
@@ -1233,6 +1257,58 @@ def _resolve_layers_arg(layers_arg: str) -> list[int]:
 _TEMPLATE_PIN_PROBES = ["hi", "Explain how rain forms.", "What is 2 + 2?"]
 
 
+def _maybe_write_p1_sentinel(args) -> None:
+    """Plan-§9 P1 completion sentinel writer (round 2, p1-sentinel-no-writer).
+
+    Called at the PASS end of every P1 gate step. Once EVERY required gate
+    (P1_SENTINEL_REQUIRED) has a ``passed: true`` record in run_meta, writes
+    the fingerprinted sentinel to --sentinel-path (default the plan's
+    /workspace/logs/issue-2330-p1-smoke.json) atomically and logs the path;
+    otherwise logs which gates are still pending. Idempotent — a later gate
+    re-run re-writes the sentinel from the fresh run_meta. Fingerprints:
+    target model id + its HF repo sha, code git SHA, split_ids file sha256
+    (+ the payload's per-split id-list shas — post-drop when length_scan
+    dropped rows), and the per-gate PASS records verbatim. P2/P3 do NOT
+    hard-gate on the sentinel (reconciler scope: write + log is the
+    contract); the orchestrator's poller consumes the path."""
+    meta: dict = {}
+    if args.run_meta_out.exists():
+        meta = json.loads(args.run_meta_out.read_text(encoding="utf-8"))
+    missing = [k for k in P1_SENTINEL_REQUIRED if not meta.get(k, {}).get("passed")]
+    if missing:
+        print(f"[p1-sentinel] pending — P1 gates without a PASS record yet: {missing}", flush=True)
+        return
+    split_ids_path = Path(args.split_ids)
+    split_payload = _load_split_ids(split_ids_path)
+    # The 9B production model (template_pin runs on the 9B leg by construction;
+    # args.model at write time may be the 7B parity leg's).
+    target_model = str(meta["template_pin"]["model"])
+    model_sha = _retry_transient(
+        lambda: getattr(_hf_api().model_info(target_model), "sha", None),
+        what=f"model_info {target_model}",
+    )
+    sentinel = {
+        "schema": "issue2330_p1_smoke_v1",
+        "issue": 2330,
+        "phase": "P1",
+        "status": "PASS",
+        "model": target_model,
+        "model_hf_sha": model_sha,
+        "code_git_sha": _git_sha(),
+        "split_ids_path": str(split_ids_path),
+        "split_ids_file_sha256": _sha256_file(split_ids_path),
+        "split_ids_sha256_per_split": split_payload.get("sha256"),
+        "gates": {k: meta[k] for k in P1_SENTINEL_REQUIRED},
+        "ts_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    sentinel_path = Path(args.sentinel_path)
+    _write_json_atomic(sentinel_path, sentinel)
+    print(
+        f"[p1-sentinel] WROTE {sentinel_path} — all {len(P1_SENTINEL_REQUIRED)} P1 gates PASS",
+        flush=True,
+    )
+
+
 def gate_template_pin(args) -> int:
     """Gate step 1: render 3 probe prompts with enable_thinking=False; assert
     the empty-think-block suffix; record realized header token ids (repro
@@ -1252,9 +1328,11 @@ def gate_template_pin(args) -> int:
         "n_probe_prompts": len(_TEMPLATE_PIN_PROBES),
         "tokenizer_name_or_path": str(getattr(tok, "name_or_path", args.model)),
         "vocab_size": int(len(tok)),
+        "passed": True,  # asserts above precede the record write
     }
     _update_run_meta(args.run_meta_out, "template_pin", record)
     print(f"[gate] template_pin PASS: suffix ids={record['suffix_token_ids']}")
+    _maybe_write_p1_sentinel(args)
     _phase("done")
     return 0
 
@@ -1314,6 +1392,9 @@ def gate_length_scan(args) -> int:
         "max_rendered_len": max_len_seen,
         "drops_per_split": {k: len(v) for k, v in drops.items()},
         "ts_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        # The record persists on the HALT branch too (audit trail) — the P1
+        # sentinel keys on this flag, not on key presence.
+        "passed": total_over == 0 or frac <= args.max_over_budget_frac,
     }
     _update_run_meta(args.run_meta_out, "length_scan", record)
 
@@ -1322,6 +1403,7 @@ def gate_length_scan(args) -> int:
             f"[gate] length_scan PASS: 0/{total_scanned} over the {PROMPT_TOKEN_BUDGET}-token "
             f"budget (max rendered len {max_len_seen})"
         )
+        _maybe_write_p1_sentinel(args)
         _phase("done")
         return 0
     if frac > args.max_over_budget_frac:
@@ -1359,6 +1441,7 @@ def gate_length_scan(args) -> int:
         f"({frac:.4%} <= {args.max_over_budget_frac:.2%}); split_ids.json re-written — "
         f"post-drop counts {payload['counts']} (commit + push the update before P2/P3)"
     )
+    _maybe_write_p1_sentinel(args)
     _phase("done")
     return 0
 
@@ -1523,6 +1606,8 @@ def gate_parity7b(args) -> int:
         "worst_cos": worst["cos"],
         "worst_at": {k: worst[k] for k in ("ci", "field", "layer")},
         "max_cos_deviation": 1.0 - worst["cos"],
+        # Persisted on the HALT branch too — the P1 sentinel keys on this flag.
+        "passed": worst["cos"] >= args.parity_cos_min,
     }
     _update_run_meta(args.run_meta_out, "parity7b", record)
     if worst["cos"] < args.parity_cos_min:
@@ -1538,6 +1623,7 @@ def gate_parity7b(args) -> int:
         f"[gate] parity7b PASS: {len(rows_c)} rows x 2 fields x {len(layers)} layers, "
         f"worst cosine {worst['cos']:.6f} (>= {args.parity_cos_min})"
     )
+    _maybe_write_p1_sentinel(args)
     _phase("done")
     return 0
 
@@ -1650,6 +1736,7 @@ def gate_hook_probe(args) -> int:
         "h_dim": h_dim,
         "v_c_convention": "cx_last = hidden state at index p_len-1 (final rendered-prompt token)",
         "suffix_token_ids": [int(i) for i in suffix_ids],
+        "passed": True,  # asserts above precede the record write
     }
     _update_run_meta(args.run_meta_out, "hook_probe", record)
     print(
@@ -1657,6 +1744,7 @@ def gate_hook_probe(args) -> int:
         f"hidden_states[k+1] (max rel {max(per_layer_max_rel.values()):.2e}), "
         f"tuple len {tuple_len} = {n_blocks}+1, h_dim {h_dim}"
     )
+    _maybe_write_p1_sentinel(args)
     _phase("done")
     return 0
 
@@ -2116,6 +2204,135 @@ def run_capture(args) -> int:
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
+    if args.no_upload:
+        # P1 step-3 smoke shard (local-only run; production never passes
+        # --no-upload): record realized values for the P1 completion sentinel.
+        _update_run_meta(
+            args.run_meta_out,
+            "smoke_shard",
+            {
+                "split": args.split,
+                "capture_mode": args.capture_mode,
+                "shard_index": args.shard_index,
+                "num_shards": args.num_shards,
+                "shard_size": args.shard_size,
+                "kept_rows": int(kept_total),
+                "n_chunks": int(n_sub),
+                "overlength_skipped": len(skipped_all),
+                "empty_response_dropped": len(dropped_empty_all),
+                "gen_rows": int(gen_total),
+                "cap_hit": int(cap_hit_total),
+                "think_open": int(think_total),
+                "capture_fn": capture_fn_choice,
+                "passed": True,  # the think-leak gate above raises before this point
+            },
+        )
+        _maybe_write_p1_sentinel(args)
+
+    _phase("done")
+    return 0
+
+
+def run_aggregate_cap_hit(args) -> int:
+    """Round-2 cap-hit aggregator (cap-hit-control-unwired FIX 2i).
+
+    Aggregates per-chunk cap-hit metadata for ONE (root, split) from the Hub's
+    ``<root>/<split>/raw_completions/*.json`` chunks into
+    ``cap_hit_<split>.json`` (schema ``issue2330_cap_hit_v1``): per-chunk
+    counts, split totals + fraction, and the per-context ``cap_hit_cis`` list
+    (finish_reason == 'length') the P3 truncation-restriction control joins on.
+    Runnable standalone over the BANKED 7B store
+    (``--cap-hit-root issue1491_scale_ladder/scale7_refit --cap-hit-revision
+    <pin>`` — banked chunks carry per-row ci+finish_reason, schema-probed at
+    the pinned revision) AND over this issue's own 9B prefix (``--hf-prefix``).
+    Per-row finish_reason is the ground truth; a chunk whose ``n_cap_hit``
+    metadata disagrees raises (fail-loud, never fabricated). Uploads the
+    aggregate next to the split for ISSUE-OWNED roots only; a foreign banked
+    root is never written to (the JSON is committed to git instead)."""
+    _phase("aggregate_cap_hit")
+    assert args.split, "--split is required for --aggregate-cap-hit"
+    root = args.cap_hit_root or args.hf_prefix
+    assert root, "--cap-hit-root or --hf-prefix is required for --aggregate-cap-hit"
+    prefix = f"{root}/{args.split}/raw_completions"
+    revision = args.cap_hit_revision
+    cache_dir = args.out_dir / ".cache_caphit"
+    index = _remote_index(prefix, revision=revision)
+    names = sorted(n for n in index if n.endswith(".json"))
+    if not names:
+        raise RuntimeError(f"no raw_completions chunks under {prefix} (revision={revision})")
+    per_chunk: list[dict] = []
+    cap_cis: list[int] = []
+    seen_cis: set[int] = set()
+    total = 0
+    gen_max: int | None = None
+    think_total: int | None = None
+    for name in names:
+        local = _hub_download(f"{prefix}/{name}", cache_dir, revision)
+        with open(local, encoding="utf-8") as fh:
+            payload = json.load(fh)
+        rows = payload["rows"]
+        chunk_cap = [int(r["ci"]) for r in rows if str(r.get("finish_reason")) == "length"]
+        meta_n = payload.get("n_cap_hit")
+        if meta_n is not None and int(meta_n) != len(chunk_cap):
+            raise RuntimeError(
+                f"{name}: chunk metadata n_cap_hit={meta_n} != per-row finish_reason=='length' "
+                f"count {len(chunk_cap)} — refusing to aggregate inconsistent metadata"
+            )
+        for r in rows:
+            ci = int(r["ci"])
+            if ci in seen_cis:
+                raise RuntimeError(f"{name}: duplicate ci {ci} across chunks of {prefix}")
+            seen_cis.add(ci)
+        gm = payload.get("gen_max_tokens")
+        if gm is not None:
+            assert gen_max is None or int(gm) == gen_max, ("gen_max_tokens drift", gen_max, gm)
+            gen_max = int(gm)
+        nt = payload.get("n_think_open")
+        if nt is not None:
+            think_total = (think_total or 0) + int(nt)
+        total += len(rows)
+        cap_cis.extend(chunk_cap)
+        per_chunk.append({"name": name, "n_rows": len(rows), "n_cap_hit": len(chunk_cap)})
+        print(f"[cap-hit] {name}: {len(chunk_cap)}/{len(rows)} finish_reason=='length'", flush=True)
+    out = {
+        "schema": CAP_HIT_SCHEMA,
+        "root": root,
+        "split": args.split,
+        "revision": revision,
+        "gen_max_tokens": gen_max,
+        "n_chunks": len(names),
+        "total": total,
+        "cap_hit": len(cap_cis),
+        "cap_hit_frac": len(cap_cis) / max(total, 1),
+        "n_think_open": think_total,
+        "cap_hit_cis": sorted(cap_cis),
+        "git_commit": _git_sha(),
+        "ts_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "per_chunk": per_chunk,
+    }
+    out_path = (
+        Path(os.path.expanduser(str(args.cap_hit_out)))
+        if args.cap_hit_out
+        else (args.out_dir / f"cap_hit_{args.split}.json")
+    )
+    _write_json_atomic(out_path, out)
+    print(
+        f"[cap-hit] {root}/{args.split}: {len(cap_cis)}/{total} = "
+        f"{100.0 * len(cap_cis) / max(total, 1):.2f}% cap-hit -> {out_path}",
+        flush=True,
+    )
+    if args.no_upload:
+        print("[cap-hit] --no-upload: aggregate NOT uploaded (local/smoke path)", flush=True)
+    elif args.hf_prefix and root == args.hf_prefix:
+        # "Uploaded with the split": one scoped upload_folder commit + verify.
+        _upload_names_once(out_path.parent, f"{root}/{args.split}", [out_path.name], False)
+        print(f"[cap-hit] uploaded {out_path.name} -> {root}/{args.split}/", flush=True)
+    else:
+        print(
+            "[cap-hit] foreign/banked root — aggregate NOT uploaded to the banked prefix; "
+            "commit the JSON under eval_results/issue_2330/cap_hit/ (git) instead",
+            flush=True,
+        )
     _phase("done")
     return 0
 
@@ -2236,6 +2453,39 @@ def _build_parser() -> argparse.ArgumentParser:
         help="accumulating run-meta JSON (default <out-dir>/run_meta.json)",
     )
     ap.add_argument(
+        "--sentinel-path",
+        type=Path,
+        default=Path("/workspace/logs/issue-2330-p1-smoke.json"),
+        help="plan-§9 P1 completion sentinel (written once EVERY P1 gate has a "
+        "passed=true run-meta record; default = the plan's pod path — local "
+        "smokes pass an explicit /tmp path)",
+    )
+    ap.add_argument(
+        "--aggregate-cap-hit",
+        action="store_true",
+        help="aggregate per-chunk cap-hit metadata for ONE (root, split) into "
+        "cap_hit_<split>.json (schema issue2330_cap_hit_v1; consumed by the P3 "
+        "truncation-restriction control + fig_cap_hit)",
+    )
+    ap.add_argument(
+        "--cap-hit-root",
+        default=None,
+        help="aggregate mode: store root holding <root>/<split>/raw_completions/ "
+        "(default --hf-prefix; pass the banked 7B root "
+        f"{PARITY_BANKED_PREFIX.rsplit('/', 1)[0]} + --cap-hit-revision for the 7B side)",
+    )
+    ap.add_argument(
+        "--cap-hit-revision",
+        default=None,
+        help="aggregate mode: pinned data-repo revision for a banked root (7B: the "
+        "plan-§10 store pin); None = main (the issue's own 9B prefix)",
+    )
+    ap.add_argument(
+        "--cap-hit-out",
+        default=None,
+        help="aggregate mode: output JSON path (default <out-dir>/cap_hit_<split>.json)",
+    )
+    ap.add_argument(
         "--fits-smoke",
         action="store_true",
         help="plan §4 P1 step 4 — invoke the P3 fits port (scripts/issue2330_matched_fits.py, "
@@ -2332,6 +2582,17 @@ def _run_fits_smoke(args) -> int:
         print(f"[fits-smoke] FAIL: fits port exited rc={proc.returncode}", file=sys.stderr)
         return proc.returncode
     assert out_json.is_file(), f"fits smoke exited 0 but wrote no {out_json}"
+    _update_run_meta(
+        args.run_meta_out,
+        "fits_smoke",
+        {
+            "chunk_dir": str(chunk_dir),
+            "out_json": str(out_json),
+            "out_json_sha256": _sha256_file(out_json),
+            "passed": True,  # rc==0 + artifact-present asserts precede the record
+        },
+    )
+    _maybe_write_p1_sentinel(args)
     print(f"[fits-smoke] OK — {out_json}", flush=True)
     return 0
 
@@ -2361,6 +2622,9 @@ def main() -> int:
         "with .env present)"
     )
 
+    if args.aggregate_cap_hit:
+        return run_aggregate_cap_hit(args)
+
     if args.gate:
         return {
             "template_pin": gate_template_pin,
@@ -2376,10 +2640,32 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    _rc = main()
+    import traceback
+
+    # Round-2 vllm-exception-teardown guard (unanimous concern): an exception
+    # must NEVER reach interpreter finalization with an engine constructed —
+    # finalize-time multiprocessing cleanup deadlocks on engine children
+    # (gotchas.md "sys.exit() is NOT a terminal for a vLLM generation driver").
+    try:
+        _rc = main()
+    except SystemExit as e:  # argparse exits / SIGTERM handler — preserve the code
+        _code = e.code
+        if isinstance(_code, int) or _code is None:
+            _rc = 0 if _code is None else int(_code)
+        else:
+            print(_code, file=sys.stderr)
+            _rc = 1
+    except BaseException:
+        traceback.print_exc()
+        _rc = 1
     sys.stdout.flush()
     sys.stderr.flush()
     if _ENGINE_CONSTRUCTED:
+        if _LIVE_ENGINE is not None:
+            try:  # best-effort reap on the exception path; the traceback is already printed
+                _reap_vllm_engine(_LIVE_ENGINE)
+            except Exception:
+                traceback.print_exc()
         # gotchas.md: sys.exit() is NOT a terminal for a vLLM generation driver —
         # finalize-time multiprocessing cleanup can deadlock on engine children.
         # All durables (uploads verified before purge, atomic raw writes,

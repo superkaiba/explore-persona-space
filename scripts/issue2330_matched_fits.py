@@ -52,8 +52,10 @@ Modes:
   miss/shuffle, anchor-gate halt, λ-grid extension) on synthetic tensors —
   plan §4 P3 implementer duty (statistics-reconciler rec 3).
 - ``--synthetic-e2e``: shape-faithful synthetic CPU end-to-end (d=3584/4096,
-  tiny n — a DELIBERATELY under-determined n<d smoke shape, schema check only)
-  through the production cell-fit + writer bodies, faking only the HF boundary.
+  n_train = d+128 — the WELL-POSED n>d production λ-selection regime; tiny eval
+  splits; schema check only, never a signal read) through the production
+  cell-fit + writer bodies, faking only the HF boundary (and, round 2, the
+  cap-hit aggregate feeding the truncation-restriction control).
 """
 
 from __future__ import annotations
@@ -106,6 +108,12 @@ ANCHOR_TOL = 0.01
 ANCHOR_INVESTIGATE_DEVIATION = 1e-3  # passing-but-large ⇒ investigate-before-narrate
 
 PREDS_HF_PREFIX = "issue2330_matched/analysis_tensors/preds"
+
+# Cap-hit aggregate schema token (round 2, cap-hit-control-unwired): produced
+# by issue2330_qwen35_generate_capture.py --aggregate-cap-hit; consumed here
+# (--cap-hit-dir → the primary-layer truncation-restriction control) and by
+# issue2330_figures.py fig_cap_hit. Keep the three literals in sync.
+CAP_HIT_SCHEMA = "issue2330_cap_hit_v1"
 
 # λ-grid-edge disposition: extend ONE DECADE per pass (grid spacing is 0.5
 # decades ⇒ 2 extra points), refit, record; fail loud past the cap.
@@ -509,6 +517,39 @@ def fit_cell_layer(bundle: dict, dev, ceiling: dict, h_dim: int) -> dict:
     return {"result": result, "preds": preds}
 
 
+def _truncation_restriction(pred_te, y_te, ci_te: list[int], cap_info: dict | None) -> dict:
+    """#1491 truncation-restriction control (plan §8/§11 — registered INSTEAD
+    of the 2% re-gen default; round 2, cap-hit-control-unwired).
+
+    Evaluates the ALREADY-FITTED primary-layer ridge map on the subset of test
+    contexts whose generation did NOT hit the 1,024-token cap
+    (finish_reason != 'length') — a test-restricted READ beside the full-test
+    R², never a refit. ``cap_info`` is the parsed aggregate for this model's
+    test_1000 split ({"cap_hit_cis": set[int], "source": str, ...});
+    ``None`` ⇒ the explicit ``cap_hit_unavailable`` record (fail-loud
+    provenance — never a fabricated zero-capped read)."""
+    if cap_info is None:
+        return {"available": False, "reason": "cap_hit_unavailable"}
+    cap_set = {int(c) for c in cap_info["cap_hit_cis"]}
+    capped = np.array([int(c) in cap_set for c in ci_te], dtype=bool)
+    keep = ~capped
+    rec = {
+        "available": True,
+        "control": "test_restricted_read",
+        "cap_hit_source": str(cap_info.get("source")),
+        "n_test": int(len(ci_te)),
+        "n_test_capped": int(capped.sum()),
+        "n_test_untruncated": int(keep.sum()),
+        "r2_test_full": float(LF._pooled_r2(pred_te, y_te)),
+    }
+    if int(keep.sum()) == 0:
+        rec["r2_test_untruncated"] = None
+        rec["reason"] = "all test rows cap-hit — restriction read undefined"
+        return rec
+    rec["r2_test_untruncated"] = float(LF._pooled_r2(pred_te[keep], y_te[keep]))
+    return rec
+
+
 def save_cell_preds(
     preds_dir: Path,
     cell: str,
@@ -550,13 +591,17 @@ def run_battery(
     preds_dir: Path,
     models: dict[str, dict] | None = None,
     anchor_fn=run_anchor_gate,
+    cap_hit_fn=None,
 ) -> dict[str, Path]:
     """Run the 4-cell × 3-layer battery.
 
     ``store_fn(model_cfg, layer)`` → the per-split store dict (production: HF
     streaming via the reuse cores; synthetic e2e: rng arrays — the ONLY faked
     boundary). ``ceiling_fn(model_cfg, layer)`` → the two-draw ceiling record.
-    Cell JSONs are atomically rewritten after EVERY (cell, layer) unit.
+    ``cap_hit_fn(model_cfg)`` → the parsed test_1000 cap-hit aggregate (or
+    None ⇒ the primary-layer truncation restriction records
+    ``cap_hit_unavailable``). Cell JSONs are atomically rewritten after EVERY
+    (cell, layer) unit.
     """
     models = models or MODELS
     t0 = time.time()
@@ -571,6 +616,13 @@ def run_battery(
     unit_i, unit_total = 0, sum(len(m["layers"]) * len(m["cells"]) for m in models.values())
     for model_key in [k for k in MODEL_ORDER if k in models]:
         mcfg = models[model_key]
+        cap_info = cap_hit_fn(mcfg) if cap_hit_fn is not None else None
+        if cap_info is None:
+            logger.warning(
+                "[matched-fits] %s: cap-hit metadata UNAVAILABLE — the primary-layer "
+                "truncation restriction will record 'cap_hit_unavailable' (never fabricated)",
+                model_key,
+            )
         per_cell_preds: dict[str, dict[int, dict]] = {c: {} for c in mcfg["cells"]}
         for layer in mcfg["layers"]:
             _phase(f"assemble_{model_key}_L{layer}")
@@ -596,6 +648,16 @@ def run_battery(
                             "realized id list differs from the ledger set by the first model."
                         )
                 fit = fit_cell_layer(bundle, dev, ceiling, mcfg["h_dim"])
+                if layer == mcfg["primary_layer"]:
+                    # #1491 truncation-restriction control (round 2): a READ of
+                    # the fitted map on the untruncated test subset, reported
+                    # beside the full-test R² in the cell JSON.
+                    fit["result"]["truncation_restriction"] = _truncation_restriction(
+                        fit["preds"]["pred_te"],
+                        fit["preds"]["target_te"],
+                        bundle["cis"]["test_1000"],
+                        cap_info,
+                    )
                 per_cell_preds[cell][layer] = fit["preds"]
 
                 rec = results.setdefault(
@@ -708,6 +770,52 @@ def _production_ceiling_fn(args, split_ids: dict):
         )
 
     return ceiling_fn
+
+
+def _production_cap_hit_fn(args):
+    """``cap_hit_fn(mcfg)`` for run_battery (round 2, cap-hit-control-unwired).
+
+    Scans --cap-hit-dir for aggregates in the ``issue2330_cap_hit_v1`` schema
+    (written by ``issue2330_qwen35_generate_capture.py --aggregate-cap-hit``)
+    and CONTENT-matches ``root == mcfg['hf_prefix']`` + ``split == test_1000``
+    (never filename-matched). A missing dir / no matching file ⇒ None
+    (run_battery records ``cap_hit_unavailable`` with a loud warning); a
+    schema-foreign ``cap_hit_*.json`` in the dir ⇒ raise (refusing to guess)."""
+    cap_dir = args.cap_hit_dir
+
+    def cap_hit_fn(mcfg: dict):
+        if cap_dir is None or not Path(cap_dir).is_dir():
+            logger.warning(
+                "[matched-fits] cap-hit dir %s absent — run the aggregator "
+                "(issue2330_qwen35_generate_capture.py --aggregate-cap-hit) per (root, split) "
+                "to arm the truncation-restriction control for %s",
+                cap_dir,
+                mcfg["hf_prefix"],
+            )
+            return None
+        for p in sorted(Path(cap_dir).glob("cap_hit_*.json")):
+            payload = json.loads(p.read_text(encoding="utf-8"))
+            if payload.get("schema") != CAP_HIT_SCHEMA:
+                raise RuntimeError(
+                    f"{p}: schema {payload.get('schema')!r} != {CAP_HIT_SCHEMA!r} — not a "
+                    "pipeline cap-hit aggregate (refusing to guess a foreign format)"
+                )
+            if payload["root"] == mcfg["hf_prefix"] and payload["split"] == "test_1000":
+                return {
+                    "cap_hit_cis": {int(c) for c in payload["cap_hit_cis"]},
+                    "source": str(p),
+                    "total": int(payload["total"]),
+                    "cap_hit": int(payload["cap_hit"]),
+                }
+        logger.warning(
+            "[matched-fits] no cap_hit_*.json under %s with root=%s split=test_1000 — "
+            "the truncation restriction will record 'cap_hit_unavailable'",
+            cap_dir,
+            mcfg["hf_prefix"],
+        )
+        return None
+
+    return cap_hit_fn
 
 
 def _resolve_device(name: str):
@@ -931,12 +1039,44 @@ def run_selftest() -> int:
     assert rec["abs_deviation"] < 1e-9 and rec["investigate_before_narrate"] is False
     print("[selftest] PASS anchor-gate pass path (deviation record present)", flush=True)
 
+    # 5. Truncation-restriction control (#1491; round 2, cap-hit-control-unwired):
+    #    unavailable / subset-read / empty-cap-set / all-capped paths.
+    pred_t = rng.standard_normal((6, 8)).astype(np.float32)
+    y_t = (pred_t + 0.01 * rng.standard_normal(pred_t.shape)).astype(np.float32)
+    ci_te = [1, 2, 3, 4, 5, 6]
+    rec_na = _truncation_restriction(pred_t, y_t, ci_te, None)
+    assert rec_na == {"available": False, "reason": "cap_hit_unavailable"}, rec_na
+    cap_info = {"cap_hit_cis": {2, 5}, "source": "selftest", "total": 6, "cap_hit": 2}
+    rec_sub = _truncation_restriction(pred_t, y_t, ci_te, cap_info)
+    assert rec_sub["n_test"] == 6 and rec_sub["n_test_capped"] == 2, rec_sub
+    assert rec_sub["n_test_untruncated"] == 4, rec_sub
+    mask = np.array([c not in {2, 5} for c in ci_te], dtype=bool)
+    expect_sub = float(LF._pooled_r2(pred_t[mask], y_t[mask]))
+    assert np.isclose(rec_sub["r2_test_untruncated"], expect_sub), (
+        rec_sub["r2_test_untruncated"],
+        expect_sub,
+    )
+    rec_empty = _truncation_restriction(
+        pred_t, y_t, ci_te, {"cap_hit_cis": set(), "source": "selftest"}
+    )
+    assert rec_empty["n_test_untruncated"] == 6, rec_empty
+    assert np.isclose(rec_empty["r2_test_untruncated"], rec_empty["r2_test_full"]), rec_empty
+    rec_all = _truncation_restriction(
+        pred_t, y_t, ci_te, {"cap_hit_cis": set(ci_te), "source": "selftest"}
+    )
+    assert rec_all["r2_test_untruncated"] is None and "reason" in rec_all, rec_all
+    print(
+        "[selftest] PASS truncation-restriction control "
+        "(unavailable / subset / empty-cap / all-capped)",
+        flush=True,
+    )
+
     print("[selftest] ALL PASS", flush=True)
     return 0
 
 
 # ---------------------------------------------------------------------------
-# --synthetic-e2e: shape-faithful CPU end-to-end (schema check; n<d smoke shape)
+# --synthetic-e2e: shape-faithful CPU e2e (schema check; n>d production regime)
 # ---------------------------------------------------------------------------
 
 
@@ -1006,6 +1146,23 @@ def run_synthetic_e2e(args) -> int:
             "synthetic": True,
         }
 
+    # Synthetic cap-hit aggregates: first 2 test cis capped per model — the
+    # truncation-restriction schema flows through the SAME run_battery seam
+    # as production (_production_cap_hit_fn is the only faked boundary here).
+    n_capped_synth = 2
+    cap_by_prefix = {
+        m["hf_prefix"]: {
+            "cap_hit_cis": set(ids["test_1000"][:n_capped_synth]),
+            "source": "synthetic-e2e",
+            "total": n_te,
+            "cap_hit": n_capped_synth,
+        }
+        for m in models.values()
+    }
+
+    def cap_hit_fn(mcfg: dict) -> dict:
+        return cap_by_prefix[mcfg["hf_prefix"]]
+
     out_dir = Path(args.out_dir) / "synthetic_e2e"
     preds_dir = Path(args.preds_dir) if args.preds_dir else out_dir / "preds"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1016,7 +1173,15 @@ def run_synthetic_e2e(args) -> int:
         flush=True,
     )
     paths = run_battery(
-        split_ids, store_fn, ceiling_fn, dev, out_dir, preds_dir, models=models, anchor_fn=None
+        split_ids,
+        store_fn,
+        ceiling_fn,
+        dev,
+        out_dir,
+        preds_dir,
+        models=models,
+        anchor_fn=None,
+        cap_hit_fn=cap_hit_fn,
     )
 
     # Schema verification: JSON + npz keys.
@@ -1034,7 +1199,7 @@ def run_synthetic_e2e(args) -> int:
             "_meta",
         ):
             assert key in rec, (cell, key)
-        for layer_rec in rec["per_layer"].values():
+        for layer_key, layer_rec in rec["per_layer"].items():
             for key in (
                 "ridge",
                 "floors",
@@ -1044,6 +1209,18 @@ def run_synthetic_e2e(args) -> int:
                 "n_vs_d",
             ):
                 assert key in layer_rec, (cell, key)
+            # Truncation-restriction control (round 2): present at the primary
+            # layer ONLY, with the untruncated-subset read populated.
+            is_primary = int(layer_key) == int(rec["primary_layer"])
+            assert ("truncation_restriction" in layer_rec) == is_primary, (cell, layer_key)
+            if is_primary:
+                tr_rec = layer_rec["truncation_restriction"]
+                assert tr_rec["available"] is True, (cell, tr_rec)
+                assert tr_rec["n_test"] == n_te, (cell, tr_rec)
+                assert tr_rec["n_test_capped"] == n_capped_synth, (cell, tr_rec)
+                assert tr_rec["n_test_untruncated"] == n_te - n_capped_synth, (cell, tr_rec)
+                assert isinstance(tr_rec["r2_test_untruncated"], float), (cell, tr_rec)
+                assert isinstance(tr_rec["r2_test_full"], float), (cell, tr_rec)
             assert layer_rec["wc_transfer"]["fold_label"] == "wildchat_corpus_transfer"
             assert layer_rec["wc_transfer"]["n_wc_test"] == n_wc
             assert set(layer_rec["floors"]) == {
@@ -1107,6 +1284,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="skip the HF preds mirror (smokes / local verification)",
     )
     ap.add_argument(
+        "--cap-hit-dir",
+        type=Path,
+        default=None,
+        help="dir of cap_hit_*.json aggregates (issue2330_cap_hit_v1; written by "
+        "issue2330_qwen35_generate_capture.py --aggregate-cap-hit) for the primary-layer "
+        "truncation-restriction control (default <out-dir>/cap_hit; absent ⇒ the control "
+        "records 'cap_hit_unavailable' loud, never fabricated)",
+    )
+    ap.add_argument(
         "--smoke-chunk-dir",
         default=None,
         help="P1 step-4 fits-shape smoke on a LOCAL capture-chunk dir (count pins opted out)",
@@ -1125,7 +1311,8 @@ def _build_parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--synthetic-e2e",
         action="store_true",
-        help="shape-faithful synthetic CPU e2e (JSON/npz schema check; n<d smoke shape)",
+        help="shape-faithful synthetic CPU e2e (JSON/npz schema check; n_train = d+128 — "
+        "the n>d production λ-selection regime)",
     )
     ap.add_argument(
         "--import-check",
@@ -1171,13 +1358,23 @@ def main() -> int:
         args.preds_dir = REPO_ROOT / "data" / "issue_2330" / "preds"
     if args.cache_dir is None:
         args.cache_dir = args.out_dir / ".cache"
+    if args.cap_hit_dir is None:
+        args.cap_hit_dir = args.out_dir / "cap_hit"
     dev = _resolve_device(args.device)
     _phase("load_split_ids")
     split_ids = load_split_ids(args.split_ids)
     _phase("battery")
     store_fn = _production_store_fn(args, split_ids)
     ceiling_fn = _production_ceiling_fn(args, split_ids)
-    paths = run_battery(split_ids, store_fn, ceiling_fn, dev, args.out_dir, args.preds_dir)
+    paths = run_battery(
+        split_ids,
+        store_fn,
+        ceiling_fn,
+        dev,
+        args.out_dir,
+        args.preds_dir,
+        cap_hit_fn=_production_cap_hit_fn(args),
+    )
     if not args.no_upload:
         _upload_preds_mirror(args.preds_dir)
     _phase("done")
