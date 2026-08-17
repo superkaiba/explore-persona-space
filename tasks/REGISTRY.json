@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2344,
+  "highest_id": 2345,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10392,6 +10392,13 @@
       "path": "tasks/archived/2344",
       "status": "archived",
       "title": "Does the mission-control spec form write a canonical spec-v2 task body end to end?"
+    },
+    "2345": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2345",
+      "status": "proposed",
+      "title": "workflow-fix: ruff-policy pin red on main \u2014 autonomous_session_watch.py gate_push_pass C901 (c0d76f99c9)"
     },
     "235": {
       "has_clean_result": true,
