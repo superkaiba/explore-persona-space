@@ -191,12 +191,49 @@ def _staged_hashes_path(prefix: str) -> Path:
     return STAGE / f"staged_hashes_{prefix}.json"
 
 
-def _write_staged_hashes(prefix: str, staged_hashes: dict[str, str]) -> None:
-    """Atomic (tmp + os.replace) write of the staged-hash sidecar — the
-    durable per-unit result store the staged-verify resume predicate reads."""
+def _write_staged_hashes(prefix: str, src_revision: str, verified: dict[str, dict]) -> None:
+    """Atomic (tmp + os.replace) write of the v2 staged-hash sidecar:
+    ``{"src_revision": <sha>, "hashes": {path: {"sha256":..., "gitsha1":...}}}``.
+    The store holds ONLY units whose identity verification PASSED (review r2 —
+    a unit may never enter the sidecar before its verify verdict)."""
     tmp = _staged_hashes_path(prefix).with_suffix(".tmp")
-    tmp.write_text(json.dumps(staged_hashes, sort_keys=True))
+    tmp.write_text(json.dumps({"src_revision": src_revision, "hashes": verified}, sort_keys=True))
     os.replace(tmp, _staged_hashes_path(prefix))
+
+
+def _load_staged_sidecar(prefix: str, src_revision: str) -> dict[str, dict] | None:
+    """v2 sidecar loader: the verified-units store, or None when the sidecar is
+    absent, legacy-schema, unparseable, or fingerprinted to a DIFFERENT
+    ``src_revision`` (review r2: the sidecar is an identity-bearing resume
+    store — unfingerprinted or cross-snapshot content is DISCARDED, forcing a
+    full re-hash)."""
+    p = _staged_hashes_path(prefix)
+    if not p.is_file():
+        return None
+    try:
+        raw = json.loads(p.read_text())
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(raw, dict) or raw.get("src_revision") != src_revision:
+        return None
+    hashes = raw.get("hashes")
+    if not isinstance(hashes, dict):
+        return None
+    return hashes
+
+
+# Pipeline step order — the invalidation chain's single source of truth.
+STEP_ORDER = ("download", "staged_verify", "pack", "local_verify", "upload", "hub_verify")
+
+
+def _invalidate_downstream(rec: dict, step: str) -> None:
+    """Review r2: any upstream artifact change invalidates EVERY downstream
+    step checkpoint — a fresh download forces staged re-verify, a rebuilt pack
+    forces local verify + upload, etc. (checkpoints are consumed only when
+    their whole upstream chain is intact)."""
+    steps = rec.get("steps") or {}
+    for later in STEP_ORDER[STEP_ORDER.index(step) + 1 :]:
+        steps.pop(later, None)
 
 
 def _load_srcmap(prefix: str) -> dict[str, dict]:
@@ -658,6 +695,14 @@ def step_snapshot(prefix: str, st: dict) -> tuple[str, dict[str, dict]]:
         )
     STAGE.mkdir(parents=True, exist_ok=True)
     _srcmap_path(prefix).write_text(json.dumps(src_map, sort_keys=True))
+    # Fresh snapshot (review r2): every artifact/checkpoint record a prior
+    # partial run wrote described the OLD pinned revision — reset them ALL
+    # before recording the new pin, so no stale packed_files / chunk record /
+    # step checkpoint can be consumed against this snapshot.
+    rec["packed_files"] = {}
+    for stale_key in ("chunks", "kept_stale", "kept_new", "mode"):
+        rec.pop(stale_key, None)
+    steps.clear()
     rec["src_revision"] = src_revision
     rec["snapshot_ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     rec["n_files"] = len(src_map)
@@ -684,9 +729,10 @@ def step_download(prefix: str, st: dict, src_map: dict, paths: list[str]) -> Non
     def one(p: str):
         # Per-unit durable result = the staged file itself; resume predicate:
         # a present, size-matching staged copy is skipped without a Hub call.
+        # Third element: did this unit FETCH (attempt to write fresh bytes)?
         local = dest / p
         if local.is_file() and local.stat().st_size == src_map[p]["size"]:
-            return None, ""
+            return None, "", False
         last = ""
         for attempt in range(MAX_ATTEMPTS):
             try:
@@ -699,22 +745,25 @@ def step_download(prefix: str, st: dict, src_map: dict, paths: list[str]) -> Non
                     local_dir=str(dest),
                     etag_timeout=60,
                 )
-                return None, ""
+                return None, "", True
             except Exception as e:
                 last = f"{type(e).__name__}: {str(e)[:120]}"
                 if attempt < MAX_ATTEMPTS - 1:
                     time.sleep(min(60, 2 ** (attempt + 1)))
-        return p, last
+        return p, last, True
 
     t0 = time.time()
+    fetched: list[str] = []
     with ThreadPoolExecutor(max_workers=DL_WORKERS) as ex:
         futs = {ex.submit(one, p): p for p in paths}
         n = 0
         for f in as_completed(futs):
-            bad, msg = f.result()
+            bad, msg, did_fetch = f.result()
             if bad:
                 failed.append(bad)
                 errs[msg] += 1
+            if did_fetch:
+                fetched.append(futs[f])
             n += 1
             # Per-unit progress line (code-style intra-phase contract, T2 > ~50).
             log(
@@ -722,6 +771,18 @@ def step_download(prefix: str, st: dict, src_map: dict, paths: list[str]) -> Non
                 f"elapsed={time.time() - t0:.0f}s"
                 + (f" (failed so far: {len(failed)})" if failed else "")
             )
+    if fetched:
+        # Upstream artifact change (review r2): fresh bytes landed (or were
+        # attempted) for these units — evict them from the verified-units
+        # sidecar and invalidate every downstream step checkpoint, so they
+        # must re-verify / re-pack. Persist BEFORE the failure raise below.
+        sidecar = _load_staged_sidecar(prefix, src_revision)
+        if sidecar is not None:
+            for p in fetched:
+                sidecar.pop(p, None)
+            _write_staged_hashes(prefix, src_revision, sidecar)
+        _invalidate_downstream(rec, "download")
+        _save_state(st)
     if failed:
         (STAGE / f"{prefix}.download_failed.json").write_text(json.dumps(failed, indent=1))
         for msg, c in errs.most_common(5):
@@ -744,16 +805,27 @@ def step_staged_verify(prefix: str, st: dict, src_map: dict, paths: list[str]) -
     LFS entries: local sha256 == lfs.sha256. Non-LFS entries: local git-blob
     sha1 == blob_id, contingent on A7 (probed once; on a demonstrated
     non-git-sha1 blob_id the fallback is size + hf_hub_download's own etag
-    check, recorded as a STATED DOWNGRADE in the run log)."""
+    check, recorded as a STATED DOWNGRADE in the run log).
+
+    Resume contract (review r2): the sidecar holds ONLY verified units and is
+    fingerprinted by src_revision (_load_staged_sidecar discards anything
+    else). Resumed units are re-adjudicated from their STORED digests — cheap
+    dict compares, no re-hash — so a bad unit re-fails on EVERY retry instead
+    of riding a stale checkpoint. Fresh units are digested, verified, and
+    inserted only on PASS; fresh non-LFS units under an undecided A7 are held
+    PENDING (never persisted) until the batch verdict resolves. Returns
+    {path: sha256} for the pack step."""
     rec = st["prefixes"][prefix]
+    src_revision = rec["src_revision"]
     src_root = STAGE / f"src_{prefix}"
-    staged_hashes: dict[str, str] = {}
-    if _staged_hashes_path(prefix).is_file():
-        staged_hashes = json.loads(_staged_hashes_path(prefix).read_text())
+    sidecar = _load_staged_sidecar(prefix, src_revision) or {}
+    a7 = st.get("blob_id_is_git_sha1")
     nonlfs_probe: list[tuple[str, bool]] = []  # (path, sha1_matches)
+    pending_nonlfs: dict[str, dict] = {}  # fresh non-LFS digests awaiting the A7 verdict
     t0 = time.time()
     n = 0
     n_resumed = 0
+    n_fresh = 0
     for p in sorted(paths):
         local = src_root / p
         if not local.is_file():
@@ -764,26 +836,47 @@ def step_staged_verify(prefix: str, st: dict, src_map: dict, paths: list[str]) -
                 f"{prefix}: size mismatch {p}: staged {local.stat().st_size} != hub {ent['size']}"
             )
         n += 1
-        if p in staged_hashes:
-            # Resume predicate: hashed + verified by a prior partial run (the
-            # sidecar is the durable per-unit result); size re-checked above.
+        stored = sidecar.get(p)
+        if stored is not None:
+            # Resumed unit: re-adjudicate identity from the STORED digests (no
+            # re-hash) — a unit that would fail today fails NOW (review r2).
             n_resumed += 1
+            if ent["lfs"]:
+                if stored["sha256"] != ent["oid"]:
+                    raise VerifyFailure(f"{prefix}: LFS sha256 mismatch on resumed unit {p}")
+            elif a7 is True:
+                if stored["gitsha1"] != ent["oid"]:
+                    raise VerifyFailure(f"{prefix}: git-blob sha1 mismatch on resumed unit {p}")
+            elif a7 is None:
+                nonlfs_probe.append((p, stored["gitsha1"] == ent["oid"]))
+            # a7 is False: size (re-checked above) + etag is the STATED DOWNGRADE.
             continue
+        n_fresh += 1
         sha256, gitsha1 = _dual_digest(local)
-        staged_hashes[p] = sha256
         if ent["lfs"]:
             if sha256 != ent["oid"]:
                 raise VerifyFailure(f"{prefix}: LFS sha256 mismatch on {p}")
+            sidecar[p] = {"sha256": sha256, "gitsha1": gitsha1}
+        elif a7 is True:
+            if gitsha1 != ent["oid"]:
+                raise VerifyFailure(f"{prefix}: git-blob sha1 mismatch on {p}")
+            sidecar[p] = {"sha256": sha256, "gitsha1": gitsha1}
+        elif a7 is False:
+            # STATED DOWNGRADE bar: size (checked above) + etag — verified.
+            sidecar[p] = {"sha256": sha256, "gitsha1": gitsha1}
         else:
+            # A7 undecided: verdict unknown — hold PENDING, never persist an
+            # unverified unit into the sidecar (review r2).
             nonlfs_probe.append((p, gitsha1 == ent["oid"]))
+            pending_nonlfs[p] = {"sha256": sha256, "gitsha1": gitsha1}
         # Per-unit progress line (code-style intra-phase contract, T2 > ~50).
         log(f"[staged-verify] unit {n:,}/{len(paths):,} {p} elapsed={time.time() - t0:.0f}s")
-        if n % 2000 == 0:
-            _write_staged_hashes(prefix, staged_hashes)  # incremental durable checkpoint
+        if n_fresh % 2000 == 0:
+            # Incremental durable checkpoint — VERIFIED units only.
+            _write_staged_hashes(prefix, src_revision, sidecar)
     if n_resumed:
         log(f"    [staged-verify] resumed past {n_resumed:,} previously verified units")
     # A7 disposition: decided ONCE (state-global), applied to every non-LFS file.
-    a7 = st.get("blob_id_is_git_sha1")
     if nonlfs_probe and a7 is None:
         matches = [ok for _, ok in nonlfs_probe]
         if all(matches):
@@ -798,19 +891,23 @@ def step_staged_verify(prefix: str, st: dict, src_map: dict, paths: list[str]) -
             bad = [p for p, ok in nonlfs_probe if not ok][:5]
             raise VerifyFailure(f"{prefix}: MIXED blob_id sha1 agreement (corruption?): {bad}")
         st["blob_id_is_git_sha1"] = a7
-    if nonlfs_probe and a7 is True:
-        bad = [p for p, ok in nonlfs_probe if not ok]
-        if bad:
-            raise VerifyFailure(f"{prefix}: git-blob sha1 mismatch on {len(bad)} files: {bad[:5]}")
-    _write_staged_hashes(prefix, staged_hashes)
+    # Batch verdict resolved without a raise: every pending fresh non-LFS unit
+    # is now verified (a7 True == all matched; a7 False == the stated
+    # size+etag downgrade) — merge them into the verified-units sidecar.
+    sidecar.update(pending_nonlfs)
+    _write_staged_hashes(prefix, src_revision, sidecar)
+    if n_fresh:
+        # Fresh hashing occurred: any pack/upload/verify checkpoint from a
+        # prior partial run may predate these units — invalidate downstream.
+        _invalidate_downstream(rec, "staged_verify")
     rec.setdefault("steps", {})["staged_verify"] = {
         "done": True,
         "run_id": RUN_ID,
-        "src_revision": rec.get("src_revision"),
+        "src_revision": src_revision,
     }
     _save_state(st)
     log(f"    staged identity verify PASS ({len(paths):,} files)")
-    return staged_hashes
+    return {p: sidecar[p]["sha256"] for p in paths}
 
 
 def _shard_name(shard_idx: int, chunk_idx: int | None) -> str:
@@ -831,6 +928,16 @@ def step_pack(
     """Step 5: stream files into tar shards under the ISOLATED per-prefix
     upload root; write the sidecar index (+ manifest for whole-prefix mode)."""
     rec = st["prefixes"][prefix]
+    # Re-packing MUTATES the pack artifacts (review r2): drop the prior
+    # whole-mode pack record (rebuilt from scratch below; chunked mode
+    # accumulates per-chunk keys, overwritten per chunk) and invalidate every
+    # downstream checkpoint BEFORE the first shard write, so a crash mid-pack
+    # can never leave stale local-verify/upload/hub-verify checkpoints beside
+    # half-rebuilt shards.
+    if chunk_idx is None:
+        rec["packed_files"] = {}
+    _invalidate_downstream(rec, "pack")
+    _save_state(st)
     src_root = STAGE / f"src_{prefix}"
     packed_dir = STAGE / f"up_{prefix}" / prefix / "__packed__"
     packed_dir.mkdir(parents=True, exist_ok=True)
@@ -1043,7 +1150,10 @@ def step_hub_verify(prefix: str, st: dict) -> None:
         if ent["lfs"]:
             if ent["oid"] != exp["sha256"]:
                 raise VerifyFailure(f"{prefix}: packed LFS sha256 mismatch: {repo_path}")
-        elif a7 is False:
+        elif a7 is not True:
+            # A7 False OR undecided (review r2 minor: an all-LFS-source prefix
+            # reaches here with A7 never probed — a gitsha1 compare would then
+            # rest on an unproven equivalence): byte-compare is always sound.
             _redownload_byte_compare(prefix, repo_path, exp)
         elif ent["oid"] != exp["gitsha1"]:
             raise VerifyFailure(f"{prefix}: packed git-blob sha1 mismatch: {repo_path}")
@@ -1063,7 +1173,7 @@ def _redownload_byte_compare(prefix: str, repo_path: str, exp: dict) -> None:
     tmp.mkdir(parents=True, exist_ok=True)
 
     def _fetch() -> str:
-        # NO_RETRY: routed through _retry_listing bounded backoff (read-only fetch)
+        # NO_RETRY: token-only waiver — this thunk IS retried via _retry_listing
         return hf_hub_download(
             repo_id=SRC, filename=repo_path, repo_type="dataset", local_dir=str(tmp)
         )
@@ -1122,7 +1232,7 @@ def step_pilot_extra(prefix: str, st: dict, index: dict) -> None:
     tmp.mkdir(parents=True, exist_ok=True)
 
     def _fetch() -> str:
-        # NO_RETRY: routed through _retry_listing bounded backoff (read-only fetch)
+        # NO_RETRY: token-only waiver — this thunk IS retried via _retry_listing
         return hf_hub_download(
             repo_id=SRC,
             filename=f"{prefix}/__packed__/{shard}",
@@ -1161,6 +1271,37 @@ def _step_done(rec: dict, key: str) -> bool:
     the step's on-disk outputs exist before skipping."""
     s = rec.get("steps", {}).get(key) or {}
     return bool(s.get("done")) and s.get("src_revision") == rec.get("src_revision")
+
+
+def _claim_chunked_pilot(st: dict, prefix: str) -> bool:
+    """The FIRST prefix to enter chunked mode claims the chunked-mode pilot
+    role, persisted in state (resume-stable across restarts): its first chunk
+    carries the plan SS4.6 'Pilot extra' duty even when it is not
+    PILOT_PREFIX (Codex r2 chunked-pilot-contract). Returns True iff `prefix`
+    holds the claim."""
+    holder = st.get("chunked_pilot")
+    if holder is None:
+        st["chunked_pilot"] = prefix
+        _save_state(st)
+        return True
+    return holder == prefix
+
+
+def _sizing_mode_hints() -> dict[str, str]:
+    """Expected per-prefix mode ('whole' | 'chunked') from the committed P2
+    sizing.json — best-effort ({} when absent/unparseable). Backstop for the
+    main-loop chunked-pilot duty when a gate trip skipped run_prefix BEFORE
+    its rec['mode'] assignment (Codex r2 chunked-pilot-contract, arm 2)."""
+    p = Path(__file__).resolve().parent.parent / "eval_results" / "issue_2332" / "sizing.json"
+    try:
+        sizing = json.loads(p.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    out: dict[str, str] = {}
+    for prefix, info in (sizing.get("prefixes") or {}).items():
+        if isinstance(info, dict) and isinstance(info.get("mode"), str):
+            out[prefix] = "chunked" if info["mode"].startswith("chunked") else "whole"
+    return out
 
 
 def _delete_batch_size(st: dict) -> int:
@@ -1283,7 +1424,11 @@ def run_delete(
             f"parent={head[:12]} elapsed={time.time() - t0:.0f}s"
         )
     if final_assert:
-        final = _list_prefix(prefix)
+        # Codex r2 concern (delete-final-revision-binding): pin the completion
+        # listing to a freshly-read head so the final assert + realized
+        # accounting derive from ONE immutable tree, not a mutable main ref.
+        final_head = _repo_head_sha()
+        final = _list_prefix(prefix, revision=final_head)
         _assert_pack_present(prefix, final, expected_pack, st.get("blob_id_is_git_sha1"))
         packed = f"{prefix}/__packed__/"
         leftovers = [
@@ -1390,30 +1535,35 @@ def run_prefix(prefix: str, st: dict) -> str:
         log(f"{prefix}: {'DEFERRED' if PREFIXES[prefix][0] == 1739 else 'SKIPPED'} — {e}")
         return "deferred" if PREFIXES[prefix][0] == 1739 else "skipped"
     src_revision, src_map = step_snapshot(prefix, st)
-    del src_revision
     chunks = plan_chunks(src_map, prefix)
     if chunks is None:
         rec["mode"] = "whole"
         _staging_headroom_assert(2 * rec["total_bytes"])
         paths = sorted(src_map)
         packed_dir = STAGE / f"up_{prefix}" / prefix / "__packed__"
-        # Checkpoint CONSUMPTION (review r1): each step's done-record is
-        # fingerprinted by src_revision (_step_done) and skipped only when its
-        # on-disk outputs are still present; hub_verify is NEVER skipped here
-        # (its run_id-keyed restart re-verify is the delete path's own law).
-        if _step_done(rec, "download") and (STAGE / f"src_{prefix}").is_dir():
-            log(f"{prefix}: download checkpoint consumed — skip (staged tree present)")
-        else:
-            step_download(prefix, st, src_map, paths)
-        if _step_done(rec, "staged_verify") and _staged_hashes_path(prefix).is_file():
-            staged = json.loads(_staged_hashes_path(prefix).read_text())
-            log(f"{prefix}: staged-verify checkpoint consumed — {len(staged):,} hashes loaded")
+        # Checkpoint CONSUMPTION (review r1+r2): every skip predicate is
+        # artifact-complete AND identity-complete. download is ALWAYS called —
+        # its per-unit size-keyed resume makes it an idempotent completeness
+        # sweep (and it evicts+invalidates on any fresh fetch). upload is
+        # ALWAYS called — upload_large_folder is internally resumable, and
+        # consuming its checkpoint wedges a partial upload behind a forever-
+        # failing hub_verify (review r2 minor 1). hub_verify is NEVER skipped (its
+        # run_id-keyed restart re-verify is the delete path's own law).
+        step_download(prefix, st, src_map, paths)
+        sidecar = _load_staged_sidecar(prefix, src_revision)
+        if _step_done(rec, "staged_verify") and sidecar is not None and set(paths) <= set(sidecar):
+            staged = {p: sidecar[p]["sha256"] for p in paths}
+            log(
+                f"{prefix}: staged-verify checkpoint consumed — {len(staged):,} verified "
+                "hashes loaded (fingerprinted sidecar covers all units)"
+            )
         else:
             staged = step_staged_verify(prefix, st, src_map, paths)
         if (
             _step_done(rec, "pack")
+            and rec.get("packed_files")
             and (packed_dir / "index.json").is_file()
-            and all((STAGE / f"up_{prefix}" / rp).is_file() for rp in rec.get("packed_files", {}))
+            and all((STAGE / f"up_{prefix}" / rp).is_file() for rp in rec["packed_files"])
         ):
             packed = {
                 "index": json.loads((packed_dir / "index.json").read_text()),
@@ -1427,10 +1577,7 @@ def run_prefix(prefix: str, st: dict) -> str:
             log(f"{prefix}: local-verify checkpoint consumed — skip")
         else:
             step_local_verify(prefix, st, src_map, paths, packed["index"])
-        if _step_done(rec, "upload"):
-            log(f"{prefix}: upload checkpoint consumed — skip (hub verify is the arbiter)")
-        else:
-            step_upload(prefix, st, packed["k"])
+        step_upload(prefix, st, packed["k"])
         step_hub_verify(prefix, st)
         if prefix == PILOT_PREFIX:
             step_pilot_extra(prefix, st, packed["index"])
@@ -1438,6 +1585,11 @@ def run_prefix(prefix: str, st: dict) -> str:
     else:
         log(f"{prefix}: CHUNKED mode — {len(chunks)} chunks")
         rec["mode"] = "chunked"
+        # Chunked-mode pilot duty (plan SS7 gate 7, second clause; Codex r2
+        # chunked-pilot-contract): whichever prefix is FIRST chunked at
+        # runtime claims the role durably — its first chunk carries the
+        # 'Pilot extra' re-download check, PILOT_PREFIX or not.
+        is_chunked_pilot = _claim_chunked_pilot(st, prefix)
         n_deleted = 0
         merged_index: dict[str, dict] = {}
         all_shard_sha: dict[str, str] = {}
@@ -1460,7 +1612,7 @@ def run_prefix(prefix: str, st: dict) -> str:
             step_local_verify(prefix, st, src_map, paths, packed["index"])
             step_upload(prefix, st, packed["k"])
             step_hub_verify(prefix, st)
-            if prefix == PILOT_PREFIX and ci == 0:
+            if ci == 0 and (prefix == PILOT_PREFIX or is_chunked_pilot):
                 step_pilot_extra(prefix, st, packed["index"])
             chunk_realized = run_delete(
                 prefix, st, src_map=src_map, restrict=set(paths), final_assert=False
@@ -1557,14 +1709,27 @@ def cmd_sizing(args: argparse.Namespace) -> int:
         chunks = plan_chunks(listing, prefix)
         expected = PREFIXES[prefix][1]
         drift = len(listing) - expected
+        drift_recheck: str | None = None
         if drift != 0:
             log(
                 f"DRIFT on target prefix {prefix}: live {len(listing):,} != inventory "
-                f"{expected:,} ({drift:+,}) — someone wrote to it; re-running G-writer "
-                "(plan SS4.4.4: loud + writer re-check; a live writer refuses here, "
-                "historical drift proceeds on the FRESH counts — snapshot re-pins anyway)"
+                f"{expected:,} ({drift:+,}) — someone wrote to it; re-running the "
+                "G-writer four-way check (plan SS4.4.4 fail-loud: a refusal REFUSES "
+                "this prefix — recorded + re-runnable — never proceeds on a log line)"
             )
-            gate_writer(prefix)
+            try:
+                gate_writer(prefix)
+            except GateRefusal as e:
+                log(f"{prefix}: sizing REFUSED on drift — {e}")
+                out["prefixes"][prefix] = {
+                    "files": len(listing),
+                    "bytes": total,
+                    "inventory_drift": drift,
+                    "mode": "refused-drift",
+                    "drift_refused": str(e),
+                }
+                continue
+            drift_recheck = "writer-recheck-clean"
         if chunks is None:
             k = n_shards + 2  # shards + index.json + manifest.json
             chunk_plan = None
@@ -1594,6 +1759,7 @@ def cmd_sizing(args: argparse.Namespace) -> int:
             "staged_footprint_bytes": 2 * total,
             "mode": "whole" if chunks is None else f"chunked({len(chunks)})",
             "inventory_drift": drift,
+            "drift_writer_recheck": drift_recheck,
         }
     out["repo_count_before"] = _fresh_repo_count()
     out_path = Path(args.out) / "sizing.json"
@@ -1699,6 +1865,7 @@ def main(argv: list[str] | None = None) -> int:
         full_order = args.prefix is None
         results: dict[str, str] = {}
         chunked_pilot_checked = False
+        mode_hints = _sizing_mode_hints()
         for prefix in targets:
             try:
                 results[prefix] = run_prefix(prefix, st)
@@ -1728,16 +1895,20 @@ def main(argv: list[str] | None = None) -> int:
                     f"(fix + re-run `run --prefix {PILOT_PREFIX}`, then `run`)"
                 )
                 return 1
-            # Chunked-mode pilot (plan SS7 gate 7, second clause): the FIRST
-            # chunked-mode prefix in the ascending order serves as the
-            # chunked-mode pilot — a failure stops later (larger) prefixes.
-            if (
-                full_order
-                and not chunked_pilot_checked
-                and st["prefixes"].get(prefix, {}).get("mode") == "chunked"
-            ):
-                chunked_pilot_checked = True
-                if results[prefix] != "done":
+            # Chunked-mode pilot (plan SS7 gate 7, second clause; Codex r2
+            # chunked-pilot-contract): the FIRST chunked-mode prefix that
+            # actually RUNS its chunked pipeline serves as the chunked-mode
+            # pilot. Mode is read from the rec when run_prefix assigned it,
+            # else from the sizing.json hint (an entry-gate trip skips
+            # run_prefix BEFORE the rec['mode'] assignment). Outcomes:
+            # done -> pilot satisfied; skipped/deferred -> nothing ran, the
+            # duty TRANSFERS to the next chunked prefix; ran-and-failed
+            # (incomplete) -> ABORT before larger chunked prefixes.
+            mode = st["prefixes"].get(prefix, {}).get("mode") or mode_hints.get(prefix)
+            if full_order and not chunked_pilot_checked and mode == "chunked":
+                if results[prefix] == "done":
+                    chunked_pilot_checked = True
+                elif results[prefix] not in ("skipped", "deferred"):
                     log(
                         f"ABORT run: first chunked-mode prefix {prefix} "
                         f"result={results[prefix]!r} — it serves as the chunked-mode "

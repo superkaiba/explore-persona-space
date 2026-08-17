@@ -2692,19 +2692,49 @@ def stage_hub_file(
         )
     target.parent.mkdir(parents=True, exist_ok=True)
     tok = token or os.environ.get("HF_TOKEN")
-    with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
-        local = retry_transient(
-            lambda: hf_hub_download(
-                repo_id=repo_id,
-                filename=path_in_repo,
-                repo_type=repo_type,
-                revision=revision,
-                local_dir=td,
-                token=tok,
-            ),
-            what=f"stage_hub_file({repo_id}:{path_in_repo})",
+    from huggingface_hub.utils import EntryNotFoundError
+
+    try:
+        with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
+            local = retry_transient(
+                lambda: hf_hub_download(
+                    repo_id=repo_id,
+                    filename=path_in_repo,
+                    repo_type=repo_type,
+                    revision=revision,
+                    local_dir=td,
+                    token=tok,
+                ),
+                what=f"stage_hub_file({repo_id}:{path_in_repo})",
+            )
+            os.replace(local, target)
+    except EntryNotFoundError:
+        # #2332 packed-prefix fallback (central seam, review r2): the 8 repack
+        # target prefixes replace loose files with `<prefix>/__packed__/` tar
+        # shards + index. When the LOOSE path 404s AND the path sits under a
+        # repacked target prefix AND its merged index.json exists on the repo,
+        # serve the byte-identical member via the accessor; EVERY other path
+        # re-raises the original error unchanged (packed_fallback returns None
+        # for non-target prefixes / unpacked prefixes / non-member paths, and
+        # PROPAGATES integrity failures loudly). Revision note: a pinned
+        # `revision=` request that 404s falls through to the HEAD packed copy —
+        # the repack is a verified byte-identical MOVE, so the bytes match any
+        # revision at which the loose file existed.
+        from .packed_prefix import packed_fallback
+
+        data = packed_fallback(repo_id, path_in_repo, repo_type=repo_type)
+        if data is None:
+            raise
+        logger.info(
+            "stage_hub_file: %s:%s served from the #2332 packed prefix (__packed__ fallback)",
+            repo_id,
+            path_in_repo,
         )
-        os.replace(local, target)
+        with tempfile.NamedTemporaryFile(
+            dir=target.parent, prefix=".hfstage-packed-", delete=False
+        ) as tf:
+            tf.write(data)
+        os.replace(tf.name, target)
     return target
 
 

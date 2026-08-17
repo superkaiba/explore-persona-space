@@ -37,9 +37,22 @@ import tarfile
 import time
 from pathlib import Path
 
-__all__ = ["PackedPrefixError", "read_packed"]
+__all__ = ["REPACKED_PREFIXES", "PackedPrefixError", "packed_fallback", "read_packed"]
 
 _DOWNLOAD_ATTEMPTS = 3
+
+# The 8 #2332 repack target prefixes (canonical home — the repack tooling and
+# the stage_hub_file packed fallback both key on this tuple).
+REPACKED_PREFIXES = (
+    "issue1481_conpos_grid",
+    "issue1090_pvdatagen",
+    "issue1586_methodgen",
+    "issue667_alllayer",
+    "issue1434_writingstyle",
+    "issue1739_ctxmap",
+    "issue2224_screening",
+    "issue1489_ctx_aug",
+)
 
 
 class PackedPrefixError(RuntimeError):
@@ -73,6 +86,28 @@ def _download(repo_id: str, filename: str, repo_type: str = "dataset") -> str:
                 time.sleep(2 * 4**attempt)
     assert last is not None
     raise last
+
+
+def packed_fallback(repo_id: str, orig_path: str, *, repo_type: str = "dataset") -> bytes | None:
+    """Central-seam fallback probe (#2332 review r2): the bytes of ``orig_path``
+    from its packed shard, or ``None`` when the packed route does not apply.
+
+    ``None`` (caller re-raises its ORIGINAL not-found error unchanged) when:
+    the first path segment is not one of :data:`REPACKED_PREFIXES`; the
+    prefix's merged ``index.json`` does not exist on the repo (not repacked
+    yet); or the index exists but ``orig_path`` is not a member (the file
+    genuinely never existed). A :class:`PackedPrefixError` (integrity failure
+    once the packed route IS live) PROPAGATES — never swallowed into None.
+    """
+    from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+
+    stripped = orig_path.lstrip("/")
+    if "/" not in stripped or stripped.split("/", 1)[0] not in REPACKED_PREFIXES:
+        return None
+    try:
+        return read_packed(repo_id, stripped, repo_type=repo_type)
+    except (EntryNotFoundError, RepositoryNotFoundError, KeyError):
+        return None
 
 
 def read_packed(repo_id: str, orig_path: str, *, repo_type: str = "dataset") -> bytes:

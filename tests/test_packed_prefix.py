@@ -361,18 +361,52 @@ def _live_ac4(pp, expect_packed: tuple[str, ...] = ()) -> None:
             )
 
 
+def _parse_expect_packed(raw: str) -> tuple[str, ...]:
+    """Parse ``EPM_I2332_EXPECT_PACKED``. Empty/unset -> () (default discover
+    mode). ``all`` -> every target prefix. Otherwise a comma list whose EVERY
+    entry must be a known target prefix — a nonempty-but-malformed value (bare
+    commas, an unknown prefix) FAILS the test instead of silently normalizing
+    to the skip-permitting default (Codex r2 ac4-closeout-env-fail-open)."""
+    raw = raw.strip()
+    if not raw:
+        return ()
+    if raw.lower() == "all":
+        return TARGET_PREFIXES
+    entries = tuple(x for x in (s.strip() for s in raw.split(",")) if x)
+    unknown = sorted(set(entries) - set(TARGET_PREFIXES))
+    if not entries or unknown:
+        pytest.fail(
+            f"EPM_I2332_EXPECT_PACKED is set but malformed: {raw!r} (parsed={entries}, "
+            f"unknown={unknown}) — a nonempty value must be 'all' or a comma list of "
+            "known target prefixes; refusing to fall back to the skippable default"
+        )
+    return entries
+
+
 def test_live_packed_prefix_resolution_ac4(pp):
     """AC4 demonstration (plan SS4.7(2)): >=5 real member paths per PACKED prefix
     resolve through ``read_packed`` and byte-verify. Reads only — no Hub writes.
     P7 closeout invocation: ``EPM_I2332_EXPECT_PACKED=all`` (or a comma list)."""
-    raw = os.environ.get("EPM_I2332_EXPECT_PACKED", "").strip()
-    if not raw:
-        expect: tuple[str, ...] = ()
-    elif raw.lower() == "all":
-        expect = TARGET_PREFIXES
-    else:
-        expect = tuple(x for x in (s.strip() for s in raw.split(",")) if x)
+    expect = _parse_expect_packed(os.environ.get("EPM_I2332_EXPECT_PACKED", ""))
     _live_ac4(pp, expect_packed=expect)
+
+
+def test_parse_expect_packed_malformed_values_fail_not_skip():
+    """OFFLINE pin (Codex r2 ac4-closeout-env-fail-open): a nonempty malformed
+    EXPECT_PACKED value must FAIL loud — never normalize to the unset default
+    that permits the pre-repack skip."""
+    assert _parse_expect_packed("") == ()
+    assert _parse_expect_packed("  ") == ()
+    assert _parse_expect_packed("all") == TARGET_PREFIXES
+    assert _parse_expect_packed("ALL") == TARGET_PREFIXES
+    two = f"{TARGET_PREFIXES[0]} , {TARGET_PREFIXES[1]}"
+    assert _parse_expect_packed(two) == (TARGET_PREFIXES[0], TARGET_PREFIXES[1])
+    with pytest.raises(pytest.fail.Exception, match="malformed"):
+        _parse_expect_packed(",,")
+    with pytest.raises(pytest.fail.Exception, match="unknown"):
+        _parse_expect_packed("not_a_known_prefix")
+    with pytest.raises(pytest.fail.Exception, match="unknown"):
+        _parse_expect_packed(f"{TARGET_PREFIXES[0]},bogus_prefix")
 
 
 def test_closeout_mode_fails_instead_of_skipping(pp, monkeypatch):
@@ -390,3 +424,153 @@ def test_closeout_mode_fails_instead_of_skipping(pp, monkeypatch):
     monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
     with pytest.raises(AssertionError, match="CLOSEOUT MODE"):
         _live_ac4(pp, expect_packed=("issue1489_ctx_aug",))
+
+
+# ── r4: packed_fallback semantics (the central-seam probe) ────────────────────
+
+
+def test_packed_fallback_semantics(pp, tmp_path, monkeypatch):
+    """``packed_fallback`` (review r2 item 5): serves bytes for a repacked
+    target-prefix member; returns None (the caller re-raises its ORIGINAL
+    not-found unchanged) for non-target prefixes, prefix-less paths,
+    un-repacked target prefixes, and non-member paths; and PROPAGATES
+    ``PackedPrefixError`` — integrity failures are never swallowed to None."""
+    from huggingface_hub.errors import EntryNotFoundError
+
+    target_prefix = "issue1489_ctx_aug"
+    assert target_prefix in pp.REPACKED_PREFIXES
+    member = f"{target_prefix}/raw/x.json"
+    payload = b'{"j": 42}'
+    packed_dir = tmp_path / target_prefix / "__packed__"
+    packed_dir.mkdir(parents=True)
+    index: dict[str, dict] = {}
+    _pack_shard(packed_dir / "shard-00000.tar", {member: payload}, index)
+    (packed_dir / "index.json").write_text(json.dumps(index))
+
+    def fake_download(repo_id: str, filename: str, repo_type: str = "dataset") -> str:
+        local = tmp_path / filename
+        if not local.is_file():
+            raise EntryNotFoundError(f"fake hub 404: {filename}")
+        return str(local)
+
+    monkeypatch.setattr(pp, "_download", fake_download)
+    assert pp.packed_fallback(LIVE_REPO, member) == payload
+    # A leading slash is stripped (stage_hub_file passes path_in_repo raw).
+    assert pp.packed_fallback(LIVE_REPO, "/" + member) == payload
+    assert pp.packed_fallback(LIVE_REPO, "not_a_target/x.json") is None
+    assert pp.packed_fallback(LIVE_REPO, "orphan.json") is None
+    # Target prefix but not a member of the packed index: None (KeyError arm).
+    assert pp.packed_fallback(LIVE_REPO, f"{target_prefix}/raw/other.json") is None
+    # Target prefix whose index.json does not exist (not repacked yet): None.
+    assert pp.packed_fallback(LIVE_REPO, "issue667_alllayer/x.json") is None
+    # Integrity failure PROPAGATES loudly (never swallowed into None).
+    tampered = json.loads((packed_dir / "index.json").read_text())
+    tampered[member]["sha256"] = "0" * 64
+    (packed_dir / "index.json").write_text(json.dumps(tampered))
+    with pytest.raises(pp.PackedPrefixError, match="sha256 mismatch"):
+        pp.packed_fallback(LIVE_REPO, member)
+
+
+# ── r4: stage_hub_file central-seam fallback (subprocess, worktree src) ───────
+
+_STAGE_FALLBACK_PROBE = '''
+"""Subprocess probe: hub.stage_hub_file serves a repacked member through the
+packed fallback on EntryNotFoundError (positive arm) and re-raises the
+ORIGINAL not-found unchanged for a non-target path (negative arm). Only the
+huggingface_hub download boundary is faked (signature-conformant def)."""
+
+import hashlib
+import io
+import json
+import sys
+import tarfile
+from pathlib import Path
+
+work = Path(sys.argv[1])
+src_dir = Path(sys.argv[2])
+prefix = "issue1489_ctx_aug"
+member = f"{prefix}/raw/x.json"
+payload = b'{"k": 1}'
+packed_dir = work / prefix / "__packed__"
+packed_dir.mkdir(parents=True, exist_ok=True)
+shard = packed_dir / "shard-00000.tar"
+with tarfile.open(shard, "w", format=tarfile.PAX_FORMAT) as tar:
+    ti = tarfile.TarInfo(name=member)
+    ti.size = len(payload)
+    ti.mtime = 0
+    ti.mode = 0o644
+    tar.addfile(ti, io.BytesIO(payload))
+with tarfile.open(shard, "r:") as rt:
+    off = rt.getmember(member).offset_data
+index = {
+    member: {
+        "shard": "shard-00000.tar",
+        "offset": off,
+        "size": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+    }
+}
+(packed_dir / "index.json").write_text(json.dumps(index))
+
+import huggingface_hub
+from huggingface_hub.errors import EntryNotFoundError
+
+
+def fake_hf_hub_download(
+    *, repo_id=None, filename=None, repo_type="dataset", revision=None,
+    local_dir=None, token=None, etag_timeout=None, **kw
+):
+    if "/__packed__/" in (filename or ""):
+        return str(work / filename)
+    raise EntryNotFoundError(f"loose copy absent (repacked): {filename}")
+
+
+huggingface_hub.hf_hub_download = fake_hf_hub_download
+
+from explore_persona_space.orchestrate import hub as H
+from explore_persona_space.orchestrate import packed_prefix as PP
+
+assert Path(PP.__file__).resolve().is_relative_to(src_dir.resolve()), (
+    f"worktree src did not win module resolution: {PP.__file__} not under {src_dir}"
+)
+target = work / "staged" / "x.json"
+out = H.stage_hub_file("superkaiba1/explore-persona-space-data", member, target)
+assert Path(out) == target and target.read_bytes() == payload, "fallback did not serve bytes"
+try:
+    H.stage_hub_file(
+        "superkaiba1/explore-persona-space-data", "not_a_target/x.json", work / "n.json"
+    )
+except EntryNotFoundError:
+    pass
+else:
+    raise AssertionError("non-target 404 must re-raise the ORIGINAL EntryNotFoundError")
+assert not (work / "n.json").exists(), "negative arm must stage nothing"
+print("HUB-FALLBACK-OK")
+'''
+
+
+def test_stage_hub_file_packed_fallback_subprocess(tmp_path):
+    """The central-seam fallback (review r2 item 5) exercised through the REAL
+    ``hub.stage_hub_file`` body: loose-404 under a target prefix serves the
+    packed member atomically; any other path re-raises the original not-found.
+    Runs in a subprocess with the WORKTREE src forced onto PYTHONPATH — the
+    editable install otherwise resolves ``explore_persona_space`` to the MAIN
+    checkout's src, where this seam does not exist until the branch merges."""
+    import subprocess
+
+    src_dir = REPO_ROOT / "src"
+    script = tmp_path / "probe_stage_hub_file.py"
+    script.write_text(_STAGE_FALLBACK_PROBE)
+    env = {
+        **os.environ,
+        "PYTHONPATH": str(src_dir) + os.pathsep + os.environ.get("PYTHONPATH", ""),
+    }
+    cp = subprocess.run(
+        [sys.executable, str(script), str(tmp_path / "scratch"), str(src_dir)],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=300,
+    )
+    assert cp.returncode == 0, f"stdout={cp.stdout}\nstderr={cp.stderr}"
+    assert "HUB-FALLBACK-OK" in cp.stdout
