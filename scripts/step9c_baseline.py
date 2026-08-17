@@ -31,6 +31,9 @@ Subcommands::
                                                      --cones-from PATH --timeout-s S --out PATH
                                                      [--base origin/main]
                                                      [--scratch-timeout-s 120]
+    uv run python scripts/step9c_baseline.py classify-new-nodes --new-nodes PATH
+                                                     --baseline-selected PATH --own-diff PATH
+                                                     --out-block PATH --out-unclassifiable PATH
     uv run python scripts/step9c_baseline.py probe   (--pattern REGEX | --issue N |
                                                       --fleet [--exclude-issue N])
 
@@ -73,12 +76,23 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
   0          always — prints the resolved gate temp-write root, or nothing
 ``mapped-baseline``
   0          the baseline leg RAN — stdout carries ``scratch_path=<abs>`` +
-             ``rc=<pytest rc>`` (0 green / 1 failures / 124 timeout; rc is DATA —
-             the SKILL gate's ``rc>1 => crash`` arm classifies); an EMPTY
-             selection writes an empty ``--out`` and reports ``rc=0``
+             ``selected_path=<abs>`` (the ``--out``-sibling ``.selected`` sidecar
+             listing the baseline SELECTION, one repo-relative test path per
+             line; #2348) + ``rc=<pytest rc>`` (0 green / 1 failures / 124
+             timeout; rc is DATA — the SKILL gate's ``rc>1 => crash`` arm
+             classifies); an EMPTY selection writes an empty ``--out`` + an
+             empty ``.selected`` and reports ``rc=0``
   2          setup/crash-class failure (fail CLOSED): unresolvable ``--base``;
              missing ``--map-files`` / root / root-venv interpreter; scratch
              creation, src-shadow probe (#1251), or baseline-selector failure
+``classify-new-nodes``
+  0          the split RAN — stdout carries ``block_count=<n>`` +
+             ``unclassifiable_count=<n>``; a missing/unreadable
+             ``--baseline-selected`` degrades to LEGACY mode (ALL nodes ->
+             ``--out-block`` + stderr WARN — the status-quo fail direction)
+  2          missing/unreadable ``--new-nodes`` / ``--own-diff``, or an output
+             write failure (fail CLOSED: inputs left byte-unchanged — the SKILL
+             blocks' ``||`` keeps the un-rewritten NEW file blocking)
 ``probe``
   0          CLEAR — no live FOREIGN ``/proc/*/cmdline`` match (safe to launch);
              ``--fleet``: DISTINCT foreign gate-issue count < ``EPM_GATE_FLEET_MAX``
@@ -3312,10 +3326,20 @@ def cmd_mapped_baseline(args: argparse.Namespace) -> int:
     (SIGTERM converted to SystemExit so teardown still runs under the
     caller's ``timeout`` bound).
 
-    stdout protocol (machine-read by the SKILL gate blocks)::
+    stdout protocol (machine-read by the SKILL gate blocks; ``rc=`` stays the
+    LAST line)::
 
-        scratch_path=<abs scratch tree>   # the <TREE> sed cancels this prefix
-        rc=<pytest rc>                    # 0 green / 1 failures / 124 timeout
+        scratch_path=<abs scratch tree>     # the <TREE> sed cancels this prefix
+        selected_path=<abs .selected file>  # the baseline SELECTION sidecar (#2348)
+        rc=<pytest rc>                      # 0 green / 1 failures / 124 timeout
+
+    The ``.selected`` sidecar (``--out`` + ``.selected``, beside ``--out`` in
+    /tmp — NOT inside the torn-down scratch; one repo-relative test path per
+    line, empty file on an empty selection) records which test FILES the
+    baseline COULD run: the ``classify-new-nodes`` split keys on it (#2348 —
+    ``comm -23`` can only subtract what the baseline observed, so a NEW node
+    whose file was never selected at the baseline must not block
+    unconditionally).
 
     Exit 0 whenever the leg RAN (rc is DATA — the caller's ``rc>1 => crash``
     arm classifies); exit 2 on any setup / selection / shadow-probe failure
@@ -3355,11 +3379,17 @@ def cmd_mapped_baseline(args: argparse.Namespace) -> int:
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
         _log(f"mapped-baseline: scratch creation failed (fail-closed): {exc}")
         return 2
+    selected_path = out_path.with_name(out_path.name + ".selected")
     try:
         assert_scratch_src_shadow(root, scratch.path, args.scratch_timeout_s)
         tests = _select_mapped_tests_on_tree(
             scratch.path, map_files, python_exe, args.scratch_timeout_s
         )
+        # Selection sidecar (#2348): the test FILES the baseline COULD run —
+        # the classify-new-nodes split's observability key. Written beside
+        # --out (it must survive the scratch teardown), empty on an empty
+        # selection.
+        selected_path.write_text("".join(f"{t}\n" for t in tests))
         if not tests:
             out_path.write_text("")
             rc = 0
@@ -3381,7 +3411,99 @@ def cmd_mapped_baseline(args: argparse.Namespace) -> int:
     finally:
         remove_scratch_worktree(root, scratch)
     print(f"scratch_path={scratch.path}")
+    print(f"selected_path={selected_path}")
     print(f"rc={rc}")
+    return 0
+
+
+def _classify_atomic_write(path: Path, lines: list[str]) -> None:
+    """Atomic line-list write: same-directory temp file + ``os.replace``.
+
+    The in-place ``--out-block == --new-nodes`` rewrite is the designed call
+    shape (#2348) — the replace makes a crash mid-write leave the target
+    byte-unchanged rather than truncated.
+    """
+    tmp = path.with_name(f"{path.name}.tmp-{os.getpid()}")
+    tmp.write_text("".join(f"{ln}\n" for ln in lines))
+    os.replace(tmp, path)
+
+
+def cmd_classify_new_nodes(args: argparse.Namespace) -> int:
+    """Split the Step 10d node-grain NEW set by baseline OBSERVABILITY (#2348).
+
+    ``comm -23`` can only subtract what the baseline COULD RUN: a NEW-classified
+    node whose test file was never SELECTED on the baseline tree was never
+    compared, so a main-side pre-existing red among such nodes false-blocks
+    the merge (the #2155 set-mismatch class). Pure file I/O — no git, no
+    subprocess. Per node line (``tests/<file>::<node>``; file = the text
+    before the first ``::``):
+
+    - file in the ``--baseline-selected`` set -> ``--out-block`` (a real
+      both-trees delta — the baseline observed the file and stayed green);
+    - file in the ``--own-diff`` set -> ``--out-block`` (branch-new/payload
+      test — "NEW by construction", the unchanged doctrine);
+    - otherwise -> ``--out-unclassifiable`` ("unclassifiable —
+      pristine-oracle needed": recorded + WARNed by the caller, never a
+      silent pass, never an automatic block).
+
+    Fail directions: a missing/unreadable ``--baseline-selected`` degrades to
+    LEGACY mode (ALL nodes -> ``--out-block`` + a stderr WARN — the status-quo
+    fail direction); a missing/unreadable ``--new-nodes`` / ``--own-diff``
+    exits 2 with every input left byte-unchanged (the SKILL blocks' ``||``
+    then keeps the un-rewritten NEW file blocking). ALL inputs are read FULLY
+    before any write (in-place ``--out-block == --new-nodes`` is the designed
+    call shape), and ``--out-unclassifiable`` is written BEFORE ``--out-block``
+    (both write-tmp + ``os.replace``): a crash between the two replaces then
+    fails CLOSED — the block operand still holds every node, at worst
+    double-recorded — whereas the opposite order could silently drop
+    unclassifiable nodes from the block operand with no record (the one
+    window where "never a silent pass" would fail).
+
+    stdout: ``block_count=<n>`` + ``unclassifiable_count=<n>``; exit 0
+    whenever the split RAN.
+    """
+    new_nodes_path = Path(args.new_nodes)
+    own_diff_path = Path(args.own_diff)
+    # Read EVERY input fully before writing anything (in-place rewrite support).
+    try:
+        node_lines = [ln for ln in new_nodes_path.read_text().splitlines() if ln.strip()]
+    except OSError as exc:
+        _log(f"classify-new-nodes: --new-nodes unreadable (fail-closed exit 2): {exc}")
+        return 2
+    try:
+        own_diff = {ln.strip() for ln in own_diff_path.read_text().splitlines() if ln.strip()}
+    except OSError as exc:
+        _log(f"classify-new-nodes: --own-diff unreadable (fail-closed exit 2): {exc}")
+        return 2
+    selected_path = Path(args.baseline_selected)
+    legacy = False
+    selected: set[str] = set()
+    try:
+        selected = {ln.strip() for ln in selected_path.read_text().splitlines() if ln.strip()}
+    except OSError:
+        legacy = True
+        _log(
+            "classify-new-nodes: WARN baseline-selected list missing/unreadable "
+            f"({selected_path}) — LEGACY mode: every NEW node kept blocking (status quo)"
+        )
+    block: list[str] = []
+    unclassifiable: list[str] = []
+    for line in node_lines:
+        test_file = line.split("::", 1)[0].strip()
+        if legacy or test_file in selected or test_file in own_diff:
+            block.append(line)
+        else:
+            unclassifiable.append(line)
+    # --out-unclassifiable FIRST, then --out-block: a crash between the two
+    # replaces fails CLOSED (the block operand still holds every node).
+    try:
+        _classify_atomic_write(Path(args.out_unclassifiable), unclassifiable)
+        _classify_atomic_write(Path(args.out_block), block)
+    except OSError as exc:
+        _log(f"classify-new-nodes: output write failed (fail-closed exit 2): {exc}")
+        return 2
+    print(f"block_count={len(block)}")
+    print(f"unclassifiable_count={len(unclassifiable)}")
     return 0
 
 
@@ -3718,6 +3840,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_mapped.add_argument("--out", required=True, help="baseline pytest TEXT output path")
     p_mapped.set_defaults(func=cmd_mapped_baseline)
+
+    p_classify = sub.add_parser(
+        "classify-new-nodes",
+        help="split the Step 10d node-grain NEW set by baseline observability (#2348): "
+        "node file in --baseline-selected or --own-diff -> --out-block (keeps blocking); "
+        "else -> --out-unclassifiable (pristine-oracle-needed WARN arm). Pure file I/O; "
+        "missing --baseline-selected -> LEGACY all-block + stderr WARN; missing "
+        "--new-nodes/--own-diff -> exit 2 (inputs byte-unchanged)",
+    )
+    p_classify.add_argument(
+        "--new-nodes", required=True, help="the comm -23 NEW node-id list (one node per line)"
+    )
+    p_classify.add_argument(
+        "--baseline-selected",
+        required=True,
+        help="the mapped-baseline .selected sidecar (one repo-relative test path per line); "
+        "missing/unreadable -> LEGACY mode (all nodes block, stderr WARN)",
+    )
+    p_classify.add_argument(
+        "--own-diff", required=True, help="the payload path list (own-diff / additive files)"
+    )
+    p_classify.add_argument(
+        "--out-block",
+        required=True,
+        help="block-worthy node subset (in-place --out-block == --new-nodes is the designed "
+        "call shape; write-tmp + os.replace)",
+    )
+    p_classify.add_argument(
+        "--out-unclassifiable",
+        required=True,
+        help="'unclassifiable — pristine-oracle needed' node subset (written BEFORE "
+        "--out-block so a crash between the replaces fails CLOSED)",
+    )
+    p_classify.set_defaults(func=cmd_classify_new_nodes)
 
     p_probe = sub.add_parser(
         "probe",
