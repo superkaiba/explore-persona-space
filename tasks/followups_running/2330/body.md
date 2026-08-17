@@ -24,6 +24,8 @@ relates_to:
 ---
 # Qwen2.5-7B-Instruct's context-to-answer map outscores Qwen3.5-9B's at matched LMSYS data, an edge from a peak at its middle captured layer rather than a uniform deficit (MODERATE confidence)
 <!-- clean-result-v4 -->
+**Methodology:** [docs/methodology/issue_2330.md @ a65f5c9117](https://github.com/superkaiba/explore-persona-space/blob/a65f5c911729bf3c3e1e2491e8891f75dfcad25a/docs/methodology/issue_2330.md) · [gist mirror](https://gist.github.com/superkaiba/c715b157f1f82b2d0e3dea11446424ca)
+
 
 ## Takeaways
 
