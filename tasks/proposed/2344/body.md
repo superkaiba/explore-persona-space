@@ -47,7 +47,7 @@ _Suggested order by expected information per unit cost (entropy of P(failure) ÷
 
 ## Kill criteria
 
-Kill if task.py refuses the composed body or the read-verify-after-write mismatches twice.
+Kill if task.py refuses the composed body or the read-verify-after-write mismatches twice. UPDATED-VIA-PUT-SPEC.
 
 ## Confound pre-mortem
 
