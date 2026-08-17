@@ -1795,10 +1795,14 @@ never an auto-approve. For a SANCTIONED amendment (a version persisted with
 BASE version it amends — the newest earlier `plans/v{J}.md` carrying the
 `Estimated GPU-hours (total):` line; never omit `--gpu-hours` merely because
 the amendment file lacks the line (#2255). The command prints a `PLAN_GATE_DECISION: <decision>`
-line (`auto_approved` | `parked_no_estimate` | `interactive_pending`) that
+line (`auto_approved` | `parked_asked` | `parked_no_estimate` |
+`interactive_pending`) that
 Step 2c branches on; for `auto_approved` it has already flipped the status to
-`approved` and posted `epm:plan-approved`, and for `parked_no_estimate` it
-has already posted `epm:awaiting-spend-approval`.
+`approved` and posted `epm:plan-approved`, for `parked_asked` (async
+sessions — `EPM_ASYNC_SESSION=1`; mission-control rung 0) it has parked
+`plan_pending` and posted the canonical `epm:ask` (gate=plan_approval;
+deliberately NOT `epm:awaiting-spend-approval`), and for `parked_no_estimate`
+it has already posted `epm:awaiting-spend-approval`.
 
 > **Same-issue follow-up round?** At `followups_running` this same command is
 > safe: `task.py` fires the gate decision + markers but HOLDS the status in
@@ -1827,6 +1831,28 @@ Branch on the decision (equivalently, re-read the task status):
   gate, #1771): the gate already flipped the
   status to `approved` and posted `epm:plan-approved`. Do NOT ask, do NOT
   re-post. Continue to Step 4 in the **same invocation**.
+- **`parked_asked`** (ASYNC session — `EPM_ASYNC_SESSION=1` alongside
+  `EPM_AUTONOMOUS_SESSION=1`; mission-control rung 0, CONTRACTS §2): the gate
+  parked `plan_pending` and posted the ONE canonical `epm:ask`
+  (gate=plan_approval; note carries plan version + path, `est_gpu_hours`, and
+  the answer command `task.py set-status <N> approved [--if-plan-v K]` —
+  idempotent against an already-open ask, so a tick/watcher re-drive never
+  stacks a duplicate). An async session NEVER self-approves a plan —
+  code-enforced in `task.py`, not by this prose — and the gate deliberately
+  posts NO `epm:awaiting-spend-approval` (that marker flips the shared
+  `plan_pending_over_cap` predicate and would re-classify this park out of
+  the tick's ISSUE_PARK `async-parked` HEALTHY verdict). Do NOT post a second
+  ask; do NOT wait in-session. Post ONE `epm:progress` companion note with
+  the outcome-branch summary (approve ⇒ user runs the answer command, the
+  next `/issue <N>` invocation resumes at Step 4 · revise ⇒ user posts
+  guidance, planner runs `new-plan-version`, gate re-fires · reject ⇒ user
+  runs `set-status <N> archived|on_hold`), run the standard gate-park
+  CRON-TEARDOWN, post the §5 marker, then EXIT (park-and-EXIT; the durable
+  ask marker + the watcher's gate-push are the user-facing surfaces):
+  ```bash
+  uv run python scripts/post_step_completed.py --issue <N> --step 2c \
+    --exit-kind parked --notes "plan_pending; epm:ask posted (async plan-approval gate)"
+  ```
 - **`parked_no_estimate`** (autonomous, missing/unparseable estimate —
   the retained FAIL SAFE, #1771): the gate left `plan_pending` in place
   and already posted
