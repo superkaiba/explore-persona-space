@@ -1496,12 +1496,27 @@ def _degenerate_token_prefixes(tok, cids: set[str]) -> dict[str, tuple[list[int]
     return out
 
 
+def _bank_system_presence() -> dict[str, bool]:
+    """``cid -> True`` iff the FROZEN bank context carries a system message.
+
+    Derived deterministically from ``BANK.build_contexts()`` — never from the
+    in-memory capture-bank dict (which carries only per-context states). An
+    absent/None ``system`` renders BARE under the Qwen3.5 thinking-off
+    template (no default system turn is inserted), so one-sided system
+    absence is the template-level explanation for a one-sided ``no_prefix``
+    flag (2026-08-16 rc=23 halt: ``persona_prompted`` v2 is the deliberate
+    NO-PERSONA control arm, ``system: null`` in the frozen bank).
+    """
+    return {cid: ctx.get("system") is not None for cid, ctx in BANK.build_contexts().items()}
+
+
 def run_degeneracy_guard(
     bank: dict,
     pairs: list[BANK.Pair2162],
     tok=None,
     *,
     token_prefixes: dict[str, tuple[list[int], int]] | None = None,
+    system_presence: dict[str, bool] | None = None,
 ) -> dict:
     """Plan §7 gate 2 — pair-slot identity vs the span-locus registry.
 
@@ -1529,8 +1544,25 @@ def run_degeneracy_guard(
     read <= ~0.994). A violation is a BANK defect (HALT), never a runtime m
     adjustment.
 
+    One-sided ``no_prefix`` flags are EXPECTED when exactly one of the pair's
+    two contexts carries no system message in the FROZEN bank AND the bare
+    (no-prefix) side IS the system-absent side: ``persona_prompted`` v2 is
+    the deliberate NO-PERSONA control arm (``system: null``), and Qwen3.5's
+    thinking-off chat template inserts no default system turn, so its render
+    is bare while v1/v3 carry a system turn (2026-08-16 rc=23 halt — 24/1404
+    false violations, all ``persona_prompted`` v2-vs-{v1,v3}). Such pairs are
+    recorded under ``no_prefix_asymmetry_expected`` — never violations; their
+    pe identity/distinctness checks are N/A (no pe token exists on the bare
+    side; ``pe_excluded_reason`` already enumeration-excludes their pe
+    cells), mirroring the both-sides-no-prefix branch, while ce distinctness
+    still runs unchanged. A ``no_prefix`` mismatch whose system-presence
+    AGREES — or whose bare side is NOT the system-absent side — remains a
+    HALT violation (``no_prefix_mismatch``): a genuine render/capture defect.
+
     ``token_prefixes`` (tests / precomputed callers) bypasses the tokenizer;
     production threads ``tok`` and derives it via ``_degenerate_token_prefixes``.
+    ``system_presence`` (tests / precomputed callers) bypasses the frozen bank
+    build; production derives it lazily via ``_bank_system_presence``.
     """
     recs = bank["per_context"]
     degenerate_cids: set[str] = set()
@@ -1544,6 +1576,7 @@ def run_degeneracy_guard(
     assert not missing, f"token_prefixes missing degenerate contexts: {sorted(missing)[:5]}"
 
     violations: list[dict] = []
+    no_prefix_asymmetry_expected: list[dict] = []
     n_checked = 0
     n_no_prefix_pe = 0
     degenerate_pe_cos: dict[str, float] = {}
@@ -1559,9 +1592,38 @@ def run_degeneracy_guard(
         failed: list[str] = []
         row_extra: dict = {}
         if np_a != np_b:
-            # Pairs share their carrier, so their template SHAPE must agree —
-            # a one-sided no-prefix render is a bank defect (unit-1 flag).
-            failed.append("no_prefix_mismatch")
+            if system_presence is None:
+                system_presence = _bank_system_presence()
+            assert pair.a in system_presence and pair.b in system_presence, (
+                pair.pair_id,
+                "system_presence missing pair contexts",
+            )
+            sys_a = bool(system_presence[pair.a])
+            sys_b = bool(system_presence[pair.b])
+            if sys_a != sys_b and np_a == (not sys_a):
+                # EXPLAINED asymmetry: exactly one side has NO system message
+                # in the frozen bank and the bare (no-prefix) side IS that
+                # side — a thinking-off-template consequence (no default
+                # system turn), not a render/capture defect. pe checks are
+                # N/A for this pair (no pe token on the bare side; its pe
+                # cells are enumeration-excluded via pe_excluded_reason),
+                # mirroring the both-sides-no-prefix branch below; the ce
+                # distinctness check still runs unchanged.
+                no_prefix_asymmetry_expected.append(
+                    {
+                        "pair_id": pair.pair_id,
+                        "cell": pair.cell,
+                        "no_prefix_side": "a" if np_a else "b",
+                        "system_absent_side": "a" if not sys_a else "b",
+                    }
+                )
+            else:
+                # Pairs share their carrier, so with system-presence AGREEING
+                # their template SHAPE must agree — a one-sided no-prefix
+                # render is a bank defect (unit-1 flag). Same verdict when
+                # the bare side is NOT the system-absent side (system
+                # asymmetry then does not explain the render asymmetry).
+                failed.append("no_prefix_mismatch")
         elif np_a:
             # BOTH sides no-prefix (thinking-off bare renders): NO pe slot
             # exists on either side, so pe identity/distinctness is N/A —
@@ -1600,6 +1662,13 @@ def run_degeneracy_guard(
                     **row_extra,
                 }
             )
+    if no_prefix_asymmetry_expected:
+        logger.info(
+            "[degeneracy_guard] %d one-sided no-prefix pairs EXPLAINED by one-sided system "
+            "absence in the frozen bank (cells: %s) — recorded, not violations",
+            len(no_prefix_asymmetry_expected),
+            ", ".join(sorted({r["cell"] for r in no_prefix_asymmetry_expected})),
+        )
     report = {
         "criterion": "span-locus degeneracy guard (plan §7 gate 2)",
         "bar_cos": DEGENERACY_COS_MIN,
@@ -1618,6 +1687,8 @@ def run_degeneracy_guard(
         "degenerate_pe_cos": degenerate_pe_cos,
         "n_degenerate_pairs": len(degenerate_pe_cos),
         "n_no_prefix_pe_pairs": n_no_prefix_pe,
+        "no_prefix_asymmetry_expected": no_prefix_asymmetry_expected,
+        "n_no_prefix_asymmetry_expected": len(no_prefix_asymmetry_expected),
         "max_pe_jitter": max(jitters) if jitters else None,
     }
     return report

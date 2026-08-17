@@ -17,6 +17,10 @@ One test class per binding round-1 finding that added a permanent invariant:
 - F9 (two-write ordering): AST pin that grid + stage-2 persist the text-only
   shard BEFORE the capture reduce (the anchors #779 pattern).
 - CC2: ``_finite_or_none`` never lets a bare NaN token into per-draw JSONL.
+- Crash-fix 2026-08-16 (rc=23): ``run_degeneracy_guard`` records a one-sided
+  ``no_prefix`` flag as ``no_prefix_asymmetry_expected`` (not a violation)
+  IFF the frozen bank explains it — exactly one side has no system message
+  and the bare side IS that side; every other np mismatch keeps the HALT.
 
 CPU-only, network-free, repo-root-path-free (tmp_path).
 """
@@ -30,6 +34,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import torch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts"
@@ -297,3 +302,156 @@ def test_gate0b_unpacks_resolve_decoder_blocks_before_counting():
         and any(isinstance(t, ast.Tuple) and len(t.elts) == 3 for t in node.targets)
     ]
     assert unpacks, "_gate0b_check: no 3-tuple unpack of _resolve_decoder_blocks(...)"
+
+
+# ── crash-fix 2026-08-16 (rc=23): one-sided no-prefix EXPLAINED by system absence ──
+#
+# The pod-side P1 bank phase halted with 24/1404 `no_prefix_mismatch`
+# violations, all in `persona_prompted`: v2 is the deliberate NO-PERSONA
+# control arm (`system: null` in the frozen bank) and Qwen3.5's thinking-off
+# template inserts no default system turn, so all 12 v2 contexts render bare
+# while v1/v3 do not. `run_degeneracy_guard` now records such pairs under
+# `no_prefix_asymmetry_expected` (not violations) IFF exactly one side lacks
+# a system message AND the bare side IS the system-absent side; every other
+# np mismatch keeps the HALT. Fail pre-fix: the guard had no
+# `system_presence` parameter and flagged every np mismatch.
+
+
+def _unit2(theta: float) -> torch.Tensor:
+    """(1, 2) unit vector at angle ``theta`` (cosine to ``_unit2(0)`` = cos theta)."""
+    return torch.tensor([[math.cos(theta), math.sin(theta)]], dtype=torch.float32)
+
+
+_DISTINCT_THETA = 1.2  # cos ~ 0.362 — far below DEGENERACY_COS_MIN
+
+
+def _np_pair(cell: str = "persona_prompted") -> R.BANK.Pair2162:
+    """A v1-v2 pair in ``cell`` (v2 = the no-system side in the incident)."""
+    return R.BANK.Pair2162(
+        pair_id=f"{cell}::v1-v2::n3",
+        cell=cell,
+        carrier="n3",
+        value_a="v1",
+        value_b="v2",
+        a=f"{cell}::v1::n3",
+        b=f"{cell}::v2::n3",
+    )
+
+
+def _np_bank(pair, *, np_a: bool = False, np_b: bool = True, ce_theta: float = _DISTINCT_THETA):
+    """Two-context bank; a no-prefix side gets the capture_bank zero ``v_pe``."""
+    zeros = torch.zeros((1, 2), dtype=torch.float32)
+    return {
+        "per_context": {
+            pair.a: {
+                "v_pe": zeros if np_a else _unit2(0.0),
+                "v_ce": _unit2(0.0),
+                "no_prefix": np_a,
+            },
+            pair.b: {
+                "v_pe": zeros if np_b else _unit2(0.3),
+                "v_ce": _unit2(ce_theta),
+                "no_prefix": np_b,
+            },
+        }
+    }
+
+
+def test_np_asymmetry_explained_by_system_absence_is_not_a_violation(monkeypatch):
+    """np flags mismatch AND system-presence mismatches (aligned: the bare
+    side is the system-absent side) => recorded, NOT a violation, passed
+    stays True. Also pins the production-default threading (``system_presence``
+    omitted => derived via ``_bank_system_presence``)."""
+    pair = _np_pair()
+    bank = _np_bank(pair)
+    sp = {pair.a: True, pair.b: False}  # v2 = the NO-PERSONA control arm
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence=sp)
+    assert report["passed"], report["violations"]
+    assert report["n_violations"] == 0
+    assert report["n_no_prefix_asymmetry_expected"] == 1
+    (row,) = report["no_prefix_asymmetry_expected"]
+    assert row == {
+        "pair_id": pair.pair_id,
+        "cell": "persona_prompted",
+        "no_prefix_side": "b",
+        "system_absent_side": "b",
+    }
+    # These pairs never contribute to the both-sides-no-prefix counter.
+    assert report["n_no_prefix_pe_pairs"] == 0
+    # Production-default threading: omitted system_presence -> the frozen-bank
+    # derivation is consulted (monkeypatched; the real mapping is pinned by
+    # test_bank_system_presence_production_derivation).
+    monkeypatch.setattr(R, "_bank_system_presence", lambda: sp)
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={})
+    assert report["passed"] and report["n_no_prefix_asymmetry_expected"] == 1
+
+
+def test_np_asymmetry_explained_pair_still_fails_on_degenerate_ce():
+    """ce distinctness still runs on an EXPLAINED pair: a degenerate ce
+    (ce_cos = 1.0) must still FAIL even though the np mismatch is expected."""
+    pair = _np_pair()
+    bank = _np_bank(pair, ce_theta=0.0)
+    sp = {pair.a: True, pair.b: False}
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence=sp)
+    assert not report["passed"]
+    (row,) = report["violations"]
+    assert row["flag"] == "distinctness_ce"
+    assert report["n_no_prefix_asymmetry_expected"] == 1  # recorded either way
+
+
+@pytest.mark.parametrize("present", [True, False])
+def test_np_mismatch_with_agreeing_system_presence_still_halts(present):
+    """np flags mismatch while system-presence AGREES => a genuine
+    render/capture defect: still a HALT violation (protective value kept)."""
+    pair = _np_pair()
+    bank = _np_bank(pair)
+    sp = {pair.a: present, pair.b: present}
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence=sp)
+    assert not report["passed"]
+    (row,) = report["violations"]
+    assert row["flag"] == "no_prefix_mismatch"
+    assert report["no_prefix_asymmetry_expected"] == []
+    assert report["n_no_prefix_asymmetry_expected"] == 0
+
+
+def test_np_mismatch_misaligned_with_system_absence_still_halts():
+    """System-presence mismatch does NOT excuse the np mismatch when the bare
+    (no-prefix) side is the side that HAS the system message — that render
+    asymmetry is unexplained and stays a HALT violation."""
+    pair = _np_pair()
+    bank = _np_bank(pair)  # b is the bare side...
+    sp = {pair.a: False, pair.b: True}  # ...but A is the system-absent side
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence=sp)
+    assert not report["passed"]
+    assert report["violations"][0]["flag"] == "no_prefix_mismatch"
+    assert report["no_prefix_asymmetry_expected"] == []
+
+
+def test_both_sides_no_prefix_behaviour_unchanged():
+    """Both-sides-bare pairs keep the pre-fix semantics: pe checks N/A via
+    ``n_no_prefix_pe_pairs``, no asymmetry record, ce distinctness still
+    binding — and ``system_presence`` is never consulted (empty dict OK)."""
+    pair = _np_pair()
+    bank = _np_bank(pair, np_a=True, np_b=True)
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence={})
+    assert report["passed"], report["violations"]
+    assert report["n_no_prefix_pe_pairs"] == 1
+    assert report["no_prefix_asymmetry_expected"] == []
+    bank = _np_bank(pair, np_a=True, np_b=True, ce_theta=0.0)
+    report = R.run_degeneracy_guard(bank, [pair], token_prefixes={}, system_presence={})
+    assert not report["passed"]
+    assert report["violations"][0]["flag"] == "distinctness_ce"
+
+
+def test_bank_system_presence_production_derivation():
+    """The production default maps the frozen bank exactly: all 12
+    ``persona_prompted`` v2 contexts (the NO-PERSONA control) have no system
+    message; all 24 v1/v3 contexts do. Whole-bank coverage (1,404 cids)."""
+    sp = R._bank_system_presence()
+    assert len(sp) == 1404
+    pp = {cid: v for cid, v in sp.items() if cid.startswith("persona_prompted::")}
+    assert len(pp) == 36
+    v2 = {cid for cid in pp if "::v2::" in cid}
+    assert len(v2) == 12
+    assert all(not pp[cid] for cid in v2)
+    assert all(pp[cid] for cid in set(pp) - v2)
