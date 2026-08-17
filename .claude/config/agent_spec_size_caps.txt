@@ -19,4 +19,7 @@ codex-clean-result-critic.md  50_200  # measured 47,431 B @ #2325 2026-08-16; co
 codex-code-reviewer.md        52_200  # measured 49,481 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 50_500.
 experiment-implementer.md     69_600  # measured 66,804 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 67_800.
 experimenter.md               70_300  # measured 67,528 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 67_600.
-research-pm.md                49_700  # measured 46,978 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 47_000.
+# research-pm.md entry REMOVED @ #2155 2026-08-16: the six-span relocation to
+# .claude/rules/research-pm-section-reference.md trimmed the spec to 29,011 B,
+# under AGENT_SPEC_FAIL_BYTES (40,000) — a dropped-under-cap entry is stale and
+# must be removed, never lowered. Prior: 49_700.
