@@ -1,1 +1,2 @@
 {"ts": "2026-08-17T12:56:11Z", "event": "raised", "concern_id": "gate-scope-check-absent", "severity": "BLOCKER", "summary": "Highest-version results marker entirely omits the required Gate-scope check (#1288) field and roster.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-17T12:56:15Z", "event": "raised", "concern_id": "marker-command-not-fenced", "severity": "NIT", "summary": "Verification commands are present only inline, not in a copy-pasteable fenced block.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
