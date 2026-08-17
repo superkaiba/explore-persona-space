@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2345,
+  "highest_id": 2346,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10399,6 +10399,13 @@
       "path": "tasks/running/2345",
       "status": "running",
       "title": "workflow-fix: ruff-policy pin red on main \u2014 autonomous_session_watch.py gate_push_pass C901 (c0d76f99c9)"
+    },
+    "2346": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2346",
+      "status": "proposed",
+      "title": "gotchas.md: warn that an interrupted posix_fallocate quota probe leaks its full allocation (12.6 GB leaked on a live pod, #2329)"
     },
     "235": {
       "has_clean_result": true,
