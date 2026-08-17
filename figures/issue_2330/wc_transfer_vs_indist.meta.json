@@ -1,0 +1,98 @@
+{
+  "commit": "fa54cfc2",
+  "render_id": "a97d65268b1f4724",
+  "git_commit": "fa54cfc2",
+  "git_dirty": false,
+  "created": "2026-08-17T07:10:30Z",
+  "figsize": [
+    6.6,
+    3.9
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (primary layers)": 0.6813526736580284,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (primary layers)": 0.5745373450578599,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (primary layers)": 0.7048843807269918,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (primary layers)": 0.5978744403390874,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (primary layers)": 0.6348699063407799,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (primary layers)": 0.4966269602564076,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (primary layers)": 0.6613257615440016,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (primary layers)": 0.5308014972705497,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Corpus transfer: in-distribution vs WildChat fold",
+        "ylabel": "held-out R\u00b2 (primary layers)",
+        "legend_labels": [
+          "LMSYS in-distribution test",
+          "WildChat transfer (fold: wildchat_corpus_transfer)"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B\n5k-fit",
+          "Qwen2.5-7B\n10k-fit",
+          "Qwen3.5-9B\n5k-fit",
+          "Qwen3.5-9B\n10k-fit"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "commit": "fa54cfc2",
+  "render_id": "5b99212ce82241a8",
+  "git_commit": "fa54cfc2",
+  "git_dirty": false,
+  "created": "2026-08-17T07:10:31Z",
+  "figsize": [
+    6.6,
+    3.9
+  ],
+  "points": [
+    {
+      "category": "Qwen2.5-7B\ntest_1000",
+      "cap-hit fraction (% finish_reason == length)": 5.6,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen2.5-7B\ntrain_10k",
+      "cap-hit fraction (% finish_reason == length)": 7.86,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen2.5-7B\nval_400",
+      "cap-hit fraction (% finish_reason == length)": 6.25,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B\ntest_1000",
+      "cap-hit fraction (% finish_reason == length)": 20.7,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B\ntrain_10k",
+      "cap-hit fraction (% finish_reason == length)": 25.83,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B\nval_400",
+      "cap-hit fraction (% finish_reason == length)": 20.75,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "cap-hit fraction (% finish_reason == length)": 2.0,
+      "series": "2% reference (not a trigger \u2014 restriction control registered instead)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "cap-hit fraction (% finish_reason == length)": 2.0,
+      "series": "2% reference (not a trigger \u2014 restriction control registered instead)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Generation cap-hit per (model, split)",
+        "ylabel": "cap-hit fraction (% finish_reason == length)",
+        "legend_labels": [
+          "2% reference (not a trigger \u2014 restriction control registered instead)"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B\ntest_1000",
+          "Qwen2.5-7B\ntrain_10k",
+          "Qwen2.5-7B\nval_400",
+          "Qwen3.5-9B\ntest_1000",
+          "Qwen3.5-9B\ntrain_10k",
+          "Qwen3.5-9B\nval_400"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "2% reference (not a trigger \u2014 restriction control registered instead)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
