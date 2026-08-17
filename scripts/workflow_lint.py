@@ -15389,7 +15389,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    "issue/steps/09-step-5.md": 97_900,  # measured 95,138 B
+    "issue/steps/09-step-5.md": 99_300,  # measured 96,505 B @ #2352 2026-08-17
     "issue/steps/10-step-6.md": 144_200,  # measured 141,432 B
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
     "issue/steps/18-step-10d.md": 274_800,  # measured 272,064 B
