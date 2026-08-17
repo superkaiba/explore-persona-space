@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2349,
+  "highest_id": 2350,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10434,6 +10434,13 @@
       "path": "tasks/completed/235",
       "status": "completed",
       "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives the model was never trained on, absent under same-language SFT (LOW confidence)"
+    },
+    "2350": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2350",
+      "status": "proposed",
+      "title": "Experimenter launcher composition: mandatory per-leg out/scratch dir isolation for concurrent same-driver legs (#2330 fu1 dense-store poisoning)"
     },
     "237": {
       "has_clean_result": true,
