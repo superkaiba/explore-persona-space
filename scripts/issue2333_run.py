@@ -355,24 +355,69 @@ def make_ids_fn(model_tag: str):
     return ids_fn
 
 
-def minimal_pair_check(ids_a: list[int], ids_b: list[int]) -> bool:
-    """True iff A/B differ in AT MOST one contiguous token window (plan A16).
+def _common_affix(a: list[int], b: list[int]) -> tuple[int, int]:
+    """(common token prefix, common token suffix) lengths, non-overlapping.
 
-    r1 Critical fix: the previous prefix/suffix-length predicate was a
-    TAUTOLOGY (its suffix loop was bounded by ``min_len - p``, so the returned
-    inequality always held and the rc-26 minimal-pair HALT could never fire).
-    This version computes the actual diff structure via
-    ``difflib.SequenceMatcher`` opcodes over the id lists: the minimal-pair
-    property holds iff at most ONE non-``equal`` opcode region exists
-    (identical lists trivially satisfy it). Adversarially unit-tested with
-    violating pairs (two disjoint edits, reversal, disjoint sequences) in
-    tests/test_issue2333_run_units.py.
+    Vendored verbatim from origin/issue-2329:
+    src/explore_persona_space/experiments/issue2329/bank2329.py::_common_affix
+    (diagnostic fields for the minimal-pair violation report).
     """
-    import difflib
+    m = min(len(a), len(b))
+    n = 0
+    while n < m and a[n] == b[n]:
+        n += 1
+    s = 0
+    while s < m - n and a[len(a) - 1 - s] == b[len(b) - 1 - s]:
+        s += 1
+    return n, s
 
-    ops = difflib.SequenceMatcher(a=ids_a, b=ids_b, autojunk=False).get_opcodes()
-    n_diff_regions = sum(1 for op in ops if op[0] != "equal")
-    return n_diff_regions <= 1
+
+def final_turn_boundary(ids: list[int], im_start_id: int) -> int:
+    """Index of the SECOND-TO-LAST ``<|im_start|>`` — the final-turn boundary.
+
+    ``ids[boundary:]`` is the final user turn + generation prompt. The
+    occurrence assert is >= 2, NOT an exact count (relaxed from #2329's
+    ``prefix_end_index_2329``): q35 thinking-off bare renders insert no
+    default system turn (2 occurrences), q25 renders carry the default
+    "You are Qwen..." system turn (3), and demo-history cells carry more.
+    """
+    occ = [i for i, t in enumerate(ids) if t == im_start_id]
+    assert len(occ) >= 2, f"expected >=2 <|im_start|> token occurrences, got {len(occ)}"
+    return occ[-2]
+
+
+def minimal_pair_check(ids_a: list[int], ids_b: list[int], im_start_id: int) -> tuple[str, ...]:
+    """Span-locus minimal-pair verdict (plan A16/B0): empty tuple iff intact.
+
+    Vendored/adapted from origin/issue-2329:
+    src/explore_persona_space/experiments/issue2329/bank2329.py::_pair_verdict
+    (prefix-side locus branch — every pair in this run's universe, S1 survivor
+    cells + S2 matched-query, varies the PREFIX side only): (a) the final user
+    turn + generation prompt — token ids from the second-to-last
+    ``<|im_start|>`` — must be token-IDENTICAL across A/B
+    (``final-turn-tokens-differ`` = genuine tokenizer break), and (b) the
+    varied prefix must actually differ (``varied-prefix-identical`` = bank
+    defect — impossible for distinct context strings).
+
+    r3 fix: the r2 predicate (<= 1 contiguous ``SequenceMatcher`` diff region
+    over the WHOLE id sequence) was structurally wrong — conflict cells swap
+    the instruction slot AND the demo-history format (~12 interleaved diff
+    regions BY DESIGN), mq persona<->conv pairs compose different templates
+    (>= 7 regions), and mq bare<->persona under q25 splits on the default
+    system block. It failed 77/195 (q25) and 82/195 (q35) with an EMPTY
+    q35-only violation set: checker mis-specification, not a tokenizer break.
+    The span-locus form passes 0/195 under BOTH tokenizers (r3 verification)
+    and matches #2329's realized gate (1404/1404 intact on the superset bank
+    under Qwen3.5).
+    """
+    reasons: list[str] = []
+    pe_a = final_turn_boundary(ids_a, im_start_id)
+    pe_b = final_turn_boundary(ids_b, im_start_id)
+    if ids_a[pe_a:] != ids_b[pe_b:]:
+        reasons.append("final-turn-tokens-differ")
+    if ids_a[:pe_a] == ids_b[:pe_b]:
+        reasons.append("varied-prefix-identical")
+    return tuple(reasons)
 
 
 # ── model loading (q25 / q35) ─────────────────────────────────────────
@@ -944,18 +989,40 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
     ids_fn = make_ids_fn(cfg.model_tag)
     model, tok = load_model_and_tokenizer(cfg)
 
-    # Minimal-pair re-tokenization check at FULL grain (plan A16/B0).
+    # Minimal-pair re-tokenization check at FULL grain (plan A16/B0):
+    # span-locus verdict — final-turn token identity + varied-prefix-differs.
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
+    im_start_id = tok.convert_tokens_to_ids(BANK2162.IM_START)
+    assert isinstance(im_start_id, int) and im_start_id >= 0, im_start_id
     violations: list[str] = []
+    violation_detail: list[dict] = []
     for p in [*s1_pairs, *s2_pairs]:
-        if not minimal_pair_check(ctx_ids[p.a], ctx_ids[p.b]):
+        reasons = minimal_pair_check(ctx_ids[p.a], ctx_ids[p.b], im_start_id)
+        if reasons:
             violations.append(p.pair_id)
+            n_pre, n_suf = _common_affix(ctx_ids[p.a], ctx_ids[p.b])
+            violation_detail.append(
+                {
+                    "pair_id": p.pair_id,
+                    "reasons": list(reasons),
+                    "len_a": len(ctx_ids[p.a]),
+                    "len_b": len(ctx_ids[p.b]),
+                    "common_prefix": n_pre,
+                    "common_suffix": n_suf,
+                }
+            )
     frac = len(violations) / (len(s1_pairs) + len(s2_pairs))
     logger.info("[bank] minimal-pair check: %d violations (%.3f)", len(violations), frac)
     if frac > MINPAIR_VIOLATION_MAX_FRAC:
         R._write_json_atomic(
             cfg.gates_dir / "minpair_report.json",
-            {"verdict": "FAIL", "violations": violations, "frac": frac, **_repro(cfg)},
+            {
+                "verdict": "FAIL",
+                "violations": violations,
+                "detail": violation_detail,
+                "frac": frac,
+                **_repro(cfg),
+            },
         )
         return RC_MINPAIR_GATE
 

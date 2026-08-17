@@ -324,23 +324,65 @@ def test_run_block_drops_short_donor_pairs(tiny_model, tmp_path):
 # ── r2 additions: minimal-pair / fingerprint / S2 map / chunk store / guards ──
 
 
-def test_minimal_pair_check_single_region_only():
-    """The A16 gate is a real predicate (r1 Critical: the r1 form was a
-    tautology): TRUE iff the two id sequences differ in AT MOST one contiguous
-    region, FALSE on every multi-region adversarial shape."""
+IMS = 7  # synthetic <|im_start|> token id for the span-locus tests
+
+
+def test_minimal_pair_check_span_locus():
+    """r3 fix: the A16 gate is the SPAN-LOCUS verdict (vendored from #2329
+    ``_pair_verdict``, prefix-side branch), NOT the r2 single-contiguous-
+    diff-region predicate — conflict cells swap the instruction slot AND the
+    demo-history format (~12 interleaved prefix diff regions BY DESIGN) and
+    mq pairs compose different templates, so the r2 form failed 77/195 (q25)
+    and 82/195 (q35) with an empty q35-only set. Intact iff the final user
+    turn + generation prompt (ids from the second-to-last <|im_start|>) are
+    token-IDENTICAL and the varied prefix actually differs."""
     mp = RUN.minimal_pair_check
-    assert mp([1, 2, 3, 4], [1, 2, 3, 4])  # identical
-    assert mp([1, 2, 3, 4], [1, 9, 3, 4])  # single substitution
-    assert mp([1, 2, 3, 4], [1, 2, 9, 9, 3, 4])  # single contiguous insertion
-    assert mp([1, 2, 3, 4], [1, 4])  # single contiguous deletion
-    assert mp([1, 2, 3, 4], [9, 8, 3, 4])  # multi-token single region
-    assert mp([], [1, 2])  # pure insertion
-    # Adversarial multi-region shapes (each fooled the r1 predicate):
-    assert not mp([1, 2, 3, 4], [9, 2, 9, 4])  # two separated substitutions
-    assert not mp([1, 2, 3, 4], [1, 9, 3, 9])  # gap-1 separated substitutions
-    assert not mp([1, 2, 3], [3, 2, 1])  # reversal
-    assert not mp([1, 2, 3, 4, 5], [9, 2, 3, 4, 9])  # prefix AND suffix changed
-    assert not mp([1, 2, 3, 4, 5, 6], [1, 9, 3, 9, 5, 9])  # three regions
+    final = [IMS, 50, 51, IMS, 60]  # final user turn + generation header
+
+    # single prefix substitution -> intact
+    assert mp([IMS, 1, 2, *final], [IMS, 9, 2, *final], IMS) == ()
+    # conflict-cell shape: TWO interleaved prefix diff regions -> intact
+    # (exactly the shape the r2 predicate falsely rejected)
+    assert mp([IMS, 1, 2, 3, 4, 5, *final], [IMS, 9, 2, 3, 8, 5, *final], IMS) == ()
+    # template recomposition (mq persona<->conv): different turn structure,
+    # different prefix length, multiple diff regions -> intact
+    assert mp([IMS, 1, 2, IMS, 3, 4, 5, *final], [IMS, 6, 7, *final], IMS) == ()
+    # q35 thinking-off bare render (2 occurrences, EMPTY prefix) vs persona
+    # render (system turn present) -> intact
+    assert mp(list(final), [IMS, 1, 2, *final], IMS) == ()
+
+    # genuine tokenizer break: final-turn tokens differ -> violation
+    assert mp([IMS, 1, 2, IMS, 50, 51, IMS, 60], [IMS, 9, 2, IMS, 50, 99, IMS, 60], IMS) == (
+        "final-turn-tokens-differ",
+    )
+    # bank defect: varied prefix identical (identical renders) -> violation
+    assert mp([IMS, 1, 2, *final], [IMS, 1, 2, *final], IMS) == ("varied-prefix-identical",)
+    # both breaks at once -> both reasons
+    assert mp([IMS, 1, 2, IMS, 50], [IMS, 1, 2, IMS, 99], IMS) == (
+        "final-turn-tokens-differ",
+        "varied-prefix-identical",
+    )
+
+
+def test_final_turn_boundary_occurrence_relaxation():
+    """Boundary = SECOND-TO-LAST <|im_start|>; >= 2 occurrences accepted (q35
+    thinking-off bare renders insert no default system turn); < 2 fails loud."""
+    ftb = RUN.final_turn_boundary
+    assert ftb([IMS, 10, IMS, 20], IMS) == 0  # bare render: 2 occurrences
+    assert ftb([IMS, 1, IMS, 10, IMS, 20], IMS) == 2  # + system turn
+    assert ftb([IMS, 1, IMS, 2, IMS, 10, IMS, 20], IMS) == 4  # + demo history
+    with pytest.raises(AssertionError):
+        ftb([IMS, 10, 11], IMS)  # single occurrence — not a chat render
+
+
+def test_common_affix_non_overlapping():
+    """Vendored #2329 ``_common_affix``: prefix counted first, suffix bounded
+    so the two never overlap (diagnostic fields in the violation report)."""
+    ca = RUN._common_affix
+    assert ca([1, 2, 3, 4], [1, 2, 9, 4]) == (2, 1)
+    assert ca([1, 2, 3], [1, 2, 3]) == (3, 0)
+    assert ca([1, 1, 1], [1, 1]) == (2, 0)
+    assert ca([], [1]) == (0, 0)
 
 
 def test_regime_fingerprint_field_sensitivity(tmp_path):
