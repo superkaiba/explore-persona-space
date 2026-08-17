@@ -649,6 +649,34 @@ and give the in-place merge a three-part ruling frame: byte-preservation
 per-file atomicity with done-record-strictly-LAST (a done record before data
 writes is the stale-done question by another road).
 
+**Contingency-port round after a reconciled-PASS (merge + relocate; #2348 r2,
+2026-08-17):** when round 2 is a plan-contingency port (merge origin/main +
+re-apply round-1 hunks to a file that RELOCATED on main) following a round-1
+Claude-PASS / Codex-FAIL / reconciler BINDING PASS: (a) pin every
+merge-soundness diff to the MERGED MAIN TIP SHA (the merge commit's second
+parent), never `origin/main` — the worktree ref advances past the merged tip
+between merge and compose, polluting `origin/main..HEAD` forms; (b)
+new-file-via-merge trap: `git diff <round-parent>..HEAD -- <relocated-file>`
+shows the ENTIRE file as added (it did not exist at the round parent) — the
+port delta is `git show <port-commit>` and the fidelity reference is the r1
+range's diff on the OLD path; ban the misleading form explicitly; (c) when
+the r2 marker REPEATS a shape absence whose r1 twin-raised concern was
+reconciler-STRIPPED (gate-scope line, ruff-policy pin field), attest the
+absence + the strip precedent at compose time and route it to a per-concern
+`RECURRENCE-IN-ROUND-2` STATUS line — not a fresh Critical — while keeping
+the Step 4.6 diff-consistency (substantive) half fully binding; (d) with all
+prior concerns raised BY the twin and adjudicated, inline the reconciler's
+per-blocker dispositions verbatim + the author-neutrality line, and scope
+refuted items precisely (e.g. the `${WT` ban applies to MERGE-BASE lines
+only — plan Edit D preserves `${WT:-$REPO_ROOT}` on helper-probe fallbacks;
+an unscoped restatement makes the twin re-FAIL its own refuted item); (e)
+already-persisted ledger ids get status lines, never re-emitted `CONCERN:: `
+rows (the blind forwarder would duplicate them) — assert exactly ONE
+line-start grammar row in the final prompt; (f) a brief-ordered pytest
+battery run composes as the sanctioned-commands carve-out (named nodeids
+only) + the `STATIC (env unavailable)` never-fabricate fallback, with an
+explicit "unrunnable env is NOT `data-access-blocked`" line.
+
 **Proposer-band follow-up round at the cap (#2330 r5, 2026-08-17):** a Step
 9b/9a-ter PROPOSER follow-up posts NO `epm:followup-scope` marker — the round
 contract is the `epm:followup-value-critique` proposals (inline in their own
