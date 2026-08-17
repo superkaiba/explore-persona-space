@@ -683,7 +683,7 @@ def fig_dense_profile(dense_path: Path, fits_dir: Path, out: Path) -> None:
         ls="--",
         lw=1.3,
         color=COL_MODEL["qwen25_7b"],
-        label="Qwen2.5-7B layer 19, 10k-fit (reference)",
+        label="Qwen2.5-7B best of 3 captured layers (L19, 10k)",
     )
     ax.axvline(18, ls="--", lw=1.1, color=GRAY, label="layer 18 (dense-sweep peak)")
     ax.axvline(22, ls=":", lw=1.1, color=GRAY, label="layer 22 (depth-matched pick)")
