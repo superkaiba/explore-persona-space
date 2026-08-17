@@ -176,6 +176,39 @@ def _grid_behavior_score(
     return scores.get(J.J94._item_id(tag, f"{tag}|{block_key}|{pair_id}|{draw}|{side}"))
 
 
+TINY_STORE_MAX_LAYERS = 8  # --tiny shrunk captures (default --tiny-layers 4)
+
+
+def _read_layer_index(layers: list[int], shard: Path, registry: dict) -> int:
+    """READ_LAYER shard index — fail-loud on full-depth stores missing it (r2 F6).
+
+    Production stores capture ALL 32 layers, so READ_LAYER (30) is always
+    present; tiny/smoke stores (<= TINY_STORE_MAX_LAYERS captured layers, the
+    ``--tiny`` shrunk-config convention) keep the last-layer fallback. Any
+    OTHER store missing READ_LAYER — canonically a stale 28-layer Qwen2.5
+    parent-model store — RAISES instead of silently reading the wrong layer
+    while downstream outputs still describe the read as layer 30. Also pins
+    ONE consistent layer registry across a directory's shards (``registry``
+    carries the first shard's layers + path).
+    """
+    layers = list(layers)
+    if "layers" in registry:
+        assert registry["layers"] == layers, (
+            f"inconsistent layer registry across shards: {shard} has {layers} vs "
+            f"{registry['first_shard']}'s {registry['layers']}"
+        )
+    else:
+        registry["layers"] = layers
+        registry["first_shard"] = str(shard)
+    if READ_LAYER in layers:
+        return layers.index(READ_LAYER)
+    assert len(layers) <= TINY_STORE_MAX_LAYERS, (
+        f"{shard}: {len(layers)}-layer store lacks READ_LAYER={READ_LAYER} and is not a "
+        f"tiny capture (<= {TINY_STORE_MAX_LAYERS} layers) — stale prior-model shard?"
+    )
+    return len(layers) - 1
+
+
 def _load_va_store(va_dir: Path) -> dict[tuple[str, str, str, int], torch.Tensor]:
     """(block_key, pair_id, context_a, draw) -> read-layer (30) span-mean V_a (H,).
 
@@ -184,10 +217,10 @@ def _load_va_store(va_dir: Path) -> dict[tuple[str, str, str, int], torch.Tensor
     """
     out: dict[tuple[str, str, str, int], torch.Tensor] = {}
     n_empty = 0
+    registry: dict = {}
     for shard in sorted(va_dir.glob("shard_*.pt")):
         payload = torch.load(shard, map_location="cpu", weights_only=False)
-        layers = payload["layers"]
-        li = layers.index(READ_LAYER) if READ_LAYER in layers else len(layers) - 1
+        li = _read_layer_index(payload["layers"], shard, registry)
         va = payload["va_span"]
         empty = set(payload.get("empty_rows", []))
         n_empty += len(empty)
@@ -210,17 +243,22 @@ def _load_anchor_va(anchors_dir: Path) -> dict[tuple[str, int], torch.Tensor]:
     """
     out: dict[tuple[str, int], torch.Tensor] = {}
     n_empty = 0
+    registry: dict = {}
     for shard in sorted(anchors_dir.glob("va_anchors_*.pt")):
         payload = torch.load(shard, map_location="cpu", weights_only=False)
-        layers = payload["layers"]
-        li = layers.index(READ_LAYER) if READ_LAYER in layers else len(layers) - 1
+        li = _read_layer_index(payload["layers"], shard, registry)
         va = payload["va_span"]
         empty = set(payload.get("empty_rows", []))
         n_empty += len(empty)
         for j, meta in enumerate(payload["index"]):
             if j in empty:
                 continue
-            out[(meta["context_id"], meta["draw"])] = va[j, li].float()
+            key = (meta["context_id"], meta["draw"])
+            assert key not in out, (
+                f"duplicate anchor V_a row {key} in {shard} — stale prior-width "
+                "va_anchors shard? (the run driver quarantines these at phase entry)"
+            )
+            out[key] = va[j, li].float()
     assert out, f"no anchor V_a shards under {anchors_dir}"
     if n_empty:
         logger.info("[anchor-va] excluded %d empty-completion zero-vector rows", n_empty)

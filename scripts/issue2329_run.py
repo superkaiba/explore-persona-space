@@ -769,6 +769,88 @@ def _anchor_batch_done(cfg: RunConfig, regime_fp: str, batch: str, expected_draw
     return True
 
 
+_WIDTH_SHARDED_STEMS = frozenset(
+    {
+        "anchors_gate",
+        "anchors_rest",
+        "va_anchors_gate",
+        "va_anchors_rest",
+        "anchor_margin",
+        "margin_anchors",
+    }
+)
+
+
+def _shard_worker_index(name: str) -> int | None:
+    """Worker index of a width-sharded anchor/margin artifact filename, else None.
+
+    Strict stem allowlist (``_WIDTH_SHARDED_STEMS``) so block shards / other
+    manifests can never be swept by accident.
+    """
+    stem = name
+    for suffix in ("_done.json", ".jsonl", ".pt"):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+    else:
+        return None
+    head, sep, idx = stem.rpartition("_w")
+    if not sep or not idx.isdigit() or head not in _WIDTH_SHARDED_STEMS:
+        return None
+    return int(idx)
+
+
+def _sweep_stale_width_shards(
+    anchors_dir: Path, margin_dir: Path, manifest_dir: Path, out_root: Path, num_workers: int
+) -> int:
+    """Quarantine prior-width anchor/margin shards + their done records (r2 F3).
+
+    Anchor/margin shard names are width-unnamespaced (``anchors_{batch}_w{i}``),
+    and the designed cross-width resume (``_sharded_done_record``'s 8-GPU ->
+    4-GPU fallback) re-runs only the SURVIVING workers — stale ``w{i}`` files
+    with ``i >= num_workers`` would otherwise persist as pure duplicates and
+    corrupt every consumer three ways: judge ``load_anchor_rows`` concatenates
+    ``anchors_*.jsonl`` (duplicated units into the coherence gate + behavior
+    waves), mapshift SUM-accumulates ``va_anchors_*.pt`` (double-counted anchor
+    means), analysis ``_load_anchor_va`` dict-keys (silent last-write-wins).
+
+    Quarantine, never delete (generated rollout text), into
+    ``out_root/stale_width_quarantine/<dirname>/`` — OUTSIDE every uploaded dir
+    (hub allow_patterns are fnmatch and cross "/", so a subdir of the
+    anchors/margin/manifests dirs would still ride their P5 uploads) and
+    outside every consumer glob (all non-recursive). Concurrent workers race
+    benignly: a sibling's rename winning leaves nothing to move.
+    """
+    moved = 0
+    qroot = out_root / "stale_width_quarantine"
+    for d in (anchors_dir, margin_dir, manifest_dir):
+        if not d.exists():
+            continue
+        for p in sorted(d.iterdir()):
+            if not p.is_file():
+                continue
+            widx = _shard_worker_index(p.name)
+            if widx is None or widx < num_workers:
+                continue
+            dest = qroot / d.name / f"{p.name}.stale-{int(time.time())}"
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                p.rename(dest)
+            except FileNotFoundError:
+                logger.info("[stale-width] %s already quarantined by a sibling", p.name)
+                continue
+            moved += 1
+            logger.warning(
+                "[stale-width] quarantined prior-width shard %s -> %s (num_workers=%d)",
+                p,
+                dest,
+                num_workers,
+            )
+    if moved:
+        logger.warning("[stale-width] quarantined %d prior-width artifacts", moved)
+    return moved
+
+
 def slot_position(ctx_len: int, prefix_end: int, slot: str) -> int:
     """The single edit position (UNPADDED context coordinates) for one slot.
 
@@ -797,6 +879,12 @@ def cap_hit(n_completion_tokens: int, max_new_tokens: int) -> bool:
     """Cap-hit telemetry from the re-tokenized completion length (the
     ``generate_batch`` decoded-text proxy, recorded as ``cap_hit_basis``)."""
     return n_completion_tokens >= max_new_tokens
+
+
+def _finite_or_none(x: float) -> float | None:
+    """JSON-safe float: NaN/inf -> None (a bare NaN token in per-draw JSONL is
+    the r2 CC2 bug — strict JSON parsers reject it)."""
+    return x if math.isfinite(x) else None
 
 
 # ── config ────────────────────────────────────────────────────────────
@@ -2123,6 +2211,9 @@ def phase_anchors(cfg: RunConfig) -> int:
     logger.info(
         "[phase=anchors] worker=%d/%d smoke=%s", cfg.worker_index, cfg.num_workers, cfg.smoke
     )
+    _sweep_stale_width_shards(
+        cfg.anchors_dir, cfg.margin_dir, cfg.manifest_dir, cfg.out_root, cfg.num_workers
+    )
     # >= 2 draws even under --smoke: the disjoint-half floor F_act needs k >= 2.
     draws = 2 if cfg.smoke else cfg.anchor_draws
     _manifest, bank_sha = bank_manifest_and_sha()
@@ -2369,27 +2460,20 @@ def run_block(
     assert len(texts_per_cell) == len(cells)
 
     # Hooked V_a: one flattened (pair x draw) row set, each row armed with its
-    # pair's payload at its pair's position.
+    # pair's payload at its pair's position. Rows are built TEXT-ONLY here, in
+    # the same nested order as the flat capture lists.
     flat_ctx: list[list[int]] = []
     flat_text: list[str] = []
     flat_payload: list[torch.Tensor] = []
     flat_pos: list[int] = []
+    rows_out: list[dict] = []
     for c, texts in zip(cells, texts_per_cell, strict=True):
-        for text in texts:
+        pair: BANK.Pair2162 = c["pair"]
+        for i, text in enumerate(texts):
             flat_ctx.append(ids_for(c["context_a"]))
             flat_text.append(text)
             flat_payload.append(c["payload"])
             flat_pos.append(c["position"])
-    states = capture_answer_states(
-        cfg, model, tok, flat_ctx, flat_text, eot, payloads=flat_payload, positions=flat_pos
-    )
-
-    rows_out: list[dict] = []
-    k = 0
-    for c, texts in zip(cells, texts_per_cell, strict=True):
-        pair: BANK.Pair2162 = c["pair"]
-        for i, text in enumerate(texts):
-            n_tok = states["n_completion_tokens"][k]
             rows_out.append(
                 {
                     "block_key": block.key,
@@ -2410,14 +2494,24 @@ def run_block(
                     "draw": i,
                     "seed": cfg.seed_base + i,
                     "temperature": GRID_TEMPERATURE,
-                    "n_completion_tokens": n_tok,
-                    "cap_hit": cap_hit(n_tok, cfg.max_new_tokens),
-                    "cap_hit_basis": "retokenized_completion_len >= max_new_tokens",
                     "text": text,
                 }
             )
-            k += 1
-    _write_jsonl_atomic(cfg.rollouts_dir / f"shard_{block.slug}.jsonl", rows_out)
+    # Persist the rollout TEXT the moment generation completes, BEFORE the
+    # capture reduce (#779 / r2 F9 — the anchors two-write pattern): a capture
+    # crash must never lose the block's generated rollouts. The post-capture
+    # write below atomically REPLACES this file with the capture-enriched rows
+    # (adds token counts / cap_hit).
+    shard_jsonl = cfg.rollouts_dir / f"shard_{block.slug}.jsonl"
+    _write_jsonl_atomic(shard_jsonl, rows_out)
+    states = capture_answer_states(
+        cfg, model, tok, flat_ctx, flat_text, eot, payloads=flat_payload, positions=flat_pos
+    )
+    for r, n_tok in zip(rows_out, states["n_completion_tokens"], strict=True):
+        r["n_completion_tokens"] = n_tok
+        r["cap_hit"] = cap_hit(n_tok, cfg.max_new_tokens)
+        r["cap_hit_basis"] = "retokenized_completion_len >= max_new_tokens"
+    _write_jsonl_atomic(shard_jsonl, rows_out)
     _save_pt_atomic(
         cfg.va_dir / f"shard_{block.slug}.pt",
         {
@@ -2735,6 +2829,9 @@ def phase_margin(cfg: RunConfig) -> int:
     file landed (claim-queue namespace ``margin``)."""
     logger.info(
         "[phase=margin] worker=%d/%d smoke=%s", cfg.worker_index, cfg.num_workers, cfg.smoke
+    )
+    _sweep_stale_width_shards(
+        cfg.anchors_dir, cfg.margin_dir, cfg.manifest_dir, cfg.out_root, cfg.num_workers
     )
     assert cfg.pools_path is not None and cfg.pools_path.exists(), (
         f"--pools file required for --phase margin (got {cfg.pools_path}) — the pools are "
@@ -3175,6 +3272,12 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
 def phase_upload(cfg: RunConfig) -> int:
     """P5: bulk upload every prefix, then write the pod sentinel."""
     logger.info("[phase=upload]")
+    # r2 F3 defense-in-depth: a manual `--phase upload` on a cross-width-resumed
+    # out-root must never ship prior-width duplicates (the anchors/margin phase
+    # entries run the same idempotent sweep).
+    _sweep_stale_width_shards(
+        cfg.anchors_dir, cfg.margin_dir, cfg.manifest_dir, cfg.out_root, cfg.num_workers
+    )
     uploaded: dict[str, list[str]] = {}
     uploaded["vc_bank"] = _upload_dir(
         cfg, cfg.bank_dir, f"{HF_PREFIX}/analysis_tensors/vc_bank", ["*.pt", "*.json"]
@@ -3464,9 +3567,15 @@ def _fact_block_records(
                         "pair_id": pid,
                         "draw": rows[i]["draw"],
                         "f_act": fa,
-                        "f_act_shared": float(res.f_act_shared[k]),
-                        "s_norm": float(res.s_norm[k]),
-                        "t_norm": float(res.t_norm[k]),
+                        # r2 CC2: mirror f_act's None-if-degenerate treatment
+                        # (+ a finiteness guard — f_act_shared is NaN whenever
+                        # the FULL-mean t-axis is zero, a degeneracy the
+                        # disjoint-half `degenerate` flag does not cover).
+                        "f_act_shared": (
+                            None if degen else _finite_or_none(float(res.f_act_shared[k]))
+                        ),
+                        "s_norm": None if degen else _finite_or_none(float(res.s_norm[k])),
+                        "t_norm": None if degen else _finite_or_none(float(res.t_norm[k])),
                         "degenerate": degen,
                         **{
                             f: audits[i][f]
@@ -3982,35 +4091,20 @@ def run_stage2_block(
     assert len(texts_per_cell) == len(cells)
 
     # Hooked V_a (single-layer add-mode — the SAME intervention the rollout
-    # was generated under), flattened (pair x draw).
+    # was generated under), flattened (pair x draw). Rows are built TEXT-ONLY
+    # here, in the same nested order as the flat capture lists.
     flat_ctx: list[list[int]] = []
     flat_text: list[str] = []
     flat_delta: list[torch.Tensor] = []
     flat_pos: list[int] = []
+    rows_out: list[dict] = []
     for c, texts in zip(cells, texts_per_cell, strict=True):
-        for text in texts:
+        pair: BANK.Pair2162 = c["pair"]
+        for i, text in enumerate(texts):
             flat_ctx.append(ids_for(c["context_a"]))
             flat_text.append(text)
             flat_delta.append(c["delta"])
             flat_pos.append(c["position"])
-    states = capture_answer_states(
-        cfg,
-        model,
-        tok,
-        flat_ctx,
-        flat_text,
-        eot,
-        payloads=flat_delta,
-        positions=flat_pos,
-        hook_builder=_stage2_hook_builder(block.layer, block.dose),
-    )
-
-    rows_out: list[dict] = []
-    k = 0
-    for c, texts in zip(cells, texts_per_cell, strict=True):
-        pair: BANK.Pair2162 = c["pair"]
-        for i, text in enumerate(texts):
-            n_tok = states["n_completion_tokens"][k]
             rows_out.append(
                 {
                     "block_key": block.key,
@@ -4035,14 +4129,30 @@ def run_stage2_block(
                     "draw": i,
                     "seed": cfg.seed_base + i,
                     "temperature": STAGE2_TEMPERATURE,
-                    "n_completion_tokens": n_tok,
-                    "cap_hit": cap_hit(n_tok, cfg.max_new_tokens),
-                    "cap_hit_basis": "retokenized_completion_len >= max_new_tokens",
                     "text": text,
                 }
             )
-            k += 1
-    _write_jsonl_atomic(cfg.rollouts_dir / f"stage2_shard_{block.slug}.jsonl", rows_out)
+    # Persist the rollout TEXT the moment generation completes, BEFORE the
+    # capture reduce (#779 / r2 F9 — the anchors two-write pattern); the
+    # post-capture write below atomically REPLACES with the enriched rows.
+    shard_jsonl = cfg.rollouts_dir / f"stage2_shard_{block.slug}.jsonl"
+    _write_jsonl_atomic(shard_jsonl, rows_out)
+    states = capture_answer_states(
+        cfg,
+        model,
+        tok,
+        flat_ctx,
+        flat_text,
+        eot,
+        payloads=flat_delta,
+        positions=flat_pos,
+        hook_builder=_stage2_hook_builder(block.layer, block.dose),
+    )
+    for r, n_tok in zip(rows_out, states["n_completion_tokens"], strict=True):
+        r["n_completion_tokens"] = n_tok
+        r["cap_hit"] = cap_hit(n_tok, cfg.max_new_tokens)
+        r["cap_hit_basis"] = "retokenized_completion_len >= max_new_tokens"
+    _write_jsonl_atomic(shard_jsonl, rows_out)
     _save_pt_atomic(
         cfg.va_dir / f"stage2_shard_{block.slug}.pt",
         {

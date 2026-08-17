@@ -208,6 +208,20 @@ def load_anchor_rows(anchors_dir: Path) -> list[dict]:
     for r in rows[:1]:
         for key in ("context_id", "cell", "value_id", "carrier", "draw", "text"):
             assert key in r, (key, sorted(r))
+    # r2 F3 loud backstop: anchor shard names are width-unnamespaced, so a
+    # stale prior-width shard (an 8->4 reshard's surviving w4..w7 files, on
+    # disk or on the HF prefix this dir was staged from) duplicates every one
+    # of its (context_id, draw) units into the coherence gate + behavior
+    # waves. One row per unit, or fail loud naming the duplicate.
+    seen: set[tuple[str, int]] = set()
+    for r in rows:
+        unit = (r["context_id"], r["draw"])
+        assert unit not in seen, (
+            f"duplicate anchor row {unit} across {anchors_dir}/anchors_*.jsonl — "
+            "stale prior-width shard (the run driver quarantines these at phase "
+            "entry; sweep the staged/HF copy before judging)"
+        )
+        seen.add(unit)
     return rows
 
 

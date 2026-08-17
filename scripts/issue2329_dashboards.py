@@ -706,8 +706,16 @@ def _fmt_value(value: str) -> str:
 
 
 def _dropped_note(bank: dict, cell: str) -> str:
-    """Per-cell dropped-pair note (divergence 9), or '' when the cell is intact."""
-    n = (bank["token_identity"].get("per_cell") or {}).get(cell, 0)
+    """Per-cell dropped-pair note (divergence 9), or '' when the cell is intact.
+
+    ``token_identity.per_cell`` rows are DICTS — the frozen manifest ships
+    ``bank2329.build_token_identity``'s per-cell records verbatim
+    (``{"n_pairs", "n_intact", "n_dropped", "dropped"}``); read ``n_dropped``
+    from the row, never treat the row itself as a count (r2 F1: a truthy
+    non-empty dict crashed the ``n > 1`` compare on the first cell rendered).
+    """
+    row = (bank["token_identity"].get("per_cell") or {}).get(cell) or {}
+    n = int(row.get("n_dropped", 0))
     if not n:
         return ""
     plural = "s" if n > 1 else ""
