@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import ast
 import json
+import logging
 import math
 import multiprocessing
 import os
@@ -660,7 +661,9 @@ def test_atomic_writers_unlink_tmp_on_failure_no_orphan_residue(tmp_path, monkey
     assert residue == [], residue
 
 
-def test_atomic_replace_cleanup_failure_does_not_mask_original_exception(tmp_path, monkeypatch):
+def test_atomic_replace_cleanup_failure_does_not_mask_original_exception(
+    tmp_path, monkeypatch, caplog
+):
     """r3 finding 1 (``cleanup-can-mask-original``): when the write/replace
     fails AND the best-effort temp unlink ALSO fails (PermissionError, a
     non-ENOENT OSError), the ORIGINAL write/replace exception must escape
@@ -668,7 +671,11 @@ def test_atomic_replace_cleanup_failure_does_not_mask_original_exception(tmp_pat
     suppressed (logged at warning), never propagated in its place.
     Pre-fix red (BEHAVIOURAL): the unlink sat bare inside the
     ``except BaseException`` handler, so its PermissionError displaced the
-    original OSError before the bare ``raise`` was reached."""
+    original OSError before the bare ``raise`` was reached.
+    r6 Minor pin (BEHAVIOURAL): the suppressed-cleanup warning carries the
+    CLEANUP exception's detail (errno/strerror via ``str(exc)``), so
+    EACCES vs EROFS vs EIO is recoverable from the log — pre-fix the
+    message held only the temp path."""
 
     def _boom_replace(src, dst):
         raise OSError("simulated replace failure")
@@ -679,7 +686,10 @@ def test_atomic_replace_cleanup_failure_does_not_mask_original_exception(tmp_pat
     with monkeypatch.context() as m:
         m.setattr(R.os, "replace", _boom_replace)
         m.setattr(Path, "unlink", _boom_unlink)
-        with pytest.raises(OSError, match="simulated replace failure") as excinfo:
+        with (
+            caplog.at_level(logging.WARNING, logger="issue2329.run"),
+            pytest.raises(OSError, match="simulated replace failure") as excinfo,
+        ):
             R._write_json_atomic(tmp_path / "a.json", {"x": 1})
     # The ORIGINAL exception type escapes — not the cleanup's PermissionError
     # (PermissionError IS an OSError subclass, so pin the exact type too).
@@ -688,6 +698,17 @@ def test_atomic_replace_cleanup_failure_does_not_mask_original_exception(tmp_pat
     assert any(t.name == "_boom_replace" for t in excinfo.traceback), [
         t.name for t in excinfo.traceback
     ]
+    # The warning fired exactly once and carries the cleanup exception's
+    # detail (not just the temp path).
+    cleanup_warnings = [
+        rec
+        for rec in caplog.records
+        if rec.name == "issue2329.run" and "cleanup unlink of" in rec.getMessage()
+    ]
+    assert len(cleanup_warnings) == 1, [r.getMessage() for r in caplog.records]
+    assert "simulated unlink failure" in cleanup_warnings[0].getMessage(), cleanup_warnings[
+        0
+    ].getMessage()
 
 
 def test_atomic_writer_tmp_paths_are_process_unique_for_all_three(tmp_path, monkeypatch):

@@ -1281,8 +1281,12 @@ def _atomic_replace(path: Path):
         # stays loud (r3 finding 1, ``cleanup-can-mask-original``).
         try:
             tmp.unlink(missing_ok=True)
-        except OSError:
-            logger.warning("cleanup unlink of %s failed; propagating original exception", tmp)
+        except OSError as cleanup_exc:
+            logger.warning(
+                "cleanup unlink of %s failed (%s); propagating original exception",
+                tmp,
+                cleanup_exc,
+            )
         raise
 
 
