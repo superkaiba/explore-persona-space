@@ -89,6 +89,7 @@ from issue1336_insertarm_clouds import (  # noqa: E402
     FORWARD_PAIRS,
     INSERTED_PREFIX,
     inserted_cloud_name,
+    retry_hub_409,
 )
 
 CLOUDS_PREFIX = f"{cm.HF_PREFIX_1336}/analysis_tensors/layer30_clouds"
@@ -434,14 +435,17 @@ def main() -> int:
         names = sorted(p.name for p in args.out_root.glob("arrow_*.json"))
         assert names, f"no battery JSONs under {args.out_root} — nothing to mirror"
         hub.assert_hub_dir_filecounts(args.out_root, mirror, allow_patterns=["arrow_*.json"])
-        hub.retry_transient(
-            lambda: upload_folder(
-                repo_id=cm.HF_DATA_REPO,
-                repo_type="dataset",
-                folder_path=str(args.out_root),
-                path_in_repo=mirror,
-                allow_patterns=["arrow_*.json"],
-                commit_message="issue-1336 inserted-arm: arrow-ladder battery JSONs mirror",
+        retry_hub_409(
+            lambda: hub.retry_transient(
+                lambda: upload_folder(
+                    repo_id=cm.HF_DATA_REPO,
+                    repo_type="dataset",
+                    folder_path=str(args.out_root),
+                    path_in_repo=mirror,
+                    allow_patterns=["arrow_*.json"],
+                    commit_message="issue-1336 inserted-arm: arrow-ladder battery JSONs mirror",
+                ),
+                what="arrow-ladder results mirror upload",
             ),
             what="arrow-ladder results mirror upload",
         )

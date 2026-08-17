@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import random
 import shutil
 import sys
 import time
@@ -69,6 +70,46 @@ CHAT_CORPORA: tuple[str, ...] = tuple(cm.V2_CORPORA)  # 7 chat surfaces (fmt = c
 def inserted_cloud_name(encoder: str, text_source: str, corpus: str) -> str:
     """Basename stem for one inserted-cloud cell (v3_pair_id naming)."""
     return f"clouds_{cm.v3_pair_id(encoder, text_source)}_chat_{corpus}"
+
+
+# Vendored VERBATIM from scripts/issue1336_t5d_upload_cell.py @ 9010d8de24
+# (issue-1336-backward-pairs; a cherry-pick conflicts on unrelated files).
+# 2026-08-17: three-way commit contention on the shared data repo (this pod's
+# 4 harvest workers + pod-1336-t5d's uploads) 409-killed workers w1/w2.
+def _is_commit_conflict(err: BaseException) -> bool:
+    """True for the HF 409 'another commit operation is in progress' rejection.
+
+    HF serializes commits per repo, so a sibling pod committing to the shared
+    data repo surfaces here as HfHubHTTPError 409 — EXPECTED contention, not a
+    unit failure.
+    """
+    from huggingface_hub.errors import HfHubHTTPError
+
+    resp = getattr(err, "response", None)
+    return isinstance(err, HfHubHTTPError) and getattr(resp, "status_code", None) == 409
+
+
+def retry_hub_409(fn, what: str, attempts: int = 5):
+    """Run ``fn`` (itself already ``hub.retry_transient``-wrapped) with a bounded
+    outer retry for 409 commit conflicts: up to ``attempts`` tries, 60-120 s
+    uniform-jitter backoff between them. ``retry_transient`` does not classify
+    409 transient (correct for most callers — a 409 can mean a real conflict),
+    so per-repo commit contention gets this bounded outer envelope instead.
+    Non-409 errors propagate immediately; the last 409 re-raises.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001 — filtered to 409 right below
+            if not _is_commit_conflict(e) or attempt == attempts:
+                raise
+            delay = random.uniform(60.0, 120.0)
+            print(
+                f"[hub-409] {what}: commit conflict (attempt {attempt}/{attempts}); "
+                f"retrying in {delay:.0f}s",
+                flush=True,
+            )
+            time.sleep(delay)
 
 
 def _git_sha() -> str:
@@ -178,14 +219,17 @@ def harvest_cell(
         from huggingface_hub import upload_folder
 
         hub.assert_hub_dir_filecounts(local_out, INSERTED_PREFIX, allow_patterns=[f"{name}.*"])
-        hub.retry_transient(
-            lambda: upload_folder(
-                repo_id=cm.HF_DATA_REPO,
-                repo_type="dataset",
-                folder_path=str(local_out),
-                path_in_repo=INSERTED_PREFIX,
-                allow_patterns=[f"{name}.*"],
-                commit_message=f"issue-1336 inserted-arm clouds: {name}",
+        retry_hub_409(
+            lambda: hub.retry_transient(
+                lambda: upload_folder(
+                    repo_id=cm.HF_DATA_REPO,
+                    repo_type="dataset",
+                    folder_path=str(local_out),
+                    path_in_repo=INSERTED_PREFIX,
+                    allow_patterns=[f"{name}.*"],
+                    commit_message=f"issue-1336 inserted-arm clouds: {name}",
+                ),
+                what=f"inserted-cloud upload {name}",
             ),
             what=f"inserted-cloud upload {name}",
         )
