@@ -62,6 +62,7 @@ import time
 import unicodedata
 import uuid
 from collections import Counter
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -1251,25 +1252,47 @@ def build_config(args: argparse.Namespace) -> RunConfig:
 # ── io helpers ────────────────────────────────────────────────────────
 
 
-def _write_json_atomic(path: Path, obj) -> None:
+@contextmanager
+def _atomic_replace(path: Path):
+    """Yield a PROCESS-UNIQUE same-directory temp path; ``os.replace`` it
+    onto ``path`` on success, unlink it on failure.
+
+    The temp name embeds pid + a uuid fragment: concurrent workers writing
+    identical content to ONE shared destination (all 8 grid workers write
+    ``manifests/pe_exclusions.json``) must not share a temp name, or one
+    worker's replace consumes the shared temp and every later worker dies
+    ``FileNotFoundError`` (grid crash 2026-08-16 05:36Z, rc=1). Same-dir
+    keeps the replace atomic (one filesystem — never route through /tmp);
+    unlink-on-failure keeps orphan ``*.tmp`` residue out of the out-root
+    (the upload-verifier residue-sweep surface). Concurrent same-content
+    writes stay safe/idempotent: last atomic replace wins with identical
+    bytes."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
-    os.replace(tmp, path)
+    tmp = path.parent / f"{path.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
+    try:
+        yield tmp
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def _write_json_atomic(path: Path, obj) -> None:
+    """Atomic idempotent JSON write; safe under concurrent same-content writers."""
+    with _atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
 
 
 def _write_jsonl_atomic(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
-    os.replace(tmp, path)
+    """Atomic idempotent JSONL write; safe under concurrent same-content writers."""
+    with _atomic_replace(path) as tmp:
+        tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
 
 
 def _save_pt_atomic(path: Path, obj) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    torch.save(obj, tmp)
-    os.replace(tmp, path)
+    """Atomic idempotent ``torch.save``; safe under concurrent same-content writers."""
+    with _atomic_replace(path) as tmp:
+        torch.save(obj, tmp)
 
 
 def _sha256_bytes(payload: bytes) -> str:

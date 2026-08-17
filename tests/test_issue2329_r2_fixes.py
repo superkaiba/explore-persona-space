@@ -29,6 +29,14 @@ One test class per binding round-1 finding that added a permanent invariant:
   A-bare cases (excused when A is the system-absent side; HALT when A is
   bare but A is the system-PRESENT side).
 
+- Crash-fix 2026-08-16 (grid rc=1): the three atomic writers
+  (``_write_json_atomic`` / ``_write_jsonl_atomic`` / ``_save_pt_atomic``)
+  derive PROCESS-UNIQUE temp paths, so 8 grid workers writing identical
+  content to ONE shared destination (``manifests/pe_exclusions.json``) can
+  no longer consume each other's temp via ``os.replace``
+  (``FileNotFoundError``), and a failed write unlinks its temp (no orphan
+  ``*.tmp`` residue for the out-root residue sweep to flag).
+
 CPU-only, network-free, repo-root-path-free (tmp_path).
 """
 
@@ -37,6 +45,9 @@ from __future__ import annotations
 import ast
 import json
 import math
+import multiprocessing
+import os
+import queue
 import sys
 from pathlib import Path
 
@@ -552,3 +563,127 @@ def test_np_a_bare_but_a_system_present_still_halts():
     assert report["violations"][0]["flag"] == "no_prefix_mismatch"
     assert report["no_prefix_asymmetry_expected"] == []
     assert report["n_no_prefix_asymmetry_expected"] == 0
+
+
+# ── crash-fix 2026-08-16 (grid rc=1): shared temp name in the atomic writers ──
+#
+# All 8 grid workers call ``_write_pe_exclusions`` on the SAME destination
+# (``manifests/pe_exclusions.json``). Pre-fix, every one of the three atomic
+# writers derived the SAME temp path (``<name>.tmp``), so one worker's
+# ``os.replace`` consumed the shared temp and every later worker died
+# ``FileNotFoundError`` (grid phase rc=1, 2026-08-16 05:36Z). Content is
+# identical across workers by construction, so the fix is a PROCESS-UNIQUE
+# temp name + unlink-on-failure — NOT locking, NOT writer election.
+
+_HAMMER_PAYLOAD = {"scope": "grid", "criterion": "pe", "rows": [1, 2, 3]}
+_HAMMER_PROCS = 8
+_HAMMER_ITERS = 50
+_HAMMER_ROUNDS = 3
+
+
+def _json_hammer_worker(dest: str, barrier, errq) -> None:
+    """Forked child: hammer ``_write_json_atomic`` on ONE shared destination."""
+    barrier.wait(timeout=60)
+    try:
+        for _ in range(_HAMMER_ITERS):
+            R._write_json_atomic(Path(dest), _HAMMER_PAYLOAD)
+    except BaseException as e:  # pragma: no cover - exercised pre-fix only
+        errq.put(f"pid={os.getpid()} {type(e).__name__}: {e}")
+        raise SystemExit(1) from e
+
+
+def test_write_json_atomic_concurrent_same_destination_all_workers_succeed(tmp_path):
+    """BEHAVIOURAL reproduction of the grid crash: 8 real (forked) processes
+    x 50 same-destination writes x 3 barrier-synchronized rounds. Every
+    process must exit 0 (pre-fix: >=1 worker dies ``FileNotFoundError``
+    because a sibling's ``os.replace`` consumed the shared ``.tmp``), the
+    final file must parse to the payload, and no ``*.tmp``-shaped residue
+    may remain (the upload-verifier residue-sweep surface)."""
+    ctx = multiprocessing.get_context("fork")
+    dest = tmp_path / "manifests" / "pe_exclusions.json"
+    for round_idx in range(_HAMMER_ROUNDS):
+        barrier = ctx.Barrier(_HAMMER_PROCS)
+        errq = ctx.Queue()
+        procs = [
+            ctx.Process(target=_json_hammer_worker, args=(str(dest), barrier, errq))
+            for _ in range(_HAMMER_PROCS)
+        ]
+        for p in procs:
+            p.start()
+        for p in procs:
+            p.join(timeout=120)
+        for p in procs:  # pragma: no cover - hang guard
+            if p.is_alive():
+                p.terminate()
+        errors = []
+        while True:
+            try:
+                errors.append(errq.get_nowait())
+            except queue.Empty:
+                break
+        exitcodes = [p.exitcode for p in procs]
+        assert exitcodes == [0] * _HAMMER_PROCS, (round_idx, exitcodes, errors)
+        assert json.loads(dest.read_text()) == _HAMMER_PAYLOAD, round_idx
+    residue = [f.name for f in dest.parent.iterdir() if ".tmp" in f.name]
+    assert residue == [], residue
+
+
+def test_atomic_writers_unlink_tmp_on_failure_no_orphan_residue(tmp_path, monkeypatch):
+    """A failed write must not strand ``*.tmp`` residue in the out-root
+    (orphan temps are exactly what the out-root residue sweep flags).
+    BEHAVIOURAL pre-fix red: no cleanup existed, so the temp survived a
+    raising ``os.replace`` (json/jsonl) and a mid-write ``torch.save``
+    failure (pt)."""
+
+    def _boom(src, dst):
+        raise OSError("simulated replace failure")
+
+    with monkeypatch.context() as m:
+        m.setattr(R.os, "replace", _boom)
+        with pytest.raises(OSError, match="simulated replace failure"):
+            R._write_json_atomic(tmp_path / "a.json", {"x": 1})
+        with pytest.raises(OSError, match="simulated replace failure"):
+            R._write_jsonl_atomic(tmp_path / "b.jsonl", [{"x": 1}])
+    # pt writer: a REAL mid-write failure — a lambda is unpicklable, and
+    # torch.save dies with the temp file already created on disk.
+    with pytest.raises(Exception, match=r"[Pp]ickle"):
+        R._save_pt_atomic(tmp_path / "c.pt", lambda: 1)
+    residue = [f.name for f in tmp_path.iterdir() if ".tmp" in f.name]
+    assert residue == [], residue
+    # Success path leaves no residue either, and the errors above propagated
+    # (fail-loud preserved — cleanup must never swallow the exception).
+    R._write_json_atomic(tmp_path / "a.json", {"x": 1})
+    R._write_jsonl_atomic(tmp_path / "b.jsonl", [{"x": 1}])
+    R._save_pt_atomic(tmp_path / "c.pt", torch.tensor([1.0]))
+    assert json.loads((tmp_path / "a.json").read_text()) == {"x": 1}
+    residue = [f.name for f in tmp_path.iterdir() if ".tmp" in f.name]
+    assert residue == [], residue
+
+
+def test_atomic_writer_tmp_paths_are_process_unique_for_all_three(tmp_path, monkeypatch):
+    """The temp name embeds the writer's pid (process-unique across the
+    8-way grid fan-out) for ALL THREE writers — json (exercised concurrently
+    above) plus the jsonl/pt siblings that are one grid-shape change away
+    from the identical crash. Pre-fix red for all three (shared
+    ``<name>.tmp``, no pid). Coverage note: jsonl/pt get this naming pin
+    rather than a full concurrent hammer to keep suite runtime modest; all
+    three writers share one temp-derivation code path, which the hammer
+    above exercises under real cross-process contention."""
+    captured: list[str] = []
+    real_replace = os.replace
+
+    def _recording_replace(src, dst):
+        captured.append(Path(src).name)
+        return real_replace(src, dst)
+
+    with monkeypatch.context() as m:
+        m.setattr(R.os, "replace", _recording_replace)
+        R._write_json_atomic(tmp_path / "a.json", {"x": 1})
+        R._write_jsonl_atomic(tmp_path / "b.jsonl", [{"x": 1}])
+        R._save_pt_atomic(tmp_path / "c.pt", torch.tensor([1.0]))
+    assert len(captured) == 3, captured
+    pid_token = f".{os.getpid()}."
+    for name in captured:
+        assert pid_token in name and name.endswith(".tmp"), (name, pid_token)
+    # uuid fragment: unique per call even within one process
+    assert len(set(captured)) == 3, captured
