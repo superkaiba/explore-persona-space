@@ -12,8 +12,9 @@ reference is unchanged.
 This file pins:
 
 - ``test_agent_spec_caps_load_snapshot`` — a ONE-SHOT migration pin: the
-  loaded caps mapping EQUALS the snapshot of the 6 entries at migration
-  (merge) time. This catches a hand-typed cap silently diverging from the
+  loaded caps mapping EQUALS the snapshot (6 entries at migration/merge
+  time; research-pm.md removed as a stale entry at #2155). This catches a
+  hand-typed cap silently diverging from the
   pre-migration dict literal. Every FUTURE cap-raise commit is expected to
   edit BOTH the data file AND this snapshot in lockstep — the test is the
   pin, NOT an ongoing invariant. The ongoing invariants (regrowth ratchet
@@ -63,17 +64,21 @@ from workflow_lint import _load_agent_spec_caps  # noqa: E402
 _MIGRATION_SNAPSHOT: dict[str, int] = {
     # #2325 corridor-max re-cap (2026-08-16): cap = ((measured + 2_800) // 100) * 100,
     # re-measured at Step 10d against the merged tree.
+    # #2155 (2026-08-16): research-pm.md entry REMOVED in lockstep with the
+    # data file — the six-span relocation to
+    # .claude/rules/research-pm-section-reference.md trimmed the spec under
+    # AGENT_SPEC_FAIL_BYTES, so the grandfather entry is stale (the
+    # "remove the entry, never lower it" rule).
     "code-reviewer.md": 109_600,
     "codex-clean-result-critic.md": 50_200,
     "codex-code-reviewer.md": 52_200,
     "experiment-implementer.md": 69_600,
     "experimenter.md": 70_300,
-    "research-pm.md": 49_700,
 }
 
 
 def test_agent_spec_caps_load_snapshot() -> None:
-    """The loaded caps EQUAL the migration-time snapshot of 6 entries.
+    """The loaded caps EQUAL the snapshot (6 at migration; 5 post-#2155).
 
     ONE-SHOT MIGRATION PIN (#1718): catches a hand-typed cap silently
     diverging from the pre-migration Python literal. Every future cap-raise
@@ -103,9 +108,12 @@ def test_agent_spec_caps_file_parses_current() -> None:
     """
     caps = _load_agent_spec_caps()
     assert isinstance(caps, dict), f"expected dict, got {type(caps)!r}"
-    assert len(caps) >= 6, (
+    # >= 5: 6 at migration (merge) time; research-pm.md removed as a stale
+    # entry at #2155 (spec trimmed under AGENT_SPEC_FAIL_BYTES).
+    assert len(caps) >= 5, (
         f"shipped .claude/config/agent_spec_size_caps.txt parses to only "
-        f"{len(caps)} entries; expected >= 6 at migration (merge) time"
+        f"{len(caps)} entries; expected >= 5 (6 at migration time, minus the "
+        f"#2155 research-pm.md stale-entry removal)"
     )
     for name, cap in caps.items():
         assert isinstance(name, str), f"cap key not str: {name!r}"

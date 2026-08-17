@@ -14466,7 +14466,13 @@ _LESSONS_ROW_RE = re.compile(
 # file 10041 B) could not land under the old cap. The raise buys EXACTLY
 # this row plus <=40 B headroom (10041 + 40 = 10081) — not general slack
 # (the #992 argued-raise form; the per-row and non-row caps still bind).
-_LESSONS_MAX_BYTES = 10081
+# 10081->10205 (#2155): the index sat at 10079/10081 (2 B headroom), so the
+# new research-pm-section-reference.md index row (+124 B incl. newline;
+# measured post-edit file 10203 B) could not land under the old cap. The
+# raise buys EXACTLY this row plus 2 B headroom (10203 + 2 = 10205, the
+# plan-§C.3 measured+~2 form) — not general slack (the #992 argued-raise
+# form; the per-row and non-row caps still bind).
+_LESSONS_MAX_BYTES = 10205
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
