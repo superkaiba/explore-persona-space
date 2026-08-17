@@ -250,6 +250,7 @@ def judge_graded(
     max_tokens: int = 64,
     dry_run: bool = False,
     threshold_base: int | None = None,
+    force_sync: bool = False,
 ) -> JudgeResult:
     """Graded 0-100 judge over ``items`` via the sanctioned Batch client.
 
@@ -284,6 +285,14 @@ def judge_graded(
             exercises the run's EXACT request builder on the Batch path
             (gotchas.md "A --mock-judge ... smoke does NOT validate the
             Anthropic Batch API REQUEST SHAPE").
+        force_sync: when True, forwarded to
+            ``judge_completions_batch(force_sync=True)`` — bypass count-based
+            routing and dispatch synchronously regardless of N: the #2152
+            transport-parity pilot's sync pin (sibling of
+            ``threshold_base=0``, which pins batch). Passed CONDITIONALLY
+            (only when True), so existing callers and legacy
+            signature-conformant fakes are byte-identically unaffected by
+            default.
 
     Note on resumable dispatch: ``judge_completions_batch`` derives its #1019
     checkpoint dir from ``cache_dir`` (``cache_dir/.dispatch``) when none is
@@ -322,6 +331,8 @@ def judge_graded(
     passthrough: dict = {}
     if threshold_base is not None:
         passthrough["threshold_base"] = threshold_base
+    if force_sync:
+        passthrough["force_sync"] = True
     _batch_judge.judge_completions_batch(
         completions=completions,
         judge_system_prompt=system_prompt,
