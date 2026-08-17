@@ -123,6 +123,7 @@ def test_per_cell_arithmetic_known_breach_set(tmp_path):
         "cap_hit_rows": 2,
         "cap_hit_pct": pytest.approx(4.0),
         "breach": True,
+        "realized_caps_by_batch": {"gate": [2048]},  # legacy rows backfilled
     }
     assert rep["per_cell"]["cellB"]["cap_hit_pct"] == pytest.approx(2.0)
     assert rep["per_cell"]["cellB"]["breach"] is False  # STRICT >: 2.0% does NOT fire
@@ -184,6 +185,38 @@ def test_per_cell_value_breakdown_and_max_spread(tmp_path):
         "spread_pct": pytest.approx(16.0),
     }
     assert rep["value_key_fields"] == ["value_id"]
+
+
+def test_per_cell_realized_caps_by_batch_distinguishes_mixed_store(tmp_path):
+    """After a batch-scoped capregen the store is legitimately mixed: a
+    COMPLETED gate-slice re-gen shows [4096] in the breaching cell's gate
+    entry while rest stays [2048]; a HALF-DONE gate re-gen shows
+    [2048, 4096] — machine-distinguishable per (cell, batch)."""
+    done_gate = [dict(_row("cellA", "v1", i, False, cap=4096)) for i in range(4)]
+    rest_legacy = [dict(_row("cellA", "v1", 10 + i, False)) for i in range(4)]
+    for r in rest_legacy:
+        r["gate_slice"] = False
+    half_gate = [dict(_row("cellB", "v1", i, False, cap=4096 if i % 2 else 2048)) for i in range(4)]
+    s = tmp_path / "shard_a.jsonl"
+    _write_shard(s, done_gate + rest_legacy + half_gate)
+    rep = R.compute_cap_hit_report([s], 2048, scope="anchors", expected_shards={"shard_a.jsonl"})
+    assert rep["per_cell"]["cellA"]["realized_caps_by_batch"] == {
+        "gate": [4096],
+        "rest": [2048],
+    }
+    assert rep["per_cell"]["cellB"]["realized_caps_by_batch"] == {"gate": [2048, 4096]}
+    assert rep["realized_row_caps"] == [2048, 4096]
+
+
+def test_capregen_batch_flag_requirements(tmp_path):
+    """anchors capregen REQUIRES a single batch (gate|rest — Phase A vs B,
+    never collapsed); grid capregen REFUSES the flag (no batch dimension)."""
+    cfg_none = _cfg(tmp_path, ["--capregen-scope", "anchors"])
+    with pytest.raises(RuntimeError, match=r"capregen-batch gate\|rest is required"):
+        R.phase_capregen_anchors(cfg_none)
+    cfg_grid = _cfg(tmp_path, ["--capregen-scope", "grid", "--capregen-batch", "gate"])
+    with pytest.raises(RuntimeError, match="anchors only"):
+        R.phase_capregen_grid(cfg_grid)
 
 
 def test_grid_rows_key_on_value_a(tmp_path):

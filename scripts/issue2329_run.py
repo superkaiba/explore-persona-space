@@ -1094,6 +1094,7 @@ class RunConfig:
     # Cap-hit report + cell-restricted re-gen (registered >2%/cell trigger).
     cap_scope: str = "both"
     capregen_scope: str | None = None
+    capregen_batch: str | None = None
     breach_report: Path | None = None
 
     @property
@@ -1167,6 +1168,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=("anchors", "grid"),
         default=None,
         help="capregen: which rollout set to re-generate breaching cells for (required)",
+    )
+    ap.add_argument(
+        "--capregen-batch",
+        choices=("gate", "rest"),
+        default=None,
+        help="capregen anchors: which anchors batch to re-generate (REQUIRED for "
+        "--capregen-scope anchors; the gate-slice leg is the gate-3 critical path "
+        "and the rest-batch leg is deferrable — never collapsed into one "
+        "invocation); refused for --capregen-scope grid",
     )
     ap.add_argument(
         "--breach-report",
@@ -1285,6 +1295,7 @@ def build_config(args: argparse.Namespace) -> RunConfig:
         num_workers_explicit=args.num_workers is not None,
         cap_scope=args.cap_scope,
         capregen_scope=args.capregen_scope,
+        capregen_batch=args.capregen_batch,
         breach_report=args.breach_report,
     )
 
@@ -3226,6 +3237,7 @@ def compute_cap_hit_report(
     pending: list[str] = []
     cell_counts: dict[str, list[int]] = {}
     cv_counts: dict[tuple[str, str], list[int]] = {}
+    cell_caps: dict[str, dict[str, set[int]]] = {}
     n_rows = 0
     hits = 0
     n_tok_all: list[int] = []
@@ -3261,7 +3273,16 @@ def compute_cap_hit_report(
             n_rows += 1
             hits += hit
             n_tok_all.append(int(r["n_completion_tokens"]))
-            realized_caps.add(int(r.get("max_new_tokens", max_new_tokens)))
+            rcap = int(r.get("max_new_tokens", max_new_tokens))
+            realized_caps.add(rcap)
+            # Per-(cell x batch) realized caps: after a batch-scoped capregen
+            # the store is legitimately MIXED (gate slice regenerated at 4096
+            # while rest is still at 2048) — this is how a consumer tells a
+            # COMPLETED gate-slice re-gen ([4096] in the gate entry) from a
+            # half-done one ([2048, 4096]). anchors rows carry gate_slice;
+            # rows without it (grid) aggregate under "all".
+            bkey = ("gate" if r["gate_slice"] else "rest") if "gate_slice" in r else "all"
+            cell_caps.setdefault(cell, {}).setdefault(bkey, set()).add(rcap)
             c = cell_counts.setdefault(cell, [0, 0])
             c[0] += 1
             c[1] += hit
@@ -3283,6 +3304,7 @@ def compute_cap_hit_report(
             "cap_hit_rows": h,
             "cap_hit_pct": pct,
             "breach": pct > threshold_pct,  # STRICT >: exactly threshold does NOT fire
+            "realized_caps_by_batch": {k: sorted(v) for k, v in sorted(cell_caps[cell].items())},
         }
     per_cell_value: dict[str, dict[str, dict]] = {}
     for (cell, vkey), (n, h) in sorted(cv_counts.items()):
@@ -3567,6 +3589,11 @@ def phase_capregen_grid(cfg: RunConfig) -> int:
     NOT recomputed (teacher-forced pool scoring — independent of the
     generation cap), so margin shards/done-files stay untouched. Regenerated
     va shards persist via a follow-up ``--phase upload``."""
+    if cfg.capregen_batch is not None:
+        raise RuntimeError(
+            "--capregen-batch applies to --capregen-scope anchors only "
+            "(the grid has no gate/rest batch dimension)"
+        )
     logger.info(
         "[phase=capregen] scope=grid worker=%d/%d smoke=%s",
         cfg.worker_index,
@@ -3798,8 +3825,16 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
     record keeps the BASE regime_fp (post-regen re-entries of the standard
     anchors command skip cleanly) and gains a ``capregen`` sub-record; the
     #722 r3 cross-regime hard refusal is preserved via the base-fp check."""
+    if cfg.capregen_batch not in ("gate", "rest"):
+        raise RuntimeError(
+            "--capregen-batch gate|rest is required for --capregen-scope anchors: the "
+            "gate-slice leg (gate-3 critical path, ~gate rows only) and the rest-batch "
+            "leg (deferrable — final F_beh reads, not gate 3) are SEPARATE invocations, "
+            "never collapsed into one"
+        )
     logger.info(
-        "[phase=capregen] scope=anchors worker=%d/%d smoke=%s",
+        "[phase=capregen] scope=anchors batch=%s worker=%d/%d smoke=%s",
+        cfg.capregen_batch,
         cfg.worker_index,
         cfg.num_workers,
         cfg.smoke,
@@ -3831,7 +3866,11 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
     gate_ids, rest_ids, contexts = _anchor_context_order(cfg)
     cell_of = {cid: ctx["cell"] for cid, ctx in contexts.items()}
     model, tok, eot = None, None, None
-    for batch, order in (("gate", gate_ids), ("rest", rest_ids)):
+    # ONE batch per invocation (second scope addendum): Phase A = gate (the
+    # gate-3 critical path), Phase B = rest (deferrable). The per-(batch,
+    # worker) done records already resume the two legs independently.
+    selected = gate_ids if cfg.capregen_batch == "gate" else rest_ids
+    for batch, order in ((cfg.capregen_batch, selected),):
         done_path = cfg.manifest_dir / f"anchors_{batch}_w{cfg.worker_index}_done.json"
         if not done_path.exists():
             raise RuntimeError(
