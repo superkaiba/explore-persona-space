@@ -181,13 +181,96 @@ def fig_avg_target(fresh: dict) -> None:
     plt.close(fig)
 
 
+def fig_contrastive_maps(battery: dict) -> None:
+    maps = [
+        ("ridge (banked)", "ridge_banked"),
+        ("MSE-trained MLP (banked)", "mlp_mse_banked"),
+        ("contrastive linear (InfoNCE)", "contrastive_linear"),
+        ("contrastive MLP (InfoNCE)", "contrastive_mlp"),
+    ]
+    conventions = [
+        ("raw euclidean", "raw_euclidean"),
+        ("raw cosine", "raw_cos"),
+        ("whitened cosine", "whiten_cos"),
+    ]
+    csls_ref = 0.9761593401066291
+    csls_double_ref = 0.984508600744392
+
+    palette = paper_palette(6)
+    conv_colors = [palette[4], palette[5], palette[0]]
+    fig, ax = plt.subplots(figsize=(7.5, 4.4))
+    width = 0.24
+    for g, (map_label, map_key) in enumerate(maps):
+        for c, (_, conv_key) in enumerate(conventions):
+            v = battery["results"][map_key][conv_key]["acc_at_k"]["1"]
+            x = g + (c - 1) * width
+            ax.bar(x, v, width, color=conv_colors[c])
+            if v > 0.92:
+                ax.text(
+                    x,
+                    v - 0.03,
+                    f"{v:.3f}",
+                    ha="center",
+                    va="top",
+                    fontsize=7.5,
+                    color="white",
+                    rotation=90,
+                )
+            else:
+                ax.text(x, v + 0.012, f"{v:.3f}", ha="center", fontsize=7.5)
+    ax.axhline(csls_ref, color="0.25", linestyle="--", linewidth=1.3)
+    ax.axhline(csls_double_ref, color="0.25", linestyle=":", linewidth=1.5)
+    ax.set_xticks(range(len(maps)))
+    ax.set_xticklabels([m[0] for m in maps], fontsize=9)
+    ax.set_ylim(0, 1.35)
+    ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.set_ylabel("rank-1 retrieval accuracy (9,941 contexts)")
+    ax.set_title("Discrimination-trained maps vs metric-side correction")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in conv_colors] + [
+        plt.Line2D([0], [0], color="0.25", linestyle="--", linewidth=1.3),
+        plt.Line2D([0], [0], color="0.25", linestyle=":", linewidth=1.5),
+    ]
+    ax.legend(
+        handles,
+        [c[0] for c in conventions]
+        + [
+            f"CSLS on the unchanged ridge map ({csls_ref:.3f})",
+            f"double-strength CSLS penalty ({csls_double_ref:.3f})",
+        ],
+        loc="upper left",
+        fontsize=8,
+        ncol=2,
+    )
+    savefig_paper(fig, "fig_contrastive_maps", dir=FIG_DIR)
+    plt.close(fig)
+
+
 def main() -> None:
+    import sys
+
+    which = set(sys.argv[1:]) or {"zoo", "avg", "contrastive"}
     set_paper_style("blog")
-    fresh = json.loads((REPO / "eval_results/issue_2202/freshwhiten_avg/summary.json").read_text())
-    zoo = json.loads((REPO / "eval_results/issue_2202/metric_zoo/summary.json").read_text())
-    fig_convention_zoo(zoo, fresh)
-    fig_avg_target(fresh)
-    print(f"wrote fig_convention_zoo + fig_avg_target under {FIG_DIR}")
+    wrote = []
+    if which & {"zoo", "avg"}:
+        fresh = json.loads(
+            (REPO / "eval_results/issue_2202/freshwhiten_avg/summary.json").read_text()
+        )
+    if "zoo" in which:
+        zoo = json.loads((REPO / "eval_results/issue_2202/metric_zoo/summary.json").read_text())
+        fig_convention_zoo(zoo, fresh)
+        wrote.append("fig_convention_zoo")
+    if "avg" in which:
+        fig_avg_target(fresh)
+        wrote.append("fig_avg_target")
+    if "contrastive" in which:
+        battery = json.loads(
+            (
+                REPO / "eval_results/issue_2202/contrastive_maps/eval/contrastive_maps_battery.json"
+            ).read_text()
+        )
+        fig_contrastive_maps(battery)
+        wrote.append("fig_contrastive_maps")
+    print(f"wrote {' + '.join(wrote)} under {FIG_DIR}")
 
 
 if __name__ == "__main__":
