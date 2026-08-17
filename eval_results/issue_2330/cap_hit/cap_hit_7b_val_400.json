@@ -1,0 +1,99 @@
+{
+  "schema": "issue2330_cap_hit_v2",
+  "root": "issue1491_scale_ladder/scale7_refit",
+  "split": "val_400",
+  "store_split": "val_400",
+  "subset_mode": false,
+  "revision": "815ff6d976c686af8672b27cfdfb1ce6b419c02c",
+  "expected_ids_key": "val_400",
+  "expected_n": 400,
+  "expected_ids_sha256": "61c7e6234e65fb5cce2355ea19e2867337eab0f6ef7092bc7e646da03f05ab8e",
+  "split_ids_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2330/eval_results/issue_2330/split_ids.json",
+  "total": 400,
+  "cap_hit": 25,
+  "cap_hit_frac": 0.0625,
+  "cap_hit_cis": [
+    20,
+    21,
+    44,
+    51,
+    148,
+    197,
+    204,
+    251,
+    258,
+    259,
+    272,
+    278,
+    287,
+    298,
+    306,
+    313,
+    315,
+    319,
+    326,
+    335,
+    355,
+    363,
+    369,
+    389,
+    396
+  ],
+  "n_chunks": 8,
+  "n_store_rows": 400,
+  "n_rows_outside_expected": 0,
+  "gen_max_tokens": 1024,
+  "n_think_open": null,
+  "per_chunk": [
+    {
+      "name": "shard00_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 3
+    },
+    {
+      "name": "shard01_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 1
+    },
+    {
+      "name": "shard02_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 1
+    },
+    {
+      "name": "shard03_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 1
+    },
+    {
+      "name": "shard04_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 1
+    },
+    {
+      "name": "shard05_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 7
+    },
+    {
+      "name": "shard06_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 6
+    },
+    {
+      "name": "shard07_chunk0000.json",
+      "n_rows": 50,
+      "n_covered": 50,
+      "n_cap_hit_store": 5
+    }
+  ],
+  "git_commit": "c1e8d82802ad688108a55866731c7330fae1a2c9",
+  "ts_utc": "2026-08-17T03:20:31Z"
+}
