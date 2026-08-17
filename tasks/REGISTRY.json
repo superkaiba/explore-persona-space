@@ -10403,8 +10403,8 @@
     "2346": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2346",
-      "status": "proposed",
+      "path": "tasks/planning/2346",
+      "status": "planning",
       "title": "gotchas.md: warn that an interrupted posix_fallocate quota probe leaks its full allocation (12.6 GB leaked on a live pod, #2329)"
     },
     "235": {
