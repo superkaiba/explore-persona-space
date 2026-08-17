@@ -555,3 +555,39 @@ explicitly: a committed test asserting `passed` cannot distinguish a SKIPPED
 check from one that ran-and-happened-to-pass when the degenerate input
 computes below the bar anyway (zero-vector cosine ~0 under eps) — demand a
 read-the-control-flow verification, never the green test as evidence.
+
+**Crash-fix round WITH its own impl marker + write-granted empirical arm
+(#2329 r6, 2026-08-16):** the r4 entry's "no per-round impl marker exists by
+design" is NOT universal for crash-fix rounds — this run-phase crash-fix
+posted its own `epm:experiment-implementation v6`; ALWAYS probe events.jsonl
+tail before assuming the r4 shape. When the marker exists: sentinel = impl
+marker version; inline BOTH the impl marker AND the `epm:progress` crash
+diagnosis in separate envelopes (the diagnosis stays the ground truth the
+fix-engaged signal answers; its falsified-hypothesis section becomes an
+ESTABLISHED FACTS do-not-re-litigate block). Also: (a) brief-supplied
+diff-size figures can be `--stat`-combined (+47 = 35+12) or CUMULATIVE
+cross-round test additions (+232 = r5 97 + r6 135) — re-derive from
+`git show --numstat` at compose time and use those in the Diff-size header,
+flagging the discrepancy in the return; (b) when the brief says write access
+WILL be granted, the scratch reproduction carve-out becomes the PRIMARY arm
+(run only the named nodeids; expect red-pre-fix/green-post-fix both ways)
+with the never-fabricate STATIC fallback retained, and the return states
+`Codex write mode: true (scratch reproduction sanctioned)`; (c) a live pod
+mid-smoke gets its own OUT OF SCOPE bullet (never ssh/relaunch/touch
+/workspace) — the smoke-run-missing invalidation alone does not convey the
+hands-off duty.
+
+**Tests-only blocker-closure cap round (#2329 r5, 2026-08-16):** when the round's
+sole change is a test file closing one objective blocker, compose the TIGHT
+no-rubric shape with: (a) the valid-tags enumeration NARROWED inside the verdict
+template's Blocker-tags bracket itself (`substantive` | `git-provenance` |
+`data-access-blocked` only, with the brief-invalidated tags named in OUT OF
+SCOPE) — the full tag zoo invites an invalid mechanical FAIL; (b) when the brief
+orders self-reproduction of a pre-fix failure, the scratch-dir carve-out
+(`git show <sha>~1:<file>` into /tmp, run ONLY the named test nodeids) PLUS the
+never-fabricate STATIC fallback labeled `STATIC (env unavailable)`, and flag at
+return time that dispatch write-mode decides which arm executes; (c) assert-side:
+the inlined impl body usually carries the round SHA once — count template spans
+and body separately before asserting the total; (d) a prior twin verdict at a
+NON-standard /tmp name (e.g. `/tmp/<N>-codex-r<k>-marker.md`) may be the posted
+events.jsonl note verbatim — byte-compare before trusting either copy.
