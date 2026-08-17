@@ -1,0 +1,1 @@
+{"ts": "2026-08-17T19:43:58Z", "event": "raised", "concern_id": "stale-preflight-cardinality", "severity": "CONCERN", "summary": "The dispatch preflight says four probes after adding mandatory item (e); update it and the test-module description to five.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
