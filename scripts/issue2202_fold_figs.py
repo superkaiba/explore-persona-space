@@ -181,13 +181,184 @@ def fig_avg_target(fresh: dict) -> None:
     plt.close(fig)
 
 
+def fig_contrastive_maps(battery: dict) -> None:
+    maps = [
+        ("ridge (banked)", "ridge_banked"),
+        ("MSE-trained MLP (banked)", "mlp_mse_banked"),
+        ("contrastive linear (InfoNCE)", "contrastive_linear"),
+        ("contrastive MLP (InfoNCE)", "contrastive_mlp"),
+    ]
+    conventions = [
+        ("raw euclidean", "raw_euclidean"),
+        ("raw cosine", "raw_cos"),
+        ("whitened cosine", "whiten_cos"),
+    ]
+    csls_ref = 0.9761593401066291
+    csls_double_ref = 0.984508600744392
+
+    palette = paper_palette(6)
+    conv_colors = [palette[4], palette[5], palette[0]]
+    fig, ax = plt.subplots(figsize=(7.5, 4.4))
+    width = 0.24
+    for g, (map_label, map_key) in enumerate(maps):
+        for c, (_, conv_key) in enumerate(conventions):
+            v = battery["results"][map_key][conv_key]["acc_at_k"]["1"]
+            x = g + (c - 1) * width
+            ax.bar(x, v, width, color=conv_colors[c])
+            if v > 0.92:
+                ax.text(
+                    x,
+                    v - 0.03,
+                    f"{v:.3f}",
+                    ha="center",
+                    va="top",
+                    fontsize=7.5,
+                    color="white",
+                    rotation=90,
+                )
+            else:
+                ax.text(x, v + 0.012, f"{v:.3f}", ha="center", fontsize=7.5)
+    ax.axhline(csls_ref, color="0.25", linestyle="--", linewidth=1.3)
+    ax.axhline(csls_double_ref, color="0.25", linestyle=":", linewidth=1.5)
+    ax.set_xticks(range(len(maps)))
+    ax.set_xticklabels([m[0] for m in maps], fontsize=9)
+    ax.set_ylim(0, 1.35)
+    ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.set_ylabel("rank-1 retrieval accuracy (9,941 contexts)")
+    ax.set_title("Discrimination-trained maps vs metric-side correction")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in conv_colors] + [
+        plt.Line2D([0], [0], color="0.25", linestyle="--", linewidth=1.3),
+        plt.Line2D([0], [0], color="0.25", linestyle=":", linewidth=1.5),
+    ]
+    ax.legend(
+        handles,
+        [c[0] for c in conventions]
+        + [
+            f"CSLS on the unchanged ridge map ({csls_ref:.3f})",
+            f"double-strength CSLS penalty ({csls_double_ref:.3f})",
+        ],
+        loc="upper left",
+        fontsize=8,
+        ncol=2,
+    )
+    savefig_paper(fig, "fig_contrastive_maps", dir=FIG_DIR)
+    plt.close(fig)
+
+
+def fig_avgtgt_convergence(avgtgt: dict) -> None:
+    map_labels = {
+        "ridge": "ridge (banked)",
+        "mlp_w8192": "MSE-trained MLP (banked)",
+        "mlp_w8192_seed43": "MSE-trained MLP, seed 43 (banked)",
+        "krr_nystrom": "kernel ridge, Nystrom (banked)",
+        "residual_skip": "residual skip map (banked)",
+        "contrastive_linear": "contrastive linear (InfoNCE)",
+        "contrastive_mlp": "contrastive MLP (InfoNCE)",
+    }
+    conv = "csls_k10_whitencos"
+    rows = []
+    for key, label in map_labels.items():
+        cell = avgtgt["matrix"][key][conv]
+        rows.append((label, cell["single"]["acc_at_k"]["1"], cell["avg"]["acc_at_k"]["1"]))
+    rows.sort(key=lambda r: r[2])
+
+    palette = paper_palette(4)
+    c_single, c_avg = palette[0], palette[3]
+    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    for i, (_, s, a) in enumerate(rows):
+        ax.plot([s, a], [i, i], color="0.75", linewidth=1.2, zorder=1)
+        ax.scatter([s], [i], color=c_single, s=45, zorder=2)
+        ax.scatter([a], [i], color=c_avg, s=45, zorder=2)
+        ax.text(s - 0.0012, i, f"{s:.3f}", ha="right", va="center", fontsize=8)
+        ax.text(a + 0.0012, i, f"{a:.3f}", ha="left", va="center", fontsize=8)
+    ax.set_yticks(range(len(rows)))
+    ax.set_yticklabels([r[0] for r in rows], fontsize=9)
+    ax.set_ylim(-0.7, len(rows) + 1.4)
+    ax.set_xlim(0.968, 1.001)
+    ax.set_xlabel("rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)")
+    ax.set_title("All seven maps converge under hub-corrected retrieval + averaged targets")
+    handles = [
+        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor=c_single, markersize=7),
+        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor=c_avg, markersize=7),
+    ]
+    ax.legend(
+        handles, ["single-draw target", "5-draw-averaged target"], loc="upper left", fontsize=8.5
+    )
+    savefig_paper(fig, "fig_avgtgt_convergence", dir=FIG_DIR)
+    plt.close(fig)
+
+
+def fig_residual_margins() -> None:
+    import numpy as np
+
+    d = np.load(REPO / "eval_results/issue_2202/residual_read/percontext_ranks_margins.npz")
+    margin = d["margin_csls_k10_whitencos_avg"]
+    n_fail = int((margin < 0).sum())
+
+    palette = paper_palette(4)
+    fig, ax = plt.subplots(figsize=(6.8, 4.0))
+    ax.hist(margin, bins=60, color=palette[0])
+    ax.set_yscale("log")
+    ax.axvspan(margin.min() - 0.01, 0.0, color="#d9534f", alpha=0.15, zorder=0)
+    med = float(np.median(margin))
+    ax.axvline(med, color=palette[2], linestyle="--", linewidth=1.4)
+    ax.set_xlabel("retrieval margin: true-target minus best-competitor score")
+    ax.set_ylabel("covered rows (log scale)")
+    ax.set_title("Residual failures are near-misses in the margin distribution")
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=palette[0]),
+        plt.Rectangle((0, 0), 1, 1, color="#d9534f", alpha=0.15),
+        plt.Line2D([0], [0], color=palette[2], linestyle="--", linewidth=1.4),
+    ]
+    ax.legend(
+        handles,
+        [
+            "covered rows (n = 1,988)",
+            f"failure region, margin below 0 (n = {n_fail})",
+            f"pool median (+{med:.3f})",
+        ],
+        loc="upper left",
+        fontsize=8.5,
+    )
+    savefig_paper(fig, "fig_residual_margins", dir=FIG_DIR)
+    plt.close(fig)
+
+
 def main() -> None:
+    import sys
+
+    which = set(sys.argv[1:]) or {"zoo", "avg", "contrastive", "avgtgt", "residual"}
     set_paper_style("blog")
-    fresh = json.loads((REPO / "eval_results/issue_2202/freshwhiten_avg/summary.json").read_text())
-    zoo = json.loads((REPO / "eval_results/issue_2202/metric_zoo/summary.json").read_text())
-    fig_convention_zoo(zoo, fresh)
-    fig_avg_target(fresh)
-    print(f"wrote fig_convention_zoo + fig_avg_target under {FIG_DIR}")
+    wrote = []
+    if which & {"zoo", "avg"}:
+        fresh = json.loads(
+            (REPO / "eval_results/issue_2202/freshwhiten_avg/summary.json").read_text()
+        )
+    if "zoo" in which:
+        zoo = json.loads((REPO / "eval_results/issue_2202/metric_zoo/summary.json").read_text())
+        fig_convention_zoo(zoo, fresh)
+        wrote.append("fig_convention_zoo")
+    if "avg" in which:
+        fig_avg_target(fresh)
+        wrote.append("fig_avg_target")
+    if "contrastive" in which:
+        battery = json.loads(
+            (
+                REPO / "eval_results/issue_2202/contrastive_maps/eval/contrastive_maps_battery.json"
+            ).read_text()
+        )
+        fig_contrastive_maps(battery)
+        wrote.append("fig_contrastive_maps")
+    if "avgtgt" in which:
+        avgtgt = json.loads(
+            (REPO / "eval_results/issue_2202/avgtgt_completion/summary.json").read_text()
+        )
+        fig_avgtgt_convergence(avgtgt)
+        wrote.append("fig_avgtgt_convergence")
+    if "residual" in which:
+        fig_residual_margins()
+        wrote.append("fig_residual_margins")
+    print(f"wrote {' + '.join(wrote)} under {FIG_DIR}")
 
 
 if __name__ == "__main__":
