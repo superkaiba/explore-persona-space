@@ -577,6 +577,32 @@ mid-smoke gets its own OUT OF SCOPE bullet (never ssh/relaunch/touch
 /workspace) — the smoke-run-missing invalidation alone does not convey the
 hands-off duty.
 
+**Cycle-CLOSE pass adjudicating the twin's OWN FAIL, fold of two impl markers
+(#2329 rclose = sentinel v8, 2026-08-17):** when the closing pass of a
+crash-fix cycle adjudicates whether CODEX'S OWN prior blocker+nit are closed
+across a two-commit range (fix commit with impl v<k>, minor fold with impl
+v<k+1>): (a) sentinel = the HIGHEST impl marker of the fold, matching the
+task's codex-sentinel==impl-version convention — state the mapping in the
+return; inline BOTH impl bodies in separate `(v<k> — the fix commit <sha>)` /
+`(v<k+1> — the fold commit <sha>)` envelopes. (b) Inline the prior Codex FAIL
+verdict with its marker-tag lines STRIPPED and its `CONCERN:: ` rows
+BLOCKQUOTED (`> CONCERN:: `) — simpler than the #2145 tag-arithmetic form:
+asserts collapse to own-head==1 / close==1 / prior-tag==0 / line-start
+rows==1 (template grammar only) / blockquoted==2. (c) Add an author-neutrality
+line ("you authored the prior FAIL — neither defend it by demanding more than
+its stated contract nor wave the fix through because it answers you") plus
+the standing no-relitigate block for the twin's own already-PASSed questions
+at the FAILed commit (behaviourally unchanged ⇒ confirm-undisturbed only).
+(d) Per-blob expectations isolate the fold's delta: vs the FAILed commit's
+blob the masking test goes red; vs the fix commit's blob ONLY the fold's new
+assert goes red (masking asserts stay green). (e) The brief's per-finding
+`VERIFIED-ADDRESSED | NOT-ADDRESSED` parenthetical (`NOT-ADDRESSED =
+substantive FAIL`) binds EACH finding incl. the NIT when the brief says
+"for EACH" — follow the brief, don't soften the nit arm. (f) An impl marker
+whose head sentinel lacks the version digit (bare
+`<!-- epm:experiment-implementation -->`) is FLAGGED in the return only —
+never handed to Codex when marker-shape tags are brief-invalidated.
+
 **Tests-only blocker-closure cap round (#2329 r5, 2026-08-16):** when the round's
 sole change is a test file closing one objective blocker, compose the TIGHT
 no-rubric shape with: (a) the valid-tags enumeration NARROWED inside the verdict
