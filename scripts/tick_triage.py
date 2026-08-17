@@ -1249,6 +1249,7 @@ def compute_issue_verdict(
     prev_fingerprint: str | None = None,
     no_progress_streak: int = 0,
     no_progress_threshold: int = 3,
+    open_ask: bool = False,
 ) -> tuple[str, str, int]:
     """Pure verdict for /issue-tick. Returns ``(verdict, reason, streak)``.
 
@@ -1257,6 +1258,16 @@ def compute_issue_verdict(
     #2058 no-progress-respawn arm (session alive, chain heartbeating but no
     durable advancement). Legacy callers not wiring them get streak=0 and
     the pre-#2058 verdict behavior preserved by construction.
+
+    ``open_ask`` (mission-control rung 0, T1): True when the newest
+    ``epm:ask`` on the task is OPEN (no answering transition since —
+    ``task_workflow.open_async_ask``). At an ISSUE_PARK status that reads
+    HEALTHY (reason ``async-parked``): the async session posted a durable
+    ask and EXITed by design, so the park is never a dead chain — no
+    STALE-REDRIVE, no runaway/no-progress streak advance. Default False =
+    pre-rung-0 verdict table byte-identical. The ``plan_pending`` over-cap
+    arm (``epm:awaiting-spend-approval``) deliberately checks FIRST and is
+    untouched.
 
     Raises ValueError on a status outside the known enum sets — main()
     converts that to a non-zero exit (fail toward coverage)."""
@@ -1272,6 +1283,14 @@ def compute_issue_verdict(
         return ("TERMINAL", f"status={status} — teardown", 0)
     if status not in ISSUE_PARK and status not in ISSUE_ACTIVE:
         raise ValueError(f"unknown status {status!r}")
+    if open_ask and status in ISSUE_PARK:
+        # T1 (mission-control rung 0): async park-and-EXIT — HEALTHY until
+        # the ask is answered; streaks deliberately not advanced.
+        return (
+            "HEALTHY",
+            f"status={status} — async-parked (open epm:ask awaiting user answer)",
+            0,
+        )
     age_desc = "no markers" if marker_age_s is None else f"marker age {marker_age_s / 60:.0f}m"
     if marker_age_s is not None and marker_age_s <= stale_after_s:
         # #2058 no-progress arm — reachable ONLY when marker age is fresh.
@@ -1460,6 +1479,12 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
         else:
             fingerprint = compute_progress_fingerprint(events, head_sha, status)
             freeze_active = False
+        # T1 (mission-control rung 0): an OPEN epm:ask at an ISSUE_PARK
+        # status reads HEALTHY (async park-and-EXIT). Lazy import — the
+        # canonical predicate lives in task_workflow (shared with the
+        # watcher's W1/W3 arms and task.py's parked_asked gate branch).
+        from explore_persona_space.task_workflow import open_async_ask
+
         verdict, reason, no_progress_streak = compute_issue_verdict(
             status,
             prev_status,
@@ -1470,6 +1495,7 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
             prev_fingerprint=prev_fingerprint if isinstance(prev_fingerprint, str) else None,
             no_progress_streak=prev_no_progress_streak,
             no_progress_threshold=no_progress_threshold(),
+            open_ask=open_async_ask(events) is not None,
         )
         # Persist the updated streak + fingerprint. On a degraded-key
         # freeze, the streak advance from the equal-fingerprint path is

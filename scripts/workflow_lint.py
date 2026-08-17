@@ -15289,12 +15289,11 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # --follow scripts/workflow_lint.py at commits before the #2325 trim (the
 # same history move #1718 made for the agent-spec caps).
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 989,603 B @ #2326 2026-08-16 merge of origin/main
-    # (c2cf24e5e2, the #2325-trimmed 982,587 B SKILL.md) into issue-2326
-    # (+7,016 B: the concerns-persistence additions); corridor-max
-    # ((measured+2_800)//100)*100 -> headroom 2,797 B. Prior: 985_300
-    # (#2325 main) / 989_650 (branch pre-merge); chronicle: git log.
-    "issue/SKILL.md": 992_400,
+    # measured 991,350 B @ mission-control rung 0 2026-08-17 (the Step 2c
+    # `parked_asked` async plan-approval branch, +1,747 B); corridor-max
+    # ((measured+2_800)//100)*100 -> headroom 2,750 B. Prior: 992_400
+    # (#2326) / 985_300 (#2325 main); chronicle: git log.
+    "issue/SKILL.md": 994_100,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
