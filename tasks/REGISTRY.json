@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2339,
+  "highest_id": 2340,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10356,6 +10356,13 @@
       "path": "tasks/completed/234",
       "status": "completed",
       "title": "Betley's edu_v0 cue is a base-model jailbreak; the conditional-misalignment surface is the security/authority/educational triad on edu-insecure Qwen2.5-7B (MODERATE confidence)"
+    },
+    "2340": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2340",
+      "status": "proposed",
+      "title": "verify_task_body: footer check for SHA-pinned GitHub links on named code/artifacts"
     },
     "235": {
       "has_clean_result": true,
