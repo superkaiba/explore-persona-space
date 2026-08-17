@@ -1,11 +1,16 @@
-"""Tests for the rule-26 judge pilot gate (#2021, `eval/judge_pilot.py`).
+"""Tests for the rule-26 judge pilot gate (#2021/#2152, `eval/judge_pilot.py`).
 
 Most tests fake `judge_graded` at the `judge_pilot` seam (signature-conformant
 via `unittest.mock.create_autospec`; the fake WRITES a synthetic save_raw and
 reduces it with the REAL `judge_result_from_save_raw`, so the production reduce
-+ classification run in every test). The #906 real-body test executes
-`judge_pilot_gate`'s real body THROUGH the real `judge_graded`, faking only the
-API boundary (`batch_judge.judge_completions_batch`, autospec'd).
++ classification run in every test). The #906 real-body tests execute
+`judge_pilot_gate`'s / `judge_graded`'s real bodies THROUGH the real call
+chain, faking only the API boundary (`batch_judge.judge_completions_batch`,
+autospec'd).
+
+Rules-pin discovery (#1496): this file pins behavior the rule file
+`.claude/rules/llm-judging.md` (rules 26/28) prescribes — the literal
+`llm-judging.md` here arms Step 9c auto-selection on rules-only diffs.
 """
 
 import hashlib
@@ -41,13 +46,34 @@ def _items(n: int, prefix: str) -> list[tuple[str, str, str]]:
     return [(f"{prefix}{i}", f"q{i}", f"a{i}") for i in range(n)]
 
 
-def _install_fake_judge(monkeypatch, arm_draws: dict[str, list], record: list | None = None):
+# Sentinel: the fake ECHOES the routing record the gate's forcing implies
+# (the REAL conditional — batch iff threshold_base == 0).
+_ECHO = object()
+
+
+def _install_fake_judge(
+    monkeypatch,
+    arm_draws: dict[str, list],
+    record: list | None = None,
+    routing=_ECHO,
+    routing_by_arm: dict | None = None,
+    n_cached: int = 0,
+    n_submitted: int | None = None,
+):
     """Monkeypatch `judge_pilot.judge_graded` with a signature-conformant fake.
 
     The fake writes `save_raw` from `arm_draws[<arm>]` (one parsed entry per
     (item, draw) slot, in order) and returns the REAL reduce's JudgeResult, so
     gate stats exercise the production classification. `record` (optional)
-    captures (arm, [item ids], max_tokens) per call.
+    captures (arm, [item ids], max_tokens, threshold_base, force_sync) per
+    call. #2152 knobs: `routing` controls the persisted `save_raw["routing"]`
+    record — default `_ECHO` echoes what the forcing implies
+    (`{"path": "batch"}` iff `threshold_base == 0`, the batch pin; both the
+    force_sync pin and the legacy small-n pilot land sync), `None` OMITS the
+    record entirely (the unverifiable case), a dict overrides it (the mismatch
+    case); `routing_by_arm` overrides per arm (values: dict record, or None to
+    omit); `n_cached` / `n_submitted` write the #2151/#2152 cache counters
+    into save_raw (defaults 0 / the arm's written draw count).
     """
 
     def impl(
@@ -62,10 +88,19 @@ def _install_fake_judge(monkeypatch, arm_draws: dict[str, list], record: list | 
         max_tokens=64,
         dry_run=False,
         threshold_base=None,
+        force_sync=False,
     ):
         arm = Path(save_raw).stem.removeprefix("judge_raw_pilot_")
         if record is not None:
-            record.append((arm, [item_id for item_id, _q, _a in items], max_tokens))
+            record.append(
+                (
+                    arm,
+                    [item_id for item_id, _q, _a in items],
+                    max_tokens,
+                    threshold_base,
+                    force_sync,
+                )
+            )
         draws = list(arm_draws[arm])
         all_scores = {}
         di = 0
@@ -75,9 +110,19 @@ def _install_fake_judge(monkeypatch, arm_draws: dict[str, list], record: list | 
                     break
                 all_scores[f"{item_id}__{idx:05d}__{comp:02d}"] = draws[di]
                 di += 1
+        payload: dict = {"all_scores": all_scores}
+        realized = routing
+        if routing_by_arm is not None and arm in routing_by_arm:
+            realized = routing_by_arm[arm]
+        if realized is _ECHO:
+            realized = {"path": "batch" if threshold_base == 0 else "sync"}
+        if realized is not None:
+            payload["routing"] = realized
+        payload["n_cached"] = n_cached
+        payload["n_submitted"] = len(all_scores) if n_submitted is None else n_submitted
         p = Path(save_raw)
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({"all_scores": all_scores}))
+        p.write_text(json.dumps(payload))
         return graded_judge.judge_result_from_save_raw(p, items)
 
     fake = mock.create_autospec(graded_judge.judge_graded, side_effect=impl)
@@ -86,7 +131,12 @@ def _install_fake_judge(monkeypatch, arm_draws: dict[str, list], record: list | 
 
 
 def _run(monkeypatch, tmp_path, arm_items, arm_draws, **kw):
-    _install_fake_judge(monkeypatch, arm_draws)
+    fake_kw = {
+        k: kw.pop(k)
+        for k in ("record", "routing", "routing_by_arm", "n_cached", "n_submitted")
+        if k in kw
+    }
+    _install_fake_judge(monkeypatch, arm_draws, **fake_kw)
     # allow_subresolution_pilot defaults True HERE (the library default is
     # False): the legacy drop-profile tests deliberately use tiny 6-item arms,
     # which are sub-resolution by construction under the #2124 config-time
@@ -145,14 +195,16 @@ def test_kept_truncated_verdict_fails_gate(monkeypatch, tmp_path):
     assert any("truncation" in f and "KEPT" in f for f in rep.failures), rep.failures
 
 
-def test_api_refusal_draws_reported_but_gate_verdict_unchanged(monkeypatch, tmp_path, caplog):
-    """#2151 (plan §6 test 4): api-refusal draws surface in the arm report
-    (``n_api_refusal`` + the tally's "refusal" row + the reduce's WARNING) but
-    change NO gate condition — a 25%-censored pilot still PASSes BY DESIGN
-    (rule 28's non-coverage note: the rule-26 gate is NOT protective for this
-    class). The parse-fail denominator excludes the censored draws exactly as
-    it excludes transport losses, and the effective-draws floor does NOT
-    shrink (it keys on ``n_draws - n_transport_lost`` only)."""
+def test_api_refusal_rate_fails_at_default_threshold(monkeypatch, tmp_path, caplog):
+    """#2151→#2152 (plan §6 test 8; REVISED from
+    test_api_refusal_draws_reported_but_gate_verdict_unchanged — a designed
+    tightening): a 25%-censored pilot now FAILs at the default 0.10
+    api_refusal_threshold — the rule-28 censor is GATE-KEYED as of #2152
+    (llm-judging.md rule 26(d)), superseding #2151 §12.3's REPORT-only
+    treatment. All #2151 report-field behavior is retained: ``n_api_refusal``
+    + the tally's "refusal" row + the reduce's WARNING; the censored draws
+    still leave every content/transport counter untouched and the
+    effective-draws floor does NOT shrink."""
     import logging
 
     arms = {"a": _items(6, "a")}
@@ -160,12 +212,18 @@ def test_api_refusal_draws_reported_but_gate_verdict_unchanged(monkeypatch, tmp_
     with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.graded_judge"):
         rep = _run(monkeypatch, tmp_path, arms, draws)
 
-    # Verdict UNCHANGED: no failure names the censoring.
-    assert rep.passed is True
-    assert rep.verdict == "PASS"
-    assert rep.failures == []
-    # REPORT-only surfacing: the arm carries the count + the tally row.
+    # The ONE deliberate #2152 verdict change: 3/12 = 25% >= 10% FAILs.
+    assert rep.passed is False
+    assert rep.verdict == "FAIL"
+    ar = [f for f in rep.failures if "api-refusal rate" in f]
+    assert ar, rep.failures
+    assert "25.0%" in ar[0] and "10%" in ar[0] and "rule 28" in ar[0]
+    assert "waive_api_refusal_arms" in ar[0]
+    # No OTHER clause fires: the api-refusal failure is the only one.
+    assert len(rep.failures) == len(ar)
+    # #2151 report surfacing retained: count + tally row + the rate field.
     assert rep.arms["a"].n_api_refusal == 3
+    assert rep.arms["a"].api_refusal_rate == pytest.approx(0.25)
     assert rep.arms["a"].stop_reason_tally.get("refusal") == 3
     # The censored draws leave every content/transport counter untouched.
     assert rep.arms["a"].n_scored == 9
@@ -679,3 +737,373 @@ def test_judge_result_frac_items_complete_property(tmp_path):
     empty = graded_judge.JudgeResult(scores={}, n_total_draws=0, n_dropped_draws=0)
     with pytest.raises(ValueError, match="zero items"):
         _ = empty.frac_items_complete
+
+
+# --- #2152: transport parity (rule 26(c)) + api-refusal gate (rule 26(d)) --------
+
+
+def test_wave_batch_declaration_forces_batch_pilot(monkeypatch, tmp_path):
+    """Plan §6 test 1: a declared batch wave — pinned (wave_threshold_base=0)
+    AND deterministic count-routed (n >= 2*tb at the dispatcher default) —
+    forces the pilot onto the Batch path (the fake observes threshold_base=0)
+    and records both transports + the wave_routing dict."""
+    arms = {"a": _items(6, "a")}
+    draws = {"a": [KEPT] * 12}
+    for sub, wave_kwargs in (
+        ("pinned", {"wave_threshold_base": 0}),
+        ("counted", {"wave_n_calls": 44_310}),
+    ):
+        record: list = []
+        _install_fake_judge(monkeypatch, draws, record=record)
+        rep = judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / sub / "c",
+            save_raw_dir=tmp_path / sub / "r",
+            allow_subresolution_pilot=True,
+            **wave_kwargs,
+        )
+        assert record[0][3] == 0  # threshold_base=0 observed by the fake (batch pin)
+        assert record[0][4] is False  # force_sync NOT passed on the batch branch
+        assert rep.wave_transport == "batch"
+        assert rep.arms["a"].transport == "batch"
+        assert rep.pilot_transport == "batch"
+        assert rep.passed is True
+        assert rep.wave_routing is not None and rep.wave_routing["path"] == "batch"
+
+
+def test_wave_sync_declaration_threads_force_sync(monkeypatch, tmp_path):
+    """Plan §6 test 2 (revised per the fail-fast supersession): sync
+    certification requires the wave_force_sync=True pin — the fake observes
+    force_sync=True with threshold_base=None. (The v3 count-routed sync case
+    wave_n_calls=300 is now the probe-region ValueError — see
+    test_probe_region_unpinned_declaration_raises.)"""
+    arms = {"a": _items(6, "a")}
+    record: list = []
+    _install_fake_judge(monkeypatch, {"a": [KEPT] * 12}, record=record)
+    rep = judge_pilot_gate(
+        arms,
+        PROMPT,
+        max_tokens=800,
+        cache_dir=tmp_path / "c",
+        save_raw_dir=tmp_path / "r",
+        allow_subresolution_pilot=True,
+        wave_force_sync=True,
+    )
+    assert record[0][3] is None
+    assert record[0][4] is True
+    assert rep.wave_transport == "sync"
+    assert rep.arms["a"].transport == "sync"
+    assert rep.pilot_transport == "sync"
+    assert rep.passed is True
+
+
+def test_transport_mismatch_fails(monkeypatch, tmp_path):
+    """Plan §6 test 3 + the plan's durability pin: a realized-vs-declared
+    transport mismatch is a FAIL naming both transports — never a silent
+    pass. Pins the load-bearing mechanism the llm-judging.md rule 26(c)/28
+    prose describes."""
+    arms = {"a": _items(6, "a")}
+    rep = _run(
+        monkeypatch,
+        tmp_path,
+        arms,
+        {"a": [KEPT] * 12},
+        routing={"path": "sync"},  # realized sync against a declared batch wave
+        wave_threshold_base=0,
+    )
+    assert rep.verdict == "FAIL"
+    mism = [f for f in rep.failures if "pilot ran sync" in f]
+    assert mism, rep.failures
+    assert "batch" in mism[0] and "#2152" in mism[0]
+    assert "mirror the production dispatch kwargs 1:1" in mism[0]
+    assert rep.pilot_transport == "sync"
+    assert rep.wave_transport == "batch"
+
+
+def test_unverifiable_transport_fails_when_wave_declared(monkeypatch, tmp_path):
+    """Plan §6 test 4: a wave-declared pilot whose save_raw carries NO routing
+    record FAILs as transport-unverifiable (fully-cached replay / legacy
+    writer) — never a silent pass."""
+    arms = {"a": _items(6, "a")}
+    rep = _run(
+        monkeypatch,
+        tmp_path,
+        arms,
+        {"a": [KEPT] * 12},
+        routing=None,  # fake writes NO routing record
+        wave_threshold_base=0,
+    )
+    assert rep.verdict == "FAIL"
+    unv = [f for f in rep.failures if "UNVERIFIABLE" in f]
+    assert unv, rep.failures
+    assert "no routing record" in unv[0]
+    assert rep.arms["a"].transport is None
+    assert rep.pilot_transport is None
+
+
+def test_undeclared_wave_warns_not_fails(monkeypatch, tmp_path):
+    """Plan §6 test 5: legacy (undeclared-wave) callers keep today's verdicts
+    byte-identically — ONE recorded UNDECLARED warning, no new FAIL, even
+    with cache-served draws (n_cached > 0 FAILs only under a declaration)."""
+    arms = {"a": _items(6, "a")}
+    rep = _run(monkeypatch, tmp_path / "clean", arms, {"a": [KEPT] * 12})
+    assert rep.passed is True
+    undecl = [w for w in rep.warnings if "UNDECLARED" in w]
+    assert len(undecl) == 1, rep.warnings
+    assert "declare wave_n_calls" in undecl[0]
+    assert rep.wave_transport is None
+    assert rep.wave_routing is None
+
+    rep2 = _run(monkeypatch, tmp_path / "cached", arms, {"a": [KEPT] * 12}, n_cached=3)
+    assert rep2.passed is True  # cache-served draws FAIL only under a declared wave
+    assert rep2.arms["a"].n_cached == 3
+
+
+def test_wave_declaration_conflicts_raise(monkeypatch, tmp_path):
+    """Plan §6 test 6: ambiguous / contradictory declarations raise BEFORE any
+    judge_graded call (zero API spend)."""
+    arms = {"a": _items(6, "a")}
+    record: list = []
+    fake = _install_fake_judge(monkeypatch, {}, record=record)
+    common = dict(max_tokens=800, cache_dir=tmp_path / "c", save_raw_dir=tmp_path / "r")
+    with pytest.raises(ValueError, match="EITHER the legacy pilot routing knob"):
+        judge_pilot_gate(arms, PROMPT, **common, threshold_base=0, wave_threshold_base=0)
+    with pytest.raises(ValueError, match="contradictory wave declaration"):
+        judge_pilot_gate(arms, PROMPT, **common, wave_force_sync=True, wave_threshold_base=0)
+    with pytest.raises(ValueError, match="declare wave_n_calls"):
+        judge_pilot_gate(arms, PROMPT, **common, wave_threshold_base=500)
+    with pytest.raises(ValueError, match="wave_n_calls=0 must be >= 1"):
+        judge_pilot_gate(arms, PROMPT, **common, wave_n_calls=0)
+    assert fake.call_count == 0
+    assert record == []
+
+
+def test_probe_region_unpinned_declaration_raises(monkeypatch, tmp_path):
+    """Plan §6 test 7 (MF-1): an unpinned count-routed declaration inside the
+    dispatcher's OTPM-probe region (wave_n_calls < 2*threshold_base,
+    judge_dispatch.py:1652) raises fail-fast naming BOTH pins — the realized
+    route there depends on a live OTPM probe no pilot can certify. The
+    boundary n == 2*tb and the >= 5k default-tb common case route
+    deterministic batch with no pin and no raise."""
+    arms = {"a": _items(6, "a")}
+    record: list = []
+    fake = _install_fake_judge(monkeypatch, {"a": [KEPT] * 12}, record=record)
+    with pytest.raises(ValueError, match="OTPM-PROBE-DEPENDENT") as exc:
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "f1" / "c",
+            save_raw_dir=tmp_path / "f1" / "r",
+            wave_n_calls=5_000,
+            wave_threshold_base=20_000,
+        )
+    msg = str(exc.value)
+    assert "wave_threshold_base=0" in msg and "wave_force_sync=True" in msg
+    assert "SAME pin on the production dispatch" in msg
+    with pytest.raises(ValueError, match="OTPM-PROBE-DEPENDENT"):
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "f2" / "c",
+            save_raw_dir=tmp_path / "f2" / "r",
+            wave_n_calls=300,  # the old count-routed-sync shape (default tb=2,000)
+        )
+    assert fake.call_count == 0
+    assert record == []
+
+    # Boundary n == 2*tb (no probe) and the >= 5k default-tb common case:
+    # deterministic batch by count, no pin needed.
+    for sub, n in (("b1", 4_000), ("b2", 44_310)):
+        rep = judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / sub / "c",
+            save_raw_dir=tmp_path / sub / "r",
+            allow_subresolution_pilot=True,
+            wave_n_calls=n,
+        )
+        assert rep.wave_transport == "batch"
+        assert rep.passed is True
+
+
+def test_api_refusal_below_threshold_passes(monkeypatch, tmp_path):
+    """Plan §6 test 9: a rate strictly below the bar (1/12 ~= 8.3% < 10%)
+    PASSes; the rate field still reports it."""
+    arms = {"a": _items(6, "a")}
+    rep = _run(monkeypatch, tmp_path, arms, {"a": [KEPT] * 11 + [API_REFUSAL_DROP]})
+    assert rep.passed is True
+    assert rep.arms["a"].api_refusal_rate == pytest.approx(1 / 12)
+    assert rep.arms["a"].n_api_refusal == 1
+
+
+def test_api_refusal_waiver_and_disable(monkeypatch, tmp_path):
+    """Plan §6 test 10: the #2091-pattern waiver (reason recorded at the
+    caller-site constant) turns the FAIL into a WAIVED warning; unknown
+    waiver names raise; a > 1.0 threshold disables the clause (report-only,
+    the #2151-era behavior) with NO under-power advisory (the >= 1
+    exemption); <= 0 raises."""
+    arms = {"a": _items(6, "a")}
+    draws = {"a": [KEPT] * 9 + [API_REFUSAL_DROP] * 3}
+    rep = _run(monkeypatch, tmp_path / "waived", arms, draws, waive_api_refusal_arms={"a"})
+    assert rep.passed is True
+    assert rep.arms["a"].api_refusal_waived is True
+    assert any("api-refusal" in w and "WAIVED" in w for w in rep.warnings), rep.warnings
+
+    with pytest.raises(ValueError, match="unknown arm"):
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "c2",
+            save_raw_dir=tmp_path / "r2",
+            waive_api_refusal_arms={"nope"},
+        )
+
+    rep2 = _run(monkeypatch, tmp_path / "off", arms, draws, api_refusal_threshold=2.0)
+    assert rep2.passed is True  # disabled: a rate can never reach 2.0
+    assert rep2.api_refusal_threshold == 2.0
+    assert not any("UNDER-POWERED for api_refusal_threshold" in w for w in rep2.warnings)
+
+    with pytest.raises(ValueError, match=r"api_refusal_threshold.*must be > 0"):
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "c3",
+            save_raw_dir=tmp_path / "r3",
+            api_refusal_threshold=0.0,
+        )
+
+
+def test_api_refusal_denominator_excludes_transport_losses(monkeypatch, tmp_path):
+    """Plan §6 test 11: the rate denominator is the API-reached set
+    (n_draws - n_transport_lost) — refusals stay IN it (DISTINCT from the
+    parse-fail n_answered denominator), transport losses leave it."""
+    arms = {"a": _items(6, "a")}
+    # 12 draws: 8 kept + 2 transport-lost + 2 api-refusal -> rate 2/10 = 20%.
+    draws = {"a": [KEPT] * 8 + [TRANSPORT] * 2 + [API_REFUSAL_DROP] * 2}
+    rep = _run(monkeypatch, tmp_path, arms, draws)
+    assert rep.arms["a"].api_refusal_rate == pytest.approx(2 / 10)  # NOT 2/12
+    assert rep.verdict == "FAIL"  # 20% >= 10%
+    assert any("api-refusal rate" in f for f in rep.failures), rep.failures
+
+
+def test_report_new_fields_serialize_and_pilot_transport_precedence(monkeypatch, tmp_path):
+    """Plan §6 test 12: the #2152 fields ride to_json(), and pilot_transport
+    aggregates realized per-arm routes with explicit precedence — any arm
+    None -> None; unique -> that route; else "mixed" — under a declared AND
+    an undeclared wave."""
+    arms = {"a": _items(6, "a")}
+    rep = _run(monkeypatch, tmp_path / "ser", arms, {"a": [KEPT] * 12}, wave_threshold_base=0)
+    d = rep.to_json()
+    assert d["wave_transport"] == "batch"
+    assert d["pilot_transport"] == "batch"
+    assert d["api_refusal_threshold"] == pytest.approx(0.10)
+    assert d["wave_routing"]["path"] == "batch"
+    assert d["arms"]["a"]["transport"] == "batch"
+    assert d["arms"]["a"]["api_refusal_rate"] == 0.0
+    assert d["arms"]["a"]["api_refusal_waived"] is False
+    assert d["arms"]["a"]["n_cached"] == 0
+
+    # pilot_transport precedence table: {arm -> routing record} -> aggregate.
+    cases = [
+        ({"a": None}, None),
+        ({"a": {"path": "sync"}, "b": None}, None),
+        ({"a": {"path": "sync"}, "b": {"path": "batch"}}, "mixed"),
+        ({"a": {"path": "sync"}, "b": {"path": "batch"}, "c": None}, None),
+    ]
+    for i, (by_arm, expected) in enumerate(cases):
+        arms_i = {arm: _items(6, arm) for arm in by_arm}
+        draws_i = {arm: [KEPT] * 12 for arm in by_arm}
+        # Undeclared wave: aggregate recorded, verdict unchanged (PASS).
+        rep_u = _run(monkeypatch, tmp_path / f"u{i}", arms_i, draws_i, routing_by_arm=by_arm)
+        assert rep_u.pilot_transport == expected
+        assert rep_u.passed is True
+        # Declared batch wave: same aggregate; every case carries a None or a
+        # sync arm against the batch wave, so the parity clauses FAIL loudly.
+        rep_d = _run(
+            monkeypatch,
+            tmp_path / f"d{i}",
+            arms_i,
+            draws_i,
+            routing_by_arm=by_arm,
+            wave_threshold_base=0,
+        )
+        assert rep_d.pilot_transport == expected
+        assert rep_d.passed is False
+
+
+def test_judge_graded_force_sync_passthrough(monkeypatch, tmp_path):
+    """Plan §6 test 13 (#906 real-body): the REAL judge_graded forwards
+    force_sync=True to judge_completions_batch (autospec'd API boundary) and
+    OMITS the kwarg entirely by default — legacy callers byte-identical."""
+
+    def impl(*args, **kwargs):
+        completions = kwargs["completions"]
+        save_raw = Path(kwargs["save_raw"])
+        all_scores = {}
+        for persona, by_q in completions.items():
+            for idx, (_q, comps) in enumerate(by_q.items()):
+                for comp_idx in range(len(comps)):
+                    all_scores[f"{persona}__{idx:05d}__{comp_idx:02d}"] = {
+                        "score": 90,
+                        "stop_reason": "end_turn",
+                    }
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": all_scores}))
+
+    spec = mock.create_autospec(batch_judge.judge_completions_batch, side_effect=impl)
+    monkeypatch.setattr(batch_judge, "judge_completions_batch", spec)
+
+    items = _items(3, "x")
+    res = graded_judge.judge_graded(
+        items,
+        PROMPT,
+        n_draws=2,
+        cache_dir=tmp_path / "c1",
+        save_raw=tmp_path / "r1.json",
+        force_sync=True,
+    )
+    assert res.n_total_draws == 6
+    assert spec.call_args.kwargs["force_sync"] is True
+
+    graded_judge.judge_graded(
+        items,
+        PROMPT,
+        n_draws=2,
+        cache_dir=tmp_path / "c2",
+        save_raw=tmp_path / "r2.json",
+    )
+    assert "force_sync" not in spec.call_args.kwargs
+    assert "threshold_base" not in spec.call_args.kwargs
+
+
+def test_mixed_cache_pilot_fails_when_wave_declared(monkeypatch, tmp_path):
+    """Plan §6 test 14 (MF-2): cache-served draws void transport certification
+    EVEN with a truthful matching routing record — they carry no routing
+    provenance and are refusal-free by construction (the #2151 cache
+    PUT-SKIP), diluting the clause-(d) api-refusal rate strictly toward
+    PASS."""
+    arms = {"a": _items(6, "a")}
+    rep = _run(
+        monkeypatch,
+        tmp_path,
+        arms,
+        {"a": [KEPT] * 12},
+        routing={"path": "batch"},  # truthful record for the dispatched remainder
+        n_cached=3,
+        n_submitted=9,
+        wave_threshold_base=0,
+    )
+    assert rep.verdict == "FAIL"
+    cache = [f for f in rep.failures if "cache-served" in f]
+    assert cache, rep.failures
+    assert "UNVERIFIABLE" in cache[0]
+    assert "refusal-free by construction" in cache[0]
+    assert "rule 24(ii)" in cache[0]
+    assert rep.arms["a"].n_cached == 3
