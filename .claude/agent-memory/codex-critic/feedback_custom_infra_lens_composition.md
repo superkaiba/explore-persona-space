@@ -148,6 +148,20 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   exact flawed inventory the calibration bans. Numcheck PASS first try at
   ~84 KB.
 
+- **Live-service hazard ban (#2332): when the plan under review OPERATES ON a
+  rate-fragile external service (an HF repo near its file-count cap, under a
+  live concurrency constraint), the header's read-only block must explicitly
+  ban the REVIEWER from calling that service** ("Do NOT make ANY HuggingFace
+  Hub API call ... review from the LOCAL artifacts only") and the tail's
+  verify-numbers nudge is rescoped to local artifacts. A Codex twin with
+  shell access will otherwise verify claims by listing the live repo — the
+  exact hazard class the plan guards. Also worked: brief-supplied NUMBERED
+  attack points (not lens rubric items) as the lens span, each phrased
+  "construct a concrete failing scenario, don't check prose exists"; and
+  labeling a body constraints section "ESTABLISHED MEASURED FACT, not up for
+  debate" in the inputs span to pre-empt relitigation of measured ops facts.
+  Paths-only shape again; numcheck PASS first try at ~10 KB.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the

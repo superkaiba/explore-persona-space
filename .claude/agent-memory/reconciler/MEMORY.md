@@ -3,7 +3,9 @@
 ## Pre-registered verdict logic / plan-stage statistics (the big two — read both on any plan-stage stats/methodology split)
 
 - [Claude treats pre-registered verdict-logic gate defects as analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — defective registered gates/kills/lattices: data-recoverability never rescues; barred-amendment tell; 35+ incident ledger (#547…#614)
+- [Efficiency lens: pilot placement + CPU-GD + MAY-hold uploads](feedback_efficiency_lens_pilot_placement_and_cpu_gd_calibration.md) — Claude misses pilot firing AFTER the phase it gates; Codex categorically GPU-routes batched GD + flags <30-min terminal uploads (#2329 r1)
 - [Gate-design flaw (REVISE) vs recoverable robustness read (APPROVE) boundary](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on affirmative misfire / barred amendment / run-time-only capture loss
+- [One-arm port: internal smoke ≠ validity](feedback_one_arm_port_capture_parity.md) — demand capture-parity vs the parent driver on a shared model; fits-anchor doesn't cover it (#2330 r1)
 - [Live-replay proposed mechanical checks against the named offender](feedback_live_replay_proposed_mechanical_checks.md) — execute a workflow-fix plan's proposed regexes/check/glob against the incident artifact it claims to catch (#869, #867)
 - [Claude APPROVEs unwired lint-check plans (dead tripwire)](feedback_claude_approves_unwired_lint_check_plans.md) — check-addition plans with direct-call-only tests: no_flags wiring unpinned, "no-flags run passes" vacuous (#842, #891)
 - [Grep the consumer/writer surface before crediting a plan claim](feedback_claude_approves_daemon_interface_read_missing_route_filter.md) — consumer-VISIBLE route + grep for the capability the plan claims absent (#956); [state-rewrite safety claims](feedback_claude_accepts_plan_state_rewrite_safety_claim.md) — grep the literal state write + poll/monitor contracts encoding the state FREEZING (#908, #919); [reroute consumer-pointer trace](feedback_claude_approves_reroute_without_consumer_pointer_trace.md) — consumers RECONSTRUCTING ids ≠ consuming the return (#564 r1)
@@ -21,6 +23,10 @@
 - [Claude credits claims without the direct probe](feedback_claude_trusts_disk_assumption_framed_as_code_claim.md) — per-item disk state: per-folder ls, not a code read (#724); [caller topology](feedback_claude_trusts_caller_topology_claims_without_wrapper_trace.md) — live-execute the path-selection predicate vs PeftModel/wrappers; fact-checker CONFIRMED ≠ trace (#868); [labeled split](feedback_claude_approves_labeled_split_over_disjoint_registries.md) — intersect registry keys with label-class slugs yourself (#901)
 
 ## Claude code-review misses (FAIL-leaning calibration)
+
+- [Split-review composites miss cross-commit plan contracts](feedback_split_review_misses_cross_commit_plan_contracts.md) — grep §9 phase_outputs writers + §8/§11 registered controls + marker ported/asserted claims yourself; Codex facts all verified, 5/8 blockers over-classed (#2330 r1)
+- [Mode-dependent durability doc claims — enumerate routed vs primary](feedback_mode_dependent_durability_doc_claims.md) — Claude verifies doc clauses locally, missing cross-clause falsification; dictate mode-split wording on a 3rd-round sentence loop (#2326 r3)
+- [Fix-round closure: expand elided plan quotes + open the parent impl](feedback_fix_round_closure_elided_control_arm.md) — Claude's "VERIFIED FIXED" quoted §8 minus "+ untruncated refit", certifying half a control; brief wording never rescopes the plan (#2330 r2)
 
 - [Persist-before-reduce: ordering not existence; derived expected-set ≠ hollow gate](feedback_persist_before_reduce_ordering_vs_existence.md) — Claude counts a site persisted because the file exists (write AFTER remote judge) (#906)
 - [Claude misses when the plan's HEADLINE decision statistic isn't produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — Claude PASSes verifying OTHER plan items while never checking the pre-registered headline estimator is actually computed + persisted (#841, #922)
