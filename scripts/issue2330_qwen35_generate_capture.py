@@ -311,7 +311,9 @@ def _update_run_meta(path: Path, key: str, record: dict) -> None:
 
 def _is_transient_hub_error(e: Exception) -> bool:
     status = getattr(getattr(e, "response", None), "status_code", None)
-    if status in (408, 425, 429, 500, 502, 503, 504):
+    if status in (408, 409, 425, 429, 500, 502, 503, 504):
+        # 409: "Another commit operation is in progress" — sibling shard's
+        # concurrent commit to the same data repo; clears in seconds.
         return True
     names = {t.__name__ for t in type(e).__mro__}
     return bool(
