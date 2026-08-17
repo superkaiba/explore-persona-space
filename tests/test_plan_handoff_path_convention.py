@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 # Repository root (this file lives at <root>/tests/).
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -60,7 +62,7 @@ def test_adversarial_planner_edit_success_gate_pinned() -> None:
         assert token.replace("\n", " ") in ap.replace("\n", " "), (
             f"adversarial-planner SKILL.md lost edit-success-gate token {token!r}"
         )
-    issue = ISSUE_SKILL.read_text()
+    issue = issue_skill_text()
     assert "Edit-success gate" in issue, (
         "issue SKILL.md lost the edit-success-gate pointer next to its Goal-currency gate"
     )
@@ -75,7 +77,7 @@ def test_plan_self_containment_convention_pinned() -> None:
     gap where a thin delta silently reaches the three self-containment
     consumers (subagent briefs / verify_plan --issue / the Step-2c gate)."""
     ap = AP_SKILL.read_text()
-    issue = ISSUE_SKILL.read_text()
+    issue = issue_skill_text()
     claude_md = (REPO_ROOT / "CLAUDE.md").read_text()
 
     # The escape flag is documented at BOTH persist-adjacent SKILL.md sites.

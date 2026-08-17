@@ -20,6 +20,8 @@ import importlib.util
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
@@ -36,7 +38,7 @@ def _normalized(path: Path) -> str:
     multi-word fragments would break on any innocent re-wrap (same
     convention as tests/test_issue_skill_compute_pilot_fence_pin.py).
     """
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", read_workflow_doc(path))
 
 
 def test_skill_9a_ter_duties_block_present():

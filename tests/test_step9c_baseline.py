@@ -57,6 +57,8 @@ from xml.sax.saxutils import escape as xml_escape
 
 import pytest
 
+from tests.issue_skill_source import issue_skill_text
+
 _HELPER_PATH = Path(__file__).resolve().parents[1] / "scripts" / "step9c_baseline.py"
 _spec = importlib.util.spec_from_file_location("step9c_baseline", _HELPER_PATH)
 assert _spec and _spec.loader
@@ -2710,9 +2712,7 @@ def test_skill_step9c_blocks_pin_tmpdir_routing():
     r1 C1). Outer-level expansion embeds the literal mktemp path into the
     inner script — this is the correct, load-bearing behavior; only the
     shell specials `\\$?` / `\\$!` are deferred by design."""
-    skill = (
-        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
-    ).read_text()
+    skill = issue_skill_text()
     blocks = [
         b
         for b in skill.split("```")
@@ -2751,9 +2751,7 @@ def test_skill_tg_blocks_pin_tmpdir_routing():
     leg is the `mapped-baseline` helper call, which routes its own temp
     writes via gate_tmp_root() internally — so exactly ONE direct
     TMPDIR/basetemp thread remains per block (the gated leg)."""
-    skill = (
-        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
-    ).read_text()
+    skill = issue_skill_text()
     blocks = [b for b in skill.split("```") if 'uv run pytest "${TG_TESTS[@]}"' in b]
     assert len(blocks) == 2, "expected the shared-gate + surgical TG blocks"
     for block in blocks:

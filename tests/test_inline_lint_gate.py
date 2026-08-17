@@ -28,6 +28,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.issue_skill_source import issue_skill_text
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = _REPO_ROOT / "scripts" / "inline_lint_gate.py"
 
@@ -2258,7 +2260,7 @@ def test_skill_md_step9a_ter_demotion_prose_names_violation_grain() -> None:
     names the violation-grain demotion contract (the #2235 Phase A demotion
     sentence carries the #2318 clause) — durability for the SKILL side of
     the contract."""
-    skill = (_REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text(encoding="utf-8")
+    skill = issue_skill_text()
     anchor = "Phase A ledger demotion (#2235)"
     assert anchor in skill, "SKILL.md lost the Phase A ledger demotion sentence"
     window = skill[skill.index(anchor) : skill.index(anchor) + 1200]

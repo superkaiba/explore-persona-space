@@ -24,6 +24,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
 _HEADING = "**Same-phase rate/ETA duty (#1863; incident #1482).**"
@@ -36,7 +38,7 @@ def _norm(text: str) -> str:
 
 def _duty_span() -> str:
     """The duty paragraph, bounded below by the Per-lane reconciliation heading."""
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index(_HEADING)  # raises ValueError if the heading is gone
     end = text.index("**Per-lane planned-cell reconciliation", start)
     return _norm(text[start:end])
@@ -93,7 +95,7 @@ def test_heartbeat_item2_cross_reference() -> None:
     # Acceptance criterion 2: § Long-phase heartbeat duty item 2 includes
     # the [phase-rate] read on a long same-phase stretch, keyed on elapsed
     # same-phase time / heartbeat resumes (not the 3-tick count).
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index("**Long-phase heartbeat duty")
     end = text.index("**Remote-landing watches carry a producer-fence deadline", start)
     block = _norm(text[start:end])

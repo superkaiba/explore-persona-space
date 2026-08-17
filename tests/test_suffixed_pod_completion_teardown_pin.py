@@ -31,6 +31,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 CLAUDE_MD = ROOT / "CLAUDE.md"
 # #2166: the doc-compaction commit 40653b5dcf moved the § Pods multi-pod
@@ -138,7 +140,7 @@ def test_claude_md_pods_summary_carries_gate_direction():
 def test_issue_skill_9a_ter_carries_completion_side_teardown_mirror():
     """SKILL.md Step 9a-ter carries the executing mirror of the contract
     (whole-file whitespace-normalized — the token appears exactly once)."""
-    norm = _norm(ISSUE_SKILL.read_text())
+    norm = _norm(issue_skill_text())
     for token in (
         "Completion-side teardown",
         "--name-suffix <slug>",
