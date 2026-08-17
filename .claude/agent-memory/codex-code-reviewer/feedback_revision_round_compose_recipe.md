@@ -603,6 +603,18 @@ whose head sentinel lacks the version digit (bare
 `<!-- epm:experiment-implementation -->`) is FLAGGED in the return only —
 never handed to Codex when marker-shape tags are brief-invalidated.
 
+**Grammar-migration check keys on template CONTENT, not mtime (#2155 r2,
+2026-08-17):** the #2330 entry's "any template predating commit 2454922e7d
+carries the RETIRED concerns form" is necessary but not sufficient — the
+#2155 r1 template POSTdated that commit and still used the retired free-form
+`## Concerns to persist` (its r1 Codex verdict emitted a prose-bullet concern
+the blind forwarder cannot parse; the reconciler had to mint the concern id
+by hand). On every template reuse, grep the template for a line-start
+`CONCERN:: ` grammar row; absent ⇒ apply the three-edit migration regardless
+of dates. The grammar's canonical source is the composer spec's own verdict
+template (`.claude/agents/codex-code-reviewer.md`, the `## Concerns to
+persist` block) — NOT code-reviewer.md, which carries no `CONCERN::` text.
+
 **Tests-only blocker-closure cap round (#2329 r5, 2026-08-16):** when the round's
 sole change is a test file closing one objective blocker, compose the TIGHT
 no-rubric shape with: (a) the valid-tags enumeration NARROWED inside the verdict
@@ -636,3 +648,19 @@ and give the in-place merge a three-part ruling frame: byte-preservation
 (name any DECLARED mutation, e.g. cap backfill), per-crash-point idempotency,
 per-file atomicity with done-record-strictly-LAST (a done record before data
 writes is the stale-done question by another road).
+
+**Proposer-band follow-up round at the cap (#2330 r5, 2026-08-17):** a Step
+9b/9a-ter PROPOSER follow-up posts NO `epm:followup-scope` marker — the round
+contract is the `epm:followup-value-critique` proposals (inline in their own
+envelope) + the impl marker's `Brief adherence` section; grep events for
+`followup` before assuming the fu1-r1 scope-marker shape. Two composable
+deltas: (a) a DECLARED brief deviation ("MODIFIED (1)" in Brief adherence)
+gets a JUSTIFIED/UNJUSTIFIED adjudication duty with the engine-wiring trace
+spelled out (a rebound module constant must reach the engine constructor
+AFTER rebind — the #505/#601 + #1727 classes); (b) the round range can carry
+an extra agent-memory bookkeeping commit beyond the brief's `round_commits`
+list — include it in the pinned range, mark it stat-only/not-a-finding in the
+prompt, and flag it in the return. Committed data artifacts in-range (the
+9a-ter round's JSON) get digest-only instructions; the free-analysis round's
+NUMBERS are adjudicated (two critics reproduced) — scope its commit to
+code-hazards-only or the twin relitigates settled outputs.
