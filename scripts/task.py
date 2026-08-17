@@ -423,7 +423,11 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     ``set-status <N> approved --if-plan-v K``. Code-enforced here, like the
     autonomous auto-approve, so the property holds even if the orchestrator
     mis-follows the Step 2c prose. With EPM_ASYNC_SESSION unset the table
-    below is byte-identical to its pre-rung-0 form.
+    below is byte-identical to its pre-rung-0 form. EXCEPTION: the
+    ``followups_running`` hold branch in :func:`cmd_set_status` remaps a
+    ``parked_asked`` back to the legacy held-round decision — that ask's
+    answer command would be refused by the hold itself, and the status is
+    watcher-ACTIVE (mid-active gates are rung 2; CONTRACTS §2.1 row 4).
 
     Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` from
     the process env (the Bash tool inherits the claude-process env, so a
@@ -527,6 +531,18 @@ def cmd_set_status(args: argparse.Namespace) -> None:
         if followup_hold:
             gpu_hours = getattr(args, "gpu_hours", None)
             decision, _cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
+            if decision == "parked_asked":
+                # Async suppression at the followups_running hold
+                # (mission-control rung 0, MAJOR-1): the ask's recorded
+                # answer (`set-status <N> approved`) is itself a
+                # FOLLOWUP_HELD_BLOCKED_STATUSES transition, so the posted
+                # command would be refused by this very hold — and
+                # followups_running is watcher-ACTIVE, so an async
+                # park-and-EXIT here churns crash-recovery respawns.
+                # Mid-active-round gates are a rung-2 concern (CONTRACTS
+                # §2.1 row 4): fall through to the exact legacy held-round
+                # decision (async flag ignored at this hold).
+                decision = "auto_approved" if gpu_hours is not None else "parked_no_estimate"
             if decision == "auto_approved":
                 post_event(
                     args.number,
@@ -541,10 +557,6 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                         "followups_running (status-hold rule, SKILL.md Step 9b)."
                     ),
                 )
-            elif decision == "parked_asked":
-                # Async session (mission-control rung 0): park IN PLACE +
-                # post the durable ask; the round's status hold is unchanged.
-                _post_plan_approval_ask(args.number, gpu_hours)
             elif decision == "parked_no_estimate":
                 reason = "estimate missing/unparseable (fail-safe)"
                 post_event(

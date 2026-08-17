@@ -22,6 +22,7 @@ Covers, per CONTRACTS §1.1 rows 4/7, §1.3 T1/W1/W3, §2/§2.2:
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import sys
@@ -251,6 +252,57 @@ def test_post_plan_approval_ask_payload_and_idempotence(monkeypatch):
     monkeypatch.setattr(task_py, "list_events", lambda issue: [_ask()])
     task_py._post_plan_approval_ask(42, 7.5)
     assert len(posts) == 1
+
+
+@pytest.mark.parametrize(
+    ("gpu_hours", "expected_decision", "expected_marker"),
+    [
+        (5.0, "auto_approved", "epm:plan-approved"),
+        (None, "parked_no_estimate", "epm:awaiting-spend-approval"),
+    ],
+)
+def test_followups_running_hold_suppresses_async_ask(
+    monkeypatch, capsys, gpu_hours, expected_decision, expected_marker
+):
+    """MAJOR-1 (rung-0 implementation review): an async session's plan-gate
+    call on a `followups_running` task must NOT post the plan_approval
+    `epm:ask` — the ask's recorded answer (`set-status <N> approved`) is a
+    FOLLOWUP_HELD_BLOCKED_STATUSES transition the hold itself refuses, and
+    followups_running is watcher-ACTIVE (a park-and-EXIT there churns
+    crash-recovery respawns). Mid-active-round gates are rung 2 by design
+    (CONTRACTS §2.1 row 4): the hold falls through to the exact legacy
+    held-round behavior — epm:plan-approved with an estimate,
+    epm:awaiting-spend-approval without — status unmoved either way."""
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_ASYNC_SESSION", "1")
+    posted: list[str] = []
+    monkeypatch.setattr(
+        task_py, "get_task", lambda number: {"status": "followups_running", "frontmatter": {}}
+    )
+    monkeypatch.setattr(task_py, "post_event", lambda number, kind, **kw: posted.append(kind))
+    monkeypatch.setattr(
+        task_py, "set_status", lambda *a, **kw: pytest.fail("hold must not move status")
+    )
+    # If the pre-fix ask path ran, _post_plan_approval_ask would consult
+    # these (and post epm:ask) — mock them so the regression manifests as
+    # the ask marker, not an unrelated lookup error.
+    monkeypatch.setattr(task_py, "list_events", lambda issue: [])
+    monkeypatch.setattr(task_py, "highest_plan_version", lambda issue: 1)
+
+    ns = argparse.Namespace(
+        number=99,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=gpu_hours,
+    )
+    task_py.cmd_set_status(ns)
+
+    assert "epm:ask" not in posted
+    assert posted == [expected_marker]
+    out = capsys.readouterr().out
+    assert f"PLAN_GATE_DECISION: {expected_decision}" in out
+    assert "(followups_running hold: status unchanged)" in out
 
 
 # ─── tick_triage T1 ──────────────────────────────────────────────────────────
