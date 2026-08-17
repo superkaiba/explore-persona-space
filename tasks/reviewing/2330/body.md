@@ -56,6 +56,7 @@ The dependent variable is held-out R² of a per-layer linear (ridge) map from th
 | Parameter | Value | Source |
 |---|---|---|
 | Decoding (both models) | temperature 1.0, top_p 0.95, n = 1, max_tokens 1,024, seed 42, vLLM | driver constants `issue1491_ladder_generate_capture.py:137-150`; recipe identity with the banked 7B targets (plan §11) |
+| 9B rendering / runtime | `enable_thinking=False` threaded into every chat-template call (rendered think-suffix token ids pinned by the template gate); isolated venv: vLLM 0.27.1 (exact install pin), transformers 5.15.0 (reconstructed — the pin's own floor is ≥ 5.5.3 and 5.15.0 was the newest release at the 2026-08-17 venv build; the launcher's version probe printed the realized value only to the pod log, which was not persisted) | committed launcher `run_records/launch_issue_2330_p1.sh` (venv pin + version probe); `run_records/run_meta.json` `template_pin` (suffix token ids) |
 | Ceiling draws | seeds 43 and 44 over the 1,000 test prompts, per model | plan §6, parent-ladder convention |
 | Capture | fp32; context vector = last rendered-prompt-token activation; answer profile = response-token mean; layers 7B {14, 19, 26} of 28, 9B {16, 22, 30} of 32 (depth-fraction matched; 9B index 16 is a full-attention block output, 22/30 are linear-attention block outputs) | plan §11; driver |
 | Ridge fit | streaming fp64 primal; λ grid logspace(−3, 8, 23), validation-selected (400-prompt split); selected λ: 7B 3,162 at all layers, 9B 1,000 at indices 16/22 and 3,162 at 30; no grid-edge hits, no extensions | `issue1491_ladder_fits.py:127`; fits JSONs |
@@ -128,7 +129,7 @@ Held-out R² at all three depth-fraction-matched capture layers per model (10k f
 
 The middle pair is the only one favoring the 7B: at depth 0.5 the 9B is higher by 0.056 (p = 0.002) and at 0.93 higher by 0.016 (p = 0.010) — the headline is a mid-stack statement, not a whole-stack one. Each model's best captured layer still favors the 7B (0.705 vs 0.668, a 0.037 gap), a diagnostic read over only three captured depths per model: a 9B peak between the captured layers would go unseen here. Whether the flat profile reflects the 9B's hybrid attention pattern or any other bundle component is not identified.
 
-Per-unit record: per-context predictions and targets at all three captured layers live in the pinned npz (footer).
+Per-unit exemption: the per-context strip above already carries this contrast's per-unit view at the primary layers; per-context predictions and targets at all three captured layers are in the pinned npz (footer).
 
 ### The 9B's three-to-four-times-higher truncation rate does not appear to explain the gap: −0.040 on shared uncapped prompts
 
@@ -150,17 +151,19 @@ Held-out R² at the primary layers versus training-set size, with the 7B's 25,00
 
 > **Figure.** *Doubling training data moves both models by about +0.025.* Held-out R² vs training-set size (7B +0.024, 9B +0.026, raw); the anchor diamond marks the 7B 25k fit (0.725). Lines are two-point segments, not fitted curves.
 
-The near-parallel gains (+0.024 for the 7B, +0.026 for the 9B, raw) say the gap is not a data-hunger artifact at these training sizes, and the 7B's 25,000-row anchor shows the incumbent's curve still rising past the sizes tested here.
+The near-parallel gains (+0.024 for the 7B, +0.026 for the 9B, raw) say the gap is not a data-hunger artifact at these training sizes, and the 7B's 25,000-row anchor shows the incumbent's curve still rising past the sizes tested here. The four LMSYS cells here are the same four fits shown point-by-point in the per-context cosine strip above, which is their per-unit view.
 
 ### Every fitted map clears its best floor by at least 0.60
 
 Baseline floor R² per cell at the primary layers: shuffled-pairing nulls, train-mean, and the three identity-family baselines (the fitted maps appear in the hero figure).
 
-![Baseline floor R2 per cell for five floor families](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8713bfdb2dd587a8dda4104c28db6ddd1d80c6a1/figures/issue_2330/floors_panel.png)
+![Baseline floor R2 per cell for five floor families, all at or below near-zero, far under the fitted maps](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8713bfdb2dd587a8dda4104c28db6ddd1d80c6a1/figures/issue_2330/floors_panel.png)
 
 > **Figure.** *No floor family comes close to the fitted maps.* Baseline held-out R² per cell (primary layers, N = 1,000): shuffled-pairing nulls and train-mean sit near zero, per-dimension scaled identity barely above zero, identity-plus-bias and identity-copy far below zero.
 
 At 10k the shuffled-pairing nulls read −0.022 (7B) and −0.018 (9B), train-mean −0.02, and the best identity-family baseline (per-dimension scaled identity) 0.079 and 0.018; identity-plus-learned-bias reads −0.89 and −2.07 (input and output dimensions match within each model). The smallest margin between any fitted map and its best floor is 0.60 (the 7B at 5k), so the maps capture structure no identity-family or null baseline reproduces.
+
+Per-unit exemption: each floor is a per-cell baseline scalar; the fitted maps' per-unit view is the per-context strip above, and the per-context targets the floors are computed from are in the pinned npz (footer).
 
 ### Retrieval acc@1 runs 64.4-73.5% against 0.1% chance but does not track the R² ordering
 
@@ -172,6 +175,8 @@ Nearest-neighbor retrieval per cell: the fraction of held-out prompts whose pred
 
 Across cells and both metrics acc@1 spans 64.4-73.5%. Cosine favors the 9B at 5k (70.0% vs 68.3%) and is near-tied at 10k (72.5% vs 73.1% for the 7B), while euclidean favors the 7B at both sizes (73.5% vs 70.7% at 10k). Retrieval and R² dissociating this way suggests part of the R² gap reflects activation geometry or scale rather than weaker answer discrimination.
 
+Per-unit exemption: acc@k is binary per prompt, so the plotted per-cell fractions are its complete summary; the per-context predictions behind it are in the pinned npz (footer).
+
 ### The gap widens to −0.067 on the WildChat transfer fold, where the 9B's depth pattern inverts
 
 Held-out R² of the same 10k fits scored in-distribution (LMSYS test) versus on the WildChat transfer fold (998 prompts; fit never sees WildChat), at the primary layers.
@@ -182,7 +187,7 @@ Held-out R² of the same 10k fits scored in-distribution (LMSYS test) versus on 
 
 At 10k the transfer read is 0.598 (7B) vs 0.531 (9B) — a 0.067 gap, point estimates only (no bootstrap was run on this fold). The depth pattern inverts for the 9B on transfer: its transfer R² rises with depth (0.517 / 0.531 / 0.556) while the 7B again peaks mid-stack (0.478 / 0.598 / 0.503), so at the shallow depth-matched pair the 9B transfers better (0.517 vs 0.478); per-layer, the 9B's largest transfer drop is at its shallow layer, not the middle. In-distribution numbers carry no generalization claim; every headline above is labeled with its fold.
 
-Per-unit record: per-context WildChat predictions and targets live in the same pinned npz (footer).
+Per-unit exemption: the per-context strip above is the in-distribution per-unit view; the transfer fold's per-unit evidence (per-context WildChat predictions and targets) is in the same pinned npz (footer).
 
 ---
 
