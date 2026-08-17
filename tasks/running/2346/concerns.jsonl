@@ -1,0 +1,1 @@
+{"ts": "2026-08-17T15:23:20Z", "event": "raised", "concern_id": "silent-sweep-errors-unlogged", "severity": "BLOCKER", "summary": "Both production sweep copies silently swallow housekeeping failures instead of emitting the required bounded skip diagnostic.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
