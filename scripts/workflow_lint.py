@@ -15392,7 +15392,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     "issue/steps/09-step-5.md": 97_900,  # measured 95,138 B
     "issue/steps/10-step-6.md": 144_200,  # measured 141,432 B
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    "issue/steps/18-step-10d.md": 274_800,  # measured 272,064 B
+    "issue/steps/18-step-10d.md": 282_700,  # measured 279,937 B @ #2348 (TG merge-base + classify port)
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
