@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""Fold figures for #2202 inline rounds `freshwhiten-avg` + `metric-zoo`.
+
+Renders two clean-result figures from the committed round summaries:
+
+1. ``fig_convention_zoo`` — horizontal bars of full-pool rank-1 retrieval
+   accuracy (acc@1, n = 9,941) for every banked + new similarity convention,
+   sorted, with the raw-euclidean fresh-draw reference and the
+   convention-matched (CSLS on whitened cosine) reference as vertical lines.
+2. ``fig_avg_target`` — grouped bars of covered-row acc@1 (n = 1,988) for
+   single-draw vs 5-draw-averaged targets under raw euclidean and whitened
+   cosine, with each convention's fresh-draw reference drawn per group.
+
+Inputs: eval_results/issue_2202/freshwhiten_avg/summary.json and
+eval_results/issue_2202/metric_zoo/summary.json. Zero compute beyond reading
+the committed JSONs.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    paper_palette,
+    savefig_paper,
+    set_paper_style,
+)
+
+REPO = Path(__file__).resolve().parent.parent
+FIG_DIR = REPO / "figures" / "issue_2202"
+
+# slug -> (plain-English label, is_banked)
+LABELS: dict[str, tuple[str, bool]] = {
+    "raw_euclidean": ("raw euclidean (banked)", True),
+    "raw_cos": ("raw cosine (banked)", True),
+    "cent_cos": ("mean-centered cosine (banked)", True),
+    "whiten_euc": ("whitened euclidean (banked)", True),
+    "whiten_cos": ("whitened cosine (banked)", True),
+    "csls_k10_raw_cos": ("CSLS K=10 on raw cosine (banked)", True),
+    "r2_cand_norm": ("candidate-normalized R²", False),
+    "pearson_r": ("Pearson r across dims (= raw cosine)", False),
+    "csls_k10_whitencos": ("CSLS K=10 on whitened cosine", False),
+    "hubdeg_pen_whitencos_g05": ("in-degree hub penalty on whitened cosine", False),
+    "whitencos_lam03": ("whitened cosine, shrinkage 0.3", False),
+    "whitencos_lam05": ("whitened cosine, shrinkage 0.5", False),
+    "truncwhiten_k1024_cos": ("top-1024 truncated whitening, cosine", False),
+    "truncwhiten_k256_cos": ("top-256 truncated whitening, cosine", False),
+    "truncwhiten_k64_cos": ("top-64 truncated whitening, cosine", False),
+    "alphawhiten_a05_cos": ("half-power whitening, cosine", False),
+    "abtt_d35_cos": ("all-but-the-top (35 dims), cosine", False),
+    "diagwhiten_cos": ("per-dimension z-score, cosine", False),
+    "dsl_k10_euc": ("DisSimLocal K=10, euclidean", False),
+    "nicdm_k10_euc": ("NICDM local scaling K=10, euclidean", False),
+    "isf_cos_b30": ("inverted softmax (beta 30), cosine", False),
+    "mp_emp_euc": ("mutual proximity, euclidean", False),
+    "diagwhiten_euc": ("per-dimension z-score, euclidean", False),
+    "truncwhiten_k64_euc": ("top-64 truncated whitening, euclidean", False),
+    "truncwhiten_k256_euc": ("top-256 truncated whitening, euclidean", False),
+    "truncwhiten_k1024_euc": ("top-1024 truncated whitening, euclidean", False),
+    "csls_pen_whitencos_g10": ("double-strength CSLS penalty on whitened cosine", False),
+    "isf_cos_b10": ("inverted softmax (beta 10), cosine", False),
+}
+
+# sensitivity records that duplicate a banked convention exactly (skip as bars)
+SKIP_SENSITIVITY = {"truncwhiten_kfull_euc", "truncwhiten_kfull_cos"}
+
+
+def fig_convention_zoo(zoo: dict, fresh: dict) -> None:
+    rows: list[tuple[str, float, bool]] = []
+    for slug, rec in zoo["banked_baselines"]["acc1_table"].items():
+        label, banked = LABELS[slug]
+        rows.append((label, rec["acc1"], banked))
+    for slug in ("r2_cand_norm", "pearson_r"):
+        label, banked = LABELS[slug]
+        rows.append((label, fresh["addendum_conventions"][slug]["acc_at_k"]["1"], banked))
+    for rec in zoo["new_conventions_ranked"]:
+        label, banked = LABELS[rec["name"]]
+        rows.append((label, rec["acc1"], banked))
+    for rec in zoo["sensitivity_records"]:
+        if rec["name"] in SKIP_SENSITIVITY:
+            continue
+        label, banked = LABELS[rec["name"]]
+        rows.append((label, rec["acc1"], banked))
+    rows.sort(key=lambda r: r[1])
+
+    ref_raw = zoo["banked_baselines"]["fresh_draw_ceiling_raw_euclidean"]
+    ref_matched = zoo["ceilings"]["ceiling_csls_k10_whitencos"]["ceiling"]["acc1_ceiling"]
+
+    c_new, c_ref_raw, c_ref_matched = paper_palette(3)
+    c_banked = "0.62"
+
+    fig, ax = plt.subplots(figsize=(7.5, 9.0))
+    y = range(len(rows))
+    ax.barh(
+        list(y),
+        [r[1] for r in rows],
+        color=[c_banked if r[2] else c_new for r in rows],
+        height=0.72,
+    )
+    for i, (_, acc1, _) in enumerate(rows):
+        ax.text(acc1 + 0.008, i, f"{acc1:.3f}", va="center", fontsize=7.5)
+    ax.axvline(ref_raw, color=c_ref_raw, linestyle="--", linewidth=1.4)
+    ax.axvline(ref_matched, color=c_ref_matched, linestyle=":", linewidth=1.6)
+    ax.set_yticks(list(y))
+    ax.set_yticklabels([r[0] for r in rows], fontsize=8.5)
+    ax.set_xlim(0, 1.06)
+    ax.set_xlabel("rank-1 retrieval accuracy (full 9,941-answer pool)")
+    ax.set_title("Rank-1 retrieval accuracy by similarity convention")
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=c_new),
+        plt.Rectangle((0, 0), 1, 1, color=c_banked),
+        plt.Line2D([0], [0], color=c_ref_raw, linestyle="--", linewidth=1.4),
+        plt.Line2D([0], [0], color=c_ref_matched, linestyle=":", linewidth=1.6),
+    ]
+    ax.legend(
+        handles,
+        [
+            "new this round",
+            "banked convention",
+            f"fresh-draw reference, raw euclidean ({ref_raw:.3f})",
+            f"fresh-draw reference, matched to CSLS on whitened cosine ({ref_matched:.3f})",
+        ],
+        loc="lower right",
+        fontsize=8,
+    )
+    savefig_paper(fig, "fig_convention_zoo", dir=FIG_DIR)
+    plt.close(fig)
+
+
+def fig_avg_target(fresh: dict) -> None:
+    covered = fresh["map_acc_on_covered_rows"]
+    single = covered["single_draw_target"]
+    avg = covered["draw_averaged_target"]
+    refs = fresh["fresh_draw_reference"]
+    conventions = [
+        ("raw euclidean", "raw_euclidean", refs["raw_euclidean_recomputed"]),
+        ("whitened cosine", "whiten_cos", refs["whiten_cos"]),
+    ]
+
+    palette = paper_palette(4)
+    c_single, c_ref, c_avg = palette[0], palette[2], palette[3]
+    fig, ax = plt.subplots(figsize=(6.5, 4.2))
+    width = 0.34
+    for g, (label, key, ref) in enumerate(conventions):
+        v_single = single[key]["acc_at_k"]["1"]
+        v_avg = avg[key]["acc_at_k"]["1"]
+        ax.bar(g - width / 2, v_single, width, color=c_single)
+        ax.bar(g + width / 2, v_avg, width, color=c_avg)
+        ax.text(g - width / 2, v_single + 0.008, f"{v_single:.3f}", ha="center", fontsize=9)
+        ax.text(g + width / 2, v_avg + 0.008, f"{v_avg:.3f}", ha="center", fontsize=9)
+        ax.hlines(ref, g - 0.46, g + 0.46, color=c_ref, linestyle="--", linewidth=1.6)
+        ax.text(g + 0.47, ref, f"{ref:.3f}", va="center", fontsize=8, color=c_ref)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels([c[0] for c in conventions])
+    ax.set_ylim(0, 1.09)
+    ax.set_ylabel("rank-1 retrieval accuracy (1,988 covered rows)")
+    ax.set_title("Single-draw vs 5-draw-averaged answer targets")
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=c_single),
+        plt.Rectangle((0, 0), 1, 1, color=c_avg),
+        plt.Line2D([0], [0], color=c_ref, linestyle="--", linewidth=1.6),
+    ]
+    ax.legend(
+        handles,
+        [
+            "single-draw target",
+            "5-draw-averaged target",
+            "fresh-draw reference (matched convention)",
+        ],
+        loc="lower right",
+        fontsize=8.5,
+    )
+    savefig_paper(fig, "fig_avg_target", dir=FIG_DIR)
+    plt.close(fig)
+
+
+def main() -> None:
+    set_paper_style("blog")
+    fresh = json.loads((REPO / "eval_results/issue_2202/freshwhiten_avg/summary.json").read_text())
+    zoo = json.loads((REPO / "eval_results/issue_2202/metric_zoo/summary.json").read_text())
+    fig_convention_zoo(zoo, fresh)
+    fig_avg_target(fresh)
+    print(f"wrote fig_convention_zoo + fig_avg_target under {FIG_DIR}")
+
+
+if __name__ == "__main__":
+    main()
