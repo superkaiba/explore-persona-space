@@ -8930,8 +8930,8 @@
     "2155": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2155",
-      "status": "approved",
+      "path": "tasks/running/2155",
+      "status": "running",
       "title": "Cut ~35K tokens/spawn from the always-on context load (autocompact thrash)"
     },
     "2156": {
