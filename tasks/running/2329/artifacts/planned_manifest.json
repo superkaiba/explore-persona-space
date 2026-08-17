@@ -75,21 +75,21 @@
     {
       "id": "mapshift_r2",
       "title": "Per-layer context-to-answer map skill with baselines",
-      "source": "eval_results/issue_2329/mapshift/fresh_fit.json",
+      "source": "eval_results/issue_2329/mapshift/fresh_fit_diagnostics.json",
       "transform": "per layer (32): LOCO-carrier held-out R-squared of the dof-capped GCV ridge v_C -> v_A, alongside the identity+learned-bias baseline (identity_bias_predict) and kNN retrieval P(true target in top-k) euclidean+cosine with chance k/n_pool stated; x-axis fraction-of-stack, full-attention layers marked; n_train vs d=4096 printed",
       "plotted_quantity": "held-out R-squared (and retrieval fraction) vs fraction-of-stack depth"
     },
     {
       "id": "mapshift_shift_prediction",
       "title": "Predicted vs realized patched shift",
-      "source": "eval_results/issue_2329/mapshift/shift_battery.json",
+      "source": "eval_results/issue_2329/mapshift/shift_summary.json + shift_cells.jsonl",
       "transform": "per type x layer: correlation between the map-predicted answer-state shift (fitted map applied to the donor-minus-recipient context state) and the realized patched V_a shift; parent #2162-mapshift conventions; per-cell points behind the summary",
       "plotted_quantity": "predicted-vs-realized shift correlation per type x layer"
     },
     {
       "id": "dv3_2afc",
       "title": "2AFC minimal-pair answer discrimination",
-      "source": "eval_results/issue_2329/mapshift/dv3ext.json",
+      "source": "eval_results/issue_2329/mapshift/dv3_ext.json",
       "transform": "#2215 paired 2AFC per type x layer: fraction of pairs where the map-predicted answer state sits closer (sim_blocks convention) to the true pair member than the alternative, vs the identity+bias baseline and the carrier-blocked deranged null; chance 0.5 line",
       "plotted_quantity": "2AFC accuracy (0-1) vs baselines and null"
     },
