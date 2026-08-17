@@ -690,6 +690,7 @@ def phase_fitness2329(cfg: RunConfig, regime_fp: str) -> int:
         try:
             entries = retry_transient(
                 lambda p=prefix: list(
+                    # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
                     api.list_repo_tree(
                         C.DATA_REPO,
                         path_in_repo=p,
