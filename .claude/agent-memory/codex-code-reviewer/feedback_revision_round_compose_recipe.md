@@ -568,6 +568,30 @@ blind-chunk-reuse concern class). Also state the missing `### (e)` heading
 is EXPECTED when the round claims no closures — else Codex invents a
 marker-shape objection.
 
+**Post-cap USER-GREENLIT scoped round (#2333 r6, 2026-08-17):** when a
+cap-5 FAIL+FAIL park is followed by a user greenlight for ONE scoped round,
+frame it explicitly as "greenlit scoped round past the cap-5 park, NOT
+round <n> of the loop" (sentinel = impl marker version). The CONTRACT
+replaces the plan: inline verbatim envelopes for (i) the greenlight
+progress note, (ii) the cap-park `epm:failure` residual excerpt, (iii) the
+ledger BLOCKER row, (iv) the prior twin's Critical Evidence/Fix — and when
+the two r(n-1) reviewers' rows were merged at park ("id-A == id-B" in the
+failure note), treat the un-persisted twin id as a PSEUDO-ID and say ONE
+closure adjudication covers both (tail: do-not-re-emit either). Decompose
+into C1-C7 with SCOPE as its own item (greenlight: out-of-scope hunk =
+substantive FAIL; NEW substantive blocker RE-PARKS — swap the cap-round
+"advance-or-surface" tags sentence for "re-park-or-relaunch"). Attest a
+REPURPOSED (e) heading (here "(e) Parent-module default behavior") is not
+the optional Concerns-addressed section — at most CONCERNS, closure runs
+off code. A marker DEVIATION NOTE about pre-existing collection errors
+gets the Step 0.9 provenance probe pinned in the prompt (zero commits in
+the round range on the failing file). Hand compose-time literal-grep
+ground truth for the implementer's sweep table NEUTRALLY when the table's
+"site" column cites the consumption point rather than the literal hit
+(adjudicate honesty, don't pre-resolve). Name any same-name-different-
+module decoy the caller sweep will hit (issue2094_run.py's own
+run_injection_gate).
+
 **Concern-closure round on a by-reference compose (#2333 r4, 2026-08-16):**
 when the round CLAIMS closure of a reconciler-persisted concern, the
 concern row's `evidence` field is the acceptance contract — inline it
