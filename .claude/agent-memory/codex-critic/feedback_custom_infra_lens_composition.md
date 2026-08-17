@@ -148,6 +148,25 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   exact flawed inventory the calibration bans. Numcheck PASS first try at
   ~84 KB.
 
+- **Standard-lens infra spawn with an orchestrator lens-TRANSLATION note
+  (#2152 round one, alternatives): when the brief names a STANDARD lens plus a
+  prose translation ("for each claimed PROTECTION find the simplest realistic
+  scenario where it silently fails") + press points, inline the note VERBATIM
+  as its own span labeled "press points — leads, not pre-judged findings",
+  extract the standard lens items verbatim as usual, and bridge them with a
+  digit-free translation paragraph (predicted-positive-result → claimed
+  protection; fatal-unweighable → undisclosed + unprevented + realistic;
+  analyzer → the downstream code-review ensemble + test-verdict gate). Add a
+  `### Press-point dispositions` output section (one hollow-protection /
+  disclosed-residual / prevented line per press point, placed BEFORE
+  What's-Good) so coverage is systematic; carry the brief's FATAL vs
+  RECOVERABLE split as the Must-Fix bar (disclosed residual = Concern, and
+  "a disclosure that materially understates the hole is itself a finding").
+  Guard the plan's own declared declines (no-live-probe rationale, out-of-scope
+  fence) as out-of-bounds unless an undisclosed silent-failure class rides
+  them. Numcheck PASS first try at ~66 KB; scaffold avoided rule-number
+  digits by writing "the pilot-gate rule" / "the api-refusal rule".
+
 - **Live-service hazard ban (#2332): when the plan under review OPERATES ON a
   rate-fragile external service (an HF repo near its file-count cap, under a
   live concurrency constraint), the header's read-only block must explicitly
