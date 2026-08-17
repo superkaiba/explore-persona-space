@@ -894,12 +894,42 @@ def capture_bank(
     return {"layers": layers, "per_context": records}
 
 
+def _banked_vce(rec: dict) -> torch.Tensor:
+    """``(L, H)`` context-end state from a banked PARENT per-context record.
+
+    TWO observed parent record schemas (probed from the REAL pinned stores,
+    r4 crash fix — leg A q25 died ``KeyError: 'v_ce'`` on the S2 records):
+
+    - #2162 vc_bank @ ``PIN_2162``: record keys {context_id, cell, value_id,
+      carrier, ctx_len, prefix_end, v_ce, v_pe} — ``v_ce`` (L, H) verbatim.
+    - #2094 vc_bank @ ``PIN_2094``: record keys {context_id, prefix,
+      query_id, ctx_len, prefix_end, nq, q_span, v_pe} — NO ``v_ce``; the
+      context-end state is ``q_span[-1]``: q_span is (nq, L, H) over
+      positions [prefix_end, ctx_len), so its last row is position
+      ctx_len-1 — the slot the parent's own ``ce`` read uses
+      (issue2094_run.py::_slot_vectors / capture_bank).
+
+    Fail LOUD on any other layout — never a silent default (#2061/#2091
+    schema-from-artifact family).
+    """
+    if "v_ce" in rec:
+        return rec["v_ce"].float()
+    if "q_span" in rec:
+        span = rec["q_span"]
+        assert span.ndim == 3 and span.shape[0] == int(rec["nq"]), (span.shape, rec.get("nq"))
+        return span[-1].float()
+    raise RuntimeError(
+        f"unrecognized banked per-context schema for {rec.get('context_id')!r}: "
+        f"keys={sorted(rec)} — expected 'v_ce' (#2162 layout) or 'q_span' (#2094 layout)"
+    )
+
+
 def capture_parity_gate(cfg: RunConfig, bank: dict) -> dict:
     """q25 HALT gate: fresh v_ce vs the PINNED parent banks (two-bar, #779).
 
     S1 contexts against the #2162 vc bank @ PIN_2162; S2 contexts against the
-    #2094 vc bank @ PIN_2094. Early layers per-layer >= 0.999; flattened
-    all-layer >= 0.995.
+    #2094 vc bank @ PIN_2094 (dual record schemas — ``_banked_vce``). Early
+    layers per-layer >= 0.999; flattened all-layer >= 0.995.
     """
     staged: dict[str, dict] = {}
     for set_name, repo_rel, rev in (
@@ -909,7 +939,13 @@ def capture_parity_gate(cfg: RunConfig, bank: dict) -> dict:
         dest = cfg.bank_dir / f"parent_vc_bank_{set_name}.pt"
         if not dest.exists():
             _stage_pinned(repo_rel, rev, dest)
-        staged[set_name] = torch.load(dest, map_location="cpu", weights_only=False)["per_context"]
+        store = torch.load(dest, map_location="cpu", weights_only=False)
+        assert list(store["layers"]) == list(bank["layers"]), (
+            set_name,
+            store["layers"],
+            bank["layers"],
+        )
+        staged[set_name] = store["per_context"]
 
     worst = {"early": 1.0, "flat": 1.0}
     n = 0
@@ -919,7 +955,7 @@ def capture_parity_gate(cfg: RunConfig, bank: dict) -> dict:
         if parent is None:
             raise RuntimeError(f"capture-parity: context {cid} absent from pinned parent bank")
         fresh = rec["v_ce"]
-        banked = parent["v_ce"].float()
+        banked = _banked_vce(parent)
         assert fresh.shape == banked.shape, (cid, fresh.shape, banked.shape)
         early = min(
             float(torch.nn.functional.cosine_similarity(fresh[layer], banked[layer], dim=0))
@@ -932,7 +968,17 @@ def capture_parity_gate(cfg: RunConfig, bank: dict) -> dict:
         worst["flat"] = min(worst["flat"], flat)
         n += 1
         if early < C.PARITY_EARLY_COS_MIN or flat < C.PARITY_FLAT_COS_MIN:
-            details.append({"context_id": cid, "early": early, "flat": flat})
+            details.append(
+                {
+                    "context_id": cid,
+                    "early": early,
+                    "flat": flat,
+                    # render-drift diagnostics: byte-equivalent renders must
+                    # agree on both position fields (fresh vs banked parent)
+                    "ctx_len": (rec.get("ctx_len"), parent.get("ctx_len")),
+                    "prefix_end": (rec.get("prefix_end"), parent.get("prefix_end")),
+                }
+            )
     verdict = "PASS" if not details else "FAIL"
     return {
         "verdict": verdict,
@@ -950,24 +996,64 @@ S2_DONOR_MAP_PROVENANCE = (
     "FALLBACK. The §4.2 PRIMARY (recover the parent's realized derangement from "
     "eval_results/issue_2094/f_metrics/null_cells.jsonl donor_pair_id fields) is "
     "AMBIGUOUS: 5/15 mq pairs carry >1 distinct pair-type donor across the parent's "
-    "null blocks (15/15 counting centroid donors; measured 2026-08-16, r2 re-probe)."
+    "null blocks (15/15 counting centroid donors; measured 2026-08-16, r2 re-probe). "
+    "When minpair drops occurred, the derangement is over the SURVIVING matched-query "
+    "ids only (same seed; dropped ids recorded in bank.json minpair_dropped_pair_ids)."
 )
 
 
-def build_donor_maps(s1_pairs: list, s2_pairs: list) -> dict[str, dict[str, str]]:
-    """Shuffled-donor maps: S1 = the parent's value-constrained same-cell
-    assignment (deterministic regeneration over the FULL 1404-pair set, seed
-    BANK2162.SEED — the bank.json realized map), restricted to the survivor
-    cells; S2 = the plan §4.2 NAMED FALLBACK — fresh seeded derangement, seed
-    ``C.S2_DERANGEMENT_SEED`` (23330) — because the primary (recovery from the
-    parent's null_cells.jsonl) is ambiguous (``S2_DONOR_MAP_PROVENANCE``)."""
+def _frozen_s1_shuffled_map(staged: Path) -> dict[str, str]:
+    """Frozen S1 shuffled-donor map from the staged parent bank.json @ PIN_2162.
+
+    Observed schema (real artifact probed r4): the JSON manifest's top-level
+    key is ``donor_assignment`` (SINGULAR — the parent's vc_bank.pt store
+    carries ``donor_assignments``, plural, which is where the pre-r4 plural
+    read came from), a dict {shuffled, crosstype}; ``shuffled`` maps
+    pair_id -> donor pair_id. Fail LOUD on drift, never a silent default.
+    """
+    manifest = json.loads(staged.read_text())
+    da = manifest.get("donor_assignment")
+    if not isinstance(da, dict) or "shuffled" not in da:
+        raise RuntimeError(
+            "parent bank.json schema drift: expected top-level 'donor_assignment' "
+            f"with a 'shuffled' map; got top-level keys={sorted(manifest)}"
+        )
+    return da["shuffled"]
+
+
+def build_donor_maps(
+    s1_pairs: list, s2_pairs: list, dropped: set[str] | frozenset[str] = frozenset()
+) -> dict[str, dict[str, str]]:
+    """Shuffled-donor maps over the SURVIVOR pair set (post minpair drops).
+
+    S1 = the parent's value-constrained same-cell assignment (deterministic
+    regeneration over the FULL 1404-pair set, seed BANK2162.SEED — the
+    bank.json realized map), restricted to the survivor cells AND the
+    surviving (non-``dropped``) pairs. A surviving recipient whose frozen
+    donor was dropped cannot get a valid donor under the frozen-map
+    semantics — fail LOUD, never re-assign (r4 survivor-safety: maps built
+    over ALL pairs let survivors reference dropped donors — a silent
+    cascade-drop in grid via ``pair_dropped_for_arm`` and a ``KeyError`` in
+    the q35 ce-control via ``payload_for_arm``'s ``pairs_by_id`` lookup).
+
+    S2 = the plan §4.2 NAMED FALLBACK — fresh seeded derangement over the
+    SURVIVING matched-query ids, seed ``C.S2_DERANGEMENT_SEED`` (23330) —
+    because the primary (recovery from the parent's null_cells.jsonl) is
+    ambiguous (``S2_DONOR_MAP_PROVENANCE``). Re-deranging survivors keeps
+    the recorded-seed semantics and cannot orphan a survivor.
+    """
     full = BANK2162.donor_assignment_2162(BANK2162.build_pairs())
-    s1_ids = {p.pair_id for p in s1_pairs}
+    s1_ids = {p.pair_id for p in s1_pairs if p.pair_id not in dropped}
     s1_map = {pid: d for pid, d in full["shuffled"].items() if pid in s1_ids}
     assert set(s1_map) == s1_ids, "S1 donor map does not cover the survivor pairs"
-    missing = [d for d in s1_map.values() if d not in s1_ids]
-    assert not missing, f"S1 shuffled donors leave the survivor-cell pair set: {missing[:5]}"
-    s2_ids = sorted(p.pair_id for p in s2_pairs)
+    orphaned = {pid: d for pid, d in s1_map.items() if d not in s1_ids}
+    if orphaned:
+        raise RuntimeError(
+            "S1 survivors reference minpair-dropped (or out-of-cell) frozen donors — the "
+            "frozen value-constrained map cannot be preserved over this survivor set; "
+            f"refusing (recipient -> unavailable donor): {sorted(orphaned.items())[:5]}"
+        )
+    s2_ids = sorted(p.pair_id for p in s2_pairs if p.pair_id not in dropped)
     s2_map = C.seeded_derangement(s2_ids, C.S2_DERANGEMENT_SEED)
     stray = [d for d in s2_map.values() if d not in set(s2_ids)]
     assert not stray, f"S2 donors leave the matched-query set: {stray[:5]}"
@@ -1038,7 +1124,8 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
             logger.error("[bank] capture-parity FAIL: %s", parity)
             return RC_PARITY_GATE
 
-    donor_maps = build_donor_maps(s1_pairs, s2_pairs)
+    dropped_ids = set(violations)
+    donor_maps = build_donor_maps(s1_pairs, s2_pairs, dropped=dropped_ids)
     # Plan §4.2: the S1 map IS the parent bank.json's value-constrained
     # assignment — cross-check the deterministic regeneration against the
     # staged frozen copy @ PIN_2162 (fail loud on drift; #600 sha-pin family).
@@ -1046,8 +1133,8 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
         staged = cfg.bank_dir / "parent_bank_2162.json"
         if not staged.exists():
             _stage_pinned(C.R2162_BANK_JSON, C.PIN_2162, staged)
-        parent_map = json.loads(staged.read_text())["donor_assignments"]["shuffled"]
-        s1_ids = {p.pair_id for p in s1_pairs}
+        parent_map = _frozen_s1_shuffled_map(staged)
+        s1_ids = {p.pair_id for p in s1_pairs if p.pair_id not in dropped_ids}
         mismatch = {
             pid: (donor_maps["shuffled"][pid], parent_map.get(pid))
             for pid in s1_ids

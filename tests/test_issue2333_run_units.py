@@ -495,3 +495,203 @@ def test_q35_render_thinking_off_assert():
         ids_fn(_FakeTemplateTok(base + "<think>\n"), ctx)
     with pytest.raises(AssertionError, match="non-empty thinking block"):
         ids_fn(_FakeTemplateTok(base + "<think>\nreasoning...\n</think>\n\n"), ctx)
+
+
+# ── r4 crash fix: banked-parent dual-schema reads (leg A q25 KeyError) ─
+#
+# Fixture layouts MIRROR the REAL pinned stores, probed r4 from
+# superkaiba1/explore-persona-space-data:
+#   issue2162_ctxinfo/analysis_tensors/vc_bank/vc_bank.pt @ PIN_2162 —
+#     top-level {layers, per_context, donor_assignments, bank_sha, repro};
+#     record keys {context_id, cell, value_id, carrier, ctx_len,
+#     prefix_end, v_ce, v_pe}.
+#   issue2094_singlepos/analysis_tensors/vc_bank/vc_bank.pt @ PIN_2094 —
+#     top-level {layers, per_context, centroids, donor_derangement,
+#     bank_sha, repro}; record keys {context_id, prefix, query_id, ctx_len,
+#     prefix_end, nq, q_span, v_pe} — NO v_ce (the r4 crash).
+
+_PAR_LAYERS = [0, 1, 2, 3]  # covers C.PARITY_EARLY_LAYERS
+_PAR_H = 8
+
+
+def _rec_2162_layout(cid: str, v_ce: torch.Tensor) -> dict:
+    return {
+        "context_id": cid,
+        "cell": "instr_format",
+        "value_id": "v1",
+        "carrier": "d1",
+        "ctx_len": 40,
+        "prefix_end": 30,
+        "v_ce": v_ce,
+        "v_pe": torch.zeros_like(v_ce),
+    }
+
+
+def _rec_2094_layout(cid: str, q_span: torch.Tensor) -> dict:
+    return {
+        "context_id": cid,
+        "prefix": "bare",
+        "query_id": "q1",
+        "ctx_len": 40,
+        "prefix_end": 40 - q_span.shape[0],
+        "nq": q_span.shape[0],
+        "q_span": q_span,
+        "v_pe": torch.zeros(q_span.shape[1:]),
+    }
+
+
+def test_banked_vce_2162_layout():
+    v = torch.randn(len(_PAR_LAYERS), _PAR_H)
+    out = RUN._banked_vce(_rec_2162_layout("instr_format::v1::d1", v))
+    assert torch.equal(out, v.float())
+
+
+def test_banked_vce_2094_layout_qspan_last_row():
+    span = torch.randn(5, len(_PAR_LAYERS), _PAR_H)
+    out = RUN._banked_vce(_rec_2094_layout("bare__q1", span))
+    assert torch.equal(out, span[-1].float())  # position ctx_len-1 == span[-1]
+
+
+def test_banked_vce_unrecognized_schema_raises():
+    with pytest.raises(RuntimeError, match="unrecognized banked per-context schema"):
+        RUN._banked_vce({"context_id": "x", "v_pe": torch.zeros(2, 2)})
+
+
+def _write_parent_stores(bank_dir: Path, s1_vce: dict, s2_span: dict) -> None:
+    """Tiny stores at the gate's staged names, mirroring the real layouts."""
+    torch.save(
+        {
+            "layers": _PAR_LAYERS,
+            "per_context": {cid: _rec_2162_layout(cid, v) for cid, v in s1_vce.items()},
+            "donor_assignments": {"shuffled": {}, "crosstype": {}},
+            "bank_sha": "s1sha",
+            "repro": {},
+        },
+        bank_dir / "parent_vc_bank_s1.pt",
+    )
+    torch.save(
+        {
+            "layers": _PAR_LAYERS,
+            "per_context": {cid: _rec_2094_layout(cid, s) for cid, s in s2_span.items()},
+            "centroids": {},
+            "donor_derangement": {},
+            "bank_sha": "s2sha",
+            "repro": {},
+        },
+        bank_dir / "parent_vc_bank_s2.pt",
+    )
+
+
+def test_capture_parity_gate_dual_schema_end_to_end(tmp_path):
+    """Pre-r4 this failed KeyError 'v_ce' on the S2 (q_span-only) record —
+    the exact leg A q25 crash. Runs the REAL gate body against real-layout
+    stores on disk (staging skipped via pre-existing dests; no network)."""
+    torch.manual_seed(0)
+    s1_v = torch.randn(len(_PAR_LAYERS), _PAR_H)
+    s2_span = torch.randn(6, len(_PAR_LAYERS), _PAR_H)
+    _write_parent_stores(tmp_path, {"s1ctx": s1_v}, {"s2ctx": s2_span})
+    fresh = {
+        "layers": _PAR_LAYERS,
+        "per_context": {
+            "s1ctx": {
+                "context_id": "s1ctx",
+                "set": "s1",
+                "ctx_len": 40,
+                "prefix_end": 30,
+                "v_ce": s1_v.clone(),
+            },
+            "s2ctx": {
+                "context_id": "s2ctx",
+                "set": "s2",
+                "ctx_len": 40,
+                "prefix_end": 34,
+                "v_ce": s2_span[-1].clone(),
+            },
+        },
+    }
+    cfg = SimpleNamespace(bank_dir=tmp_path)
+    parity = RUN.capture_parity_gate(cfg, fresh)
+    assert parity["verdict"] == "PASS", parity
+    assert parity["n_contexts"] == 2
+    assert parity["worst_early_cos"] > 0.9999 and parity["worst_flat_cos"] > 0.9999
+
+    # perturbed fresh -> designed FAIL with drift diagnostics, never a crash
+    fresh["per_context"]["s2ctx"]["v_ce"] = -s2_span[-1].clone()
+    bad = RUN.capture_parity_gate(cfg, fresh)
+    assert bad["verdict"] == "FAIL"
+    assert bad["failures"] and bad["failures"][0]["context_id"] == "s2ctx"
+    assert bad["failures"][0]["ctx_len"] == (40, 40)
+
+    # parent/fresh layer-list mismatch fails LOUD at load, not silently
+    with pytest.raises(AssertionError):
+        RUN.capture_parity_gate(cfg, {**fresh, "layers": [0, 1]})
+
+
+def test_frozen_s1_shuffled_map_real_layout(tmp_path):
+    """The bank.json key is donor_assignment (SINGULAR — real artifact @
+    PIN_2162); the pre-r4 plural read is now a loud schema-drift error."""
+    good = tmp_path / "bank.json"
+    good.write_text(
+        json.dumps(
+            {
+                "issue": 2162,
+                "donor_assignment": {"shuffled": {"p1": "p2"}, "crosstype": {"p1": "p3"}},
+            }
+        )
+    )
+    assert RUN._frozen_s1_shuffled_map(good) == {"p1": "p2"}
+
+    plural = tmp_path / "bank_plural.json"  # the exact pre-r4 wrong assumption
+    plural.write_text(json.dumps({"donor_assignments": {"shuffled": {"p1": "p2"}}}))
+    with pytest.raises(RuntimeError, match="schema drift"):
+        RUN._frozen_s1_shuffled_map(plural)
+
+
+def test_build_donor_maps_survivor_safe_below_threshold_drop(monkeypatch):
+    """r4 scope extension (r3 Codex `consumer-contract-post-init`): donor maps
+    are rebuilt over the SURVIVOR set after below-threshold minpair drops.
+
+    (a) every survivor's shuffled-donor reference resolves within the
+        survivor set (the q35 ce-control `pairs_by_id[donor_id]` lookup and
+        the grid `pair_dropped_for_arm` null lookup both stay in-set);
+    (b) no silent cascade-drop: dropped ids appear NEITHER as recipients NOR
+        as donors, and the S2 derangement over survivors keeps full coverage;
+    (c) an S1 survivor orphaned by its frozen donor's drop is a LOUD
+        RuntimeError (frozen value-constrained map preserved, never
+        re-assigned) — and the wholesale rc=26 minpair gate still precedes
+        the donor rebuild in phase_bank.
+    """
+    monkeypatch.chdir(REPO_ROOT)
+    s1, s2 = RUN.build_pair_universe()
+
+    # -- S2 drop (1/15 << 10% wholesale threshold): survivor-safe rebuild
+    dropped = {sorted(p.pair_id for p in s2)[0]}
+    maps = RUN.build_donor_maps(s1, s2, dropped=dropped)
+    surv_s2 = sorted(p.pair_id for p in s2 if p.pair_id not in dropped)
+    all_ids = {p.pair_id for p in [*s1, *s2]} - dropped
+    # (a) every survivor resolves its donor within the survivor universe
+    pairs_by_id = {p.pair_id: p for p in [*s1, *s2] if p.pair_id not in dropped}
+    for pid, donor_id in maps["shuffled"].items():
+        assert pid in all_ids and donor_id in all_ids, (pid, donor_id)
+        assert pairs_by_id[donor_id] is not None  # the ce-control lookup shape
+    # (b) no cascade: dropped id absent as recipient AND as donor; S2 survivors
+    # fully covered by the recorded-seed derangement over the survivor ids
+    assert not (dropped & set(maps["shuffled"])), "dropped id kept as recipient"
+    assert not (dropped & set(maps["shuffled"].values())), "dropped id kept as donor"
+    realized_s2 = {pid: maps["shuffled"][pid] for pid in surv_s2}
+    assert realized_s2 == RUN.C.seeded_derangement(surv_s2, RUN.C.S2_DERANGEMENT_SEED)
+    assert sorted(realized_s2.values()) == surv_s2 and all(k != v for k, v in realized_s2.items())
+
+    # (c) S1 orphaned survivor -> LOUD refusal (frozen map, never re-assigned)
+    full = RUN.build_donor_maps(s1, s2)
+    some_s1_donor = next(d for pid, d in full["shuffled"].items() if pid in {p.pair_id for p in s1})
+    with pytest.raises(RuntimeError, match="frozen value-constrained map"):
+        RUN.build_donor_maps(s1, s2, dropped={some_s1_donor})
+
+    # (c) wholesale-break ordering pin: rc=26 gate fires BEFORE the rebuild
+    import inspect
+
+    src = inspect.getsource(RUN.phase_bank)
+    assert src.index("RC_MINPAIR_GATE") < src.index("build_donor_maps"), (
+        "phase_bank must evaluate the wholesale minpair gate before the survivor-set donor rebuild"
+    )
