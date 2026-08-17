@@ -16,6 +16,11 @@ yet evidence of genuine absence (hit live on #2147 r1, 2026-08-16):
    `epm:experiment-implementation v1`; probe 1 resolved it, and the compose
    proceeded with a neutral marker-kind attestation in the prompt so the
    twin judges shape on the inlined body, never the kind naming).
+   CAVEAT (#2338 r1, 2026-08-17): a THIRD variant, bare `epm:implementation
+   v1`, matches NEITHER standard prefix — only probe 2's full kind listing
+   catches it. Never stop at probe 1; fetch the odd kind with its own
+   `--prefix epm:implementation` once the listing names it, then proceed
+   with the same neutral-attestation compose.
 2. **Full events.jsonl kind listing on main** — an implementer may have put
    report CONTENT in an `epm:progress` note. READ the candidate note body: a
    `[surfaced-followups]` / heartbeat / dispatch note is NOT a report (on
