@@ -2,7 +2,8 @@
 title: Conversation history alone carries about half the full-context answer-state
   map on 100k real multi-turn conversations (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- keep-running
 created_at: '2026-07-28T00:42:49Z'
 has_clean_result: true
 parent_id: 1482
