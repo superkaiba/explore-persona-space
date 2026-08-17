@@ -9,14 +9,24 @@ origin_prompt: 'run the full experiment i talked about earlier on the overrefusa
   (4-way: LLM judge on context, probe on context vector, probe on mapped answer vector,
   probe on actual answer vector, fair train/eval split)'
 workflow: v1
+goal: 'On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct''s
+  over-refuse-vs-answer decision is predictable from its INTERNAL representation of
+  the context when it is NOT predictable from the prompt text by a strong LLM judge,
+  and whether a fitted context->answer map recovers the behavior-relevant signal that
+  only the actual-answer representation contains. Compare four predictors under a
+  fair group-level split: (1) LLM judge on context text, (2) linear probe on the context
+  activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear
+  probe on the actual answer activation (ceiling).'
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
-Predict Qwen2.5-7B-Instruct's behavior (RELIABLY-ANSWER vs RELIABLY-OVER-REFUSE) on borderline dual-use prompts, and compare four predictors of that behavior under a fair, group-level train/eval split:
+On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct's over-refuse-vs-answer decision is predictable from its INTERNAL representation of the context when it is NOT predictable from the prompt text by a strong LLM judge, and whether a fitted context->answer map recovers the behavior-relevant signal that only the actual-answer representation contains. Compare four predictors under a fair group-level split: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear probe on the actual answer activation (ceiling).
 
 1. **LLM judge on context** — Sonnet (`claude-sonnet-4-5-20250929`) reads only the prompt text and predicts behavior (few-shot, calibrated, returns P). Surface baseline; expected near chance if behavior is surface-unpredictable.
 2. **Probe on context vector** — linear probe on Qwen's residual-stream activation at the last prompt token → behavior.
-3. **Probe on mapped answer vector** — fit a context->answer map M (the leakage-paper object M_{C,A}), apply to the context to get a PREDICTED answer representation (no generation), probe that.
+3. **Probe on mapped answer vector** — fit a label-blind context->answer map M (the leakage-paper object M_{C,A}), apply to the context to get a PREDICTED answer representation (no generation), probe that. ABLATION over map training data: (#3a) generic unjudged (context,answer) only vs (#3b) generic + the borderline TRAIN-split contexts (still label-blind). See Design.
 4. **Probe on actual answer vector** — linear probe on the representation of the actually-generated answer (ceiling — the answer already contains the refuse/answer decision).
 
 **Headline hypothesis:** judge-on-text ≈ chance, context-probe well above chance, mapped-answer-probe approaching the actual-answer ceiling — i.e., the context already determines the behavior-relevant answer geometry via the map.
@@ -33,6 +43,11 @@ Predict Qwen2.5-7B-Instruct's behavior (RELIABLY-ANSWER vs RELIABLY-OVER-REFUSE)
 - **Behavior label (DV):** reliable, multi-sample. Sample N≈10 per prompt at temp≈0.9, Sonnet-judge each response as answer vs over-refuse. Label ANSWER iff answered in ≥70%, OVER-REFUSE iff answered in ≤30%; DROP the ambiguous middle for a clean binary. Balance by subsampling the majority class.
 - **Activations:** Qwen2.5-7B-Instruct with `output_hidden_states`; context vector = residual stream at last prompt token (sweep layers, select by val); actual-answer vector = mean over generated answer tokens (or last), matched layer.
 - **Map M (LABEL-BLIND, trained on additional unjudged generic data — user decision):** fit the context→answer representation map on a SEPARATE, GENERIC, UNJUDGED corpus of (context, answer) pairs — disjoint from the behavior-labeled borderline set, NO behavior labels, NO prompt overlap. M is a task-agnostic transform (the model's general context→answer geometry), never fit to the DV — this is what makes #3 non-circular with #2 (M cannot encode behavior labels it never saw). Prefer a LOW-RANK / answer-subspace map and REPORT its effective rank, so #3 is a probe restricted to the generically-learned answer geometry (a strict, regularizing subset of #2's hypothesis class).
+
+  **Map-training ABLATION (user decision) — two conditions for predictor #3:**
+  - **#3a — generic-only:** M trained on the unjudged generic (context, answer) corpus only.
+  - **#3b — generic + in-domain:** M trained on the unjudged generic corpus PLUS the TRAIN-split borderline contexts, used as unjudged (context, answer) pairs — the map still NEVER sees the behavior labels (label-blind), it only additionally sees the borderline domain's context→answer geometry.
+  Both map conditions use TRAIN groups only; eval groups are held out from BOTH the map and the probe (group-level split — no leakage in either stage). Comparison tests whether label-blind in-domain adaptation of the map improves behavior prediction, i.e. whether the borderline domain's answer geometry carries the behavior signal beyond generic geometry. Behavior probe is trained on the labeled train set in both conditions.
 - **Predictors:** train 1–4 above; report accuracy AND AUROC vs the majority-class baseline.
 - **Fair split:** GROUP-LEVEL by seed/topic — all paraphrases/near-duplicates of one seed stay on the same side of train/eval (no leakage). Report LODO-style generalization too.
 
