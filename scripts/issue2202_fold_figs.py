@@ -245,10 +245,53 @@ def fig_contrastive_maps(battery: dict) -> None:
     plt.close(fig)
 
 
+def fig_avgtgt_convergence(avgtgt: dict) -> None:
+    map_labels = {
+        "ridge": "ridge (banked)",
+        "mlp_w8192": "MSE-trained MLP (banked)",
+        "mlp_w8192_seed43": "MSE-trained MLP, seed 43 (banked)",
+        "krr_nystrom": "kernel ridge, Nystrom (banked)",
+        "residual_skip": "residual skip map (banked)",
+        "contrastive_linear": "contrastive linear (InfoNCE)",
+        "contrastive_mlp": "contrastive MLP (InfoNCE)",
+    }
+    conv = "csls_k10_whitencos"
+    rows = []
+    for key, label in map_labels.items():
+        cell = avgtgt["matrix"][key][conv]
+        rows.append((label, cell["single"]["acc_at_k"]["1"], cell["avg"]["acc_at_k"]["1"]))
+    rows.sort(key=lambda r: r[2])
+
+    palette = paper_palette(4)
+    c_single, c_avg = palette[0], palette[3]
+    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    for i, (_, s, a) in enumerate(rows):
+        ax.plot([s, a], [i, i], color="0.75", linewidth=1.2, zorder=1)
+        ax.scatter([s], [i], color=c_single, s=45, zorder=2)
+        ax.scatter([a], [i], color=c_avg, s=45, zorder=2)
+        ax.text(s - 0.0012, i, f"{s:.3f}", ha="right", va="center", fontsize=8)
+        ax.text(a + 0.0012, i, f"{a:.3f}", ha="left", va="center", fontsize=8)
+    ax.set_yticks(range(len(rows)))
+    ax.set_yticklabels([r[0] for r in rows], fontsize=9)
+    ax.set_ylim(-0.7, len(rows) + 1.4)
+    ax.set_xlim(0.968, 1.001)
+    ax.set_xlabel("rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)")
+    ax.set_title("All seven maps converge under hub-corrected retrieval + averaged targets")
+    handles = [
+        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor=c_single, markersize=7),
+        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor=c_avg, markersize=7),
+    ]
+    ax.legend(
+        handles, ["single-draw target", "5-draw-averaged target"], loc="upper left", fontsize=8.5
+    )
+    savefig_paper(fig, "fig_avgtgt_convergence", dir=FIG_DIR)
+    plt.close(fig)
+
+
 def main() -> None:
     import sys
 
-    which = set(sys.argv[1:]) or {"zoo", "avg", "contrastive"}
+    which = set(sys.argv[1:]) or {"zoo", "avg", "contrastive", "avgtgt"}
     set_paper_style("blog")
     wrote = []
     if which & {"zoo", "avg"}:
@@ -270,6 +313,12 @@ def main() -> None:
         )
         fig_contrastive_maps(battery)
         wrote.append("fig_contrastive_maps")
+    if "avgtgt" in which:
+        avgtgt = json.loads(
+            (REPO / "eval_results/issue_2202/avgtgt_completion/summary.json").read_text()
+        )
+        fig_avgtgt_convergence(avgtgt)
+        wrote.append("fig_avgtgt_convergence")
     print(f"wrote {' + '.join(wrote)} under {FIG_DIR}")
 
 
