@@ -10346,8 +10346,8 @@
     "2339": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2339",
-      "status": "proposed",
+      "path": "tasks/planning/2339",
+      "status": "planning",
       "title": "judge_pilot_gate: unsatisfiable-config remedy text names escapes that cannot satisfy the verdict-time floor"
     },
     "234": {
