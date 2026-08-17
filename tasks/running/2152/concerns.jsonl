@@ -1,0 +1,1 @@
+{"ts": "2026-08-17T04:59:21Z", "event": "raised", "concern_id": "post-recovery-completeness-source", "severity": "BLOCKER", "summary": "issue2224 post-recovery completeness reads round-zero scores, so recovered items remain falsely incomplete.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
