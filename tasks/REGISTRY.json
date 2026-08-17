@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2353,
+  "highest_id": 2354,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10462,6 +10462,13 @@
       "path": "tasks/running/2353",
       "status": "running",
       "title": "verify_task_body: WARN-level per-unit-or-exemption check for every v4 result section (multi-point aggregate figures escape the current single-aggregate-stat trigger)"
+    },
+    "2354": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2354",
+      "status": "proposed",
+      "title": "worktree_audit.py stale-sweep reaps an active inline-round worktree (pod-side work + parked parent look idle)"
     },
     "237": {
       "has_clean_result": true,
