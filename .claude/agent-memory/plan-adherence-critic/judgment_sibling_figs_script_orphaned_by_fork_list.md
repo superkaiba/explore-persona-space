@@ -26,3 +26,13 @@ for the id AND its `source` basename (`fresh_fit.json`, `dv3ext.json`, ...);
 zero hits with no declared `not run`/deferral ⇒ Major missing-component
 finding. Also `ls scripts/ | grep -i '<parent-issue>.*fig'` to enumerate ALL
 parent renderers before trusting the fork list. Related: [[judgment_smoke_slice_and_figure_transform_elements]].
+
+**Two literal-mismatch sub-cases that are NOT missing coverage** (#2329 r2):
+(a) manifest `source` strings are plan-time SKETCHES — when a source basename
+doesn't hit, grep the PRODUCER's write sites for the realized filenames
+(`fresh_fit_diagnostics.json` vs sketch `fresh_fit.json`); producer/consumer
+agreement + a registered deviation passes, but recommend correcting the
+manifest source fields so the report-verifier's manifest-completeness
+recompute doesn't trip later. (b) figure-id vs savefig-name deltas
+(`hero_f_by_type` id → `hero_ftype` file): a renderer wired to the declared
+sources under a different output name is coverage, not a gap.
