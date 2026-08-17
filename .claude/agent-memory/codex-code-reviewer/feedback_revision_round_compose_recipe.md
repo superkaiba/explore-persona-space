@@ -543,3 +543,32 @@ blocked compound Bash means NOTHING in it ran — a `cat >>` upstream of the
 blocked git verb never executed; re-apply the write (via the Edit tool,
 never a heredoc — #1756) before retrying the commit, and verify landing by
 blob read at HEAD, never by the commit line.
+
+**Concern-closure round on a by-reference compose (#2333 r4, 2026-08-16):**
+when the round CLAIMS closure of a reconciler-persisted concern, the
+concern row's `evidence` field is the acceptance contract — inline it
+VERBATIM (mark it "this is the acceptance contract") and decompose it into
+per-item (i)/(ii)/(iii) adjudication lines in a dedicated fix-verification
+verdict section, with an explicit note where the implementation deviates
+from the evidence's LITERAL prescription under a recorded directive (here:
+S1 frozen-map restriction + orphan refusal vs the evidence's "re-derange";
+instruct adjudicate-as-faithful-or-not, not auto-flag). Three sibling
+duties this shape adds: (a) a reconciler "Standing recommendations on
+PASS" that is DIRECTIVE-PHRASED at this round ("Round 4: include X") but
+absent from the diff (compose-time grep) gets its own NEUTRAL adjudication
+block + a verdict line — named severity ceiling (Minor/CONCERNS-class,
+never a manufactured FAIL) so Codex neither ignores nor inflates it;
+(b) pre-trace INTERACTION regressions where the fix makes a prior
+concern's exposure WIDER (here: survivor rebuild makes donor maps depend
+on the drop set → the donor-chunk blind-resume concern's stale-cache risk
+now has a new axis) — hand it to Codex as the look-hardest regression row;
+(c) the closure concern gets its status line in the fix-verification
+section, NOT a row in the regression-check section, and the ledger's
+missing `addressed` event is declared EXPECTED (orchestrator business).
+Assert traps hit live: `grep -c` counts LINES not occurrences (the tail's
+CONCERN:: grammar block = 4 substring hits on 3 lines); per-id tail counts
+need a map when ids recur in instruction prose (ledger field + closure
+line + regression instruction); Python `len()` vs `wc -c` differ on
+em-dash-heavy prompts (~1 KB per 130 KB) — not drift. Worktree memory
+commits: the root-code-commit guard fires even on a `cd <wt> && git ...`
+compound — use `git -C "$WT" add/commit -- <path>` explicitly.
