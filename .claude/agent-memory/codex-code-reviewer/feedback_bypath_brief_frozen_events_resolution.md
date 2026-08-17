@@ -38,3 +38,21 @@ unreachable-marker class in a quieter form (stale-read, not error).
 `ls <wt>/tasks/*/<N>` + tail the worktree events.jsonl vs main before
 choosing each reference. Related: [[worktree-status-folder-both-directions]],
 [[concurrent-followups-wrong-plan-symlink]].
+
+**Two r3 extensions (#2325 r3, 2026-08-16):**
+
+- **Main-side events.jsonl by working-tree path needs the stash-race re-read
+  rule IN the prompt** — under fleet concurrency an uncommitted row is
+  transiently reverted by other sessions' pre-commit stash cycles
+  (`git checkout -- .` for the hook window), and a working-tree read inside
+  the window produced a false "marker destroyed" alarm on #2325. The prompt
+  must say: a row that appears missing ⇒ re-read via
+  `git -C <main-root> show HEAD:tasks/<status>/<N>/events.jsonl` before
+  concluding anything; never file a missing-row finding from a working-tree
+  read alone; `data-access-blocked` applies only AFTER the re-read.
+- **Review-dispatched fix rounds may post NO new `epm:results` version**
+  (the standing report stays v<k>; the round's record is an `epm:progress`
+  dispatch note). Preempt the predictable spurious complaint with an explicit
+  line: "the absence of an `epm:results` v<k+1> is by orchestrator design
+  this round and is NOT a `marker-shape` finding" — and repeat the carve-out
+  inside the Blocker-tags bracket.
