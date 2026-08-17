@@ -74,8 +74,11 @@ description = "Files that intentionally contain secret-shaped pattern definition
 paths = [
     '''scripts/redact_for_gist\.py''',
     '''scripts/check_no_secret_shaped_strings\.py''',
+    '''scripts/scrub_secrets\.py''',
+    '''src/explore_persona_space/orchestrate/secret_scrub\.py''',
     '''tests/test_redact_for_gist\.py''',
     '''tests/test_check_no_secret_shaped_strings\.py''',
+    '''tests/test_secret_scrub\.py''',
     '''\.gitleaks\.toml''',
     # task #2091 greedy judge DVs: the `group_key` cluster-id column trips
     # generic-api-key 6,674 times across the three DV files (Reddit AITA post

@@ -24,6 +24,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
+
 logger = logging.getLogger(__name__)
 
 # Default public HF Hub repos
@@ -1842,6 +1844,18 @@ def _upload(
             path_in_repo,
             ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
         )
+
+    # Secret upload gate (2026-08-17): scan every Hub-bound text file / tar
+    # member for real-secret-grade strings BEFORE any network I/O. Four HF
+    # secret-scanning alerts (2026-06-15 → 2026-08-17) all traced to corpus
+    # text with pasted third-party credentials landing on the PUBLIC data
+    # repo unscanned; the gate makes that structurally impossible via this
+    # path. Placed BEFORE HfApi construction and OUTSIDE the try below (the
+    # #595 / #1190 / #1738 pre-try precedent) so it propagates regardless of
+    # raise_on_error. Never mutates bytes — remediation is
+    # scripts/scrub_secrets.py, then re-pack/re-hash. Kill switch:
+    # EPM_SECRET_UPLOAD_GATE=0.
+    assert_upload_clean([local_path], what=f"_upload:{repo_id}/{path_in_repo}")
 
     api = HfApi(token=token)
 
