@@ -54,8 +54,9 @@ Modes:
 - ``--synthetic-e2e``: shape-faithful synthetic CPU end-to-end (d=3584/4096,
   n_train = d+128 — the WELL-POSED n>d production λ-selection regime; tiny eval
   splits; schema check only, never a signal read) through the production
-  cell-fit + writer bodies, faking only the HF boundary (and, round 2, the
-  cap-hit aggregate feeding the truncation-restriction control).
+  cell-fit + writer bodies, faking only the HF boundary (and, rounds 2-3, the
+  per-split cap-hit aggregates feeding the TWO-ARM truncation-restriction
+  control — test-restricted read + untruncated refit, #1491 parity).
 """
 
 from __future__ import annotations
@@ -84,6 +85,7 @@ import issue779_ffc_n1m_fits as F  # noqa: E402
 import issue779_ffc_n50k_fits as N50  # noqa: E402
 import issue779_fitter_fair_comparison as FFC  # noqa: E402
 import issue1491_ladder_fits as LF  # noqa: E402
+import issue2330_split_ids as SI  # noqa: E402  (single source of the sha-pin domain)
 
 logger = logging.getLogger("issue2330_matched_fits")
 
@@ -109,11 +111,19 @@ ANCHOR_INVESTIGATE_DEVIATION = 1e-3  # passing-but-large ⇒ investigate-before-
 
 PREDS_HF_PREFIX = "issue2330_matched/analysis_tensors/preds"
 
-# Cap-hit aggregate schema token (round 2, cap-hit-control-unwired): produced
-# by issue2330_qwen35_generate_capture.py --aggregate-cap-hit; consumed here
-# (--cap-hit-dir → the primary-layer truncation-restriction control) and by
-# issue2330_figures.py fig_cap_hit. Keep the three literals in sync.
-CAP_HIT_SCHEMA = "issue2330_cap_hit_v1"
+# Cap-hit aggregate schema token (round 2, cap-hit-control-unwired; round 3
+# v1→v2: exact-coverage invariants + the expected-id-set sha256 fingerprint):
+# produced by issue2330_qwen35_generate_capture.py --aggregate-cap-hit;
+# consumed here (--cap-hit-dir → the primary-layer truncation-restriction
+# read+refit control) and by issue2330_figures.py fig_cap_hit. Keep the three
+# literals in sync.
+CAP_HIT_SCHEMA = "issue2330_cap_hit_v2"
+
+# The logical splits the truncation-restriction control CONSUMES aggregates
+# for, per model root: test (both arms' eval subset), train + val (the refit
+# arm's fit-side masks). Other aggregates in --cap-hit-dir (ceiling draws,
+# wc_test_1k) are figure-only and ignored here.
+CAP_CONSUMED_SPLITS = ("test_1000", "train_10k", "val_400")
 
 # λ-grid-edge disposition: extend ONE DECADE per pass (grid spacing is 0.5
 # decades ⇒ 2 extra points), refit, record; fail loud past the cap.
@@ -517,36 +527,129 @@ def fit_cell_layer(bundle: dict, dev, ceiling: dict, h_dim: int) -> dict:
     return {"result": result, "preds": preds}
 
 
-def _truncation_restriction(pred_te, y_te, ci_te: list[int], cap_info: dict | None) -> dict:
-    """#1491 truncation-restriction control (plan §8/§11 — registered INSTEAD
-    of the 2% re-gen default; round 2, cap-hit-control-unwired).
+def _cap_mask(ci_list: list[int], rec: dict, what: str) -> np.ndarray:
+    """Boolean cap-hit mask over ``ci_list`` from a VALIDATED aggregate rec.
 
-    Evaluates the ALREADY-FITTED primary-layer ridge map on the subset of test
-    contexts whose generation did NOT hit the 1,024-token cap
-    (finish_reason != 'length') — a test-restricted READ beside the full-test
-    R², never a refit. ``cap_info`` is the parsed aggregate for this model's
-    test_1000 split ({"cap_hit_cis": set[int], "source": str, ...});
-    ``None`` ⇒ the explicit ``cap_hit_unavailable`` record (fail-loud
-    provenance — never a fabricated zero-capped read)."""
-    if cap_info is None:
+    FIX 2b (round 3): every fitted ci must be a MEMBER of the aggregate's
+    expected id set — with exact producer-side coverage (every expected ci has
+    a row), membership proves the ci has an aggregate row, so a ci with no row
+    can never silently read as uncapped (it raises here instead)."""
+    expected = rec["expected_id_set"]
+    missing = [int(c) for c in ci_list if int(c) not in expected]
+    if missing:
+        raise RuntimeError(
+            f"cap-hit coverage miss for {what}: {len(missing)}/{len(ci_list)} fitted cis "
+            f"absent from the {rec['split']} aggregate's expected id set "
+            f"(first: {missing[:10]}) — a missing aggregate row must NEVER be treated as "
+            "uncapped; re-run the aggregator against the current split_ids.json"
+        )
+    cap = rec["cap_hit_cis"]
+    return np.array([int(c) in cap for c in ci_list], dtype=bool)
+
+
+def _truncation_restriction(
+    bundle: dict, pred_te: np.ndarray, dev, cap_infos: dict | None, train_key: str
+) -> dict:
+    """#1491 TWO-ARM truncation-restriction control (plan §8/§11 — registered
+    INSTEAD of the 2% re-gen default; round 3, cap-hit-control-unwired).
+
+    Mirrors the parent's semantics (issue1491_caphit_restriction_analysis.py
+    phase_b_restriction, :250-285):
+
+    - ``read``  — arm 2: the ALREADY-FITTED primary-layer ridge map evaluated
+      on the non-cap-hit test rows only (same fit, restricted eval).
+    - ``refit`` — arm 3: the ridge REFIT on non-cap-hit train rows with λ
+      selected on non-cap-hit val rows, evaluated on non-cap-hit test rows.
+      One deliberate deviation from the parent: the refit uses THIS issue's
+      ``fit_ridge_edge_extended`` (plan-§11 λ-grid-edge disposition) instead
+      of the parent's fixed-grid ``F.fit_ridge`` — every meaning-carrying
+      ridge fit in this battery carries the disposition.
+
+    ``cap_infos`` is the per-split dict from ``_production_cap_hit_fn``
+    ({"test_1000"|"train_10k"|"val_400": validated rec | None}); ``None`` (or
+    a missing test arm) ⇒ the explicit ``cap_hit_unavailable`` record, and a
+    missing train/val aggregate degrades ONLY the refit arm to
+    ``{"available": False, ...}`` — loud, never fabricated (FIX 1c)."""
+    if cap_infos is None:
         return {"available": False, "reason": "cap_hit_unavailable"}
-    cap_set = {int(c) for c in cap_info["cap_hit_cis"]}
-    capped = np.array([int(c) in cap_set for c in ci_te], dtype=bool)
-    keep = ~capped
-    rec = {
+    te_rec = cap_infos.get("test_1000")
+    if te_rec is None:
+        return {"available": False, "reason": "cap_hit_unavailable (no test_1000 aggregate)"}
+    ci_te = bundle["cis"]["test_1000"]
+    y_te = bundle["Y"][bundle["te"]]
+    if int(te_rec["total"]) != len(ci_te):
+        raise RuntimeError(
+            f"cap-hit aggregate total={te_rec['total']} != fitted n_test={len(ci_te)} "
+            f"({te_rec['source']}) — aggregate/split drift; refusing a partial mask"
+        )
+    cap_te = _cap_mask(ci_te, te_rec, "test_1000")
+    keep_te = ~cap_te
+    rec: dict = {
         "available": True,
-        "control": "test_restricted_read",
-        "cap_hit_source": str(cap_info.get("source")),
+        "cap_hit_source": {s: (cap_infos.get(s) or {}).get("source") for s in CAP_CONSUMED_SPLITS},
         "n_test": int(len(ci_te)),
-        "n_test_capped": int(capped.sum()),
-        "n_test_untruncated": int(keep.sum()),
+        "n_test_capped": int(cap_te.sum()),
+    }
+
+    # Arm 2 — test-restricted READ (same fit, non-cap-hit test rows only).
+    read: dict = {
+        "control": "test_restricted_read",
+        "n_test_untruncated": int(keep_te.sum()),
         "r2_test_full": float(LF._pooled_r2(pred_te, y_te)),
     }
-    if int(keep.sum()) == 0:
-        rec["r2_test_untruncated"] = None
-        rec["reason"] = "all test rows cap-hit — restriction read undefined"
+    if int(keep_te.sum()) == 0:
+        read["r2_test_untruncated"] = None
+        read["reason"] = "all test rows cap-hit — restriction read undefined"
+    else:
+        read["r2_test_untruncated"] = float(LF._pooled_r2(pred_te[keep_te], y_te[keep_te]))
+    rec["read"] = read
+
+    # Arm 3 — untruncated REFIT (non-cap-hit train/val fit, non-cap-hit test eval).
+    tr_rec, va_rec = cap_infos.get("train_10k"), cap_infos.get("val_400")
+    if tr_rec is None or va_rec is None:
+        rec["refit"] = {
+            "available": False,
+            "control": "untruncated_refit",
+            "reason": "train_10k/val_400 cap-hit aggregate missing — run "
+            "--aggregate-cap-hit for both to arm the refit arm",
+        }
         return rec
-    rec["r2_test_untruncated"] = float(LF._pooled_r2(pred_te[keep], y_te[keep]))
+    ci_tr = bundle["cis"][train_key]
+    ci_va = bundle["cis"]["val_400"]
+    # train_5k ⊆ train_10k (split_ids prefix property) ⇒ the train_10k
+    # aggregate covers BOTH cell train masks; membership is asserted per ci.
+    cap_tr = _cap_mask(ci_tr, tr_rec, train_key)
+    cap_va = _cap_mask(ci_va, va_rec, "val_400")
+    refit: dict = {
+        "available": True,
+        "control": "untruncated_refit",
+        "n_train": int(len(ci_tr)),
+        "n_train_capped": int(cap_tr.sum()),
+        "n_train_untruncated": int((~cap_tr).sum()),
+        "n_val": int(len(ci_va)),
+        "n_val_capped": int(cap_va.sum()),
+        "n_val_untruncated": int((~cap_va).sum()),
+    }
+    tr_r = bundle["tr"][~cap_tr]
+    va_r = bundle["val"][~cap_va]
+    te_r = bundle["te"][keep_te]
+    if len(tr_r) == 0 or len(va_r) == 0 or len(te_r) == 0:
+        refit["selected_lambda"] = None
+        refit["r2_test_untruncated"] = None
+        refit["reason"] = "degenerate untruncated subset (empty train/val/test after masking)"
+        rec["refit"] = refit
+        return rec
+    pred_r, meta_r = fit_ridge_edge_extended(
+        bundle["X"], bundle["Y"], tr_r, va_r, te_r, dev, LF.RIDGE_BLOCK
+    )
+    refit["selected_lambda"] = float(meta_r["selected_lambda"])
+    refit["r2_test_untruncated"] = float(LF._pooled_r2(pred_r, bundle["Y"][te_r]))
+    refit["meta"] = {
+        "val_r2_at_selected": float(meta_r["val_r2_at_selected"]),
+        "lambda_grid_edge": meta_r.get("lambda_grid_edge"),
+        "grid_extensions": meta_r.get("grid_extensions"),
+    }
+    rec["refit"] = refit
     return rec
 
 
@@ -598,10 +701,11 @@ def run_battery(
     ``store_fn(model_cfg, layer)`` → the per-split store dict (production: HF
     streaming via the reuse cores; synthetic e2e: rng arrays — the ONLY faked
     boundary). ``ceiling_fn(model_cfg, layer)`` → the two-draw ceiling record.
-    ``cap_hit_fn(model_cfg)`` → the parsed test_1000 cap-hit aggregate (or
-    None ⇒ the primary-layer truncation restriction records
-    ``cap_hit_unavailable``). Cell JSONs are atomically rewritten after EVERY
-    (cell, layer) unit.
+    ``cap_hit_fn(model_cfg)`` → the per-split validated cap-hit recs
+    ({"test_1000"|"train_10k"|"val_400": rec | None}, round 3) feeding the
+    primary-layer truncation-restriction read+refit control (None ⇒ it
+    records ``cap_hit_unavailable``). Cell JSONs are atomically rewritten
+    after EVERY (cell, layer) unit.
     """
     models = models or MODELS
     t0 = time.time()
@@ -616,8 +720,8 @@ def run_battery(
     unit_i, unit_total = 0, sum(len(m["layers"]) * len(m["cells"]) for m in models.values())
     for model_key in [k for k in MODEL_ORDER if k in models]:
         mcfg = models[model_key]
-        cap_info = cap_hit_fn(mcfg) if cap_hit_fn is not None else None
-        if cap_info is None:
+        cap_infos = cap_hit_fn(mcfg) if cap_hit_fn is not None else None
+        if cap_infos is None:
             logger.warning(
                 "[matched-fits] %s: cap-hit metadata UNAVAILABLE — the primary-layer "
                 "truncation restriction will record 'cap_hit_unavailable' (never fabricated)",
@@ -649,14 +753,16 @@ def run_battery(
                         )
                 fit = fit_cell_layer(bundle, dev, ceiling, mcfg["h_dim"])
                 if layer == mcfg["primary_layer"]:
-                    # #1491 truncation-restriction control (round 2): a READ of
-                    # the fitted map on the untruncated test subset, reported
-                    # beside the full-test R² in the cell JSON.
+                    # #1491 TWO-ARM truncation-restriction control (round 3):
+                    # test-restricted READ of the fitted map + untruncated
+                    # REFIT (non-cap-hit train/val fit, non-cap-hit test
+                    # eval), reported beside the full-test R² per cell.
                     fit["result"]["truncation_restriction"] = _truncation_restriction(
+                        bundle,
                         fit["preds"]["pred_te"],
-                        fit["preds"]["target_te"],
-                        bundle["cis"]["test_1000"],
-                        cap_info,
+                        dev,
+                        cap_infos,
+                        train_key,
                     )
                 per_cell_preds[cell][layer] = fit["preds"]
 
@@ -772,15 +878,85 @@ def _production_ceiling_fn(args, split_ids: dict):
     return ceiling_fn
 
 
-def _production_cap_hit_fn(args):
-    """``cap_hit_fn(mcfg)`` for run_battery (round 2, cap-hit-control-unwired).
+def _validate_cap_aggregate(payload: dict, source: str, split_ids: dict) -> dict:
+    """FIX 2b (round 3): consumer-side coverage invariants for ONE aggregate.
 
-    Scans --cap-hit-dir for aggregates in the ``issue2330_cap_hit_v1`` schema
-    (written by ``issue2330_qwen35_generate_capture.py --aggregate-cap-hit``)
-    and CONTENT-matches ``root == mcfg['hf_prefix']`` + ``split == test_1000``
-    (never filename-matched). A missing dir / no matching file ⇒ None
-    (run_battery records ``cap_hit_unavailable`` with a loud warning); a
-    schema-foreign ``cap_hit_*.json`` in the dir ⇒ raise (refusing to guess)."""
+    Requires the round-3 fingerprint fields (a pre-fingerprint aggregate fails
+    loud with a re-run message); asserts the aggregate was produced against
+    THIS run's split_ids (sha compared in the producer's own domain —
+    ``issue2330_split_ids._sha256_id_list``, recomputed here from the id list
+    so a corrupted split_ids also fails loud); asserts
+    ``expected_n == total == len(split list)``, ``cap_hit == len(cap_hit_cis)``
+    (duplicate-free), ``0 <= cap_hit <= total``, and ``cap_hit_cis ⊆ expected``.
+    Returns the validated consumer rec ``_truncation_restriction`` masks with."""
+    split = str(payload.get("split"))
+    for field in ("expected_ids_sha256", "expected_n", "total", "cap_hit", "cap_hit_cis"):
+        if field not in payload:
+            raise RuntimeError(
+                f"{source}: cap-hit aggregate missing {field!r} — a pre-coverage-fingerprint "
+                f"aggregate; re-run --aggregate-cap-hit (schema {CAP_HIT_SCHEMA})"
+            )
+    if split not in split_ids["splits"]:
+        raise RuntimeError(f"{source}: aggregate split {split!r} unknown to split_ids.json")
+    expected_ids = [int(i) for i in split_ids["splits"][split]]
+    own_sha = str(split_ids["sha256"][split])
+    recomputed = SI._sha256_id_list(expected_ids)
+    if recomputed != own_sha:
+        raise RuntimeError(
+            f"split_ids.json internal sha mismatch for {split}: recomputed {recomputed[:16]}… "
+            f"!= carried {own_sha[:16]}… — split_ids corruption; refusing every cap mask"
+        )
+    got_sha = str(payload["expected_ids_sha256"])
+    if got_sha != own_sha:
+        raise RuntimeError(
+            f"{source}: expected_ids_sha256 {got_sha[:16]}… != this run's split_ids "
+            f"{own_sha[:16]}… for {split} — the aggregate was produced against a DIFFERENT "
+            "split_ids.json; re-run --aggregate-cap-hit against the committed one"
+        )
+    n = len(expected_ids)
+    if int(payload["expected_n"]) != n or int(payload["total"]) != n:
+        raise RuntimeError(
+            f"{source}: expected_n={payload['expected_n']} / total={payload['total']} != "
+            f"len(split_ids.{split})={n} — coverage grain mismatch"
+        )
+    cap_list = [int(c) for c in payload["cap_hit_cis"]]
+    cap_set = set(cap_list)
+    if len(cap_set) != len(cap_list):
+        raise RuntimeError(f"{source}: duplicate cis in cap_hit_cis")
+    if int(payload["cap_hit"]) != len(cap_set) or not 0 <= len(cap_set) <= n:
+        raise RuntimeError(
+            f"{source}: cap_hit={payload['cap_hit']} vs len(cap_hit_cis)={len(cap_set)} "
+            f"outside [0, {n}] — inconsistent aggregate"
+        )
+    stray = cap_set - set(expected_ids)
+    if stray:
+        raise RuntimeError(
+            f"{source}: {len(stray)} cap_hit_cis outside the {split} expected id set "
+            f"(first: {sorted(stray)[:10]}) — aggregate/split drift"
+        )
+    return {
+        "split": split,
+        "source": source,
+        "total": n,
+        "cap_hit": len(cap_set),
+        "cap_hit_cis": cap_set,
+        "expected_id_set": set(expected_ids),
+    }
+
+
+def _production_cap_hit_fn(args, split_ids: dict):
+    """``cap_hit_fn(mcfg)`` for run_battery (round 3, cap-hit-control-unwired).
+
+    Scans --cap-hit-dir for aggregates in the ``issue2330_cap_hit_v2`` schema
+    (written by ``issue2330_qwen35_generate_capture.py --aggregate-cap-hit``),
+    CONTENT-matches ``root == mcfg['hf_prefix']`` (never filename-matched),
+    and validates every CONSUMED split's aggregate (test_1000 / train_10k /
+    val_400) against split_ids (``_validate_cap_aggregate``). Returns the
+    per-split dict {"test_1000": rec|None, "train_10k": rec|None,
+    "val_400": rec|None} — a missing train/val arm degrades ONLY the refit arm
+    (loud warning); no aggregates at all / a missing dir ⇒ None
+    (``cap_hit_unavailable``). A schema-foreign or duplicate (root, split)
+    ``cap_hit_*.json`` ⇒ raise (refusing to guess)."""
     cap_dir = args.cap_hit_dir
 
     def cap_hit_fn(mcfg: dict):
@@ -793,27 +969,48 @@ def _production_cap_hit_fn(args):
                 mcfg["hf_prefix"],
             )
             return None
+        found: dict[str, dict] = {}
         for p in sorted(Path(cap_dir).glob("cap_hit_*.json")):
             payload = json.loads(p.read_text(encoding="utf-8"))
             if payload.get("schema") != CAP_HIT_SCHEMA:
                 raise RuntimeError(
                     f"{p}: schema {payload.get('schema')!r} != {CAP_HIT_SCHEMA!r} — not a "
-                    "pipeline cap-hit aggregate (refusing to guess a foreign format)"
+                    "pipeline cap-hit aggregate (refusing to guess a foreign format; a v1 "
+                    "aggregate predates the coverage fingerprint — re-run the aggregator)"
                 )
-            if payload["root"] == mcfg["hf_prefix"] and payload["split"] == "test_1000":
-                return {
-                    "cap_hit_cis": {int(c) for c in payload["cap_hit_cis"]},
-                    "source": str(p),
-                    "total": int(payload["total"]),
-                    "cap_hit": int(payload["cap_hit"]),
-                }
-        logger.warning(
-            "[matched-fits] no cap_hit_*.json under %s with root=%s split=test_1000 — "
-            "the truncation restriction will record 'cap_hit_unavailable'",
-            cap_dir,
-            mcfg["hf_prefix"],
-        )
-        return None
+            if payload.get("root") != mcfg["hf_prefix"]:
+                continue
+            split = str(payload.get("split"))
+            if split not in CAP_CONSUMED_SPLITS:
+                continue  # ceiling draws / wc_test_1k: figure-only aggregates
+            if split in found:
+                raise RuntimeError(
+                    f"{p}: duplicate cap-hit aggregate for (root={mcfg['hf_prefix']}, "
+                    f"split={split}) under {cap_dir}"
+                )
+            found[split] = _validate_cap_aggregate(payload, str(p), split_ids)
+        if not found:
+            logger.warning(
+                "[matched-fits] no cap_hit_*.json under %s with root=%s — the truncation "
+                "restriction will record 'cap_hit_unavailable'",
+                cap_dir,
+                mcfg["hf_prefix"],
+            )
+            return None
+        out: dict[str, dict | None] = {}
+        for split in CAP_CONSUMED_SPLITS:
+            rec = found.get(split)
+            out[split] = rec
+            if rec is None:
+                logger.warning(
+                    "[matched-fits] %s: no %s cap-hit aggregate under %s — the %s arm "
+                    "degrades loud (never fabricated)",
+                    mcfg["hf_prefix"],
+                    split,
+                    cap_dir,
+                    "read+refit" if split == "test_1000" else "refit",
+                )
+        return out
 
     return cap_hit_fn
 
@@ -1039,37 +1236,203 @@ def run_selftest() -> int:
     assert rec["abs_deviation"] < 1e-9 and rec["investigate_before_narrate"] is False
     print("[selftest] PASS anchor-gate pass path (deviation record present)", flush=True)
 
-    # 5. Truncation-restriction control (#1491; round 2, cap-hit-control-unwired):
-    #    unavailable / subset-read / empty-cap-set / all-capped paths.
-    pred_t = rng.standard_normal((6, 8)).astype(np.float32)
-    y_t = (pred_t + 0.01 * rng.standard_normal(pred_t.shape)).astype(np.float32)
-    ci_te = [1, 2, 3, 4, 5, 6]
-    rec_na = _truncation_restriction(pred_t, y_t, ci_te, None)
+    # 5. TWO-ARM truncation-restriction control (#1491; round 3,
+    #    cap-hit-control-unwired): unavailable / read / refit / coverage paths
+    #    on a REAL tiny ridge problem where capped TRAIN rows are corrupted-Y
+    #    outliers, so the refit arm's map DIFFERS from the read arm's.
+    n_tr5, n_va5, n_te5, d5 = 40, 12, 12, 8
+    ids5 = {
+        "train_10k": list(range(0, n_tr5)),
+        "val_400": list(range(1000, 1000 + n_va5)),
+        "test_1000": list(range(2000, 2000 + n_te5)),
+    }
+    # FRESH seeded stream + noise/corruption calibrated so BOTH ridge fits
+    # select an INTERIOR λ (probed at THIS exact stream: full fit λ=10,
+    # refit λ=0.316) — a near-noiseless fixture sends the clean refit's
+    # val-optimum below the grid's low edge and spuriously exhausts the
+    # plan-§11 extension loop (the #1345 gate-calibration class).
+    rng5 = np.random.default_rng(0)
+    X5 = rng5.standard_normal((n_tr5 + n_va5 + n_te5, d5)).astype(np.float32)
+    Y5 = (0.7 * X5 + 0.2 * rng5.standard_normal(X5.shape)).astype(np.float32)
+    capped_tr = set(ids5["train_10k"][:10])  # corrupted + capped train rows
+    Y5[:10] += 2.0 * rng5.standard_normal((10, d5)).astype(np.float32)
+    capped_va = set(ids5["val_400"][:2])
+    capped_te = set(ids5["test_1000"][:2])
+    tr5 = np.arange(0, n_tr5, dtype=np.int64)
+    va5 = np.arange(n_tr5, n_tr5 + n_va5, dtype=np.int64)
+    te5 = np.arange(n_tr5 + n_va5, n_tr5 + n_va5 + n_te5, dtype=np.int64)
+    bundle5 = {
+        "X": X5,
+        "Y": Y5,
+        "tr": tr5,
+        "val": va5,
+        "te": te5,
+        "cis": {
+            "train_10k": ids5["train_10k"],
+            "val_400": ids5["val_400"],
+            "test_1000": ids5["test_1000"],
+        },
+    }
+
+    def _rec5(split: str, capped: set[int]) -> dict:
+        return {
+            "split": split,
+            "source": f"selftest:{split}",
+            "total": len(ids5[split]),
+            "cap_hit": len(capped),
+            "cap_hit_cis": set(capped),
+            "expected_id_set": set(ids5[split]),
+        }
+
+    cap5 = {
+        "test_1000": _rec5("test_1000", capped_te),
+        "train_10k": _rec5("train_10k", capped_tr),
+        "val_400": _rec5("val_400", capped_va),
+    }
+    pred5, _ = fit_ridge_edge_extended(X5, Y5, tr5, va5, te5, dev, LF.RIDGE_BLOCK)
+
+    rec_na = _truncation_restriction(bundle5, pred5, dev, None, "train_10k")
     assert rec_na == {"available": False, "reason": "cap_hit_unavailable"}, rec_na
-    cap_info = {"cap_hit_cis": {2, 5}, "source": "selftest", "total": 6, "cap_hit": 2}
-    rec_sub = _truncation_restriction(pred_t, y_t, ci_te, cap_info)
-    assert rec_sub["n_test"] == 6 and rec_sub["n_test_capped"] == 2, rec_sub
-    assert rec_sub["n_test_untruncated"] == 4, rec_sub
-    mask = np.array([c not in {2, 5} for c in ci_te], dtype=bool)
-    expect_sub = float(LF._pooled_r2(pred_t[mask], y_t[mask]))
-    assert np.isclose(rec_sub["r2_test_untruncated"], expect_sub), (
-        rec_sub["r2_test_untruncated"],
-        expect_sub,
+    rec_note = _truncation_restriction(
+        bundle5, pred5, dev, {"test_1000": None, "train_10k": None, "val_400": None}, "train_10k"
     )
-    rec_empty = _truncation_restriction(
-        pred_t, y_t, ci_te, {"cap_hit_cis": set(), "source": "selftest"}
+    assert rec_note["available"] is False and "no test_1000" in rec_note["reason"], rec_note
+
+    rec5 = _truncation_restriction(bundle5, pred5, dev, cap5, "train_10k")
+    assert rec5["available"] is True and rec5["n_test"] == n_te5, rec5
+    assert rec5["n_test_capped"] == 2, rec5
+    read5 = rec5["read"]
+    assert read5["control"] == "test_restricted_read", read5
+    assert read5["n_test_untruncated"] == n_te5 - 2, read5
+    mask5 = np.array([c not in capped_te for c in ids5["test_1000"]], dtype=bool)
+    expect_read = float(LF._pooled_r2(pred5[mask5], Y5[te5][mask5]))
+    assert np.isclose(read5["r2_test_untruncated"], expect_read), (read5, expect_read)
+    refit5 = rec5["refit"]
+    assert refit5["available"] is True and refit5["control"] == "untruncated_refit", refit5
+    assert refit5["n_train"] == n_tr5 and refit5["n_train_capped"] == 10, refit5
+    assert refit5["n_train_untruncated"] == n_tr5 - 10, refit5
+    assert refit5["n_val"] == n_va5 and refit5["n_val_capped"] == 2, refit5
+    assert isinstance(refit5["selected_lambda"], float), refit5
+    # Distinct arms: dropping the corrupted capped TRAIN rows changes the map,
+    # so the refit's untruncated-test R² differs from (and beats) the read's.
+    assert not np.isclose(refit5["r2_test_untruncated"], read5["r2_test_untruncated"]), rec5
+    assert refit5["r2_test_untruncated"] > read5["r2_test_untruncated"], rec5
+    # Parity oracle: the parent's phase_b_restriction arithmetic (fit on
+    # tr[~cap_tr]/val[~cap_val], eval on te[~cap_te]) reproduced inline.
+    tr_r = tr5[np.array([c not in capped_tr for c in ids5["train_10k"]])]
+    va_r = va5[np.array([c not in capped_va for c in ids5["val_400"]])]
+    te_r = te5[mask5]
+    pred_oracle, _ = fit_ridge_edge_extended(X5, Y5, tr_r, va_r, te_r, dev, LF.RIDGE_BLOCK)
+    oracle_r2 = float(LF._pooled_r2(pred_oracle, Y5[te_r]))
+    assert np.isclose(refit5["r2_test_untruncated"], oracle_r2), (refit5, oracle_r2)
+    print("[selftest] PASS two-arm truncation restriction (read vs refit distinct)", flush=True)
+
+    # 5b. Missing train/val aggregate ⇒ refit arm degrades loud; read intact.
+    rec_part = _truncation_restriction(
+        bundle5, pred5, dev, {**cap5, "train_10k": None}, "train_10k"
     )
-    assert rec_empty["n_test_untruncated"] == 6, rec_empty
-    assert np.isclose(rec_empty["r2_test_untruncated"], rec_empty["r2_test_full"]), rec_empty
+    assert rec_part["read"]["r2_test_untruncated"] is not None, rec_part
+    assert rec_part["refit"]["available"] is False, rec_part
+    # 5c. All test rows capped ⇒ read + refit r2 None with reasons.
     rec_all = _truncation_restriction(
-        pred_t, y_t, ci_te, {"cap_hit_cis": set(ci_te), "source": "selftest"}
+        bundle5,
+        pred5,
+        dev,
+        {**cap5, "test_1000": _rec5("test_1000", set(ids5["test_1000"]))},
+        "train_10k",
     )
-    assert rec_all["r2_test_untruncated"] is None and "reason" in rec_all, rec_all
+    assert rec_all["read"]["r2_test_untruncated"] is None, rec_all
+    assert rec_all["refit"]["r2_test_untruncated"] is None, rec_all
+    # 5d. FIX 2b: a fitted ci ABSENT from the aggregate's expected set ⇒ raise
+    #    (a missing aggregate row must never read as uncapped).
+    short_te = _rec5("test_1000", capped_te)
+    short_te["expected_id_set"] = set(ids5["test_1000"][:-1])
+    short_te["total"] = n_te5  # keep the total check green; membership must fire
+    _expect_raise(
+        lambda: _truncation_restriction(
+            bundle5, pred5, dev, {**cap5, "test_1000": short_te}, "train_10k"
+        ),
+        "must NEVER be treated as uncapped",
+        "cap-mask membership miss",
+    )
+    # 5e. Aggregate total != fitted split length ⇒ raise.
+    off_total = _rec5("test_1000", capped_te)
+    off_total["total"] = n_te5 - 1
+    _expect_raise(
+        lambda: _truncation_restriction(
+            bundle5, pred5, dev, {**cap5, "test_1000": off_total}, "train_10k"
+        ),
+        "aggregate/split drift",
+        "aggregate total mismatch",
+    )
     print(
-        "[selftest] PASS truncation-restriction control "
-        "(unavailable / subset / empty-cap / all-capped)",
+        "[selftest] PASS truncation-restriction degradations "
+        "(unavailable / missing-arm / all-capped / coverage-miss / total-mismatch)",
         flush=True,
     )
+
+    # 6. _validate_cap_aggregate (FIX 2b consumer invariants) against a
+    #    REAL-domain split_ids fixture (shas via issue2330_split_ids._sha256_id_list).
+    ids6 = {"test_1000": [3, 1, 4, 1_5, 9_2]}
+    split_ids6 = {
+        "splits": ids6,
+        "counts": {k: len(v) for k, v in ids6.items()},
+        "sha256": {k: SI._sha256_id_list(v) for k, v in ids6.items()},
+        "dropped_overlength": {},
+    }
+    good = {
+        "schema": CAP_HIT_SCHEMA,
+        "split": "test_1000",
+        "expected_ids_sha256": split_ids6["sha256"]["test_1000"],
+        "expected_n": 5,
+        "total": 5,
+        "cap_hit": 2,
+        "cap_hit_cis": [1, 9_2],
+    }
+    rec6 = _validate_cap_aggregate(good, "selftest6", split_ids6)
+    assert rec6["cap_hit_cis"] == {1, 92} and rec6["total"] == 5, rec6
+    assert rec6["expected_id_set"] == set(ids6["test_1000"]), rec6
+    _expect_raise(
+        lambda: _validate_cap_aggregate(
+            {k: v for k, v in good.items() if k != "expected_ids_sha256"},
+            "selftest6",
+            split_ids6,
+        ),
+        "pre-coverage-fingerprint",
+        "missing fingerprint field",
+    )
+    _expect_raise(
+        lambda: _validate_cap_aggregate(
+            {**good, "expected_ids_sha256": SI._sha256_id_list([1, 2, 3])},
+            "selftest6",
+            split_ids6,
+        ),
+        "DIFFERENT",
+        "sha fingerprint mismatch",
+    )
+    _expect_raise(
+        lambda: _validate_cap_aggregate({**good, "total": 4}, "selftest6", split_ids6),
+        "coverage grain mismatch",
+        "total != split length",
+    )
+    _expect_raise(
+        lambda: _validate_cap_aggregate({**good, "cap_hit": 3}, "selftest6", split_ids6),
+        "inconsistent aggregate",
+        "cap_hit != len(cap_hit_cis)",
+    )
+    _expect_raise(
+        lambda: _validate_cap_aggregate({**good, "cap_hit_cis": [1, 777]}, "selftest6", split_ids6),
+        "outside the test_1000 expected id set",
+        "stray cap ci",
+    )
+    _expect_raise(
+        lambda: _validate_cap_aggregate(
+            {**good, "cap_hit_cis": [1, 1], "cap_hit": 2}, "selftest6", split_ids6
+        ),
+        "duplicate cis",
+        "duplicate cap ci",
+    )
+    print("[selftest] PASS _validate_cap_aggregate invariants (6 rejection paths)", flush=True)
 
     print("[selftest] ALL PASS", flush=True)
     return 0
@@ -1146,16 +1509,29 @@ def run_synthetic_e2e(args) -> int:
             "synthetic": True,
         }
 
-    # Synthetic cap-hit aggregates: first 2 test cis capped per model — the
-    # truncation-restriction schema flows through the SAME run_battery seam
-    # as production (_production_cap_hit_fn is the only faked boundary here).
-    n_capped_synth = 2
+    # Synthetic cap-hit aggregates (round 3: per-split recs in the VALIDATED
+    # consumer shape): first 2 test / 3 train / 1 val cis capped per model —
+    # the two-arm truncation-restriction control flows through the SAME
+    # run_battery seam as production (_production_cap_hit_fn is the only
+    # faked boundary here). The 3 capped train ids sit in the train_5k
+    # PREFIX, so both cells realize the same capped-train count.
+    n_capped_synth, n_capped_tr, n_capped_va = 2, 3, 1
+
+    def _cap_rec(split: str, id_list: list[int], capped: list[int]) -> dict:
+        return {
+            "split": split,
+            "source": "synthetic-e2e",
+            "total": len(id_list),
+            "cap_hit": len(capped),
+            "cap_hit_cis": set(capped),
+            "expected_id_set": set(id_list),
+        }
+
     cap_by_prefix = {
         m["hf_prefix"]: {
-            "cap_hit_cis": set(ids["test_1000"][:n_capped_synth]),
-            "source": "synthetic-e2e",
-            "total": n_te,
-            "cap_hit": n_capped_synth,
+            "test_1000": _cap_rec("test_1000", ids["test_1000"], ids["test_1000"][:n_capped_synth]),
+            "train_10k": _cap_rec("train_10k", ids["train_10k"], ids["train_10k"][:n_capped_tr]),
+            "val_400": _cap_rec("val_400", ids["val_400"], ids["val_400"][:n_capped_va]),
         }
         for m in models.values()
     }
@@ -1209,8 +1585,9 @@ def run_synthetic_e2e(args) -> int:
                 "n_vs_d",
             ):
                 assert key in layer_rec, (cell, key)
-            # Truncation-restriction control (round 2): present at the primary
-            # layer ONLY, with the untruncated-subset read populated.
+            # Truncation-restriction control (round 3, two-arm): present at
+            # the primary layer ONLY, with BOTH the test-restricted read and
+            # the untruncated refit populated (distinct records).
             is_primary = int(layer_key) == int(rec["primary_layer"])
             assert ("truncation_restriction" in layer_rec) == is_primary, (cell, layer_key)
             if is_primary:
@@ -1218,9 +1595,25 @@ def run_synthetic_e2e(args) -> int:
                 assert tr_rec["available"] is True, (cell, tr_rec)
                 assert tr_rec["n_test"] == n_te, (cell, tr_rec)
                 assert tr_rec["n_test_capped"] == n_capped_synth, (cell, tr_rec)
-                assert tr_rec["n_test_untruncated"] == n_te - n_capped_synth, (cell, tr_rec)
-                assert isinstance(tr_rec["r2_test_untruncated"], float), (cell, tr_rec)
-                assert isinstance(tr_rec["r2_test_full"], float), (cell, tr_rec)
+                read_rec = tr_rec["read"]
+                assert read_rec["control"] == "test_restricted_read", (cell, read_rec)
+                assert read_rec["n_test_untruncated"] == n_te - n_capped_synth, (cell, read_rec)
+                assert isinstance(read_rec["r2_test_untruncated"], float), (cell, read_rec)
+                assert isinstance(read_rec["r2_test_full"], float), (cell, read_rec)
+                refit_rec = tr_rec["refit"]
+                assert refit_rec["available"] is True, (cell, refit_rec)
+                assert refit_rec["control"] == "untruncated_refit", (cell, refit_rec)
+                n_tr_cell = int(rec["n_realized"][rec["train_key"]])
+                assert refit_rec["n_train"] == n_tr_cell, (cell, refit_rec)
+                assert refit_rec["n_train_capped"] == n_capped_tr, (cell, refit_rec)
+                assert refit_rec["n_train_untruncated"] == n_tr_cell - n_capped_tr, (
+                    cell,
+                    refit_rec,
+                )
+                assert refit_rec["n_val"] == n_val, (cell, refit_rec)
+                assert refit_rec["n_val_capped"] == n_capped_va, (cell, refit_rec)
+                assert isinstance(refit_rec["selected_lambda"], float), (cell, refit_rec)
+                assert isinstance(refit_rec["r2_test_untruncated"], float), (cell, refit_rec)
             assert layer_rec["wc_transfer"]["fold_label"] == "wildchat_corpus_transfer"
             assert layer_rec["wc_transfer"]["n_wc_test"] == n_wc
             assert set(layer_rec["floors"]) == {
@@ -1287,8 +1680,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "--cap-hit-dir",
         type=Path,
         default=None,
-        help="dir of cap_hit_*.json aggregates (issue2330_cap_hit_v1; written by "
-        "issue2330_qwen35_generate_capture.py --aggregate-cap-hit) for the primary-layer "
+        help="dir of cap_hit_*.json aggregates (issue2330_cap_hit_v2; written by "
+        "issue2330_qwen35_generate_capture.py --aggregate-cap-hit per (root, split): "
+        "test_1000 + train_10k + val_400 per model) for the primary-layer two-arm "
         "truncation-restriction control (default <out-dir>/cap_hit; absent ⇒ the control "
         "records 'cap_hit_unavailable' loud, never fabricated)",
     )
@@ -1373,7 +1767,7 @@ def main() -> int:
         dev,
         args.out_dir,
         args.preds_dir,
-        cap_hit_fn=_production_cap_hit_fn(args),
+        cap_hit_fn=_production_cap_hit_fn(args, split_ids),
     )
     if not args.no_upload:
         _upload_preds_mirror(args.preds_dir)

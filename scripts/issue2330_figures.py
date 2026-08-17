@@ -18,7 +18,7 @@ the per-cell preds npz, and renders the plan §6 roster under
   25k port-parity anchor when the fits carry it); WildChat-transfer vs
   in-distribution panel (fold-labeled); optional cap-hit fractions per
   split/model (``--cap-hit-dir`` — the pipeline's own ``cap_hit_*.json``
-  aggregates in the ``issue2330_cap_hit_v1`` schema, written by
+  aggregates in the ``issue2330_cap_hit_v2`` schema, written by
   ``issue2330_qwen35_generate_capture.py --aggregate-cap-hit``); bootstrap Δ
   distributions (per-draw Δ recomputed from the preds npz with the P4 seed +
   shared resample matrix and parity-asserted against contrasts.json);
@@ -444,18 +444,26 @@ def fig_wc_transfer(data: dict, fits: dict, out: Path) -> None:
     plt.close(fig)
 
 
-CAP_HIT_SCHEMA = "issue2330_cap_hit_v1"
+CAP_HIT_SCHEMA = "issue2330_cap_hit_v2"
 # Aggregate `root` → model key. Mirrors issue2330_matched_fits.MODELS[*]["hf_prefix"]
 # (kept as literals — this module must not import the torch-heavy fits driver).
 CAP_HIT_ROOT_TO_MODEL = {
     "issue1491_scale_ladder/scale7_refit": "qwen25_7b",
     "issue2330_matched/qwen35_9b": "qwen35_9b",
 }
+# FIX 2c (round 3) required roster: the (model, logical-split) aggregates the
+# P3 truncation-restriction control CONSUMES — all six must be present in
+# --cap-hit-dir mode (a missing pair raises; EXTRA aggregates — ceiling draws,
+# wc_test_1k — are plotted but never required). The no---cap-hit-dir
+# default-skip branch is unchanged.
+CAP_HIT_REQUIRED_ROSTER = {
+    (m, s) for m in ("qwen25_7b", "qwen35_9b") for s in ("train_10k", "val_400", "test_1000")
+}
 
 
 def fig_cap_hit(cap_hit_dir: Path, out: Path) -> None:
     """Cap-hit fractions per (model, split) from the PIPELINE's own aggregates:
-    ``cap_hit_*.json`` files (schema ``issue2330_cap_hit_v1``) written by
+    ``cap_hit_*.json`` files (schema ``issue2330_cap_hit_v2``) written by
     ``issue2330_qwen35_generate_capture.py --aggregate-cap-hit``. Fail-loud on
     an empty dir, a foreign schema, an unknown root, total<=0, or a duplicate
     (model, split). The dotted 2% line is a REFERENCE only — the registered
@@ -482,10 +490,21 @@ def fig_cap_hit(cap_hit_dir: Path, out: Path) -> None:
         total, cap = int(payload["total"]), int(payload["cap_hit"])
         if total <= 0:
             raise RuntimeError(f"{p}: total<=0")
+        if not 0 <= cap <= total:
+            raise RuntimeError(
+                f"{p}: cap_hit={cap} outside [0, total={total}] — inconsistent aggregate"
+            )
         key = (model_key, split)
         if key in rows:
             raise RuntimeError(f"{p}: duplicate cap-hit aggregate for {key}")
         rows[key] = 100.0 * cap / total
+    missing_pairs = sorted(CAP_HIT_REQUIRED_ROSTER - set(rows))
+    if missing_pairs:
+        raise RuntimeError(
+            f"{cap_hit_dir}: cap-hit roster incomplete — missing (model, split) pairs "
+            f"{missing_pairs} (run issue2330_qwen35_generate_capture.py --aggregate-cap-hit "
+            "per missing pair; omit --cap-hit-dir entirely for the explicit-skip branch)"
+        )
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(6.6, 3.9))
     keys = sorted(rows)
@@ -624,7 +643,7 @@ def main() -> int:
         "--cap-hit-dir",
         type=Path,
         default=None,
-        help="dir of cap_hit_*.json aggregates (issue2330_cap_hit_v1 schema, written by "
+        help="dir of cap_hit_*.json aggregates (issue2330_cap_hit_v2 schema, written by "
         "issue2330_qwen35_generate_capture.py --aggregate-cap-hit); the cap-hit panel is "
         "SKIPPED (with an explicit log line, never zero bars) when absent",
     )

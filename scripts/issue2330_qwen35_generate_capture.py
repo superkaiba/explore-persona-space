@@ -181,11 +181,15 @@ PLAIN_SUFFIX_TEXT = "<|im_start|>assistant\n"
 # plan §11 — so this only WARNs).
 CAP_HIT_REGEN_TRIGGER = 0.02
 
-# Cap-hit aggregate schema token (round 2, cap-hit-control-unwired): produced
-# by --aggregate-cap-hit, consumed FAIL-LOUD by issue2330_matched_fits.py
-# (--cap-hit-dir, truncation-restriction control) and issue2330_figures.py
+# Cap-hit aggregate schema token (round 2, cap-hit-control-unwired; round 3
+# bumps v1→v2: exact-coverage invariants + the expected-id-set sha256
+# fingerprint + logical-split/store-split routing fields — consumers REQUIRE
+# the new fields, so pre-fingerprint v1 aggregates fail loud here instead of
+# KeyError-ing downstream). Produced by --aggregate-cap-hit, consumed
+# FAIL-LOUD by issue2330_matched_fits.py (--cap-hit-dir,
+# truncation-restriction read+refit control) and issue2330_figures.py
 # (--cap-hit-dir, fig_cap_hit). Keep the three literals in sync.
-CAP_HIT_SCHEMA = "issue2330_cap_hit_v1"
+CAP_HIT_SCHEMA = "issue2330_cap_hit_v2"
 
 # <think>-leak validity assert (plan §7: < 1% of responses open with <think>).
 THINK_SCAN_MAX_FRAC = 0.01
@@ -211,6 +215,26 @@ MANIFEST_SPLIT_FILES = {
     "test_1000": "test_1000.jsonl",
     "wc_test_1k": "wc_test_1k.jsonl",
 }
+
+
+def store_subpath_for_split(split: str) -> str:
+    """Logical split -> store subpath under an hf-prefix root.
+
+    THE single routing table (round 3, cap-hit-control-unwired FIX 1b): both
+    ``run_capture``'s stage_prefix (the WRITE side) and the cap-hit
+    aggregator's chunk prefix (the READ side) compose paths through this
+    function, so the two can never drift. Ceiling draws land under
+    ``ceiling_draws/seed{S}`` (generation re-renders test_1000 at seeds
+    43/44); every other split lives under its own name. The banked 7B
+    train store is the one case where the STORE subpath differs from the
+    logical split's canonical subpath (train_25k holds the train_10k rows)
+    — the aggregator's ``--cap-hit-store-split`` override + split-ID
+    subsetting handles it (never a new logical split)."""
+    if split.startswith("ceiling_draw_"):
+        _, _, gen_seed = SPLIT_TO_MANIFEST[split]
+        return f"ceiling_draws/seed{gen_seed}"
+    return split
+
 
 # Split_ids keys the length scan covers = every DISTINCT consumed prompt set
 # (ceiling draws reuse test_1000's renders; plan §12 A5 count fix: 12,399).
@@ -1791,10 +1815,9 @@ def run_capture(args) -> int:
         _phase("done")
         return 0
 
-    if args.split.startswith("ceiling_draw_"):
-        stage_prefix = f"{args.hf_prefix}/ceiling_draws/seed{gen_seed}"
-    else:
-        stage_prefix = f"{args.hf_prefix}/{args.split}"
+    # Round 3 (FIX 1b): the WRITE side of the shared logical-split → store-
+    # subpath table — the cap-hit aggregator READS through the same function.
+    stage_prefix = f"{args.hf_prefix}/{store_subpath_for_split(args.split)}"
 
     scratch = args.out_dir / "shards" / args.split.replace("ceiling_draw_", "cdraw_")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -2233,56 +2256,51 @@ def run_capture(args) -> int:
     return 0
 
 
-def run_aggregate_cap_hit(args) -> int:
-    """Round-2 cap-hit aggregator (cap-hit-control-unwired FIX 2i).
+def _aggregate_cap_hit_core(
+    chunks: list[tuple[str, dict]],
+    expected_ids: list[int],
+    *,
+    subset_mode: bool,
+    prefix: str,
+) -> dict:
+    """Pure cap-hit aggregation core over downloaded chunk payloads (round 3,
+    FIX 2a — exact-coverage invariants; exercised by ``--selftest-cap-hit``).
 
-    Aggregates per-chunk cap-hit metadata for ONE (root, split) from the Hub's
-    ``<root>/<split>/raw_completions/*.json`` chunks into
-    ``cap_hit_<split>.json`` (schema ``issue2330_cap_hit_v1``): per-chunk
-    counts, split totals + fraction, and the per-context ``cap_hit_cis`` list
-    (finish_reason == 'length') the P3 truncation-restriction control joins on.
-    Runnable standalone over the BANKED 7B store
-    (``--cap-hit-root issue1491_scale_ladder/scale7_refit --cap-hit-revision
-    <pin>`` — banked chunks carry per-row ci+finish_reason, schema-probed at
-    the pinned revision) AND over this issue's own 9B prefix (``--hf-prefix``).
-    Per-row finish_reason is the ground truth; a chunk whose ``n_cap_hit``
-    metadata disagrees raises (fail-loud, never fabricated). Uploads the
-    aggregate next to the split for ISSUE-OWNED roots only; a foreign banked
-    root is never written to (the JSON is committed to git instead)."""
-    _phase("aggregate_cap_hit")
-    assert args.split, "--split is required for --aggregate-cap-hit"
-    root = args.cap_hit_root or args.hf_prefix
-    assert root, "--cap-hit-root or --hf-prefix is required for --aggregate-cap-hit"
-    prefix = f"{root}/{args.split}/raw_completions"
-    revision = args.cap_hit_revision
-    cache_dir = args.out_dir / ".cache_caphit"
-    index = _remote_index(prefix, revision=revision)
-    names = sorted(n for n in index if n.endswith(".json"))
-    if not names:
-        raise RuntimeError(f"no raw_completions chunks under {prefix} (revision={revision})")
+    ``expected_ids`` is the LOGICAL split's committed id list (split_ids.json).
+    Coverage is EXACT over that set: a missing chunk / missing ci raises, and
+    in same-split mode an extra ci raises too. ``subset_mode`` (the banked
+    train_25k store read for the train_10k logical split) tolerates store rows
+    OUTSIDE the expected set — skipped + counted, never silently mixed into
+    the totals. Per-row finish_reason is the ground truth; a chunk whose
+    ``n_cap_hit`` metadata disagrees raises. Returns the aggregate count
+    fields; the caller adds routing + fingerprint + repro metadata."""
+    expected = {int(i) for i in expected_ids}
     per_chunk: list[dict] = []
     cap_cis: list[int] = []
-    seen_cis: set[int] = set()
-    total = 0
+    seen: set[int] = set()
+    outside_cis: list[int] = []
+    n_store_rows = 0
     gen_max: int | None = None
     think_total: int | None = None
-    for name in names:
-        local = _hub_download(f"{prefix}/{name}", cache_dir, revision)
-        with open(local, encoding="utf-8") as fh:
-            payload = json.load(fh)
+    for name, payload in chunks:
         rows = payload["rows"]
-        chunk_cap = [int(r["ci"]) for r in rows if str(r.get("finish_reason")) == "length"]
+        chunk_cap_all = [int(r["ci"]) for r in rows if str(r.get("finish_reason")) == "length"]
         meta_n = payload.get("n_cap_hit")
-        if meta_n is not None and int(meta_n) != len(chunk_cap):
+        if meta_n is not None and int(meta_n) != len(chunk_cap_all):
             raise RuntimeError(
                 f"{name}: chunk metadata n_cap_hit={meta_n} != per-row finish_reason=='length' "
-                f"count {len(chunk_cap)} — refusing to aggregate inconsistent metadata"
+                f"count {len(chunk_cap_all)} — refusing to aggregate inconsistent metadata"
             )
+        n_covered = 0
         for r in rows:
             ci = int(r["ci"])
-            if ci in seen_cis:
+            if ci in seen:
                 raise RuntimeError(f"{name}: duplicate ci {ci} across chunks of {prefix}")
-            seen_cis.add(ci)
+            seen.add(ci)
+            if ci in expected:
+                n_covered += 1
+            else:
+                outside_cis.append(ci)
         gm = payload.get("gen_max_tokens")
         if gm is not None:
             assert gen_max is None or int(gm) == gen_max, ("gen_max_tokens drift", gen_max, gm)
@@ -2290,25 +2308,119 @@ def run_aggregate_cap_hit(args) -> int:
         nt = payload.get("n_think_open")
         if nt is not None:
             think_total = (think_total or 0) + int(nt)
-        total += len(rows)
-        cap_cis.extend(chunk_cap)
-        per_chunk.append({"name": name, "n_rows": len(rows), "n_cap_hit": len(chunk_cap)})
-        print(f"[cap-hit] {name}: {len(chunk_cap)}/{len(rows)} finish_reason=='length'", flush=True)
-    out = {
-        "schema": CAP_HIT_SCHEMA,
-        "root": root,
-        "split": args.split,
-        "revision": revision,
-        "gen_max_tokens": gen_max,
-        "n_chunks": len(names),
+        n_store_rows += len(rows)
+        cap_cis.extend(c for c in chunk_cap_all if c in expected)
+        per_chunk.append(
+            {
+                "name": name,
+                "n_rows": len(rows),
+                "n_covered": n_covered,
+                "n_cap_hit_store": len(chunk_cap_all),
+            }
+        )
+        print(
+            f"[cap-hit] {name}: {len(chunk_cap_all)}/{len(rows)} finish_reason=='length'",
+            flush=True,
+        )
+    missing = sorted(expected - seen)
+    if missing:
+        raise RuntimeError(
+            f"cap-hit coverage INCOMPLETE under {prefix}: {len(missing)}/{len(expected)} "
+            f"expected cis absent from the store chunks (first: {missing[:10]}) — a missing "
+            "chunk or a partial store; refusing to write a partial aggregate (a missing row "
+            "must NEVER read downstream as uncapped)"
+        )
+    if outside_cis and not subset_mode:
+        raise RuntimeError(
+            f"cap-hit coverage EXTRA rows under {prefix}: {len(outside_cis)} store cis outside "
+            f"the expected id set in same-split mode (first: {sorted(outside_cis)[:10]}) — "
+            "store/split_ids drift; refusing to aggregate"
+        )
+    total = len(expected)  # == covered rows: coverage exact + duplicates impossible
+    return {
         "total": total,
         "cap_hit": len(cap_cis),
         "cap_hit_frac": len(cap_cis) / max(total, 1),
-        "n_think_open": think_total,
         "cap_hit_cis": sorted(cap_cis),
+        "n_chunks": len(chunks),
+        "n_store_rows": n_store_rows,
+        "n_rows_outside_expected": len(outside_cis),
+        "gen_max_tokens": gen_max,
+        "n_think_open": think_total,
+        "per_chunk": per_chunk,
+    }
+
+
+def run_aggregate_cap_hit(args) -> int:
+    """Cap-hit aggregator (round 2 FIX 2i; round 3 coverage + routing rework).
+
+    Aggregates per-chunk cap-hit metadata for ONE LOGICAL split into
+    ``cap_hit_<split>.json`` (schema ``issue2330_cap_hit_v2``): split totals +
+    fraction and the per-context ``cap_hit_cis`` list (finish_reason ==
+    'length') the P3 truncation-restriction read+refit control joins on.
+
+    Routing (FIX 1b): chunks are read from
+    ``<root>/<store subpath>/raw_completions`` where the store subpath comes
+    from the SAME ``store_subpath_for_split`` table run_capture writes with
+    (ceiling draws → ``ceiling_draws/seed{S}``); ``--cap-hit-store-split``
+    overrides it for the banked 7B train case (``--split train_10k
+    --cap-hit-store-split train_25k``), which enters SUBSET mode: store rows
+    outside the committed train_10k id set are skipped + counted.
+
+    Coverage (FIX 2a): the committed split_ids.json id set for the logical
+    split is loaded and coverage must be EXACT — a missing chunk, a missing
+    ci, or (same-split mode) an extra ci each raise; the expected-set sha256
+    (copied from split_ids.json's own per-split digest — same producer domain,
+    ``issue2330_split_ids._sha256_id_list``) is fingerprinted into the
+    aggregate so the fits consumer can refuse an aggregate produced against a
+    drifted split_ids. Runnable over the BANKED 7B store (``--cap-hit-root
+    issue1491_scale_ladder/scale7_refit --cap-hit-revision <pin>``) AND this
+    issue's own 9B prefix (``--hf-prefix``). Uploads the aggregate next to the
+    STORE subpath for issue-owned roots only; a foreign banked root is never
+    written to (the JSON is committed to git instead)."""
+    _phase("aggregate_cap_hit")
+    assert args.split, "--split is required for --aggregate-cap-hit"
+    root = args.cap_hit_root or args.hf_prefix
+    assert root, "--cap-hit-root or --hf-prefix is required for --aggregate-cap-hit"
+    split_payload = _load_split_ids(Path(args.split_ids))
+    _, ids_key, _ = SPLIT_TO_MANIFEST[args.split]
+    expected_ids = [int(i) for i in split_payload["splits"][ids_key]]
+    expected_sha = str(split_payload["sha256"][ids_key])
+    canonical_subpath = store_subpath_for_split(args.split)
+    store_split = args.cap_hit_store_split or canonical_subpath
+    subset_mode = store_split != canonical_subpath
+    prefix = f"{root}/{store_split}/raw_completions"
+    revision = args.cap_hit_revision
+    cache_dir = args.out_dir / ".cache_caphit"
+    index = _remote_index(prefix, revision=revision)
+    names = sorted(n for n in index if n.endswith(".json"))
+    if not names:
+        raise RuntimeError(f"no raw_completions chunks under {prefix} (revision={revision})")
+    print(
+        f"[cap-hit] {root}/{args.split}: store_split={store_split} subset_mode={subset_mode} "
+        f"expected_n={len(expected_ids)} chunks={len(names)}",
+        flush=True,
+    )
+    chunks: list[tuple[str, dict]] = []
+    for name in names:
+        local = _hub_download(f"{prefix}/{name}", cache_dir, revision)
+        with open(local, encoding="utf-8") as fh:
+            chunks.append((name, json.load(fh)))
+    agg = _aggregate_cap_hit_core(chunks, expected_ids, subset_mode=subset_mode, prefix=prefix)
+    out = {
+        "schema": CAP_HIT_SCHEMA,
+        "root": root,
+        "split": args.split,  # LOGICAL split (the key consumers join on)
+        "store_split": store_split,  # store subpath actually read
+        "subset_mode": subset_mode,
+        "revision": revision,
+        "expected_ids_key": ids_key,
+        "expected_n": len(expected_ids),
+        "expected_ids_sha256": expected_sha,
+        "split_ids_path": str(args.split_ids),
+        **agg,
         "git_commit": _git_sha(),
         "ts_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "per_chunk": per_chunk,
     }
     out_path = (
         Path(os.path.expanduser(str(args.cap_hit_out)))
@@ -2317,16 +2429,19 @@ def run_aggregate_cap_hit(args) -> int:
     )
     _write_json_atomic(out_path, out)
     print(
-        f"[cap-hit] {root}/{args.split}: {len(cap_cis)}/{total} = "
-        f"{100.0 * len(cap_cis) / max(total, 1):.2f}% cap-hit -> {out_path}",
+        f"[cap-hit] {root}/{args.split}: {out['cap_hit']}/{out['total']} = "
+        f"{100.0 * out['cap_hit'] / max(out['total'], 1):.2f}% cap-hit "
+        f"(store rows {out['n_store_rows']}, outside-expected "
+        f"{out['n_rows_outside_expected']}) -> {out_path}",
         flush=True,
     )
     if args.no_upload:
         print("[cap-hit] --no-upload: aggregate NOT uploaded (local/smoke path)", flush=True)
     elif args.hf_prefix and root == args.hf_prefix:
-        # "Uploaded with the split": one scoped upload_folder commit + verify.
-        _upload_names_once(out_path.parent, f"{root}/{args.split}", [out_path.name], False)
-        print(f"[cap-hit] uploaded {out_path.name} -> {root}/{args.split}/", flush=True)
+        # "Uploaded with the split": one scoped upload_folder commit + verify,
+        # next to the STORE subpath the chunks live under.
+        _upload_names_once(out_path.parent, f"{root}/{store_split}", [out_path.name], False)
+        print(f"[cap-hit] uploaded {out_path.name} -> {root}/{store_split}/", flush=True)
     else:
         print(
             "[cap-hit] foreign/banked root — aggregate NOT uploaded to the banked prefix; "
@@ -2334,6 +2449,117 @@ def run_aggregate_cap_hit(args) -> int:
             flush=True,
         )
     _phase("done")
+    return 0
+
+
+def _expect_raise_capture(fn, needle: str, what: str) -> None:
+    """Selftest helper: fn() must raise RuntimeError containing ``needle``."""
+    try:
+        fn()
+    except RuntimeError as e:
+        assert needle in str(e), (what, needle, str(e)[:200])
+        print(f"[selftest-cap-hit] PASS {what}: raised as designed ({needle!r})", flush=True)
+        return
+    raise AssertionError(f"[selftest-cap-hit] FAIL {what}: no RuntimeError raised")
+
+
+def run_selftest_cap_hit() -> int:
+    """CPU selftest for the cap-hit routing table + aggregation core (round 3):
+    table-driven logical-split → store-subpath resolution (ceiling path +
+    train_25k subset), exact-coverage rejection (missing chunk / missing CI /
+    extra CI), metadata mismatch, duplicate ci, subset-mode filtering."""
+    # 1. Routing table: every logical split resolves through the ONE function
+    #    run_capture writes with (ceiling draws → ceiling_draws/seed{S}).
+    expect_subpath = {
+        "train_10k": "train_10k",
+        "val_400": "val_400",
+        "test_1000": "test_1000",
+        "wc_test_1k": "wc_test_1k",
+        "ceiling_draw_43": "ceiling_draws/seed43",
+        "ceiling_draw_44": "ceiling_draws/seed44",
+    }
+    assert sorted(expect_subpath) == sorted(SPLIT_TO_MANIFEST), "routing table drift"
+    for split, want in expect_subpath.items():
+        got = store_subpath_for_split(split)
+        assert got == want, (split, got, want)
+    print("[selftest-cap-hit] PASS store_subpath_for_split table (6 logical splits)", flush=True)
+
+    def _chunk(name: str, cis: list[int], capped: set[int], meta_n: int | None = None) -> tuple:
+        rows = [{"ci": c, "finish_reason": ("length" if c in capped else "stop")} for c in cis]
+        n = len([c for c in cis if c in capped]) if meta_n is None else meta_n
+        return (name, {"rows": rows, "n_cap_hit": n, "gen_max_tokens": GEN_MAX_TOKENS})
+
+    expected = list(range(10, 20))  # the logical split's committed id list
+
+    # 2. Happy path, same-split mode: exact coverage; totals at the logical grain.
+    chunks = [
+        _chunk("c0.json", expected[:5], {11, 13}),
+        _chunk("c1.json", expected[5:], {17}),
+    ]
+    agg = _aggregate_cap_hit_core(chunks, expected, subset_mode=False, prefix="selftest")
+    assert agg["total"] == 10 and agg["cap_hit"] == 3, agg
+    assert agg["cap_hit_cis"] == [11, 13, 17], agg["cap_hit_cis"]
+    assert agg["n_store_rows"] == 10 and agg["n_rows_outside_expected"] == 0, agg
+    print("[selftest-cap-hit] PASS same-split happy path (exact coverage)", flush=True)
+
+    # 3. Missing chunk (5 expected cis never seen) ⇒ raise.
+    _expect_raise_capture(
+        lambda: _aggregate_cap_hit_core(chunks[:1], expected, subset_mode=False, prefix="st"),
+        "coverage INCOMPLETE",
+        "missing chunk",
+    )
+    # 3b. Missing single CI ⇒ raise.
+    holed = [_chunk("c0.json", expected[:5], set()), _chunk("c1.json", expected[5:9], set())]
+    _expect_raise_capture(
+        lambda: _aggregate_cap_hit_core(holed, expected, subset_mode=False, prefix="st"),
+        "coverage INCOMPLETE",
+        "missing single ci",
+    )
+    # 3c. Extra CI in same-split mode ⇒ raise.
+    extra = [_chunk("c0.json", expected[:5] + [99], set()), _chunk("c1.json", expected[5:], set())]
+    _expect_raise_capture(
+        lambda: _aggregate_cap_hit_core(extra, expected, subset_mode=False, prefix="st"),
+        "EXTRA rows",
+        "extra ci (same-split mode)",
+    )
+    # 3d. Duplicate ci across chunks ⇒ raise.
+    dup = [_chunk("c0.json", expected[:5], set()), _chunk("c1.json", expected[4:], set())]
+    _expect_raise_capture(
+        lambda: _aggregate_cap_hit_core(dup, expected, subset_mode=False, prefix="st"),
+        "duplicate ci",
+        "duplicate ci",
+    )
+    # 3e. Chunk-metadata mismatch ⇒ raise.
+    bad_meta = [
+        _chunk("c0.json", expected[:5], {11}, meta_n=3),
+        _chunk("c1.json", expected[5:], set()),
+    ]
+    _expect_raise_capture(
+        lambda: _aggregate_cap_hit_core(bad_meta, expected, subset_mode=False, prefix="st"),
+        "n_cap_hit",
+        "chunk metadata mismatch",
+    )
+
+    # 4. Subset mode (banked train_25k-style superset store): outside rows
+    #    skipped + counted; cap set FILTERED to the expected ids; totals at
+    #    the LOGICAL grain.
+    superset = [
+        _chunk("s0.json", expected[:5] + [100, 101], {11, 100}),
+        _chunk("s1.json", expected[5:] + [102], {17, 102}),
+    ]
+    agg_sub = _aggregate_cap_hit_core(superset, expected, subset_mode=True, prefix="selftest")
+    assert agg_sub["total"] == 10 and agg_sub["cap_hit"] == 2, agg_sub
+    assert agg_sub["cap_hit_cis"] == [11, 17], agg_sub["cap_hit_cis"]
+    assert agg_sub["n_store_rows"] == 13 and agg_sub["n_rows_outside_expected"] == 3, agg_sub
+    print("[selftest-cap-hit] PASS subset mode (outside rows skipped+counted)", flush=True)
+    # 4b. Subset mode still refuses a MISSING expected ci.
+    _expect_raise_capture(
+        lambda: _aggregate_cap_hit_core(superset[:1], expected, subset_mode=True, prefix="st"),
+        "coverage INCOMPLETE",
+        "subset mode missing ci",
+    )
+
+    print("[selftest-cap-hit] ALL PASS", flush=True)
     return 0
 
 
@@ -2464,7 +2690,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--aggregate-cap-hit",
         action="store_true",
         help="aggregate per-chunk cap-hit metadata for ONE (root, split) into "
-        "cap_hit_<split>.json (schema issue2330_cap_hit_v1; consumed by the P3 "
+        "cap_hit_<split>.json (schema issue2330_cap_hit_v2; consumed by the P3 "
         "truncation-restriction control + fig_cap_hit)",
     )
     ap.add_argument(
@@ -2479,6 +2705,21 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="aggregate mode: pinned data-repo revision for a banked root (7B: the "
         "plan-§10 store pin); None = main (the issue's own 9B prefix)",
+    )
+    ap.add_argument(
+        "--cap-hit-store-split",
+        default=None,
+        help="aggregate mode: store subpath override when the chunks live under a "
+        "DIFFERENT subpath than the logical split's canonical one (the banked 7B "
+        "train case: --split train_10k --cap-hit-store-split train_25k — enters "
+        "SUBSET mode, filtering store rows to the committed split_ids id set); "
+        "default = store_subpath_for_split(--split)",
+    )
+    ap.add_argument(
+        "--selftest-cap-hit",
+        action="store_true",
+        help="CPU selftest of the cap-hit routing table + aggregation core (round 3: "
+        "ceiling/train_25k routing, exact-coverage rejection, subset filtering)",
     )
     ap.add_argument(
         "--cap-hit-out",
@@ -2610,6 +2851,10 @@ def main() -> int:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     if args.run_meta_out is None:
         args.run_meta_out = args.out_dir / "run_meta.json"
+
+    if args.selftest_cap_hit:
+        # Local-only synthetic-chunk selftest: runs BEFORE the token assert below.
+        return run_selftest_cap_hit()
 
     if args.fits_smoke:
         # Local-only (no HF token needed): runs BEFORE the token assert below.
