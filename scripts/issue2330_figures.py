@@ -451,6 +451,9 @@ CAP_HIT_SCHEMA = "issue2330_cap_hit_v2"
 CAP_HIT_ROOT_TO_MODEL = {
     "issue1491_scale_ladder/scale7_refit": "qwen25_7b",
     "issue2330_matched/qwen35_9b": "qwen35_9b",
+    # fu1 cap2048 regeneration stores (same schema, gen_max_tokens=2048).
+    "issue2330_matched/q25_cap2048": "qwen25_7b",
+    "issue2330_matched/qwen35_9b_cap2048": "qwen35_9b",
 }
 # FIX 2c (round 3) required roster: the (model, logical-split) aggregates the
 # P3 truncation-restriction control CONSUMES — all six must be present in
@@ -620,6 +623,161 @@ def fig_lambda_table(fits: dict, out: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# fu1 figures: dense 9B layer profile + cap-1024 vs cap-2048 comparison
+# ---------------------------------------------------------------------------
+
+
+def _cap_hit_fracs(cap_hit_dir: Path) -> dict[tuple[str, str], float]:
+    """(model, split) → cap-hit % from a dir of issue2330_cap_hit_v2 aggregates
+    (same schema/root/consistency gates as fig_cap_hit, roster check relaxed to
+    the six (model, split) pairs actually present in the dir)."""
+    files = sorted(Path(cap_hit_dir).glob("cap_hit_*.json"))
+    if not files:
+        raise RuntimeError(f"{cap_hit_dir}: no cap_hit_*.json aggregates found")
+    rows: dict[tuple[str, str], float] = {}
+    for p in files:
+        payload = json.loads(p.read_text(encoding="utf-8"))
+        if payload.get("schema") != CAP_HIT_SCHEMA:
+            raise RuntimeError(f"{p}: schema {payload.get('schema')!r} != {CAP_HIT_SCHEMA!r}")
+        root, split = str(payload["root"]), str(payload["split"])
+        if root not in CAP_HIT_ROOT_TO_MODEL:
+            raise RuntimeError(f"{p}: unknown root {root!r}")
+        total, cap = int(payload["total"]), int(payload["cap_hit"])
+        if total <= 0 or not 0 <= cap <= total:
+            raise RuntimeError(f"{p}: inconsistent aggregate total={total} cap_hit={cap}")
+        key = (CAP_HIT_ROOT_TO_MODEL[root], split)
+        if key in rows:
+            raise RuntimeError(f"{p}: duplicate cap-hit aggregate for {key}")
+        rows[key] = 100.0 * cap / total
+    return rows
+
+
+def fig_dense_profile(dense_path: Path, fits_dir: Path, out: Path) -> None:
+    """9B held-out test R² at every layer output 0-30 (dense sweep, banked
+    generations), with the depth-matched pick (L22) and the realized peak (L18)
+    marked and the 7B layer-19 10k fit as a reference level."""
+    dense = json.loads(Path(dense_path).read_text(encoding="utf-8"))
+    fits7 = json.loads((fits_dir / "matched_fits_q25_n10k.json").read_text(encoding="utf-8"))
+    ref7 = float(fits7["per_layer"]["19"]["ridge"]["test_r2"])
+
+    set_paper_style("blog")
+    fig, ax = plt.subplots(figsize=(6.6, 3.9))
+    for cell, ls, alpha in (("q35_n10k", "-", 1.0), ("q35_n5k", "--", 0.55)):
+        pl = dense["cells"][cell]["per_layer"]
+        layers = sorted(int(k) for k in pl)
+        r2 = [float(pl[str(k)]["test_r2"]) for k in layers]
+        ax.plot(
+            layers,
+            r2,
+            ls=ls,
+            lw=1.5,
+            marker="o",
+            markersize=3.2,
+            color=COL_MODEL["qwen35_9b"],
+            alpha=alpha,
+            label=f"Qwen3.5-9B {N_TRAIN_OF[cell] // 1000}k-fit",
+        )
+    ax.axhline(
+        ref7,
+        ls="--",
+        lw=1.3,
+        color=COL_MODEL["qwen25_7b"],
+        label="Qwen2.5-7B layer 19, 10k-fit (reference)",
+    )
+    ax.axvline(18, ls="--", lw=1.1, color=GRAY, label="layer 18 (dense-sweep peak)")
+    ax.axvline(22, ls=":", lw=1.1, color=GRAY, label="layer 22 (depth-matched pick)")
+    ax.legend(fontsize=8, loc="lower right")
+    ax.set_xlabel("Qwen3.5-9B layer index (block output, 0-30 of 32)")
+    ax.set_ylabel("held-out test R²")
+    ax.set_title("Dense per-layer map R², Qwen3.5-9B")
+    savefig_paper(fig, "issue_2330/dense_layer_profile", dir=str(out))
+    plt.close(fig)
+
+
+def fig_cap2048_comparison(
+    fits_dir: Path,
+    cap2048_dir: Path,
+    cap_hit_dir: Path,
+    cap_hit_cap2048_dir: Path,
+    out: Path,
+) -> None:
+    """Two panels: primary-layer test R² per cell at the 1,024 vs 2,048 caps
+    (left) and cap-hit % per (model, split) at both caps (right)."""
+    r2 = {}
+    for cell in CELLS:
+        prim = str(PRIMARY_LAYER[MODEL_OF[cell]])
+        orig = json.loads((fits_dir / f"matched_fits_{cell}.json").read_text(encoding="utf-8"))
+        cap = json.loads(
+            (cap2048_dir / f"matched_fits_{cell}_cap2048.json").read_text(encoding="utf-8")
+        )
+        r2[cell] = (
+            float(orig["per_layer"][prim]["ridge"]["test_r2"]),
+            float(cap["per_layer"][prim]["ridge"]["test_r2"]),
+        )
+
+    fr_orig = _cap_hit_fracs(cap_hit_dir)
+    fr_cap = _cap_hit_fracs(cap_hit_cap2048_dir)
+
+    set_paper_style("blog")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.8, 3.9))
+
+    # Left: per-cell primary-layer R² at both caps (open = 1,024, filled = 2,048).
+    for i, cell in enumerate(CELLS):
+        col = COL_MODEL[MODEL_OF[cell]]
+        v1024, v2048 = r2[cell]
+        ax1.plot([i, i], [v1024, v2048], color=col, lw=1.0, alpha=0.6, zorder=2)
+        ax1.scatter([i], [v1024], facecolors="none", edgecolors=col, s=52, linewidths=1.4, zorder=3)
+        ax1.scatter([i], [v2048], color=col, s=52, zorder=3)
+    ax1.set_xticks(range(len(CELLS)))
+    ax1.set_xticklabels([CELL_LABEL[c].replace(" ", "\n", 1) for c in CELLS], fontsize=8)
+    ax1.set_ylabel("held-out test R² (primary layer)")
+    ax1.set_title("Map R² at the 1,024 vs 2,048 caps")
+    handles = [
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            ls="",
+            markerfacecolor="none",
+            markeredgecolor=GRAY,
+            markeredgewidth=1.4,
+            markersize=8,
+        ),
+        plt.Line2D([], [], marker="o", ls="", color=GRAY, markersize=8),
+    ]
+    ax1.legend(handles, ["1,024-token cap", "2,048-token cap"], fontsize=8, loc="lower right")
+
+    # Right: cap-hit % per (model, split) at both caps.
+    keys = sorted(fr_orig)
+    if sorted(fr_cap) != keys:
+        raise RuntimeError("cap-hit (model, split) rosters differ across caps")
+    split_label = {"test_1000": "test", "train_10k": "train", "val_400": "val"}
+    labels = [f"{MODEL_LABEL[m]}\n{split_label.get(s, s)}" for m, s in keys]
+    x = np.arange(len(keys))
+    w = 0.38
+    ax2.bar(
+        x - w / 2,
+        [fr_orig[k] for k in keys],
+        width=w,
+        color=[COL_MODEL[m] for m, _ in keys],
+        alpha=0.45,
+    )
+    ax2.bar(x + w / 2, [fr_cap[k] for k in keys], width=w, color=[COL_MODEL[m] for m, _ in keys])
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(labels, fontsize=7)
+    ax2.set_ylabel("generations ending at the cap (%)")
+    ax2.set_title("Cap-hit per (model, split)")
+    bar_handles = [
+        plt.Rectangle((0, 0), 1, 1, color=GRAY, alpha=0.45),
+        plt.Rectangle((0, 0), 1, 1, color=GRAY),
+    ]
+    ax2.legend(bar_handles, ["1,024-token cap", "2,048-token cap"], fontsize=8)
+
+    savefig_paper(fig, "issue_2330/cap2048_comparison", dir=str(out))
+    plt.close(fig)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Task #2330 P4 figures (plan §6 roster)")
     ap.add_argument(
@@ -654,8 +812,42 @@ def main() -> int:
         "issue2330_qwen35_generate_capture.py --aggregate-cap-hit); the cap-hit panel is "
         "SKIPPED (with an explicit log line, never zero bars) when absent",
     )
+    ap.add_argument(
+        "--fu1",
+        action="store_true",
+        help="render ONLY the fu1 figures (dense 9B layer profile + cap-1024 vs "
+        "cap-2048 comparison); skips the preds/contrasts loads",
+    )
+    ap.add_argument(
+        "--dense-json",
+        type=Path,
+        default=REPO_ROOT
+        / "eval_results"
+        / "issue_2330"
+        / "dense_sweep"
+        / "matched_fits_q35_dense.json",
+    )
+    ap.add_argument(
+        "--cap2048-dir",
+        type=Path,
+        default=REPO_ROOT / "eval_results" / "issue_2330" / "cap2048",
+    )
+    ap.add_argument(
+        "--cap-hit-cap2048-dir",
+        type=Path,
+        default=REPO_ROOT / "eval_results" / "issue_2330" / "cap_hit_cap2048",
+    )
     args = ap.parse_args()
     contrasts_path = args.contrasts if args.contrasts else args.fits_dir / "contrasts.json"
+
+    if args.fu1:
+        cap_hit_dir = args.cap_hit_dir or (REPO_ROOT / "eval_results" / "issue_2330" / "cap_hit")
+        fig_dense_profile(args.dense_json, args.fits_dir, args.out)
+        fig_cap2048_comparison(
+            args.fits_dir, args.cap2048_dir, cap_hit_dir, args.cap_hit_cap2048_dir, args.out
+        )
+        print(f"[figures] wrote fu1 figures under {args.out / 'issue_2330'}", flush=True)
+        return 0
 
     # Fail-loud loads: _load_cells carries the matched-id, committed-R² parity
     # (1e-6), and #2130 ceiling n_pairs defenses; raises on any miss.
