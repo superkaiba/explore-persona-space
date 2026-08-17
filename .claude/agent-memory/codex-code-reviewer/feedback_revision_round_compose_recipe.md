@@ -555,3 +555,18 @@ explicitly: a committed test asserting `passed` cannot distinguish a SKIPPED
 check from one that ran-and-happened-to-pass when the degenerate input
 computes below the bar anyway (zero-vector cosine ~0 under eps) — demand a
 read-the-control-flow verification, never the green test as evidence.
+
+**Tests-only blocker-closure cap round (#2329 r5, 2026-08-16):** when the round's
+sole change is a test file closing one objective blocker, compose the TIGHT
+no-rubric shape with: (a) the valid-tags enumeration NARROWED inside the verdict
+template's Blocker-tags bracket itself (`substantive` | `git-provenance` |
+`data-access-blocked` only, with the brief-invalidated tags named in OUT OF
+SCOPE) — the full tag zoo invites an invalid mechanical FAIL; (b) when the brief
+orders self-reproduction of a pre-fix failure, the scratch-dir carve-out
+(`git show <sha>~1:<file>` into /tmp, run ONLY the named test nodeids) PLUS the
+never-fabricate STATIC fallback labeled `STATIC (env unavailable)`, and flag at
+return time that dispatch write-mode decides which arm executes; (c) assert-side:
+the inlined impl body usually carries the round SHA once — count template spans
+and body separately before asserting the total; (d) a prior twin verdict at a
+NON-standard /tmp name (e.g. `/tmp/<N>-codex-r<k>-marker.md`) may be the posted
+events.jsonl note verbatim — byte-compare before trusting either copy.
