@@ -534,3 +534,24 @@ marker block; instruct NOT to re-emit already-persisted open ids as rows);
 the verdict template; (3) patch the rubric's Step 0.8 span with the
 record-the-ledger-state sentence. Assert-side: `^CONCERN:: ` line-start
 regex over the final prompt must match exactly the one grammar row.
+
+**Crash-fix round on a reconciler-OVERTURN close + scoped-out intermediate
+hot-fix (#2329 r4, 2026-08-16):** when the crash-fix round follows a round the
+reconciler closed by OVERTURNING the Codex twin's Critical, compose BOTH
+shapes together: the crash-fix provenance block (epm:progress diagnosis as the
+inlined ground truth; `marker-shape`/`smoke-run-missing` declared INVALID —
+no per-round impl marker exists by design) AND the post-overturn
+no-relitigate block. A reconciler "STANDING RECOMMENDATION (does NOT gate,
+must ride the next round touching file X)" that the bounded dispatch
+deliberately did not implement gets an explicit instruction — record as a
+non-blocking CONCERN row, never a FAIL blocker — else the twin (author of the
+overturned finding) predictably re-FAILs on its own item. When the brief
+scopes the diff to `<round-sha> vs parent` and an UNREVIEWED intermediate
+hot-fix sits between the last reviewed HEAD and the round commit, follow the
+brief (intermediate commit = out-of-round, git-provenance routing) and FLAG
+the unreviewed commit in the return — scope widening is the orchestrator's
+call, never the composer's. Also hand Codex the skipped-vs-ran trap
+explicitly: a committed test asserting `passed` cannot distinguish a SKIPPED
+check from one that ran-and-happened-to-pass when the degenerate input
+computes below the bar anyway (zero-vector cosine ~0 under eps) — demand a
+read-the-control-flow verification, never the green test as evidence.
