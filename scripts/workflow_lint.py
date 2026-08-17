@@ -3038,6 +3038,25 @@ def _other_worktree_prefix(repo_root: Path) -> str | None:
     return None
 
 
+def _issue_step_companions(skills_root: Path) -> list[Path]:
+    """``<skills_root>/issue/steps/*.md`` — the per-step bodies split out of
+    ``.claude/skills/issue/SKILL.md`` (#2155).
+
+    Every check that scans ``skills/**/SKILL.md`` MUST also scan these, or the
+    split silently drops enforcement over the relocated prose instead of
+    failing loud — the inverse of the #850/#1159 pointer-reachability rule and
+    the same coverage-loss class that makes a grandfathered size entry go
+    stale. This mirrors how ``markers.md`` and ``templates/*.md`` are already
+    appended alongside the SKILL.md glob.
+
+    Returns [] when the directory is absent, so callers are split-agnostic.
+    """
+    steps = skills_root / "issue" / "steps"
+    if not steps.is_dir():
+        return []
+    return sorted(p for p in steps.glob("*.md") if p.is_file())
+
+
 def _is_other_worktree_path(path: Path, current_worktree_prefix: str | None) -> bool:
     """Return True iff ``path`` lives under a DIFFERENT worktree than the
     one we are currently running from.
@@ -5348,6 +5367,7 @@ def check_poller_marker_consumers(
         consumers: list[Path] = []
         if skills_dir.is_dir():
             consumers.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+            consumers.extend(_issue_step_companions(skills_dir))
         consumers.extend(
             _REPO_ROOT / "scripts" / name
             for name in (
