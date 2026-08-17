@@ -12,3 +12,4 @@
 {"ts": "2026-08-17T03:11:45Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mswnly98-cnfhex phase=done after 212s fetch_retries=0."}
 {"ts": "2026-08-17T03:12:53Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mswnm32r-36xl9v phase=done after 273s fetch_retries=0."}
 {"ts": "2026-08-17T03:16:29Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mswnpqdu-uaf71y phase=done after 306s fetch_retries=0."}
+{"ts": "2026-08-17T03:36:51Z", "kind": "epm:plan-verify", "version": 3, "by": "unknown", "note": "verify_plan v4: PASS n_fail=0 n_warn=0 (post-revision; both binding Must-Fix channels closed mechanically)."}
