@@ -35793,6 +35793,93 @@ def _campaign_gate_candidates() -> set[int]:
     }
 
 
+def _gate_push_runaway_arm(
+    by_issue: dict[int, set[str]],
+    daemon_reachable: bool,
+    dry_run: bool,
+) -> None:
+    """Tick-runaway force-stop tail of :func:`gate_push_pass`, extracted
+    verbatim for C901 (#2345); behavior unchanged."""
+    flags = _runaway_flags()
+    if not flags:
+        return
+    running_pod_issues = {
+        issue
+        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
+    }
+    for issue, flag_path in flags:
+        _process_runaway_flag(
+            issue,
+            flag_path,
+            sorted(by_issue.get(issue, set())),
+            running_pod_issues,
+            daemon_reachable,
+            dry_run,
+        )
+
+
+def _gate_push_process_issue(issue: int, dry_run: bool) -> None:
+    """Per-issue arm of :func:`gate_push_pass` (loop body extracted verbatim
+    for C901, #2345): gate-push transition detection, the rung-0 W1/W3 arms,
+    and the status-transition-keyed self-report refresh for ONE issue."""
+    status = _task_status(issue)
+    if status is None or status in TERMINAL_FOR_GC:
+        # completed/archived: never a push target, no title value — and
+        # acting here would CHURN against the terminal-status GC (it
+        # reaps gate-notify-<N>.json each tick, so this pass would
+        # re-create it + re-refresh the self-report every pass, keeping
+        # the self-report permanently fresh and structurally disabling
+        # the session-reconcile idle signal for done tasks).
+        return
+    state = _load_gate_notify_state(issue)
+    last_status = state.get("last_status")
+    # Rung 0 W3 (CONTRACTS §1.3): the stale-async-park arm runs EVERY tick
+    # for parked statuses — steady state included, so it sits BEFORE the
+    # last_status == status short-circuit (a park is steady state by
+    # definition). Non-park statuses and tasks with no open ask are a
+    # no-op; carry the persisted dedup key forward on every save so a
+    # status flap cannot re-alert the same ask.
+    alerted_ts_prev = state.get("async_ask_alerted_ts")
+    alerted_ts = alerted_ts_prev if isinstance(alerted_ts_prev, (int, float)) else None
+    events: list[dict] | None = None
+    if status in ISSUE_PARK or status == "awaiting_promotion":
+        events = _task_events(issue)
+        fresh_alert = _async_park_stale_alert_arm(issue, status, events, state, dry_run)
+        if fresh_alert is not None:
+            alerted_ts = fresh_alert
+    if last_status == status:
+        # Steady state — no transition work; persist only a NEW alert
+        # dedup key (a no-alert tick rewrites nothing, keeping legacy
+        # steady-state ticks write-free as before).
+        if alerted_ts is not None and alerted_ts != alerted_ts_prev and not dry_run:
+            _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
+        return
+    if events is None:
+        events = _task_events(issue)
+    over_cap = status == "plan_pending" and plan_pending_over_cap(events)
+    # Rung 0 W1 (CONTRACTS §1.3): a fresh OPEN plan-approval epm:ask at
+    # plan_pending ALSO fires the gate push — local OR only; the shared
+    # tick_triage plan_pending_over_cap predicate is untouched.
+    async_plan_ask = False
+    if status == "plan_pending":
+        try:
+            from explore_persona_space.task_workflow import open_async_ask
+
+            async_plan_ask = open_async_ask(events, gate="plan_approval") is not None
+        except ImportError:
+            async_plan_ask = False
+    if decide_gate_push(status, last_status, over_cap or async_plan_ask):
+        msg = _gate_push_message(issue, status, events, over_cap, async_ask=async_plan_ask)
+        sent = _telegram_push(msg, dry_run)
+        print(
+            f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
+            f"({'sent' if sent else 'push not confirmed'})"
+        )
+    _refresh_self_report(issue, status, dry_run)
+    if not dry_run:
+        _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
+
+
 def gate_push_pass(
     dry_run: bool,
     *,
@@ -35833,78 +35920,8 @@ def gate_push_pass(
     if candidates:
         print(f"gate-push: {len(candidates)} candidate issue(s)")
     for issue in candidates:
-        status = _task_status(issue)
-        if status is None or status in TERMINAL_FOR_GC:
-            # completed/archived: never a push target, no title value — and
-            # acting here would CHURN against the terminal-status GC (it
-            # reaps gate-notify-<N>.json each tick, so this pass would
-            # re-create it + re-refresh the self-report every pass, keeping
-            # the self-report permanently fresh and structurally disabling
-            # the session-reconcile idle signal for done tasks).
-            continue
-        state = _load_gate_notify_state(issue)
-        last_status = state.get("last_status")
-        # Rung 0 W3 (CONTRACTS §1.3): the stale-async-park arm runs EVERY tick
-        # for parked statuses — steady state included, so it sits BEFORE the
-        # last_status == status short-circuit (a park is steady state by
-        # definition). Non-park statuses and tasks with no open ask are a
-        # no-op; carry the persisted dedup key forward on every save so a
-        # status flap cannot re-alert the same ask.
-        alerted_ts_prev = state.get("async_ask_alerted_ts")
-        alerted_ts = alerted_ts_prev if isinstance(alerted_ts_prev, (int, float)) else None
-        events: list[dict] | None = None
-        if status in ISSUE_PARK or status == "awaiting_promotion":
-            events = _task_events(issue)
-            fresh_alert = _async_park_stale_alert_arm(issue, status, events, state, dry_run)
-            if fresh_alert is not None:
-                alerted_ts = fresh_alert
-        if last_status == status:
-            # Steady state — no transition work; persist only a NEW alert
-            # dedup key (a no-alert tick rewrites nothing, keeping legacy
-            # steady-state ticks write-free as before).
-            if alerted_ts is not None and alerted_ts != alerted_ts_prev and not dry_run:
-                _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
-            continue
-        if events is None:
-            events = _task_events(issue)
-        over_cap = status == "plan_pending" and plan_pending_over_cap(events)
-        # Rung 0 W1 (CONTRACTS §1.3): a fresh OPEN plan-approval epm:ask at
-        # plan_pending ALSO fires the gate push — local OR only; the shared
-        # tick_triage plan_pending_over_cap predicate is untouched.
-        async_plan_ask = False
-        if status == "plan_pending":
-            try:
-                from explore_persona_space.task_workflow import open_async_ask
-
-                async_plan_ask = open_async_ask(events, gate="plan_approval") is not None
-            except ImportError:
-                async_plan_ask = False
-        if decide_gate_push(status, last_status, over_cap or async_plan_ask):
-            msg = _gate_push_message(issue, status, events, over_cap, async_ask=async_plan_ask)
-            sent = _telegram_push(msg, dry_run)
-            print(
-                f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
-                f"({'sent' if sent else 'push not confirmed'})"
-            )
-        _refresh_self_report(issue, status, dry_run)
-        if not dry_run:
-            _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
-    flags = _runaway_flags()
-    if not flags:
-        return
-    running_pod_issues = {
-        issue
-        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
-    }
-    for issue, flag_path in flags:
-        _process_runaway_flag(
-            issue,
-            flag_path,
-            sorted(by_issue.get(issue, set())),
-            running_pod_issues,
-            daemon_reachable,
-            dry_run,
-        )
+        _gate_push_process_issue(issue, dry_run)
+    _gate_push_runaway_arm(by_issue, daemon_reachable, dry_run)
 
 
 def program_orchestrator_pass(
