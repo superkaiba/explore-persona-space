@@ -10339,8 +10339,8 @@
     "2338": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2338",
-      "status": "running",
+      "path": "tasks/completed/2338",
+      "status": "completed",
       "title": "gotchas.md: MooseFS preflight fallocate canary grinds ~9 min (slow-canary vs read-wedge discriminator) + resumed-pod uv sync flash-attn uninstall note"
     },
     "2339": {
