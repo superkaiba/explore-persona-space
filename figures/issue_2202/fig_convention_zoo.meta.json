@@ -1,0 +1,254 @@
+{
+  "commit": "835623a7+dirty",
+  "render_id": "630ad319ee7d432b",
+  "git_commit": "835623a7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2202/fig_avg_target.meta.json",
+    "figures/issue_2202/fig_avg_target.pdf",
+    "figures/issue_2202/fig_avg_target.png",
+    "figures/issue_2202/fig_convention_zoo.meta.json",
+    "figures/issue_2202/fig_convention_zoo.pdf",
+    "figures/issue_2202/fig_convention_zoo.png",
+    "scripts/issue2202_fold_figs.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-17T19:16:34Z",
+  "figsize": [
+    7.5,
+    9.0
+  ],
+  "points": [
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.01016,
+      "y": 0.02031988733527814,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.092043,
+      "y": 0.1840861080374208,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.233377,
+      "y": 0.46675384770143846,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.252339,
+      "y": 0.5046775978271804,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.313701,
+      "y": 0.6274016698521275,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.368172,
+      "y": 0.7363444321496831,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.408007,
+      "y": 0.816014485464239,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.408359,
+      "y": 0.8167186399758576,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.414093,
+      "y": 0.8281862991650739,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.414093,
+      "y": 0.8281862991650739,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.424605,
+      "y": 0.8492103410119707,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.434162,
+      "y": 0.8683231063273312,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.436526,
+      "y": 0.8730510009053415,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.438688,
+      "y": 0.8773765214767126,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.439091,
+      "y": 0.878181269489991,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.441203,
+      "y": 0.8824061965597022,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.454733,
+      "y": 0.9094658485061865,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.463485,
+      "y": 0.9269691177949905,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.465144,
+      "y": 0.9302887033497637,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.46776,
+      "y": 0.9355195654360728,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.468062,
+      "y": 0.9361231264460316,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.471532,
+      "y": 0.9430640780605573,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.471582,
+      "y": 0.9431646715622171,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.473946,
+      "y": 0.9478925661402273,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.476763,
+      "y": 0.9535258022331757,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.478724,
+      "y": 0.9574489487979077,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.48808,
+      "y": 0.9761593401066291,
+      "_kind": "bar"
+    },
+    {
+      "rank-1 retrieval accuracy (full 9,941-answer pool)": 0.492254,
+      "y": 0.984508600744392,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Rank-1 retrieval accuracy by similarity convention",
+        "xlabel": "rank-1 retrieval accuracy (full 9,941-answer pool)",
+        "legend_labels": [
+          "new this round",
+          "banked convention",
+          "fresh-draw reference, raw euclidean (0.943)",
+          "fresh-draw reference, matched to CSLS on whitened cosine (0.973)"
+        ],
+        "annotations": [
+          "0.020",
+          "0.184",
+          "0.467",
+          "0.505",
+          "0.627",
+          "0.736",
+          "0.816",
+          "0.817",
+          "0.828",
+          "0.828",
+          "0.849",
+          "0.868",
+          "0.873",
+          "0.877",
+          "0.878",
+          "0.882",
+          "0.909",
+          "0.927",
+          "0.930",
+          "0.936",
+          "0.936",
+          "0.943",
+          "0.943",
+          "0.948",
+          "0.954",
+          "0.957",
+          "0.976",
+          "0.985"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "whitened euclidean (banked)",
+          "top-1024 truncated whitening, euclidean",
+          "top-256 truncated whitening, euclidean",
+          "top-64 truncated whitening, euclidean",
+          "per-dimension z-score, euclidean",
+          "inverted softmax (beta 10), cosine",
+          "raw euclidean (banked)",
+          "mutual proximity, euclidean",
+          "raw cosine (banked)",
+          "Pearson r across dims (= raw cosine)",
+          "inverted softmax (beta 30), cosine",
+          "NICDM local scaling K=10, euclidean",
+          "DisSimLocal K=10, euclidean",
+          "per-dimension z-score, cosine",
+          "candidate-normalized R\u00b2",
+          "mean-centered cosine (banked)",
+          "CSLS K=10 on raw cosine (banked)",
+          "all-but-the-top (35 dims), cosine",
+          "half-power whitening, cosine",
+          "top-64 truncated whitening, cosine",
+          "top-256 truncated whitening, cosine",
+          "top-1024 truncated whitening, cosine",
+          "whitened cosine, shrinkage 0.5",
+          "whitened cosine, shrinkage 0.3",
+          "whitened cosine (banked)",
+          "in-degree hub penalty on whitened cosine",
+          "CSLS K=10 on whitened cosine",
+          "double-strength CSLS penalty on whitened cosine"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
