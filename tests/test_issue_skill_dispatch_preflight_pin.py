@@ -1,10 +1,11 @@
 """Prose pin for the #1964 dispatch-preflight duties (staging / env-pin /
-per-leg / relaunch-flag probes).
+per-leg / relaunch-flag / out-scratch-isolation probes).
 
 Pins (a) the Step 6b dispatch-input/env/flag preflight block in the /issue
-SKILL.md (anchor phrase + the four duties' key command literals — the
+SKILL.md (anchor phrase + the five duties' key command literals — the
 lane-aware staged-input probes, the env-read enumeration grep, the per-LEG
-carry-over gate, and the handle-sidecar flag-fidelity clause), (b) its
+carry-over gate, the handle-sidecar flag-fidelity clause, and the per-leg
+out/scratch isolation item), (b) its
 placement — AFTER the hand-composed argv dry-run block, inside Step 6b
 (before Step 6c), (c) the crash-fix-rounds § Changed-argv relaunch mirror
 clause (relaunch-flag fidelity + machine caps), and (d) this file's own
@@ -105,6 +106,11 @@ def test_dispatch_preflight_has_per_leg_out_scratch_isolation_item():
     # Collision test: same/layout-sharing driver + split + shard indices.
     assert "layout-sharing" in window
     assert "overlapping shard indices" in window
+    # ACTION mandate: a possible collision derives a per-leg out/scratch
+    # root pre-launch. Two asserts so the line-break/indent between the
+    # phrases cannot break the pin.
+    assert "derives a PER-LEG" in window
+    assert "root BEFORE launch" in window
     # Non-collision escape = basename disjointness; bare driver difference
     # is explicitly NOT blessed.
     assert "BASENAME" in window and "DISJOINTNESS" in window

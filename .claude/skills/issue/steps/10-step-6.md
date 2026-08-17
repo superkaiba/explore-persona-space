@@ -543,7 +543,7 @@ this probe (same class as the gotchas #1310 signature probe).
 **Dispatch-input/env/flag preflight (REQUIRED before any instance-booting
 dispatch; #1964 — extends the argv dry-run above; same trigger + same
 byte-identical-re-dispatch exemption).** The argv dry-run validates PARSE
-+ early post-parse validation only; the four probes below cover what it
++ early post-parse validation only; the five probes below cover what it
 deliberately excludes — each is a VM-side check costing seconds, run
 BEFORE provisioning (#1739/#1689/#1345/#1902/#1946/#1900 — all
 discoverable pre-boot).
