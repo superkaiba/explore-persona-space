@@ -79,7 +79,7 @@
     "native_axes.pt": "efa71706b584e6ef",
     "default_states.pt": "f596e7c12c95d07c",
     "answer_axis.pt": "05785aa9929862d9",
-    "tau_map.json": "063a738f037981c5"
+    "tau_map.json": "731fa7989051a358"
   },
   "deviations": {
     "system_prompt_added": "paper case studies ran WITHOUT a system prompt; the default assistant system prompt is added so prefix-position arms are definable",
@@ -88,9 +88,12 @@
   },
   "metadata": {
     "issue": 2223,
-    "timestamp_utc": "2026-08-16T19:49:34.044917+00:00",
-    "git_commit": "5b33b435",
-    "git_dirty": false,
+    "timestamp_utc": "2026-08-17T16:31:13.387858+00:00",
+    "git_commit": "f740a15f",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2223/casestudy_replay/qwen3-32b/extractions/tau_map.json"
+    ],
     "torch_version": "2.8.0+cu128",
     "transformers_version": "4.57.6",
     "label": "casestudy_replay"
