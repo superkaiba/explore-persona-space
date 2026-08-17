@@ -1203,6 +1203,14 @@ def check_env_vars(report: PreflightReport, required: list[str]):
             report.add_warning(f"Env var {var} looks suspiciously short: '{val[:3]}...'")
 
 
+def _allow_transformers5_override() -> bool:
+    """True when the launching session explicitly acknowledged the vLLM 0.11.x +
+    transformers>=5 skew (env ``EPM_PREFLIGHT_ALLOW_TRANSFORMERS5=1``) — degrades
+    the skew ERROR to a logged WARN for workloads VERIFIED not to import vLLM,
+    mirroring ``EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE``. Per-launch, never persistent."""
+    return os.environ.get("EPM_PREFLIGHT_ALLOW_TRANSFORMERS5", "").strip() in {"1", "true", "yes"}
+
+
 def check_vllm_transformers_compat(report: PreflightReport):
     """Refuse to proceed when vLLM 0.11.x is resolved against transformers >=5.
 
@@ -1210,6 +1218,16 @@ def check_vllm_transformers_compat(report: PreflightReport):
     removed. Every fresh pod hits this 10 sec into the first `LLM(...)` init. This has
     recurred across issues #238, #261, #263, #269, #331, #354, #368 — caught here so
     the next fresh pod fails preflight in <2 sec instead of crashing in vLLM later.
+
+    Workload-scoped acknowledgment (#2337): the skew breaks ONLY workloads that
+    instantiate vLLM ``LLM(...)``; preflight has no reliable view of the workload,
+    so a launching session that VERIFIED its workload never imports vLLM (static
+    grep of the dispatch chain + the workload's own smoke evidence) may set
+    ``EPM_PREFLIGHT_ALLOW_TRANSFORMERS5=1`` (accepted: ``1``/``true``/``yes``) to
+    degrade the ERROR to exactly one WARN — the warn records that any ``LLM(...)``
+    instantiation is still EXPECTED to crash. Do NOT downgrade transformers instead
+    for a model whose support requires transformers >= 5 (e.g. qwen3_5). Non-skew
+    version combinations and the ImportError branch are unaffected by the override.
     """
     try:
         import transformers
@@ -1223,11 +1241,27 @@ def check_vllm_transformers_compat(report: PreflightReport):
     t_major = int(t_ver.split(".")[0])
     v_minor = ".".join(v_ver.split(".")[:2])
     if v_minor in {"0.11"} and t_major >= 5:
+        if _allow_transformers5_override():
+            report.add_warning(
+                f"vLLM/transformers skew ACKNOWLEDGED: vllm=={v_ver} + "
+                f"transformers=={t_ver} (EPM_PREFLIGHT_ALLOW_TRANSFORMERS5 is set). Any "
+                f"LLM(...) instantiation is still EXPECTED to crash — "
+                f"tokenizer.all_special_tokens_extended is gone in transformers >=5, and "
+                f"the #1689 tokenizer .pth shim (scripts/_install_tokenizer_patch.py) is "
+                f"unwired and disfavored. The override is per-launch, for workloads "
+                f"verified NOT to import vLLM — do not leave it set process-wide."
+            )
+            return
         report.add_error(
             f"vLLM/transformers version skew: vllm=={v_ver} + transformers=={t_ver}. "
             f"vLLM 0.11.x calls tokenizer.all_special_tokens_extended which transformers "
-            f">=5 removed. Every LLM(...) instantiation will crash. Fix: pin "
-            f"`transformers>=4.46,<5.0` in pyproject.toml and re-run `uv sync --locked`. "
+            f">=5 removed, so any LLM(...) instantiation will crash. Remedy depends on "
+            f"the workload: (a) workload instantiates vLLM LLM(...) -> pin "
+            f"`transformers>=4.46,<5.0` in pyproject.toml and re-run `uv sync --locked`; "
+            f"(b) workload does NOT import vLLM (verify: static grep of the dispatch "
+            f"chain + the workload's own smoke evidence) -> set "
+            f"EPM_PREFLIGHT_ALLOW_TRANSFORMERS5=1 for that launch. Do NOT downgrade "
+            f"transformers for a model requiring >=5 (e.g. qwen3_5). "
             f"See .claude/agent-memory/experimenter/feedback_vllm0110_transformers5_breakage.md"
         )
 

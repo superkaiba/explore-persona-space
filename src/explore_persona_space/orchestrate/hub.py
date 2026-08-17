@@ -282,11 +282,21 @@ def check_hf_storage_headroom(
         # PARTIAL-None GUARD: counting a present-but-unpopulated usedStorage
         # as 0 silently understates usage — ANY missing value poisons the
         # probe to unknown rather than producing a partial sum.
+        detail = f"{n_missing}/{n} missing usedStorage"
+        if n_missing == n:
+            # ALL repos missing usedStorage is the signature of an auth /
+            # endpoint condition (expired or absent token, wrong endpoint),
+            # not a storage fact — name it so the basis line is not read as
+            # "zero storage" (#2337).
+            detail += (
+                "; all repos missing usedStorage usually indicates an "
+                "auth/endpoint condition, not zero storage"
+            )
         return HfStorageHeadroom(
             used_tb=None,
             ceiling_tb=ceiling,
             over_ceiling=False,
-            basis=f"suspect ({n_missing}/{n} missing usedStorage)",
+            basis=f"suspect ({detail})",
             n_repos=n,
         )
     used_bytes = sum(per_repo)
