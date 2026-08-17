@@ -40,7 +40,11 @@ import json
 import re
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 EVAL = REPO / "eval_results" / "issue_2330"
