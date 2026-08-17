@@ -555,7 +555,12 @@ def _config_satisfiability_guard(
     ``per_arm_items * n_draws``. Refuses BEFORE any ``judge_graded`` call / API
     spend (fail fast); ``allow_subresolution_pilot=True`` downgrades the
     refusal to a recorded report warning (the deliberate escape for smoke legs
-    and unavoidably tiny runtime arms).
+    and unavoidably tiny runtime arms). Bypass scope (#2339): the escapes —
+    ``waive_parse_fail_arms`` and ``allow_subresolution_pilot`` — bypass ONLY
+    this config-time refusal; the verdict-time ``min_effective_draws_per_arm``
+    floor in ``_gate_verdict`` has no exemption for bypassed or waived arms,
+    so an arm whose max realizable draws (``len(items) * n_draws``) sit
+    STRICTLY below that floor is verdict-doomed under every escape.
 
     Returns ``(pre_warnings, bypassed_arms, min_resolvable)``. Raises
     ``ValueError`` on a non-positive threshold, an empty arm, or an
@@ -611,17 +616,59 @@ def _config_satisfiability_guard(
                 "arms, so the naive required * n_arms under-provisions)"
             )
         if item_limited:
-            arms_txt = "; ".join(
-                f"arm {arm!r}: {len(arms[arm])} item(s) < {items_needed} needed "
-                f"(realized {realized} draw(s) < required {required})"
-                for arm, (realized, required, items_needed) in sorted(item_limited.items())
-            )
-            parts.append(
-                f"item-limited: {arms_txt} — NO target_total_draws can fix an arm "
-                "holding fewer than ceil(required / n_draws) items; waive it "
-                "(waive_parse_fail_arms, with a recorded reason) or accept a "
-                "sub-resolution pilot (allow_subresolution_pilot=True)"
-            )
+            # #2339 honest-remedy split (TEXT-ONLY; the raise/downgrade control
+            # flow is unchanged): the waive/allow_subresolution escapes lift ONLY
+            # this config-time refusal (the resolution floor); the verdict-time
+            # min_effective_draws_per_arm floor in _gate_verdict has NO exemption
+            # for bypassed or waived arms. An arm whose maximum realizable draws
+            # (len(items) * n_draws) sit STRICTLY BELOW that floor is therefore
+            # verdict-DOOMED under EVERY escape (transport losses only shrink
+            # effective draws further), so its remedy text must name levers that
+            # can actually produce a PASS (#2329 shipped a provably-unpassable
+            # fix on the old escape-naming text).
+            doomed = {
+                arm: v
+                for arm, v in item_limited.items()
+                if len(arms[arm]) * d_eff < min_effective_draws_per_arm
+            }
+            escapable = {arm: v for arm, v in item_limited.items() if arm not in doomed}
+            if escapable:
+                arms_txt = "; ".join(
+                    f"arm {arm!r}: {len(arms[arm])} item(s) < {items_needed} needed "
+                    f"(realized {realized} draw(s) < required {required})"
+                    for arm, (realized, required, items_needed) in sorted(escapable.items())
+                )
+                parts.append(
+                    f"item-limited: {arms_txt} — NO target_total_draws can fix an arm "
+                    "holding fewer than ceil(required / n_draws) items; waive it "
+                    "(waive_parse_fail_arms, with a recorded reason) or accept a "
+                    "sub-resolution pilot (allow_subresolution_pilot=True); NOTE: at "
+                    "exact equality (len(items) * n_draws == min_effective_draws_per_arm) "
+                    "a PASS has ZERO transport-loss headroom — a single transport-lost "
+                    "draw drops the arm below the verdict-time min-effective floor"
+                )
+            if doomed:
+                arms_txt = "; ".join(
+                    f"arm {arm!r}: {len(arms[arm])} item(s) x n_draws {d_eff} = "
+                    f"{len(arms[arm]) * d_eff} realizable draw(s) < "
+                    f"min_effective_draws_per_arm={min_effective_draws_per_arm}"
+                    for arm in sorted(doomed)
+                )
+                items_for_floor = math.ceil(min_effective_draws_per_arm / d_eff)
+                parts.append(
+                    f"item-limited VERDICT-DOOMED: {arms_txt} — waive_parse_fail_arms "
+                    "and allow_subresolution_pilot bypass ONLY this config-time refusal "
+                    "(the resolution floor); the verdict-time min_effective_draws_per_arm "
+                    "floor in _gate_verdict still FAILs the arm unconditionally (no "
+                    "exemption for bypassed or waived arms), so an escape here converts "
+                    "a pre-spend refusal into a guaranteed post-spend verdict FAIL. Real "
+                    "remedies: lower the caller's min_effective_draws_per_arm to <= the "
+                    "arm's realizable draws, raise n_draws, or enlarge the arm's item "
+                    "pool to >= ceil(min_effective_draws_per_arm / n_draws) = "
+                    f"{items_for_floor} item(s); after the floor/pool remedy the escapes "
+                    "become usable at config time for any residual resolution-floor "
+                    "deficit"
+                )
         msg = (
             "judge_pilot_gate: unsatisfiable pilot configuration — the rule-26(b) "
             f"parse-fail check (FAIL on rate >= parse_fail_threshold="
@@ -754,6 +801,12 @@ def judge_pilot_gate(
             from ``ValueError`` to a recorded report warning and the pilot
             proceeds. The deliberate escape for smoke legs and unavoidably
             tiny runtime arms; production callers keep the default False.
+            Bypass scope (#2339): CONFIG-TIME ONLY — it does not exempt any
+            arm from the verdict-time ``min_effective_draws_per_arm`` floor
+            in ``_gate_verdict``, so an arm whose max realizable draws
+            (``len(items) * n_draws``) sit strictly below that floor still
+            FAILs the verdict after the spend; fix the floor / ``n_draws`` /
+            the item pool instead (the guard's VERDICT-DOOMED remedy text).
         threshold_base: LEGACY pilot-routing knob — ``judge_graded`` passthrough
             (``0`` forces the Batch-API path — the pre-launch request-shape
             probe). Superseded by the wave declaration below, which DERIVES the
