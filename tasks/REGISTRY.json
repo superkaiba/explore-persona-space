@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2334,
+  "highest_id": 2335,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10314,6 +10314,13 @@
       "path": "tasks/completed/2334",
       "status": "completed",
       "title": "Register eval_results/issue_1739 cone in tests/sparse_cones.txt (deterministic sparse-worktree test FAIL, #671 class)"
+    },
+    "2335": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2335",
+      "status": "proposed",
+      "title": "gotchas.md: RunPod host-driver vs CUDA-major wheel mismatch \u2014 cuda-compat forward-compat recipe"
     },
     "234": {
       "has_clean_result": true,
