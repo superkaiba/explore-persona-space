@@ -10,7 +10,7 @@
 - [Start-manifest + presence-done = stale-artifact skip](start_manifest_stale_artifact_done.md) — fingerprint manifest at cell START + artifact-presence "done" skips onto a prior run's stale adapter after a crashed retrain (#2225 R1 g2)
 - [Presence re-drive blesses stale mirror](presence_redrive_blesses_stale_mirror.md) — an upload re-drive short-circuiting on a presence-only remote check blesses a PRIOR fingerprint's bytes on the durable mirror (#2225 R2 g1)
 - [Count gate starved by resume-skip](count_gate_starved_by_resume_skip.md) — fresh-round grep-count gates FATAL when units dedupe into a prior round; trace skip branches (#2225 R1 g5)
-- [Smoke-arch marker #2176 grammar pitfalls](smoke_arch_marker_2176_grammar_pitfalls.md) — run check-smoke-arch-registry first; prose-decorated per-arm heading = empty sub-block; bare-token row keys (#2225 R1 g6)
+- [Smoke-arch marker #2176 grammar pitfalls](smoke_arch_marker_2176_grammar_pitfalls.md) — run check-smoke-arch-registry first; bare-token row keys; only the FIRST arm-registry line parses (#2225 g6, #2333 g2)
 - [Mode-scoped column threading untested](mode_scoped_column_threading_untested.md) — a batch column only ONE mode consumes needs an e2e test in THAT mode; other modes pass with threading deleted (#2225 R1 g1)
 - [Hand-rolled pod sentinel envelope](handrolled_pod_sentinel_envelope.md) — flag /workspace/logs JSON lacking _SENTINEL_REQUIRED_KEYS; poller silently skips it (#1491 M1)
 - [Gate threshold vs shard config](gate_threshold_vs_shard_config.md) — per-shard accumulation gates go dead when shard count drops rows/shard below the threshold (#1491 M2)
