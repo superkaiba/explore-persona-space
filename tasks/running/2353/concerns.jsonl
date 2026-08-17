@@ -1,0 +1,1 @@
+{"ts": "2026-08-17T21:24:48Z", "event": "raised", "concern_id": "check59-truncated-section-names", "severity": "BLOCKER", "summary": "Check 59 omits flagged H3 names after the first three, violating the every-flagged-section diagnostic contract.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
