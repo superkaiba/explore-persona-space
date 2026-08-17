@@ -2272,8 +2272,10 @@ def _aggregate_cap_hit_core(
     train_25k store read for the train_10k logical split) tolerates store rows
     OUTSIDE the expected set — skipped + counted, never silently mixed into
     the totals. Per-row finish_reason is the ground truth; a chunk whose
-    ``n_cap_hit`` metadata disagrees raises. Returns the aggregate count
-    fields; the caller adds routing + fingerprint + repro metadata."""
+    ``n_cap_hit`` metadata disagrees raises, and a row LACKING the field
+    raises KeyError (round 4 — a missing field must never silently classify
+    as uncapped). Returns the aggregate count fields; the caller adds
+    routing + fingerprint + repro metadata."""
     expected = {int(i) for i in expected_ids}
     per_chunk: list[dict] = []
     cap_cis: list[int] = []
@@ -2284,7 +2286,7 @@ def _aggregate_cap_hit_core(
     think_total: int | None = None
     for name, payload in chunks:
         rows = payload["rows"]
-        chunk_cap_all = [int(r["ci"]) for r in rows if str(r.get("finish_reason")) == "length"]
+        chunk_cap_all = [int(r["ci"]) for r in rows if str(r["finish_reason"]) == "length"]
         meta_n = payload.get("n_cap_hit")
         if meta_n is not None and int(meta_n) != len(chunk_cap_all):
             raise RuntimeError(
@@ -2467,7 +2469,8 @@ def run_selftest_cap_hit() -> int:
     """CPU selftest for the cap-hit routing table + aggregation core (round 3):
     table-driven logical-split → store-subpath resolution (ceiling path +
     train_25k subset), exact-coverage rejection (missing chunk / missing CI /
-    extra CI), metadata mismatch, duplicate ci, subset-mode filtering."""
+    extra CI), metadata mismatch, duplicate ci, subset-mode filtering; round 4
+    adds the missing-finish_reason rejection (hard access ⇒ KeyError)."""
     # 1. Routing table: every logical split resolves through the ONE function
     #    run_capture writes with (ceiling draws → ceiling_draws/seed{S}).
     expect_subpath = {
@@ -2539,6 +2542,21 @@ def run_selftest_cap_hit() -> int:
         "n_cap_hit",
         "chunk metadata mismatch",
     )
+
+    # 3f. Row LACKING finish_reason ⇒ KeyError (round 4: hard access — a row
+    #     without the field must never silently classify as uncapped).
+    missing_fr = [_chunk("c0.json", expected[:5], {11}), _chunk("c1.json", expected[5:], set())]
+    del missing_fr[1][1]["rows"][0]["finish_reason"]
+    try:
+        _aggregate_cap_hit_core(missing_fr, expected, subset_mode=False, prefix="st")
+    except KeyError as e:
+        assert "finish_reason" in str(e), e
+        print(
+            "[selftest-cap-hit] PASS missing finish_reason: KeyError raised as designed",
+            flush=True,
+        )
+    else:
+        raise AssertionError("[selftest-cap-hit] FAIL missing finish_reason: no KeyError raised")
 
     # 4. Subset mode (banked train_25k-style superset store): outside rows
     #    skipped + counted; cap set FILTERED to the expected ids; totals at
