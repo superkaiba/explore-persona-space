@@ -34,9 +34,12 @@ from __future__ import annotations
 import hashlib
 import json
 import tarfile
+import time
 from pathlib import Path
 
 __all__ = ["PackedPrefixError", "read_packed"]
+
+_DOWNLOAD_ATTEMPTS = 3
 
 
 class PackedPrefixError(RuntimeError):
@@ -45,15 +48,31 @@ class PackedPrefixError(RuntimeError):
 
 
 def _download(repo_id: str, filename: str, repo_type: str = "dataset") -> str:
-    """Network boundary: fetch one repo file via ``hf_hub_download``.
+    """Network boundary: fetch one repo file via ``hf_hub_download`` under a
+    bounded transient retry (huggingface_hub natively retries only 429 here).
 
-    Returns the local cached path. Module-level seam so tests can
-    monkeypatch it; uses the default HF cache (no ``local_dir``), so
-    repeated member reads from one shard download the shard once.
+    Typed not-found errors propagate IMMEDIATELY, never retried — the caller
+    owns their semantics (a missing ``index.json`` IS the unpacked-prefix
+    signal). Returns the local cached path. Module-level seam so tests can
+    monkeypatch it; uses the default HF cache (no ``local_dir``), so repeated
+    member reads from one shard download the shard once.
     """
     from huggingface_hub import hf_hub_download  # lazy: offline callers never import HF
+    from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
 
-    return hf_hub_download(repo_id=repo_id, filename=filename, repo_type=repo_type)
+    last: Exception | None = None
+    for attempt in range(_DOWNLOAD_ATTEMPTS):
+        try:
+            # NO_RETRY: this loop IS the bounded retry (3 attempts, exp backoff)
+            return hf_hub_download(repo_id=repo_id, filename=filename, repo_type=repo_type)
+        except (EntryNotFoundError, RepositoryNotFoundError):
+            raise
+        except Exception as e:
+            last = e
+            if attempt < _DOWNLOAD_ATTEMPTS - 1:
+                time.sleep(2 * 4**attempt)
+    assert last is not None
+    raise last
 
 
 def read_packed(repo_id: str, orig_path: str, *, repo_type: str = "dataset") -> bytes:
@@ -67,13 +86,19 @@ def read_packed(repo_id: str, orig_path: str, *, repo_type: str = "dataset") -> 
     against the index entry -> return bytes.
 
     Raises:
-        ValueError: ``orig_path`` carries no prefix segment (no ``/``).
+        ValueError: ``orig_path`` is absolute (leading ``/``) or carries no
+            prefix segment (no ``/``).
         KeyError: ``orig_path`` is absent from the prefix's packed index
             (message names the index path checked).
         PackedPrefixError: member absent from the shard, offset/size
             disagreement with the index, non-regular member, or sha256
             mismatch of the extracted bytes.
     """
+    if orig_path.startswith("/"):
+        raise ValueError(
+            f"orig_path {orig_path!r} is absolute — pass the repo-relative path "
+            "(a leading slash would derive an EMPTY prefix segment)"
+        )
     if "/" not in orig_path.strip("/"):
         raise ValueError(
             f"orig_path {orig_path!r} has no prefix segment — expected '<prefix>/<subpath>'"

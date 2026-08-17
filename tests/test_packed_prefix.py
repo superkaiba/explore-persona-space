@@ -33,6 +33,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 import sys
 import tarfile
 import time
@@ -148,6 +149,13 @@ def test_missing_path_raises_keyerror_naming_index(pp, packed_layout):
 def test_no_prefix_segment_raises_valueerror(pp, packed_layout):
     with pytest.raises(ValueError, match="no prefix segment"):
         pp.read_packed("any/repo", "noslash")
+
+
+def test_leading_slash_rejected(pp, packed_layout):
+    """An absolute path would derive an EMPTY prefix ('//__packed__/...') —
+    rejected explicitly rather than surfacing as a confusing 404."""
+    with pytest.raises(ValueError, match="absolute"):
+        pp.read_packed("any/repo", f"/{PREFIX}/a.json")
 
 
 def test_sha256_mismatch_raises(pp, packed_layout):
@@ -290,9 +298,14 @@ def _retry_once(fn, *args, **kwargs):
         return fn(*args, **kwargs)
 
 
-def test_live_packed_prefix_resolution_ac4(pp):
-    """AC4 demonstration (plan SS4.7(2)): >=5 real member paths per PACKED prefix
-    resolve through ``read_packed`` and byte-verify. Reads only — no Hub writes."""
+def _live_ac4(pp, expect_packed: tuple[str, ...] = ()) -> None:
+    """The live AC4 body. Default mode: packed prefixes are DISCOVERED by
+    probe, and zero-packed / hub-unreachable states skip loudly. CLOSEOUT mode
+    (``expect_packed`` non-empty — the P7 binding invocation, via
+    ``EPM_I2332_EXPECT_PACKED=all`` or a comma list): every expected prefix
+    MUST be packed and resolvable — the skip branches are FORBIDDEN, and any
+    probe failure is a FAILURE (Codex r1: a subset-green AC4 must not read as
+    complete)."""
     from huggingface_hub import HfApi
 
     api = HfApi()
@@ -309,6 +322,13 @@ def test_live_packed_prefix_resolution_ac4(pp):
                 packed.append(prefix)
         except _transport_excs() as e:  # persistent (post-retry) transport failure
             probe_failed[prefix] = repr(e)
+    if expect_packed:
+        missing = sorted(set(expect_packed) - set(packed))
+        assert not missing and not probe_failed, (
+            f"CLOSEOUT MODE: expected packed prefixes not resolvable — missing index.json: "
+            f"{missing}; probe transport failures: {probe_failed} (skip is forbidden here)"
+        )
+        packed = [p for p in packed if p in set(expect_packed)]
     if not packed:
         if len(probe_failed) == len(TARGET_PREFIXES):
             pytest.skip(
@@ -319,7 +339,7 @@ def test_live_packed_prefix_resolution_ac4(pp):
         pytest.skip(
             "PRE-REPACK STATE: none of the 8 #2332 target prefixes has "
             "<prefix>/__packed__/index.json on the Hub yet. The P7 closeout invocation "
-            "is the binding AC4 run — it asserts packed prefixes exist before invoking."
+            "is the binding AC4 run (EPM_I2332_EXPECT_PACKED=all forbids this skip)."
         )
     # >=1 packed prefix confirmed ⇒ transport failures are FAILURES from here on
     # (retry-once already applied inside _retry_once).
@@ -339,3 +359,34 @@ def test_live_packed_prefix_resolution_ac4(pp):
             assert hashlib.sha256(data).hexdigest() == index[orig]["sha256"], (
                 f"{prefix}: sha256 mismatch for {orig}"
             )
+
+
+def test_live_packed_prefix_resolution_ac4(pp):
+    """AC4 demonstration (plan SS4.7(2)): >=5 real member paths per PACKED prefix
+    resolve through ``read_packed`` and byte-verify. Reads only — no Hub writes.
+    P7 closeout invocation: ``EPM_I2332_EXPECT_PACKED=all`` (or a comma list)."""
+    raw = os.environ.get("EPM_I2332_EXPECT_PACKED", "").strip()
+    if not raw:
+        expect: tuple[str, ...] = ()
+    elif raw.lower() == "all":
+        expect = TARGET_PREFIXES
+    else:
+        expect = tuple(x for x in (s.strip() for s in raw.split(",")) if x)
+    _live_ac4(pp, expect_packed=expect)
+
+
+def test_closeout_mode_fails_instead_of_skipping(pp, monkeypatch):
+    """OFFLINE pin of the closeout-mode contract: with every existence probe
+    returning False, closeout mode FAILS (never skips) naming the missing
+    prefixes. The HF boundary fake is signature-conformant by construction."""
+    import huggingface_hub
+
+    class _FakeApi:
+        def file_exists(
+            self, repo_id: str, filename: str, *, repo_type=None, revision=None, token=None
+        ) -> bool:
+            return False
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    with pytest.raises(AssertionError, match="CLOSEOUT MODE"):
+        _live_ac4(pp, expect_packed=("issue1489_ctx_aug",))

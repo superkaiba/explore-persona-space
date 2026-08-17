@@ -63,6 +63,7 @@ import inspect
 import json
 import math
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -83,6 +84,7 @@ from explore_persona_space.task_workflow import (
 
 load_dotenv()
 from huggingface_hub import CommitOperationDelete, HfApi, hf_hub_download  # noqa: E402
+from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError  # noqa: E402
 
 # Import-time capability check (plan v2 SS4.0): the CAS delete design depends
 # on the `parent_commit` kwarg. If this env's huggingface_hub lacks it, STOP —
@@ -187,6 +189,14 @@ def _srcmap_path(prefix: str) -> Path:
 
 def _staged_hashes_path(prefix: str) -> Path:
     return STAGE / f"staged_hashes_{prefix}.json"
+
+
+def _write_staged_hashes(prefix: str, staged_hashes: dict[str, str]) -> None:
+    """Atomic (tmp + os.replace) write of the staged-hash sidecar — the
+    durable per-unit result store the staged-verify resume predicate reads."""
+    tmp = _staged_hashes_path(prefix).with_suffix(".tmp")
+    tmp.write_text(json.dumps(staged_hashes, sort_keys=True))
+    os.replace(tmp, _staged_hashes_path(prefix))
 
 
 def _load_srcmap(prefix: str) -> dict[str, dict]:
@@ -305,12 +315,17 @@ def _fresh_run_signal(issue: int) -> str | None:
         return None
     last_done = ""
     sig_ts, sig_kind = "", None
-    for line in events.read_text().splitlines():
+    for lineno, line in enumerate(events.read_text().splitlines(), start=1):
+        if not line.strip():
+            continue
         try:
             row = json.loads(line)
-        except json.JSONDecodeError:
-            log(f"    WARN: unparseable events.jsonl line on #{issue} (skipped for gate read)")
-            continue
+        except json.JSONDecodeError as e:
+            # FAIL CLOSED (review r1): a malformed row could BE the fresh
+            # run-signal marker this gate exists to see — refuse, never skip.
+            raise GateRefusal(
+                f"G-writer: unparseable events.jsonl line {lineno} on #{issue} — fail closed: {e}"
+            ) from e
         kind, ts = row.get("kind", ""), row.get("ts", "")
         if kind in DONE_KINDS and ts > last_done:
             last_done = ts
@@ -432,23 +447,62 @@ def _run_hub_step_gates(prefix: str) -> None:
         gate_1739()
 
 
+LIST_RETRY_ATTEMPTS = 4
+
+
+def _retry_listing(thunk, what: str):
+    """Bounded transient-retry for READ-ONLY Hub listings/fetches (#920 class:
+    huggingface_hub natively retries only 429 on the tree API, so a transient
+    5xx on a cursor page would kill an otherwise-healthy multi-hour run).
+
+    The thunk MUST materialize its iterator INTERNALLY (a cursor-page 504
+    raises DURING iteration). Typed not-found errors are NEVER retried and
+    NEVER coerced — the caller owns their semantics. Read-only calls have no
+    side effects, so a bounded broad retry is safe (unlike the CAS delete
+    commit, which is deliberately never retried — plan SS4.6 step 9)."""
+    last: Exception | None = None
+    for attempt in range(LIST_RETRY_ATTEMPTS):
+        try:
+            return thunk()
+        except (EntryNotFoundError, RepositoryNotFoundError):
+            raise
+        except Exception as e:
+            last = e
+            if attempt < LIST_RETRY_ATTEMPTS - 1:
+                wait = min(60, 5 * 3**attempt)
+                log(
+                    f"    [{what}] transient Hub error (attempt {attempt + 1}/"
+                    f"{LIST_RETRY_ATTEMPTS}, retry in {wait}s): "
+                    f"{type(e).__name__}: {str(e)[:160]}"
+                )
+                time.sleep(wait)
+    assert last is not None
+    raise last
+
+
 def _fresh_repo_count() -> int:
     """Full-repo file count via top-level non-recursive listing + per-entry
     scoped recursive counts (the 2026-08-15 inventory method; NEVER a root
-    recursive listing — it 504s past ~62k files)."""
+    recursive listing — it 504s past ~62k files). All listings ride
+    _retry_listing's bounded transient retry."""
     api = _get_api()
-    top = list(api.list_repo_tree(SRC, repo_type="dataset", recursive=False))
+
+    def _top() -> list:
+        # HUB_VERIFY_RETRY_EXEMPT: routed through _retry_listing bounded backoff
+        it = api.list_repo_tree(SRC, repo_type="dataset", recursive=False)
+        return list(it)
+
+    top = _retry_listing(_top, "count:top-level")
     n_top_files = sum(1 for t in top if getattr(t, "size", None) is not None)
     folders = [t.path for t in top if getattr(t, "size", None) is None]
 
     def count_one(folder: str) -> int:
-        return sum(
-            1
-            for t in api.list_repo_tree(
-                SRC, path_in_repo=folder, repo_type="dataset", recursive=True
-            )
-            if getattr(t, "size", None) is not None
-        )
+        def _walk() -> int:
+            # HUB_VERIFY_RETRY_EXEMPT: routed through _retry_listing bounded backoff
+            it = api.list_repo_tree(SRC, path_in_repo=folder, repo_type="dataset", recursive=True)
+            return sum(1 for t in it if getattr(t, "size", None) is not None)
+
+        return _retry_listing(_walk, f"count:{folder}")
 
     with ThreadPoolExecutor(max_workers=LIST_WORKERS) as ex:
         counts = list(ex.map(count_one, folders))
@@ -509,22 +563,34 @@ def _entry_identity(t) -> dict:
 
 
 def _list_prefix(prefix: str, revision: str | None = None) -> dict[str, dict]:
-    """Scoped recursive listing -> {path: {size, oid, lfs}} (never a root listing)."""
+    """Scoped recursive listing -> {path: {size, oid, lfs}} (never a root listing).
+
+    Transient errors ride _retry_listing's bounded backoff. The ONE legal
+    empty-listing case is a typed ``EntryNotFoundError`` — the PATH is absent
+    at that revision (re-list after the last delete batch removed everything
+    outside ``__packed__``, pre-first-upload probes). Every OTHER error —
+    ``RepositoryNotFoundError``, auth-shaped 404s, 5xx after retries —
+    PROPAGATES; a transport/auth failure is never coerced to an empty
+    inventory (review r1: the old ``"404" in str(e)`` substring match waved
+    a repo-level 404 through as "nothing left")."""
     api = _get_api()
-    out: dict[str, dict] = {}
-    try:
-        for t in api.list_repo_tree(
+
+    def _walk() -> list:
+        # HUB_VERIFY_RETRY_EXEMPT: routed through _retry_listing bounded backoff
+        it = api.list_repo_tree(
             SRC, path_in_repo=prefix, repo_type="dataset", recursive=True, revision=revision
-        ):
-            if getattr(t, "size", None) is None:
-                continue
-            out[t.path] = _entry_identity(t)
-    except Exception as e:
-        # A 404 on a fully-deleted prefix is a legitimate empty listing (final
-        # assert / re-list after the last delete batch). Anything else re-raises.
-        if "404" in str(e):
-            return {}
-        raise
+        )
+        return list(it)
+
+    try:
+        entries = _retry_listing(_walk, f"list:{prefix}")
+    except EntryNotFoundError:
+        return {}
+    out: dict[str, dict] = {}
+    for t in entries:
+        if getattr(t, "size", None) is None:
+            continue
+        out[t.path] = _entry_identity(t)
     return out
 
 
@@ -535,6 +601,7 @@ def _repo_head_sha() -> str:
 def _create_commit_delete(batch: list[str], head_sha: str, prefix: str) -> None:
     """One explicit-path delete commit, CAS'd on ``parent_commit`` (plan SS4.6 step 9)."""
     ops = [CommitOperationDelete(path_in_repo=p) for p in batch]
+    # NO_RETRY: CAS delete — plan SS4.6 step 9 bans blind retry (caller re-derives)
     _get_api().create_commit(
         repo_id=SRC,
         repo_type="dataset",
@@ -615,9 +682,15 @@ def step_download(prefix: str, st: dict, src_map: dict, paths: list[str]) -> Non
     errs: Counter = Counter()
 
     def one(p: str):
+        # Per-unit durable result = the staged file itself; resume predicate:
+        # a present, size-matching staged copy is skipped without a Hub call.
+        local = dest / p
+        if local.is_file() and local.stat().st_size == src_map[p]["size"]:
+            return None, ""
         last = ""
         for attempt in range(MAX_ATTEMPTS):
             try:
+                # NO_RETRY: own 6-attempt backoff-to-60s loop (measured mover constraint)
                 hf_hub_download(
                     repo_id=SRC,
                     filename=p,
@@ -633,6 +706,7 @@ def step_download(prefix: str, st: dict, src_map: dict, paths: list[str]) -> Non
                     time.sleep(min(60, 2 ** (attempt + 1)))
         return p, last
 
+    t0 = time.time()
     with ThreadPoolExecutor(max_workers=DL_WORKERS) as ex:
         futs = {ex.submit(one, p): p for p in paths}
         n = 0
@@ -642,8 +716,12 @@ def step_download(prefix: str, st: dict, src_map: dict, paths: list[str]) -> Non
                 failed.append(bad)
                 errs[msg] += 1
             n += 1
-            if n % 2000 == 0:
-                log(f"    [download] unit {n:,}/{len(paths):,} (failed so far: {len(failed)})")
+            # Per-unit progress line (code-style intra-phase contract, T2 > ~50).
+            log(
+                f"[download] unit {n:,}/{len(paths):,} {bad or futs[f]} "
+                f"elapsed={time.time() - t0:.0f}s"
+                + (f" (failed so far: {len(failed)})" if failed else "")
+            )
     if failed:
         (STAGE / f"{prefix}.download_failed.json").write_text(json.dumps(failed, indent=1))
         for msg, c in errs.most_common(5):
@@ -651,6 +729,12 @@ def step_download(prefix: str, st: dict, src_map: dict, paths: list[str]) -> Non
         raise PrefixIncomplete(
             f"{prefix}: {len(failed)} downloads failed — staging PRESERVED, source untouched"
         )
+    rec.setdefault("steps", {})["download"] = {
+        "done": True,
+        "run_id": RUN_ID,
+        "src_revision": src_revision,
+    }
+    _save_state(st)
     log(f"    download complete ({len(paths):,} files)")
 
 
@@ -667,7 +751,9 @@ def step_staged_verify(prefix: str, st: dict, src_map: dict, paths: list[str]) -
     if _staged_hashes_path(prefix).is_file():
         staged_hashes = json.loads(_staged_hashes_path(prefix).read_text())
     nonlfs_probe: list[tuple[str, bool]] = []  # (path, sha1_matches)
+    t0 = time.time()
     n = 0
+    n_resumed = 0
     for p in sorted(paths):
         local = src_root / p
         if not local.is_file():
@@ -677,6 +763,12 @@ def step_staged_verify(prefix: str, st: dict, src_map: dict, paths: list[str]) -
             raise VerifyFailure(
                 f"{prefix}: size mismatch {p}: staged {local.stat().st_size} != hub {ent['size']}"
             )
+        n += 1
+        if p in staged_hashes:
+            # Resume predicate: hashed + verified by a prior partial run (the
+            # sidecar is the durable per-unit result); size re-checked above.
+            n_resumed += 1
+            continue
         sha256, gitsha1 = _dual_digest(local)
         staged_hashes[p] = sha256
         if ent["lfs"]:
@@ -684,9 +776,12 @@ def step_staged_verify(prefix: str, st: dict, src_map: dict, paths: list[str]) -
                 raise VerifyFailure(f"{prefix}: LFS sha256 mismatch on {p}")
         else:
             nonlfs_probe.append((p, gitsha1 == ent["oid"]))
-        n += 1
+        # Per-unit progress line (code-style intra-phase contract, T2 > ~50).
+        log(f"[staged-verify] unit {n:,}/{len(paths):,} {p} elapsed={time.time() - t0:.0f}s")
         if n % 2000 == 0:
-            log(f"    [staged-verify] unit {n:,}/{len(paths):,}")
+            _write_staged_hashes(prefix, staged_hashes)  # incremental durable checkpoint
+    if n_resumed:
+        log(f"    [staged-verify] resumed past {n_resumed:,} previously verified units")
     # A7 disposition: decided ONCE (state-global), applied to every non-LFS file.
     a7 = st.get("blob_id_is_git_sha1")
     if nonlfs_probe and a7 is None:
@@ -707,8 +802,12 @@ def step_staged_verify(prefix: str, st: dict, src_map: dict, paths: list[str]) -
         bad = [p for p, ok in nonlfs_probe if not ok]
         if bad:
             raise VerifyFailure(f"{prefix}: git-blob sha1 mismatch on {len(bad)} files: {bad[:5]}")
-    _staged_hashes_path(prefix).write_text(json.dumps(staged_hashes, sort_keys=True))
-    rec.setdefault("steps", {})["staged_verify"] = {"done": True, "run_id": RUN_ID}
+    _write_staged_hashes(prefix, staged_hashes)
+    rec.setdefault("steps", {})["staged_verify"] = {
+        "done": True,
+        "run_id": RUN_ID,
+        "src_revision": rec.get("src_revision"),
+    }
     _save_state(st)
     log(f"    staged identity verify PASS ({len(paths):,} files)")
     return staged_hashes
@@ -741,6 +840,7 @@ def step_pack(
     shard_idx = -1
     cur_bytes = 0
     n = 0
+    t0 = time.time()
     try:
         for p in sorted(paths):
             if tar is None or cur_bytes >= SHARD_TARGET_BYTES:
@@ -766,8 +866,11 @@ def step_pack(
             }
             cur_bytes += ti.size
             n += 1
-            if n % 2000 == 0:
-                log(f"    [pack] unit {n:,}/{len(paths):,} shard={shard_files[-1].name}")
+            # Per-unit progress line (code-style intra-phase contract, T2 > ~50).
+            log(
+                f"[pack] unit {n:,}/{len(paths):,} {p} shard={shard_files[-1].name} "
+                f"elapsed={time.time() - t0:.0f}s"
+            )
     finally:
         if tar is not None:
             tar.close()
@@ -826,6 +929,7 @@ def step_pack(
     rec.setdefault("steps", {})[f"pack_c{chunk_idx}" if chunk_idx is not None else "pack"] = {
         "done": True,
         "run_id": RUN_ID,
+        "src_revision": rec.get("src_revision"),
         "n_shards": len(shard_files),
         "k": len(packed_files),
     }
@@ -840,6 +944,7 @@ def step_local_verify(prefix: str, st: dict, src_map: dict, paths: list[str], in
     packed_dir = STAGE / f"up_{prefix}" / prefix / "__packed__"
     seen: dict[str, int] = {}
     shards = sorted({e["shard"] for e in index.values()})
+    t0 = time.time()
     for shard in shards:
         with tarfile.open(packed_dir / shard, "r") as tar:
             for m in tar:
@@ -857,6 +962,11 @@ def step_local_verify(prefix: str, st: dict, src_map: dict, paths: list[str], in
                 if m.offset_data != ent["offset"]:
                     raise VerifyFailure(f"{prefix}: member offset mismatch: {m.name}")
                 seen[m.name] = m.size
+                # Per-unit progress line (code-style intra-phase contract, T2 > ~50).
+                log(
+                    f"[local-verify] unit {len(seen):,}/{len(index):,} {m.name} "
+                    f"elapsed={time.time() - t0:.0f}s"
+                )
     expected = {p: src_map[p]["size"] for p in paths}
     if seen != expected:
         missing = sorted(set(expected) - set(seen))[:5]
@@ -865,6 +975,13 @@ def step_local_verify(prefix: str, st: dict, src_map: dict, paths: list[str], in
             f"{prefix}: member census mismatch (missing {len(set(expected) - set(seen))}, "
             f"extra {len(set(seen) - set(expected))}; e.g. missing={missing} extra={extra})"
         )
+    rec = st["prefixes"][prefix]
+    rec.setdefault("steps", {})["local_verify"] = {
+        "done": True,
+        "run_id": RUN_ID,
+        "src_revision": rec.get("src_revision"),
+    }
+    _save_state(st)
     log(f"    local pack verify PASS ({len(seen):,} members across {len(shards)} shard(s))")
 
 
@@ -895,13 +1012,20 @@ def step_upload(prefix: str, st: dict, k_expected: int) -> None:
             f"verify decides): {type(e).__name__}: {str(e)[:160]}"
         )
     rec = st["prefixes"][prefix]
-    rec.setdefault("steps", {})["upload"] = {"done": True, "run_id": RUN_ID}
+    rec.setdefault("steps", {})["upload"] = {
+        "done": True,
+        "run_id": RUN_ID,
+        "src_revision": rec.get("src_revision"),
+    }
     _save_state(st)
 
 
 def step_hub_verify(prefix: str, st: dict) -> None:
     """Step 8: the ONLY success signal — scoped re-list of <prefix>/__packed__
-    with per-entry identity match, branching on the entry's ACTUAL lfs attr."""
+    with per-entry identity match, branching on the entry's ACTUAL lfs attr.
+    Read-only, but gated on G-mover anyway (the LIVE-CONCURRENCY marker's
+    letter: before ANY repack step; review r1 minor)."""
+    gate_mover()
     rec = st["prefixes"][prefix]
     expected: dict[str, dict] = rec.get("packed_files", {})
     if not expected:
@@ -937,9 +1061,14 @@ def _redownload_byte_compare(prefix: str, repo_path: str, exp: dict) -> None:
     """A7 fallback for non-LFS sidecars: re-download + byte-compare (trivial bytes)."""
     tmp = STAGE / f"verify_tmp_{prefix}"
     tmp.mkdir(parents=True, exist_ok=True)
-    local = Path(
-        hf_hub_download(repo_id=SRC, filename=repo_path, repo_type="dataset", local_dir=str(tmp))
-    )
+
+    def _fetch() -> str:
+        # NO_RETRY: routed through _retry_listing bounded backoff (read-only fetch)
+        return hf_hub_download(
+            repo_id=SRC, filename=repo_path, repo_type="dataset", local_dir=str(tmp)
+        )
+
+    local = Path(_retry_listing(_fetch, f"redownload:{repo_path}"))
     s256, _ = _dual_digest(local)
     if s256 != exp["sha256"]:
         raise VerifyFailure(f"{prefix}: re-download byte-compare mismatch: {repo_path}")
@@ -976,9 +1105,92 @@ def derive_delete_set(
     return deletable, stale, added
 
 
+def step_pilot_extra(prefix: str, st: dict, index: dict) -> None:
+    """Plan SS4.6 'Pilot extra' (belt-and-braces, PILOT ONLY): re-download ONE
+    shard from the Hub and byte-compare it against the local shard, then
+    resolve 20 randomly sampled members (seeded RNG — reproducible) from the
+    DOWNLOADED tar and byte-compare each against its staged original. Runs
+    AFTER step 8 (Hub verify) and BEFORE any delete; any mismatch is a
+    VerifyFailure — the prefix stays fully intact. P5/P6 deliberately skip
+    this (plan-stated asymmetry: remote-hash equality + local member verify
+    is strictly stronger once the pilot has proven the end-to-end path)."""
+    rec = st["prefixes"][prefix]
+    packed_dir = STAGE / f"up_{prefix}" / prefix / "__packed__"
+    src_root = STAGE / f"src_{prefix}"
+    shard = sorted({e["shard"] for e in index.values()})[0]
+    tmp = STAGE / f"pilot_extra_{prefix}"
+    tmp.mkdir(parents=True, exist_ok=True)
+
+    def _fetch() -> str:
+        # NO_RETRY: routed through _retry_listing bounded backoff (read-only fetch)
+        return hf_hub_download(
+            repo_id=SRC,
+            filename=f"{prefix}/__packed__/{shard}",
+            repo_type="dataset",
+            local_dir=str(tmp),
+        )
+
+    remote_copy = Path(_retry_listing(_fetch, f"pilot-extra:{shard}"))
+    r256, _ = _dual_digest(remote_copy)
+    l256, _ = _dual_digest(packed_dir / shard)
+    if r256 != l256:
+        raise VerifyFailure(
+            f"{prefix}: pilot extra — re-downloaded shard {shard} != local shard "
+            f"(hub {r256[:16]}... vs local {l256[:16]}...)"
+        )
+    members = [p for p in sorted(index) if index[p]["shard"] == shard]
+    sample = random.Random(2332).sample(members, min(20, len(members)))
+    with tarfile.open(remote_copy, "r:") as tar:
+        for i, p in enumerate(sample):
+            fh = tar.extractfile(p)
+            if fh is None:
+                raise VerifyFailure(f"{prefix}: pilot extra — member not extractable: {p}")
+            if fh.read() != (src_root / p).read_bytes():
+                raise VerifyFailure(f"{prefix}: pilot extra — member bytes != staged original: {p}")
+            log(f"    [pilot-extra] unit {i + 1}/{len(sample)} {p} OK")
+    shutil.rmtree(tmp, ignore_errors=True)
+    rec.setdefault("steps", {})["pilot_extra"] = {"done": True, "run_id": RUN_ID, "shard": shard}
+    _save_state(st)
+    log(f"    pilot extra PASS: shard {shard} byte-identical + {len(sample)} members verified")
+
+
+def _step_done(rec: dict, key: str) -> bool:
+    """Resume predicate: step `key` is checkpoint-complete FOR THIS SNAPSHOT —
+    recorded done AND fingerprinted by the same src_revision (a re-snapshot
+    invalidates every later step's checkpoint). Consumers additionally verify
+    the step's on-disk outputs exist before skipping."""
+    s = rec.get("steps", {}).get(key) or {}
+    return bool(s.get("done")) and s.get("src_revision") == rec.get("src_revision")
+
+
 def _delete_batch_size(st: dict) -> int:
     pilot_done = bool(st.get("prefixes", {}).get(PILOT_PREFIX, {}).get("done"))
     return DELETE_BATCH_STEADY if pilot_done else DELETE_BATCH_PILOT
+
+
+def _assert_pack_present(
+    prefix: str, current: dict[str, dict], expected_pack: dict, a7: bool | None
+) -> None:
+    """Per-batch pack-presence guard AT THE PINNED REVISION (review r1): every
+    recorded packed file must be present, size-matched, and identity-matched
+    in the SAME listing the delete set derives from — a pack modified or
+    removed after step 8 REFUSES further deletes instead of orphaning
+    originals. Non-LFS sidecars degrade to size+presence unless A7 proved
+    blob_id == git-sha1 (their bytes were already step-8-verified; the tar
+    shards themselves are LFS and always identity-checked)."""
+    if not expected_pack:
+        raise VerifyFailure(f"{prefix}: no packed_files recorded — refuse to delete")
+    for rp, exp in sorted(expected_pack.items()):
+        ent = current.get(rp)
+        if ent is None:
+            raise VerifyFailure(f"{prefix}: packed file MISSING at pinned revision: {rp}")
+        if ent["size"] != exp["size"]:
+            raise VerifyFailure(f"{prefix}: packed size changed at pinned revision: {rp}")
+        if ent["lfs"]:
+            if ent["oid"] != exp["sha256"]:
+                raise VerifyFailure(f"{prefix}: packed identity changed at pinned revision: {rp}")
+        elif a7 is True and ent["oid"] != exp["gitsha1"]:
+            raise VerifyFailure(f"{prefix}: packed identity changed at pinned revision: {rp}")
 
 
 def run_delete(
@@ -994,9 +1206,16 @@ def run_delete(
 
     State machine: unreachable without a recorded hub-verify PASS; a PASS
     recorded by a PRIOR process run forces a re-verify first. Gates re-run
-    before EACH batch. On ANY commit exception (412 CAS conflict, 504, ...):
-    log, NEVER interpret, re-list + re-derive (a 504 can mask a landed
-    commit) — never a blind retry of the same batch."""
+    before EACH batch. REVISION BINDING (review r1): HEAD is read FIRST,
+    the re-list is pinned to THAT revision, the pack presence/identity is
+    asserted in that same listing, and the CAS `parent_commit` is the SAME
+    sha — a commit landing after the head-read 412s and forces a fresh
+    pinned re-derive, so the delete set can never derive from an older tree
+    than its CAS parent. On ANY commit exception (412 CAS conflict, 504,
+    ...): log, NEVER interpret, re-list + re-derive — never a blind retry
+    of the same batch. Returns the REALIZED freed-slot count derived from
+    listings (restart- and 504-ambiguity-safe), not the in-process commit
+    tally."""
     rec = st["prefixes"].setdefault(prefix, {})
     hv = rec.get("steps", {}).get("hub_verify") or {}
     if not hv.get("pass"):
@@ -1012,12 +1231,23 @@ def run_delete(
     bs = batch_size if batch_size is not None else _delete_batch_size(st)
     kept_stale: set[str] = set(rec.get("kept_stale", []))
     kept_new: set[str] = set(rec.get("kept_new", []))
+    expected_pack: dict = rec.get("packed_files", {})
     n_deleted = 0
     consecutive_failures = 0
+    prev_n_deletable: int | None = None
+    t0 = time.time()
+    current: dict[str, dict] = {}
     while True:
         _run_hub_step_gates(prefix)
-        current = _list_prefix(prefix)
+        head = _repo_head_sha()
+        current = _list_prefix(prefix, revision=head)
+        _assert_pack_present(prefix, current, expected_pack, st.get("blob_id_is_git_sha1"))
         deletable, stale, added = derive_delete_set(src_map, current, prefix, restrict=restrict)
+        if prev_n_deletable is not None and len(deletable) < prev_n_deletable:
+            # Progress observed via the re-list (a 504-masked LANDED commit
+            # still shrinks the set) — reset the no-progress failure counter.
+            consecutive_failures = 0
+        prev_n_deletable = len(deletable)
         for p in stale:
             if p not in kept_stale:
                 log(f"    REPACK-STALE (kept, NOT deleted — bytes not in the tar): {p}")
@@ -1031,7 +1261,6 @@ def run_delete(
         _save_state(st)
         if not deletable:
             break
-        head = _repo_head_sha()
         batch = deletable[:bs]
         try:
             _create_commit_delete(batch, head, prefix)
@@ -1044,14 +1273,18 @@ def run_delete(
             if consecutive_failures >= MAX_CONSECUTIVE_DELETE_FAILURES:
                 raise VerifyFailure(
                     f"{prefix}: {consecutive_failures} consecutive delete-commit failures with "
-                    "no progress — fail loud (source + pack both intact)"
+                    "no re-list-observed progress — fail loud (source + pack both intact)"
                 ) from e
             continue
         consecutive_failures = 0
         n_deleted += len(batch)
-        log(f"    deleted batch of {len(batch):,} (total {n_deleted:,}) parent={head[:12]}")
+        log(
+            f"    [delete] batch of {len(batch):,} (this-run total {n_deleted:,}) "
+            f"parent={head[:12]} elapsed={time.time() - t0:.0f}s"
+        )
     if final_assert:
         final = _list_prefix(prefix)
+        _assert_pack_present(prefix, final, expected_pack, st.get("blob_id_is_git_sha1"))
         packed = f"{prefix}/__packed__/"
         leftovers = [
             p
@@ -1067,9 +1300,20 @@ def run_delete(
             f"    final re-list assert PASS: only __packed__/* + {len(kept_stale)} stale + "
             f"{len(kept_new)} fleet-added keepers remain"
         )
-    rec.setdefault("steps", {})["delete"] = {"done": True, "run_id": RUN_ID, "n_deleted": n_deleted}
+        current = final  # the freshest listing feeds the realized accounting
+    # REALIZED accounting (review r1): derive freed slots from the last listing
+    # rather than the in-process commit tally — correct across restarts and
+    # 504-masked-but-landed commits (the exact ambiguity this loop tolerates).
+    scope = restrict if restrict is not None else set(src_map)
+    realized = sum(1 for p in scope if p in src_map and p not in current)
+    rec.setdefault("steps", {})["delete"] = {
+        "done": True,
+        "run_id": RUN_ID,
+        "n_deleted_this_run": n_deleted,
+        "n_deleted_realized": realized,
+    }
     _save_state(st)
-    return n_deleted
+    return realized
 
 
 # ─── chunk planning + per-prefix pipeline ────────────────────────────────────
@@ -1149,25 +1393,64 @@ def run_prefix(prefix: str, st: dict) -> str:
     del src_revision
     chunks = plan_chunks(src_map, prefix)
     if chunks is None:
+        rec["mode"] = "whole"
         _staging_headroom_assert(2 * rec["total_bytes"])
         paths = sorted(src_map)
-        step_download(prefix, st, src_map, paths)
-        staged = step_staged_verify(prefix, st, src_map, paths)
-        packed = step_pack(prefix, st, src_map, paths, staged, None, write_manifest=True)
-        step_local_verify(prefix, st, src_map, paths, packed["index"])
-        step_upload(prefix, st, packed["k"])
+        packed_dir = STAGE / f"up_{prefix}" / prefix / "__packed__"
+        # Checkpoint CONSUMPTION (review r1): each step's done-record is
+        # fingerprinted by src_revision (_step_done) and skipped only when its
+        # on-disk outputs are still present; hub_verify is NEVER skipped here
+        # (its run_id-keyed restart re-verify is the delete path's own law).
+        if _step_done(rec, "download") and (STAGE / f"src_{prefix}").is_dir():
+            log(f"{prefix}: download checkpoint consumed — skip (staged tree present)")
+        else:
+            step_download(prefix, st, src_map, paths)
+        if _step_done(rec, "staged_verify") and _staged_hashes_path(prefix).is_file():
+            staged = json.loads(_staged_hashes_path(prefix).read_text())
+            log(f"{prefix}: staged-verify checkpoint consumed — {len(staged):,} hashes loaded")
+        else:
+            staged = step_staged_verify(prefix, st, src_map, paths)
+        if (
+            _step_done(rec, "pack")
+            and (packed_dir / "index.json").is_file()
+            and all((STAGE / f"up_{prefix}" / rp).is_file() for rp in rec.get("packed_files", {}))
+        ):
+            packed = {
+                "index": json.loads((packed_dir / "index.json").read_text()),
+                "k": rec["steps"]["pack"]["k"],
+                "packed_files": rec["packed_files"],
+            }
+            log(f"{prefix}: pack checkpoint consumed — skip (shards + index on disk)")
+        else:
+            packed = step_pack(prefix, st, src_map, paths, staged, None, write_manifest=True)
+        if _step_done(rec, "local_verify"):
+            log(f"{prefix}: local-verify checkpoint consumed — skip")
+        else:
+            step_local_verify(prefix, st, src_map, paths, packed["index"])
+        if _step_done(rec, "upload"):
+            log(f"{prefix}: upload checkpoint consumed — skip (hub verify is the arbiter)")
+        else:
+            step_upload(prefix, st, packed["k"])
         step_hub_verify(prefix, st)
+        if prefix == PILOT_PREFIX:
+            step_pilot_extra(prefix, st, packed["index"])
         n_deleted = run_delete(prefix, st, src_map=src_map)
     else:
         log(f"{prefix}: CHUNKED mode — {len(chunks)} chunks")
+        rec["mode"] = "chunked"
         n_deleted = 0
         merged_index: dict[str, dict] = {}
         all_shard_sha: dict[str, str] = {}
         for ci, paths in enumerate(chunks):
             ckey = f"chunk_{ci}"
             if rec.get("chunks", {}).get(ckey, {}).get("done"):
+                crec = rec["chunks"][ckey]
                 log(f"{prefix}: {ckey} already done — skip")
                 merged_index.update(json.loads((STAGE / f"index_{prefix}_c{ci}.json").read_text()))
+                # Restore the chunk's persisted shard hashes + realized count so
+                # a resumed run's manifest and slots_freed stay correct.
+                all_shard_sha.update(crec.get("shard_sha256s", {}))
+                n_deleted += crec.get("n_deleted_realized", 0)
                 continue
             chunk_bytes = sum(src_map[p]["size"] for p in paths)
             _staging_headroom_assert(2 * chunk_bytes)
@@ -1177,17 +1460,27 @@ def run_prefix(prefix: str, st: dict) -> str:
             step_local_verify(prefix, st, src_map, paths, packed["index"])
             step_upload(prefix, st, packed["k"])
             step_hub_verify(prefix, st)
-            n_deleted += run_delete(
+            if prefix == PILOT_PREFIX and ci == 0:
+                step_pilot_extra(prefix, st, packed["index"])
+            chunk_realized = run_delete(
                 prefix, st, src_map=src_map, restrict=set(paths), final_assert=False
             )
+            n_deleted += chunk_realized
             merged_index.update(packed["index"])
             (STAGE / f"index_{prefix}_c{ci}.json").write_text(
                 json.dumps(packed["index"], sort_keys=True, separators=(",", ":"))
             )
+            chunk_shas: dict[str, str] = {}
             for rp, meta in packed["packed_files"].items():
                 if rp.endswith(".tar"):
-                    all_shard_sha[Path(rp).name] = meta["sha256"]
-            rec.setdefault("chunks", {})[ckey] = {"done": True, "n_files": len(paths)}
+                    chunk_shas[Path(rp).name] = meta["sha256"]
+            all_shard_sha.update(chunk_shas)
+            rec.setdefault("chunks", {})[ckey] = {
+                "done": True,
+                "n_files": len(paths),
+                "n_deleted_realized": chunk_realized,
+                "shard_sha256s": chunk_shas,
+            }
             _cleanup_staging(prefix)
             _save_state(st)
         # Final merged index.json + manifest.json (their own small gated upload).
@@ -1214,7 +1507,9 @@ def run_prefix(prefix: str, st: dict) -> str:
         _save_state(st)
         step_upload(prefix, st, k_expected=2)
         step_hub_verify(prefix, st)
-        n_deleted += run_delete(prefix, st, src_map=src_map, final_assert=True)
+        # The final pass's REALIZED count spans the whole src_map scope, so it
+        # REPLACES (never adds to) the per-chunk accumulation.
+        n_deleted = run_delete(prefix, st, src_map=src_map, final_assert=True)
     rec["done"] = {
         "files": rec["n_files"],
         "bytes": rec["total_bytes"],
@@ -1265,16 +1560,37 @@ def cmd_sizing(args: argparse.Namespace) -> int:
         if drift != 0:
             log(
                 f"DRIFT on target prefix {prefix}: live {len(listing):,} != inventory "
-                f"{expected:,} ({drift:+,}) — someone wrote to it; re-running G-writer"
+                f"{expected:,} ({drift:+,}) — someone wrote to it; re-running G-writer "
+                "(plan SS4.4.4: loud + writer re-check; a live writer refuses here, "
+                "historical drift proceeds on the FRESH counts — snapshot re-pins anyway)"
             )
             gate_writer(prefix)
+        if chunks is None:
+            k = n_shards + 2  # shards + index.json + manifest.json
+            chunk_plan = None
+        else:
+            # Chunked k (plan SS4.5): Σ per-chunk shards + one index-c<i>.json
+            # per chunk + the final merged index.json + manifest.json.
+            chunk_plan = []
+            for ci, cpaths in enumerate(chunks):
+                cbytes = sum(listing[p]["size"] for p in cpaths)
+                chunk_plan.append(
+                    {
+                        "chunk": ci,
+                        "files": len(cpaths),
+                        "bytes": cbytes,
+                        "shards": max(1, math.ceil(cbytes / SHARD_TARGET_BYTES)),
+                    }
+                )
+            k = sum(c["shards"] for c in chunk_plan) + len(chunk_plan) + 2
         out["prefixes"][prefix] = {
             "files": len(listing),
             "bytes": total,
             "census": dict(census.most_common()),
             "max_file_bytes": max((e["size"] for e in listing.values()), default=0),
             "shards_planned": n_shards,
-            "k": n_shards + 2,
+            "k": k,
+            "chunk_plan": chunk_plan,
             "staged_footprint_bytes": 2 * total,
             "mode": "whole" if chunks is None else f"chunked({len(chunks)})",
             "inventory_drift": drift,
@@ -1308,7 +1624,34 @@ def build_argparser() -> argparse.ArgumentParser:
     _prefix_arg(p)
     p = sub.add_parser("run", help="full chain; all 8 prefixes in plan order when no --prefix")
     _prefix_arg(p, required=False)
+    p = sub.add_parser("closeout", help="P7: fresh count -> before_after.json + final_state.json")
+    p.add_argument("--out", default="eval_results/issue_2332", help="output dir")
     return ap
+
+
+def cmd_closeout(args: argparse.Namespace) -> int:
+    """P7 closeout (plan SS4.7(1)): fresh full-repo count -> before_after.json
+    (before-count read from the committed sizing.json) + a durable
+    final_state.json snapshot. repack_report.md stays orchestrator-composed
+    prose. Read-only on the Hub."""
+    gate_mover()
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sizing = json.loads((out_dir / "sizing.json").read_text())
+    after = _fresh_repo_count()
+    st = _load_state()
+    before = sizing["repo_count_before"]
+    ba = {
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "repo_count_before": before,
+        "repo_count_after": after,
+        "slots_freed_total": before - after,
+        "per_prefix": {p: st.get("prefixes", {}).get(p, {}).get("done") for p in PREFIXES},
+    }
+    (out_dir / "before_after.json").write_text(json.dumps(ba, indent=1, sort_keys=True))
+    (out_dir / "final_state.json").write_text(json.dumps(st, indent=1, sort_keys=True))
+    log(f"closeout: before {before:,} -> after {after:,} (freed {before - after:,})")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1317,6 +1660,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_count(args)
     if args.cmd == "sizing":
         return cmd_sizing(args)
+    if args.cmd == "closeout":
+        return cmd_closeout(args)
     st = _load_state()
     st.setdefault("run_history", []).append(
         {
@@ -1351,7 +1696,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "run":
         targets = [args.prefix] if args.prefix else list(PREFIXES)
+        full_order = args.prefix is None
         results: dict[str, str] = {}
+        chunked_pilot_checked = False
         for prefix in targets:
             try:
                 results[prefix] = run_prefix(prefix, st)
@@ -1364,10 +1711,40 @@ def main(argv: list[str] | None = None) -> int:
                 if str(e).startswith("G-mover"):
                     log(f"ABORT run: {e} (mover is a global condition — no Hub work proceeds)")
                     raise
-                log(f"{prefix}: gate trip mid-chain — {e} (staging preserved; skip prefix)")
-                st["prefixes"].setdefault(prefix, {})["skipped"] = str(e)
+                # Mid-chain per-prefix trip: the #1739 prefix's sanctioned
+                # outcome vocabulary is `deferred`, every other prefix `skipped`.
+                key = "deferred" if PREFIXES[prefix][0] == 1739 else "skipped"
+                log(f"{prefix}: gate trip mid-chain — {e} (staging preserved; {key})")
+                st["prefixes"].setdefault(prefix, {})[key] = str(e)
                 _save_state(st)
-                results[prefix] = "skipped"
+                results[prefix] = key
+            # Pilot->fleet gate (plan SS7 gate 7): in full-order mode, fleet
+            # prefixes NEVER start after a non-done pilot — a pilot failure is
+            # fix-and-rerun on the pilot, and the run stops here.
+            if full_order and prefix == PILOT_PREFIX and results[prefix] != "done":
+                log(
+                    f"ABORT run: pilot {PILOT_PREFIX} result={results[prefix]!r} — plan SS7 "
+                    "gate 7: fleet prefixes do not start after a pilot failure "
+                    f"(fix + re-run `run --prefix {PILOT_PREFIX}`, then `run`)"
+                )
+                return 1
+            # Chunked-mode pilot (plan SS7 gate 7, second clause): the FIRST
+            # chunked-mode prefix in the ascending order serves as the
+            # chunked-mode pilot — a failure stops later (larger) prefixes.
+            if (
+                full_order
+                and not chunked_pilot_checked
+                and st["prefixes"].get(prefix, {}).get("mode") == "chunked"
+            ):
+                chunked_pilot_checked = True
+                if results[prefix] != "done":
+                    log(
+                        f"ABORT run: first chunked-mode prefix {prefix} "
+                        f"result={results[prefix]!r} — it serves as the chunked-mode "
+                        "pilot (plan SS7 gate 7); fix and re-run before larger "
+                        "chunked prefixes"
+                    )
+                    return 1
         log(f"run complete: {results}")
         return 0 if all(v == "done" for v in results.values()) else 1
     raise SystemExit(f"unknown cmd {args.cmd!r}")

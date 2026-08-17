@@ -5,6 +5,14 @@ Audited boundary: repo full tree (excludes: .git,worktrees) + 43 worktrees full-
 
 Verdict per prefix: `no-live-reader` (0 reader-class hits within the stated boundary) or `readers-found` (reader-class hits listed below; the trivially-updatable vs needs-accessor triage is the orchestrator's branch decision per the #2332 brief — the Option-2 accessor is NOT built this round).
 
+> **Addendum (2026-08-16, round 2/3):** the orchestrator's triage resolved every
+> `readers-found` prefix to `readers-need-accessor`, and the Option-2 accessor HAS
+> since been built: `src/explore_persona_space/orchestrate/packed_prefix.py::read_packed`
+> (+ `tests/test_packed_prefix.py`, incl. the live AC4 tier — closeout invocation
+> `EPM_I2332_EXPECT_PACKED=all`). Reader migration is sequenced with the repack
+> itself (plan SS4.7(2)); every repacked path stays recoverable via the on-Hub
+> `index.json` + tar members' original names. The audit table below is unchanged.
+
 | prefix | owner | owner status | verdict | reader hits | writer hits | inert | self-tooling |
 |---|---|---|---|---|---|---|---|
 | `issue1489_ctx_aug` | #1489 | awaiting_promotion | **readers-found** | 3 | 1 | 429 | 12 |
