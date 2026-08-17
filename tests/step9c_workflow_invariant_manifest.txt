@@ -86,6 +86,7 @@ tests/test_no_pod_side_task_py_shellout.py
 tests/test_no_progress_respawn.py
 tests/test_outroot_residue_prose_pins.py
 tests/test_ownership_probe_exemplar_bracketed.py
+tests/test_persist_verdict_concerns.py
 tests/test_plan_handoff_path_convention.py
 tests/test_plan_patch.py
 tests/test_planner_phase_outputs_declaration.py
@@ -120,6 +121,7 @@ tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
 tests/test_workflow_lint_agent_spec_caps.py
 tests/test_workflow_lint_agent_spec_size.py
+tests/test_workflow_lint_codex_concerns_persistence.py
 tests/test_workflow_lint_cvd_scoped_gpu_verdict.py
 tests/test_workflow_lint_dotenv_check.py
 tests/test_workflow_lint_failover_pivot_pin.py

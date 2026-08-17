@@ -3250,6 +3250,7 @@ grep -m1 '^\*\*Blocker tags:' "$MB" || true  # sites that carry it (5c-bis / 9a-
 #    lives in the extracted block's head sentinel the sed extraction keys on):
 uv run python scripts/task.py post-marker <N> epm:<kind> \
   --file "$MB"
+# 5. Concerns persistence (persist_verdict_concerns.py): § Codex concerns persistence at verdict collection (below).
 ```
 
 The Step 5b item-2/3 durable-verdict probes (start/end tags at the
@@ -3267,6 +3268,98 @@ any composer returning `Posting mode: in-context` — where the verdict
 body IS the deliverable merged into context (discipline 1 bounds its
 content). Non-trigger-dense rounds: unchanged — reading the output file
 remains fine.
+
+**Codex concerns persistence at verdict collection (fires at EVERY
+marker-mode Codex verdict collection — 5b/5c, Step 9a, Step 9a-bis,
+Step 9b VC — trigger-dense or NOT; #2326).** The Codex twins never mutate
+`concerns.jsonl`; the orchestrator forwards their machine-readable
+concern rows blind — the forwarder parses ONLY LINE-START-anchored
+`CONCERN:: ` rows of the EXTRACTED marker block and prints only counts +
+kebab ids, never prose. Extract `$MB` first (the § File-only sed
+one-liner) even on non-trigger-dense rounds:
+
+    MB=/tmp/issue-<N>-<kind>-r<n>-marker.md
+    sed -n '/^<!-- epm:<kind> v<n>/,/^<!-- \/epm:<kind> -->/p' "$OUT" > "$MB"
+    # (a) PRE-POST gate — runs BETWEEN the recipe's step 2 (end-tag/char-cap
+    #     gate) and step 4 (post-marker). Exit 1/3 = MALFORMED output
+    #     -> the site's existing stricter-retry re-dispatch (cap 2); the
+    #     verdict marker is NOT posted on this attempt. Exit 2 (argparse/
+    #     usage — the forwarder never examined the marker) = the INVOCATION
+    #     is the bug: fix the invocation and re-run this gate, NEVER a
+    #     Codex re-dispatch (mirrors the resume exit-2 exception below):
+    uv run python scripts/persist_verdict_concerns.py <N> --file "$MB" \
+      --by <codex-role> --round <n> --require-block --validate-only
+    # (b) POST-POST persist — same command minus --validate-only, run right
+    #     after the step-4 post-marker succeeds. Exit 0 prints
+    #     `persisted K/K concern(s): <ids>`; idempotent on replay. Exit 4 =
+    #     OPERATIONAL persistence failure -> re-run this persist invocation
+    #     alone, never a Codex re-dispatch:
+    uv run python scripts/persist_verdict_concerns.py <N> --file "$MB" \
+      --by <codex-role> --round <n> --require-block
+
+`--require-block` applies at the sites whose composer contract carries the
+`CONCERN:: ` grammar (5b/5c `codex-code-reviewer`, 9a-bis
+`codex-clean-result-critic`); at 9a / 9b VC run BOTH invocations WITHOUT
+it (zero rows -> no-op; a spontaneous prose concerns-heading WARNs, never
+retries). VALIDATION is all-or-nothing; PERSISTENCE is per-row — a
+mid-loop operational failure (exit 4) leaves a PARTIAL ledger whose
+printed count is COMPLETED calls only: the library appends the
+ledger row BEFORE the events.jsonl mirror + commit, so the failing row
+may itself sit in `concerns.jsonl` uncommitted. The idempotent re-run
+here and the resume recovery below converge the LEDGER; the
+decision-inert events.jsonl mirror's fate is mode-dependent (forwarder
+module docstring).
+
+**Resume recovery (crash between marker post and persist — #2326).**
+At ANY resume/decision point where a current-round `epm:<kind>-codex v<n>`
+marker ALREADY EXISTS — every resume-table row whose PREDICATE includes
+an existing current-round `epm:<kind>-codex v<n>` marker: the agree /
+disagree→spawn-reconciler / cap-hit decision rows AND the
+one-twin-missing re-spawn rows (Codex marker present, Claude twin absent
+→ re-spawn the Claude reviewer only; SKILL.md :15839 code-review, :15849
+interpretation, :15854 clean-result) — the orchestrator runs recovery
+FIRST, then the row's action: re-materialize the marker block from the
+durable marker `note` (a pipe to file; no findings prose enters context),
+re-run the persist invocation verbatim with that site's `--by` /
+`--round` / `--require-block` policy, and only THEN apply the row's
+action — at a re-spawn-only row, BEFORE the re-spawn (idempotent per
+`task_workflow.py:8514-8552`, so the later collection-time persist after
+the re-spawned round is a no-op). Rows whose predicate keys on the Codex
+marker's ABSENCE (the re-spawn-the-Codex-twin rows) have nothing to
+recover. The fourth marker-mode site (`epm:followup-value-critique-codex`)
+has NO one-twin-missing row — follow-up resume routes through the
+followup-scope rows (:15863-15864); when a follow-up resume reaches a
+decision point with that codex marker present, the same recovery duty
+binds there. Exit 0 = persisted or idempotent no-op:
+
+    MB=/tmp/issue-<N>-<kind>-r<n>-marker.md
+    uv run python scripts/task.py view <N> --json \
+      | jq -er --arg k "epm:<kind>-codex" --argjson v <n> \
+          '[.events[] | select(.kind==$k and .version==$v)] | last | .note' > "$MB"
+    uv run python scripts/persist_verdict_concerns.py <N> --file "$MB" \
+      --by <codex-role> --round <n> --require-block   # contract sites only; omit the flag at 9a / 9b VC
+
+(A `part=K/N` split marker — markers.md § 50,000-char note cap — has no
+single authoritative `note`: concatenate ALL parts of the `(kind, version)`
+in `part` order into `"$MB"` before the forwarder run, never `last` alone.
+The recipe's step-2 50k gate keeps these sites single-part in practice.)
+
+**Resume-specific non-zero-exit disposition (bound per exit code):** any
+non-zero forwarder exit on a POSTED marker at resume follows the same
+WARN-and-proceed — log a WARN line, proceed with the row's action, NEVER
+retro-dispatch Codex against a settled round — with exit 2 the sole
+exception. Exit 1 (malformed rows) or exit 3 (heading/block absent at a
+contract site) on a POSTED marker indicates a legacy/pre-fix round: the
+pre-post gate guards every post-fix posting against exactly those
+STRUCTURAL shapes; exit 3 keeps its named line —
+`WARN: legacy-marker-no-concern-rows`. Exit 4 (operational persistence
+failure) says NOTHING about the round's age — it fires on fully post-fix
+markers too (the pre-post gate validates structure, not the ledger
+write), may leave a PARTIAL ledger, and converges the LEDGER via the
+idempotent re-run at every later recovery row. EXCEPTION — argparse/usage exit 2:
+the forwarder never examined the marker (the invocation itself is
+malformed), so the rows are fully recoverable — fix the invocation and
+re-run the recovery, never WARN-and-proceed past it.
 
 **5c. Apply ensemble decision rule.**
 
@@ -3430,8 +3523,16 @@ binding-concerns check BEFORE advancing on `final_verdict == PASS`:
 open_concerns=$(uv run python scripts/task.py list-concerns <N> --open-only --json)
 ```
 
-If `open_concerns` is empty: advance per Step 5d as usual (the
-historical PASS path is unchanged).
+If `open_concerns` is empty: log one line in the round record —
+`concerns ledger: empty — nothing to walk` — then advance per Step 5d as
+usual. (Empty is now informative in the ordinary case: § Codex concerns
+persistence forwards emitted Codex concern rows at collection AND re-runs
+the forwarder at every resume-table row whose predicate includes an
+existing current-round Codex marker — the decision rows and the
+one-twin-missing re-spawn rows alike — so an empty ledger ordinarily
+means no reviewer persisted anything this task. Residual: an orchestrator
+that runs no step of the recipe at all — the pre-existing `post-marker`
+trust floor.)
 
 If `open_concerns` is non-empty AND `final_verdict == PASS`, iterate
 per concern_id:
@@ -15732,6 +15833,14 @@ Every "re-spawn `codex-*` … only" action in this table is subject to the
 #1204 pre-spawn sentinel check (CLAUDE.md § Codex ensemble review): when
 LIVE, record the instant confirmed no-show instead of re-spawning the
 composer.
+
+Every row below whose PREDICATE includes an EXISTING current-round
+`epm:*-codex` marker — the agree / disagree→spawn-reconciler / cap-hit
+decision rows AND the one-twin-missing re-spawn rows (Codex marker
+present, Claude twin absent) — FIRST runs the resume-recovery step of
+§ Codex concerns persistence at verdict collection (re-materialize the
+marker `note` → re-run the concerns forwarder), THEN applies the row's
+action — at a re-spawn-only row, before the re-spawn (#2326).
 
 | Status at resume | `epm:*` events present | Interpretation | Action |
 |------------------|------------------------|----------------|--------|

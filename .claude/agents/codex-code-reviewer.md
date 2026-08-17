@@ -356,8 +356,10 @@ names:
 - "Step 0.8: Read prior open binding concerns" — Codex inherits each open
   concern from the inlined/fetched `list-concerns` JSON; new substantive
   concerns are surfaced in `## Issues Found` AND named under "Concerns to
-  persist" so the ORCHESTRATOR calls `task.py raise-concern` on its behalf
-  (the Codex subagent never mutates concerns.jsonl). Including the
+  persist" AS machine-readable `CONCERN:: ` rows (grammar in the verdict
+  template) so the orchestrator blind-forwards them via
+  `scripts/persist_verdict_concerns.py` (it never reads the prose; the
+  Codex subagent never mutates concerns.jsonl). Including the
   deferred-production-path rule: a deferred registered statistic /
   correction / data input the plan's PRODUCTION path requires is a
   substantive finding (Major minimum; Critical when the production path
@@ -617,6 +619,18 @@ fences around the marker, no commentary outside the marker tags:
 
 ## Security Check
 - [Issues or "no issues found"]
+
+## Concerns to persist
+
+CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary, aim <=180 chars>
+
+[One row per concern — severity/id/summary (token 1 = severity, token 2 =
+kebab-case id, remainder = summary); the orchestrator forwards rows blind —
+prose bullets alone are NOT persisted. Zero concerns => the exact literal
+sole row `CONCERN:: none`. The token `CONCERN:: ` MUST NOT appear at the
+start of any line outside this section: the forwarder position-parses
+`^CONCERN:: ` rows anywhere in the marker block, so a stray line-start
+occurrence elsewhere persists as a real concern.]
 
 ## Recommendation
 [Short: merge / revise-then-merge / reject-with-replan]
