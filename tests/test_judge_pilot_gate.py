@@ -593,6 +593,82 @@ def test_allow_subresolution_pilot_downgrades_to_report_warning(monkeypatch, tmp
     assert "item-limited" in sub[0] and "tiny" in sub[0]
 
 
+def test_escape_cannot_satisfy_verdict_floor_verdict_fails(monkeypatch, tmp_path):
+    """#2339 criterion 3: a verdict-DOOMED arm (len(items) * n_draws <
+    min_effective_draws_per_arm) escaped via allow_subresolution_pilot=True
+    runs the pilot and then FAILs the verdict-time min-effective floor —
+    the escape bypasses ONLY the config-time refusal."""
+    record: list = []
+    arms = {"doomed": _items(4, "d")}  # 4 items x n_draws 2 = 8 < floor 10
+    rep = _run(
+        monkeypatch,
+        tmp_path,
+        arms,
+        {"doomed": [KEPT] * 8},
+        target_total_draws=200,
+        allow_subresolution_pilot=True,
+        record=record,
+    )
+    assert record, "the pilot must actually RUN under the escape"
+    assert rep.passed is False
+    min_eff = [f for f in rep.failures if "min_effective_draws_per_arm=10" in f]
+    assert min_eff, rep.failures
+    assert "arm doomed" in min_eff[0] and "only 8 effective" in min_eff[0]
+    warn = [w for w in rep.warnings if "VERDICT-DOOMED" in w]
+    assert warn, rep.warnings
+    assert "bypass ONLY this config-time refusal" in warn[0]
+
+
+def test_item_limited_doomed_remedy_names_real_remedies(monkeypatch, tmp_path):
+    """#2339 criterion 4: strict-mode refusal on a verdict-DOOMED arm names
+    the honest remedies (floor / n_draws / item pool) and states that the
+    escapes cannot produce a PASS."""
+    fake = _install_fake_judge(monkeypatch, {})
+    arms = {"doomed": _items(4, "d")}
+    with pytest.raises(ValueError, match="VERDICT-DOOMED") as exc:
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "c",
+            save_raw_dir=tmp_path / "r",
+            target_total_draws=200,
+        )
+    msg = str(exc.value)
+    assert "4 item(s) x n_draws 2 = 8 realizable draw(s)" in msg
+    assert "lower the caller's min_effective_draws_per_arm" in msg
+    assert "raise n_draws" in msg
+    assert "enlarge the arm's item" in msg
+    assert "ceil(min_effective_draws_per_arm / n_draws) = 5 item(s)" in msg
+    assert "_gate_verdict still FAILs" in msg
+    assert "guaranteed post-spend verdict FAIL" in msg
+    assert "become usable at config time" in msg
+    assert fake.call_count == 0, "the refusal must fire BEFORE any judge_graded call"
+
+
+def test_item_limited_escapable_remedy_keeps_escapes(monkeypatch, tmp_path):
+    """#2339 criterion 5: an item-limited arm that CAN pass after an escape
+    (len(items) * n_draws >= min_effective_draws_per_arm) keeps the
+    waive/allow_subresolution remedy text and is NOT labeled doomed."""
+    _install_fake_judge(monkeypatch, {})
+    arms = {"tiny": _items(6, "t")}  # 6 x 2 = 12 >= floor 10; 6 < 26 items
+    with pytest.raises(ValueError, match="item-limited") as exc:
+        judge_pilot_gate(
+            arms,
+            PROMPT,
+            max_tokens=800,
+            cache_dir=tmp_path / "c",
+            save_raw_dir=tmp_path / "r",
+            target_total_draws=200,
+        )
+    msg = str(exc.value)
+    assert "6 item(s) < 26 needed" in msg
+    assert "waive_parse_fail_arms" in msg
+    assert "allow_subresolution_pilot=True" in msg
+    assert "VERDICT-DOOMED" not in msg
+    assert "ZERO transport-loss headroom" in msg
+
+
 def test_min_effective_draws_dominates_when_larger(monkeypatch, tmp_path):
     """required = max(min_effective_draws_per_arm, floor(1/threshold)+1): a
     min-effective floor ABOVE the resolution floor binds, and the remedy is
