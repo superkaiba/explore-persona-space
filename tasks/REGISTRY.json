@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2351,
+  "highest_id": 2352,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10448,6 +10448,13 @@
       "path": "tasks/proposed/2351",
       "status": "proposed",
       "title": "workflow_lint _hf_routing_file_errors false-positives on HF-call text inside docstrings"
+    },
+    "2352": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2352",
+      "status": "proposed",
+      "title": "Step 5a spec-freshness: add tests/issue_skill_source.py to FAMILY_workflow (half-sync reds test_issue_skill_* collection)"
     },
     "237": {
       "has_clean_result": true,
