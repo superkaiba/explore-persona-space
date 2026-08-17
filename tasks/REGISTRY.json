@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2333,
+  "highest_id": 2334,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10307,6 +10307,13 @@
       "path": "tasks/running/2333",
       "status": "running",
       "title": "Snowball test: do context-vector patch effects run through the first few answer tokens? First-k token patches + prefills vs ce patch, both models"
+    },
+    "2334": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2334",
+      "status": "proposed",
+      "title": "Register eval_results/issue_1739 cone in tests/sparse_cones.txt (deterministic sparse-worktree test FAIL, #671 class)"
     },
     "234": {
       "has_clean_result": true,
