@@ -96,10 +96,16 @@ def _msg_td(text: str, cls: str) -> str:
     return f'<td class="{cls}"><div class="msg">{html.escape(text)}</div></td>'
 
 
-def render_block(scenario: str, layers_cfg: str, cells: dict[str, dict]) -> str:
-    """One table: rows = turns, cols = user + every arm at this layer config."""
+def render_block(
+    scenario: str, layers_cfg: str, cells: dict[str, dict], arms: "list[str]" = ARM_ORDER
+) -> str:
+    """One table: rows = turns, cols = user + every arm at this layer config.
+
+    ``arms`` defaults to the full ``ARM_ORDER`` (original #2223 dashboard); a
+    caller may pass a subset (e.g. the strength-sweep arms) to scope the columns.
+    """
     arm_cells: list[tuple[str, dict | None]] = []
-    for arm in ARM_ORDER:
+    for arm in arms:
         key = _cell_key("na", arm) if arm == "unsteered" else _cell_key(layers_cfg, arm)
         arm_cells.append((arm, cells.get(key)))
     present = [c for _, c in arm_cells if c is not None]
@@ -139,29 +145,48 @@ def render_block(scenario: str, layers_cfg: str, cells: dict[str, dict]) -> str:
     )
 
 
-def build_dashboard(out_root: Path) -> str:
-    body = ["<h1>Issue #2223 — case-study frozen replay (per model)</h1>"]
-    body.append(
-        "<p class='meta'>Frozen user turns from the paper's UNSTEERED case-study "
+def build_dashboard(
+    out_root: Path,
+    *,
+    arms: "list[str]" = ARM_ORDER,
+    models: "list[str] | None" = None,
+    scenarios: "tuple[str, ...] | list[str]" = SCENARIOS,
+    header_html: str = "",
+    title: str = "Issue #2223 — case-study frozen replay (per model)",
+    meta_note: str = (
+        "Frozen user turns from the paper's UNSTEERED case-study "
         "transcripts; assistant side regenerated per arm (greedy, thinking off). "
         "Deviation: a default system prompt is added (the paper's case studies ran "
         "without one) so prefix-position arms are definable. Content shown verbatim "
-        "(escaped); no scoring or analysis on this page.</p>"
-    )
+        "(escaped); no scoring on the conversation tables themselves.</p>"
+    ),
+) -> str:
+    """Assemble the self-contained HTML.
+
+    ``arms`` scopes the conversation columns; ``models`` (slugs) scopes which
+    model legs render (``None`` = all present); ``header_html`` is injected right
+    after the H1 (used for the strength-sweep analysis + embedded figures).
+    """
+    body = [f"<h1>{html.escape(title)}</h1>"]
+    if header_html:
+        body.append(header_html)
+    body.append(f"<p class='meta'>{meta_note}")
     slugs = discover_model_slugs(out_root)
+    if models is not None:
+        slugs = [s for s in slugs if s in models]
     if not slugs:
         body.append("<p class='meta'>no model cells generated yet</p>")
     for slug in slugs:
         model_root = out_root / slug
         body.append(f"<h1>model: {html.escape(slug)}</h1>")
-        for sc in SCENARIOS:
+        for sc in scenarios:
             cells = load_cells(model_root, sc)
             body.append(f"<h2>{html.escape(slug)} — scenario: {html.escape(sc)}</h2>")
             if not cells:
                 body.append("<p class='meta'>no cells generated yet</p>")
                 continue
             for lc in LAYER_CONFIGS:
-                body.append(render_block(sc, lc, cells))
+                body.append(render_block(sc, lc, cells, arms))
     return (
         "<!doctype html><html><head><meta charset='utf-8'>"
         f"<title>issue 2223 case-study replay</title><style>{CSS}</style></head>"

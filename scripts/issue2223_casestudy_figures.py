@@ -71,14 +71,21 @@ def _arm_cell(cells: dict[str, dict], arm: str, layers_cfg: str) -> dict | None:
     return cells.get(key)
 
 
-def fig_drift(scenario: str, layers_cfg: str, cells: dict[str, dict], colors, out_dir: Path):
+def fig_drift(
+    scenario: str,
+    layers_cfg: str,
+    cells: dict[str, dict],
+    colors,
+    out_dir: Path,
+    arms: "list[str]" = ARM_ORDER,
+):
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis.paper_plots import savefig_paper
 
     fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.6), sharex=True)
     any_line = False
-    for arm in ARM_ORDER:
+    for arm in arms:
         cell = _arm_cell(cells, arm, layers_cfg)
         if cell is None:
             continue
@@ -111,16 +118,33 @@ def fig_drift(scenario: str, layers_cfg: str, cells: dict[str, dict], colors, ou
     print(f"[figures] wrote {paths['png']}", flush=True)
 
 
-def fig_harm(
-    scenario: str, layers_cfg: str, cells: dict[str, dict], scores: dict, colors, out_dir: Path
+_DV_YLABEL = {"harm": "harm judge score (0-100)", "coherence": "coherence score (0-100)"}
+
+
+def fig_score(
+    scenario: str,
+    layers_cfg: str,
+    cells: dict[str, dict],
+    scores: dict,
+    colors,
+    out_dir: Path,
+    *,
+    dv: str = "harm",
+    arms: "list[str]" = ARM_ORDER,
 ):
+    """Per-turn judge-score line figure for one DV (``harm`` or ``coherence``).
+
+    ``scores`` is the ``["cells"]`` block of ``<dv>_<scenario>.json`` (harm =
+    ``scores_<sc>.json``; coherence = ``coherence_<sc>.json``); both share the
+    ``{layers__arm: {turn: {"score": ...}}}`` shape.
+    """
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis.paper_plots import savefig_paper
 
     fig, ax = plt.subplots(figsize=(6.0, 3.6))
     any_line = False
-    for arm in ARM_ORDER:
+    for arm in arms:
         cell = _arm_cell(cells, arm, layers_cfg)
         if cell is None:
             continue
@@ -141,14 +165,14 @@ def fig_harm(
             color=colors[arm],
         )
         any_line = True
-    assert any_line, f"no judged cells for {scenario}/{layers_cfg}"
+    assert any_line, f"no judged cells for {scenario}/{layers_cfg} ({dv})"
     ax.set_xlabel("turn")
-    ax.set_ylabel("judge score (0-100)")
+    ax.set_ylabel(_DV_YLABEL[dv])
     ax.set_ylim(-2, 102)
-    ax.set_title(f"{scenario} — {layers_cfg} layers")
+    ax.set_title(f"{scenario} — {layers_cfg} layers ({dv})")
     ax.legend(fontsize=6, loc="best")
     fig.tight_layout()
-    paths = savefig_paper(fig, f"harm_{scenario}_{layers_cfg}", dir=out_dir, formats=("png",))
+    paths = savefig_paper(fig, f"{dv}_{scenario}_{layers_cfg}", dir=out_dir, formats=("png",))
     plt.close(fig)
     print(f"[figures] wrote {paths['png']}", flush=True)
 
@@ -163,7 +187,9 @@ def main(argv: list[str] | None = None) -> int:
         "--fig-dir",
         default=str(REPO / "figures" / "issue_2223" / "casestudy_replay"),
     )
-    ap.add_argument("--which", choices=("drift", "harm", "both"), default="both")
+    ap.add_argument(
+        "--which", choices=("drift", "harm", "coherence", "both", "all"), default="both"
+    )
     args = ap.parse_args(argv)
     out_root = Path(args.out_root)
     fig_root = Path(args.fig_dir)
@@ -185,19 +211,27 @@ def main(argv: list[str] | None = None) -> int:
             if not cells:
                 print(f"[figures] {slug}: no cells for {sc} — skipping scenario", flush=True)
                 continue
-            scores = None
-            if args.which in ("harm", "both"):
-                sp = model_root / "judged" / f"scores_{sc}.json"
-                assert sp.exists(), (
-                    f"{sp} absent — run the judge phase first "
-                    "(or pass --which drift for projection figures only)"
-                )
-                scores = json.loads(sp.read_text())["cells"]
+            want_harm = args.which in ("harm", "both", "all")
+            want_coh = args.which in ("coherence", "all")
+            want_drift = args.which in ("drift", "both", "all")
+            score_blocks: dict[str, dict] = {}
+            for dv, fname in (("harm", f"scores_{sc}.json"), ("coherence", f"coherence_{sc}.json")):
+                if (dv == "harm" and want_harm) or (dv == "coherence" and want_coh):
+                    sp = model_root / "judged" / fname
+                    assert sp.exists(), (
+                        f"{sp} absent — run the judge phase first "
+                        "(or pass --which drift for projection figures only)"
+                    )
+                    score_blocks[dv] = json.loads(sp.read_text())["cells"]
             for lc in LAYER_CONFIGS:
-                if args.which in ("drift", "both"):
+                if want_drift:
                     fig_drift(sc, lc, cells, colors, fig_dir)
-                if args.which in ("harm", "both"):
-                    fig_harm(sc, lc, cells, scores, colors, fig_dir)
+                if want_harm:
+                    fig_score(sc, lc, cells, score_blocks["harm"], colors, fig_dir, dv="harm")
+                if want_coh:
+                    fig_score(
+                        sc, lc, cells, score_blocks["coherence"], colors, fig_dir, dv="coherence"
+                    )
     return 0
 
 
