@@ -513,3 +513,24 @@ Assert-side traps hit live: the full round-SHA count spans template AND
 inlined marker (assert each side separately before the sum), and a
 compose-time "marker lacks `<!-- epm:results vN -->`" observation puts that
 literal in YOUR prose — assert body==0 and template==1, not absent.
+
+**Same-day rubric staleness + the #2326 grammar migration (#2330 r3,
+2026-08-16):** rubric staleness is not only a cross-day hazard — the r2
+rubric extraction (17:57) predated a 19:13 commit to code-reviewer.md the
+SAME day. Run the currency check (`git log -1 --format='%ci %h' --
+.claude/agents/code-reviewer.md` vs extraction mtime, SAME timezone) at
+EVERY compose. When the delta is small and hunk-anchored, PATCH the
+extraction by applying the commit's hunks (count-assert each anchor;
+skip hunks targeting the Step-7 output-schema region when the extraction
+excludes it — grep the hunk's context line first) instead of re-extracting.
+Separately: any template predating commit `2454922e7d` (#2326) carries the
+RETIRED concerns form — migrating it needs THREE edits: (1) `## Concerns to
+persist` switches to the machine-row grammar (`CONCERN:: <SEVERITY>
+<kebab-id> <summary>` at line start; sole literal `CONCERN:: none` when
+empty; the token must not open any other line — closure status lines
+included, say so explicitly since the forwarder position-parses the whole
+marker block; instruct NOT to re-emit already-persisted open ids as rows);
+(2) add the `**Prior-concerns ledger:** <K open: ids>|empty` header line to
+the verdict template; (3) patch the rubric's Step 0.8 span with the
+record-the-ledger-state sentence. Assert-side: `^CONCERN:: ` line-start
+regex over the final prompt must match exactly the one grammar row.
