@@ -17,6 +17,8 @@ goal: 'On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct''
   fair group-level split: (1) LLM judge on context text, (2) linear probe on the context
   activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear
   probe on the actual answer activation (ceiling).'
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
