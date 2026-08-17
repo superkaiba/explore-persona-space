@@ -544,6 +544,30 @@ blocked git verb never executed; re-apply the write (via the Edit tool,
 never a heredoc — #1756) before retrying the commit, and verify landing by
 blob read at HEAD, never by the commit line.
 
+**Cap-round crash-fix with a COMPLETED sibling leg (#2333 r5, 2026-08-17):**
+when one leg finished + uploaded under PRE-fix code and the fix targets the
+OTHER leg's crash, make completed-leg INVARIANCE the highest-consequence
+priority with a 5-part checklist: (a) verbatim-delegation byte-equality on
+the old-path branch (delegation, not reimplementation, is the argument);
+(b) legacy-record branch ORDER — the old-path check must precede any
+new-flag read (`rec.get` on records predating the schema); (c) no reader
+REQUIRES the new manifest key (compose-grep: writer-only); (d) old-path
+call-site rewires are pure refactor (identical values + assert behavior);
+(e) phase-done skip isolates the completed leg's store. Instruct "ANY
+finding that changes the completed leg's semantics is Critical". Compose
+the crash-diagnosis envelope from the epm:progress halt note when no
+epm:failure exists (variant g — cite the marker's own Dispatch-context
+provenance). A re-POSTED smoke-arch marker (vs r4's left-standing) flips
+that priority from left-standing-claim verification to CLAIM-SET
+verification vs the diff (bank-row accuracy + "verbatim from v<n-1>" + the
+no-architecture-change greps). Open concerns with NO closure assigned get
+regression-duty-ONLY framing plus named look-hardest rows where the diff
+touches a concern's neighborhood (here: a position-only edit inside a
+cap-regen pass vs the write-order concern; a record-schema change vs the
+blind-chunk-reuse concern class). Also state the missing `### (e)` heading
+is EXPECTED when the round claims no closures — else Codex invents a
+marker-shape objection.
+
 **Concern-closure round on a by-reference compose (#2333 r4, 2026-08-16):**
 when the round CLAIMS closure of a reconciler-persisted concern, the
 concern row's `evidence` field is the acceptance contract — inline it
