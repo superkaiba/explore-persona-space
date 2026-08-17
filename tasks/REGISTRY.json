@@ -10389,8 +10389,8 @@
       "goal": "Mission-control spec-form live smoke: verify the create/edit/submit surface writes a canonical spec-v2 body through task.py.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2344",
-      "status": "proposed",
+      "path": "tasks/archived/2344",
+      "status": "archived",
       "title": "Does the mission-control spec form write a canonical spec-v2 task body end to end?"
     },
     "235": {
