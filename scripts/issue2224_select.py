@@ -695,8 +695,16 @@ def post_recovery_arm_stats(outcome: RedrawOutcome, save_raw: Path, item_ids: se
     tally = dict(res.stop_reason_tally)
     for key, v in outcome.redraw_stop_reason_tally.items():
         tally[key] = tally.get(key, 0) + v
+    # #2124 (rule 29) per-item completeness, off the reduce's pre-seeded scores
+    # map (scores[item] is None marks all-draws-dropped) — same computation as
+    # judge_pilot_gate. Required fields since #2124; this call site predated
+    # them and crashed TypeError (pre-existing on main, surfaced by #2152's
+    # sibling-suite sweep).
+    n_items_zero_valid = sum(1 for v in res.scores.values() if v is None)
     return ArmPilotStats(
         n_items=len(item_ids),
+        n_items_zero_valid=n_items_zero_valid,
+        frac_items_complete=(len(item_ids) - n_items_zero_valid) / max(1, len(item_ids)),
         n_draws=res.n_total_draws,
         n_scored=n_answered - n_content_post,
         n_content_dropped=n_content_post,
