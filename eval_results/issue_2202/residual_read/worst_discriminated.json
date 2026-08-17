@@ -1,0 +1,462 @@
+{
+ "round": "residual-read (worst-discriminated tail persistence)",
+ "definition": "bottom 50 of the 1,988 resample-covered rows by per-row retrieval margin (true-target score minus best competitor) under CSLS K=10 on whitened cosine with draw-averaged targets; negative margin = rank-1 failure",
+ "n_tail": 50,
+ "n_covered": 1988,
+ "n_tail_failures": 11,
+ "n_tail_successes": 39,
+ "tail_margin_min": -0.1307,
+ "tail_margin_max": 0.0395,
+ "pool_margin_median": 0.1752,
+ "composition_topic": {
+  "coding": {
+   "tail_count": 15,
+   "tail_share": 0.3,
+   "pool_share": 0.165,
+   "ratio": 1.82
+  },
+  "creative_writing": {
+   "tail_count": 11,
+   "tail_share": 0.22,
+   "pool_share": 0.1675,
+   "ratio": 1.31
+  },
+  "factual_qa": {
+   "tail_count": 11,
+   "tail_share": 0.22,
+   "pool_share": 0.3119,
+   "ratio": 0.71
+  },
+  "nsfw": {
+   "tail_count": 3,
+   "tail_share": 0.06,
+   "pool_share": 0.0211,
+   "ratio": 2.84
+  },
+  "chitchat_social": {
+   "tail_count": 3,
+   "tail_share": 0.06,
+   "pool_share": 0.0614,
+   "ratio": 0.98
+  },
+  "translation": {
+   "tail_count": 2,
+   "tail_share": 0.04,
+   "pool_share": 0.0412,
+   "ratio": 0.97
+  },
+  "summarization_extraction": {
+   "tail_count": 2,
+   "tail_share": 0.04,
+   "pool_share": 0.0277,
+   "ratio": 1.45
+  },
+  "advice_howto": {
+   "tail_count": 2,
+   "tail_share": 0.04,
+   "pool_share": 0.1157,
+   "ratio": 0.35
+  },
+  "harmful_or_unsafe_request": {
+   "tail_count": 1,
+   "tail_share": 0.02,
+   "pool_share": 0.0236,
+   "ratio": 0.85
+  }
+ },
+ "composition_language": {
+  "en": {
+   "tail_count": 30,
+   "tail_share": 0.6,
+   "pool_share": 0.5905,
+   "ratio": 1.02
+  },
+  "zh": {
+   "tail_count": 14,
+   "tail_share": 0.28,
+   "pool_share": 0.1202,
+   "ratio": 2.33
+  },
+  "es": {
+   "tail_count": 2,
+   "tail_share": 0.04,
+   "pool_share": 0.0418,
+   "ratio": 0.96
+  },
+  "pt": {
+   "tail_count": 2,
+   "tail_share": 0.04,
+   "pool_share": 0.0337,
+   "ratio": 1.19
+  },
+  "ko": {
+   "tail_count": 1,
+   "tail_share": 0.02,
+   "pool_share": 0.0065,
+   "ratio": 3.06
+  },
+  "ru": {
+   "tail_count": 1,
+   "tail_share": 0.02,
+   "pool_share": 0.0895,
+   "ratio": 0.22
+  }
+ },
+ "tail_rows": [
+  {
+   "ci": 93209,
+   "margin": -0.13065271930192043,
+   "rank": 7.0,
+   "topic": "translation",
+   "language": "ko"
+  },
+  {
+   "ci": 12765,
+   "margin": -0.09992654054235278,
+   "rank": 23.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 72669,
+   "margin": -0.08456707338487716,
+   "rank": 14.0,
+   "topic": "creative_writing",
+   "language": "zh"
+  },
+  {
+   "ci": 23945,
+   "margin": -0.06328328164476454,
+   "rank": 3.0,
+   "topic": "factual_qa",
+   "language": "en"
+  },
+  {
+   "ci": 72816,
+   "margin": -0.03442570442036458,
+   "rank": 3.0,
+   "topic": "creative_writing",
+   "language": "en"
+  },
+  {
+   "ci": 18697,
+   "margin": -0.025146486655935885,
+   "rank": 9.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 51000,
+   "margin": -0.025094149292535062,
+   "rank": 2.0,
+   "topic": "factual_qa",
+   "language": "zh"
+  },
+  {
+   "ci": 25708,
+   "margin": -0.01631706508532277,
+   "rank": 2.0,
+   "topic": "creative_writing",
+   "language": "en"
+  },
+  {
+   "ci": 27413,
+   "margin": -0.010090052999953372,
+   "rank": 3.0,
+   "topic": "creative_writing",
+   "language": "en"
+  },
+  {
+   "ci": 57671,
+   "margin": -0.006271221714452831,
+   "rank": 4.0,
+   "topic": "coding",
+   "language": "zh"
+  },
+  {
+   "ci": 67184,
+   "margin": -0.005001390376383141,
+   "rank": 3.0,
+   "topic": "factual_qa",
+   "language": "en"
+  },
+  {
+   "ci": 19808,
+   "margin": 0.002503029004591817,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 98939,
+   "margin": 0.006513134838268764,
+   "rank": 1.0,
+   "topic": "summarization_extraction",
+   "language": "zh"
+  },
+  {
+   "ci": 14536,
+   "margin": 0.006538646175835966,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 64188,
+   "margin": 0.00677948492786995,
+   "rank": 1.0,
+   "topic": "creative_writing",
+   "language": "zh"
+  },
+  {
+   "ci": 11815,
+   "margin": 0.008164496295036225,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "es"
+  },
+  {
+   "ci": 9802,
+   "margin": 0.011213870302883122,
+   "rank": 1.0,
+   "topic": "harmful_or_unsafe_request",
+   "language": "en"
+  },
+  {
+   "ci": 61498,
+   "margin": 0.013734374145824915,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "zh"
+  },
+  {
+   "ci": 14014,
+   "margin": 0.014306228092277551,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "en"
+  },
+  {
+   "ci": 34664,
+   "margin": 0.014870111058138666,
+   "rank": 1.0,
+   "topic": "nsfw",
+   "language": "en"
+  },
+  {
+   "ci": 26288,
+   "margin": 0.01580066777331196,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 84451,
+   "margin": 0.016025510127591944,
+   "rank": 1.0,
+   "topic": "creative_writing",
+   "language": "zh"
+  },
+  {
+   "ci": 79897,
+   "margin": 0.01938875539574901,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 9263,
+   "margin": 0.022114737980464566,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 42812,
+   "margin": 0.02229184627803593,
+   "rank": 1.0,
+   "topic": "chitchat_social",
+   "language": "zh"
+  },
+  {
+   "ci": 22786,
+   "margin": 0.022616653865343034,
+   "rank": 1.0,
+   "topic": "nsfw",
+   "language": "en"
+  },
+  {
+   "ci": 26401,
+   "margin": 0.023288874625730982,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 58449,
+   "margin": 0.02357304206500277,
+   "rank": 1.0,
+   "topic": "nsfw",
+   "language": "en"
+  },
+  {
+   "ci": 80163,
+   "margin": 0.02394430245763221,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 24751,
+   "margin": 0.025406207510196593,
+   "rank": 1.0,
+   "topic": "creative_writing",
+   "language": "en"
+  },
+  {
+   "ci": 15607,
+   "margin": 0.027555575112336,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "pt"
+  },
+  {
+   "ci": 86911,
+   "margin": 0.028530170902220264,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "en"
+  },
+  {
+   "ci": 16932,
+   "margin": 0.02854788885655818,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 56976,
+   "margin": 0.028556041638379284,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 30272,
+   "margin": 0.03076373316107628,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "en"
+  },
+  {
+   "ci": 4616,
+   "margin": 0.03172744596185356,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "en"
+  },
+  {
+   "ci": 99033,
+   "margin": 0.03189419664098181,
+   "rank": 1.0,
+   "topic": "summarization_extraction",
+   "language": "zh"
+  },
+  {
+   "ci": 70767,
+   "margin": 0.032181097353804144,
+   "rank": 1.0,
+   "topic": "creative_writing",
+   "language": "en"
+  },
+  {
+   "ci": 83376,
+   "margin": 0.03228584579839963,
+   "rank": 1.0,
+   "topic": "translation",
+   "language": "zh"
+  },
+  {
+   "ci": 72137,
+   "margin": 0.03367809488615803,
+   "rank": 1.0,
+   "topic": "creative_writing",
+   "language": "en"
+  },
+  {
+   "ci": 56790,
+   "margin": 0.035741849131276815,
+   "rank": 1.0,
+   "topic": "chitchat_social",
+   "language": "es"
+  },
+  {
+   "ci": 17820,
+   "margin": 0.03680018198821036,
+   "rank": 1.0,
+   "topic": "chitchat_social",
+   "language": "zh"
+  },
+  {
+   "ci": 23565,
+   "margin": 0.037132179421044784,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "en"
+  },
+  {
+   "ci": 13120,
+   "margin": 0.03740867929016273,
+   "rank": 1.0,
+   "topic": "advice_howto",
+   "language": "pt"
+  },
+  {
+   "ci": 85368,
+   "margin": 0.03759520876742353,
+   "rank": 1.0,
+   "topic": "creative_writing",
+   "language": "zh"
+  },
+  {
+   "ci": 77922,
+   "margin": 0.03794851392464943,
+   "rank": 1.0,
+   "topic": "advice_howto",
+   "language": "zh"
+  },
+  {
+   "ci": 87516,
+   "margin": 0.038835806911086096,
+   "rank": 1.0,
+   "topic": "creative_writing",
+   "language": "ru"
+  },
+  {
+   "ci": 67529,
+   "margin": 0.038961962312869206,
+   "rank": 1.0,
+   "topic": "coding",
+   "language": "zh"
+  },
+  {
+   "ci": 21556,
+   "margin": 0.039385873173106684,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "en"
+  },
+  {
+   "ci": 13521,
+   "margin": 0.0395464602950322,
+   "rank": 1.0,
+   "topic": "factual_qa",
+   "language": "en"
+  }
+ ],
+ "provenance": {
+  "margins": "eval_results/issue_2202/residual_read/percontext_ranks_margins.npz",
+  "labels": "eval_results/issue_1738/percontext_summary_L19_ridge.csv",
+  "convention": "csls_k10_whitencos_avg"
+ }
+}

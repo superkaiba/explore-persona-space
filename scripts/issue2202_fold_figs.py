@@ -288,10 +288,46 @@ def fig_avgtgt_convergence(avgtgt: dict) -> None:
     plt.close(fig)
 
 
+def fig_residual_margins() -> None:
+    import numpy as np
+
+    d = np.load(REPO / "eval_results/issue_2202/residual_read/percontext_ranks_margins.npz")
+    margin = d["margin_csls_k10_whitencos_avg"]
+    n_fail = int((margin < 0).sum())
+
+    palette = paper_palette(4)
+    fig, ax = plt.subplots(figsize=(6.8, 4.0))
+    ax.hist(margin, bins=60, color=palette[0])
+    ax.set_yscale("log")
+    ax.axvspan(margin.min() - 0.01, 0.0, color="#d9534f", alpha=0.15, zorder=0)
+    med = float(np.median(margin))
+    ax.axvline(med, color=palette[2], linestyle="--", linewidth=1.4)
+    ax.set_xlabel("retrieval margin: true-target minus best-competitor score")
+    ax.set_ylabel("covered rows (log scale)")
+    ax.set_title("Residual failures are near-misses in the margin distribution")
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=palette[0]),
+        plt.Rectangle((0, 0), 1, 1, color="#d9534f", alpha=0.15),
+        plt.Line2D([0], [0], color=palette[2], linestyle="--", linewidth=1.4),
+    ]
+    ax.legend(
+        handles,
+        [
+            "covered rows (n = 1,988)",
+            f"failure region, margin below 0 (n = {n_fail})",
+            f"pool median (+{med:.3f})",
+        ],
+        loc="upper left",
+        fontsize=8.5,
+    )
+    savefig_paper(fig, "fig_residual_margins", dir=FIG_DIR)
+    plt.close(fig)
+
+
 def main() -> None:
     import sys
 
-    which = set(sys.argv[1:]) or {"zoo", "avg", "contrastive", "avgtgt"}
+    which = set(sys.argv[1:]) or {"zoo", "avg", "contrastive", "avgtgt", "residual"}
     set_paper_style("blog")
     wrote = []
     if which & {"zoo", "avg"}:
@@ -319,6 +355,9 @@ def main() -> None:
         )
         fig_avgtgt_convergence(avgtgt)
         wrote.append("fig_avgtgt_convergence")
+    if "residual" in which:
+        fig_residual_margins()
+        wrote.append("fig_residual_margins")
     print(f"wrote {' + '.join(wrote)} under {FIG_DIR}")
 
 
