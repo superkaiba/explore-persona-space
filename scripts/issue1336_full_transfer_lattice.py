@@ -82,7 +82,10 @@ TIERS = stt.TIERS
 SURFACES = stt.SURFACES
 DEGENERATE = stt.DEGENERATE
 # (stt.TIER_COLORS is deliberately NOT reused — see the palette block below.)
-TIER_LABEL = stt.TIER_LABEL
+# Copy, then extend with the input-side rotation tier: stt reads the committed
+# int-keyed label block, which must not be mutated in place.
+TIER_LABEL = dict(stt.TIER_LABEL)
+TIER_LABEL["5c"] = "rotation + bias, context side"
 CEILING_COLOR = stt.CEILING_COLOR
 CROSS_COLOR = xmap.CROSS_COLOR
 
@@ -109,6 +112,11 @@ TIER_COLORS = {
     3: "#17BECF",  # bias offset
     4: "#E377C2",  # global scaling
     5: "#D62728",  # rotation
+    # "5c" — the INPUT-side rotation+bias orth tier (metric_ladder t5c), not one
+    # of the nine t0..t8 ladder tiers; it rides this colour map so every
+    # tier-keyed site treats it uniformly. Dark magenta: separable from tier
+    # 5's red (its output-side sibling) and tier 4's light pink.
+    "5c": "#C51B8A",
     6: "#1F77B4",  # reparam contexts
     7: "#2CA02C",  # reparam answers
     8: "#9467BD",  # reparam both
@@ -183,11 +191,24 @@ if FULL_LADDER:
     TIERS = (0, 1, 2, 3, 4, 5, 6, 7, 8)
     SUFFIX += "_fullladder"
 elif _TIER_SEL:
-    TIERS = tuple(int(_t) for _t in _TIER_SEL.split(",") if _t.strip())
+    # Integer tokens are the t0..t8 ladder tiers; the literal token "5c" is the
+    # input-side rotation+bias orth tier, read from the rigid harvest (below).
+    TIERS = tuple(
+        int(_t) if _t.strip().isdigit() else _t.strip() for _t in _TIER_SEL.split(",") if _t.strip()
+    )
     _bad = [_t for _t in TIERS if _t not in TIER_COLORS]
     if _bad:
-        raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8")
+        raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8 and 5c")
     SUFFIX += "_t" + "".join(str(_t) for _t in TIERS)
+
+# --outdir <name>: render into figures/issue_1336/<name>/ instead of the shared
+# figure dir — used for the writeup re-render with the input-rotation tier so a
+# different tier roster does not clobber the standing figure set.
+for _i, _a in enumerate(sys.argv):
+    if _a == "--outdir" and _i + 1 < len(sys.argv):
+        OUTDIR = REPO / "figures" / "issue_1336" / sys.argv[_i + 1]
+    elif _a.startswith("--outdir="):
+        OUTDIR = REPO / "figures" / "issue_1336" / _a.split("=", 1)[1]
 
 # The alignment panel plots the identity+bias baselines of A_ctx and A_ans —
 # the two remaps t6 and t7 apply. With NEITHER tier drawn it describes maps
@@ -399,6 +420,88 @@ if LAYER != 30:
     CROSS_PROV = dict(xmap.CROSS_PROV, layer=LAYER, source=f"per_layer/{LAYER}.repswap_r2")
 
 
+# --- input-side rotation+bias tier ("5c") -----------------------------------
+# t5c = W_s( R_ctx x_t ): an orthogonal Procrustes R_ctx is fit on the pair's
+# shared TRAIN rows aligning TARGET context vectors into the SOURCE context
+# frame ((x_t − μ_t) R + μ_s; issue825_map_alignment._orth_fit(Xt_tr, Xs_tr)),
+# then the FROZEN per-fold source map W_s is applied to the aligned held-out
+# target contexts — the rotation-constrained sibling of t6 (full ridge context
+# remap) and the input-side sibling of t5 (rotation + bias fit AFTER W_s on
+# the output). Nothing is fitted here: values are READ from the
+# rigid-decomposition re-run harvest (4× cpu-bigmem pods, 2026-08-13), which
+# re-ran the identical ladder battery plus the ORTH_TIER_NAMES block
+# (issue1336_metric_ladder.py). That re-run reproduces the plotted round-3
+# within/t0/t5/t6/t7 values to ≤1e-12 (same rows, folds, estimator), so this
+# series shares the axis basis exactly. orth tiers exist at layer 30 ONLY
+# (the ladder gates them to the full-tier layer). CI: a DIRECT 1,000-draw
+# bootstrap on t5c's R² (r2_bootstrap), unlike the gap-CI mapping the t0..t8
+# tiers ride — both are prompt-level bootstrap intervals in R² units. The
+# scaled variant t5cs rides the banked summary JSON only, never a figure.
+# The three round-B pairs (sft→rlvr, sft→rlvr_long, rlvr→rlvr_long) were
+# never run with orth tiers and render as line GAPS — the tiers-1-5 contract.
+RIGID_DIR = REPO / "eval_results" / "issue_1336" / "rigid" / "metric_ladder"
+INPUT_ROT_TIER = "5c"
+
+
+def _load_inputrot() -> tuple[dict, dict]:
+    """(pair, fmt, corpus) -> cell-shaped t5c read; plus the raw t5c/t5cs blocks."""
+    import re
+
+    pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
+    cells: dict[tuple, dict] = {}
+    blocks: dict[tuple, dict] = {}
+    if not RIGID_DIR.is_dir():
+        return cells, blocks
+    for fp in sorted(RIGID_DIR.glob("pair_*.json")):
+        m = pat.match(fp.name)
+        if not m:
+            continue
+        src, tgt, fmt, corpus = m.groups()
+        d = json.load(open(fp))
+        layer = d.get("per_layer", {}).get(LKEY)
+        if not layer or not layer.get("orth_tiers"):
+            continue
+        rec = layer["orth_tiers"]["t5c"]["raw"]
+        bs = rec.get("r2_bootstrap") or {}
+        key = (f"{src}__{tgt}", fmt, corpus)
+        cells[key] = {
+            "r2": float(rec["r2"]),
+            "r2_lo": float(bs["ci_lo"]) if "ci_lo" in bs else None,
+            "r2_hi": float(bs["ci_hi"]) if "ci_hi" in bs else None,
+            "within_r2": float(layer["raw"]["within_r2"]),
+            "n": int(d.get("n_shared_rows", 0)),
+            "has_ci": "ci_lo" in bs,
+        }
+        blocks[key] = {
+            "file": str(fp.relative_to(REPO)),
+            "n_shared_rows": int(d.get("n_shared_rows", 0)),
+            "within_r2": float(layer["raw"]["within_r2"]),
+            "t5c": layer["orth_tiers"]["t5c"],
+            "t5cs": layer["orth_tiers"]["t5cs"],
+        }
+    return cells, blocks
+
+
+INPUTROT, INPUTROT_BLOCKS = _load_inputrot()
+if INPUT_ROT_TIER in TIERS and not INPUTROT:
+    raise SystemExit(
+        f"--tiers included {INPUT_ROT_TIER} but no orth_tiers exist at layer {LAYER} under "
+        f"{RIGID_DIR} — the rigid harvest computed them at layer 30 only"
+    )
+
+_base_cell = stt.cell
+
+
+def _cell_with_inputrot(src: str, tgt: str, fmt: str, corpus: str, tier) -> dict | None:
+    """stt.cell plus the "5c" tier; identical return shape, None when unmeasured."""
+    if tier == INPUT_ROT_TIER:
+        return INPUTROT.get((f"{src}__{tgt}", fmt, corpus))
+    return _base_cell(src, tgt, fmt, corpus, tier)
+
+
+stt.cell = _cell_with_inputrot
+
+
 # --- fair baselines -------------------------------------------------------
 # Two floors, both already committed per round-3 pair file; neither is refitted.
 #
@@ -432,6 +535,9 @@ BASELINE_PAIRS = tuple(p for p in PAIRS if p not in SELFMAP_PAIRS)
 # plotting one tier's null under another tier's name.
 NULL_ORDER = ("within", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8")
 NULL_COL = {t: NULL_ORDER.index(f"t{t}") for t in range(9)}
+# Only the nine int ladder tiers have a shuffled-null column in r2_matrix; the
+# "5c" orth tier's nulls were never part of that layout and are not selected.
+NULL_TIERS = tuple(t for t in TIERS if isinstance(t, int))
 
 
 def _selfmap_align_baselines() -> dict:
@@ -495,7 +601,7 @@ def load_baselines() -> dict:
                 "shuffled-null column layout moved; fix NULL_ORDER rather than reindexing"
             )
         mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
-        rec["null"].append(mat[:, [NULL_COL[t] for t in TIERS]])
+        rec["null"].append(mat[:, [NULL_COL[t] for t in NULL_TIERS]])
         _bl = layer.get("baselines")
         _id = float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan")
         rec["ident"].append(_id)
@@ -545,7 +651,7 @@ def load_baselines() -> dict:
             entry = {
                 "null_lo": np.nan,
                 "null_hi": np.nan,
-                "null_per_tier": {int(t): np.nan for t in TIERS},
+                "null_per_tier": {int(t): np.nan for t in NULL_TIERS},
                 "null_max_single_draw": np.nan,
                 "a_ctx": float(np.median([v[0] for v in _ab])) if _ab else np.nan,
                 "a_ans": float(np.median([v[1] for v in _ab])) if _ab else np.nan,
@@ -565,7 +671,7 @@ def load_baselines() -> dict:
         out[pi] = {
             "null_lo": float(per_tier.min()),
             "null_hi": float(per_tier.max()),
-            "null_per_tier": {int(t): float(v) for t, v in zip(TIERS, per_tier)},
+            "null_per_tier": {int(t): float(v) for t, v in zip(NULL_TIERS, per_tier)},
             "null_max_single_draw": float(max(m.max() for m in rec["null"])),
             "identity_bias": float(np.median(rec["ident"])),
             "identity_bias_range": [float(min(rec["ident"])), float(max(rec["ident"]))],
@@ -679,7 +785,7 @@ def collect() -> dict:
                 # never measured for them. Record the absence and let the
                 # drawing code leave a gap. Any OTHER empty cell set is a reaped
                 # cache and still fails loud.
-                if (src, tgt) in SELFMAP_PAIRS and tier in (1, 2, 3, 4, 5):
+                if (src, tgt) in SELFMAP_PAIRS and tier in (1, 2, 3, 4, 5, INPUT_ROT_TIER):
                     data[(pi, tier)] = []
                     continue
                 raise RuntimeError(
@@ -1059,15 +1165,15 @@ def _panel_baselines(fmt: str, corpus: str) -> tuple[dict[int, np.ndarray], np.n
             mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
             _bl = layer.get("baselines")
             _id = float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan")
-            found[f"{src}__{tgt}"] = (mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0), _id)
+            found[f"{src}__{tgt}"] = (mat[:, [NULL_COL[t] for t in NULL_TIERS]].mean(axis=0), _id)
             if _bl:
                 by_target.setdefault(tgt, []).append(_id)
-    per_tier: dict[int, list[float]] = {t: [] for t in TIERS}
+    per_tier: dict[int, list[float]] = {t: [] for t in NULL_TIERS}
     identv: list[float] = []
     borrowed: list[bool] = []
     for src, tgt in PAIRS:
         v = found.get(f"{src}__{tgt}")
-        for i, t in enumerate(TIERS):
+        for i, t in enumerate(NULL_TIERS):
             per_tier[t].append(np.nan if v is None else float(v[0][i]))
         if v is not None:
             identv.append(v[1])
@@ -1469,7 +1575,9 @@ def fig_trained_on(D: dict) -> Path:
         1,
         2,
         width_ratios=[1.45, 1.0],
-        wspace=0.20,
+        # 0.20 -> 0.33: the "5c: rotation + bias, context side" y-tick label is
+        # longer than every prior arm label and crossed into the left panel.
+        wspace=0.33,
         left=0.052,
         right=0.985,
         top=0.845,
@@ -1786,6 +1894,51 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
             ),
         },
         "tier_labels": {str(t): TIER_LABEL[t] for t in TIERS},
+        "input_rot_tier": (
+            {
+                "definition": (
+                    "t5c = W_s( R_ctx x_t ): orthogonal Procrustes R_ctx fit on the pair's "
+                    "shared TRAIN rows aligning TARGET context vectors into the SOURCE context "
+                    "frame ((x_t - mu_t) R + mu_s; issue825_map_alignment._orth_fit(Xt_tr, "
+                    "Xs_tr), no scale), then the FROZEN per-fold source map W_s applied to the "
+                    "aligned held-out target contexts. The rotation-constrained sibling of t6 "
+                    "(full ridge context remap) and the input-side sibling of t5 (rotation + "
+                    "bias fit AFTER W_s on the output side). Closed-form SVD at d=4096; same "
+                    "fold-local pooled-OOF R2 accumulator, folds and rows as every other tier."
+                ),
+                "source": (
+                    "eval_results/issue_1336/rigid/metric_ladder/pair_*.json — the "
+                    "rigid-decomposition re-run of the full ladder battery + the "
+                    "ORTH_TIER_NAMES block (issue1336_metric_ladder.py), 4x cpu-bigmem pods, "
+                    "finished 2026-08-13, harvested commit 70162cb912"
+                ),
+                "basis_note": (
+                    "the rigid re-run reproduces the plotted round-3 within/t0/t5/t6/t7 to "
+                    "<=1e-12 on spot-checked cells (identical rows, folds, estimator), so the "
+                    "t5c series shares this figure's axis basis exactly; t5c_r2 row values "
+                    "come from the rigid harvest while every other tier column keeps its "
+                    "round-3 / round-B source"
+                ),
+                "coverage": (
+                    "the 7 round-3 forward pairs x 8 surfaces; the 3 round-B pairs (sft->rlvr, "
+                    "sft->rlvr_long, rlvr->rlvr_long) never ran orth tiers and render as line "
+                    "gaps — the tiers-1-5 contract. Layer 30 only (the ladder gates orth tiers "
+                    "to the full-tier layer)."
+                ),
+                "ci_note": (
+                    "t5c intervals are a DIRECT 1,000-draw prompt-level bootstrap on R2 "
+                    "(orth_tiers.t5c.raw.r2_bootstrap), unlike the t0..t8 gap-CI mapping; both "
+                    "are R2-unit intervals from the same shared bootstrap draws"
+                ),
+                "scaled_variant": (
+                    "t5cs (the s_fwd-scaled rotation from the same SVD) is banked in "
+                    "eval_results/issue_1336/input_rot_tier/inputrot_tier_summary.json and is "
+                    "deliberately NOT drawn on any figure"
+                ),
+            }
+            if INPUT_ROT_TIER in TIERS
+            else None
+        ),
         "cross_map_definition": xmap.CROSS_MAP_DEFINITION
         if hasattr(xmap, "CROSS_MAP_DEFINITION")
         else (
@@ -1915,8 +2068,78 @@ def main() -> None:
 
     figs = [fig_aggregate(D), fig_percorpus(D), fig_trained_on(D), fig_controlled_gap(D)]
     meta = write_meta(D, figs)
-    for p in figs + [meta]:
+    outputs = figs + [meta]
+    if INPUT_ROT_TIER in TIERS:
+        outputs.append(write_inputrot_summary())
+    for p in outputs:
         print("wrote", p)
+
+
+def _git_meta() -> dict:
+    """Commit + dirty flag of the plotter's own tree (this branch predates the
+    orchestrate.provenance helper, so the two fields are captured directly)."""
+    import subprocess
+
+    here = Path(__file__).resolve().parent
+    try:
+        sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=here, capture_output=True, text=True, check=True
+        ).stdout.strip()
+        dirty = bool(
+            subprocess.run(
+                ["git", "status", "--porcelain", "--untracked-files=no"],
+                cwd=here,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        )
+        return {"git_commit": sha, "git_dirty": dirty}
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return {"git_commit": "unavailable-no-git-checkout", "git_dirty": None}
+
+
+def write_inputrot_summary() -> Path:
+    """Bank the t5c/t5cs reads + provenance to eval_results/ (the figures draw t5c only)."""
+    rows = []
+    for (pair, fmt, corpus), b in sorted(INPUTROT_BLOCKS.items()):
+        rows.append(
+            {
+                "pair": pair,
+                "format": fmt,
+                "corpus": corpus,
+                "degenerate": (fmt, corpus) in DEGENERATE,
+                "n_shared_rows": b["n_shared_rows"],
+                "within_r2": b["within_r2"],
+                "t5c": b["t5c"],
+                "t5cs": b["t5cs"],
+                "source_file": b["file"],
+            }
+        )
+    out_dir = REPO / "eval_results" / "issue_1336" / "input_rot_tier"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "issue": 1336,
+        "layer": LAYER,
+        "estimator": (
+            "closed-form orthogonal Procrustes SVD at d=4096 "
+            "(issue825_map_alignment._orth_fit(Xt_train, Xs_train)); alignment = "
+            "(x_t - mu_t) R + mu_s (t5cs: s_fwd-scaled), then the frozen per-fold source "
+            "map W_s; fold-local pooled OOF R2, seed-0 5-fold, fp64 — computed by "
+            "issue1336_metric_ladder.py's ORTH_TIER_NAMES block in the rigid-decomposition "
+            "re-run (2026-08-13)"
+        ),
+        "n_train_note": (
+            "per-fold n_train 5.9k-12.4k > d=4096 on every surface except gsm8k_test1319 "
+            "(n_train ~1034 < d — estimator-degenerate, excluded from every aggregate)"
+        ),
+        "n_cells": len(rows),
+        "rows": rows,
+        **_git_meta(),
+    }
+    out = out_dir / "inputrot_tier_summary.json"
+    out.write_text(json.dumps(payload, indent=1))
+    return out
 
 
 if __name__ == "__main__":
