@@ -83,3 +83,4 @@
 {"ts": "2026-08-17T16:40:52Z", "kind": "epm:progress", "version": 25, "by": "unknown", "note": "[long-phase-heartbeat] Run healthy (pid 3544096): issue1481_conpos_grid download 60,998/206,604 at 16:40Z (~13 units/s, on the ~3h projection). Handles unchanged.\n"}
 {"ts": "2026-08-17T17:20:51Z", "kind": "epm:progress", "version": 26, "by": "unknown", "note": "[long-phase-heartbeat] Run healthy (pid 3544096): issue1481_conpos_grid download 92,965/206,604 at 17:20Z. Handles unchanged.\n"}
 {"ts": "2026-08-17T18:00:52Z", "kind": "epm:progress", "version": 27, "by": "unknown", "note": "[long-phase-heartbeat] Run healthy (pid 3544096): issue1481_conpos_grid download 124,938/206,604 at 18:00Z (~60% done). Handles unchanged.\n"}
+{"ts": "2026-08-17T18:40:51Z", "kind": "epm:progress", "version": 28, "by": "unknown", "note": "[long-phase-heartbeat] Run healthy (pid 3544096): issue1481_conpos_grid download 155,470/206,604 at 18:40Z (~75%). Handles unchanged.\n"}
