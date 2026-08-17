@@ -12,7 +12,9 @@ import argparse
 import errno
 import importlib.util
 import os
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -298,3 +300,95 @@ def test_probe_ebadf_never_masks_edquot(tmp_path, monkeypatch):
     ok, _share_free_gb, detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
     assert ok is False
     assert "QUOTA EXHAUSTED" in detail
+
+
+# ── #2346: leaked-survivor sweep at probe entry (mirror of the preflight sweep) ─
+#
+# An INTERRUPTED probe (SIGTERM/SIGKILL mid-fallocate) leaks its allocation —
+# `finally:` never runs under those signals (#2329). `probe_quota_headroom`
+# sweeps dead-pid `.pod_disk_guard_probe.<pid>.<uuid8>.tmp` survivors older
+# than the age gate at entry; live pids, fresh files (#1979 cross-node
+# siblings), and malformed names are kept, and a sweep error never fails the
+# probe. Siblings of tests/test_preflight_disk.py's #2346 section.
+
+
+def _plant_guard_survivor(probe_dir: Path, pid: int, *, age_s: float = 7200.0) -> Path:
+    """Plant a fake leaked guard probe file with the given pid and mtime age."""
+    p = probe_dir / f".pod_disk_guard_probe.{pid}.deadbeef.tmp"
+    p.write_bytes(b"x")
+    t = time.time() - age_s
+    os.utime(p, (t, t))
+    return p
+
+
+def _dead_pid() -> int:
+    """Return a pid guaranteed dead on this host (spawned + reaped)."""
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    return proc.pid
+
+
+def _noop_fallocate(monkeypatch):
+    """Skip the real (1 GiB) allocation; the sweep runs before fallocate."""
+    monkeypatch.setattr(guard.os, "posix_fallocate", lambda fd, offset, length: None)
+
+
+def test_guard_sweep_removes_dead_pid_old_survivor(tmp_path, monkeypatch):
+    """A dead-pid survivor older than the age gate is swept at probe entry."""
+    _noop_fallocate(monkeypatch)
+    survivor = _plant_guard_survivor(tmp_path, _dead_pid(), age_s=7200.0)
+    ok, _free, _detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert ok is True
+    assert not survivor.exists()
+    assert list(tmp_path.iterdir()) == []  # probe's own file cleaned too
+
+
+def test_guard_sweep_keeps_live_pid_file_regardless_of_age(tmp_path, monkeypatch):
+    """A file embedding a LIVE pid is never swept, however old its mtime."""
+    _noop_fallocate(monkeypatch)
+    survivor = _plant_guard_survivor(tmp_path, os.getpid(), age_s=10 * 3600.0)
+    ok, _free, _detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert ok is True
+    assert survivor.exists()
+
+
+def test_guard_sweep_keeps_dead_pid_fresh_file(tmp_path, monkeypatch):
+    """A FRESH file is kept even when its pid reads dead on this host (#1979)."""
+    _noop_fallocate(monkeypatch)
+    survivor = _plant_guard_survivor(tmp_path, _dead_pid(), age_s=60.0)
+    ok, _free, _detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert ok is True
+    assert survivor.exists()
+
+
+def test_guard_sweep_leaves_malformed_and_foreign_names(tmp_path, monkeypatch):
+    """Malformed / legacy / foreign / out-of-range-pid names are untouched."""
+    _noop_fallocate(monkeypatch)
+    keep = [
+        tmp_path / ".pod_disk_guard_probe.tmp",  # legacy fixed name (pre-#1983)
+        tmp_path / ".pod_disk_guard_probe.notapid.deadbeef.tmp",  # non-digit pid
+        tmp_path / ".pod_disk_guard_probe.123.zzzzzzzz.tmp",  # non-hex uuid8
+        tmp_path / f".pod_disk_guard_probe.{10**19}.deadbeef.tmp",  # pid > C int
+        tmp_path / "model.safetensors",  # ordinary file
+    ]
+    old = time.time() - 7200
+    for p in keep:
+        p.write_bytes(b"x")
+        os.utime(p, (old, old))
+    ok, _free, _detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert ok is True
+    for p in keep:
+        assert p.exists(), p.name
+
+
+def test_guard_sweep_error_never_fails_probe(tmp_path, monkeypatch):
+    """A scandir failure inside the sweep leaves the probe verdict intact."""
+    _noop_fallocate(monkeypatch)
+
+    def boom(path, *args, **kwargs):
+        raise OSError(errno.EIO, "io error")
+
+    monkeypatch.setattr(guard.os, "scandir", boom)
+    ok, _free, detail = guard.probe_quota_headroom(tmp_path, min_gb=1)
+    assert ok is True
+    assert "OK: reserved" in detail
