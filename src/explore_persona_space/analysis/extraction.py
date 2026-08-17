@@ -156,6 +156,15 @@ def _resolve_decoder_blocks(model):
         blocks = getattr(inner, "layers", None)
         if blocks is not None:
             return blocks, getattr(inner, "embed_tokens", None), depth
+        # Multimodal wrappers (Qwen3.5 `Qwen3_5ForConditionalGeneration`) nest
+        # the text decoder under `.language_model` (#2333, plan A9). Additive:
+        # checked only when this level has no `.layers`, so every existing
+        # text-only layout resolves exactly as before.
+        lang = getattr(inner, "language_model", None)
+        if lang is not None:
+            blocks = getattr(lang, "layers", None)
+            if blocks is not None:
+                return blocks, getattr(lang, "embed_tokens", None), depth
     return None, None, 0
 
 
