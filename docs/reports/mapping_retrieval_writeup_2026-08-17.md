@@ -73,7 +73,7 @@ The 15 residual failures (union over the two CSLS conventions, covered rows) are
 
 **Differentiation metrics** (how well the map separates, beyond binary acc@1): pairwise AUC — the probability the true answer outranks a random distractor — is ≥0.9996 in every convention (≥0.99999 whitened). Successes win by ~7–8× more margin than failures lose by (whitened-cosine medians +0.13 vs −0.03), and draw-averaging widens winning margins (+0.13→+0.17) as well as flipping failures. MRR (mean of 1/rank): 0.860 raw → 0.996 at the clean operating point.
 
-**Worst-discriminated contexts** (bottom-50 by margin — 11 failures + 39 barely-won): a *different population* from the old raw-euclidean failure profile. Refusal/NSFW enrichment is gone (shares match the pool); what remains poorly separated is Chinese-language contexts (28% vs 12% pool), coding (30% vs 17%), and shallow 2-turn exchanges (56% vs 42%). Russian is absent from the tail (2% vs 9% pool).
+**Worst-discriminated contexts** (bottom-50 by margin — 11 failures + 39 barely-won): a *different population* from the old raw-euclidean failure profile. Refusal/NSFW enrichment is gone (shares match the pool); what remains poorly separated is Chinese-language contexts (28% vs 12% pool), coding (30% vs 17%), and shallow 2-turn exchanges (56% vs 42%). Russian is strongly under-represented (1/50 = 2% vs 8.9% pool).
 
 ## 8. In flight / open
 
