@@ -10311,8 +10311,8 @@
     "2334": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2334",
-      "status": "approved",
+      "path": "tasks/running/2334",
+      "status": "running",
       "title": "Register eval_results/issue_1739 cone in tests/sparse_cones.txt (deterministic sparse-worktree test FAIL, #671 class)"
     },
     "234": {
