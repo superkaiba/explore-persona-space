@@ -1,6 +1,7 @@
 ---
-title: 'Matched-data map R2: Qwen2.5-7B-Instruct vs Qwen3.5-9B on LMSYS on-policy
-  generations at 5k/10k'
+title: Qwen2.5-7B-Instruct's context-to-answer map outscores Qwen3.5-9B's at matched
+  LMSYS data, an edge from its sharp mid-stack peak rather than a uniform deficit
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-16T18:05:01Z'
