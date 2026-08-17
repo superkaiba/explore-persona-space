@@ -9,13 +9,15 @@ stranding the pointer (family: test_issue_skill_forensics_ingest_pointer.py).
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 RULE_MD = REPO / ".claude" / "rules" / "trigger-dense-review.md"
 
 
 def test_orchestrator_turn_discipline_pointer_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     # .index() raises ValueError on a missing anchor — a hard fail, never a skip.
     idx = text.index("Guard-surface round: orchestrator turn discipline (#1563)")
     window = text[idx : idx + 600]

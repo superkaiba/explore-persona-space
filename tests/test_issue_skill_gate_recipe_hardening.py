@@ -59,11 +59,13 @@ import re
 import subprocess
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude/skills/issue/SKILL.md"
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _span(text: str, start_anchor: str, end_anchor: str) -> str:
