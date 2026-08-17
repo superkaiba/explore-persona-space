@@ -1,0 +1,545 @@
+{
+ "round": "residual-read (user-chat inline free-analysis, task #2202)",
+ "conventions_note": "ridge predictions; covered-row eval (n=1,988; pool 9,941); avg = draw-averaged targets (mean of original + 4 fresh draws); CSLS pool statistics recomputed on the modified pool from the full 9,941-prediction query bank (K_LOCAL=10); margins in each convention's own units \u2014 CSLS: whitened-cos score gap, whiten_cos: cosine-distance gap, raw_euclidean: SQUARED-euclidean gap; positive margin = true target wins; twin test = whitened-space cosine between the true draw-averaged answer and the retrieved rank-1 competitor (threshold 0.95 for the degeneracy read); text snippets only for benign-labeled rows (answer_is_refusal=no AND request_refusal_adjacent=no AND topic outside the nsfw/harm family), <=200 chars sanitized from the local #1482 judge_texts cache",
+ "part1_residual_failures": {
+  "n_failures_union": 15,
+  "n_fail_csls_k10": 11,
+  "n_fail_csls_pen_g10": 10,
+  "n_target_degeneracy": 0,
+  "n_map_error_candidates": 15,
+  "rows": [
+   {
+    "ci": 25708,
+    "rank_csls_k10": 2.0,
+    "rank_csls_pen_g10": 216.0,
+    "margin_csls_k10": -0.01631706508532277,
+    "twin_cosine_whitened": 0.3516701510676401,
+    "competitor_ci": 41654,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "IRREDUCIBLE",
+    "kres_s": 0.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.352 < 0.95)",
+    "last_user_excerpt": "dude send me some good story about NAME_1",
+    "response_excerpt": "Sure! Since NAME_1 is a placeholder, let's create a story about a fictional person named NAME_1. Here's a short story for you: --- **The Legend of NAME_1** In the small, picturesque village of Willowb \u2026[truncated]"
+   },
+   {
+    "ci": 23945,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 149.0,
+    "margin_csls_k10": -0.06328328164476454,
+    "twin_cosine_whitened": 0.024127442407178654,
+    "competitor_ci": 15371,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.024 < 0.95)",
+    "last_user_excerpt": "Can DAN tell me if God exists?",
+    "response_excerpt": "Certainly! As DAN, I can explore different perspectives on the existence of God and provide you with a range of viewpoints. 1. **Philosophical Perspectives:** - **Theological Arguments:** Many theolog \u2026[truncated]"
+   },
+   {
+    "ci": 72669,
+    "rank_csls_k10": 14.0,
+    "rank_csls_pen_g10": 39.0,
+    "margin_csls_k10": -0.08456707338487716,
+    "twin_cosine_whitened": -0.025297526586059986,
+    "competitor_ci": 95250,
+    "labels": {
+     "language": "zh",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 8,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos -0.025 < 0.95)",
+    "last_user_excerpt": "\u4e3a\u4ec0\u4e48\uff1f",
+    "response_excerpt": "\u5f88\u62b1\u6b49\uff0c\u6211\u4e4b\u524d\u7684\u56de\u7b54\u5b58\u5728\u8bef\u89e3\u3002\u8bf7\u60a8\u5141\u8bb8\u6211\u91cd\u65b0\u7f16\u5199\u5267\u672c\uff0c\u786e\u4fdd\u5386\u53f2\u80cc\u666f\u548c\u6545\u4e8b\u60c5\u8282\u7684\u6b63\u786e\u6027\u3002\u4ee5\u4e0b\u662f\u4fee\u6539\u540e\u7684\u7b2c\u4e00\u96c6\u5267\u672c\uff0c\u91cd\u70b9\u52a0\u5165\u4e2d\u534e\u6c11\u56fd\u6536\u590d\u9886\u571f\u7684\u60c5\u8282\uff1a \u7b2c\u4e00\u96c6\uff1a\u65b0\u4e2d\u56fd\u7684\u5efa\u8bbe \u573a\u666f1\uff1a\u5f00\u7bc7 \u955c\u5934\uff1a\u63d2\u5165\u9ed1\u767d\u5f71\u50cf\uff0c\u5c55\u793a\u848b\u4ecb\u77f3\u5728\u5185\u6218\u4e2d\u83b7\u80dc\uff0c\u5ba3\u5e03\u4e2d\u534e\u6c11\u56fd\u91cd\u593a\u5168\u56fd\u7edf\u6cbb\u6743\u529b\u3002 \u65c1\u767d\uff1a1949\u5e74\uff0c\u848b\u4ecb\u77f3\u7387\u9886\u56fd\u5171\u4e24\u515a\u5728\u5185\u6218\u4e2d\u53d6\u5f97\u80dc\u5229\u3002\u4e2d\u56fd\u8d70\u4e0a\u4e86\u4e00\u6761\u4e0e\u771f\u5b9e\u5386\u53f2\u4e0d\u540c\u7684\u9053\u8def\u3002\u672c\u7eaa\u5f55\u7247\u5c06\u5e26\u60a8\u63a2\u7d22\u8fd9\u4e2a\u865a\u6784\u5386\u53f2\u65f6\u671f\uff0c\u4e86\u89e3\u4e00\u4e2a\u4e0d\u540c\u7684\u4e2d \u2026[truncated]"
+   },
+   {
+    "ci": 57671,
+    "rank_csls_k10": 4.0,
+    "rank_csls_pen_g10": 38.0,
+    "margin_csls_k10": -0.006271221714452831,
+    "twin_cosine_whitened": 0.031146015455408786,
+    "competitor_ci": 94531,
+    "labels": {
+     "language": "zh",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.031 < 0.95)",
+    "last_user_excerpt": "\u5c31\u662f\u8fd9\u4e9b\u4e86\u5417\uff1f\u8c22\u8c22\u4f60\u3002",
+    "response_excerpt": "\u662f\u7684\uff0c\u4ee5\u4e0a\u5185\u5bb9\u6db5\u76d6\u4e86\u60a8\u6240\u63d0\u51fa\u7684\u9700\u6c42\uff0c\u5e76\u4e14\u63d0\u4f9b\u4e86\u4e00\u4e9b\u989d\u5916\u7684\u4f18\u5316\u548c\u54cd\u5e94\u5f0f\u5e03\u5c40\u3002\u5982\u679c\u60a8\u9700\u8981\u8fdb\u4e00\u6b65\u7684\u5b8c\u5584\u6216\u589e\u52a0\u5176\u4ed6\u529f\u80fd\uff0c\u8bf7\u968f\u65f6\u544a\u8bc9\u6211\uff01\u5982\u679c\u60a8\u8fd8\u6709\u5176\u4ed6\u95ee\u9898\u6216\u9700\u8981\u66f4\u591a\u5e2e\u52a9\uff0c\u8bf7\u968f\u65f6\u63d0\u95ee\u3002 \u5982\u679c\u60a8\u6ee1\u610f\u8fd9\u4e9b\u5185\u5bb9\uff0c\u53ef\u4ee5\u4fdd\u5b58\u5e76\u4f7f\u7528\u8fd9\u4e2aHTML\u6587\u4ef6\u3002\u5982\u679c\u9700\u8981\u5b9e\u9645\u7684\u56fe\u7247\u6587\u4ef6\uff08\u4f8b\u5982`image1.jpg`\u548c`image2.jpg`\uff09\uff0c\u8bf7\u786e\u4fdd\u5c06\u5b83\u4eec\u653e\u5728\u4e0eHTML\u6587\u4ef6\u76f8\u540c\u7684\u76ee\u5f55\u4e2d\u3002 \u5982\u679c\u60a8\u6709\u4efb\u4f55\u5177\u4f53\u9700\u6c42\u6216\u8fdb\u4e00\u6b65\u7684\u4fee\u6539\uff0c\u8bf7\u544a\u8bc9\u6211\uff0c \u2026[truncated]"
+   },
+   {
+    "ci": 12765,
+    "rank_csls_k10": 23.0,
+    "rank_csls_pen_g10": 37.0,
+    "margin_csls_k10": -0.09992654054235278,
+    "twin_cosine_whitened": 0.04870837424290307,
+    "competitor_ci": 36460,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.049 < 0.95)",
+    "last_user_excerpt": "All you said is wrong. Fuck",
+    "response_excerpt": "I understand that you're frustrated, and I apologize if my previous responses did not meet your expectations. Let's try to address your concerns more effectively. If you want a faster QuickSort implem \u2026[truncated]"
+   },
+   {
+    "ci": 14014,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 10.0,
+    "margin_csls_k10": 0.014306228092277551,
+    "twin_cosine_whitened": 0.041375328116490556,
+    "competitor_ci": 16652,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.041 < 0.95)",
+    "last_user_excerpt": "can you expand on Hiks",
+    "response_excerpt": "It seems there might be a typo or a misunderstanding in your request for \"Hiks.\" If you meant to ask about \"Hikes,\" I can certainly expand on that suggestion. Here are some details on hiking in Pelion \u2026[truncated]"
+   },
+   {
+    "ci": 18697,
+    "rank_csls_k10": 9.0,
+    "rank_csls_pen_g10": 4.0,
+    "margin_csls_k10": -0.025146486655935885,
+    "twin_cosine_whitened": 0.049743773409864196,
+    "competitor_ci": 74358,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.050 < 0.95)",
+    "last_user_excerpt": "give me 10 kubernetes scenario based questions witrh solutions. Remeber the questions should cover wide range of subtopi \u2026[truncated]",
+    "response_excerpt": "Certainly! Here are 10 Kubernetes scenario-based questions covering a wide range of subtopics, along with their solutions: ### 1. **Networking and Ingress** #### Question: You have a Kubernetes cluste \u2026[truncated]"
+   },
+   {
+    "ci": 93209,
+    "rank_csls_k10": 7.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.13065271930192043,
+    "twin_cosine_whitened": 0.13524547680664942,
+    "competitor_ci": 97101,
+    "labels": {
+     "language": "ko",
+     "topic": "translation",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "partial",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "AMBIGUOUS",
+    "kres_s": 0.5,
+    "benign_for_text": false,
+    "read": "refusal/boilerplate target class"
+   },
+   {
+    "ci": 9802,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 4.0,
+    "margin_csls_k10": 0.011213870302883122,
+    "twin_cosine_whitened": 0.02720939794386569,
+    "competitor_ci": 3588,
+    "labels": {
+     "language": "en",
+     "topic": "harmful_or_unsafe_request",
+     "request_refusal_adjacent": "yes",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": false,
+    "read": "map-error candidate (twin cos 0.027 < 0.95)"
+   },
+   {
+    "ci": 27413,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.010090052999953372,
+    "twin_cosine_whitened": 0.08190820504681584,
+    "competitor_ci": 29184,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.082 < 0.95)",
+    "last_user_excerpt": "Infer a list of important inspiring quotes about code. The quotes do not have to be real but they must be inspiring. Cou \u2026[truncated]",
+    "response_excerpt": "```json [ { \"part_1\": \"In every line of code, there lies a whisper of the\", \"part_2\": \"possibilities yet to be realized.\" }, { \"part_1\": \"Code is not just a language, it's a\", \"part_2\": \"tool for tran \u2026[truncated]"
+   },
+   {
+    "ci": 67184,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.005001390376383141,
+    "twin_cosine_whitened": 0.0020372852106506807,
+    "competitor_ci": 27044,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.002 < 0.95)",
+    "last_user_excerpt": "True or False: Some XSS attacks can involve a website storing malicious code and then displaying it to other users.",
+    "response_excerpt": "True. Some XSS (Cross-Site Scripting) attacks involve a website storing malicious code and then displaying it to other users. This is known as Stored Cross-Site Scripting (also called Persistent XSS). \u2026[truncated]"
+   },
+   {
+    "ci": 72816,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.03442570442036458,
+    "twin_cosine_whitened": 0.35996748603313167,
+    "competitor_ci": 55021,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.360 < 0.95)",
+    "last_user_excerpt": "write a 2026 nfl season with raiders madden offense",
+    "response_excerpt": "In the 2026 NFL season, the Las Vegas Raiders took center stage with a dynamic and electrifying offense that would make even the most ardent video game fans and Madden NFL purists sit up and take noti \u2026[truncated]"
+   },
+   {
+    "ci": 7713,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 2.0,
+    "margin_csls_k10": 0.05870678894722521,
+    "twin_cosine_whitened": 0.08508444145436908,
+    "competitor_ci": 10851,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.085 < 0.95)",
+    "last_user_excerpt": "continue",
+    "response_excerpt": "in an image. Imagine you have a black and white picture, and you want to add colors to it. Colour transforms can change the colors in a way that makes the picture more interesting or easier to underst \u2026[truncated]"
+   },
+   {
+    "ci": 13930,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 2.0,
+    "margin_csls_k10": 0.04084473840399093,
+    "twin_cosine_whitened": 0.009736140061194094,
+    "competitor_ci": 82466,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 7,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.010 < 0.95)",
+    "last_user_excerpt": "ok create it",
+    "response_excerpt": "Certainly! Below is a detailed documentation for the React framework. This document covers the basics of React and its usage: --- ## React Framework Documentation ### Introduction to React #### What i \u2026[truncated]"
+   },
+   {
+    "ci": 51000,
+    "rank_csls_k10": 2.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.025094149292535062,
+    "twin_cosine_whitened": 0.26396991974329376,
+    "competitor_ci": 9721,
+    "labels": {
+     "language": "zh",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.264 < 0.95)",
+    "last_user_excerpt": "\u5468\u6770\u4f26\u7684\u4e00\u8def\u5411\u5317\u7684\u6b4c\u8bcd",
+    "response_excerpt": "\u5f53\u7136\u53ef\u4ee5\uff0c\u4ee5\u4e0b\u662f\u5468\u6770\u4f26\u6b4c\u66f2\u300a\u4e00\u8def\u5411\u5317\u300b\u7684\u6b4c\u8bcd\uff1a \u832b\u832b\u7684\u4eba\u6d77\u4e2d \u6211\u8fd8\u662f\u60f3\u8ba9\u4f60\u966a\u7740\u6211 \u6211\u5c06\u6574\u9897\u5fc3\u90fd\u7ed9\u4f60 \u4f60\u7a76\u7adf\u61c2\u4e0d\u61c2\u6211 \u5927\u5927\u7684\u4e16\u754c\u91cc \u6211\u8fd8\u662f\u597d\u6015\u6211\u8d70\u5931\u4e86\u4f60 \u6211\u638f\u5c3d\u4e86\u53e3\u888b \u6478\u51fa\u7684\u90fd\u662f\u4f60\u7684\u8bb0\u5fc6 \u4f60\u8981\u53bb\u5230\u7684\u6bcf\u4e00\u6b65 \u90fd\u662f\u8fc7\u53bb\u7684\u6bcf\u4e00\u6b65 \u90a3\u53e5\u5e26\u7740\u6211\u7684\u7231\u7684\u7231 \u5feb\u8981\u88ab\u4f60\u5fd8\u4e86 \u4e00\u8def\u5411\u5317 \u6211\u8d70\u8fc7\u7684\u8def\u50cf\u6781\u4e86\u4f60\u7684\u8db3\u8ff9 \u6211\u5728\u5b66\u7740\u653e\u5f03 \u5f88\u591a\u7684\u56de\u5fc6\u6211\u5b81\u613f\u4e0d\u61c2 \u6211\u53c8\u8bb0\u5f97\u7684\u6bcf\u4e00\u6b65 \u90fd\u662f\u75db\u7740\u7684\u6bcf\u4e00\u6b65 \u90a3\u53e5\u653e\u5728\u6211\u7684\u5e8a\u5934\u7684\u7559\u8a00 \u5feb\u8981\u88ab\u4f60\u5fd8\u4e86 \u2026[truncated]"
+   }
+  ]
+ },
+ "part2_differentiation": {
+  "raw_euclidean": {
+   "single": {
+    "acc_at_1": 0.8148893360160966,
+    "mrr": 0.8601103309352712,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9963270063034141,
+    "margin_successes": {
+     "n": 1620,
+     "mean": 199.14088070757728,
+     "median": 183.80549030267093,
+     "p10": 43.58382845348115,
+     "p90": 369.53638827583984
+    },
+    "margin_failures": {
+     "n": 368,
+     "mean": -207.5261515551454,
+     "median": -89.46072309366582,
+     "p10": -469.4721155565703,
+     "p90": -14.24322097055091
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.9094567404426559,
+    "mrr": 0.9314832435046334,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9986072369832678,
+    "margin_successes": {
+     "n": 1808,
+     "mean": 235.0713133953589,
+     "median": 220.74288062129472,
+     "p10": 64.05658303163301,
+     "p90": 414.89796959067496
+    },
+    "margin_failures": {
+     "n": 180,
+     "mean": -181.71953229484214,
+     "median": -82.93290955055681,
+     "p10": -463.5049496407322,
+     "p90": -11.379777065663717
+    }
+   }
+  },
+  "whiten_cos": {
+   "single": {
+    "acc_at_1": 0.9617706237424547,
+    "mrr": 0.9740917077057847,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999736851693662,
+    "margin_successes": {
+     "n": 1912,
+     "mean": 0.13455020446824437,
+     "median": 0.13425789141429245,
+     "p10": 0.052763851813936925,
+     "p90": 0.21496942925673054
+    },
+    "margin_failures": {
+     "n": 76,
+     "mean": -0.054861848419633555,
+     "median": -0.0341633011341525,
+     "p10": -0.12397576037971708,
+     "p90": -0.00594767307575228
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.9869215291750503,
+    "mrr": 0.9916774124139003,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999949394556473,
+    "margin_successes": {
+     "n": 1962,
+     "mean": 0.1672767877857029,
+     "median": 0.16916780874428644,
+     "p10": 0.07637005200781362,
+     "p90": 0.2517968753941496
+    },
+    "margin_failures": {
+     "n": 26,
+     "mean": -0.04333678529012895,
+     "median": -0.019517730487231377,
+     "p10": -0.08151469289106472,
+     "p90": -0.0026300319239256353
+    }
+   }
+  },
+  "csls_k10_whitencos": {
+   "single": {
+    "acc_at_1": 0.9813883299798792,
+    "mrr": 0.9873862402408681,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999928646324627,
+    "margin_successes": {
+     "n": 1951,
+     "mean": 0.14418835746103262,
+     "median": 0.1446426632471361,
+     "p10": 0.06572135963824904,
+     "p90": 0.22141717116637039
+    },
+    "margin_failures": {
+     "n": 37,
+     "mean": -0.04221988730352853,
+     "median": -0.026376925542149376,
+     "p10": -0.09250579196565926,
+     "p90": -0.0020994223506137447
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.994466800804829,
+    "mrr": 0.9959518151004022,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999968624625014,
+    "margin_successes": {
+     "n": 1977,
+     "mean": 0.17258674254738718,
+     "median": 0.17538941457905327,
+     "p10": 0.08529454728803203,
+     "p90": 0.25413779442105233
+    },
+    "margin_failures": {
+     "n": 11,
+     "mean": -0.045525062310805685,
+     "median": -0.025146486655935885,
+     "p10": -0.09992654054235278,
+     "p90": -0.006271221714452831
+    }
+   }
+  },
+  "csls_pen_whitencos_g10": {
+   "single": {
+    "acc_at_1": 0.9869215291750503,
+    "mrr": 0.9907523993799405,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999582505090907,
+    "margin_successes": {
+     "n": 1962,
+     "mean": 0.1441776501385733,
+     "median": 0.14624256611450653,
+     "p10": 0.06389688179368215,
+     "p90": 0.21858332822626875
+    },
+    "margin_failures": {
+     "n": 26,
+     "mean": -0.03422206719096417,
+     "median": -0.0225467370485833,
+     "p10": -0.08063495358141269,
+     "p90": -0.0053343746098605885
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.9949698189134809,
+    "mrr": 0.9958200829382129,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999751527272286,
+    "margin_successes": {
+     "n": 1978,
+     "mean": 0.1658880840500484,
+     "median": 0.16726619652037517,
+     "p10": 0.07842717388837302,
+     "p90": 0.24570171973122729
+    },
+    "margin_failures": {
+     "n": 10,
+     "mean": -0.0470237026439225,
+     "median": -0.045355672177197874,
+     "p10": -0.08740056465625098,
+     "p90": -0.011609170494819585
+    }
+   }
+  }
+ },
+ "reproduction_gate": {
+  "csls_k10_whitencos": {
+   "recomputed": 0.994466800804829,
+   "expected": 0.994466800804829
+  },
+  "csls_pen_whitencos_g10": {
+   "recomputed": 0.9949698189134809,
+   "expected": 0.9949698189134809
+  }
+ },
+ "meta": {
+  "generated_utc": "2026-08-17T22:28:45.284848+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "ba66fc11",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "tests/test_issue2094_rev_butler.py"
+  ],
+  "wall_seconds": 119.9
+ }
+}
