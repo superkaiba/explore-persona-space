@@ -8909,8 +8909,8 @@
     "2152": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2152",
-      "status": "planning",
+      "path": "tasks/approved/2152",
+      "status": "approved",
       "title": "Rule-26 judge pilot gate must exercise the same TRANSPORT as the wave it gates (sync pilot passed a batch wave that lost 34% of draws)"
     },
     "2153": {
