@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2338,
+  "highest_id": 2339,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10342,6 +10342,13 @@
       "path": "tasks/running/2338",
       "status": "running",
       "title": "gotchas.md: MooseFS preflight fallocate canary grinds ~9 min (slow-canary vs read-wedge discriminator) + resumed-pod uv sync flash-attn uninstall note"
+    },
+    "2339": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2339",
+      "status": "proposed",
+      "title": "judge_pilot_gate: unsatisfiable-config remedy text names escapes that cannot satisfy the verdict-time floor"
     },
     "234": {
       "has_clean_result": true,
