@@ -4475,9 +4475,13 @@ def _gate0b_check() -> int:
     tiny = _shrink_config(AutoConfig.from_pretrained(MODEL_ID), 64, N_MODEL_LAYERS_FULL)
     torch.manual_seed(0)
     model = AutoModelForCausalLM.from_config(tiny)
-    n_blocks = len(_resolve_decoder_blocks(model))
+    # UNPACK: the helper returns (blocks, embed_tokens, depth) — a bare
+    # len() over the tuple is always 3 and can never satisfy this assert.
+    blocks, _embed, depth = _resolve_decoder_blocks(model)
+    n_blocks = 0 if blocks is None else len(blocks)
     assert n_blocks == N_MODEL_LAYERS_FULL, (
-        f"gate 0b: _resolve_decoder_blocks returned {n_blocks} blocks, need {N_MODEL_LAYERS_FULL}"
+        f"gate 0b: _resolve_decoder_blocks returned {n_blocks} blocks "
+        f"(depth={depth}), need {N_MODEL_LAYERS_FULL}"
     )
     print(
         f"[gate0b] OK transformers=={v} model_type={sorted(model_types)} "

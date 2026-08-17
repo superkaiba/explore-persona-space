@@ -230,3 +230,70 @@ def test_finite_or_none_maps_nan_and_inf_to_none():
     assert R._finite_or_none(float("nan")) is None
     assert R._finite_or_none(float("inf")) is None
     assert R._finite_or_none(-math.inf) is None
+
+
+# ── gate 0b: the block-count assert reads BLOCKS, not the return tuple ──
+
+
+class _Inner:
+    """Duck-types ``.layers`` for the purely-structural chain walk."""
+
+    def __init__(self, n: int) -> None:
+        self.layers = list(range(n))
+        self.embed_tokens = object()
+
+
+class _Stub:
+    def __init__(self, n: int) -> None:
+        self.model = _Inner(n)
+
+
+def test_resolve_decoder_blocks_returns_a_triple_not_the_block_list():
+    """The trap gate 0b fell into: the helper returns
+    ``(blocks, embed_tokens, depth)``, so ``len()`` over the RETURN VALUE is
+    always 3 — independent of how many decoder blocks the model has."""
+    from explore_persona_space.analysis.extraction import _resolve_decoder_blocks
+
+    ret = _resolve_decoder_blocks(_Stub(32))
+    assert len(ret) == 3, "helper contract changed — re-check every call site"
+    blocks, _embed, depth = ret
+    assert len(blocks) == 32 and depth == 1
+
+
+def test_gate0b_unpacks_resolve_decoder_blocks_before_counting():
+    """AST pin: ``_gate0b_check`` must tuple-unpack the helper and count the
+    BLOCKS. A bare ``len(_resolve_decoder_blocks(model))`` is always 3, so the
+    32-layer assert could never pass on any model (the gate self-blocked the
+    #2329 launch until this was fixed)."""
+    tree = ast.parse((SCRIPTS / "issue2329_run.py").read_text())
+    fn = next(
+        n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_gate0b_check"
+    )
+
+    def _is_resolve_call(node: ast.AST) -> bool:
+        return (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "_resolve_decoder_blocks"
+        )
+
+    bare_len = [
+        node.lineno
+        for node in ast.walk(fn)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "len"
+        and any(_is_resolve_call(a) for a in node.args)
+    ]
+    assert not bare_len, (
+        f"_gate0b_check: len() applied directly to _resolve_decoder_blocks(...) at L{bare_len} "
+        "— that counts the 3-tuple, not the decoder blocks"
+    )
+    unpacks = [
+        node
+        for node in ast.walk(fn)
+        if isinstance(node, ast.Assign)
+        and _is_resolve_call(node.value)
+        and any(isinstance(t, ast.Tuple) and len(t.elts) == 3 for t in node.targets)
+    ]
+    assert unpacks, "_gate0b_check: no 3-tuple unpack of _resolve_decoder_blocks(...)"
