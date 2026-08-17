@@ -862,6 +862,24 @@ Behaviours:
   line directly above the fence opener. Untagged fences, prose
   inline-code recipes, heredoc bodies, and compound-line quoted-text
   false-exemptions are NAMED residuals (see the check docstring).
+* ``--check-codex-concerns-persistence`` (also bundled into the no-flags
+  default run): pin the #2326 Codex concerns-persistence contract across
+  its four prose surfaces — the issue/SKILL.md "Codex concerns persistence
+  at verdict collection" subsection (region-anchored; must name the
+  forwarder ``persist_verdict_concerns.py``, carry BOTH collection
+  invocations, and keep the resume-recovery clause with its recovery
+  invocation + predicate-leading sentence; the file also carries the
+  resume-table preamble pointer and the 5c-ter empty-ledger literal), a
+  LINE-START non-sentinel ``CONCERN:: `` grammar row (a standalone
+  ``CONCERN:: none`` line alone does not satisfy it) + the
+  ``CONCERN:: none`` sentinel
+  inside both emitting Codex composers' verdict templates
+  (codex-code-reviewer.md, codex-clean-result-critic.md), and the
+  ``**Prior-concerns ledger:**`` visibility line in code-reviewer.md
+  Step 0.8 (incident #2321: a Codex verdict carried 8 "Concerns to
+  persist" items, zero were persisted, and the round-2 prior-concerns
+  gate walked an empty ledger; token-presence pins strengthened per the
+  round-1 ``durability-pin-token-presence-gaps`` concern).
 
 Exit codes:
 
@@ -12965,6 +12983,245 @@ def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token l
     return errors
 
 
+def _codex_concerns_skill_errors(skill: Path) -> list[str]:
+    """Surface (1) of ``check_codex_concerns_persistence_lens`` (#2326): the
+    issue/SKILL.md poster-duty subsection pins (split out to keep the parent
+    check under the C901 cap; the parent docstring carries the contract)."""
+    forwarder = "persist_verdict_concerns.py"
+    invocation = "persist_verdict_concerns.py <N> --file"
+    predicate_sentence = "every resume-table row whose PREDICATE includes"
+    preamble_literal = "Every row below whose PREDICATE includes an EXISTING current-round"
+    empty_ledger_literal = "concerns ledger: empty — nothing to walk"
+    heading = "**Codex concerns persistence at verdict collection"
+    recovery = "**Resume recovery (crash between marker post and persist"
+    errors: list[str] = []
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #2326 codex-concerns-persistence poster "
+            f"duty must live in issue/SKILL.md."
+        )
+        return errors
+    text = skill.read_text(encoding="utf-8")
+    idx = text.find(heading)
+    if idx == -1:
+        errors.append(
+            f"{skill}: missing the '{heading}' subsection (#2326) — "
+            f"without it the orchestrator never forwards Codex "
+            f"'Concerns to persist' rows to the ledger (incident #2321: "
+            f"8 emitted, 0 persisted, the round-2 gate walked an empty "
+            f"ledger)."
+        )
+        return errors
+    end = text.find("**5c. Apply ensemble decision rule.**", idx)
+    region = text[idx:end] if end != -1 else text[idx:]
+    if forwarder not in region:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer names the forwarder {forwarder!r} (#2326) — the "
+            f"blind-forward invocations must stay in the region."
+        )
+    rec_idx = region.find(recovery)
+    if rec_idx == -1:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer carries the '{recovery}' clause (#2326) — a "
+            f"crash between marker post and persist would reproduce "
+            f"the #2321 empty-ledger defect through the resume table."
+        )
+        collection = region
+    else:
+        collection = region[:rec_idx]
+        recovery_region = region[rec_idx:]
+        if invocation not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause carries no "
+                f"forwarder invocation ({invocation!r}) (#2326) — a "
+                f"heading-only recovery clause cannot re-run the "
+                f"persist at resume."
+            )
+        if predicate_sentence not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause no longer "
+                f"carries its predicate-leading sentence "
+                f"({predicate_sentence!r}) (#2326) — the recovery "
+                f"duty must stay anchored to the row PREDICATE (the "
+                f"one-twin-missing re-spawn rows included)."
+            )
+    if collection.count(invocation) < 2:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence COLLECTION "
+            f"sub-region carries {collection.count(invocation)} "
+            f"forwarder invocation(s) ({invocation!r}); the contract "
+            f"requires BOTH the pre-post validate gate and the "
+            f"post-post persist (#2326)."
+        )
+    if preamble_literal not in text:
+        errors.append(
+            f"{skill}: missing the resume-table preamble pointer "
+            f"({preamble_literal!r}) (#2326) — resume rows would "
+            f"advance past the recovery step (the crash-seam replay "
+            f"of the #2321 empty-ledger defect)."
+        )
+    if empty_ledger_literal not in text:
+        errors.append(
+            f"{skill}: missing the Step 5c-ter empty-ledger record "
+            f"literal ({empty_ledger_literal!r}) (#2326) — an empty "
+            f"ledger walk would leave no visible round record."
+        )
+    return errors
+
+
+def _codex_concerns_composer_errors(composer: Path, start_tag: str, end_tag: str) -> list[str]:
+    """Surfaces (2)/(3) of ``check_codex_concerns_persistence_lens`` (#2326):
+    the emitting composer's verdict-template pins — a LINE-START
+    NON-SENTINEL ``CONCERN:: `` grammar row (a standalone ``CONCERN:: none``
+    line does not satisfy it — the round-2 sentinel-only alias) + the
+    ``CONCERN:: none`` empty-set sentinel."""
+    row_token = "CONCERN:: "
+    none_sentinel = "CONCERN:: none"
+    errors: list[str] = []
+    if not composer.is_file():
+        errors.append(
+            f"{composer}: missing — the #2326 CONCERN:: row grammar must "
+            f"live in the composer's verdict template."
+        )
+        return errors
+    text = composer.read_text(encoding="utf-8")
+    start_match = re.search(rf"(?m)^{re.escape(start_tag)}", text)
+    if start_match is None:
+        errors.append(
+            f"{composer}: no line-start verdict-template start tag "
+            f"{start_tag!r} (#2326) — cannot anchor the template region."
+        )
+        return errors
+    end = text.find(end_tag, start_match.start())
+    region = text[start_match.start() : end] if end != -1 else text[start_match.start() :]
+    if re.search(rf"(?m)^{re.escape(row_token)}(?!none\b)", region) is None:
+        errors.append(
+            f"{composer}: the verdict-template region no longer carries "
+            f"a LINE-START {row_token!r} row grammar (#2326) — a "
+            f"mid-prose token mention (the containment clause) is not a "
+            f"template row, and a sentinel-only region (a standalone "
+            f"{none_sentinel!r} line as the sole line-start token, the "
+            f"#2326 round-2 alias) is not a grammar row either — Codex "
+            f"would emit prose-only concerns the blind forwarder cannot "
+            f"persist (the #2321 shape)."
+        )
+    if none_sentinel not in region:
+        errors.append(
+            f"{composer}: the verdict-template region no longer names "
+            f"the empty-set sentinel row {none_sentinel!r} (#2326) — "
+            f"Codex would have no machine shape for 'nothing to "
+            f"persist', and contract sites would exit 3 on every clean "
+            f"round."
+        )
+    return errors
+
+
+def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2326 Codex concerns-persistence contract is absent from
+    ANY of its four surfaces.
+
+    Incident #2321 (2026-08-16): a round-1 Codex code-review verdict carried
+    a "Concerns to persist" section with 8 items; NONE was persisted via
+    ``raise-concern``, so the round-2 prior-concerns gate (code-reviewer.md
+    Step 0.8) and Step 5c-ter walked an EMPTY ledger. The fix (#2326) makes
+    the Codex composers emit machine-readable ``CONCERN:: `` rows inside the
+    verdict marker envelope and makes the ORCHESTRATOR blind-forward them
+    via ``scripts/persist_verdict_concerns.py`` at every marker-mode Codex
+    verdict collection AND at every resume-table row whose predicate
+    includes an existing current-round codex marker. This check pins the
+    contract across its surfaces, region-anchored, so a future refactor
+    cannot silently strip one (the #606 copy-list-omission class):
+
+    (1) issue/SKILL.md — the "Codex concerns persistence at verdict
+        collection" subsection (region: its bold heading up to the
+        ``**5c. Apply ensemble decision rule.**`` heading) names the
+        forwarder ``persist_verdict_concerns.py``, keeps the
+        ``**Resume recovery`` clause inside the region, carries BOTH
+        collection invocations (pre-post validate + post-post persist)
+        in the COLLECTION sub-region and one invocation plus the
+        predicate-leading sentence ("every resume-table row whose
+        PREDICATE includes ...") in the RECOVERY sub-region; the file
+        additionally carries the resume-table preamble pointer ("Every
+        row below whose PREDICATE includes an EXISTING current-round
+        ...") and the Step 5c-ter empty-ledger record literal
+        (``concerns ledger: empty — nothing to walk``) — the
+        token-presence strengthening persisted as
+        ``durability-pin-token-presence-gaps`` (#2326 round 1);
+    (2) codex-code-reviewer.md — a LINE-START NON-SENTINEL ``CONCERN:: ``
+        grammar row AND the ``CONCERN:: none`` empty-set sentinel inside
+        the verdict-template region (line-start marker tags; a mid-prose
+        token mention — the containment clause — does not satisfy the
+        row pin, and neither does a standalone line-start
+        ``CONCERN:: none`` as the region's only token — the round-2
+        sentinel-only alias, EXECUTED by the #2326 reconciler:
+        sentinel-only corpus → 0 errors pre-fix);
+    (3) codex-clean-result-critic.md — same, its template region;
+    (4) code-reviewer.md — the literal ``**Prior-concerns ledger:**``
+        visibility line inside the ``### Step 0.8`` section body.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+
+    # (1) issue/SKILL.md: the poster-duty subsection region.
+    errors.extend(_codex_concerns_skill_errors(root / ".claude" / "skills" / "issue" / "SKILL.md"))
+
+    # (2)/(3) the two emitting Codex composers: row grammar in the template.
+    for rel, start_tag, end_tag in (
+        (
+            "codex-code-reviewer.md",
+            "<!-- epm:code-review-codex",
+            "<!-- /epm:code-review-codex -->",
+        ),
+        (
+            "codex-clean-result-critic.md",
+            "<!-- epm:clean-result-critique-codex",
+            "<!-- /epm:clean-result-critique-codex -->",
+        ),
+    ):
+        errors.extend(
+            _codex_concerns_composer_errors(root / ".claude" / "agents" / rel, start_tag, end_tag)
+        )
+
+    # (4) code-reviewer.md: the Step 0.8 ledger-visibility line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    ledger_line = "**Prior-concerns ledger:**"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2326 prior-concerns ledger "
+            f"visibility line must live in code-reviewer.md Step 0.8."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.8")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.8' section (#2326) — "
+                f"the prior-concerns walk (and its ledger-visibility line) "
+                f"must stay in the Claude reviewer."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if ledger_line not in body:
+                errors.append(
+                    f"{reviewer}: the '### Step 0.8' section body no longer "
+                    f"names {ledger_line!r} (#2326) — an empty concerns "
+                    f"ledger would pass vacuously with no visible record."
+                )
+    return errors
+
+
 def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the #2136 verdict-round freshness anchor is absent from the
     /issue SKILL.md durable-verdict-first surface.
@@ -15032,9 +15289,12 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # --follow scripts/workflow_lint.py at commits before the #2325 trim (the
 # same history move #1718 made for the agent-spec caps).
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 982,587 B @ #2325 2026-08-16; corridor-max
-    # ((measured+2_800)//100)*100. Prior: 983_400; chronicle: git log.
-    "issue/SKILL.md": 985_300,
+    # measured 989,603 B @ #2326 2026-08-16 merge of origin/main
+    # (c2cf24e5e2, the #2325-trimmed 982,587 B SKILL.md) into issue-2326
+    # (+7,016 B: the concerns-persistence additions); corridor-max
+    # ((measured+2_800)//100)*100 -> headroom 2,797 B. Prior: 985_300
+    # (#2325 main) / 989_650 (branch pre-merge); chronicle: git log.
+    "issue/SKILL.md": 992_400,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
@@ -16870,6 +17130,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
@@ -16981,6 +17242,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
@@ -17749,6 +18011,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "implementation round). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-codex-concerns-persistence",
+        action="store_true",
+        help="FAIL if the #2326 Codex concerns-persistence contract is "
+        "absent from any of its four surfaces: the issue/SKILL.md 'Codex "
+        "concerns persistence at verdict collection' subsection (both "
+        "collection invocations + resume-recovery clause with its recovery "
+        "invocation and predicate-leading sentence, plus the resume-table "
+        "preamble pointer and 5c-ter empty-ledger literal), a line-start "
+        "non-sentinel CONCERN:: grammar row + the CONCERN:: none sentinel in the "
+        "codex-code-reviewer.md and codex-clean-result-critic.md "
+        "verdict templates, and the Prior-concerns-ledger visibility line "
+        "in code-reviewer.md Step 0.8 (incident #2321: 8 emitted concerns, "
+        "0 persisted, an empty ledger walked vacuously at round 2). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-verdict-round-anchor",
         action="store_true",
         help="FAIL if the #2136 verdict-round freshness anchor is absent "
@@ -18351,6 +18629,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_codex_concerns_persistence
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -18516,6 +18795,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_codex_concerns_persistence or no_flags:
+        errors.extend(check_codex_concerns_persistence_lens())
     if args.check_verdict_round_anchor or no_flags:
         errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:

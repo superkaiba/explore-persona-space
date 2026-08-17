@@ -348,6 +348,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # data change or any workflow_lint.py edit re-runs the live-tree PASS
     # + threshold-branch coverage.
     "tests/test_workflow_lint_agent_spec_size.py",
+    # NEW (#2326) — workflow_lint --check-codex-concerns-persistence +
+    # no-flags bundling (the Codex "Concerns to persist" -> raise-concern
+    # blind-forwarding contract's four prose surfaces; incident #2321).
+    "tests/test_workflow_lint_codex_concerns_persistence.py",
     "tests/test_workflow_lint_dotenv_check.py",
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
@@ -579,6 +583,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_realized_rows_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
+    # NEW (#2326) — scripts/persist_verdict_concerns.py forwarder semantics
+    # (all-or-nothing validation, require-block exit 3, idempotent replay,
+    # note->$MB resume-recovery extraction, stdout content discipline).
+    "tests/test_persist_verdict_concerns.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
     # NEW (#2015) — repo-root uncommitted-state (pre-commit stash race) prose

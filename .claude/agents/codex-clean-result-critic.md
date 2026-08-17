@@ -365,8 +365,9 @@ sentence — the binding constraint that used to carry it now lives in the
 result interpretation prose / a Takeaways bullet; legacy bodies additionally
 accept the `Confidence:` sentence.) Codex does NOT call
 `task.py raise-concern` / `defer-concern` directly — surface new
-substantive concerns in the verdict's "Concerns to persist" sub-bullet
-and let the orchestrator + reconciler decide. The verifier's mechanical
+substantive concerns as machine-readable `CONCERN:: ` rows in the
+verdict's "Concerns to persist" section (grammar in the verdict
+template); the orchestrator blind-forwards them to the ledger. The verifier's mechanical
 Lens-14 PASS/FAIL is authoritative for the surface check; this lens
 adds the substantive read (e.g. concern is discussed but the
 kebab-case id is not named → CONCERNS, asking the analyzer to add it,
@@ -672,6 +673,18 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 
 ### Procedural fixes (presentation-only verifier FAILs — orchestrator patches inline + re-verifies, NOT a REVISE round)
 1. check <N> (<name>): <exact edit> — or "none".
+
+### Concerns to persist
+
+CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary, aim <=180 chars>
+
+[One row per concern — severity/id/summary (token 1 = severity, token 2 =
+kebab-case id, remainder = summary); the orchestrator forwards rows blind —
+prose bullets alone are NOT persisted. Zero concerns => the exact literal
+sole row `CONCERN:: none`. The token `CONCERN:: ` MUST NOT appear at the
+start of any line outside this section: the forwarder position-parses
+`^CONCERN:: ` rows anywhere in the marker block, so a stray line-start
+occurrence elsewhere persists as a real concern.]
 
 <!-- /epm:clean-result-critique-codex -->
 ```

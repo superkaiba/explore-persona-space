@@ -1,6 +1,6 @@
 ---
 name: missing-impl-marker probe checklist
-description: Step 5 compose can be dispatched before the implementer posts epm:results/epm:experiment-implementation — run the 4-probe checklist before failing loud, and make the epm:failure note carry the remedy + verified-good compose inputs
+description: Step 5 compose can be dispatched before the implementer posts epm:results/epm:experiment-implementation — run the 5-probe checklist (incl. the #2015 stash-race rescue patch) before failing loud, and make the epm:failure note carry the remedy + verified-good compose inputs
 metadata:
   type: feedback
 ---
@@ -28,6 +28,25 @@ yet evidence of genuine absence (hit live on #2147 r1, 2026-08-16):
 4. **Race re-probe with `date -u`** — the dispatch often lands minutes after
    the implementer finishes; re-run the prefix probe immediately before
    posting `epm:failure` so a marker landing mid-compose is caught.
+5. **Stash-race rescue patch (#2325 r2, 2026-08-16)** — when the brief CITES a
+   marker version absent from canonical events.jsonl, check
+   `~/.task-workflow/deferred-commits.jsonl` for a matching `post_event` row
+   (index.lock `CalledProcessError`) and the `~/.cache/pre-commit/patch*` file
+   whose mtime brackets it. The #2015 pre-commit stash race can DESTROY a
+   posted append (working tree == HEAD, row gone, file mtime == the deferral
+   time; #2325's `epm:results` v3 was lost this way while sibling #2147's v2
+   survived the same lock storm). Recovery: extract the `+`-prefixed JSONL
+   line from the patch, strip the `+`, jq-validate kind/version/note, verify
+   the note is complete (expected sections present), then INLINE it in the
+   prompt with an explicit provenance note ("recovered from the #2015 rescue
+   patch; its absence from events.jsonl is a known incident — NEVER a
+   finding, never marker-shape, never data-access-blocked"). Do NOT restore
+   the row yourself (compose-only) — flag the restoration duty LOUDLY in the
+   return, naming the patch path + the extracted /tmp row file so the
+   orchestrator can re-append + commit before posting the verdict. This beats
+   failing loud: the implementer DID post, the body is byte-exact
+   recoverable, and a false-absence epm:failure burns the round the other
+   way.
 
 **Why:** failing loud is correct when absence is real (composing without the
 inlined body guarantees a false `marker-shape` FAIL — the #489 class), but a
