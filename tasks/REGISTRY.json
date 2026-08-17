@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2352,
+  "highest_id": 2353,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10455,6 +10455,13 @@
       "path": "tasks/running/2352",
       "status": "running",
       "title": "Step 5a spec-freshness: add tests/issue_skill_source.py to FAMILY_workflow (half-sync reds test_issue_skill_* collection)"
+    },
+    "2353": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2353",
+      "status": "proposed",
+      "title": "verify_task_body: WARN-level per-unit-or-exemption check for every v4 result section (multi-point aggregate figures escape the current single-aggregate-stat trigger)"
     },
     "237": {
       "has_clean_result": true,
