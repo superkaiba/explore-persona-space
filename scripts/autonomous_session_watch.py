@@ -1350,6 +1350,7 @@ from spawn_session import (  # noqa: E402
     _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
+    _marker_session_mode,
     _takeover_ttl_s,
     dispatch_lease_desc,
     dispatch_lease_fresh,
@@ -1361,11 +1362,13 @@ from spawn_session import (  # noqa: E402
     takeover_sentinel_fresh,
 )
 from tick_triage import (  # noqa: E402
+    ISSUE_PARK,
     compute_head_sha,
     compute_progress_fingerprint,
     is_human_transcript_row,
     no_progress_state_path,
     no_progress_threshold,
+    parse_event_ts,
     plan_pending_over_cap,
     proc_start_epoch,
     read_no_progress_state,
@@ -11212,6 +11215,9 @@ def _completed_unmerged_respawn(issue: int, dry_run: bool) -> str:
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn stranded-merge session: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -14885,6 +14891,35 @@ def _task_events(issue: int) -> list[dict]:
     return data if isinstance(data, list) else []
 
 
+def _resolve_session_mode(issue: int, entry: dict | None = None) -> str:
+    """Session mode (``"auto"`` | ``"async"``) every spawn-issue argv builder
+    resolves before dispatch — mission-control rung 0 (CONTRACTS §2.2).
+
+    Chain: registry-entry ``session_mode`` field (pass ``entry`` when the
+    caller already holds it; else the issue-<N>.json file is read) > newest
+    durable ``epm:session-mode`` marker (survives the watcher's TERMINAL
+    registry-entry deletion; read IN-PROCESS via spawn_session's
+    ``_marker_session_mode`` — a subprocess probe here would break every
+    builder's argv/dry-run contract, e.g. dry-run performs zero spawn
+    subprocesses) > legacy ``"auto"``. Fail-soft on every signal — an
+    unreadable registry/marker degrades to the next rung, never blocks a
+    respawn (worst case: a legacy-auto respawn of an async task, which the
+    task-durable marker corrects on the next resolution)."""
+    try:
+        if entry is None:
+            reg = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+            if reg.exists():
+                entry = json.loads(reg.read_text())
+        if isinstance(entry, dict):
+            mode = entry.get("session_mode")
+            if mode in ("auto", "async"):
+                return mode
+    except (OSError, ValueError):
+        pass
+    mode = _marker_session_mode(issue)
+    return mode if mode in ("auto", "async") else "auto"
+
+
 def _daemon_reachable() -> bool:
     """True iff the Happy daemon's control server answers /list.
 
@@ -15192,6 +15227,9 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     effort = entry.get("effort")
     if effort:
         cmd.extend(["--effort", str(effort)])
+    if _resolve_session_mode(issue, entry) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -21735,6 +21773,9 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
     cmd.extend(_stalled_session_overrides(issue))
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn stalled: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -24536,6 +24577,9 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
     cmd.extend(_stalled_session_overrides(issue))
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -26354,6 +26398,9 @@ def _dispatch_infra_drain(
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would dispatch infra-drain: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned, nothing to book
@@ -27764,6 +27811,9 @@ def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would capacity-retry: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -35460,14 +35510,87 @@ def _load_gate_notify_state(issue: int) -> dict:
     return data if isinstance(data, dict) else {}
 
 
-def _save_gate_notify_state(issue: int, *, last_status: str) -> None:
+def _save_gate_notify_state(
+    issue: int, *, last_status: str, async_ask_alerted_ts: float | None = None
+) -> None:
     """Atomic temp+rename persist of the last observed status (the
-    transition key for both the push and the title reconcile)."""
+    transition key for both the push and the title reconcile).
+
+    ``async_ask_alerted_ts`` (rung 0, CONTRACTS §1.3 W3) is the epoch ts of
+    the open ``epm:ask`` the stale-park arm last alerted on — the dedup key
+    so one stale ask alerts exactly once. ``None`` (the default, every
+    legacy caller) omits the field entirely, keeping pre-rung-0 state files
+    byte-identical."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _gate_notify_state_path(issue)
     tmp = dest.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps({"last_status": last_status, "ts": time.time()}))
+    payload: dict[str, object] = {"last_status": last_status, "ts": time.time()}
+    if async_ask_alerted_ts is not None:
+        payload["async_ask_alerted_ts"] = async_ask_alerted_ts
+    tmp.write_text(json.dumps(payload))
     tmp.replace(dest)
+
+
+_ASYNC_PARK_STALE_HOURS_DEFAULT = 12.0
+
+
+def _async_park_stale_hours() -> float:
+    """Age floor (hours) before an unanswered ``epm:ask`` on a parked task
+    alerts (rung 0, CONTRACTS §1.3 W3). Env ``EPM_ASYNC_PARK_STALE_HOURS``;
+    default 12; garbage / non-positive values fall back to the default."""
+    raw = os.environ.get("EPM_ASYNC_PARK_STALE_HOURS", "")
+    try:
+        val = float(raw) if raw else _ASYNC_PARK_STALE_HOURS_DEFAULT
+    except ValueError:
+        return _ASYNC_PARK_STALE_HOURS_DEFAULT
+    return val if val > 0 else _ASYNC_PARK_STALE_HOURS_DEFAULT
+
+
+def _async_park_stale_alert_arm(
+    issue: int,
+    status: str,
+    events: list[dict],
+    state: dict,
+    dry_run: bool,
+    now: float | None = None,
+) -> float | None:
+    """Mission-control rung 0 W3 (CONTRACTS §1.3): ONE deduped digest alert
+    when a parked task's newest OPEN ``epm:ask`` has sat unanswered longer
+    than :func:`_async_park_stale_hours`. Returns the alerted ask's epoch ts
+    (the caller persists it as ``async_ask_alerted_ts`` — the dedup key; a
+    NEWER ask re-alerts, the same ask never does), or ``None`` when nothing
+    newly alerted. Fail-soft on every signal (unimportable task_workflow,
+    ts-less ask) — the arm can only add an alert, never block the pass."""
+    try:
+        from explore_persona_space.task_workflow import ask_gate, open_async_ask
+    except ImportError:
+        return None
+    ask = open_async_ask(events)
+    if ask is None:
+        return None
+    ask_epoch = parse_event_ts(ask.get("ts"))
+    if ask_epoch is None:
+        return None
+    now = time.time() if now is None else now
+    age_h = (now - ask_epoch) / 3600.0
+    if age_h < _async_park_stale_hours():
+        return None
+    prev = state.get("async_ask_alerted_ts")
+    if isinstance(prev, (int, float)) and abs(float(prev) - ask_epoch) < 1.0:
+        return None  # this exact ask already alerted once
+    gate = ask_gate(ask) or "unknown"
+    slug = _task_title(issue)
+    head = f"#{issue} {slug}".rstrip()
+    msg = (
+        f"{head} · async ask unanswered {age_h:.0f}h "
+        f"(gate={gate}, status={status}) — open to answer"
+    )
+    sent = _telegram_push(msg[:200], dry_run)
+    print(
+        f"  async-park-stale: #{issue} ask age={age_h:.1f}h gate={gate} "
+        f"({'sent' if sent else 'push not confirmed'})"
+    )
+    return ask_epoch
 
 
 def decide_gate_push(status: str | None, last_status: str | None, over_cap: bool) -> bool:
@@ -35502,18 +35625,31 @@ def _task_title(issue: int) -> str:
     return title.strip()[:45] if isinstance(title, str) else ""
 
 
-def _gate_push_message(issue: int, status: str, events: list[dict], gate_parked: bool) -> str:
+def _gate_push_message(
+    issue: int, status: str, events: list[dict], gate_parked: bool, *, async_ask: bool = False
+) -> str:
     """Mirror the /issue-tick 3d message shapes (kept under ~200 chars).
 
     ``gate_parked`` is True when the plan-gate parked at plan_pending —
     a missing/unparseable GPU-hour estimate fail-safe (#1771 removed the
     over-cap arm; the retained park cause has one shape now, so the push
     names the missing estimate rather than any cap — the #2164
-    registered-cap rendering had no threshold left to report)."""
+    registered-cap rendering had no threshold left to report).
+
+    ``async_ask`` (rung 0, CONTRACTS §1.3 W1) is True when plan_pending
+    carries an OPEN plan-approval ``epm:ask`` — the async-session park; its
+    branch wins over ``gate_parked`` (an async park never posts
+    ``epm:awaiting-spend-approval``, so both being True means an ask exists
+    and the answer command is the actionable message)."""
     slug = _task_title(issue)
     head = f"#{issue} {slug}".rstrip()  # no double space when the title read failed
     if status == "awaiting_promotion":
         msg = f"{head} · clean-result ready — open to promote"
+    elif status == "plan_pending" and async_ask:
+        msg = (
+            f"{head} · plan approval requested (async epm:ask) — answer: "
+            f"task.py set-status {issue} approved"
+        )
     elif status == "plan_pending" and gate_parked:
         msg = (
             f"{head} parked at plan_pending — plan-gate park "
@@ -35706,13 +35842,45 @@ def gate_push_pass(
             # the self-report permanently fresh and structurally disabling
             # the session-reconcile idle signal for done tasks).
             continue
-        last_status = _load_gate_notify_state(issue).get("last_status")
+        state = _load_gate_notify_state(issue)
+        last_status = state.get("last_status")
+        # Rung 0 W3 (CONTRACTS §1.3): the stale-async-park arm runs EVERY tick
+        # for parked statuses — steady state included, so it sits BEFORE the
+        # last_status == status short-circuit (a park is steady state by
+        # definition). Non-park statuses and tasks with no open ask are a
+        # no-op; carry the persisted dedup key forward on every save so a
+        # status flap cannot re-alert the same ask.
+        alerted_ts_prev = state.get("async_ask_alerted_ts")
+        alerted_ts = alerted_ts_prev if isinstance(alerted_ts_prev, (int, float)) else None
+        events: list[dict] | None = None
+        if status in ISSUE_PARK or status == "awaiting_promotion":
+            events = _task_events(issue)
+            fresh_alert = _async_park_stale_alert_arm(issue, status, events, state, dry_run)
+            if fresh_alert is not None:
+                alerted_ts = fresh_alert
         if last_status == status:
-            continue  # steady state — nothing transitioned
-        events = _task_events(issue)
+            # Steady state — no transition work; persist only a NEW alert
+            # dedup key (a no-alert tick rewrites nothing, keeping legacy
+            # steady-state ticks write-free as before).
+            if alerted_ts is not None and alerted_ts != alerted_ts_prev and not dry_run:
+                _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
+            continue
+        if events is None:
+            events = _task_events(issue)
         over_cap = status == "plan_pending" and plan_pending_over_cap(events)
-        if decide_gate_push(status, last_status, over_cap):
-            msg = _gate_push_message(issue, status, events, over_cap)
+        # Rung 0 W1 (CONTRACTS §1.3): a fresh OPEN plan-approval epm:ask at
+        # plan_pending ALSO fires the gate push — local OR only; the shared
+        # tick_triage plan_pending_over_cap predicate is untouched.
+        async_plan_ask = False
+        if status == "plan_pending":
+            try:
+                from explore_persona_space.task_workflow import open_async_ask
+
+                async_plan_ask = open_async_ask(events, gate="plan_approval") is not None
+            except ImportError:
+                async_plan_ask = False
+        if decide_gate_push(status, last_status, over_cap or async_plan_ask):
+            msg = _gate_push_message(issue, status, events, over_cap, async_ask=async_plan_ask)
             sent = _telegram_push(msg, dry_run)
             print(
                 f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
@@ -35720,7 +35888,7 @@ def gate_push_pass(
             )
         _refresh_self_report(issue, status, dry_run)
         if not dry_run:
-            _save_gate_notify_state(issue, last_status=status)
+            _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
     flags = _runaway_flags()
     if not flags:
         return

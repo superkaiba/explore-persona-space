@@ -65,8 +65,10 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     SMOKE_ARCH_MARKER_KIND,
     STATUSES,
     WORKFLOW_VERSIONS,
+    BodyShaMismatch,
     GoalH2DropError,
     NewTaskRequest,
+    PlanVersionMismatch,
     ReconcileReport,
     add_tag,
     address_concern,
@@ -77,6 +79,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     duplicate_task_dirs,
     find_task_path,
     get_task,
+    highest_plan_version,
     is_amendment_shaped,
     is_paper_task,
     latest_event,
@@ -85,6 +88,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     list_concerns,
     list_events,
     new_plan_version,
+    open_async_ask,
     parse_followup_note_field,
     post_event,
     promote,
@@ -408,7 +412,18 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     """Decide the autonomous plan-approval gate outcome from env + gpu_hours.
 
     Returns ``(decision, cap, autonomous)`` where ``decision`` is one of
-    ``"auto_approved" | "parked_no_estimate" | "interactive_pending"``.
+    ``"auto_approved" | "parked_asked" | "parked_no_estimate" |
+    "interactive_pending"``.
+
+    ASYNC SESSION MODE (mission-control rung 0): when ``EPM_ASYNC_SESSION``
+    is ALSO set (async sessions export BOTH vars), the decision is
+    ``parked_asked`` REGARDLESS of the estimate — an async session NEVER
+    self-approves; the gate parks at plan_pending and posts a durable
+    ``epm:ask`` (gate=plan_approval) for the user to answer via
+    ``set-status <N> approved --if-plan-v K``. Code-enforced here, like the
+    autonomous auto-approve, so the property holds even if the orchestrator
+    mis-follows the Step 2c prose. With EPM_ASYNC_SESSION unset the table
+    below is byte-identical to its pre-rung-0 form.
 
     Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` from
     the process env (the Bash tool inherits the claude-process env, so a
@@ -435,14 +450,52 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     # the two layers never disagree on a value like "no" / "FALSE".
     _auto_raw = os.environ.get("EPM_AUTONOMOUS_SESSION", "").strip().lower()
     autonomous = _auto_raw not in ("", "0", "false", "no")
+    # Same truthiness grammar for the async flag (mission-control rung 0).
+    _async_raw = os.environ.get("EPM_ASYNC_SESSION", "").strip().lower()
+    async_session = _async_raw not in ("", "0", "false", "no")
     # Resolved ONLY so callers keep the #2164 single-sourced value in the
     # tuple; deliberately NOT consulted by any decision branch (#1771).
     cap = resolve_plan_gate_cap()
     if not autonomous:
         return ("interactive_pending", cap, False)
+    if async_session:
+        # An async session never self-approves — estimate or not, the plan
+        # parks for the user's answer (CONTRACTS §2.1 gate-4 row).
+        return ("parked_asked", cap, True)
     if gpu_hours is None:
         return ("parked_no_estimate", cap, True)
     return ("auto_approved", cap, True)
+
+
+def _post_plan_approval_ask(issue: int, gpu_hours: float | None) -> None:
+    """Post the durable ``epm:ask`` (gate=plan_approval) for an async park
+    (mission-control rung 0; CONTRACTS §1.2 row 4). Posted AFTER the park's
+    status move so the ask is newer than the ``epm:status-changed`` row (the
+    T1/W1 freshness predicate). Idempotent: skipped when the newest
+    plan-approval ask is still OPEN (no answering transition since) — a tick
+    re-drive re-running the gate command must not stack duplicate asks."""
+    if open_async_ask(list_events(issue), gate="plan_approval") is not None:
+        _safe_echo(
+            f"epm:ask (gate=plan_approval) already open on #{issue} — not re-posting",
+            context="task.py set-status",
+        )
+        return
+    plan_v = highest_plan_version(issue)
+    answer_cmd = f"uv run python scripts/task.py set-status {issue} approved"
+    if plan_v is not None:
+        answer_cmd += f" --if-plan-v {plan_v}"
+    note = json.dumps(
+        {
+            "gate": "plan_approval",
+            "gate_id": 4,
+            "issue": issue,
+            "plan_v": plan_v,
+            "plan_path": f"plans/v{plan_v}.md" if plan_v is not None else None,
+            "est_gpu_hours": gpu_hours,
+            "answer": answer_cmd,
+        }
+    )
+    post_event(issue, "epm:ask", by="autonomous-gate", note=note)
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
@@ -488,6 +541,10 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                         "followups_running (status-hold rule, SKILL.md Step 9b)."
                     ),
                 )
+            elif decision == "parked_asked":
+                # Async session (mission-control rung 0): park IN PLACE +
+                # post the durable ask; the round's status hold is unchanged.
+                _post_plan_approval_ask(args.number, gpu_hours)
             elif decision == "parked_no_estimate":
                 reason = "estimate missing/unparseable (fail-safe)"
                 post_event(
@@ -542,6 +599,29 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                 context="task.py set-status",
             )
             return
+        if decision == "parked_asked":
+            # Async session (mission-control rung 0): park at plan_pending +
+            # post the durable epm:ask (AFTER the status move, so the ask is
+            # newer than the epm:status-changed row the T1/W1 predicates key
+            # on). Deliberately NO epm:awaiting-spend-approval: that marker
+            # flips plan_pending_over_cap and would reclassify the park out
+            # of the tick's ISSUE_PARK branch (CONTRACTS §1.3 W1 rationale).
+            path = set_status(
+                args.number,
+                "plan_pending",
+                note=args.note,
+                force_followup_exit=force_followup_exit,
+            )
+            _post_plan_approval_ask(args.number, gpu_hours)
+            _safe_echo(
+                str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
+                context="task.py set-status",
+            )
+            _safe_echo(
+                f"PLAN_GATE_DECISION: parked_asked gpu_hours={gpu_hours}",
+                context="task.py set-status",
+            )
+            return
         if decision == "parked_no_estimate":
             path = set_status(
                 args.number,
@@ -590,7 +670,14 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             args.status,
             note=args.note,
             force_followup_exit=force_followup_exit,
+            if_plan_v=getattr(args, "if_plan_v", None),
         )
+    except PlanVersionMismatch as exc:
+        # Version-keyed CAS refusal (mission-control rung 0): stale view,
+        # nothing mutated. Exit 4 is the CONTRACTS stale-view code the
+        # daemon/answer path keys on — distinct from the generic exit 1.
+        print(f"task.py set-status: STALE VIEW — {exc}", file=sys.stderr)
+        raise SystemExit(4) from exc
     except ValueError as exc:
         # Followup status-hold refusal (or another library-level rejection):
         # surface the message cleanly instead of a traceback.
@@ -1035,7 +1122,15 @@ def cmd_set_track(args: argparse.Namespace) -> None:
 
 
 def cmd_promote(args: argparse.Namespace) -> None:
-    new_path = promote(args.number, args.verdict)
+    try:
+        new_path = promote(
+            args.number, args.verdict, if_body_sha=getattr(args, "if_body_sha", None)
+        )
+    except BodyShaMismatch as exc:
+        # Version-keyed CAS refusal (mission-control rung 0): stale view,
+        # nothing mutated. Exit 4 = the CONTRACTS stale-view code.
+        print(f"task.py promote: STALE VIEW — {exc}", file=sys.stderr)
+        raise SystemExit(4) from exc
     _safe_echo(str(new_path), context="task.py promote")
 
 
@@ -1680,6 +1775,20 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--if-plan-v",
+        type=int,
+        default=None,
+        help=(
+            "OPTIONAL version-keyed CAS check (mission-control rung 0) for "
+            "the async plan-approval answer path (`set-status <N> approved "
+            "--if-plan-v K`): the current highest plans/v{K}.md must still "
+            "be K, checked inside the flock BEFORE any mutation; on "
+            "mismatch nothing is mutated and the command exits 4 (stale "
+            "view — a material-change re-park wrote a newer plan). Absent "
+            "= legacy unconditional transition."
+        ),
+    )
+    p.add_argument(
         "--force-followup-exit",
         action="store_true",
         help=(
@@ -1947,6 +2056,19 @@ def main() -> None:
     p = sub.add_parser("promote", help="USER-ONLY: awaiting_promotion → completed")
     p.add_argument("number", type=int)
     p.add_argument("verdict", choices=["useful", "not-useful"])
+    p.add_argument(
+        "--if-body-sha",
+        default=None,
+        help=(
+            "OPTIONAL version-keyed CAS check (mission-control rung 0): "
+            "sha256(body.md bytes)[:12] the caller's view was composed "
+            "against (a full sha is prefix-compared). Checked inside the "
+            "promote flock BEFORE any mutation; on mismatch nothing is "
+            "mutated and the command exits 4 (stale view — e.g. a follow-up "
+            "round rewrote the body at awaiting_promotion). Absent = legacy "
+            "unconditional promote."
+        ),
+    )
     p.set_defaults(func=cmd_promote)
 
     p = sub.add_parser("new-plan-version", help="append plans/v{next}.md")
