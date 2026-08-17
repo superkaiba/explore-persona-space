@@ -10332,8 +10332,8 @@
     "2337": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2337",
-      "status": "running",
+      "path": "tasks/completed/2337",
+      "status": "completed",
       "title": "Scope preflight's vLLM/transformers skew check to workloads that actually import vLLM"
     },
     "2338": {
