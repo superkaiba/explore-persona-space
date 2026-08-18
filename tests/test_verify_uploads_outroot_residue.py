@@ -570,3 +570,68 @@ def test_hf_arm_match_takes_precedence_no_warn(hermetic_repo, monkeypatch):
     assert row["status"] == "OK"
     assert "outroot-residue-basename-git-only" not in row["detail"]
     assert "disk=1 matched=1" in row["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Round-2 concern `git-ls-tree-parse-fail-loud` (#2359 r2): a STRUCTURALLY
+# malformed `git ls-tree -r -l` row raises RuntimeError (fail-loud — the
+# caller maps it to an ERROR row, flipping the overall verdict to FAIL),
+# while a successfully-parsed NON-BLOB row (tree/commit entry) is a
+# legitimate non-candidate and is skipped silently. A real repo cannot emit
+# a malformed row, so that test fakes the subprocess boundary
+# (create_autospec of the real subprocess.run, per #906); the non-blob test
+# uses real repo state (a 160000 gitlink) through the real git arm.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "bad_row, expected_fragment",
+    [
+        ("100644 blob abcdef0 no-tab-separator-row", "no tab separator"),
+        ("100644 blob abcdef0\tpath/only_three_fields.json", "expected 4 metadata fields"),
+    ],
+)
+def test_malformed_ls_tree_row_raises_runtime_error(monkeypatch, bad_row, expected_fragment):
+    """A row that cannot be split into `<mode> <type> <oid> <size>\\t<path>`
+    is a fail-loud RuntimeError naming the ref AND the offending row — never
+    a silent skip the verdict then builds on (round-1 shipped a silent
+    `continue` here while the docstring claimed fail-loud)."""
+    healthy = "100644 blob " + "a" * 40 + "      42\tissue_424242/healthy.json"
+
+    def _dispatch(cmd, *args, **kwargs):
+        if cmd[1] == "rev-parse":  # _issue_branch_ref probe: no issue branch
+            return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="")
+        assert cmd[:3] == ["git", "ls-tree", "-r"], cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout=f"{healthy}\n{bad_row}\n", stderr="")
+
+    fake_run = create_autospec(subprocess.run, side_effect=_dispatch)
+    monkeypatch.setattr(verify_uploads.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        verify_uploads._git_tree_candidates_for_issue(424242)
+
+    msg = str(excinfo.value)
+    assert expected_fragment in msg
+    assert "HEAD" in msg  # names the ref
+    assert repr(bad_row) in msg  # names the offending row verbatim
+
+
+def test_parsed_non_blob_row_is_skipped_not_raised(hermetic_repo):
+    """A successfully-parsed non-blob row — a 160000 gitlink, which
+    `git ls-tree -r -l` renders as `160000 commit <oid> -\\t<path>` — is a
+    legitimate non-candidate: skipped without raising, while sibling blob
+    rows still parse into candidates. Real repo state, real git arm."""
+    repo = hermetic_repo / "repo"
+    _git(
+        repo,
+        "update-index",
+        "--add",
+        "--cacheinfo",
+        f"160000,{'1' * 40},eval_results/issue_424242/q25/vendored_pin",
+    )
+    _git(repo, "commit", "-q", "-m", "add gitlink (parsed non-blob row)")
+
+    candidates = verify_uploads._git_tree_candidates_for_issue(424242)
+
+    assert "vendored_pin" not in candidates  # commit entry skipped, no raise
+    assert "upload_done.json" in candidates  # sibling blob rows still parse

@@ -1364,8 +1364,11 @@ def _git_tree_candidates_for_issue(issue_num: int) -> dict[str, list[_GitCandida
     both versions — either committed content is a permanent home).
     Uncommitted working-tree files are deliberately NOT counted (uncommitted
     is not permanent — matches Step 2.9's posture). Raises ``RuntimeError``
-    on a failed listing or a malformed blob row (fail-loud; the caller
+    on a failed listing or a STRUCTURALLY malformed row — one that cannot be
+    split into ``<mode> <type> <oid> <size>\\t<path>`` (fail-loud; the caller
     surfaces it as an ERROR row, which flips the overall verdict to FAIL).
+    Successfully-parsed non-blob rows (tree/commit entries) are skipped as
+    legitimate non-candidates.
     """
     repo_root = _verifier_repo_root()
     refs: list[str] = []
@@ -1388,15 +1391,23 @@ def _git_tree_candidates_for_issue(issue_num: int) -> dict[str, list[_GitCandida
             )
         parsed: dict[str, tuple[str, int]] = {}
         for line in result.stdout.splitlines():
+            # A STRUCTURAL parse failure (no tab separator / wrong metadata
+            # field count) is a row the verdict must not silently build on
+            # — fail loud naming the ref + the offending row (#2359 r2).
             meta, sep, path = line.partition("\t")
             if not sep:
-                continue
+                raise RuntimeError(
+                    f"unparseable git ls-tree -l row (no tab separator) for {ref}: {line!r}"
+                )
             fields = meta.split()
             if len(fields) != 4:
-                continue
+                raise RuntimeError(
+                    f"unparseable git ls-tree -l row (expected 4 metadata fields, "
+                    f"got {len(fields)}) for {ref}: {line!r}"
+                )
             _mode, otype, oid, size_field = fields
             if otype != "blob":
-                continue  # submodule/tree rows carry no content to compare
+                continue  # parsed non-blob row (tree/commit entry) — no content to compare
             try:
                 size = int(size_field)
             except ValueError as e:
