@@ -1663,16 +1663,73 @@ def test_c30b_assignment_prefixed_mover_riding_armed_chain_blocked(
     )
 
 
-# The r5 assignment-prefix group, verbatim from CWD_MOVER_LEAD_ERE. Kept as a
-# module constant so the c30c revert-pin fails LOUD (count assert below) if
-# the fixed spelling ever drifts instead of silently pinning nothing.
+# --- c30d family (r6, #2371): two text-detectable prefixed mover forms rode
+# the armed canonical `&&` chain undisarmed past the r5 grammar — (1) an
+# APPEND-assignment prefix (the r5 atom's `NAME=` cannot match `+=`), and
+# (2) the `time` keyword wrapper (`time` is a shell keyword outside both the
+# prefix group and the mover family). Both source in the CURRENT shell
+# (execution-confirmed reachability probes 2026-08-18, GNU bash 5.1.16 —
+# plan #2371 §1/§6), so a cwd move rode the armed chain and the relative
+# pathspec resolved off-root (scoped permit where the whole-index read must
+# engage). The r6 fix widens ONLY the prefix group's atom set: assignment
+# atoms tolerate an optional `+` before `=`, a second atom recognizes the
+# `time` keyword wrapper (bare or `time -p`), atoms repeat zero-or-more in
+# any interleaving. Param notes: quoted-value-append pins the MASKED-lead
+# arm (the quoted value's interior hides the prefix on the raw text);
+# assign-time pins the DELIBERATE over-tightening — `FOO=bar time . x` runs
+# EXTERNAL time (cannot source) but matches the grammar and disarms, block
+# direction, kept; append-assign-source + time-pushd are screen-covered /
+# uniform-family controls (`source` / `pushd` vocabulary already disarms via
+# the whole-record screen); command-dot-source pins the pre-r6 family-word
+# wrapper path (already blocked — the family word matches at the lead).
+_C30D_PREFIXED_MOVERS = [
+    pytest.param("FOO+=bar . scripts/env.sh", id="append-assign-dot-source"),  # gap 1 crux
+    pytest.param("FOO+='a b' . scripts/env.sh", id="quoted-value-append-dot-source"),
+    pytest.param("A+=1 B=2 . scripts/env.sh", id="mixed-multi-assign-dot-source"),
+    pytest.param("time . scripts/env.sh", id="time-dot-source"),  # gap 2 crux
+    pytest.param("time -p . scripts/env.sh", id="time-p-dot-source"),
+    pytest.param("time FOO=bar . scripts/env.sh", id="time-assign-interleave-dot-source"),
+    pytest.param("FOO=bar time . scripts/env.sh", id="assign-time-dot-source"),
+    pytest.param("FOO+=bar source scripts/env.sh", id="append-assign-source"),
+    pytest.param("time pushd scripts", id="time-pushd"),
+    pytest.param("command . scripts/env.sh", id="command-dot-source"),
+]
+
+
+@pytest.mark.parametrize("mover", _C30D_PREFIXED_MOVERS)
+def test_c30d_extended_prefix_mover_riding_armed_chain_blocked(
+    mover: str, foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && {mover} && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+# The r6 (#2371) prefix group, verbatim from CWD_MOVER_LEAD_ERE: alternated
+# atoms — plain/append assignment (NAME=v / NAME+=v) or the `time` keyword
+# wrapper (bare / `time -p`) — repeated zero-or-more in any interleaving.
+# Kept as a module constant so the c30c/c30e revert-pins fail LOUD (count
+# asserts below) if the fixed spelling ever drifts instead of silently
+# pinning nothing.
+_R6_PREFIX_GROUP = "(([A-Za-z_][A-Za-z0-9_]*[+]?=[^[:space:]]*|time([[:space:]]+-p)?)[[:space:]]+)*"
+# The HISTORICAL r5 spelling (plain NAME=value atoms only) — used by the c30e
+# revert-pin to reconstruct the r5 matcher textually (Step 10d rebase-merge
+# rewrites branch SHAs, so no `git show` blob pins; same textual convention
+# as c30c).
 _R5_PREFIX_GROUP = "([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*"
 
 
 def test_c30c_prefix_group_is_load_bearing_prefixed_dot_source_permitted_without_it(
     foreign_repo: Path, cert: Path, tmp_path: Path
 ) -> None:
-    """Regression proof the r4 hole was REAL: strip the r5 assignment-prefix
+    """Regression proof the r4 hole was REAL: strip the WHOLE (r6) prefix
     group out of a copy of the live guard — reconstructing the r3/r4
     CWD_MOVER_LEAD_ERE spelling byte-for-byte — and assert that copy PERMITS
     the assignment-prefixed dot-source crux (rc=0; the executed r4
@@ -1682,15 +1739,293 @@ def test_c30c_prefix_group_is_load_bearing_prefixed_dot_source_permitted_without
     rewrites branch commit SHAs, so the pre-fix matcher is reconstructed
     textually instead and the count assert fails loud on any drift."""
     text = SCRIPT.read_text(encoding="utf-8")
-    assert text.count(_R5_PREFIX_GROUP) == 1, "fixed CWD_MOVER_LEAD_ERE spelling drifted"
+    assert text.count(_R6_PREFIX_GROUP) == 1, "fixed CWD_MOVER_LEAD_ERE spelling drifted"
     r4_guard = tmp_path / "guard_r4_matcher.sh"
-    r4_guard.write_text(text.replace(_R5_PREFIX_GROUP, "", 1), encoding="utf-8")
+    r4_guard.write_text(text.replace(_R6_PREFIX_GROUP, "", 1), encoding="utf-8")
     r4_guard.chmod(0o755)
     _stage(foreign_repo, "scripts/own.py", "print(1)\n")
     _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
     crux = f"cd {foreign_repo} && FOO=bar . scripts/env.sh && git commit -m x -- own.py"
     _assert_allowed(_run(crux, foreign_repo, cert, script=r4_guard, cwd=foreign_repo / "scripts"))
     _assert_blocked(_run(crux, foreign_repo, cert, cwd=foreign_repo / "scripts"))
+
+
+def test_c30e_r6_prefix_atoms_load_bearing_r5_matcher_permits_both_cruxes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    """Revert-pin proof BOTH r6 gaps were real: textually reconstruct the r5
+    matcher (swap the r6 prefix group for the historical r5 spelling in a
+    copy of the live guard) and assert that copy PERMITS the
+    append-assignment crux AND the `time` wrapper crux (rc=0 — the executed
+    r5 false-allows, plan #2371 §1) while the fixed guard BLOCKS both (rc=2,
+    whole-index). Same textual-reconstruction convention as c30c (no
+    `git show` blob pins — rebase-merge rewrites branch SHAs); the count
+    asserts fail loud on any spelling drift."""
+    text = SCRIPT.read_text(encoding="utf-8")
+    assert text.count(_R6_PREFIX_GROUP) == 1, "fixed CWD_MOVER_LEAD_ERE spelling drifted"
+    assert _R5_PREFIX_GROUP not in text, "historical r5 spelling resurfaced in the guard"
+    r5_guard = tmp_path / "guard_r5_matcher.sh"
+    r5_guard.write_text(text.replace(_R6_PREFIX_GROUP, _R5_PREFIX_GROUP, 1), encoding="utf-8")
+    r5_guard.chmod(0o755)
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    for mover in ("FOO+=bar . scripts/env.sh", "time . scripts/env.sh"):
+        crux = f"cd {foreign_repo} && {mover} && git commit -m x -- own.py"
+        _assert_allowed(
+            _run(crux, foreign_repo, cert, script=r5_guard, cwd=foreign_repo / "scripts")
+        )
+        _assert_blocked(_run(crux, foreign_repo, cert, cwd=foreign_repo / "scripts"))
+
+
+def test_c30f_env_dot_source_not_reachable_stays_scoped(foreign_repo: Path, cert: Path) -> None:
+    # Not-reachable pin (r6, #2371): external `env` cannot run the `.` shell
+    # builtin, so `env . x` CANNOT source in the current shell (reachability
+    # probe execution-confirmed 2026-08-18, GNU bash 5.1.16) — the accepted
+    # non-recognition: the record matches neither the r6 lead grammar nor
+    # the whole-record screen, the armed base survives, and the pathspec
+    # still scopes past the staged uncertified gated file (rc=0). If the
+    # grammar ever recognizes `env` as a wrapper atom this pin flips —
+    # revisit the reachability probe first.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_allowed(
+        _run(
+            f"cd {foreign_repo} && env . scripts/env.sh && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+# --- c30g family (r7, #2371 revision round 2; concern
+# disarm-fallback-drops-worktree-pathspecs): a recognized r6 disarm routes
+# the record to the scope=0 whole-index fallback, which pre-r7 read STAGED
+# names only and bound the STAGED blob — but a pathspec-form commit lands
+# WORKTREE content, and a cwd-INDEPENDENT repo-top pathspec
+# (`:/scripts/own.py`) lands it regardless of the unknown post-mover cwd.
+# So an uncertified worktree edit rode either NEW r6 prefix family to a
+# PERMIT where the r5 matcher (armed base intact => scoped worktree read)
+# BLOCKED — the reconciler-executed block->permit flip (4/4 scenario
+# cells). The r7 repair keys the fallback's worktree read AND the landing
+# binding on pathspec-form evidence (commit_has_pathspec /
+# pathspec_opaque), the conservative superset; every cell below BLOCKS on
+# the fixed guard.
+_R7_WORKTREE_EVIDENCE_COND = (
+    '[ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] || [ "$pathspec_opaque" = 1 ]'
+)
+# Pre-r7 evidence key (-a only) — the c30g2 revert-pin swaps this back in at
+# all three sites (fallback mod read, landing_sha, cert_diag) to reconstruct
+# the pre-fix fallback textually (c30c/c30e convention: no `git show` blob
+# pins — Step 10d rebase-merge rewrites branch SHAs; count asserts fail loud
+# on spelling drift).
+_PRE_R7_EVIDENCE_COND = '[ "$has_dash_a" = 1 ]'
+
+_C30G_MOVERS = [
+    pytest.param("FOO+=bar . scripts/env.sh", id="append-assign-dot-source"),
+    pytest.param("time . scripts/env.sh", id="time-dot-source"),
+]
+
+
+def _committed_then_edited_repo(
+    tmp_path: Path, name: str, *, staged_cert: Path | None = None
+) -> Path:
+    """Repo with scripts/own.py + scripts/env.sh COMMITTED (tracked), then
+    own.py worktree-edited (uncertified). With ``staged_cert`` set, an
+    intermediate staged blob is added and certified BEFORE the worktree edit
+    (the certified-older-staged-blob variant: the cert is real but binds
+    content the pathspec commit does NOT land)."""
+    repo = _init_repo(tmp_path, name)
+    _stage(repo, "scripts/own.py", "print(1)\n")
+    _stage(repo, "scripts/env.sh", "cd scripts\n")
+    _git(repo, "-c", "user.email=t@e", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    if staged_cert is not None:
+        _stage(repo, "scripts/own.py", "print(2)\n")
+        _cert_line(staged_cert, "scripts/own.py", _staged_sha(repo, "scripts/own.py"))
+    _write(repo, "scripts/own.py", "print(99)\n")  # uncertified worktree edit
+    return repo
+
+
+@pytest.mark.parametrize("mover", _C30G_MOVERS)
+def test_c30g_disarmed_repo_top_pathspec_unstaged_worktree_edit_blocked(
+    mover: str, tmp_path: Path, cert: Path
+) -> None:
+    # S1: nothing staged; the ONLY uncertified content is the worktree edit
+    # the repo-top pathspec commit lands. Pre-r7 the disarmed fallback saw an
+    # empty staged set and permitted at the artifact-only early-allow.
+    repo = _committed_then_edited_repo(tmp_path, "wtland_s1")
+    _assert_blocked(
+        _run(
+            f"cd {repo} && {mover} && git commit -m x -- :/scripts/own.py",
+            repo,
+            cert,
+            cwd=repo / "scripts",
+        )
+    )
+
+
+@pytest.mark.parametrize("mover", _C30G_MOVERS)
+def test_c30g_disarmed_repo_top_pathspec_certified_older_staged_blob_blocked(
+    mover: str, tmp_path: Path, cert: Path
+) -> None:
+    # S2: an OLDER staged blob is certified; the pathspec commit lands the
+    # fresher UNCERTIFIED worktree edit. Pre-r7 the disarmed fallback bound
+    # the staged blob and validated the wrong content (permit).
+    repo = _committed_then_edited_repo(tmp_path, "wtland_s2", staged_cert=cert)
+    _assert_blocked(
+        _run(
+            f"cd {repo} && {mover} && git commit -m x -- :/scripts/own.py",
+            repo,
+            cert,
+            cwd=repo / "scripts",
+        )
+    )
+
+
+def test_c30g2_pre_r7_fallback_permits_worktree_landing_fixed_guard_blocks(
+    tmp_path: Path,
+) -> None:
+    """Revert-pin proof the r7 repair is load-bearing: swap the r7 evidence
+    key back to the pre-r7 ``-a``-only form at ALL THREE sites (fallback mod
+    read, landing_sha, cert_diag) and assert that copy PERMITS all four
+    scenario cells (both new prefix families x {unstaged edit,
+    certified-older-staged-blob} — rc=0, the reconciler-executed
+    block->permit flip) while the fixed guard BLOCKS every cell (rc=2)."""
+    text = SCRIPT.read_text(encoding="utf-8")
+    assert text.count(_R7_WORKTREE_EVIDENCE_COND) == 3, "r7 evidence condition drifted"
+    pre_guard = tmp_path / "guard_pre_r7.sh"
+    pre_guard.write_text(
+        text.replace(_R7_WORKTREE_EVIDENCE_COND, _PRE_R7_EVIDENCE_COND), encoding="utf-8"
+    )
+    pre_guard.chmod(0o755)
+    for i, mover in enumerate(("FOO+=bar . scripts/env.sh", "time . scripts/env.sh")):
+        for j, with_staged_cert in enumerate((False, True)):
+            case_cert = tmp_path / f"cert_{i}_{j}.txt"
+            repo = _committed_then_edited_repo(
+                tmp_path,
+                f"wtland_pre_{i}_{j}",
+                staged_cert=case_cert if with_staged_cert else None,
+            )
+            crux = f"cd {repo} && {mover} && git commit -m x -- :/scripts/own.py"
+            _assert_allowed(_run(crux, repo, case_cert, script=pre_guard, cwd=repo / "scripts"))
+            _assert_blocked(_run(crux, repo, case_cert, cwd=repo / "scripts"))
+
+
+# --- r8 (#2371 r3): heterogeneous bare + pathspec/-a records ----------------
+# Command-global evidence flags mean a BARE commit clause chained with a
+# pathspec/-a clause can land TWO blobs for one path (the staged blob via the
+# bare clause, worktree content via the sibling clause's evidence-keyed
+# binding). r8 requires BOTH blobs certified on such records
+# (landing_certified). The revert-pin swaps the bare-clause gate to a
+# never-true value at BOTH sites (landing_certified + the cert_diag mirror)
+# to reconstruct the pre-r8 (r2) guard textually (c30c/c30g2 convention: no
+# `git show` blob pins; count asserts fail loud on spelling drift).
+_R8_HETERO_GATE = '[ "$commit_bare_clause" = 1 ]'
+_R8_HETERO_GATE_NEUTERED = '[ "$commit_bare_clause" = 2371 ]'
+
+_HETERO_TWO_CLAUSE = "git commit -m a && git commit -m b -- tasks/t.md"
+
+
+def _hetero_repo(
+    tmp_path: Path,
+    name: str,
+    cert: Path,
+    *,
+    cert_staged: bool = False,
+    delete_worktree: bool = False,
+) -> Path:
+    """Repo with scripts/own.py committed print(1), then STAGED print(2)
+    (certified only with ``cert_staged``), then a worktree edit print(3)
+    whose hash IS certified (or the worktree file deleted with
+    ``delete_worktree``). tasks/t.md provides the artifact-only pathspec for
+    the sibling commit clause."""
+    repo = _init_repo(tmp_path, name)
+    _stage(repo, "scripts/own.py", "print(1)\n")
+    _stage(repo, "tasks/t.md", "note\n")
+    _git(repo, "-c", "user.email=t@e", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    _stage(repo, "scripts/own.py", "print(2)\n")
+    if cert_staged:
+        _cert_line(cert, "scripts/own.py", _staged_sha(repo, "scripts/own.py"))
+    if delete_worktree:
+        (repo / "scripts/own.py").unlink()
+    else:
+        _write(repo, "scripts/own.py", "print(3)\n")
+        _cert_line(cert, "scripts/own.py", _worktree_sha(repo, "scripts/own.py"))
+    return repo
+
+
+def test_c30h_bare_plus_pathspec_clause_uncertified_staged_blob_blocked(
+    tmp_path: Path, cert: Path
+) -> None:
+    # The round-2 reconciler's executed P1 cell: command-global pathspec
+    # evidence bound the CERTIFIED worktree hash while the BARE clause lands
+    # the different, UNCERTIFIED staged blob. The fixed guard blocks; the
+    # bare clause alone blocks too (staged binding — unchanged control
+    # isolating the sibling clause as the former flip).
+    repo = _hetero_repo(tmp_path, "hetero_s1", cert)
+    _assert_blocked(_run(_HETERO_TWO_CLAUSE, repo, cert))
+    _assert_blocked(_run("git commit -m a", repo, cert))
+
+
+def test_c30h_bare_plus_pathspec_both_blobs_certified_allowed(tmp_path: Path, cert: Path) -> None:
+    # Require-BOTH, not hard-block: certifying the staged AND worktree blobs
+    # permits the heterogeneous record (bounds the over-tightening; also an
+    # allow-direction pin for the incident chains' commit shapes).
+    repo = _hetero_repo(tmp_path, "hetero_s2", cert, cert_staged=True)
+    _assert_allowed(_run(_HETERO_TWO_CLAUSE, repo, cert))
+
+
+def test_c30h_bare_plus_dash_a_uncertified_staged_blob_blocked(tmp_path: Path, cert: Path) -> None:
+    # The -a analogue of the same record class (named in the reconcile fix
+    # sketch: "a bare clause coexists with pathspec/-a evidence"): bare &&
+    # -a with divergent blobs requires both certs too (block direction over
+    # the pre-existing trunk permit).
+    repo = _hetero_repo(tmp_path, "hetero_s3", cert)
+    _assert_blocked(_run("git commit -m a && git commit -a -m b", repo, cert))
+
+
+def test_c30h_worktree_deleted_bare_clause_staged_blob_blocked(tmp_path: Path, cert: Path) -> None:
+    # Deletion variant of the same flip: the worktree leg is exempt (file
+    # gone), but the bare clause still lands the uncertified STAGED blob —
+    # landing_certified must block rather than fall through the
+    # deletion exemption.
+    repo = _hetero_repo(tmp_path, "hetero_s4", cert, delete_worktree=True)
+    _assert_blocked(_run(_HETERO_TWO_CLAUSE, repo, cert))
+
+
+def test_c30h2_pre_r8_guard_permits_hetero_cell_fixed_guard_blocks(tmp_path: Path) -> None:
+    """Revert-pin proof the r8 dual requirement is load-bearing: neuter the
+    bare-clause gate at BOTH sites (landing_certified + the cert_diag
+    mirror) and assert that copy PERMITS the heterogeneous cell (rc=0 — the
+    reconciler-executed block->permit flip on the r2 guard) while the fixed
+    guard BLOCKS it (rc=2)."""
+    text = SCRIPT.read_text(encoding="utf-8")
+    assert text.count(_R8_HETERO_GATE) == 2, "r8 bare-clause gate drifted"
+    pre_guard = tmp_path / "guard_pre_r8.sh"
+    pre_guard.write_text(text.replace(_R8_HETERO_GATE, _R8_HETERO_GATE_NEUTERED), encoding="utf-8")
+    pre_guard.chmod(0o755)
+    case_cert = tmp_path / "cert_h2.txt"
+    case_cert.write_text("", encoding="utf-8")
+    repo = _hetero_repo(tmp_path, "hetero_pre", case_cert)
+    _assert_allowed(_run(_HETERO_TWO_CLAUSE, repo, case_cert, script=pre_guard))
+    _assert_blocked(_run(_HETERO_TWO_CLAUSE, repo, case_cert))
+
+
+def test_c30i_pathspec_from_file_spellings_match_residual_note(tmp_path: Path, cert: Path) -> None:
+    # Residual-note truth pins (flag-pathspec-residual-note-misstates-parser):
+    # the SEPARATE-ARGUMENT spelling's filename falls through as a positional
+    # candidate, arming the widened worktree read — over-tightening, block
+    # direction — while the EQUALS form carries no positional candidate and
+    # stays staged-only (nothing staged => artifact-only allow). Pins the
+    # exact behavior the rewritten fallback residual note documents.
+    repo = _init_repo(tmp_path, "flagform")
+    _stage(repo, "scripts/own.py", "print(1)\n")
+    _stage(repo, "tasks/t.md", "note\n")
+    _git(repo, "-c", "user.email=t@e", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    _write(repo, "scripts/own.py", "print(99)\n")  # worktree-only, uncertified
+    (repo / "list.txt").write_text("tasks/t.md\n", encoding="utf-8")
+    _assert_blocked(_run("git commit --pathspec-from-file list.txt -m x", repo, cert))
+    _assert_allowed(_run("git commit --pathspec-from-file=list.txt -m x", repo, cert))
 
 
 def test_c32b_assignment_prefixed_mover_before_arming_cd_still_scopes(
@@ -1704,6 +2039,25 @@ def test_c32b_assignment_prefixed_mover_before_arming_cd_still_scopes(
     _assert_allowed(
         _run(
             f"FOO=bar . scripts/env.sh; cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c32c_time_wrapped_mover_before_arming_cd_still_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Allow pin (over-tightening protection, c32/c32b sibling — r6 #2371):
+    # the r6-widened disarm stays ARMED-ONLY — a time-wrapped dot-source
+    # BEFORE the arming canonical cd never disarms (and never poisons
+    # arming), and the pathspec still scopes past the foreign uncertified
+    # staged file.
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_allowed(
+        _run(
+            f"time . scripts/env.sh; cd {foreign_repo} && git commit -m x -- tasks/t.md",
             foreign_repo,
             cert,
             cwd=tmp_path,
