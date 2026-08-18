@@ -25,6 +25,7 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Union matchers: probe legal-prefix × lead-only-family cross product](feedback_union_matcher_probe_prefix_cross_product.md) — 48 executed probes missed assignment-prefixed dot-source, the ONE family with no whole-record-screen fallback; execute the escape on both blobs (#2357 r4)
 - [Split-review composites miss cross-commit plan contracts](feedback_split_review_misses_cross_commit_plan_contracts.md) — grep §9 phase_outputs writers + §8/§11 registered controls + marker ported/asserted claims yourself; Codex facts all verified, 5/8 blockers over-classed (#2330 r1)
 - [Mode-dependent durability doc claims — enumerate routed vs primary](feedback_mode_dependent_durability_doc_claims.md) — Claude verifies doc clauses locally, missing cross-clause falsification; dictate mode-split wording on a 3rd-round sentence loop (#2326 r3)
 - [Fix-round closure: expand elided plan quotes + open the parent impl](feedback_fix_round_closure_elided_control_arm.md) — Claude's "VERIFIED FIXED" quoted §8 minus "+ untruncated refit", certifying half a control; brief wording never rescopes the plan (#2330 r2)
