@@ -3,21 +3,26 @@ name: deep-lit-review
 description: >
   In-depth literature search protocol. Invoke whenever an agent does a
   thorough literature review: before any NEW research direction (the
-  CLAUDE.md standing rule), when the planner grounds a formalization or
-  hyperparameter in prior work beyond a single citation, or when the user
-  asks for a deep lit search on a question. NOT for the bounded
-  post-experiment positioning pass — that stays with the
-  `related-work-finder` agent (≤6 MCP calls, proposal-only).
+  CLAUDE.md standing rule), when grounding a NEW formalization or a
+  question with no prior in-repo grounding (no `Source: #<M>`) to inherit,
+  or when the user asks for a deep lit search, "what's the prior work on
+  X", or a related-work section. Routine plan-§11 hyperparameter Source
+  lookups stay on the planner's existing bounded arXiv-MCP path — do NOT
+  load this protocol for those. Also NOT for the bounded post-experiment
+  positioning pass — that stays with the `related-work-finder` agent
+  (≤6 MCP calls, proposal-only).
 user_invocable: true
 ---
 
 # Deep literature review
 
 Evidence-grounded recipe (web sweep 2026-08-18, ~60 sources; full evidence +
-URLs: `~/notes/content/LLM Literature Review Best Practices (Deep Research).md`,
-https://github.com/superkaiba/notes/blob/v5/content/LLM%20Literature%20Review%20Best%20Practices%20(Deep%20Research).md).
+URLs: `~/notes/content/LLM Literature Review Best Practices (Deep Research).md`
+— private repo: `git -C ~/notes pull` before reading the local clone;
+https://github.com/superkaiba/notes/blob/v5/content/LLM%20Literature%20Review%20Best%20Practices%20(Deep%20Research).md
+requires Thomas's GitHub auth).
 The two non-negotiables, from that evidence: **retrieval-grounding** (LLM
-memory fabricates; retrieval-grounded tools ≈ never) and **claim-vs-source
+memory fabricates citations; retrieval-grounded tools rarely do) and **claim-vs-source
 verification** (even 2026 frontier systems state a cited source's finding
 fully accurately only ~44–77% of the time — verify what the paper says, not
 just that it exists).
@@ -64,9 +69,9 @@ a fixed query count misses the tail).
 For every core (clearly relevant) paper: pull its references AND its citers —
 `mcp__arxiv__citation_graph`, or Semantic Scholar
 `graph/v1/paper/{id}/citations` and `graph/v1/paper/{id}/references`. Triage candidates by
-title/abstract against the Step-0 criteria. Cheap recall insurance
-(+2–3 pts in published ablations); one hop is usually enough, two hops for
-survey-grade coverage.
+title/abstract against the Step-0 criteria. Cheap recall insurance (the
+PaperQA2 ablations measured +2–3 accuracy points from citation-graph
+traversal); one hop is usually enough, two hops for survey-grade coverage.
 
 ### Step 4 — Screen (sensitivity-biased)
 
@@ -98,7 +103,7 @@ load-bearing hyperparameters/recipes with per-value `Source:` lines
 ### Step 7 — Verify (mandatory, same turn)
 
 1. **Resolution:** every cited arXiv id resolves via `get_abstract` (or DOI
-   via `curl api.crossref.org/works/<doi>`), and the resolved title matches
+   via `curl https://api.crossref.org/works/<doi>`), and the resolved title matches
    the note. Drop or fix anything that fails.
 2. **Claim-vs-source:** for every load-bearing claim in the synthesis,
    re-check the note's verbatim quote actually supports the claim as
@@ -113,7 +118,8 @@ load-bearing hyperparameters/recipes with per-value `Source:` lines
 One markdown doc: question + criteria (verbatim) · search log · included
 list · excluded list (+ reasons) · per-paper notes · synthesis ·
 verification log. Landing spot: planner runs fold it into the plan's
-lit-review section (per-paper notes to `tasks/<status>/<N>/artifacts/`);
+lit-review section (per-paper notes to the task's `artifacts/` dir —
+resolve the path via `scripts/task.py find <N>`, never hand-build it);
 chat-initiated reviews land in `docs/` or the location the user names —
 durably, in the same turn (never /tmp-only).
 
@@ -128,8 +134,10 @@ deliver findings as the final message in the same turn.
 
 ## Bounds
 
-Default in-depth budget: ≤ ~25 arXiv-MCP calls + ~15 web searches + ~10 API
-curls per question, full-text reads for every include (typically 10–25
-papers). A quick pass (the user asked for "a quick look") keeps Steps 0, 2
-(one round), 5 (top ~5 papers), and 7.1 — the two non-negotiables travel
-even in the quick pass.
+Default in-depth DISCOVERY budget (Steps 1–3 only): ≤ ~25 arXiv-MCP calls +
+~15 web searches + ~10 API curls per question. Step-5 full-text reads (one
+per included paper, typically 10–25) and Step-7 verification calls (one
+resolution check per citation) are EXEMPT from that cap — never skip a
+mandatory read or verification to stay under budget. A quick pass (the user
+asked for "a quick look") keeps Steps 0, 2 (one round), 5 (top ~5 papers),
+and 7.1 — the two non-negotiables travel even in the quick pass.
