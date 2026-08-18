@@ -271,14 +271,24 @@ def _anchor_deltas(
     coherence: dict[str, float | None],
     pair: BANK.Pair2162,
     ctx: str,
+    exclude_cap_hit: bool = False,
 ) -> list[float]:
-    """Coherent kept per-draw dual-rubric contrasts for one anchor context."""
+    """Coherent kept per-draw dual-rubric contrasts for one anchor context.
+
+    ``exclude_cap_hit`` drops draws whose completion hit the generation cap
+    (the v55 restriction / truncation-sensitivity read, #2329). It is
+    RESTRICTIVE ONLY -- strictly fewer draws contribute; no draw is newly
+    admitted and no threshold is relaxed -- so a restricted estimate is
+    directly comparable to the shipped one.
+    """
     cores = J.pair_rubric_cores(pair)
     assert cores is not None
     rid_a, rid_b = (J.rubric_core_id(c) for c in cores)
     deltas: list[float] = []
     for row in anchor_rows:
         if row["context_id"] != ctx:
+            continue
+        if exclude_cap_hit and row.get("cap_hit", False):
             continue
         coh = coherence.get(J.J94._item_id("c", f"a|{ctx}|{row['draw']}"))
         if coh is None or coh <= COHERENCE_THRESHOLD:
@@ -324,8 +334,8 @@ def step_f_tables(args: argparse.Namespace) -> None:
     for p in pairs:
         if J.pair_rubric_cores(p) is None:
             continue
-        d_floor = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.a)
-        d_ceiling = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.b)
+        d_floor = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.a, args.exclude_cap_hit)
+        d_ceiling = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.b, args.exclude_cap_hit)
         sep = (
             (sum(d_ceiling) / len(d_ceiling) - sum(d_floor) / len(d_floor))
             if d_floor and d_ceiling
@@ -366,6 +376,8 @@ def step_f_tables(args: argparse.Namespace) -> None:
         n_cap = 0
         for row in rows:
             n_cap += int(row.get("cap_hit", False))
+            if args.exclude_cap_hit and row.get("cap_hit", False):
+                continue  # v55 restriction read: drop cap-hit draws (counted above)
             coh = coherence.get(
                 J.J94._item_id("c", f"g|{row['block_key']}|{pair_id}|{row['draw']}")
             )
@@ -377,8 +389,8 @@ def step_f_tables(args: argparse.Namespace) -> None:
             if sa is None or sb is None:
                 continue
             deltas.append((sb - sa) / 100.0)
-        d_floor = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.a)
-        d_ceiling = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.b)
+        d_floor = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.a, args.exclude_cap_hit)
+        d_ceiling = _anchor_deltas(anchor_rows, beh_anchor, coherence, p, p.b, args.exclude_cap_hit)
         f_beh = None
         if deltas and d_floor and d_ceiling:
             dp = sum(deltas) / len(deltas)
@@ -1473,8 +1485,8 @@ def step_stage2(args: argparse.Namespace) -> None:
     def _floor_ceiling(p: BANK.Pair2162) -> tuple[list[float], list[float]]:
         if p.pair_id not in anchor_cache:
             anchor_cache[p.pair_id] = (
-                _anchor_deltas(anchor_rows, beh_anchor, beh_anchor, p, p.a),
-                _anchor_deltas(anchor_rows, beh_anchor, beh_anchor, p, p.b),
+                _anchor_deltas(anchor_rows, beh_anchor, beh_anchor, p, p.a, args.exclude_cap_hit),
+                _anchor_deltas(anchor_rows, beh_anchor, beh_anchor, p, p.b, args.exclude_cap_hit),
             )
         return anchor_cache[p.pair_id]
 
@@ -1492,6 +1504,8 @@ def step_stage2(args: argparse.Namespace) -> None:
         n_cap = 0
         for row in rows:
             n_cap += int(row.get("cap_hit", False))
+            if args.exclude_cap_hit and row.get("cap_hit", False):
+                continue  # v55 restriction read: drop cap-hit draws (counted above)
             coh = beh_s2.get(J.J94._item_id("c", f"s|{block_key}|{pair_id}|{row['draw']}"))
             if coh is None or coh <= COHERENCE_THRESHOLD:
                 continue
@@ -1589,6 +1603,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_2329/f_metrics"))
     ap.add_argument("--perm-b", type=int, default=PROBE_PERM_B)
     ap.add_argument("--perm-chunk", type=int, default=64)
+    ap.add_argument(
+        "--exclude-cap-hit",
+        action="store_true",
+        default=False,
+        help="v55 restriction / truncation-sensitivity read (#2329): drop every draw whose "
+        "completion hit the generation cap (per-row `cap_hit`) from the grid, anchor, and "
+        "stage-2 per-draw contrasts. RESTRICTIVE ONLY -- strictly fewer draws contribute, "
+        "no draw is newly admitted and no threshold relaxed -- so the restricted estimate is "
+        "directly comparable to the unrestricted one. The `n_cap_hit` counters are unaffected "
+        "(they still count what was dropped). Write to a SEPARATE --out-dir; never overwrite "
+        "the shipped tables.",
+    )
     ap.add_argument(
         "--no-upload",
         action="store_true",
