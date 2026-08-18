@@ -32,7 +32,7 @@ relates_to:
 
 - Prefilling the context-end patch's own three-token opening recovers **67% of the full patch effect** on Qwen2.5-7B instruction-format pairs (n=172; paired diff +0.35, corrected p 2e-13) — snowball-sufficient.
 - Qwen3.5-9B agrees against its own same-wave patch ceiling (71% recovery); the Qwen2.5-normalized banked-ceiling read is indeterminate — a cross-model denominator, with measured judge-instrument offset only +0.07.
-- With patch-content donors, token identity beats transplanted hidden states: prefill recovery rises from 48% to 67% across one to three tokens on Qwen2.5 while state patches sit near 50–54%, and Qwen3.5's stop separating beyond one position. Natural-opening donors reverse this — Qwen3.5 state patches recover 100–105% of the control.
+- With patch-content donors, token identity beats transplanted hidden states: prefill recovery rises from 48% to 67% across one to three tokens on Qwen2.5 while state patches sit near 50–54%, and Qwen3.5's stop separating beyond one position. Natural-opening donors reverse this — Qwen3.5 state-patch point estimates recover 100–105% of the control, though every ratio CI crosses 1, leaving partial restoration compatible with the data.
 - Recovery is majority, not total — roughly a third of the patch effect is not carried by opening tokens; the activation companion recovers only 32% on Qwen2.5 (snowball-partial there) and does not separate on Qwen3.5.
 - Pirate matched-query pairs (n=10 per model) read indeterminate on both models: diffs near +0.10 against a design detectable-effect floor near 0.32 — underpowered, not evidence of absence.
 - 7–11% of temperature-1.0 draws carry Chinese-character intrusion (a Qwen sampling artifact, balanced on the confirmatory arms though not on every arm); every decision-lattice label is unchanged when intruded draws are excluded or zeroed.
@@ -186,7 +186,7 @@ The same profile for Qwen3.5-9B on the instruction-format set, n=156 surviving p
 
 ![Qwen3.5 instruction-format recovery profile with the fresh same-model control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/hero_snowball_q35_s1.png)
 
-> **Figure.** *Qwen3.5's own context-end effect is weaker (F 0.51), and the three-token prefill recovers 71% of it.* Three-token mediated prefill: F 0.36, paired diff +0.25 (CI 0.17 to 0.34, corrected p 3e-08); same-wave D3 CI +0.04 to +0.17. Natural-opening state patches sit at the control band.
+> **Figure.** *Qwen3.5's own context-end effect is weaker (F 0.51), and the three-token prefill recovers 71% of it.* Three-token mediated prefill: F 0.36, paired diff +0.25 (CI 0.17 to 0.34, corrected p 3e-08); same-wave D3 CI +0.04 to +0.17. Natural-opening state-patch point estimates sit at the control band.
 
 ![Per-pair steered vs null F, three-token mediated prefill, Qwen3.5](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/perpair_prefill3_q35.png)
 
