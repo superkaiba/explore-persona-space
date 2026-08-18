@@ -1,6 +1,6 @@
 ---
-title: 'guard_repo_root_branch.sh: sticky-scope invalidator anchors before legal assignment
-  prefixes (sibling of #2357 cwd-mover-lead gap)'
+title: 'workflow-fix: guard_repo_root_branch.sh — sticky-scope invalidator anchors
+  before legal assignment prefixes (#2357 cwd-mover-lead sibling)'
 kind: infra
 tags:
 - wf-fix
