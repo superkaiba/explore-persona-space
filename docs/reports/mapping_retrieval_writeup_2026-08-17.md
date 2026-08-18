@@ -75,9 +75,19 @@ The 15 residual failures (union over the two CSLS conventions, covered rows) are
 
 **Worst-discriminated contexts** (bottom-50 by margin — 11 failures + 39 barely-won): a *different population* from the old raw-euclidean failure profile. Refusal enrichment is gone (refusal-answer and refusal-adjacent shares sit at pool level; the explicit-content *topic* reads nominally 2.8× over-represented, but at 3 of 50 rows that is within count noise). What remains poorly separated is Chinese-language contexts (28% vs 12% pool), coding (30% vs 17%), and shallow 2-turn exchanges (56% vs 42%). Russian is strongly under-represented (1/50 = 2% vs 8.9% pool).
 
-## 8. In flight / open
+## 8. Training on averaged draws: the #1073 null replicates at multi-turn scale
 
-- **Averaged-target-trained map (revived on #1738, running):** 20k-context matched-n subset, 4 extra draws each (80k generations, 8×H200), ridge trained on single vs 5-draw-averaged targets, evaluated on both target types plus the full convention battery. Prior from #1073: expect the averaged-trained map ≈ single-trained within ~0.01 on single-draw eval. Results will be appended.
+Run 2026-08-18 (#1738 round `avg-target-maps`, ~11 GPU-h of 8×H200): a matched-n 20k stratified train subset, 4 extra temp-1.0 draws per training context (80k generations, recipe-matched to the originals), then two ridge fits on identical inputs — single-draw vs 5-draw-averaged targets — with λ selected on single-draw validation rows for both. Single-draw eval = full 9,941 pool; averaged eval = 5-draw-averaged targets over the 1,988 covered rows with a 1,988-entry pool (a smaller-pool convention than §4's full-pool-replacement read — the two are not cross-comparable; within-table comparisons are clean).
+
+| Map (training target) | R² single | acc@1 raw / whitened, single | R² avg | acc@1 raw / whitened, avg |
+|---|---|---|---|---|
+| single-draw, n=20k | 0.656 | 0.765 / 0.932 | 0.701 | 0.903 / 0.984 |
+| 5-draw-averaged, n=20k | 0.661 | 0.767 / 0.934 | 0.705 | 0.902 / 0.986 |
+| single-draw, n=88k (banked reference) | 0.681 | 0.816 / 0.954 | 0.728 | 0.929 / 0.994 |
+
+Training on averaged draws changes the map by ≤ +0.004 R² and ≤ +0.2pp acc@1 in every eval cell — least squares on single noisy draws already estimates the conditional-mean answer, exactly as #1073 found on the single-turn corpus. Training-set size dominates: the 88k map beats both 20k maps by ~0.02 R² / ~5pp raw acc@1. Caveat carried: 8.2% of draws hit the recipe-inherited 1,024-token generation cap (a property of the whole corpus line, matched to the original draws by construction).
+
+## 9. Open
 - **Prefix arm untested under clean conventions** — history-only retrieval reads 0.207 raw; nobody knows how much of that deficit is hub artifact. Free read on banked predictions, not yet run.
 
 ---
