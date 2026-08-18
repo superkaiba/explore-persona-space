@@ -367,6 +367,12 @@ labeled-line forms):
     contradicted floor is deliberate / already remediated elsewhere; a
     plan genuinely needing regenerated fixtures instead names the
     producing script in its modified-file list)
+  - ``N/A — no smoke run`` (checks 65 + 66 — the dedicated no-smoke-run
+    declaration route, #2178 round 2: a plan that declares it runs no
+    pre-launch smoke has no smoke fixtures in scope, so BOTH checks SKIP
+    even when a claim-shaped line is present — the declaration wins;
+    check 11's canonical ``N/A — no dry-run smoke`` standalone form is
+    recognized the same way)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -12067,6 +12073,18 @@ _C65_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c3
 # a truncated count can SATISFY a floor (bound >= F) but never FAIL one.
 _C65_READ_CAP = 8 * 1024 * 1024
 
+# Countable (line-oriented) extensions: newline counting is a valid row
+# count ONLY for line-per-row formats. A resolved ``.json`` / ``.parquet``
+# file is NON-COUNTABLE — a minified 40-object JSON array reads as 1 "row",
+# a FALSE FAIL, the one direction this check must never err — so it
+# contributes no count (neither satisfies nor contradicts a floor); when
+# ALL resolved files are non-countable the rung stays unresolved (the
+# ladder continues / the check SKIPs). ``.json``/``.parquet`` stay in the
+# ``_C65_GLOB_RE`` grammar BY CHOICE: the path token still resolves (check
+# 66's distinctive-component producer scan keeps its literal token) — only
+# COUNTING is restricted (#2178 round 2, concern `non-row-format-counting`).
+_C65_COUNTABLE_EXTS = (".jsonl", ".csv", ".tsv", ".txt")
+
 # Hard bound on counted fixture files per resolution rung (cost + detail size).
 _C65_MAX_FILES = 32
 
@@ -12093,6 +12111,8 @@ _C65_CONST_RE = re.compile(r"\b(SMOKE_[A-Z0-9_]*(?:_N|_ROWS|_SIZE))\s*=\s*(\d{1,
 # keeps a dotted repo-relative token (".claude/worktrees/...") matching
 # WHOLE or not at all — a \b would silently truncate it to "claude/..."
 # (round-1 Methodology concern 2: never a silently-truncated token).
+# ``.json``/``.parquet`` are grammar-resolvable but NON-COUNTABLE — see
+# ``_C65_COUNTABLE_EXTS``.
 _C65_GLOB_RE = re.compile(
     r"(?<![\w./*-])"
     r"((?:[\w.*-]+/)*[\w.*-]*smoke[\w.*-]*/[\w./*-]+\.(?:jsonl|json|csv|tsv|txt|parquet)"
@@ -12162,8 +12182,9 @@ def _c65_count_rows(path: Path) -> tuple[int, bool] | None:
 
 def _c65_glob_counts(base: Path, glob_tokens: list[str]) -> list[tuple[str, int, bool]]:
     """Row counts for ``glob_tokens`` globbed under ``base`` (files only,
-    at most ``_C65_MAX_FILES``; unreadable files and malformed globs are
-    skipped — fail-open, the rung just resolves less)."""
+    LINE-ORIENTED extensions only — see ``_C65_COUNTABLE_EXTS``; at most
+    ``_C65_MAX_FILES``; unreadable files and malformed globs are skipped —
+    fail-open, the rung just resolves less)."""
     counts: list[tuple[str, int, bool]] = []
     for tok in glob_tokens:
         try:
@@ -12175,6 +12196,8 @@ def _c65_glob_counts(base: Path, glob_tokens: list[str]) -> list[tuple[str, int,
                 return counts
             if not p.is_file():
                 continue
+            if p.suffix not in _C65_COUNTABLE_EXTS:
+                continue  # non-line-oriented — non-countable (_C65_COUNTABLE_EXTS)
             counted = _c65_count_rows(p)
             if counted is None:
                 continue
@@ -12207,7 +12230,13 @@ def _c65_git_tree_counts(sha: str, glob_token: str) -> list[tuple[str, int, bool
     if out is None:
         return None
     names = [ln for ln in out.decode("utf-8", errors="replace").splitlines() if ln.strip()]
-    matches = sorted(n for n in names if PurePosixPath(n).match(glob_token))[:_C65_MAX_FILES]
+    matches = sorted(
+        n
+        for n in names
+        # Line-oriented only — a committed .json/.parquet blob is just as
+        # non-countable as a working-tree one (_C65_COUNTABLE_EXTS).
+        if PurePosixPath(n).match(glob_token) and n.endswith(_C65_COUNTABLE_EXTS)
+    )[:_C65_MAX_FILES]
     counts: list[tuple[str, int, bool]] = []
     for fname in matches:
         blob = _c65_git(["git", "cat-file", "blob", f"{sha}:{fname}"])
@@ -12479,6 +12508,24 @@ def _c65_compare(ev: _C65Eval) -> _C65Cmp:
     return cmp_
 
 
+def _c65_no_smoke_declared(plan: str) -> str | None:
+    """The plan's standalone no-smoke-run declaration, if any — the
+    criterion-5 clause-3 route (task #2178 round 2): check 11's canonical
+    ``N/A — no dry-run smoke`` form (same tail regex as check 11) or the
+    plain ``N/A — no smoke run`` variant. Returns the matched phrase (for
+    the SKIP detail) or None. Checks 65/66 consult this BEFORE the claim
+    grammar: a plan carrying BOTH a declaration and a claim-shaped line
+    still SKIPs — the declaration wins, because a plan that declares it
+    runs no smoke has no smoke fixtures in scope for a size claim to gate
+    (the stray sentence is the critics' to adjudicate, not this check's).
+    Wrapped pastes are rejected by ``_standalone_na_declared`` as usual."""
+    if _standalone_na_declared(plan, r"no dry-?run smoke"):
+        return "N/A — no dry-run smoke"
+    if _standalone_na_declared(plan, r"no smoke run\b"):
+        return "N/A — no smoke run"
+    return None
+
+
 def check_smoke_fixture_size(plan: str, kind: str) -> CheckResult:
     """A plan-claimed SMOKE-FIXTURE ROW FLOOR must not overstate the
     realized fixtures (task #2178; incident #1336 v16: the plan claimed a
@@ -12486,12 +12533,29 @@ def check_smoke_fixture_size(plan: str, kind: str) -> CheckResult:
     in six of seven files — the newly binding smoke gate was unsatisfiable
     at the realized size and no gate could tell).
 
+    No-smoke-run declaration route (criterion 5 clause 3, round 2): a
+    standalone ``N/A — no dry-run smoke`` (check 11's canonical form) or
+    ``N/A — no smoke run`` declaration SKIPs this check BEFORE the claim
+    grammar is consulted — a plan carrying BOTH a declaration and a
+    claim-shaped line still SKIPs (the declaration wins: a declared
+    no-smoke plan has no smoke fixtures in scope; see
+    ``_c65_no_smoke_declared``).
+
     Trigger (conservative): a fence-masked line carrying all THREE
     conjuncts — "smoke", a fixture noun (fixture/slice/corpus/corpora/
     sample), and a floor-shaped row count ("sized >= 40 rows", "at least
     40 rows", "slice of 40 rows") — OR a RAW-scanned constant-form claim
     (a ``SMOKE_SAMPLE_N``-shaped assignment paste, fences included).
     Multiple claim lines are each evaluated; the worst grade wins.
+
+    Row counting is LINE-ORIENTED-ONLY (``_C65_COUNTABLE_EXTS``: .jsonl /
+    .csv / .tsv / .txt): a resolved ``.json`` / ``.parquet`` file is
+    NON-COUNTABLE — its newline count under-reads (a minified 40-object
+    array is one physical line), which would FAIL a satisfied floor, the
+    one direction this check must never err — so it neither satisfies nor
+    contradicts. The token stays in the glob grammar BY CHOICE (check 66's
+    producer scan keeps its literal component); an all-non-countable
+    resolution leaves the rung unresolved (ladder continues / SKIP).
 
     Resolution ladder, FIRST-RESOLVE-WINS (the working tree deliberately
     SHADOWS the pinned tip — a stale working tree is diagnosable from the
@@ -12516,6 +12580,14 @@ def check_smoke_fixture_size(plan: str, kind: str) -> CheckResult:
     ``N/A — no smoke fixture size claim`` standalone, unwrapped."""
     cid, name = "c65_smoke_fixture_size", "smoke-fixture size claim vs realized fixtures"
     del kind  # all kinds — smoke fixtures appear in experiment and infra plans alike
+    declared = _c65_no_smoke_declared(plan)
+    if declared:
+        return _skip(
+            cid,
+            name,
+            f"plan declares no smoke run (standalone '{declared}') — smoke-fixture "
+            "size claims not in scope; the declaration wins over any claim-shaped line",
+        )
     ev = _c65_evaluate(plan)
     if not ev.prose_claims and not ev.const_claims:
         return _skip(cid, name, "no smoke fixture size claim detected")
@@ -12539,10 +12611,20 @@ def check_smoke_fixture_size(plan: str, kind: str) -> CheckResult:
         return _pass(cid, name, "; ".join(cmp_.passes) + tail)
     # Nothing comparable resolved anywhere — the criterion-5 fail-safe.
     bits: list[str] = []
+    countable_tokens = [t for t in ev.glob_tokens if t.endswith(_C65_COUNTABLE_EXTS)]
     if ev.prose_claims and not ev.glob_tokens:
         bits.append("fixture path not named — claim not mechanically checkable")
+    elif ev.glob_tokens and not countable_tokens:
+        bits.append(
+            "fixture path token(s) name only non-line-oriented formats (.json/.parquet) — "
+            "newline row-counting is invalid there, so the evidence is non-countable "
+            "(neither satisfies nor contradicts a floor)"
+        )
     elif ev.glob_tokens and not ev.file_counts:
-        bits.append("fixture path unresolvable from working tree / pinned tip / issue worktrees")
+        msg = "fixture path unresolvable from working tree / pinned tip / issue worktrees"
+        if len(countable_tokens) < len(ev.glob_tokens):
+            msg += " (non-line-oriented .json/.parquet tokens are non-countable by design)"
+        bits.append(msg)
     elif ev.file_counts and not ev.prose_claims:
         bits.append(
             f"fixture files resolve (rung: {ev.winning_rung}) but every claim is "
@@ -12570,13 +12652,24 @@ def check_smoke_producer_coverage(plan: str, kind: str) -> CheckResult:
     substring. Coverage predicate: the candidate's basename or
     repo-relative path appears ANYWHERE in the plan text (RAW scan) — the
     maximally conservative WARN-minimizing reading; a candidate in the
-    plan's modified-file list is a strict subset. SKIPs when check 65's
+    plan's modified-file list is a strict subset. Shares check 65's
+    no-smoke-run declaration route (``_c65_no_smoke_declared``), consulted
+    BEFORE the claim grammar — a declaration beside a claim-shaped line
+    still SKIPs (the declaration wins). SKIPs also when check 65's
     claim trigger is absent, when the realized evidence is unresolved,
     when the claim is satisfied, or when no candidate is identifiable.
     Escape: ``N/A — no fixture-producing script change needed``
     standalone, unwrapped."""
     cid, name = "c66_smoke_producer_coverage", "smoke-fixture producing script named in plan"
     del kind  # all kinds (same scope as check 65)
+    declared = _c65_no_smoke_declared(plan)
+    if declared:
+        return _skip(
+            cid,
+            name,
+            f"plan declares no smoke run (standalone '{declared}') — producer coverage "
+            "not in scope; the declaration wins over any claim-shaped line",
+        )
     ev = _c65_evaluate(plan)
     if not ev.prose_claims and not ev.const_claims:
         return _skip(cid, name, "no smoke fixture size claim detected (check-65 trigger absent)")

@@ -13042,6 +13042,8 @@ def test_c65_c66_registered_in_checks_and_docstring_catalog():
     # Escape phrases registered in the docstring.
     assert "N/A — no smoke fixture size claim" in verify_plan.__doc__
     assert "N/A — no fixture-producing script change needed" in verify_plan.__doc__
+    # Round-2 no-smoke-run declaration route (criterion 5 clause 3).
+    assert "N/A — no smoke run" in verify_plan.__doc__
 
 
 def test_c65_v16_shape_fails(tmp_path, monkeypatch):
@@ -13191,6 +13193,89 @@ def test_c66_standalone_na_passes(tmp_path, monkeypatch):
     r = verify_plan.check_smoke_producer_coverage(plan, "experiment")
     assert r.status == "PASS"
     assert "explicit N/A declared" in r.detail
+
+
+def test_c65_c66_no_smoke_declaration_with_live_claim_skips(tmp_path, monkeypatch):
+    # Round-2 FIX 1 (concerns `no-smoke-run-skip` /
+    # `c65-no-smoke-run-declaration-skip`, criterion 5 clause 3): a
+    # standalone no-smoke declaration disarms BOTH checks even when a live
+    # claim line + resolvable fixtures are present — the declaration wins
+    # over the claim grammar (pre-fix this plan FAILed c65 / WARNed c66).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no dry-run smoke")  # default claim + glob lines stay present
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "declares no smoke run" in r.detail
+    assert "N/A — no dry-run smoke" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "SKIP"
+    assert "declares no smoke run" in r66.detail
+
+
+def test_c65_c66_no_smoke_run_variant_alone_skips(tmp_path, monkeypatch):
+    # Declaration alone (no claim, no path token): the plain `no smoke run`
+    # variant SKIPs both checks with a detail naming the declaration.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no smoke run", claim=None, glob_line=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "N/A — no smoke run" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "SKIP"
+    assert "N/A — no smoke run" in r66.detail
+
+
+def test_c65_wrapped_no_smoke_declaration_does_not_disarm(tmp_path, monkeypatch):
+    # Anti-paste: a backtick-wrapped declaration is NOT a declaration
+    # (_standalone_na_declared discipline) — the live claim still FAILs.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("`N/A — no dry-run smoke`")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+
+
+def test_c65_minified_json_is_noncountable_never_false_fails(tmp_path, monkeypatch):
+    # Round-2 FIX 2 (concern `non-row-format-counting`): a minified .json
+    # bank (40 objects on one physical line -> newline count 1) must never
+    # ground a FAIL against a 40-row floor — .json is non-line-oriented, so
+    # it is non-countable evidence and the check SKIPs (unresolved), with a
+    # detail naming the non-countable format. Pre-fix: FALSE FAIL.
+    root = tmp_path / "fixroot"
+    fdir = root / "data" / "issue_1336" / "corpora_v2_smoke"
+    fdir.mkdir(parents=True)
+    (fdir / "bank.json").write_text("[" + ",".join(f'{{"row": {i}}}' for i in range(40)) + "]")
+    (root / "scripts").mkdir()
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    plan = _c65_plan(
+        glob_line="Fixtures live at data/issue_1336/corpora_v2_smoke/*.json (bank format)."
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "non-line-oriented" in r.detail
+    # c66 follows check 65's comparison: evidence unresolved -> SKIP.
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_jsonl_sibling_still_counts_beside_noncountable_json(tmp_path, monkeypatch):
+    # Round-2 FIX 2, positive arm: the .jsonl sibling stays countable —
+    # the FAIL grounds on it alone; the non-countable .json contributes no
+    # count and never appears in the per-file detail.
+    root = tmp_path / "fixroot"
+    fdir = root / "data" / "issue_1336" / "corpora_v2_smoke"
+    fdir.mkdir(parents=True)
+    (fdir / "bank.json").write_text("[" + ",".join(f'{{"row": {i}}}' for i in range(40)) + "]")
+    (fdir / "rows.jsonl").write_text("".join(f'{{"row": {i}}}\n' for i in range(8)))
+    (root / "scripts").mkdir()
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    plan = _c65_plan(
+        glob_line=(
+            "Fixtures live at data/issue_1336/corpora_v2_smoke/*.jsonl and "
+            "data/issue_1336/corpora_v2_smoke/*.json."
+        )
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "rows.jsonl=8" in r.detail
+    assert "bank.json" not in r.detail
 
 
 def test_c65_worktree_rung_resolves(tmp_path, monkeypatch):

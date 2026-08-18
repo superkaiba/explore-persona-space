@@ -452,7 +452,13 @@ Run the structural verifier against the plan version just persisted:
   `N/A — no fixture-producing script change needed` (check 66 — the
   contradicted floor is deliberate / already remediated elsewhere; a plan
   genuinely needing regenerated fixtures instead names the producing
-  script in its modified-file list; #2178).
+  script in its modified-file list; #2178), and
+  `N/A — no smoke run` (checks 65 + 66 — the dedicated no-smoke-run
+  declaration route: a plan declaring it runs no pre-launch smoke has no
+  smoke fixtures in scope, so both checks SKIP even when a claim-shaped
+  line is present — the declaration wins; check 11's canonical
+  `N/A — no dry-run smoke` standalone form is recognized the same way;
+  #2178 round 2).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
