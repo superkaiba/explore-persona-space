@@ -34,7 +34,7 @@ relates_to:
 - Qwen3.5-9B agrees against its own same-wave patch ceiling (71% recovery) on the whole-response score; the Qwen2.5-normalized banked-ceiling read is indeterminate — a cross-model denominator, with measured judge-instrument offset only +0.07.
 - With patch-content donors, token identity beats transplanted hidden states: prefill recovery rises from 48% to 67% across one to three tokens on Qwen2.5 while state patches sit near 50–54%, and Qwen3.5's stop separating beyond one position. Natural-opening donors reverse this — Qwen3.5 state-patch point estimates recover 100–105% of the control, though every ratio CI crosses 1, leaving partial restoration compatible with the data.
 - Recovery is majority, not total — roughly a third of the patch effect is not carried by opening tokens; the activation companion recovers only 32% on Qwen2.5 (snowball-partial there) and does not separate on Qwen3.5.
-- Pirate matched-query pairs (n=10 per model) read indeterminate on both models: diffs near +0.10 against a design detectable-effect floor near 0.32 — underpowered, not evidence of absence.
+- Pirate matched-query pairs (n=10 per model) read indeterminate on both models: diffs near +0.10 sit below the design's detectable-effect floor — underpowered, not evidence of absence.
 - 7–11% of temperature-1.0 draws carry Chinese-character intrusion (a Qwen sampling artifact, balanced on the confirmatory arms though not on every arm); every decision-lattice label is unchanged when intruded draws are excluded or zeroed. Rescoring the judged span to exclude the forced donor tokens flips no separation and no Qwen2.5 label, but drops Qwen3.5's confirmatory snowball-sufficient verdict to indeterminate through the majority-share conjunct — that verdict is sensitive to the judged-span convention.
 
 ## Goal
@@ -56,11 +56,11 @@ relates_to:
 | Donor capture | greedy, `max_new_tokens` 8; first-3 token ids + post-block states at answer positions 1..3, all layers (28 / 32) | plan §4.2; `decode_hooks.py` |
 | Anchors | floor = unpatched A, ceiling = generate-under-B; K=10, temperature 1.0 (banked for Qwen2.5; fresh for Qwen3.5) | parent recipe, plan §4.1 |
 | Nulls | donors from a different pair via frozen derangements (instruction-format: value-constrained, seed 2162; matched-query: parent derangement); state donors norm-matched per layer and position; token donors unmatched | plan §4.2 |
-| Judge | `claude-sonnet-4-5-20250929`, graded 0–100, Batch API (~50 shards/leg, 0 errored rows), `max_tokens` 1024; pilot gate + 6-item forced-batch probe passed before production waves | `scripts/issue2333_judge.py`; `judge_{q25,q35}/gates/` |
+| Judge | `claude-sonnet-4-5-20250929`, graded 0–100, N=1 draw per rubric, Batch API (~50 shards/leg, 0 errored rows), `max_tokens` 1024; pilot gate + 6-item forced-batch probe passed before production waves | plan §10 instrument block; `scripts/issue2333_judge.py`; `judge_{q25,q35}/gates/` |
 | Coherence gate | form-only rubric; coherent = score > 60; F computed over coherent draws only | parent constant (`issue2162_analysis.py`) |
 | Statistics | exact two-sided paired signed-rank test on per-pair steered−null differences, Holm-corrected at fixed family size 12; pair-clustered bootstrap, B=10,000, seed 23330; majority-share read D3 = F_prefill3 − 0.5·F_control with pair-clustered CI | plan §3/§6; `scripts/issue2333_analysis.py` |
 | Mediation-donor divergence check | binary any-difference read: first-k tokens of each mediated donor vs the base context's own greedy opening, from the committed donor tensors (both greedy captures at HF revision `ab9e72d55e`); matched-query coverage 5 of 15 pairs per model — bare contexts never serve as donors, so their greedy floor openings were not captured | plan §8; `scripts/issue2333_mediation_divergence.py` |
-| Exclusions | anchor separation ≥ 0.5 required; per-cell survival floor 12 of 36 (instruction-format), set floor 5 (matched-query, confirmatory subset = the 10 banked well-separated pairs) | parent rule, plan §6 |
+| Exclusions | anchor separation ≥ 0.5 required; per-cell survival floor 12 of 36 (instruction-format), set floor 5 (matched-query, confirmatory subset = the 10 banked well-separated pairs); matched-query design detectable-effect floor ≈0.32 paired diff at n=10 (design arithmetic, not measured) | parent rule, plan §6 |
 | Follow-up rescore (free-analysis round) | per-cell prefill-3 breakdown (descriptive raw p; no per-cell family fixed in the plan) + continuation-only rescore of the 6 prefill arms per model; bootstrap, correction family (m=12), and floors identical to the Statistics row | `scripts/issue2333_followup_cells_continuation.py`; `eval_results/issue_2333/f_metrics/followup_free_summary.json` |
 | Activation DV read layer | 26 (Qwen2.5) / 30 (Qwen3.5) | plan §6 |
 | Compute | pod-2333-q25 (8× H100, ~3.2 h); pod-2333-q35 (8× H100, ~5.1 h final round) | run markers |
@@ -183,7 +183,7 @@ All 12 arms separate from their nulls, which stay at F ≈0.08–0.15 — a wron
 
 In a descriptive per-cell read (raw p; the plan fixed no per-cell family), all five cells individually separate, with same-wave recovery ratios spanning 0.51 to 0.80 (n=33–36 pairs per cell).
 
-### Qwen3.5 reproduces the sufficiency verdict against its own control; only the cross-model banked read is indeterminate
+### Qwen3.5 reproduces the sufficiency verdict against its own control; on whole-response scoring only the cross-model banked read is indeterminate
 
 The same profile for Qwen3.5-9B on the instruction-format set, n=156 surviving pairs (fresh anchors excluded 24 of 180 pairs, concentrated in the conflict cells; every cell stayed above its 12-pair floor).
 
@@ -205,11 +205,15 @@ Recovery ratio (arm F over same-wave control F) versus opening positions, prefil
 
 ![Qwen2.5 recovery ratio versus opening length, prefill vs state-patch arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/recovery_ratio_q25.png)
 
-> **Figure.** *Mediated prefills grow with opening length on Qwen2.5; mediated state patches plateau.* Instruction-format, patch-content donors: prefill 0.48 / 0.65 / 0.67 vs patch 0.50 / 0.54 / 0.54 at one to three positions. The Qwen3.5 mediated prefill trace is non-monotone — 0.40 / 0.77 / 0.71, peaking at two tokens (next figure). Per-pair traces: `k_traces_q25.png`, `scheme_contrast_q25.png`, same pin.
+> **Figure.** *Mediated prefills grow with opening length on Qwen2.5; mediated state patches plateau.* Instruction-format, patch-content donors: prefill 0.48 / 0.65 / 0.67 vs patch 0.50 / 0.54 / 0.54 at one to three positions. The Qwen3.5 mediated prefill trace is non-monotone — 0.40 / 0.77 / 0.71, peaking at two tokens (next figure).
 
-The plan's auxiliary expectation that state patches recover at least as much as prefills under mediation is reversed beyond one position; the Qwen3.5 two-to-three-token decline is a point-estimate read without a paired comparison. Qwen3.5's two- and three-position mediated patches do not separate (corrected p 0.24 and 0.32): their norm-matched nulls already move behavior to F 0.21–0.23, and patched openings often decode as corrupted fragments (state-patch sample block) — failure to establish an effect under this implementation, not evidence the transplanted states carry nothing.
+![Per-pair F traces versus opening positions, Qwen2.5](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/k_traces_q25.png)
 
-The mediation-donor check passes on the instruction-format set: mediated openings differ from the base context's greedy opening on 92–94% (Qwen2.5) and 98–100% (Qwen3.5) of surviving pairs at every length, so the rise is not explained by donors collapsing into the base opening — though this binary read leaves graded donor distance unmeasured. Matched-query coverage: 5 of 15 pairs per model.
+> **Figure.** *Per-pair companion.* One thin line per pair — steered minus null F at one to three positions — with bold arm means, split by pair set and donor scheme. `scheme_contrast_q25.png` and `arm_vs_ce_q25.png` (same pin) — not embedded: alternate per-pair views of the same arms, superseded by these traces.
+
+The plan's auxiliary expectation that state patches match or beat prefills under mediation is reversed beyond one position; the Qwen3.5 two-to-three-token decline is a point-estimate read, not a paired comparison. Qwen3.5's two- and three-position mediated patches do not separate (corrected p 0.24 and 0.32): their norm-matched nulls already move behavior to F 0.21–0.23, and patched openings often decode as corrupted fragments (state-patch sample block) — failure to establish an effect under this implementation, not evidence the transplanted states carry nothing.
+
+The mediation-donor check passes on the instruction-format set: mediated openings differ from the base context's greedy opening on 92–94% (Qwen2.5) and 98–100% (Qwen3.5) of surviving pairs at every length, so donor collapse into the base opening does not explain the rise — though this binary read leaves graded donor distance unmeasured. Matched-query coverage: 5 of 15 pairs per model.
 
 ### Natural-opening state patches recover an estimated 100–105% of the control effect on Qwen3.5
 
@@ -219,7 +223,11 @@ The same recovery-ratio read for Qwen3.5: arm F over the fresh same-model contro
 
 > **Figure.** *Natural-opening state-patch point estimates sit at the control band.* Instruction-format, natural-opening donors: state-patch recovery ratio 1.00 / 1.03 / 1.05 across one to three positions, pair-clustered ratio CIs 0.83 to 1.20 / 0.86 to 1.22 / 0.88 to 1.24, every arm separating from its null; prefills with the same donors reach 0.97 at three tokens.
 
-These are the strongest arms in the whole Qwen3.5 lattice, and their activation companion separates too. Each arm's pair-clustered ratio CI includes 1, so control-level recovery is a point estimate, not a tested equivalence — the data remain compatible with partial restoration. The corrupted-opening seam appears in these arms too (natural-opening sample block), yet they sit at the control band, which weakens seam corruption as an explanation of the mediated patches' shortfall.
+![Per-pair arm F versus same-wave control F, all Qwen3.5 arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/arm_vs_ce_q35.png)
+
+> **Figure.** *Per-pair companion of the ratio read.* Each point is one pair under one arm — steered arm F against the same pair's control F; points on the identity line recover the control in full. `k_traces_q35.png` (same pin) — not embedded: the same pairs as steered-minus-null traces, superseded by this view.
+
+These are the strongest arms in the Qwen3.5 lattice, and their activation companion separates too. Every ratio CI includes 1, so control-level recovery is a point estimate, not a tested equivalence — partial restoration stays compatible. The corrupted-opening seam appears here too (natural-opening sample block), yet these arms sit at the control band, weakening seam corruption as an explanation of the mediated patches' shortfall.
 
 Qwen2.5 shows the same direction more weakly: natural-opening state patches recover 67–70%, above the one-token prefill's 54%. Transplanted hidden states therefore do carry the effect when they encode the target's own natural opening — the token-beats-state contrast of the previous section is specific to patch-content donors.
 
@@ -240,7 +248,7 @@ Paired steered−null difference for the confirmatory three-token mediated prefi
 | Qwen3.5-9B | instruction-format (n=156) | snowball-sufficient same-wave (whole-response; drops to indeterminate continuation-only); indeterminate on the cross-model banked read | snowball-sufficient |
 | Qwen3.5-9B | matched-query (n=10) | indeterminate | indeterminate |
 
-The plan pinned the design's detectable-effect floor near 0.32 for this 10-pair set; observed diffs near +0.10 are simply below its power, so these cells read indeterminate, never no-snowball. Qwen3.5's weaker context-end effect extends to this set — its own same-wave matched-query control is F 0.28, against the banked Qwen2.5 0.51. Under the plan's aggregation policy the global headline comes from the adequately-powered patch-content instances, and both agree on sufficiency.
+Observed diffs near +0.10 sit below the design floor recorded in Methodology for this 10-pair set, so these cells read indeterminate, never no-snowball. Qwen3.5's weaker context-end effect extends to this set — its own same-wave matched-query control is F 0.28, against the banked Qwen2.5 0.51. Under the plan's aggregation policy the global headline comes from the adequately-powered patch-content instances, and both agree on sufficiency (whole-response primary).
 
 ### Scoring only the continuation keeps every separation but drops Qwen3.5's confirmatory verdict to indeterminate
 
@@ -248,11 +256,15 @@ Majority-share margin for the confirmatory three-token prefill — arm F minus h
 
 ![Majority-share margin under whole-response and continuation-only scoring, both models](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9f1bb6fab61adecae24c0eb1562d60c5d1cf391e/figures/issue_2333/continuation_d3_recount.png)
 
-> **Figure.** *Qwen3.5's continuation-only margin straddles zero; Qwen2.5's stays positive.* Whole-response margins +0.13 (CI +0.07 to +0.19) and +0.11 (CI +0.04 to +0.17); continuation-only +0.06 (CI +0.006 to +0.120) and +0.06 (CI −0.012 to +0.127). Zero is the sufficiency boundary. Per-unit exemption: the per-row scatter in the robustness section below is the raw view of the rescored quantity.
+> **Figure.** *Qwen3.5's continuation-only margin straddles zero; Qwen2.5's stays positive.* Whole-response margins +0.13 (CI +0.07 to +0.19) and +0.11 (CI +0.04 to +0.17); continuation-only +0.06 (CI +0.006 to +0.120) and +0.06 (CI −0.012 to +0.127). Zero is the sufficiency boundary.
 
-A zero-GPU follow-up round rescored the six prefill arms per model on the continuation-only companion (the judged span without the forced donor tokens), holding the plan's thresholds and correction family fixed. Nothing moves at the separation grain — all 12 prefill reads keep both conjuncts — and every Qwen2.5 label holds on both denominators. Qwen3.5's confirmatory snowball-sufficient verdict does not survive: its continuation majority-share interval straddles zero, dropping the verdict to indeterminate through that conjunct, and its natural-opening banked-denominator label drops the same way.
+![Continuation-only F versus whole-response F, Qwen3.5 steered prefill rows](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/whole_vs_continuation_q35.png)
 
-Continuation recovery ratios are 0.59 of the same-wave control on Qwen2.5 and 0.62 on Qwen3.5, against 0.67 and 0.71 whole-response. I read Qwen2.5's sufficiency as robust to the judged-span convention and Qwen3.5's as convention-sensitive — the majority claim there depends on whether the three forced tokens count as moved behavior.
+> **Figure.** *Per-unit companion of the rescore, Qwen3.5.* Each point is one steered prefill draw: continuation-only F against whole-response F, colored by prefill length. The Qwen2.5 counterpart is embedded in the robustness section below.
+
+A zero-GPU follow-up rescored the six prefill arms per model on the continuation-only companion (the judged span without the forced donor tokens), holding the plan's thresholds and correction family fixed. Nothing moves at the separation grain — all 12 prefill reads keep both conjuncts — and every Qwen2.5 label holds on both denominators. Qwen3.5's confirmatory snowball-sufficient verdict does not survive: its continuation majority-share interval straddles zero, dropping it to indeterminate through that conjunct; the natural-opening banked-denominator label drops the same way.
+
+Continuation recovery ratios are 0.59 (Qwen2.5) and 0.62 (Qwen3.5) of the same-wave control, against 0.67 and 0.71 whole-response. I read Qwen2.5's sufficiency as robust to the judged-span convention and Qwen3.5's as convention-sensitive — the majority claim there depends on whether the three forced tokens count as moved behavior.
 
 | Rescore read (three-token prefill, patch-content donors) | Qwen2.5-7B (n=172 pairs) | Qwen3.5-9B (n=156 pairs) |
 |---|---|---|
