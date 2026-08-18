@@ -29,3 +29,8 @@ When a basename match resolves ONLY via the issue-scoped git arm (not an HF pref
 - target_file: scripts/verify_uploads.py (#2187 outroot-residue arm)
 - fingerprint: outroot-residue-basename-cross-leg-false-ok
 - confidence: high (reproduced live in #2333 leg-B verification; both sha256s recorded)
+
+## Provenance
+
+- workflow_fix_target: scripts/verify_uploads.py
+- source: auto-filed by the /issue 2333 orchestrator from the leg-B upload-verifier workflow-fix-candidate (cross-leg basename false-OK, 2026-08-18)
