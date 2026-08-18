@@ -1442,6 +1442,145 @@ def test_c27d_quoted_homevar_alias_root_cd_stays_whole_index(
     )
 
 
+# --- c28 family: a non-canonical cd RIDING an armed canonical chain DISARMS
+# the widening (r3, concern ``mutable-symbolic-root-proof``). The r2 fix
+# closed the STANDALONE alias arming (c27) but kept the alias spellings as
+# non-poisoning no-op keeps, so ``cd <root> && cd <alias> && git commit -- p``
+# kept cd_root_base=1 from the canonical prefix while the shell's real
+# pathspec-resolution base was the alias's RUNTIME destination
+# (attacker-controllable via a crafted same-command $HOME or a planted
+# symlink) — a verified false-allow on r2 (origin/main BLOCKS, r2 ALLOWS).
+# The invariant pinned here: cd_root_base scopes ONLY when the LAST
+# cwd-moving cd before every commit clause is the canonical absolute root.
+# Each block case runs from a root-SUBDIR cwd with a staged uncertified
+# gated file and a cwd-relative pathspec (the c11-class bypass shape);
+# post-fix the whole-index read blocks (exit 2).
+
+
+def test_c28_tilde_alias_riding_armed_canonical_chain_blocked(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && cd ~/explore-persona-space && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c28b_homevar_alias_riding_armed_canonical_chain_blocked(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && cd $HOME/explore-persona-space && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c28c_home_reassigned_alias_riding_armed_canonical_chain_blocked(
+    foreign_repo: Path, cert: Path
+) -> None:
+    # The c27c reassignment variant composed with the riding chain: a
+    # same-command $HOME reassignment makes the riding alias's destination
+    # arbitrary while the canonical prefix already armed the base.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"HOME=/tmp/elsewhere; cd {foreign_repo} && cd $HOME/explore-persona-space"
+            " && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c28d_canonical_prefixed_subdir_cd_riding_armed_chain_blocked(
+    foreign_repo: Path, cert: Path
+) -> None:
+    # A canonical-PREFIXED subdir cd is non-canonical (hits the ``*)`` arm:
+    # cd_nonroot=1 already kills the gate) AND must also disarm the base —
+    # the r3 belt keeps the cd_root_base predicate locally sound without
+    # leaning on the distant cd_nonroot AND-term.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && cd {foreign_repo}/scripts && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+# --- c29 family: re-arming guard (over-tightening protection for the r3
+# disarm). A non-canonical cd BEFORE the arming canonical cd never disarms,
+# and a canonical arming cd AFTER a disarm re-establishes the base — the
+# LAST cwd-moving cd before the commit is canonical, so scoping still
+# engages from a non-root cwd (the foreign uncertified gated staged file
+# makes scoping observable: exit 0 iff the pathspec-scoped read ran).
+# NOTE the re-arm pins use the SEQ separator before the canonical cd: the
+# ``cd <alias> && cd <root> && git commit`` AND-form never scopes on ANY
+# version (origin/main, r2, r3 all block) — the arming cd's own separator
+# must be START/SEQ/NL (the r1 MF-1 AND-exclusion), a pre-existing refusal
+# c29c pins below. (The plain canonical allow ``cd <root> && git commit --
+# tasks/t.md`` from a non-root cwd is already pinned by c17.)
+
+
+def test_c29_alias_then_canonical_seq_rearm_still_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    _assert_allowed(
+        _run(
+            f"cd ~/explore-persona-space; cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c29b_disarm_then_canonical_rearm_still_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # armed -> alias disarm -> SEQ-separated canonical re-arm -> commit:
+    # the re-arm clears the disarm (the base is measured from the LAST
+    # canonical cd), so the pathspec still scopes.
+    _assert_allowed(
+        _run(
+            f"cd {foreign_repo} && cd ~/explore-persona-space; cd {foreign_repo}"
+            " && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c29c_alias_then_and_separated_canonical_never_arms(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Pre-existing refusal pin (r1 MF-1 AND-exclusion, unchanged by r3):
+    # an AND-separated canonical cd never arms, so the alias-then-canonical
+    # ALL-AND chain stays whole-index from a non-root cwd on every version.
+    _assert_blocked(
+        _run(
+            f"cd ~/explore-persona-space && cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # D — cd-latch variable resolution + unproven-cd diagnostics (issue #1676)
 # ---------------------------------------------------------------------------

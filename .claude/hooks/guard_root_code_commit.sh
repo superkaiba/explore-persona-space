@@ -109,9 +109,14 @@
 #   opaque (out of incident scope — the exemption stays narrow).
 # - Provably-root cd prefix (#2357): pathspec SCOPING also engages when the
 #   command carries a CANONICAL ABSOLUTE root `cd` ($GUARD_REPO absolute
-#   [+ trailing /] ONLY — the r2 arming set). The symbolic ALIAS root
-#   spellings (~/explore-persona-space[/], $HOME/explore-persona-space[/])
-#   NEVER arm the widening: they keep their legacy non-poisoning
+#   [+ trailing /] ONLY — the r2 arming set) AND that cd is the LAST
+#   cwd-moving cd before every commit clause (r3): a NON-canonical cd
+#   ANYWHERE in the armed chain after the canonical one DISARMS the
+#   widening — only a chain whose LAST pre-commit cd is the literal
+#   absolute root scopes; a later canonical arming cd re-establishes the
+#   base. The symbolic ALIAS root spellings (~/explore-persona-space[/],
+#   $HOME/explore-persona-space[/]) NEVER arm the widening AND, riding an
+#   armed chain, DISARM it (r3): they keep their legacy non-poisoning
 #   classification (cd_nonroot stays 0 — root-cwd behavior unchanged) but
 #   are fail-closed for the widening, because their runtime destination
 #   depends on $HOME and symlink resolution, neither provable from the
@@ -124,7 +129,10 @@
 #   and NO compound/subshell-context record anywhere in the command.
 #   Fail-closed residuals (each stays conservatively whole-index):
 #   symbolic-alias root spellings (the ~/ and $HOME/ forms above —
-#   legacy-kept non-poisoning, never arming);
+#   legacy-kept non-poisoning, never arming, and DISARMING when they ride
+#   an armed chain, r3); any non-canonical cd between the armed canonical
+#   cd and a commit (riding alias / subdir / relative / variable — the
+#   disarm above);
 #   variable / $(..) / relative / subdir / quote-broken cd targets;
 #   AND/OR/BG/PIPE-separated cds (own separator); trailing-token cds
 #   (`cd <root> junk`); any non-AND separator between the cd and a commit —
@@ -817,10 +825,16 @@ classify_cmd() {
   cd_nonroot=0 commit_pathspecs="" add_pathspecs=""
   # Provably-root-cd scope-base state (issue #2357): armed by the exact-root
   # cd arm below, broken by any non-AND separator (chain dominance, D3a),
-  # ordered by the commit-verb bits (D3b), reduced to cd_root_base in the
-  # post-loop verdict; consumed by the Layer-2 scope gate as an
-  # OR-alternative to cwd_ok.
+  # ordered by the commit-verb bits (D3b), DISARMED by any later
+  # non-canonical cd on the armed chain (r3, concern
+  # mutable-symbolic-root-proof: the base is provable only while the LAST
+  # cwd-moving cd before every commit clause is the canonical absolute
+  # root — a riding alias/subdir/other cd clears cd_root_seen and sets
+  # cd_base_disarmed; a later canonical arming cd re-establishes both),
+  # reduced to cd_root_base in the post-loop verdict; consumed by the
+  # Layer-2 scope gate as an OR-alternative to cwd_ok.
   cd_root_seen=0 cd_and_chain=0 commit_before_root_cd=0 commit_off_chain=0 cd_root_base=0
+  cd_base_disarmed=0
   # Unproven-cd tracking (issue #1676 fix (b)): one entry per cd clause whose
   # FINAL verdict (after any resolution attempt) is unproven — consumed by
   # the block path's cd-diag lines; never read on the allow path.
@@ -938,7 +952,9 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
           # post-loop verdict (D5). Arming RE-SETS cd_and_chain=1: the chain
           # is measured from the MOST RECENT armed cd (a fresh `; cd <root>`
           # re-establishes the base — its SEQ record already broke any prior
-          # chain via the D3a line above).
+          # chain via the D3a line above) and CLEARS cd_base_disarmed (r3):
+          # a canonical arming cd supersedes any earlier non-canonical
+          # disarm — the base is measured from the LAST canonical cd.
           case "$sep" in
             START | SEQ | NL)
               if [ -z "$tgt_trail" ]; then
@@ -946,7 +962,7 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
                 [ $((i + 3)) -lt "$n" ] && nsep=${recs[i + 3]}
                 case "$nsep" in
                   BG | PIPE) : ;;
-                  *) cd_root_seen=1 cd_and_chain=1 ;;
+                  *) cd_root_seen=1 cd_and_chain=1 cd_base_disarmed=0 ;;
                 esac
               fi
               ;;
@@ -954,17 +970,39 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
           ;;
         '~/explore-persona-space' | '~/explore-persona-space/' \
           | '$HOME/explore-persona-space' | '$HOME/explore-persona-space/')
-          # #2357 r2 (concern mutable-symbolic-root-proof): symbolic ALIAS
-          # root spellings keep their legacy NON-poisoning classification
-          # (cd_nonroot stays 0 — today's behavior at root cwd unchanged)
-          # but NEVER arm the scope base: the tilde form resolves through
-          # $HOME (mutable, reassignable in the same command) and both forms
-          # through symlinks at RUNTIME, so the command text cannot prove
-          # the cd lands at the root the armed cert check's root-pinned
-          # pathspec resolution assumes. Fail-closed for the widening only —
-          # exactly the pre-#2357 keep-arm behavior (a no-op keep).
-          : ;;
-        *) cd_nonroot=1 ;;
+          # #2357 r2+r3 (concern mutable-symbolic-root-proof): symbolic
+          # ALIAS root spellings keep their legacy NON-poisoning
+          # classification (cd_nonroot stays 0 — today's behavior at root
+          # cwd unchanged) and NEVER arm the scope base: the tilde form
+          # resolves through $HOME (mutable, reassignable in the same
+          # command) and both forms through symlinks at RUNTIME, so the
+          # command text cannot prove the cd lands at the root the armed
+          # cert check's root-pinned pathspec resolution assumes. r3: an
+          # alias cd RIDING an already-armed canonical chain additionally
+          # DISARMS the widening — the r2 no-op keep left cd_root_seen=1,
+          # so a canonical-cd-prefixed alias chain scoped pathspecs at the
+          # root while the shell's real resolution base was the alias's
+          # runtime destination (verified false-allow, reconciler r2). A
+          # later canonical arming cd re-establishes the base (its arm
+          # clears cd_base_disarmed). cd_nonroot stays untouched — the
+          # disarm gates ONLY the #2357 widening, never the legacy
+          # root-cwd path.
+          if [ "$cd_root_seen" = 1 ]; then
+            cd_root_seen=0 cd_base_disarmed=1
+          fi
+          ;;
+        *)
+          cd_nonroot=1
+          # r3 belt: any OTHER non-canonical cd riding an armed chain also
+          # disarms the widening. cd_nonroot=1 already kills the Layer-2
+          # gate globally for these spellings; the disarm keeps the
+          # cd_root_base predicate locally sound (the LAST cwd-moving cd
+          # before every commit must be the canonical absolute root)
+          # without leaning on that distant AND-term.
+          if [ "$cd_root_seen" = 1 ]; then
+            cd_root_seen=0 cd_base_disarmed=1
+          fi
+          ;;
       esac
       continue
     fi
@@ -1278,12 +1316,18 @@ $tok"
   # dominance: commit-runs => every predecessor in the chain, the cd
   # included, executed and succeeded => the pathspec-resolution base at the
   # commit is the root — a failed or skipped cd short-circuits the whole &&
-  # chain, so no armed command's commit ever runs off-base), and NO record
-  # opens a compound/subshell context (D4). Consumed by the Layer-2 scope
-  # gate as an OR-alternative to cwd_ok.
+  # chain, so no armed command's commit ever runs off-base), NO
+  # non-canonical cd DISARMED the base after arming without a later
+  # canonical re-arm (r3: the per-record disarm sites clear cd_root_seen and
+  # set cd_base_disarmed; the `== 0` AND-term here is defense-in-depth over
+  # that loop-side clear — the LAST cwd-moving cd before every commit must
+  # be the canonical absolute root), and NO record opens a
+  # compound/subshell context (D4). Consumed by the Layer-2 scope gate as
+  # an OR-alternative to cwd_ok.
   cd_root_base=0
   if [ "$cd_root_seen" = 1 ] && [ "$commit_before_root_cd" = 0 ] \
-    && [ "$commit_off_chain" = 0 ] && ! compound_context_present; then
+    && [ "$commit_off_chain" = 0 ] && [ "$cd_base_disarmed" = 0 ] \
+    && ! compound_context_present; then
     cd_root_base=1
   fi
   return 0
@@ -1638,6 +1682,24 @@ cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
     'cd ~/explore-persona-space && git commit -m x -- own.py' "$RFOR" '' "$RFOR/scripts"
   run_case "B54 home-var-alias root cd never arms from root-subdir cwd (#2357 r2)" 2 \
     'cd $HOME/explore-persona-space && git commit -m x -- own.py' "$RFOR" '' "$RFOR/scripts"
+  # r3 (concern mutable-symbolic-root-proof, riding case): a non-canonical
+  # cd RIDING an armed canonical chain disarms the widening — the LAST
+  # cwd-moving cd before the commit must be the canonical absolute root.
+  run_case "B55 tilde-alias cd riding armed canonical chain disarms (#2357 r3)" 2 \
+    "cd $RFOR && cd ~/explore-persona-space && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B56 home-var alias cd riding armed canonical chain disarms (#2357 r3)" 2 \
+    "cd $RFOR && cd \$HOME/explore-persona-space && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B57 canonical-prefixed SUBDIR cd riding armed chain disarms (#2357 r3)" 2 \
+    "cd $RFOR && cd $RFOR/scripts && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B58 alias-then-canonical SEQ re-arm still scopes (allow direction, #2357 r3)" 0 \
+    "cd ~/explore-persona-space; cd $RFOR && git commit -m x -- tasks/t.md" \
+    "$RFOR" '' "$TMP"
+  run_case "B59 disarm-then-canonical-re-arm still scopes (allow direction, #2357 r3)" 0 \
+    "cd $RFOR && cd ~/explore-persona-space; cd $RFOR && git commit -m x -- tasks/t.md" \
+    "$RFOR" '' "$TMP"
 
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
   run_case "A20 path-limited add --all with artifact pathspec" 0 \
@@ -2077,7 +2139,7 @@ done
 # attribution is already unambiguous.
 scope_diag=""
 if [ "$scope" = 0 ]; then
-  scope_diag="scope-diag: scope=0 cwd_ok=$cwd_ok cd_root_base=$cd_root_base cd_root_seen=$cd_root_seen commit_off_chain=$commit_off_chain cd_nonroot=$cd_nonroot scope_unsafe=$scope_unsafe pathspec_opaque=$pathspec_opaque commit_bare_clause=$commit_bare_clause has_dash_a=$has_dash_a commit_has_pathspec=$commit_has_pathspec
+  scope_diag="scope-diag: scope=0 cwd_ok=$cwd_ok cd_root_base=$cd_root_base cd_root_seen=$cd_root_seen cd_base_disarmed=$cd_base_disarmed commit_off_chain=$commit_off_chain cd_nonroot=$cd_nonroot scope_unsafe=$scope_unsafe pathspec_opaque=$pathspec_opaque commit_bare_clause=$commit_bare_clause has_dash_a=$has_dash_a commit_has_pathspec=$commit_has_pathspec
 "
 fi
 
@@ -2115,8 +2177,11 @@ repo root — a pathspec-limited commit is never blocked by foreign staged
 files: git commit -m \"<msg>\" -- <your paths>  (unquoted paths; run at the
 repo root, or with a leading cd <absolute repo root> &&  prefix — the literal
 absolute path, not a variable, with every clause up to the commit joined by
-&& (#2357) — the guard scopes its check to the pathspec). Plain output
-redirections on the commit clause are tolerated since #1928.
+&& AND no other cd between it and the commit: the cd to the literal absolute
+root must be the LAST cd before the commit — any later non-canonical cd
+(alias/subdir/relative) disarms the scoping (#2357) — the guard scopes its
+check to the pathspec). Plain output redirections on the commit clause are
+tolerated since #1928.
 "
 fi
 
