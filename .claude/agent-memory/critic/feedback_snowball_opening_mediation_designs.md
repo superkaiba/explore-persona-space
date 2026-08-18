@@ -1,6 +1,6 @@
 ---
 name: snowball-opening-mediation-designs
-description: 'Alternatives-lens dispositions for opening-mediation (snowball) decomposition designs: prefill-only verdict registration, dual whole/continuation judge reads, null-direction check (#2333 v4)'
+description: 'Dispositions for opening-mediation (snowball) decomposition designs: prefill-only verdict registration, dual whole/continuation judge reads, null-direction check, recovery-ratio compatibility band (#2333 v4 + v8 language amendment)'
 metadata:
   type: feedback
 ---
@@ -58,7 +58,7 @@ is noise.
    totals (v8 carried "14 booked" from a pre-correction draft vs the real
    36 worst-case) — concern/consistency-checker turf, not conclusion-
    changing when §9's basis is measured-pilot-grounded.
-6. **3-value cycle null is a MIXTURE on language cells** (#2333 v8): a
+8. **3-value cycle null is a MIXTURE on language cells** (#2333 v8): a
    value-constrained derangement guarantees donor-B ≠ recipient-B but NOT
    ≠ recipient-A, so with 3 values the null openings split into inert
    (recipient's own A-language) and third-language (genuinely disruptive —
