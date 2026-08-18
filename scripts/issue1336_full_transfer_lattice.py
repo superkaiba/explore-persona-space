@@ -87,6 +87,7 @@ DEGENERATE = stt.DEGENERATE
 TIER_LABEL = dict(stt.TIER_LABEL)
 TIER_LABEL["5c"] = "rotation + bias, context side"
 TIER_LABEL["5b"] = "rotation + bias, both sides (composed)"
+TIER_LABEL["5d"] = "rotation + bias, answer side"
 CEILING_COLOR = stt.CEILING_COLOR
 CROSS_COLOR = xmap.CROSS_COLOR
 
@@ -121,6 +122,10 @@ TIER_COLORS = {
     # map's orange (dashed, diamond markers) and tier 2's light yellow-green.
     "5c": "#C51B8A",
     "5b": "#B8860B",
+    # 5d dark teal: the ANSWER-side pinned rotation (metric_ladder t5d) — R_ans
+    # applied to the raw t0 prediction with NO context rotation. Separable from
+    # tier 3's light cyan and tier 7's brighter yellow-green.
+    "5d": "#00796B",
     6: "#1F77B4",  # reparam contexts
     7: "#2CA02C",  # reparam answers
     8: "#9467BD",  # reparam both
@@ -202,7 +207,7 @@ elif _TIER_SEL:
     )
     _bad = [_t for _t in TIERS if _t not in TIER_COLORS]
     if _bad:
-        raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8, 5c and 5b")
+        raise SystemExit(f"--tiers: unknown tier(s) {_bad}; valid tiers are 0-8, 5c, 5b and 5d")
     SUFFIX += "_t" + "".join(str(_t) for _t in TIERS)
 
 # --outdir <name>: render into figures/issue_1336/<name>/ instead of the shared
@@ -453,8 +458,18 @@ if LAYER != 30:
 # round-B pairs (sft→rlvr, sft→rlvr_long, rlvr→rlvr_long) were never run
 # with orth tiers and render as line GAPS — the tiers-1-5 contract.
 RIGID_DIR = REPO / "eval_results" / "issue_1336" / "rigid" / "metric_ladder"
+# t5d = R_ans( t0 ): the ANSWER-side pinned rotation — the same
+# _orth_fit(Ys_tr, Yt_tr) answer-cloud Procrustes t5b composes, applied to the
+# RAW t0 prediction W_s x_t with NO context rotation (t5ds: scaled). The t5d
+# GPU round (pod-1336-t5d, 2026-08-18) re-ran the identical ladder battery
+# with the extended ORTH_TIER_NAMES block, so its harvest carries ALL SIX orth
+# variants (t5c/t5cs/t5b/t5bs/t5d/t5ds) plus within/t0..t8 reproduced exactly;
+# when present it supersedes the rigid harvest as the single orth-tier source.
+T5D_DIR = REPO / "eval_results" / "issue_1336" / "t5d" / "metric_ladder"
+ORTH_SRC_DIR = T5D_DIR if T5D_DIR.is_dir() else RIGID_DIR
 # Drawable tier token -> the banked orth-tier key it reads.
-ORTH_DRAW_TIERS = {"5c": "t5c", "5b": "t5b"}
+ORTH_DRAW_TIERS = {"5c": "t5c", "5b": "t5b", "5d": "t5d"}
+ORTH_BANK_KEYS = ("t5c", "t5cs", "t5b", "t5bs", "t5d", "t5ds")
 
 
 def _load_orth_tiers() -> tuple[dict, dict]:
@@ -464,9 +479,9 @@ def _load_orth_tiers() -> tuple[dict, dict]:
     pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
     cells: dict[tuple, dict] = {}
     blocks: dict[tuple, dict] = {}
-    if not RIGID_DIR.is_dir():
+    if not ORTH_SRC_DIR.is_dir():
         return cells, blocks
-    for fp in sorted(RIGID_DIR.glob("pair_*.json")):
+    for fp in sorted(ORTH_SRC_DIR.glob("pair_*.json")):
         m = pat.match(fp.name)
         if not m:
             continue
@@ -477,6 +492,8 @@ def _load_orth_tiers() -> tuple[dict, dict]:
             continue
         key = (f"{src}__{tgt}", fmt, corpus)
         for token, oname in ORTH_DRAW_TIERS.items():
+            if oname not in layer["orth_tiers"]:
+                continue  # rigid harvest predates t5d; the tier renders as a gap
             rec = layer["orth_tiers"][oname]["raw"]
             bs = rec.get("r2_bootstrap") or {}
             cells[(token, *key)] = {
@@ -491,7 +508,7 @@ def _load_orth_tiers() -> tuple[dict, dict]:
             "file": str(fp.relative_to(REPO)),
             "n_shared_rows": int(d.get("n_shared_rows", 0)),
             "within_r2": float(layer["raw"]["within_r2"]),
-            **{k: layer["orth_tiers"][k] for k in ("t5c", "t5cs", "t5b", "t5bs")},
+            **{k: layer["orth_tiers"][k] for k in ORTH_BANK_KEYS if k in layer["orth_tiers"]},
         }
     return cells, blocks
 
@@ -501,7 +518,7 @@ _orth_drawn = [t for t in TIERS if t in ORTH_DRAW_TIERS]
 if _orth_drawn and not ORTH_CELLS:
     raise SystemExit(
         f"--tiers included {_orth_drawn} but no orth_tiers exist at layer {LAYER} under "
-        f"{RIGID_DIR} — the rigid harvest computed them at layer 30 only"
+        f"{ORTH_SRC_DIR} — the orth harvests computed them at layer 30 only"
     )
 
 _base_cell = stt.cell
@@ -1939,17 +1956,31 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                     "gap from t5b up to the cross fit is the part of the stage change that is "
                     "NOT a rigid re-encoding of either space."
                 ),
+                "definition_5d": (
+                    "t5d = R_ans( W_s x_t ): the ANSWER-side-only pinned rotation. The SAME "
+                    "answer-cloud Procrustes R_ans (_orth_fit(Ys_tr, Yt_tr)) t5b composes, "
+                    "applied to the RAW t0 prediction W_s x_t with NO context rotation. "
+                    "Contract reads: t5 - t5d isolates the opportunism of t5's directly-fit "
+                    "rotation over the pinned one; t5b - t5d isolates R_ctx's contribution; "
+                    "t5d - t0 is the pure answer-frame fix."
+                ),
                 "source": (
-                    "eval_results/issue_1336/rigid/metric_ladder/pair_*.json — the "
-                    "rigid-decomposition re-run of the full ladder battery + the "
-                    "ORTH_TIER_NAMES block (issue1336_metric_ladder.py), 4x cpu-bigmem pods, "
-                    "finished 2026-08-13, harvested commit 70162cb912"
+                    f"{ORTH_SRC_DIR.relative_to(REPO)}/pair_*.json — "
+                    + (
+                        "the t5d GPU round's full ladder battery re-run with the extended "
+                        "ORTH_TIER_NAMES block (issue1336_metric_ladder.py, branch "
+                        "issue-1336-backward-pairs), pod-1336-t5d 4x H100, finished 2026-08-18"
+                        if ORTH_SRC_DIR == T5D_DIR
+                        else "the rigid-decomposition re-run of the full ladder battery + the "
+                        "ORTH_TIER_NAMES block (issue1336_metric_ladder.py), 4x cpu-bigmem "
+                        "pods, finished 2026-08-13, harvested commit 70162cb912"
+                    )
                 ),
                 "basis_note": (
-                    "the rigid re-run reproduces the plotted round-3 within/t0/t5/t6/t7 to "
+                    "each orth re-run reproduces the plotted round-3 within/t0/t5/t6/t7 to "
                     "<=1e-12 on spot-checked cells (identical rows, folds, estimator), so the "
-                    "t5c/t5b series share this figure's axis basis exactly; t5c_r2/t5b_r2 row "
-                    "values come from the rigid harvest while every other tier column keeps "
+                    "t5c/t5b/t5d series share this figure's axis basis exactly; orth row "
+                    "values come from the orth harvest while every other tier column keeps "
                     "its round-3 / round-B source"
                 ),
                 "coverage": (
@@ -1959,14 +1990,14 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                     "to the full-tier layer)."
                 ),
                 "ci_note": (
-                    "t5c/t5b intervals are a DIRECT 1,000-draw prompt-level bootstrap on R2 "
-                    "(orth_tiers.<tier>.raw.r2_bootstrap), unlike the t0..t8 gap-CI mapping; "
-                    "both are R2-unit intervals from the same shared bootstrap draws"
+                    "t5c/t5b/t5d intervals are a DIRECT 1,000-draw prompt-level bootstrap on "
+                    "R2 (orth_tiers.<tier>.raw.r2_bootstrap), unlike the t0..t8 gap-CI "
+                    "mapping; both are R2-unit intervals from the same shared bootstrap draws"
                 ),
                 "scaled_variants": (
-                    "t5cs / t5bs (the Procrustes-scaled forms from the same SVDs) are banked "
-                    "in eval_results/issue_1336/input_rot_tier/inputrot_tier_summary.json and "
-                    "are deliberately NOT drawn on any figure"
+                    "t5cs / t5bs / t5ds (the Procrustes-scaled forms from the same SVDs) are "
+                    "banked in eval_results/issue_1336/input_rot_tier/"
+                    "inputrot_tier_summary.json and are deliberately NOT drawn on any figure"
                 ),
             }
             if _orth_drawn
@@ -2133,8 +2164,9 @@ def _git_meta() -> dict:
 
 
 def write_inputrot_summary() -> Path:
-    """Bank the t5c/t5cs/t5b/t5bs reads + provenance to eval_results/
-    (the figures draw the unscaled t5c and t5b only)."""
+    """Bank all banked orth-tier reads (t5c/t5cs/t5b/t5bs, plus t5d/t5ds when the
+    t5d harvest is the source) + provenance to eval_results/ (the figures draw
+    the unscaled t5c, t5b and t5d only)."""
     rows = []
     for (pair, fmt, corpus), b in sorted(ORTH_BLOCKS.items()):
         rows.append(
@@ -2145,10 +2177,7 @@ def write_inputrot_summary() -> Path:
                 "degenerate": (fmt, corpus) in DEGENERATE,
                 "n_shared_rows": b["n_shared_rows"],
                 "within_r2": b["within_r2"],
-                "t5c": b["t5c"],
-                "t5cs": b["t5cs"],
-                "t5b": b["t5b"],
-                "t5bs": b["t5bs"],
+                **{k: b[k] for k in ORTH_BANK_KEYS if k in b},
                 "source_file": b["file"],
             }
         )
@@ -2163,9 +2192,15 @@ def write_inputrot_summary() -> Path:
             "(x_t - mu_t) R + mu_s (t5cs: s_fwd-scaled), then the frozen per-fold source "
             "map W_s. t5b: a second rotation R_ans = _orth_fit(Ys_train, Yt_train) applied "
             "AFTER W_s(R_ctx x_t) (t5bs: both scaled) — the two-sided composition, each "
-            "rotation pinned to its independently-measured re-encoding. Fold-local pooled "
-            "OOF R2, seed-0 5-fold, fp64 — computed by issue1336_metric_ladder.py's "
-            "ORTH_TIER_NAMES block in the rigid-decomposition re-run (2026-08-13)"
+            "rotation pinned to its independently-measured re-encoding. t5d: the SAME "
+            "answer-cloud rotation R_ans = _orth_fit(Ys_train, Yt_train) applied to the RAW "
+            "t0 prediction W_s x_t with NO context rotation (t5ds: scaled) — the answer-side-"
+            "only arm isolating how much of t5b's gain the answer-frame fix alone buys. "
+            "Fold-local pooled OOF R2, seed-0 5-fold, fp64 — computed by "
+            "issue1336_metric_ladder.py's ORTH_TIER_NAMES block; t5c/t5b from the "
+            "rigid-decomposition re-run (2026-08-13), t5d/t5ds from the t5d GPU round "
+            "(pod-1336-t5d, 2026-08-18), which reproduces within/t0..t8 and t5c/t5b exactly "
+            "and supersedes the rigid files as this summary's source"
         ),
         "n_train_note": (
             "per-fold n_train 5.9k-12.4k > d=4096 on every surface except gsm8k_test1319 "
