@@ -1,0 +1,88 @@
+{
+  "commit": "aa7d1825+dirty",
+  "render_id": "971c2cffe8d54c67",
+  "git_commit": "aa7d1825",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-18T10:07:38Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.16,
+      "majority-share margin (95% CI)": 0.12599802707112798,
+      "error": 0.06067272618486834,
+      "series": "whole response",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "majority-share margin (95% CI)": 0.06336623771266935,
+      "error": 0.05685079942227827,
+      "series": "continuation only",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.84,
+      "majority-share margin (95% CI)": 0.10558509695166485,
+      "error": 0.06882977607298148,
+      "series": "whole response",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.16,
+      "majority-share margin (95% CI)": 0.05831219126560906,
+      "error": 0.06961013822041667,
+      "series": "continuation only",
+      "_kind": "errorbar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "three-token prefill, patch-content donors",
+        "ylabel": "majority-share margin (95% CI)",
+        "legend_labels": [
+          "whole response",
+          "continuation only"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B",
+          "Qwen3.5-9B"
+        ],
+        "yticklabels": [
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200"
+        ]
+      }
+    ],
+    "series": [
+      "whole response",
+      "continuation only"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

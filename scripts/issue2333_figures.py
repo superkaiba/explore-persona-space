@@ -632,10 +632,73 @@ def fig_model_compare(tags: list[str]) -> None:
     plt.close(fig)
 
 
+def fig_continuation_d3(tags: list[str]) -> None:
+    """Follow-up recount (9a-ter free-analysis round): majority-share margin D3
+    for the confirmatory three-token prefill under the whole-response DV
+    (stats.json) vs the continuation-only DV (followup_free/
+    continuation_lattice.json), per model, same-wave control denominator.
+    The zero line is the snowball-sufficient boundary of the D3 conjunct."""
+    reads = []  # (model_label, dv_label, mean, lo, hi)
+    for tag in tags:
+        stats = A62.json.loads((FMETRICS_DIR / tag / "stats.json").read_text(encoding="utf-8"))
+        whole = stats["per_set"]["s1"]["arms"]["prefill3_med"]["recovery_samewave"]
+        cont_path = FMETRICS_DIR / tag / "followup_free" / "continuation_lattice.json"
+        if not cont_path.is_file():
+            print(f"[figures] continuation_d3 {tag}: no followup_free lattice — skipped")
+            continue
+        cont = A62.json.loads(cont_path.read_text(encoding="utf-8"))
+        cont_rec = cont["arms"]["prefill3_med"]["recovery_samewave"]
+        for dv_label, rec in (
+            ("whole response", whole),
+            ("continuation only", cont_rec),
+        ):
+            if rec.get("d3_mean") is None or rec.get("d3_ci") is None:
+                continue
+            lo, hi = rec["d3_ci"]
+            reads.append((MODEL_LABEL[tag], dv_label, rec["d3_mean"], lo, hi))
+    if not reads:
+        print("[figures] continuation_d3: no reads — skipped")
+        return
+    fig, ax = plt.subplots(figsize=(6.0, 3.6))
+    colors = {"whole response": paper_palette(2)[0], "continuation only": paper_palette(2)[1]}
+    model_order = [MODEL_LABEL[t] for t in tags if MODEL_LABEL[t] in {r[0] for r in reads}]
+    offsets = {"whole response": -0.16, "continuation only": 0.16}
+    for model_label, dv_label, m, lo, hi in reads:
+        x = model_order.index(model_label) + offsets[dv_label]
+        ax.errorbar(
+            [x],
+            [m],
+            yerr=[[max(0.0, m - lo)], [max(0.0, hi - m)]],
+            fmt="o",
+            color=colors[dv_label],
+            capsize=3,
+            label=dv_label,
+        )
+    ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
+    ax.set_xticks(range(len(model_order)))
+    ax.set_xticklabels(model_order)
+    ax.set_xlim(-0.6, len(model_order) - 0.4)
+    ax.set_ylabel("majority-share margin (95% CI)")
+    ax.set_title("three-token prefill, patch-content donors")
+    handles, labels = ax.get_legend_handles_labels()
+    seen: dict[str, object] = {}
+    for h, lab in zip(handles, labels, strict=True):
+        seen.setdefault(lab, h)
+    ax.legend(seen.values(), seen.keys(), frameon=False, loc="upper right")
+    fig.tight_layout()
+    savefig_paper(fig, "continuation_d3_recount", dir=str(FIG_DIR))
+    plt.close(fig)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Issue #2333 figures.")
     ap.add_argument("--model-tags", nargs="+", default=["q25"], choices=("q25", "q35"))
     ap.add_argument("--import-check", action="store_true")
+    ap.add_argument(
+        "--continuation-d3-only",
+        action="store_true",
+        help="Render only the follow-up continuation-recount D3 figure (no full regen).",
+    )
     return ap.parse_args(argv)
 
 
@@ -654,6 +717,10 @@ def main(argv: list[str] | None = None) -> int:
         return _import_check()
     set_paper_style()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
+    if args.continuation_d3_only:
+        fig_continuation_d3(args.model_tags)
+        print(f"[figures] wrote continuation_d3_recount for {args.model_tags} under {FIG_DIR}")
+        return 0
     for tag in args.model_tags:
         data = _load_tag(tag)
         fig_hero(data, tag)
@@ -668,6 +735,7 @@ def main(argv: list[str] | None = None) -> int:
         fig_coherence(data, tag)
     if len(args.model_tags) > 1:
         fig_model_compare(args.model_tags)
+    fig_continuation_d3(args.model_tags)
     print(f"[figures] wrote figures for {args.model_tags} under {FIG_DIR}")
     return 0
 
