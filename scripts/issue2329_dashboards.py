@@ -441,30 +441,72 @@ def aligned_parts(ctx_a: dict, ctx_b: dict) -> list[tuple[str, str, str, str]]:
     return parts
 
 
+def _expand_span(text: str, start: int, end: int) -> tuple[int, int]:
+    """Expand [start, end) outward to the nearest whitespace/string boundary."""
+    while start > 0 and not text[start - 1].isspace():
+        start -= 1
+    while end < len(text) and not text[end].isspace():
+        end += 1
+    return start, end
+
+
 def diff_regions(a: str, b: str) -> list[tuple[str, str, str]]:
-    """[(op, seg_a, seg_b)] with op in {equal, diff}; short equal runs between
-    two diffs (< COALESCE_GAP chars) are folded in so each swap reads as one unit."""
-    sm = difflib.SequenceMatcher(a=a, b=b, autojunk=False)
-    ops = [
-        ("equal" if op == "equal" else "diff", a[i1:i2], b[j1:j2])
-        for op, i1, i2, j1, j2 in sm.get_opcodes()
-    ]
-    folded: list[tuple[str, str, str]] = []
-    for i, (kind, seg_a, seg_b) in enumerate(ops):
+    """[(op, seg_a, seg_b)] with op in {equal, diff}.
+
+    Short equal runs between two diffs (< COALESCE_GAP chars) fold into one
+    swap unit, and every diff region then expands outward to whitespace
+    boundaries on BOTH sides so marks cover whole words ("large" vs "grande",
+    never the raw char-level "larg" vs "grand"); overlaps created by the
+    expansion re-merge. Concatenating seg_a / seg_b reproduces a / b exactly.
+    """
+    raw = difflib.SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes()
+    folded: list[list] = []  # [kind, i1, i2, j1, j2]
+    for idx, (op, i1, i2, j1, j2) in enumerate(raw):
+        kind = "equal" if op == "equal" else "diff"
         if (
             kind == "equal"
-            and 0 < i < len(ops) - 1
-            and len(seg_a) < COALESCE_GAP
+            and 0 < idx < len(raw) - 1
+            and i2 - i1 < COALESCE_GAP
             and folded
             and folded[-1][0] == "diff"
-            and ops[i + 1][0] == "diff"
+            and raw[idx + 1][0] != "equal"
         ):
             kind = "diff"
         if folded and folded[-1][0] == kind:
-            folded[-1] = (kind, folded[-1][1] + seg_a, folded[-1][2] + seg_b)
+            folded[-1][2], folded[-1][4] = i2, j2
         else:
-            folded.append((kind, seg_a, seg_b))
-    return folded
+            folded.append([kind, i1, i2, j1, j2])
+    diffs: list[list[int]] = []
+    for kind, i1, i2, j1, j2 in folded:
+        if kind != "diff":
+            continue
+        i1, i2 = _expand_span(a, i1, i2)
+        j1, j2 = _expand_span(b, j1, j2)
+        if diffs and (i1 <= diffs[-1][1] or j1 <= diffs[-1][3]):
+            diffs[-1][1] = max(diffs[-1][1], i2)
+            diffs[-1][3] = max(diffs[-1][3], j2)
+        else:
+            diffs.append([i1, i2, j1, j2])
+    out: list[tuple[str, str, str]] = []
+    pos_a = pos_b = 0
+    for i1, i2, j1, j2 in diffs:
+        if i1 > pos_a or j1 > pos_b:
+            out.append(("equal", a[pos_a:i1], b[pos_b:j1]))
+        out.append(("diff", a[i1:i2], b[j1:j2]))
+        pos_a, pos_b = i2, j2
+    if pos_a < len(a) or pos_b < len(b):
+        out.append(("equal", a[pos_a:], b[pos_b:]))
+    return out
+
+
+def _self_check_word_boundary_marks() -> None:
+    """Build-time check: a varied-span mark must cover WHOLE words ("large" vs
+    "grande"), never shared-character fragments ("larg" vs "grand"). Fails loud."""
+    regs = diff_regions("The answer is large.", "The answer is grande.")
+    diffs = [(seg_a, seg_b) for kind, seg_a, seg_b in regs if kind == "diff"]
+    assert diffs == [("large.", "grande.")], diffs
+    assert "".join(seg_a for _, seg_a, _ in regs) == "The answer is large."
+    assert "".join(seg_b for _, _, seg_b in regs) == "The answer is grande."
 
 
 def render_swap(regions: list[tuple[str, str, str]]) -> str:
@@ -1062,6 +1104,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    _self_check_word_boundary_marks()
 
     if args.analysis_md is not None:
         assert args.analysis_md.is_file(), f"missing interpretation markdown: {args.analysis_md}"
