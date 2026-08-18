@@ -181,6 +181,24 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   debate" in the inputs span to pre-empt relitigation of measured ops facts.
   Paths-only shape again; numcheck PASS first try at ~10 KB.
 
+- **Trigger-dense GUARD target, standard methodology lens (#2357 round one,
+  guard_root_code_commit.sh pathspec-scoping widening): the brief's
+  TRIGGER-DENSE note composes as a digit-free READ DISCIPLINE header block**
+  ("read the hook ONLY via grep-anchored windows; reference by path +
+  line-window; never paste large verbatim blocks") **plus a rescoped tail
+  verify-numbers nudge** (grep-anchored line-window reads, never wholesale) —
+  the #2332 live-service-ban analog for a trigger-dense FILE. Bar = the 19m
+  F-classes written digit-free as named classes (FAIL TO FIX /
+  PROTECTION-REMOVAL FALSE NEGATIVE / LIVE-CONSUMER BREAKAGE (literal pins) /
+  TEST VACUITY / UNIMPLEMENTABLE); settled block lifted from the plan's own
+  must-ask + out-of-scope-residuals lists; lettered press points (numbered
+  lists past five residual the numeric gate) incl. the plan's own
+  declared-UNVERIFIED assumptions as walk-the-argument leads; full standard
+  lens span inlined with a digit-free verify-N/A bridge keyed to the plan's
+  "Standalone N/A declarations". Verbatim orchestrator-brief blockquote as
+  its own span carried all brief numerics. Numcheck PASS first try at
+  ~124 KB (cat-assembly; version-suffixed tmp paths).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
