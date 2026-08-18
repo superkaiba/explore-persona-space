@@ -1,0 +1,1 @@
+{"ts": "2026-08-18T13:00:57Z", "event": "raised", "concern_id": "gate-scope-repo-wide-hit-accounting", "severity": "CONCERN", "summary": "Gate-scope supplement labels its sweep repo-wide but omits six non-self test_backend_poll.py basename hits; all omitted hits are non-load-bearing prose.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
