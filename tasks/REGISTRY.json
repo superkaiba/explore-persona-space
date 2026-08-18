@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2374,
+  "highest_id": 2375,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10617,6 +10617,13 @@
       "path": "tasks/proposed/2374",
       "status": "proposed",
       "title": "Step 5a FAMILY_OF: couple .claude/rules/LESSONS.md with workflow_lint _LESSONS_* constants (same-diff pair split by family-atomic sync; 8 gate failures + 2h re-run in #2168)"
+    },
+    "2375": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2375",
+      "status": "proposed",
+      "title": "Pre-existing ordering flake on main: test_fig_two_by_two_quadrant_labels fails under the Step 9c co-selection prefix (empty mpl title) while passing single-file"
     },
     "238": {
       "has_clean_result": false,
