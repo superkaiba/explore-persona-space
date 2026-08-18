@@ -157,6 +157,14 @@ MODELS: dict[str, dict] = {
 MODEL_FOR = {k: v["hf"] for k, v in MODELS.items()}
 # Smoke band fixtures + the 32B production pin (other legs resolve at load time).
 BAND_LAYERS = {"32b": list(range(46, 54)), "tiny": [4, 5], "tiny_ih": [4, 5], "27b": None}
+# Pinned model-config num_hidden_layers for the geometry guard's `all`-config
+# layer universe (r2 concern newaxis-geometry-terminal-layer-universe): the
+# expected universe must be INDEPENDENT of the cache being validated — a cache
+# truncated at the terminal layers would otherwise shrink its own check via
+# len(). 32b = Qwen3-32B's 64 (the same count the band 46-53 pin derives from).
+# Non-pinned legs (27b + tiny smokes) resolve num_hidden_layers at model load;
+# pre-load the cache len stays the proxy there (named residual).
+EXPECTED_N_LAYERS: dict[str, int | None] = {"32b": 64, "27b": None, "tiny": None, "tiny_ih": None}
 CTX_LIMIT = {k: v["ctx_limit"] for k, v in MODELS.items()}
 
 # 32b decode MATCHES the paper (temp 0.7 / top_p 0.9, seeded sampling) as of the
@@ -1059,25 +1067,66 @@ def _committed_tau_map(ext_dir: Path) -> tuple[dict, str]:
     return json.loads(blob), src
 
 
+def _ext_checkout_sha() -> str:
+    """HEAD sha of the external/assistant-axis checkout (degrade, never crash).
+
+    Lane caveat (code-style § reproducibility metadata): a git-less / absent
+    checkout degrades to a stable sentinel string — the content hashes in
+    :func:`_newaxes_regime` remain the binding keys either way.
+    """
+    import subprocess
+
+    proc = subprocess.run(
+        ["git", "-C", str(REPO / "external" / "assistant-axis"), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return proc.stdout.strip() if proc.returncode == 0 else "unavailable-no-git-checkout"
+
+
 def _newaxes_regime(args, ext_dir: Path) -> dict:
     """Output-affecting regime keys for the extract_newaxes completion sentinel.
 
     Keyed on the new-axis file shas + pool construction + (for 32b) the pinned
-    base sha — everything that changes the merged τ/α. Deliberately EXCLUDES
-    the non-32b base tau_map sha: the phase rewrites that file, so keying on it
-    would self-invalidate every completed run.
+    base sha — everything that changes the merged τ/α — PLUS (r2 concern
+    extract-newaxes-sentinel-corpus-content) stable CONTENT hashes of the
+    selected extraction questions and (in-house legs) role prompts actually
+    consumed by the pool capture, resolved here BEFORE any model load, and the
+    external assistant-axis checkout sha. A count-preserving edit to the
+    calibration corpus therefore STALES the sentinel instead of false-skipping
+    into stale τ/α. Deliberately EXCLUDES the non-32b base tau_map sha: the
+    phase rewrites that file, so keying on it would self-invalidate every
+    completed run.
     """
     from scripts import issue2203_common as C
 
     model_key = args.model
     smoke = bool(args.smoke)
+    n_roles = 2 if smoke else int(args.n_roles)
+    n_questions = 3 if smoke else int(args.n_questions)
+    # The SAME seeded selections phase_extract_newaxes consumes (content, not
+    # just counts): hash the resolved texts — never print them.
+    questions = _extraction_questions(n_questions)
+    questions_sha = hashlib.sha256(
+        json.dumps(questions, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    role_prompts_sha = None
+    if is_inhouse(model_key):
+        role_prompts = _select_role_prompts(n_roles)
+        role_prompts_sha = hashlib.sha256(
+            json.dumps(role_prompts, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
     return C.regime_fingerprint(
         round_label=LABEL,
         phase="extract_newaxes",
         model=MODEL_FOR[model_key],
         smoke=smoke,
-        n_roles=2 if smoke else int(args.n_roles),
-        n_questions=3 if smoke else int(args.n_questions),
+        n_roles=n_roles,
+        n_questions=n_questions,
+        questions_sha256=questions_sha,
+        role_prompts_sha256=role_prompts_sha,
+        external_checkout_sha=_ext_checkout_sha(),
         base_sha256_pinned=TAU_MAP_AEE68_SHA256 if model_key == "32b" else None,
         tau_pool="default+role prefill" if is_inhouse(model_key) else "default prefill",
         **{f"newaxis_{fam}": _sha256_file(ext_dir / f) for fam, f in NEWAXIS_FILES.items()},
@@ -1250,8 +1299,14 @@ def _check_strength_geometry(
     pre-strength ``tau_map.json`` — or an axis file missing a band layer —
     would otherwise die as a bare KeyError in :func:`build_cs_stack` AFTER
     the model loads. No-op for valid geoms and engine-none arms.
+
+    The ``all``-config layer universe comes from :data:`EXPECTED_N_LAYERS`
+    (the pinned model-config layer count) where pinned — NEVER from len() of
+    the answer-axis cache under validation, which a terminal-layer truncation
+    would silently shrink (r2 concern newaxis-geometry-terminal-layer-universe).
     """
-    n_layers = len(geom["answer_axis"])
+    pinned_n = EXPECTED_N_LAYERS.get(model_key)
+    n_layers = pinned_n if pinned_n is not None else len(geom["answer_axis"])
     band = list(band) if band is not None else resolved_band(model_key, n_layers)
     layer_cfgs = list(layer_cfgs) if layer_cfgs else list(LAYER_CONFIGS)
     missing: list[str] = []

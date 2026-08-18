@@ -166,12 +166,26 @@ def _fmt(v, nd: int = 4) -> str:
         return html.escape(str(v))
 
 
+class _Safe(str):
+    """Marker for a cell carrying INTENTIONAL pre-built HTML markup.
+
+    ``_tbl`` escapes every plain ``str`` cell (r2 concern
+    dashboard-diagnostic-html-escaping); wrapping in ``_Safe`` is the ONLY
+    explicit opt-out — never pass pre-escaped plain strings.
+    """
+
+
+def _cell(c) -> str:
+    if isinstance(c, _Safe):
+        return str(c)
+    if isinstance(c, str):
+        return html.escape(c)
+    return _fmt(c)
+
+
 def _tbl(headers: list[str], rows: list[list]) -> str:
     head = "".join(f"<th>{html.escape(h)}</th>" for h in headers)
-    body = "".join(
-        "<tr>" + "".join(f"<td>{c if isinstance(c, str) else _fmt(c)}</td>" for c in row) + "</tr>"
-        for row in rows
-    )
+    body = "".join("<tr>" + "".join(f"<td>{_cell(c)}</td>" for c in row) + "</tr>" for row in rows)
     return f"<table><tr>{head}</tr>{body}</table>"
 
 
@@ -206,7 +220,7 @@ def render_diagnostics_html(diags: dict[str, dict]) -> str:
                         g.get("band_all_pass"),
                         g.get("mid_cos"),
                         g.get("mid_pass"),
-                        html.escape(str(g.get("classification"))),
+                        str(g.get("classification")),  # plain str — _tbl escapes
                     ]
                 ],
             )
@@ -246,7 +260,7 @@ def render_diagnostics_html(diags: dict[str, dict]) -> str:
                     rec.get("lambda_edge_of_grid"),
                     rec.get("r2_heldout_pooled"),
                     rec.get("r2_identity_bias_pooled"),
-                    html.escape(knn[:160]),
+                    knn[:160],  # plain str — _tbl escapes
                 ]
             )
         parts.append(

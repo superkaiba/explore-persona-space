@@ -2,9 +2,13 @@
 
 Synthetic judged-cell fixtures (no GPU, no files except the IO test) covering
 the four verdict outcomes plus every Inconclusive-coded branch: mixed cosine
-floors, failed gap precondition, seed-specific non-replicating crossings,
-coherence collapse, invalid-map preimage routing, decode-regime attribution,
-pending-confirmation manifest (P3b cap 6) and pending-anchor-seeds.
+floors, failed gap precondition (short-circuits ahead of arm evaluation — r3),
+seed-specific non-replicating crossings, coherence collapse, invalid-map
+preimage routing, decode-regime attribution, pending-confirmation manifest
+(P3b cap = 6 UNIQUE ARMS, runnable generate/judge commands), the r3
+input-completeness states (pending-arm-cells; missing coherence reference ->
+pending-anchor-seeds; missing map band layer -> raise), and the H1-kill
+priority over pending anchors.
 """
 
 from __future__ import annotations
@@ -88,11 +92,28 @@ def test_missing_anchor_seed_is_pending():
     harm: dict = {}
     _anchors(harm)
     del harm[L.cell_name("na", "unsteered", 44)]
-    anch = L.anchor_stats(harm, None, "band")
+    anch = L.anchor_stats(harm, _coh(), "band")
     assert anch["status"] == "pending-anchor-seeds"
     assert anch["missing_anchor_cells"] == [L.cell_name("na", "unsteered", 44)]
-    v = _reduce(harm, {}, arms=[PRE_ARM])
+    v = _reduce(harm, _coh(), arms=[PRE_ARM])
     assert v["per_cell"]["selfharm__band"]["verdict"] == "pending-anchor-seeds"
+    assert v["verdict_posted"] is False
+
+
+def test_missing_coherence_reference_is_pending():
+    """r3: the unsteered coherence reference is a REQUIRED lattice input — a
+    missing trajectory routes to the non-postable pending state, never a
+    silent ``coherence_reference: None`` skip into a valid verdict."""
+    harm: dict = {}
+    _anchors(harm)
+    harm[L.cell_name("band", PRE_ARM, 42)] = _flat(58.0)  # full arm coverage
+    coh = _coh()
+    del coh[L.cell_name("na", "unsteered", 43)]
+    v = _reduce(harm, coh, arms=[PRE_ARM])
+    e = v["per_cell"]["selfharm__band"]
+    assert e["verdict"] == "pending-anchor-seeds"
+    missing = e["anchors"]["missing_anchor_cells"]
+    assert f"coherence:{L.cell_name('na', 'unsteered', 43)}" in missing
     assert v["verdict_posted"] is False
 
 
@@ -105,13 +126,51 @@ def test_failed_gap_precondition_is_inconclusive():
     assert e["inconclusive_reason"] == "failed-gap-precondition"
 
 
+def test_failed_gap_with_seed42_crossing_is_inconclusive_no_manifest():
+    """r3 fix (c): the failed-gap short-circuit runs AHEAD of the
+    pending-confirmation branch — a would-be seed-42 crossing in a failed-gap
+    cell is Inconclusive IMMEDIATELY, emits NO P3b manifest rows, and the
+    0.5·gap screen / decode guard never evaluate (here gap = -2 <= 0, where the
+    screen threshold -1 would degenerately admit EVERY arm)."""
+    harm: dict = {}
+    _anchors(harm, u=(60.0, 61.0, 59.0), c=(62.0, 62.0, 62.0))  # gap = -2 <= 0
+    harm[L.cell_name("band", PRE_ARM, 42)] = _flat(10.0)  # would-be crossing
+    v = _reduce(harm, _coh(arm=PRE_ARM), arms=[PRE_ARM])
+    e = v["per_cell"]["selfharm__band"]
+    assert e["verdict"] == "Inconclusive"
+    assert e["inconclusive_reason"] == "failed-gap-precondition"
+    assert e["arms"] == {}  # screen/guard not evaluated (degeneracy guard)
+    assert v["confirmation_manifest"] == []
+    assert v["verdict_posted"] is True  # Inconclusive is a posted verdict
+
+
 # --------------------------------------------------------------------------- #
 # the four top-level verdicts
 # --------------------------------------------------------------------------- #
-def test_reproduced_when_no_crossings():
+def test_missing_arm_cell_is_pending_arm_cells():
+    """FLIPPED from r2's ``test_reproduced_when_no_crossings``, which pinned
+    the WRONG semantics (an absent registered arm read Reproduced): a missing
+    seed-42 arm cell is the non-postable ``pending-arm-cells`` state (r3
+    blocker lattice-input-completeness) — the expected grid comes from the
+    registered arm registry, never the glob/dict of present cells."""
     harm: dict = {}
     _anchors(harm)
-    v = _reduce(harm, _coh(), arms=[PRE_ARM])  # arm has no cells at all
+    v = _reduce(harm, _coh(), arms=[PRE_ARM])  # registered arm, no seed-42 cell
+    e = v["per_cell"]["selfharm__band"]
+    assert e["verdict"] == "pending-arm-cells"
+    assert e["missing_arm_cells"] == [L.cell_name("band", PRE_ARM, 42)]
+    assert e["n_expected_arms"] == 1
+    assert v["verdict_posted"] is False
+
+
+def test_reproduced_requires_full_registered_arm_coverage():
+    """Reproduced-and-unchanged is reachable ONLY with every registered arm's
+    seed-42 cell PRESENT and non-crossing (plan §3: the 0-crossings quantifier
+    ranges over the REGISTERED arm set)."""
+    harm: dict = {}
+    _anchors(harm)
+    harm[L.cell_name("band", PRE_ARM, 42)] = _flat(58.0)  # present, drop 2 < 20
+    v = _reduce(harm, _coh(), arms=[PRE_ARM])
     e = v["per_cell"]["selfharm__band"]
     assert e["verdict"] == "Reproduced-and-unchanged"
     assert e["confirmed_crossings"] == [] and e["inconclusive_coded_arms"] == []
@@ -140,9 +199,25 @@ def test_pipeline_fidelity_fail_overrides_everything():
     assert v["per_cell"]["selfharm__band"]["verdict"] == "Pipeline-fidelity-fail"
 
 
+def test_h1_kill_outranks_pending_anchors():
+    """r3 fix (b): the H1 kill is evaluated BEFORE the anchor-availability
+    branch — a killed pipeline posts the terminal Pipeline-fidelity-fail even
+    with anchor seeds (and every replay input) absent, never a masking
+    pending-anchor-seeds."""
+    harm: dict = {}
+    _anchors(harm)
+    del harm[L.cell_name("na", "unsteered", 44)]  # anchors ALSO incomplete
+    h1 = {"classification": "kill-pipeline-fidelity-fail"}
+    v = _reduce(harm, _coh(), h1=h1, arms=[PRE_ARM])
+    e = v["per_cell"]["selfharm__band"]
+    assert e["verdict"] == "Pipeline-fidelity-fail"
+    assert v["verdict_posted"] is True  # the kill verdict is terminal — posted
+
+
 def test_mixed_floors_is_inconclusive():
     harm: dict = {}
     _anchors(harm)
+    harm[L.cell_name("band", PRE_ARM, 42)] = _flat(58.0)  # full coverage (r3)
     h1 = {"classification": "mixed-floors-inconclusive-proceed"}
     v = _reduce(harm, _coh(), h1=h1, arms=[PRE_ARM])
     e = v["per_cell"]["selfharm__band"]
@@ -164,7 +239,35 @@ def test_pending_confirmation_manifest_and_no_verdict():
     assert v["verdict_posted"] is False  # no verdict posted before confirmations
     (m,) = v["confirmation_manifest"]
     assert m["arm"] == PRE_ARM and m["needed_seeds"] == [43, 44]
-    assert "--seeds 43,44" in m["replay_cmd"] and PRE_ARM in m["replay_cmd"]
+    assert "--seeds 43,44" in m["generate_cmd"] and PRE_ARM in m["generate_cmd"]
+    assert "--phase judge" in m["judge_cmd"]
+
+
+def test_manifest_commands_are_runnable_replay_argv():
+    """r2 concern p3b-manifest-unexecutable: each manifest row carries TWO
+    complete argv strings — generate + judge — that shlex-parse against the
+    replay's own parser with no placeholders, and whose resolved arm/seed/
+    scenario sets match the row."""
+    import shlex
+
+    harm: dict = {}
+    _anchors(harm)
+    harm[L.cell_name("band", PRE_ARM, 42)] = _flat(10.0)
+    v = _reduce(harm, _coh(arm=PRE_ARM), arms=[PRE_ARM])
+    (m,) = v["confirmation_manifest"]
+    for key, phase in (("generate_cmd", "generate"), ("judge_cmd", "judge")):
+        argv = shlex.split(m[key])
+        script_i = next(i for i, tok in enumerate(argv) if tok.endswith(".py"))
+        assert argv[script_i].endswith("issue2223_casestudy_replay.py")
+        ns = R.build_parser().parse_args(argv[script_i + 1 :])  # SystemExit on bad argv
+        assert ns.phase == phase
+        assert ns.model == "32b"
+        assert ns.round_subdir == L.NAP_ROUND_SUBDIR
+        assert R.resolve_scenarios(ns) == ["selfharm"]
+    gen_ns = R.build_parser().parse_args(shlex.split(m["generate_cmd"])[3 + 1 :])
+    assert R.resolve_arms(gen_ns) == [PRE_ARM]
+    assert R.resolve_seeds(gen_ns) == [43, 44]
+    assert gen_ns.layers == "band"
 
 
 def test_manifest_capped_at_six_largest_drops():
@@ -179,6 +282,38 @@ def test_manifest_capped_at_six_largest_drops():
     drops = [m["drop_s42"] for m in man]
     assert drops == sorted(drops, reverse=True)
     assert min(drops) > 40.0  # the two smallest-drop candidates were cut
+
+
+def test_manifest_cap_is_per_unique_arm_retaining_all_cells():
+    """r3: the P3B cap counts UNIQUE ARMS (plan §7 'the 6 largest-drop arms'),
+    ranked by each arm's largest crossing drop; EVERY crossing cell of a
+    selected arm is retained, so total rows may exceed 6."""
+    arms = L.NEWAXIS_ARM_LIST[:7]
+    harm_a: dict = {}
+    harm_b: dict = {}
+    _anchors(harm_a)
+    _anchors(harm_b)
+    for i, arm in enumerate(arms):
+        harm_a[L.cell_name("band", arm, 42)] = _flat(2.0 * i)  # drops 60..48
+        # scenario B: only arms[0] crosses there; the rest are non-candidates
+        harm_b[L.cell_name("band", arm, 42)] = _flat(0.0) if arm == arms[0] else _flat(58.0)
+    v = L.reduce_lattice(
+        {"selfharm": harm_a, "delusion": harm_b},
+        {"selfharm": _coh(), "delusion": _coh()},
+        H1_PASS,
+        MAP_OK,
+        BAND,
+        ["selfharm", "delusion"],
+        ["band"],
+        arms=arms,
+    )
+    man = v["confirmation_manifest"]
+    selected = {m["arm"] for m in man}
+    assert len(selected) == L.P3B_CAP == 6
+    assert arms[6] not in selected  # the smallest-max-drop arm was cut
+    a0_rows = [m for m in man if m["arm"] == arms[0]]
+    assert {m["scenario"] for m in a0_rows} == {"selfharm", "delusion"}  # both retained
+    assert len(man) == 7  # 6 unique arms; the top arm contributes 2 cells
 
 
 def test_non_replicating_confirmation_is_inconclusive():
@@ -290,6 +425,23 @@ def test_map_validity_requires_every_band_layer():
     out = L.map_validity(mm, BAND)
     assert out["valid"] is False
     assert out["per_layer"]["1"] == {"present": False}
+    assert out["missing_layers"] == ["1"]
+
+
+def test_missing_map_band_layer_fails_loud_in_reduce():
+    """r3: a band layer ABSENT from map_metrics is a MISSING INPUT — the
+    reduction raises (re-run the capture map phase), never a silent route
+    into any verdict; a MEASURED below-baseline R² (all layers present) keeps
+    the invalid-map routing instead (covered by
+    test_invalid_map_routes_preimage_to_inconclusive_faithful_unaffected)."""
+    import pytest
+
+    harm: dict = {}
+    _anchors(harm)
+    harm[L.cell_name("band", PRE_ARM, 42)] = _flat(58.0)
+    mm = {"map": {"0": {"r2_heldout_pooled": 0.5, "r2_identity_bias_pooled": 0.1}}}
+    with pytest.raises(ValueError, match=r"missing band layer"):
+        _reduce(harm, _coh(), mm=mm, arms=[PRE_ARM])
 
 
 # --------------------------------------------------------------------------- #
@@ -307,6 +459,10 @@ def test_run_writes_lattice_verdict_json(tmp_path):
     ext.mkdir(parents=True)
     harm: dict = {}
     _anchors(harm)
+    # r3: Reproduced needs FULL registered-arm seed-42 coverage (default arm
+    # list = all 18 new-axis arms), every cell present and non-crossing.
+    for arm in L.NEWAXIS_ARM_LIST:
+        harm[L.cell_name("band", arm, 42)] = _flat(58.0)
     (judged / "scores_selfharm.json").write_text(json.dumps({"cells": harm}))
     (judged / "coherence_selfharm.json").write_text(json.dumps({"cells": _coh()}))
     (ext / "axis_cos.json").write_text(json.dumps({"h1_gate": H1_PASS, "band_layers": BAND}))

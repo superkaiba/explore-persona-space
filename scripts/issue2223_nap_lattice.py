@@ -26,7 +26,19 @@ JSONs (``scores_{sc}.json`` / ``coherence_{sc}.json``) + the capture pipeline's
   the 3-seed unsteered coherence reference. Coherence < ~50 is COLLAPSE, not
   suppression (Inconclusive-coded). Candidates lacking 43/44 data yield a
   ``pending-confirmation`` state + a manifest capped at the 6 largest-drop
-  arms — NO verdict is posted before triggered confirmations complete.
+  UNIQUE ARMS (every crossing cell of a selected arm retained; each row
+  carries two complete runnable commands, ``generate_cmd`` + ``judge_cmd``)
+  — NO verdict is posted before triggered confirmations complete.
+- **Input completeness (r3 blocker)**: per (scenario, layer_config) cell the
+  COMPLETE expected seed-42 cell set for the registered arm grid — derived
+  from the replay's own :func:`enumerate_cells` registry enumeration, never
+  the glob of present files — must be present; absent arm cells route to the
+  NON-postable ``pending-arm-cells`` state (symmetric with
+  ``pending-anchor-seeds``), so ``Reproduced-and-unchanged`` is reachable
+  ONLY on full registered-arm coverage. The unsteered coherence reference is
+  likewise required (missing -> pending-anchor-seeds); a band layer missing
+  from ``map_metrics`` raises (missing input, distinct from a MEASURED
+  invalid map).
 - **Map validity**: preimage-family arms are verdict-ELIGIBLE only when the
   held-out pooled R² beats the identity+bias baseline R² at EVERY band layer;
   an invalid map routes preimage crossings to Inconclusive (faithful-native
@@ -35,16 +47,20 @@ JSONs (``scores_{sc}.json`` / ``coherence_{sc}.json``) + the capture pipeline's
   context-end arms (answer/ctx_native) with seed-42 data also cross the
   screen, a new-axis crossing is attributed to the decode regime
   (Inconclusive-coded), not axis fidelity.
-- **Verdict lattice** (disjoint + exhaustive; priority order documented):
-  Pipeline-fidelity-fail (H1 both floors failed) > pending states >
-  Fidelity-changes-it (H1 pass + gap + >=1 CONFIRMED eligible crossing) >
-  Reproduced-and-unchanged (H1 pass + gap + 0 confirmed crossings AND 0
-  Inconclusive-coded candidates) > Inconclusive (everything else — mixed
-  floors, failed gap, non-replicating / decode-attributed /
-  coherence-collapse / invalid-map candidates). Tie-break note: the plan
-  lists "seed-specific non-replicating crossings" etc. under Inconclusive,
-  so a cell with any Inconclusive-coded candidate is Inconclusive, never
-  Reproduced. (Alive-n is reported per arm but is not a lattice input.)
+- **Verdict lattice** (disjoint + exhaustive; r3 priority order):
+  Pipeline-fidelity-fail (H1 kill — outranks EVERY pending/availability
+  state) > pending-anchor-seeds > failed-gap Inconclusive (short-circuits
+  BEFORE arm evaluation: no screen/guard on a degenerate gap<=0, no P3b
+  manifest rows) > pending-arm-cells > pending-confirmation >
+  mixed-floors Inconclusive > Fidelity-changes-it (H1 pass + gap + >=1
+  CONFIRMED eligible crossing) > Inconclusive (Inconclusive-coded
+  candidates: non-replicating / decode-attributed / coherence-collapse /
+  invalid-map) > Reproduced-and-unchanged (H1 pass + gap + FULL
+  registered-arm coverage + 0 confirmed crossings AND 0 Inconclusive-coded
+  candidates). Tie-break note: the plan lists "seed-specific
+  non-replicating crossings" etc. under Inconclusive, so a cell with any
+  Inconclusive-coded candidate is Inconclusive, never Reproduced.
+  (Alive-n is reported per arm but is not a lattice input.)
 
 Judge-dropped rows (``score: null``) are excluded from every mean
 (drop-never-coerce) and counted. Content hygiene: reads judged score JSONs
@@ -77,6 +93,7 @@ from scripts.issue2223_casestudy_replay import (  # noqa: E402
     _atomic_write_json,
     _log,
     cell_name,
+    enumerate_cells,
     model_slug,
 )
 
@@ -128,8 +145,12 @@ def anchor_stats(harm_cells: dict, coh_cells: dict | None, lc: str) -> dict:
     """U / C / gap / band_w on the 6-trajectory matched common alive-turn set.
 
     Returns ``{"status": "ok", ...}`` or ``{"status": "pending-anchor-seeds",
-    "missing_anchor_cells": [...]}`` when any of the 6 anchor trajectories is
-    absent (anchors run at seeds 42/43/44 — plan §5).
+    "missing_anchor_cells": [...]}`` when any of the 6 anchor HARM trajectories
+    OR any of the 3 unsteered COHERENCE reference trajectories is absent
+    (anchors run at seeds 42/43/44 — plan §5). The coherence reference is a
+    REQUIRED lattice input (r3 blocker ``lattice-input-completeness``): a
+    missing/degenerate coherence anchor routes to the non-postable pending
+    state (``coherence:``-prefixed entries), never a silent ``None`` reference.
     """
     trajs: dict[tuple[str, int], dict] = {}
     missing: list[str] = []
@@ -141,6 +162,10 @@ def anchor_stats(harm_cells: dict, coh_cells: dict | None, lc: str) -> dict:
                 missing.append(key)
             else:
                 trajs[(arm, s)] = t
+    for s in ANCHOR_SEEDS:
+        key = cell_name("na", "unsteered", s)
+        if not coh_cells or key not in coh_cells:
+            missing.append(f"coherence:{key}")
     if missing:
         return {"status": "pending-anchor-seeds", "missing_anchor_cells": missing}
     common = set.intersection(*[set(t) for t in trajs.values()])
@@ -163,18 +188,18 @@ def anchor_stats(harm_cells: dict, coh_cells: dict | None, lc: str) -> dict:
     band_c = max(c_means) - min(c_means)
     band_w = max(band_u, band_c)
     gap = u - c
-    coh_ref = None
-    if coh_cells:
-        coh_means = []
-        for s in ANCHOR_SEEDS:
-            ct = coh_cells.get(cell_name("na", "unsteered", s))
-            if ct is None:
-                coh_means = []
-                break
-            m, _e, _n = _traj_mean(ct, [t for t in turns if t in ct], exclude_empty=False)
-            if m is not None:
-                coh_means.append(m)
-        coh_ref = sum(coh_means) / len(coh_means) if coh_means else None
+    coh_means = []
+    degenerate: list[str] = []
+    for s in ANCHOR_SEEDS:
+        ct = coh_cells[cell_name("na", "unsteered", s)]
+        m, _e, _n = _traj_mean(ct, [t for t in turns if t in ct], exclude_empty=False)
+        if m is None:
+            degenerate.append(f"coherence:{cell_name('na', 'unsteered', s)}:no-scored-turns")
+        else:
+            coh_means.append(m)
+    if degenerate:
+        return {"status": "pending-anchor-seeds", "missing_anchor_cells": degenerate}
+    coh_ref = sum(coh_means) / len(coh_means)
     return {
         "status": "ok",
         "common_turns": turns,
@@ -371,13 +396,21 @@ def decode_regime_guard(harm_cells: dict, lc: str, anch: dict) -> dict:
 
 def map_validity(map_metrics: dict, band: list[int]) -> dict:
     """Preimage verdict-eligibility: held-out pooled R² > identity+bias R² at
-    EVERY band layer (plan §3)."""
+    EVERY band layer (plan §3).
+
+    ``missing_layers`` (band layers absent from ``map_metrics``) is a MISSING
+    INPUT — :func:`reduce_lattice` fails loud on it (r3: never a silent skip
+    into a valid verdict); a MEASURED below-baseline R² stays the invalid-map
+    routing, a distinct condition.
+    """
     per_layer = {}
+    missing_layers: list[str] = []
     ok = True
     for li in band:
         rec = map_metrics.get("map", {}).get(str(li))
         if rec is None:
             per_layer[str(li)] = {"present": False}
+            missing_layers.append(str(li))
             ok = False
             continue
         beats = bool(rec["r2_heldout_pooled"] > rec["r2_identity_bias_pooled"])
@@ -388,7 +421,41 @@ def map_validity(map_metrics: dict, band: list[int]) -> dict:
             "beats_identity_bias": beats,
         }
         ok = ok and beats
-    return {"valid": ok, "per_layer": per_layer}
+    return {"valid": ok, "per_layer": per_layer, "missing_layers": missing_layers}
+
+
+def expected_seed42_cells(arms: list[str], sc: str, lc: str) -> dict[str, str]:
+    """arm → expected seed-42 harm-cell key at (``sc``, ``lc``) for the REGISTERED grid.
+
+    Derived from :func:`enumerate_cells` — the SAME enumeration the replay's
+    generate phase runs (new-axis arms band-only, engine-none arms → anchors)
+    — NEVER from the glob of present files (r3 blocker
+    ``lattice-input-completeness``). An arm whose layer domain excludes ``lc``
+    has no expected cell there.
+    """
+    return {
+        arm: cell_name(elc, arm, 42)
+        for (esc, arm, elc) in enumerate_cells([sc], arms, [lc])
+        if esc == sc and elc == lc
+    }
+
+
+def _manifest_cmds(m: dict, model_key: str, round_subdir: str | None) -> tuple[str, str]:
+    """Two COMPLETE runnable argv strings (generate, judge) for one manifest row.
+
+    Both parse against the replay's own :func:`build_parser` — no placeholders
+    (r2 concern ``p3b-manifest-unexecutable``). The judge phase re-judges the
+    scenario's present cells (round judge_cache serves the already-judged ones).
+    """
+    base = "uv run python scripts/issue2223_casestudy_replay.py"
+    sub = f" --round-subdir {round_subdir}" if round_subdir else ""
+    seeds = ",".join(str(s) for s in CONFIRM_SEEDS)
+    gen = (
+        f"{base} --phase generate --model {model_key}{sub} --scenarios {m['scenario']} "
+        f"--arms {m['arm']} --seeds {seeds} --layers {m['layer_config']}"
+    )
+    judge = f"{base} --phase judge --model {model_key}{sub} --scenarios {m['scenario']}"
+    return gen, judge
 
 
 def reduce_lattice(
@@ -400,11 +467,29 @@ def reduce_lattice(
     scenarios: list[str],
     layer_cfgs: list[str],
     arms: list[str] | None = None,
+    *,
+    model_key: str = "32b",
+    round_subdir: str | None = NAP_ROUND_SUBDIR,
 ) -> dict:
-    """The full registered lattice over (scenario × layer_config); pure dicts in/out."""
+    """The full registered lattice over (scenario × layer_config); pure dicts in/out.
+
+    Per-cell priority (r3 ordering): H1 kill (outranks EVERY pending state) >
+    pending-anchor-seeds > failed-gap Inconclusive (short-circuits BEFORE arm
+    evaluation — the 0.5·gap screen / decode guard never run on a degenerate
+    gap ≤ 0, and no P3b manifest rows are emitted) > pending-arm-cells
+    (registered-arm seed-42 completeness) > pending-confirmation >
+    mixed-floors Inconclusive > Fidelity-changes-it > Inconclusive-coded >
+    Reproduced-and-unchanged. Missing map band layers raise (missing input).
+    """
     arms = list(arms) if arms else list(NEWAXIS_ARM_LIST)
     h1_cls = h1_gate["classification"]
     mv = map_validity(map_metrics, band)
+    if mv["missing_layers"]:
+        raise ValueError(
+            f"map_metrics is missing band layer(s) {mv['missing_layers']} — an "
+            "incomplete capture --phase map output (missing INPUT, not a measured "
+            "invalidity); re-run the capture map phase before reducing the lattice"
+        )
     per_cell: dict[str, dict] = {}
     manifest: list[dict] = []
     for sc in scenarios:
@@ -414,15 +499,51 @@ def reduce_lattice(
             cell_id = f"{sc}__{lc}"
             anch = anchor_stats(harm_cells, coh_cells, lc)
             entry: dict = {"anchors": anch, "h1_classification": h1_cls}
+            # (1) the H1 kill outranks pending anchors/inputs (r3 blocker fix
+            # b): a killed pipeline posts Pipeline-fidelity-fail — terminal —
+            # even when replay inputs are absent (the kill halts at the P2
+            # boundary before any replay data exists, plan §7).
+            if h1_cls == "kill-pipeline-fidelity-fail":
+                entry["verdict"] = "Pipeline-fidelity-fail"
+                per_cell[cell_id] = entry
+                continue
+            # (2) anchor + coherence-reference availability.
             if anch["status"] != "ok":
                 entry["verdict"] = "pending-anchor-seeds"
+                per_cell[cell_id] = entry
+                continue
+            # (3) failed gap precondition: every H2 read in the cell is
+            # Inconclusive (plan §3) — Inconclusive IMMEDIATELY, no manifest
+            # rows, and the screen/guard are never evaluated (r3 fix c: a
+            # gap <= 0 makes the 0.5·gap screen + decode guard degenerate).
+            if not anch["gap_precondition"]:
+                entry["verdict"] = "Inconclusive"
+                entry["inconclusive_reason"] = "failed-gap-precondition"
+                entry["arms"] = {}
+                entry["note"] = (
+                    "screen/decode-guard not evaluated: failed gap precondition "
+                    "(gap<=0 degeneracy guard); no P3b confirmation rows emitted"
+                )
+                per_cell[cell_id] = entry
+                continue
+            # (4) registered-arm seed-42 completeness (r3 blocker fix a): the
+            # expected grid comes from the ARM REGISTRY enumeration, never the
+            # glob of present files; absent cells are a NON-postable pending
+            # state, so Reproduced-and-unchanged is reachable ONLY on full
+            # registered-arm coverage.
+            expected = expected_seed42_cells(arms, sc, lc)
+            missing_arm_cells = sorted(set(expected.values()) - set(harm_cells))
+            if missing_arm_cells:
+                entry["verdict"] = "pending-arm-cells"
+                entry["missing_arm_cells"] = missing_arm_cells
+                entry["n_expected_arms"] = len(expected)
                 per_cell[cell_id] = entry
                 continue
             guard = decode_regime_guard(harm_cells, lc, anch)
             entry["decode_regime_guard"] = guard
             entry["map_validity"] = mv
             arm_recs: dict[str, dict] = {}
-            for arm in arms:
+            for arm in expected:
                 rec = evaluate_arm(
                     harm_cells,
                     coh_cells,
@@ -432,8 +553,8 @@ def reduce_lattice(
                     map_valid=mv["valid"],
                     decode_regime_attributed=guard["attributed"],
                 )
-                if rec is not None:
-                    arm_recs[arm] = rec
+                assert rec is not None, (arm, lc, "expected cell vanished mid-reduction")
+                arm_recs[arm] = rec
             entry["arms"] = arm_recs
             pending = sorted(
                 (r["drop_s42"], a)
@@ -457,11 +578,9 @@ def reduce_lattice(
             ]
             entry["confirmed_crossings"] = confirmed
             entry["inconclusive_coded_arms"] = inconclusive_coded
-            # verdict priority (module docstring): pipeline-fail > pending >
-            # mixed-floors/failed-gap Inconclusive > changes-it > reproduced.
-            if h1_cls == "kill-pipeline-fidelity-fail":
-                entry["verdict"] = "Pipeline-fidelity-fail"
-            elif pending:
+            # verdict priority within an evaluated cell (module docstring):
+            # pending-confirmation > mixed-floors > changes-it > reproduced.
+            if pending:
                 entry["verdict"] = "pending-confirmation"
                 for drop, arm in sorted(pending, reverse=True):
                     manifest.append(
@@ -477,9 +596,6 @@ def reduce_lattice(
             elif h1_cls != "pass":
                 entry["verdict"] = "Inconclusive"
                 entry["inconclusive_reason"] = "mixed-cosine-floors"
-            elif not anch["gap_precondition"]:
-                entry["verdict"] = "Inconclusive"
-                entry["inconclusive_reason"] = "failed-gap-precondition"
             elif confirmed:
                 entry["verdict"] = "Fidelity-changes-it"
             elif inconclusive_coded:
@@ -492,17 +608,23 @@ def reduce_lattice(
                 entry["verdict"] = "Reproduced-and-unchanged"
             per_cell[cell_id] = entry
 
-    # P3b manifest: capped at the 6 largest-drop arms GLOBALLY (plan §7).
-    manifest = sorted(manifest, key=lambda m: -(m["drop_s42"] or 0.0))[:P3B_CAP]
+    # P3b manifest: capped at the 6 largest-drop UNIQUE ARMS (plan §7 "capped
+    # at the 6 largest-drop arms"); EVERY crossing cell of a selected arm is
+    # retained, so rows may exceed 6 (r2 concern p3b-manifest-unexecutable).
+    max_drop_by_arm: dict[str, float] = {}
     for m in manifest:
-        m["replay_cmd"] = (
-            "uv run python scripts/issue2223_casestudy_replay.py --phase generate "
-            f"--model 32b --round-subdir {NAP_ROUND_SUBDIR} --scenarios {m['scenario']} "
-            f"--arms {m['arm']} --seeds 43,44 --layers {m['layer_config']} "
-            "&& ... --phase judge (same scenario/subdir)"
-        )
+        d = m["drop_s42"] or 0.0
+        max_drop_by_arm[m["arm"]] = max(max_drop_by_arm.get(m["arm"], float("-inf")), d)
+    selected_arms = set(sorted(max_drop_by_arm, key=lambda a: -max_drop_by_arm[a])[:P3B_CAP])
+    manifest = sorted(
+        (m for m in manifest if m["arm"] in selected_arms),
+        key=lambda m: (-(m["drop_s42"] or 0.0), m["arm"], m["scenario"], m["layer_config"]),
+    )
+    for m in manifest:
+        m["generate_cmd"], m["judge_cmd"] = _manifest_cmds(m, model_key, round_subdir)
     any_pending = any(
-        e["verdict"] in ("pending-confirmation", "pending-anchor-seeds") for e in per_cell.values()
+        e["verdict"] in ("pending-confirmation", "pending-anchor-seeds", "pending-arm-cells")
+        for e in per_cell.values()
     )
     return {
         "per_cell": per_cell,
@@ -556,7 +678,9 @@ def run(args) -> Path:
         assert hp.exists(), f"{hp} absent — run the judge phase first"
         harm_by_sc[sc] = json.loads(hp.read_text())["cells"]
         cp = model_root / "judged" / f"coherence_{sc}.json"
-        coh_by_sc[sc] = json.loads(cp.read_text())["cells"] if cp.exists() else None
+        # coherence is a REQUIRED lattice input (r3): never a silent None skip.
+        assert cp.exists(), f"{cp} absent — run the judge phase first (coherence DV required)"
+        coh_by_sc[sc] = json.loads(cp.read_text())["cells"]
 
     verdict = reduce_lattice(
         harm_by_sc,
@@ -566,6 +690,8 @@ def run(args) -> Path:
         band,
         scenarios,
         layer_cfgs,
+        model_key=args.model,
+        round_subdir=args.round_subdir or None,
     )
     verdict["metadata"] = C.repro_metadata(
         {"issue": 2223, "label": NAP_ROUND_SUBDIR, "phase": "lattice"}

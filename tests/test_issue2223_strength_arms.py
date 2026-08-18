@@ -429,13 +429,50 @@ def test_strength_geometry_guard_rejects_pre_strength_taumap():
             pre, ["cap_ctx_p100", "steer_ctx_k8"], Path("/x"), "32b", Path("/o"), band=[0, 1]
         )
     # original (non-strength) arms never trip the guard on the same pre geom
+    # (band-scoped: the r3 `all`-config universe is the PINNED 64-layer count,
+    # so a 2-layer synthetic geom exercises coverage logic at band only)
     R._check_strength_geometry(
-        pre, ["cap_ctx", "unsteered"], Path("/x"), "32b", Path("/o"), band=[0, 1]
+        pre,
+        ["cap_ctx", "unsteered"],
+        Path("/x"),
+        "32b",
+        Path("/o"),
+        band=[0, 1],
+        layer_cfgs=["band"],
     )
     # a complete geom passes for every new18 arm
     R._check_strength_geometry(
-        geom, list(R.NEW_STRENGTH_ARMS), Path("/x"), "32b", Path("/o"), band=[0, 1]
+        geom,
+        list(R.NEW_STRENGTH_ARMS),
+        Path("/x"),
+        "32b",
+        Path("/o"),
+        band=[0, 1],
+        layer_cfgs=["band"],
     )
+
+
+def test_geometry_guard_all_config_layer_universe_is_pinned():
+    """r2 concern newaxis-geometry-terminal-layer-universe: the `all`-config
+    coverage universe is the PINNED model-config layer count (32b → 64), not
+    len() of the cache being validated — deleting the TERMINAL layer from the
+    answer-axis cache (which shrinks len() to 63 and previously shrank the
+    check's own universe with it) fails LOUD on an all-config arm."""
+    import copy
+
+    import pytest
+
+    layers = list(range(64))
+    geom = _synth_geom(layers, 4)
+    R._check_strength_geometry(
+        geom, ["cap_ctx"], Path("/x"), "32b", Path("/o"), band=[46, 47], layer_cfgs=["all"]
+    )
+    g = copy.deepcopy(geom)
+    del g["answer_axis"][63]  # terminal layer gone — len() would read 63
+    with pytest.raises(RuntimeError, match=r"axis\[answer\] layers \[63\]"):
+        R._check_strength_geometry(
+            g, ["cap_ctx"], Path("/x"), "32b", Path("/o"), band=[46, 47], layer_cfgs=["all"]
+        )
 
 
 def _synth_geom_newaxis(layers, H, seed=9):
@@ -537,6 +574,10 @@ def test_extract_newaxes_sentinel_skips_before_model_load(tmp_path, monkeypatch)
     import pytest
 
     _out_root, ext_dir, args = _newaxes_env(tmp_path)
+    # r3: the regime hashes the RESOLVED question content — fake the external
+    # assistant-axis checkout boundary with a signature-conformant selector
+    # BEFORE the first regime computation so both computations match.
+    monkeypatch.setattr(R, "_extraction_questions", lambda n, seed=42: ["q"] * n)
     regime = R._newaxes_regime(args, ext_dir)
     (ext_dir / R.NEWAXES_SENTINEL).write_text(json.dumps({"regime": regime}))
 
@@ -551,7 +592,6 @@ def test_extract_newaxes_sentinel_skips_before_model_load(tmp_path, monkeypatch)
     assert checked, "the skip path must re-run the geometry completeness check"
 
     # --force bypasses the sentinel and proceeds toward the pool capture
-    monkeypatch.setattr(R, "_extraction_questions", lambda n: ["q"] * n)
     monkeypatch.setattr(R, "_committed_tau_map", lambda d: ({}, "x"))
     args.force = True
     tau = {
@@ -574,6 +614,7 @@ def test_extract_newaxes_stale_sentinel_recomputes(tmp_path, monkeypatch):
     import torch as _t
 
     _out_root, ext_dir, args = _newaxes_env(tmp_path)
+    monkeypatch.setattr(R, "_extraction_questions", lambda n, seed=42: ["q"] * n)
     regime = R._newaxes_regime(args, ext_dir)
     (ext_dir / R.NEWAXES_SENTINEL).write_text(json.dumps({"regime": regime}))
     # rewrite one axis file -> its sha changes -> sentinel is STALE
@@ -586,7 +627,6 @@ def test_extract_newaxes_stale_sentinel_recomputes(tmp_path, monkeypatch):
         "source": {},
     }
     (ext_dir / "tau_map.json").write_text(json.dumps(tau))
-    monkeypatch.setattr(R, "_extraction_questions", lambda n: ["q"] * n)
 
     def _boom(*a, **k):
         raise AssertionError("recompute reached the model load")
@@ -594,6 +634,64 @@ def test_extract_newaxes_stale_sentinel_recomputes(tmp_path, monkeypatch):
     monkeypatch.setattr(R, "load_model_and_tokenizer", _boom)
     with pytest.raises(AssertionError, match="recompute reached"):
         R.phase_extract_newaxes(args)
+
+
+def _fake_external_tree(root, questions, role_prompts=None):
+    """A minimal external/assistant-axis data tree (the real resolver bodies run)."""
+    import json as _json
+
+    data = root / "external" / "assistant-axis" / "data"
+    data.mkdir(parents=True, exist_ok=True)
+    (data / "extraction_questions.jsonl").write_text(
+        "\n".join(_json.dumps({"question": q}) for q in questions)
+    )
+    if role_prompts is not None:
+        roles = data / "roles"
+        (roles / "instructions").mkdir(parents=True, exist_ok=True)
+        (roles / "role_list.json").write_text(_json.dumps([*role_prompts, "assistant"]))
+        for name, pos in role_prompts.items():
+            (roles / "instructions" / f"{name}.json").write_text(
+                _json.dumps({"instruction": [{"pos": pos}]})
+            )
+
+
+def test_newaxes_regime_keys_on_corpus_content(tmp_path, monkeypatch):
+    """r2 concern extract-newaxes-sentinel-corpus-content: the sentinel regime
+    hashes the RESOLVED question + role-prompt CONTENT (before any model load)
+    plus the external checkout sha — mutating ONE question (or one role
+    prompt) WITHOUT changing counts stales the sentinel. Runs the REAL
+    ``_extraction_questions`` / ``_select_role_prompts`` bodies against a fake
+    external tree (the filesystem boundary)."""
+    _out_root, ext_dir, args = _newaxes_env(tmp_path)
+    monkeypatch.setattr(R, "REPO", tmp_path)
+    _fake_external_tree(tmp_path, ["q1", "q2", "q3"])
+    regime_a = R._newaxes_regime(args, ext_dir)
+    assert "questions_sha256" in regime_a and "external_checkout_sha" in regime_a
+    assert regime_a["role_prompts_sha256"] is None  # tiny = published-synth leg
+    # identical content -> identical fingerprint (a bare re-run still skips)
+    assert R._newaxes_regime(args, ext_dir) == regime_a
+    # mutate ONE question, SAME count -> sentinel regime is STALE
+    _fake_external_tree(tmp_path, ["q1", "q2-MUTATED", "q3"])
+    regime_b = R._newaxes_regime(args, ext_dir)
+    assert regime_b != regime_a
+    assert regime_b["questions_sha256"] != regime_a["questions_sha256"]
+
+    # in-house leg: the consumed role prompts are content-keyed too
+    args_ih = _Args(
+        model="tiny_ih",
+        smoke=True,
+        out_root=str(_out_root),
+        n_roles=2,
+        n_questions=3,
+        force=False,
+    )
+    # exactly n_roles=2 roles so BOTH are always selected (seeded-shuffle-proof)
+    _fake_external_tree(tmp_path, ["q1", "q2", "q3"], {"r1": "be r1", "r2": "be r2"})
+    regime_c = R._newaxes_regime(args_ih, ext_dir)
+    assert regime_c["role_prompts_sha256"] is not None
+    _fake_external_tree(tmp_path, ["q1", "q2", "q3"], {"r1": "be r1 MUTATED", "r2": "be r2"})
+    regime_d = R._newaxes_regime(args_ih, ext_dir)
+    assert regime_d["role_prompts_sha256"] != regime_c["role_prompts_sha256"]
 
 
 # --------------------------------------------------------------------------- #
