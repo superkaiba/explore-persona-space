@@ -1,6 +1,6 @@
 ---
-title: 'Qwen3.5-9B rerun of the #2162 minimal-pair context-vector pipeline (thinking
-  disabled)'
+title: 'Experiment: Do the #2162 minimal-pair context-vector findings transfer to
+  Qwen3.5-9B with thinking disabled?'
 kind: experiment
 tags: []
 created_at: '2026-08-16T17:48:46Z'

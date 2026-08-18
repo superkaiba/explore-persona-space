@@ -10269,7 +10269,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2329",
       "status": "interpreting",
-      "title": "Qwen3.5-9B rerun of the #2162 minimal-pair context-vector pipeline (thinking disabled)"
+      "title": "Experiment: Do the #2162 minimal-pair context-vector findings transfer to Qwen3.5-9B with thinking disabled?"
     },
     "233": {
       "has_clean_result": false,
