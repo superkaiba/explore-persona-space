@@ -10488,8 +10488,8 @@
     "2357": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2357",
-      "status": "approved",
+      "path": "tasks/running/2357",
+      "status": "running",
       "title": "guard_root_code_commit.sh: pathspec-limited root commits blocked by foreign staged code files (scoping defect)"
     },
     "2358": {
