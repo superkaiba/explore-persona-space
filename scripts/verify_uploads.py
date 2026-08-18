@@ -26,6 +26,12 @@ Usage:
     # listing against the union of HF prefixes + ISSUE-SCOPED git trees +
     # declared discards. Any file with no permanent home FAILs — a NAME-SET
     # diff, never a count (a matching count is not a matching set; #2162).
+    # A basename matched ONLY by the issue-scoped git arm is additionally
+    # content-disambiguated (#2359: git blob sha1 vs the committed
+    # candidates when the disk bytes are locally readable; a pod-side row
+    # with no local bytes degrades to WARN `outroot-residue-basename-git-only`
+    # so the exploratory pass byte-checks — a sibling leg's committed
+    # same-named file must never silently cover this leg's file, #2333).
     uv run python scripts/verify_uploads.py --issue 42 \
         --outroot-listing /tmp/issue-42-outroot.txt \
         --hf-prefix issue42_slug/raw_completions
@@ -90,6 +96,7 @@ rest of the scan.
 
 import argparse
 import fnmatch
+import hashlib
 import json
 import logging
 import os
@@ -99,6 +106,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import NamedTuple
 
 # Make the repo's src/ importable so we can reuse the canonical HF/WandB
 # HEAD-check helper (verify_artifacts_exist) instead of reimplementing it.
@@ -1212,6 +1220,16 @@ def _unconsulted_prose_wandb_note(card: dict | None) -> str | None:
     )
 
 
+def _verifier_repo_root() -> Path:
+    """Repo root the git arms run in (the checkout containing this script).
+
+    Module-level seam (#2359): the hermetic residue tests monkeypatch this to
+    a temp git repo so the REAL subprocess git arm runs against real committed
+    fixtures — the mid-flight live tree is not a stable fixture.
+    """
+    return Path(__file__).resolve().parent.parent
+
+
 def _issue_branch_ref(issue_num: int) -> str | None:
     """Return the first existing git ref for the issue branch, or None.
 
@@ -1219,7 +1237,7 @@ def _issue_branch_ref(issue_num: int) -> str | None:
     remote-tracking ref (``origin/issue-<N>``). No fetch is performed —
     only refs already known to the repo are considered.
     """
-    repo_root = Path(__file__).resolve().parent.parent
+    repo_root = _verifier_repo_root()
     for ref in (f"issue-{issue_num}", f"origin/issue-{issue_num}"):
         result = subprocess.run(
             ["git", "rev-parse", "--verify", "--quiet", ref],
@@ -1323,26 +1341,46 @@ def filter_issue_scoped_git_paths(paths: list[str], issue_num: int) -> list[str]
     return [p for p in paths if pattern.search(p)]
 
 
-def _git_tree_basenames_for_issue(issue_num: int) -> set[str]:
-    """Basenames of ISSUE-SCOPED tracked paths on the issue branch + HEAD.
+class _GitCandidate(NamedTuple):
+    """One committed same-basename candidate on the issue-scoped git arm."""
 
-    Reads the refs (never the working tree — sparse-worktree safe), filters
-    each listing through :func:`filter_issue_scoped_git_paths`, and reduces to
-    basenames. Uncommitted working-tree files are deliberately NOT counted
-    (uncommitted is not permanent — matches Step 2.9's posture). Raises
-    ``RuntimeError`` on a failed listing (fail-loud; the caller surfaces it as
-    an ERROR row, which flips the overall verdict to FAIL).
+    path: str
+    oid: str
+    size: int
+
+
+def _git_tree_candidates_for_issue(issue_num: int) -> dict[str, list[_GitCandidate]]:
+    """Basename -> committed candidates (path, blob OID, size) for the issue.
+
+    Supersedes the former basename-SET helper (#2359): the residue check's
+    git arm needs each candidate's blob OID + byte size so a basename match
+    can be CONTENT-disambiguated — a sibling leg's committed same-named file
+    must not cover this leg's different-bytes file (#2333 cross-leg
+    false-OK). Reads the refs (never the working tree — sparse-worktree
+    safe) via ``git ls-tree -r -l`` (long format: ``<mode> <type> <oid>
+    <size>\\t<path>``), keeps blob rows whose path passes
+    :func:`filter_issue_scoped_git_paths`, and dedups on (path, oid) across
+    the issue branch + HEAD (a candidate differing BETWEEN refs contributes
+    both versions — either committed content is a permanent home).
+    Uncommitted working-tree files are deliberately NOT counted (uncommitted
+    is not permanent — matches Step 2.9's posture). Raises ``RuntimeError``
+    on a failed listing or a STRUCTURALLY malformed row — one that cannot be
+    split into ``<mode> <type> <oid> <size>\\t<path>`` (fail-loud; the caller
+    surfaces it as an ERROR row, which flips the overall verdict to FAIL).
+    Successfully-parsed non-blob rows (tree/commit entries) are skipped as
+    legitimate non-candidates.
     """
-    repo_root = Path(__file__).resolve().parent.parent
+    repo_root = _verifier_repo_root()
     refs: list[str] = []
     branch_ref = _issue_branch_ref(issue_num)
     if branch_ref is not None:
         refs.append(branch_ref)
     refs.append("HEAD")
-    basenames: set[str] = set()
+    candidates: dict[str, list[_GitCandidate]] = {}
+    seen: set[tuple[str, str]] = set()
     for ref in refs:
         result = subprocess.run(
-            ["git", "ls-tree", "-r", "--name-only", ref],
+            ["git", "ls-tree", "-r", "-l", ref],
             capture_output=True,
             text=True,
             cwd=repo_root,
@@ -1351,9 +1389,61 @@ def _git_tree_basenames_for_issue(issue_num: int) -> set[str]:
             raise RuntimeError(
                 f"git ls-tree {ref} failed (rc={result.returncode}): {result.stderr.strip()}"
             )
-        for p in filter_issue_scoped_git_paths(result.stdout.splitlines(), issue_num):
-            basenames.add(p.rsplit("/", 1)[-1])
-    return basenames
+        parsed: dict[str, tuple[str, int]] = {}
+        for line in result.stdout.splitlines():
+            # A STRUCTURAL parse failure (no tab separator / wrong metadata
+            # field count) is a row the verdict must not silently build on
+            # — fail loud naming the ref + the offending row (#2359 r2).
+            meta, sep, path = line.partition("\t")
+            if not sep:
+                raise RuntimeError(
+                    f"unparseable git ls-tree -l row (no tab separator) for {ref}: {line!r}"
+                )
+            fields = meta.split()
+            if len(fields) != 4:
+                raise RuntimeError(
+                    f"unparseable git ls-tree -l row (expected 4 metadata fields, "
+                    f"got {len(fields)}) for {ref}: {line!r}"
+                )
+            _mode, otype, oid, size_field = fields
+            if otype != "blob":
+                continue  # parsed non-blob row (tree/commit entry) — no content to compare
+            try:
+                size = int(size_field)
+            except ValueError as e:
+                # A blob row always carries a numeric size; anything else is
+                # a parse the verdict must not silently build on.
+                raise RuntimeError(f"unparseable git ls-tree -l blob row: {line!r}") from e
+            parsed[path] = (oid, size)
+        for path in filter_issue_scoped_git_paths(list(parsed), issue_num):
+            oid, size = parsed[path]
+            if (path, oid) in seen:
+                continue
+            seen.add((path, oid))
+            basename = path.rsplit("/", 1)[-1]
+            candidates.setdefault(basename, []).append(_GitCandidate(path, oid, size))
+    return candidates
+
+
+def _git_blob_sha1(path: str) -> str:
+    """Git blob SHA-1 of the file at ``path`` (matches ``git hash-object``).
+
+    hashlib sha1 over the blob header ``b"blob %d\\0" % nbytes`` + the raw
+    file bytes, chunked so a large file never materializes in memory. Valid
+    for SHA-1 object-format repos (this repo is one), and the committed blob
+    OIDs the residue check compares against are unaffected by LFS/text
+    filters (none configured in ``.gitattributes`` for these paths). Raises
+    ``OSError`` on an unreadable path — the caller maps that to residue
+    (fail-toward-FAIL).
+    """
+    h = hashlib.sha1(b"blob %d\0" % os.stat(path).st_size)
+    with open(path, "rb") as fh:
+        while True:
+            chunk = fh.read(1 << 20)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def _hf_prefix_basenames(hf_prefixes: tuple[str, ...]) -> set[str]:
@@ -1467,6 +1557,57 @@ def _outroot_disk_entries(
     return entries
 
 
+def _match_outroot_files(
+    disk_paths: list[str],
+    covered_names: set[str],
+    git_candidates: dict[str, list[_GitCandidate]],
+) -> tuple[list[str], list[str], int]:
+    """Per-file matching for :func:`check_outroot_residue` (#2359).
+
+    HF/discard coverage first (``covered_names``), then the issue-scoped git
+    arm with content disambiguation. Returns ``(residue descriptions,
+    git-only-unverified descriptions, content-verified count)``.
+    """
+    residue: list[str] = []
+    git_only_unverified: list[str] = []
+    content_verified = 0
+    for full in disk_paths:
+        basename = full.rsplit("/", 1)[-1]
+        if basename in covered_names:
+            continue
+        candidates = git_candidates.get(basename)
+        if candidates is None:
+            residue.append(f"{full} ({_file_size_or_unknown(full)})")
+            continue
+        cand_paths = ", ".join(c.path for c in candidates)
+        if not Path(full).is_file():
+            # No local bytes (pod-side --outroot-listing row): the git-only
+            # basename match is UNVERIFIABLE here — collect for the WARN.
+            git_only_unverified.append(f"{full} ~ {cand_paths}")
+            continue
+        # Local access: disambiguate by content. Size equality is the cheap
+        # first pass (no hashing when no candidate matches the byte size);
+        # an unreadable file is residue (fail-toward-FAIL).
+        try:
+            disk_size = os.stat(full).st_size
+            same_size = [c for c in candidates if c.size == disk_size]
+            disk_oid = _git_blob_sha1(full) if same_size else None
+        except OSError as e:
+            residue.append(
+                f"{full} (content check failed: {type(e).__name__}: {e}; "
+                f"committed candidate(s): {cand_paths})"
+            )
+            continue
+        if same_size and any(c.oid == disk_oid for c in same_size):
+            content_verified += 1
+            continue
+        residue.append(
+            f"{full} ({disk_size} B) same basename, different content - "
+            f"committed candidate(s): {cand_paths}"
+        )
+    return residue, git_only_unverified, content_verified
+
+
 def check_outroot_residue(
     issue_num: int,
     *,
@@ -1487,12 +1628,36 @@ def check_outroot_residue(
     matching count is not a matching set (#2162: 236 pod files vs 235
     uploaded read clean on counts while a file was lost).
 
-    Verdicts: residue non-empty -> FAIL naming every residue path + size;
-    empty -> OK; neither ``outroot_listing`` nor ``outroot`` supplied -> SKIP
-    (legacy invocations unchanged); a git/HF listing failure -> ERROR
-    (fail-loud; ERROR flips the overall verdict to FAIL). An empty
-    ``hf_prefixes`` with a listing supplied still runs, with a WARN-worded
-    detail (fail-toward-FAIL: HF-resident files then read as residue).
+    Per-file matching, HF/discards FIRST (#2359 — the order is load-bearing):
+    a basename resolving at an HF prefix or a declared discard is covered
+    with no further check; a basename resolving ONLY via the issue-scoped
+    git arm is CONTENT-disambiguated, because the git arm is issue-scoped
+    but not leg-scoped and a sibling leg's committed same-named file must
+    not cover this leg's unpersisted file (#2333: leg-B's
+    ``upload_done.json`` read OK off leg-A's committed different-bytes
+    copy). With local access the disk file's git blob sha1 is compared
+    against the committed candidates' OIDs (size equality as the cheap
+    first pass — no hashing when no candidate matches the byte size): an
+    OID match is covered; no match is residue ("same basename, different
+    content", naming both paths); an unreadable file is residue
+    (fail-toward-FAIL). Without local access (a pod-side
+    ``--outroot-listing`` row) the git-only match is UNVERIFIABLE here —
+    the check degrades to WARN carrying the literal token
+    ``outroot-residue-basename-git-only`` plus both paths, so the
+    upload-verifier's exploratory pass knows to byte-check. Per-file LOCAL
+    ACCESS (not the input-mode flag) selects content-check vs WARN, so a
+    VM-side listing still gets the strong check.
+
+    Verdicts: residue non-empty -> FAIL naming every residue path + size
+    (git-only-unverified files, when also present, are named in the same
+    detail — residue dominates); residue empty but git-only-unverified
+    non-empty -> WARN (token above); both empty -> OK (detail carries the
+    ``content-verified=<n>`` git-arm-verified count); neither
+    ``outroot_listing`` nor ``outroot`` supplied -> SKIP (legacy invocations
+    unchanged); a git/HF listing failure -> ERROR (fail-loud; ERROR flips
+    the overall verdict to FAIL). An empty ``hf_prefixes`` with a listing
+    supplied still runs, with a WARN-worded detail (fail-toward-FAIL:
+    HF-resident files then read as residue).
 
     Missing-input handling (fail-loud): a nonexistent ``outroot_listing``
     file or ``outroot`` directory returns ERROR — a missing input must never
@@ -1545,32 +1710,55 @@ def check_outroot_residue(
             "consulted (fail-toward-FAIL: HF-resident files read as residue); "
         )
 
-    # 2. Permanent-home set (basenames). A listing failure on either arm is
-    # surfaced as ERROR — never swallowed into a false OK.
+    # 2. Permanent-home sets. ORDER IS LOAD-BEARING (#2359): HF-arm basenames
+    # + declared discards cover a file BEFORE any git-arm content logic runs,
+    # so a both-arms match in listing mode stays a clean OK (no spurious WARN
+    # on healthy runs whose files are both uploaded and committed). The git
+    # arm carries per-candidate blob OID + size for the content check below.
+    # A listing failure on either arm is surfaced as ERROR — never swallowed
+    # into a false OK.
     try:
-        home_basenames = _hf_prefix_basenames(tuple(hf_prefixes))
-        home_basenames |= _git_tree_basenames_for_issue(issue_num)
+        covered_names = _hf_prefix_basenames(tuple(hf_prefixes))
+        git_candidates = _git_tree_candidates_for_issue(issue_num)
     except Exception as e:
         return {
             "status": "ERROR",
             "url": "",
             "detail": (f"{warn_prefix}permanent-home listing failed: {type(e).__name__}: {e}"),
         }
-    home_basenames.update(discarded_names)
+    covered_names.update(discarded_names)
 
-    # 3. Verdict: the name-set diff, never the counts.
-    residue = [p for p in disk_paths if p.rsplit("/", 1)[-1] not in home_basenames]
-    matched = len(disk_paths) - len(residue)
+    # 3. Verdict: the per-file name-set diff (+ git-arm content check), never
+    # the counts. residue -> FAIL; git-only matches with no local bytes ->
+    # WARN (`outroot-residue-basename-git-only`); residue dominates the WARN.
+    residue, git_only_unverified, content_verified = _match_outroot_files(
+        disk_paths, covered_names, git_candidates
+    )
+    matched = len(disk_paths) - len(residue) - len(git_only_unverified)
     if residue:
-        described = ", ".join(f"{p} ({_file_size_or_unknown(p)})" for p in residue)
+        detail = (
+            f"{warn_prefix}{len(residue)} file(s) match no permanent home "
+            f"(HF prefixes + issue-scoped git trees + declared discards): "
+            f"{', '.join(residue)}. A matching count is not a matching set - "
+            f"the verdict is the name-set diff, never the counts."
+        )
+        if git_only_unverified:
+            detail += (
+                f" Additionally {len(git_only_unverified)} git-only basename "
+                f"match(es) with no local bytes to compare (byte-check in the "
+                f"exploratory pass): {'; '.join(git_only_unverified)}"
+            )
+        return {"status": "FAIL", "url": "", "detail": detail}
+    if git_only_unverified:
         return {
-            "status": "FAIL",
+            "status": "WARN",
             "url": "",
             "detail": (
-                f"{warn_prefix}{len(residue)} file(s) match no permanent home "
-                f"(HF prefixes + issue-scoped git trees + declared discards): "
-                f"{described}. A matching count is not a matching set - the "
-                f"verdict is the name-set diff, never the counts."
+                f"{warn_prefix}outroot-residue-basename-git-only: "
+                f"{len(git_only_unverified)} file(s) matched ONLY issue-scoped "
+                f"git basenames and have no local bytes to compare - "
+                f"byte-check in the exploratory pass: "
+                f"{'; '.join(git_only_unverified)}"
             ),
         }
     return {
@@ -1578,6 +1766,7 @@ def check_outroot_residue(
         "url": "",
         "detail": (
             f"{warn_prefix}disk={len(disk_paths)} matched={matched}; "
+            f"content-verified={content_verified}; "
             f"verdict is the name-set diff, never the counts"
         ),
     }

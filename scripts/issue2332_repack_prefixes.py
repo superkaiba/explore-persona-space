@@ -76,6 +76,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
 from explore_persona_space.task_workflow import (
     find_task_path,
     primary_checkout_root,
@@ -1104,6 +1105,15 @@ def step_upload(prefix: str, st: dict, k_expected: int) -> None:
         )
     fresh = gate_cap(k_expected)
     log(f"    G-cap OK: fresh count {fresh:,} + k={k_expected} <= {CAP_TOTAL - CAP_BUFFER:,}")
+    # Secret upload gate (2026-08-18): the 2026-08-17 HF secret-scanning alert
+    # was THIS script's upload of issue2224_screening tar shards — corpus text
+    # with pasted third-party credentials, re-uploaded unscanned. Scan every
+    # text member of the staged shards BEFORE upload_large_folder; fail-loud
+    # OUTSIDE the transport try below (a finding is an outcome, not transport).
+    # Remediation: scripts/scrub_secrets.py fix on the STAGED SOURCE, then
+    # re-pack (index sha256s must be recomputed). Kill switch:
+    # EPM_SECRET_UPLOAD_GATE=0.
+    assert_upload_clean([up_root], what=f"issue2332_repack:{prefix}")
     try:
         _get_api().upload_large_folder(
             repo_id=SRC,

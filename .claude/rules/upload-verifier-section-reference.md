@@ -277,6 +277,28 @@ matching set. Built-in exemptions: `OUTROOT_EXEMPT_DIR_PARTS` (`.venv`,
 `OUTROOT_EXEMPT_SUFFIXES` (`.log`, `.pid`, `.lock`, `.tmp`); there is NO
 size floor (all three #2162 losses were sub-3-KB).
 
+**Git-only basename matches are content-disambiguated (#2359).** The git
+arm is issue-scoped but not LEG-scoped, so a sibling leg's committed
+same-named file could silently cover this leg's unpersisted file (#2333:
+leg-B's `upload_done.json` read `outroot_residue: OK` off leg-A's
+committed different-bytes copy). A basename resolving ONLY via the git
+arm (not an HF prefix, not a declared discard — those cover FIRST,
+unchanged) is therefore byte-checked: with local access the check
+compares the disk file's git blob sha1 against the committed candidates'
+OIDs (size equality as the cheap first pass) — a mismatch is residue
+(FAIL, "same basename, different content", naming both paths). A
+pod-side `--outroot-listing` row with NO local bytes cannot be compared
+mechanically: the check returns **WARN** carrying the literal token
+`outroot-residue-basename-git-only` plus `<disk path> ~ <committed
+candidate path(s)>`. **That WARN is a byte-check duty for the
+exploratory pass, never a ship-as-is:** hash the pod file in place
+(`ssh_execute <pod> 'git hash-object <path>'` or `sha256sum` both sides)
+and compare against the committed candidate — equal bytes ⇒ treat as
+covered (record the comparison in the verdict note); different bytes ⇒
+the file is UNPERSISTED — disposition it exactly like a FAIL hit below,
+then re-run the check. Residue (FAIL) dominates the WARN when both are
+present.
+
 Per residue hit, exactly ONE disposition:
 
 - **Upload it** to its correct destination per the Upload Policy table,
