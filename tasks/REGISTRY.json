@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2360,
+  "highest_id": 2361,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10512,6 +10512,13 @@
       "path": "tasks/planning/2360",
       "status": "planning",
       "title": "Preflight passes a pod venv whose lock-pinned package has no metadata and cannot import (sympy half-install breaks the whole transformers stack)"
+    },
+    "2361": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2361",
+      "status": "proposed",
+      "title": "workflow-fix: tick_triage reads STALE-REDRIVE at planning while a live subagent runs, risking a duplicate planner spawn"
     },
     "237": {
       "has_clean_result": true,
