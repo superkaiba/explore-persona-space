@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2369,
+  "highest_id": 2370,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10582,6 +10582,13 @@
       "path": "tasks/completed/237",
       "status": "completed",
       "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos \u22650.97 (MODERATE confidence)"
+    },
+    "2370": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2370",
+      "status": "proposed",
+      "title": "guard_root_code_commit.sh: pathspec scoping fails to exempt foreign staged files (blocks its own remediation form)"
     },
     "238": {
       "has_clean_result": false,
