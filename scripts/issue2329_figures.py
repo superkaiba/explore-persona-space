@@ -421,8 +421,13 @@ def fig_layer_profile(probe: dict, perm_npz: Path, out_dir: Path, inputs: list[P
         fig.supxlabel(DEPTH_XLABEL, fontsize=8)
         _save(fig, out_dir, f"probe_layer_curves_{slot}", inputs)
     # Companion heatmap (the compact per-layer summary), x in depth fractions.
+    # The two panels carry DIFFERENT row sets (ce has 2 cells pe lacks), so the
+    # y-axis is deliberately NOT shared: under sharey=True the panel drawn
+    # second owns the shared extent + tick labels, silently mis-labelling every
+    # row of the other panel (report-verifier round-1 blocker on this figure).
     half = 0.5 / max(n_layers - 1, 1)
-    fig, axes = plt.subplots(1, 2, figsize=(16, 9), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(16, 9))
+    panel_specs: list[tuple[object, int, list[str]]] = []
     for ax, slot in zip(axes, ("ce", "pe"), strict=True):
         rows = [r for r in results if r["slot"] == slot]
         rows.sort(key=lambda r: r["cell"])
@@ -441,6 +446,19 @@ def fig_layer_profile(probe: dict, perm_npz: Path, out_dir: Path, inputs: list[P
         ax.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         ax.set_xlabel(DEPTH_XLABEL)
         ax.set_title(f"probe AUC per layer — slot {slot}")
+        panel_specs.append((ax, int(mat.shape[0]), [r["cell"] for r in rows]))
+    # Fail-loud guard: each panel's REALIZED tick labels must match its own
+    # imshow row set, in count AND content. Checked after BOTH panels render so
+    # a reintroduced shared/linked y-axis (where the last panel's labels win)
+    # raises here instead of shipping a silently mis-labelled heatmap.
+    for ax, n_rows, expected in panel_specs:
+        realized = [t.get_text() for t in ax.get_yticklabels()]
+        if len(realized) != n_rows or realized != expected:
+            raise RuntimeError(
+                f"layer_profile panel {ax.get_title()!r}: imshow draws {n_rows} rows "
+                f"but the axis carries {len(realized)} tick labels "
+                "(y-axis clobbered — shared-y regression?)"
+            )
     fig.colorbar(im, ax=axes, shrink=0.7, label="LOCO AUC")
     _save(fig, out_dir, "layer_profile", inputs)
 

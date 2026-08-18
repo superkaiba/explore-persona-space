@@ -24,7 +24,7 @@
     "aggregate_view": "figures/issue_2329/layer_profile.png",
     "per_unit_views": ["figures/issue_2329/probe_layer_curves_ce.png", "figures/issue_2329/probe_layer_curves_pe.png"],
     "caption_bullets": [
-      "Aggregate view (layer_profile): heatmaps of leave-one-carrier-out (LOCO, 12 carrier groups) linear probe AUC per layer; rows = type-cells (39 for slot ce, 37 for slot pe), x = depth as fraction of the 32-layer stack, color = LOCO AUC (0.3-1.0), dashed verticals = full-attention layers.",
+      "Aggregate view (layer_profile): two heatmap panels of leave-one-carrier-out (LOCO, 12 carrier groups) linear probe AUC per layer, each with its own independent y-axis of type-cell rows — 39 rows in the ce panel, 37 in the pe panel (persona_prompted and persona_role_header appear only in the ce panel); x = depth as fraction of the 32-layer stack, color = LOCO AUC (0.3-1.0), dashed verticals = full-attention layers.",
       "Per-unit views (probe_layer_curves_ce / _pe): one small-multiple panel per type-cell with the macro AUC-vs-depth curve over value-pairs (blue), thin per-value-pair curves/points, and the within-carrier permutation 95% band per layer (grey; B=1000)."
     ]
   },
@@ -66,7 +66,7 @@
     "aggregate_view": "figures/issue_2329/mapshift/mapshift_r2.png",
     "per_unit_views": [],
     "caption_bullets": [
-      "Left panel: held-out R-squared (context grain, leave-one-carrier-out) of the dof-capped GCV ridge map v_C -> v_A per layer, x = depth as fraction of the 32-layer stack, alongside the identity and identity + learned-bias baselines; y-axis spans roughly -35 to 5; the title states n_train ~ 12,870 > d = 4,096 (well-posed).",
+      "Left panel: held-out R-squared (context grain, leave-one-carrier-out) of the dof-capped GCV ridge map v_C -> v_A per layer, x = depth as fraction of the 32-layer stack, alongside the identity and identity + learned-bias baselines; the title states n_train ~ 12,870 > d = 4,096 (well-posed).",
       "Right panel: kNN retrieval read of the fitted map, P(true target in top-5) among the held-out pool, cosine and euclidean, with the chance level 0.004 drawn; dashed verticals mark full-attention layers in both panels."
     ]
   },
@@ -76,7 +76,7 @@
     "per_unit_views": [],
     "caption_bullets": [
       "y = cosine similarity between the map-predicted answer-state shift and the realized patched shift, per layer (x = depth as fraction of the 32-layer stack); left panel restricted to the 8 stored-and-used cells, right panel all 39 cells.",
-      "Series: the bank-fit map summary curve, thin per-type-cell curves, the raw context shift with no map applied, and the null patch arms (shuffled / cross-type donors); dashed verticals mark full-attention layers; per-cell curves are the per-unit data behind the summary."
+      "Series: the bank-fit map summary curve, per-type-cell point markers, the raw context shift with no map applied, and the null patch arms (shuffled / cross-type donors); dashed verticals mark full-attention layers; the per-cell points are the per-unit data behind the summary."
     ]
   },
   "dv3_2afc": {
