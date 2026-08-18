@@ -12,10 +12,6 @@ origin_prompt: 'Surfaced during /issue 2329 workflow-v2: pod-2329-margin bootstr
   with a misleading AutoModelForCausalLM lazy-wrapper error.'
 workflow: v1
 ---
----
-kind: infra
----
-
 # Preflight passes a pod venv whose lock-pinned package has no metadata and cannot import
 
 Found while driving #2329's TF-margin deferred-leg recovery on a freshly
@@ -61,6 +57,27 @@ On RunPod the uv cache and `/workspace` venv sit on different filesystems
 (MooseFS), so the copy path is always taken — and a partial copy leaves exactly
 this shape.
 
+> **CORRECTION (2026-08-18) — the stated origin above is WITHDRAWN by its own
+> author; do not chase it.** #2329's author retracted this hypothesis in that
+> task's `epm:progress` v94 (2026-08-18T07:57:40Z), after the body above was
+> written. **The cause is NOT established.** An exhaustive dist-info/RECORD
+> manifest audit — 215 distributions, every RECORD-listed file
+> existence-checked — found **zero** missing files, which is precisely where a
+> truncated copy would show up. So the partial-copy hypothesis is REFUTED for
+> the second casualty (`anthropic`, below), whose signature is instead an
+> *internally inconsistent* install: RECORD complete, yet
+> `anthropic/types/__init__.py` imports `.shared`, which is absent — the shape
+> of a mixed-version / incompletely-replaced install, not a truncated one. For
+> `sympy` the original evidence is **unrecoverable**: its dist metadata was
+> already absent when found, and the force-reinstall overwrote the state.
+>
+> What SURVIVES unchanged: sympy's observed metadata absence is real, and the
+> fix direction is not weakened but strengthened — in the author's own words,
+> "preflight should import-test the stack rather than validate the lock."
+> Surface 2 below therefore stands only as **warning suppression**, never as
+> corruption prevention (`.claude/rules/gotchas.md` § pod-venv rebuilds already
+> records that `UV_LINK_MODE=copy` does NOT prevent the ESTALE class).
+
 ## The gap
 
 `explore_persona_space.orchestrate.preflight` checks "env vs `uv.lock`" — i.e.
@@ -101,6 +118,31 @@ the `qwen3_5` arch #2329 needs. After the repair, a full sweep confirmed sympy
 was the only casualty (torch, torch.nn, transformers,
 transformers.models.auto.modeling_auto, accelerate, safetensors,
 huggingface_hub, numpy, scipy, tokenizers, vllm all import OK).
+
+> **CORRECTION (2026-08-18) — "sympy was the only casualty" is RETRACTED as
+> false assurance from a hand-picked sweep** (#2329 `epm:progress` v94). The
+> sweep quoted above tested a self-chosen list and declared the venv clean; it
+> was not. An **exhaustive** import test over every top-level package in
+> site-packages — 210 of them — found **two** failures: `anthropic`
+> (`No module named 'anthropic.types.shared'`, which then blocked #2329's
+> TF-margin leg at import time) and `psycopg` (`no pq wrapper available`;
+> needs the binary extra, unrelated and imported by nothing on that path).
+>
+> **This bears directly on Acceptance criterion 1 below**, and is the single
+> most load-bearing fact for whoever implements this task. `anthropic` has
+> *complete* metadata, so a metadata-resolution check passes it by
+> construction; it is also not in the load-bearing stack enumerated in surface
+> 1 above, so a curated import probe never reaches it. A design that checks
+> only metadata plus a short curated import chain therefore catches **1 of the
+> 2 demonstrated casualties on the founding pod** — and misses the one that
+> actually blocked the run. Note also that the 210-package exhaustive sweep
+> was *executed pod-side*, so "import every top-level package" is a
+> demonstrated-feasible instrument, not a hypothetical one; its wall-time is
+> the open question, not its viability.
+>
+> Generalizable lesson recorded by #2329's author: when repairing a class of
+> damage, sweep exhaustively over the population, not over the members you
+> happen to suspect.
 
 ## Acceptance
 
