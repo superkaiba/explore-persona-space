@@ -1,0 +1,1 @@
+{"ts": "2026-08-18T16:30:44Z", "event": "raised", "concern_id": "argv0-pathspec-not-literal", "severity": "BLOCKER", "summary": "Git wildcard syntax can make an untracked argv0 match a tracked sibling and stamp a falsely clean commit.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
