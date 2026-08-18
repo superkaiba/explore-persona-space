@@ -729,6 +729,27 @@ heading), and expect legitimate history-prose hits when sweeping round tokens
 ("verified closed by review round 2") — grep-and-eyeball beats a bare
 count==0 assert for those.
 
+**Multi-hot-fix crash-fix round + brief-supplied excerpt file (#2356 r6,
+2026-08-18):** three deltas on the #2329-r6 crash-fix shape. (a) When the
+round range carries UNREVIEWED hot-fix commits BEFORE the marker-reported fix
+commit, the impl marker's `Diff:` line legitimately covers the FIX COMMIT
+ONLY — re-derive per-commit numstat, put the ROUND figures in the Diff-size
+header, and PRE-EXPLAIN the mismatch in the prompt ("not a marker-shape
+defect") or Codex flags it; hot-fixes carrying their own evidence record
+(e.g. a full pod smoke marker ON the hot-fix SHA) get a coverage-adjudication
+focus item (what evidence covers the hot-fix behaviors), never a 0.5 shape
+flag. (b) A trigger-dense brief-supplied `excerpt_file` may BE the byte-exact
+round diff — assert `git diff <range>` == excerpt bytes at compose time and
+SAY so in the prompt (converts "trust the composer" into a verified primary
+read; the diff-acquisition section then names the excerpt as equivalent).
+(c) The #2332-r3 "attest the worktree spec files predate the change" arm has
+an inverse: branches carrying spec-freshness sync commits can have worktree
+rubric == main (diff -q first); then attest CURRENT so Codex can follow
+rubric pointers without a divergence caveat. Also confirmed: `latest-marker
+--prefix epm:smoke-architecture-check` can return a SMALLER fresh v<n> marker
+than prior rounds (crash-fix smoke-arch notes are terse) — version+ts match
+to the round is the check, not size.
+
 **Post-reconciler-binding-FAIL fix round (mixed rulings; #2332 r4,
 2026-08-16):** when the prior round ended Claude-PASS / own-twin-FAIL /
 reconciler BINDING FAIL with MIXED per-blocker rulings (upheld + downgraded +
