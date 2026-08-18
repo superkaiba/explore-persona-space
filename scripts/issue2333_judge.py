@@ -512,6 +512,15 @@ def phase_pilot(cfg: JudgeConfig2333) -> int:
         arms: dict[str, list[tuple[str, str, str]]] = {}
         for u in units:
             arms.setdefault(_pilot_arm(u), []).append((u.item_id, u.question, u.answer))
+        # Rule-26(b) satisfiability: the gate needs >= 51 effective draws per
+        # unwaived arm (floor(1/0.02)+1 at its default parse_fail_threshold)
+        # and floor-divides the budget across arms. The inherited J62 targets
+        # were sized for the parent's arm structure; #2333's families carry
+        # more arms (calib-s1/calib-s2/grid.null/grid.steered), so re-derive
+        # from the realized arm count with headroom for transport-loss
+        # shrinkage of effective draws (60 > 51 floor).
+        per_arm_items = -(-60 // JUDGE_N_DRAWS)  # ceil division
+        target = max(target, len(arms) * JUDGE_N_DRAWS * per_arm_items)
         report = judge_pilot_gate(
             arms,
             registry[rid],
