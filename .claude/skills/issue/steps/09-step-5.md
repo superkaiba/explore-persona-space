@@ -11,6 +11,23 @@ Only if status is `running` and the appropriate implementation marker
 (`epm:experiment-implementation v<n>` for experiments, `epm:results v<n>`
 for infra) is present.
 
+**Pre-split completeness guard (#2158; incident #1336 r4 — 2 subagent
+deaths + a 2-day park on a Unit-A-only review).** Before ANY reviewer
+dispatch this round — including the per-commit split-review evaluation
+below — run ONE Bash call:
+`uv run python scripts/pre_split_review_guard.py <N>`. `REVIEW-OK`
+(exit 0) → proceed. `PRE-SPLIT-INCOMPLETE` (exit 2) → do NOT dispatch
+either reviewer: the latest #1810 pre-split signal (a breadcrumb with a
+non-empty `remaining:` list, or a `unit=`-scoped implementing
+stage-dispatch) has no later implementation marker — the round is
+mid-split. Route to Step 4b's mid-split resume (re-dispatch the REMAINING
+units, `08-step-4.md` § Pre-split multi-deliverable builds), post a
+one-line `epm:progress` note naming the guard verdict + the remaining
+deliverables, and never dispatch a review scoped to an intermediate unit.
+`BREADCRUMB-UNPARSEABLE` (exit 3) → fail loud: repost the breadcrumb in
+the documented grammar (`pre-split unit k/M complete: <SHAs>; remaining:
+<deliverables>`), then re-run the guard — never treat as OK.
+
 This step runs an **ensemble of two reviewers in parallel** — the Claude
 `code-reviewer` agent and the `codex-code-reviewer` Codex twin (gpt-5.5
 via the OpenAI Codex plugin's `companion task` runtime). On verdict
