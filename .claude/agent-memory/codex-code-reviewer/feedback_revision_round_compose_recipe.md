@@ -1092,6 +1092,32 @@ em-dash-heavy prompts (~1 KB per 130 KB) — not drift. Worktree memory
 commits: the root-code-commit guard fires even on a `cd <wt> && git ...`
 compound — use `git -C "$WT" add/commit -- <path>` explicitly.
 
+**Deferred-concern implemented ANYWAY + resume-round marker (#2174 r2,
+2026-08-18):** two deltas on the #1094-r2 upheld-concern-bounce + #2371
+addressed-not-open shapes. (a) When the reconciler DEFERRED a blocker
+outright (rejected-binding, standing-rec only) but the fix round lands its
+change ANYWAY under the plan's own calibration lever (here: blanket
+`re.IGNORECASE` vs the standing rec's "keep `EVERY row` uppercase-only",
+justified by a re-run corpus sweep 8 < 10), do NOT treat the deferred id as
+pure fence material — give it a closure-ledger line with adjudication
+vocabulary (`DEFERRED-BINDING — <hunk>: JUSTIFIED-BY-SWEEP | UNJUSTIFIED |
+DEFECTIVE-IN-IMPLEMENTATION`), name the standing-rec-vs-round TENSION
+explicitly with the plan's calibration gate as the binding criterion, and
+split the duties: mechanism verified by READING (trigger alone must not
+WARN — window + satisfier gates), sweep NUMBERS treated as reported
+evidence (no uv env), side-effects sweep over the other regex arms. Fence
+only the RE-RAISE, never the in-diff hunk's merits. (b) A RESUME-round
+marker (predecessor 529-killed after landing the commit; resume verifies +
+closes concerns + posts) composes with three attest-don't-flag notes: the
+"no new commit this resume" shape is legitimate; a missing
+`<!-- epm:results vN -->` head sentinel scores on H3 substance (at most
+Style); a VOIDED detached pytest whose junitxml is read as informational
+gets its untouched-file failures pre-routed to Step 0.9 provenance
+(pin the exact `git log origin/main..HEAD -- <file>` probe in the prompt).
+Also: numeric drift between the predecessor's commit message and the
+resume's marker (4,334 vs 4,336 sweep plans) is surfaced neutrally as
+predecessor-run-vs-re-run, never resolved by the composer.
+
 **Upheld-own-FAIL fix round with an addressed-not-open ledger (#2371 r2,
 2026-08-18):** when the implementer runs `address-concern` BEFORE the review
 (latest event `addressed`, so `--open-only` returns `[]` on a round whose whole
