@@ -136,6 +136,22 @@ for ((i = FIRST; i <= LAST; i++)); do
   fmt="${rest%%|*}"
   corpus="${rest##*|}"
 
+  # Skip a fully-banked surface (all pair JSONs present) BEFORE staging — a
+  # contiguous FIRST..LAST rerun over a partially-failed range must not
+  # re-stage ~45 GB per already-complete surface (the s3..8 rc=1 run left
+  # 4-6 complete with exports rc=0; only 3/7/8 owe work).
+  done_pairs=0
+  n_pairs=0
+  for pair in ${LADDER_PAIRS//,/ }; do
+    n_pairs=$((n_pairs + 1))
+    m0="${pair%%:*}"; m1="${pair##*:}"
+    [ -f "$OUT_A/metric_ladder/pair_${m0}__${m1}_${fmt}_${corpus}.json" ] && done_pairs=$((done_pairs + 1))
+  done
+  if [ "$done_pairs" -eq "$n_pairs" ]; then
+    echo "[driver] === surface $i/${#SURFACES[@]} $label === SKIP (all ${n_pairs} pair JSONs banked)"
+    continue
+  fi
+
   avail_gb=$(df -BG --output=avail "$STAGE" | tail -1 | tr -dc '0-9')
   need_margin=$(( need_gb * 13 / 10 ))
   echo "[driver] === surface $i/${#SURFACES[@]} $label === need=${need_gb}GB margin=${need_margin}GB avail=${avail_gb}GB"
@@ -175,6 +191,7 @@ for ((i = FIRST; i <= LAST; i++)); do
     --layer "$LAYER" \
     --turnstore-dir "$STAGE/turnstore_v2" \
     --wave1-turnstore-dir "$STAGE/turnstore_wave1" \
+    --gen-root "$STAGE/gen" \
     > "$LOGDIR/issue-1336-t5d-export-${fmt}_${corpus}.log" 2>&1
   erc=$?
   echo "[export] ${label} rc=${erc} elapsed=$(( $(date +%s) - e0 ))s"
@@ -217,6 +234,7 @@ for ((i = FIRST; i <= LAST; i++)); do
         --preds-dir "$PREDS" \
         --turnstore-dir "$STAGE/turnstore_v2" \
         --wave1-turnstore-dir "$STAGE/turnstore_wave1" \
+        --gen-root "$STAGE/gen" \
         > "$plog" 2>&1 &
       wave_pids+=($!)
       wave_pairs+=("$pair")
