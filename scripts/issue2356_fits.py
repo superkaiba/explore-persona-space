@@ -202,7 +202,7 @@ def _phase_fingerprint(args: argparse.Namespace, phase: str, inputs: dict[str, A
     try:
         from explore_persona_space.orchestrate.provenance import git_provenance
 
-        keyed["git_sha"] = git_provenance().sha
+        keyed["git_sha"] = git_provenance().commit_sha
     except Exception:  # git-less scratch tree (SLURM lane): degrade, never crash
         keyed["git_sha"] = "unavailable-no-git-checkout"
     return _sha256_obj(keyed)
