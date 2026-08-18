@@ -1137,3 +1137,20 @@ FALSE = a round-added atom flips it, blocker NOT closed, substantive FAIL).
 Assert trap: backticked heading mentions contain the bare-heading substring —
 assert total == verbatim + backticked (5 == 1 + 4) plus the `\n<heading>\n`
 line form == 1, never a bare heading count == 1.
+
+**Mixed-actor `addressed` ledger on a reconciled-PASS bounce (#2178 r2,
+2026-08-18):** when the round-1 reconciler PASSed but bounced residuals, the
+orchestrator closes the DISCARDED blocker ids by posting `addressed` rows AS
+the reconciler, and the implementer later posts `addressed` rows for the
+bounced ids — so the r2 ledger walk must split by the addressed row's ACTOR:
+reconciler-addressed = binding discard (do-not-relitigate fence),
+implementer-addressed = the round's closure claims (VERIFIED-ADDRESSED /
+NOT-ADDRESSED duties). State the split explicitly ("0 open; K addressed-r2
+pending verification; M reconciler-discarded-binding") — a bare 0-open read
+under-specifies both fences and duties. Inline the snapshot rows with FULL
+JSON fields: the `evidence` field on a reconciler-raised row carries its
+close prescription verbatim (the acceptance contract rides in free). Also:
+the reconciler's Standing-recommendations bundle minus the bounced items is
+its own fence bullet — the round implementing ONE family member does not
+convert siblings into blockers, but round-hunk regressions on their
+neighborhoods stay in scope (filter-vs-cap ordering, ladder-continuation).
