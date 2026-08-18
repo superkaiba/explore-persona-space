@@ -18,6 +18,8 @@ flagged line or the line above.
 
 Modes:
   --report          list findings (file:line, form, names, long-body tag)
+  --check           read-only alias for --report (round 2, concern
+                    sweep-check-cli-mismatch: the round-1 report advertised it)
   --apply           perform the one-token edits in place (append UnicodeDecodeError
                     last, mirroring the #2164 shape at autonomous_session_watch.py:21823)
 
@@ -30,6 +32,20 @@ Known false negatives (disclosed, per plan SS4-D2): dynamically-constructed
 exception tuples, ``from json import JSONDecodeError as JDE``-style aliasing,
 ``from contextlib import suppress as quiet`` aliasing, custom context managers
 wrapping suppress semantics. All measured 0 live instances at plan time.
+
+Round-2 divergence note (#2168 review): this sweep is DISPOSABLE (its 186-unit
+job is complete) and keeps its original, narrower predicate; the durable lint
+check (``workflow_lint.check_json_guard_unicode``) has since been EXTENDED
+beyond it — per-``with``-statement suppress union (split-suppress coverage)
+and nested-literal-tuple recursion. Waiver handling also deliberately differs:
+this script accepts the token on the flagged line or the EXACT previous
+physical line with no reason-length floor (a one-off simplification), while
+the lint uses the house convention (backward walk over blank lines + a
+>=10-char reason, byte-parallel with ``_jsonl_splitlines_waiver_present``) —
+the lint is the binding surface, and it is stricter where it matters (reason
+length), so no site this sweep skipped escapes the lint. Read posture differs
+by design too: this script silently skips unreadable files; the lint skips
+only non-UTF-8/unparseable files WITH a stderr notice and propagates OSError.
 """
 
 from __future__ import annotations
@@ -255,6 +271,12 @@ def apply_edits(findings: list[Finding]) -> list[Path]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", action="store_true", help="list findings")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="read-only alias for --report (the verification command the #2168 "
+        "round-1 report advertised; exit 1 iff findings exist)",
+    )
     parser.add_argument("--apply", action="store_true", help="apply edits in place")
     parser.add_argument(
         "--long-body-threshold",
@@ -265,7 +287,7 @@ def main() -> int:
     args = parser.parse_args()
 
     findings = scan(REPO_ROOT)
-    if args.report or not args.apply:
+    if args.report or args.check or not args.apply:
         for f in findings:
             rel = f.path.relative_to(REPO_ROOT)
             tag = " LONG_BODY" if f.try_body_span > args.long_body_threshold else ""

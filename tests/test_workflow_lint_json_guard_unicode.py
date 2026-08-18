@@ -13,20 +13,30 @@ waiver.
 
 Coverage map:
 
-1.  9 positive fixtures (parametrized, all flagged): canonical order;
+1.  12 positive fixtures (parametrized, all flagged): canonical order;
     reversed order; wider tuple; split-handler; ``from json import
     JSONDecodeError`` alias; ``json.load(open(...))`` body; two-arg
     ``contextlib.suppress`` (attribute form); bare-name ``suppress``
-    (from-import form); ``except*`` group.
+    (from-import form); ``except*`` group; split-suppress within ONE
+    ``with`` statement (round 2, concern
+    ``json-guard-split-suppress-undisclosed-miss``); nested-literal-tuple
+    handler (round 2 Minor — TypeError-at-match-time on Python 3, flagged
+    as the banned shape in intent); literal-tuple suppress arg (round 2 —
+    semantically live, ``issubclass`` recurses).
 2.  6 negative fixtures (parametrized, none flagged): three-element fixed
     try form; three-arg fixed suppress; bare ``ValueError``;
     ``except Exception``; safe-member tuple; adequate waiver (line above).
 3.  Waiver with a too-short reason -> still flagged; same-line waiver on the
-    handler line -> accepted.
-4.  Documented-miss fixture: ``from contextlib import suppress as quiet`` is
-    NOT flagged — pins the disclosed false negative as deliberate behavior,
-    so a future predicate change that starts covering it consciously updates
-    the disclosure (#2168 plan v2 §4-D5b).
+    handler line -> accepted; waiver separated by a blank line -> accepted
+    (round 2, concern ``waiver-placement-parity``: pins the house
+    backward-walk-over-blanks convention as DELIBERATE — the disposable
+    sweep's exact-previous-line form is the one-off simplification).
+4.  Documented-miss fixtures: ``from contextlib import suppress as quiet``
+    is NOT flagged (#2168 plan v2 §4-D5b), and NESTED ``with`` statements
+    each suppressing one half are NOT flagged (round 2 disclosure) — each
+    pins a disclosed false negative as deliberate behavior, so a future
+    predicate change that starts covering it consciously updates the
+    disclosure.
 5.  FORM-SPECIFIC messages (#2168 plan v2 Must-Fix 1c): a try unit's message
     carries the TUPLE fix and never mentions suppress; a suppress unit's
     message carries the SUPPRESS-ARGS fix and never the tuple-form fix.
@@ -186,6 +196,50 @@ def load(p: Path):
         pass
     return data
 """,
+    # Round 2 (concern json-guard-split-suppress-undisclosed-miss): the
+    # split-suppress form WITHIN ONE with statement — two suppress items
+    # whose UNION trips the predicate; probe-confirmed 0 findings pre-fix.
+    "split-suppress-one-with": """\
+import contextlib
+import json
+from pathlib import Path
+
+
+def load(p: Path):
+    data = None
+    with contextlib.suppress(json.JSONDecodeError), contextlib.suppress(OSError):
+        data = json.loads(p.read_text(encoding="utf-8"))
+    return data
+""",
+    # Round 2 (folded Minor): NESTED literal tuple in the handler type.
+    # On Python 3 this raises TypeError at match time instead of catching
+    # (probe-verified 3.12) — still flagged: it is the banned guard shape
+    # in intent and the message's flat-tuple fix repairs both defects.
+    "nested-tuple-handler": """\
+import json
+from pathlib import Path
+
+
+def load(p: Path):
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except ((json.JSONDecodeError, OSError),):
+        return None
+""",
+    # Round 2: a literal-tuple SUPPRESS arg is semantically live
+    # (issubclass recurses into nested tuples; probe-verified 3.12).
+    "suppress-tuple-arg": """\
+import contextlib
+import json
+from pathlib import Path
+
+
+def load(p: Path):
+    data = None
+    with contextlib.suppress((json.JSONDecodeError, OSError)):
+        data = json.loads(p.read_text(encoding="utf-8"))
+    return data
+""",
 }
 
 
@@ -334,6 +388,59 @@ def load(p: Path):
     with quiet(json.JSONDecodeError, OSError):
         data = json.loads(p.read_text(encoding="utf-8"))
     return data
+"""
+    assert _scan(tmp_path, source) == []
+
+
+def test_documented_miss_nested_with_suppress_not_flagged(tmp_path: Path) -> None:
+    """PINS the round-2 disclosed false negative (concern
+    ``json-guard-split-suppress-undisclosed-miss``, residual): NESTED
+    ``with`` statements each suppressing one half are SEPARATE ``With``
+    nodes, so the per-STATEMENT suppress union — which closes the
+    split-suppress form within one ``with`` (the round-2 fix) — never sees
+    the combined name set. 0 live instances. A future predicate change that
+    starts covering the nested form must consciously update the check
+    docstring's disclosure list — this test turning red is that signal,
+    not a defect."""
+    source = """\
+import contextlib
+import json
+from pathlib import Path
+
+
+def load(p: Path):
+    data = None
+    with contextlib.suppress(json.JSONDecodeError):
+        with contextlib.suppress(OSError):
+            data = json.loads(p.read_text(encoding="utf-8"))
+    return data
+"""
+    assert _scan(tmp_path, source) == []
+
+
+def test_waiver_honored_across_blank_gap(tmp_path: Path) -> None:
+    """DELIBERATE-divergence pin (round 2, concern
+    ``waiver-placement-parity``): the lint's waiver walk skips blank lines
+    back to the preceding NON-BLANK line — the house convention,
+    byte-parallel with ``_jsonl_splitlines_waiver_present`` — so a waiver
+    separated from the flagged line by blank lines IS honored. The
+    disposable sweep instrument (``scripts/issue2168_sweep.py``) checks
+    only the exact previous physical line; that divergence is deliberate
+    (the lint is the durable, binding surface and is STRICTER where it
+    matters — the >=10-char reason floor), and this test pins the
+    blank-gap behavior as intended, not accidental."""
+    source = """\
+import json
+from pathlib import Path
+
+
+def load(p: Path):
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    # JSON_GUARD_UNICODE_EXEMPT: bytes are pre-validated as UTF-8 upstream
+
+    except (json.JSONDecodeError, OSError):
+        return None
 """
     assert _scan(tmp_path, source) == []
 

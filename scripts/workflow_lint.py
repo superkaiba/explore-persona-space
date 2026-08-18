@@ -7887,12 +7887,21 @@ def _json_guard_terminal_name(node: ast.expr) -> str | None:
 
 def _json_guard_names_of_expr(expr: ast.expr | None) -> set[str]:
     """Name set of a handler ``type`` expression / suppress-arg expression:
-    a bare Name/Attribute or a Tuple of them; other shapes contribute
-    nothing (bare ``except:`` handlers have ``type is None``)."""
+    a bare Name/Attribute or a literal Tuple of them, recursing into NESTED
+    literal tuples (#2168 round 2). ``suppress((JSONDecodeError, OSError))``
+    is semantically LIVE (``issubclass`` recurses into nested tuples);
+    ``except ((json.JSONDecodeError, OSError),):`` raises TypeError at
+    match time on Python 3 (probe-verified 3.12) yet is still flagged —
+    it is the banned guard shape in intent and over-flagging is the safe
+    direction. Other shapes contribute nothing (bare ``except:`` handlers
+    have ``type is None``)."""
     if expr is None:
         return set()
     if isinstance(expr, ast.Tuple):
-        return {n for n in (_json_guard_terminal_name(e) for e in expr.elts) if n is not None}
+        names: set[str] = set()
+        for elt in expr.elts:
+            names |= _json_guard_names_of_expr(elt)
+        return names
     name = _json_guard_terminal_name(expr)
     return {name} if name is not None else set()
 
@@ -7984,19 +7993,26 @@ def _json_guard_scan_tree(py: Path, tree: ast.Module, lines: list[str]) -> list[
                 continue
             errors.append(_json_guard_try_message(py, flag_line, isinstance(node, ast.TryStar)))
         elif isinstance(node, ast.With | ast.AsyncWith):
+            # Union names across ALL suppress items of this ONE with statement,
+            # mirroring the try arm's all-handlers union — closes the
+            # split-suppress form `with suppress(JSONDecodeError), suppress(OSError):`
+            # (#2168 round 2). NESTED with statements are separate With nodes
+            # and stay a disclosed miss (check_json_guard_unicode docstring).
+            names: set[str] = set()
+            saw_suppress = False
             for item in node.items:
                 call = item.context_expr
                 if not _json_guard_is_suppress_call(call):
                     continue
                 assert isinstance(call, ast.Call)  # narrowed by the helper
-                names = {
-                    n for n in (_json_guard_terminal_name(a) for a in call.args) if n is not None
-                }
-                if not _json_guard_names_flagged(names):
-                    continue
-                if _json_guard_waiver_present(lines, node.lineno):
-                    continue
-                errors.append(_json_guard_suppress_message(py, node.lineno))
+                saw_suppress = True
+                for arg in call.args:
+                    names |= _json_guard_names_of_expr(arg)
+            if not saw_suppress or not _json_guard_names_flagged(names):
+                continue
+            if _json_guard_waiver_present(lines, node.lineno):
+                continue
+            errors.append(_json_guard_suppress_message(py, node.lineno))
     return errors
 
 
@@ -8015,19 +8031,33 @@ def check_json_guard_unicode(*, roots: tuple[Path, ...] | None = None) -> list[s
     silently bypassed and the caller crashes (#2164: a corrupt watcher
     registry entry killed the tick on every action path). The #2168 sweep
     fixed all 186 live units (181 try-level + 5 ``contextlib.suppress``);
-    this check is the durable reintroduction guard and embodies the same
-    predicate as the sweep instrument (``scripts/issue2168_sweep.py``).
+    this check is the durable reintroduction guard and embodies the sweep
+    instrument's predicate (``scripts/issue2168_sweep.py``), EXTENDED in
+    round 2 (review concern ``json-guard-split-suppress-undisclosed-miss``)
+    with the per-statement suppress union and nested-literal-tuple
+    recursion below — the disposable sweep keeps its original narrower
+    per-call form (its 186-unit job is complete).
 
-    A "unit" is any of (union over the unit's caught/suppressed names):
+    A "unit" is any of (union over the unit's caught/suppressed names;
+    name extraction recurses into nested literal tuples, #2168 round 2:
+    ``suppress((JSONDecodeError, OSError))`` is semantically LIVE —
+    ``issubclass`` recurses into nested tuples — and
+    ``except ((json.JSONDecodeError, OSError),):``, which on Python 3
+    raises TypeError at match time instead of catching (probe-verified
+    3.12), is still flagged: it is the banned guard shape in intent, the
+    message's flat-tuple fix repairs both defects, and over-flagging is
+    the safe direction for a guard):
 
     1. an ``ast.Try`` — union over ALL handlers' type expressions, so the
        split-handler form (``except json.JSONDecodeError:`` +
        ``except OSError:`` on one try) is covered;
     2. an ``ast.TryStar`` (``except*`` groups) — same handler union;
-    3. an ``ast.With`` / ``ast.AsyncWith`` item whose ``context_expr`` is a
-       Call to ``suppress`` (bare from-import name) or
-       ``contextlib.suppress`` (attribute form) — union over the call's
-       args, per suppress call.
+    3. an ``ast.With`` / ``ast.AsyncWith`` statement with ≥1 item whose
+       ``context_expr`` is a Call to ``suppress`` (bare from-import name)
+       or ``contextlib.suppress`` (attribute form) — union over ALL the
+       statement's suppress items' args (#2168 round 2), so the
+       split-suppress form (``with suppress(JSONDecodeError),
+       suppress(OSError):``) is covered, mirroring the handler union.
 
     Error messages are FORM-SPECIFIC: a try/``except*`` unit is told to
     extend the TUPLE; a suppress unit is told to extend the SUPPRESS ARGS —
@@ -8046,7 +8076,13 @@ def check_json_guard_unicode(*, roots: tuple[Path, ...] | None = None) -> list[s
     * ``suppress`` aliased at import
       (``from contextlib import suppress as quiet``);
     * a custom context manager wrapping suppress semantics under another
-      name.
+      name;
+    * NESTED ``with`` statements each suppressing one half
+      (``with suppress(JSONDecodeError):`` wrapping
+      ``with suppress(OSError):``) — separate ``With`` nodes, and the
+      round-2 suppress union is per-STATEMENT, so the combined set is
+      never seen (pinned deliberate by the nested-with documented-miss
+      fixture; the SAME-statement split form IS covered, unit shape 3).
 
     Known benign FALSE POSITIVE (accepted, no predicate change): a try
     pairing the two-element tuple with an ADDITIONAL bare ``except:``
