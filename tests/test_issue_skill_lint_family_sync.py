@@ -94,6 +94,43 @@ verified commit. Tests (1) + (9) gain the caps-file member; section
 (17) pins the rc-checked stanzas; section (18) reproduces both defect
 shapes under real git.
 
+#2352 (2026-08-17) adds `tests/issue_skill_source.py` — the shared
+composed-spec reader (#2155) every test_issue_skill_* pin test imports
+(`from tests.issue_skill_source import ...`) — to SPECS + SPECS_10D as a
+SINGLETON: its own family, deliberately NO FAMILY_OF entry in either
+copy. Incident: the Step 5a sync pulled the current test_issue_skill_*
+set into the issue-2333 worktree (fork predates #2155) WITHOUT the
+helper; 66 collection errors (ModuleNotFoundError:
+tests.issue_skill_source) walled `pytest -k` and would red the Step 9c
+gate as NEW. No single-family assignment closes the class: the helper is
+imported from MULTIPLE families — the workflow-family skill-pin glob
+(x64) AND the lint-family
+tests/test_workflow_lint_no_repo_root_worktree_revert.py — plus ~30
+unsynced tests, and families dirty-skip INDEPENDENTLY, so a dirty
+workflow family (the modal workflow-fix branch) with a clean lint family
+syncs the lint importer fresh and recreates the same
+ModuleNotFoundError. A singleton syncs whenever it is ITSELF clean,
+covering fresh importers in every family and in unsynced tests alike.
+Test (1) gains the token; a new negative pin (9b) holds the singleton
+disposition (no FAMILY_OF entry in either copy); section (19) adds the
+family-aware forward guard: every `tests.<mod>` import in any
+family-synced test file (imports collected via ast.parse — parenthesized
+multiline, comma-separated, and aliased forms included; string literals
+invisible) must be sync-coverable on EVERY route through which the
+importer can arrive fresh — per route a same-family token/glob, or
+route-independently the helper itself a SINGLETON token; each matching
+SPECS token is an independent per-token sync channel, so
+partial-route/cross-family coverage is insufficient — and the NEXT
+main-side helper module a family-synced test imports therefore reds THIS
+suite on main instead of red-ing a worktree gate. A runtime import-satisfiability
+probe on the FAMILY arm (the #2208 sibling-arm probe's shape) was
+considered and DEFERRED: the family sync checkouts+commits atomically
+across ALL safe families in one command inside two mirrored fail-closed
+blocks — a probe-failure revert would have to unwind whole families
+(SKILL.md included) and a bug there reds every Step 5a run and every
+merge fleet-wide, while the static guard catches the class EARLIER (on
+main, at the PR adding the import).
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -105,14 +142,19 @@ stanza's fail-closed arms, drops the 9c pre-gate re-sync reference,
 drops the #1972 uncommitted-dirt arm from either copy, drops (or
 mirrors into the 10d copy) the #1972 sibling-issue per-file arm, drops
 the #2208 import-satisfiability probe from the sibling arm, drops the
-#2303 caps-file lint-family membership, or un-checks the #2303 sync
-commit rc in either copy.
+#2303 caps-file lint-family membership, un-checks the #2303 sync
+commit rc in either copy, re-familys the #2352
+tests/issue_skill_source.py singleton (a FAMILY_OF entry for it in
+either copy), or lets a family-synced test file import a tests.<mod>
+helper not sync-coverable on EVERY of its sync routes (guard 19).
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
 matching assertions here IN THE SAME COMMIT, or the suite goes red.
 """
 
+import ast
+import fnmatch
 import os
 import re
 import shutil
@@ -120,6 +162,8 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+from tests.issue_skill_source import issue_skill_text
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -130,7 +174,7 @@ _FULL_MESSAGE_INVERT = _FULL_MESSAGE_FILTER + " --invert-grep"
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _step5a_span(text: str) -> str:
@@ -172,6 +216,7 @@ def test_step5a_specs_include_lint_family():
         "tests/step9c_workflow_invariant_manifest.txt "
         ":(glob)tests/test_workflow_lint*.py "
         ":(glob)tests/test_guard_*.py "
+        "tests/issue_skill_source.py "
         ':(glob)tests/test_issue_skill_*.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
@@ -197,7 +242,12 @@ def test_step5a_specs_include_lint_family():
         "lint-family data file .claude/config/agent_spec_size_caps.txt "
         "(workflow_lint.py reads it at MODULE IMPORT time; syncing the "
         "linter without it strands a FileNotFoundError-raising linter in "
-        "the worktree — the #2293 shape)"
+        "the worktree — the #2293 shape) — plus the #2352 SINGLETON "
+        "tests/issue_skill_source.py (the shared composed-spec reader "
+        "every test_issue_skill_* pin test imports AND lint-family + "
+        "unsynced tests import; cross-family importers mean no single "
+        "family covers it — syncing the pin tests without the helper red "
+        "66 collection errors in the issue-2333 worktree)"
     )
 
 
@@ -411,6 +461,37 @@ def test_step5a_family_atomicity_declared_in_bash():
     assert "DIRTY_FAMILIES" in span, (
         "the family-atomic loop must gate the sync on a DIRTY_FAMILIES associative array"
     )
+
+
+# --- (9b) tests/issue_skill_source.py stays a SINGLETON (#2352 negative pin) --
+
+
+def test_issue_skill_source_singleton_no_family_assignment():
+    """#2352: tests/issue_skill_source.py must have NO FAMILY_OF entry in
+    EITHER sync copy — the singleton disposition is the fix. The helper is
+    imported from MULTIPLE families (the workflow-family skill-pin glob x64
+    AND the lint-family test_workflow_lint_no_repo_root_worktree_revert.py)
+    plus ~30 unsynced tests, and families dirty-skip INDEPENDENTLY, so ANY
+    single-family assignment reopens the #2352 half-sync class through the
+    other families (a dirty workflow family + a clean lint family syncs the
+    lint importer fresh against a missing/stale helper). A deliberate
+    re-familying must rework guard (19)'s coverage predicate in the same
+    commit."""
+    text = _text()
+    for label, span in (
+        ("Step 5a", _step5a_span(text)),
+        ("auto-merge", _automerge_span(text)),
+    ):
+        assert 'FAMILY_OF["tests/issue_skill_source.py"]' not in span, (
+            f"the {label} sync copy assigns tests/issue_skill_source.py to a "
+            f"family — it must stay a SINGLETON (no FAMILY_OF entry): the "
+            f"helper's importers span the workflow AND lint families plus "
+            f"unsynced tests, families dirty-skip independently, and any "
+            f"single-family assignment recreates the #2352 "
+            f"ModuleNotFoundError half-sync through the other families. A "
+            f"deliberate re-familying must rework guard (19)'s coverage "
+            f"predicate in the same commit."
+        )
 
 
 # --- (10) auto-merge post-gate re-sync matches Step 5a family (#1714 drift guard) --
@@ -1119,6 +1200,7 @@ _FORK_STUBS_2303 = (
     "tests/step9c_workflow_invariant_manifest.txt",
     "tests/test_workflow_lint_x.py",
     "tests/test_guard_x.py",
+    "tests/issue_skill_source.py",
     "tests/test_issue_skill_x.py",
 )
 
@@ -1277,3 +1359,341 @@ def test_family_sync_commit_failure_fatal_repro_2303():
         assert subj != _SYNC_SUBJECT_2303, "no sync commit may land when the hook fails"
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+# --- (19) family-synced test files' tests.<mod> imports are sync-coverable (#2352) --
+
+_REPO = Path(__file__).resolve().parents[1]
+
+# Helper modules a family-synced test may import WITHOUT a SPECS token, each
+# with a documented rationale. conftest: tests/test_autonomous_session_watch.py
+# imports two tests.conftest symbols, but conftest.py is pytest-auto-loaded by
+# the WHOLE tests tree and pairs with the branch's OWN tests — syncing it from
+# main is exactly the "blind-syncing broader tests/ is actively unsafe" case
+# the boundary paragraph bans, so it is a NAMED accepted seam (same remedy
+# class as the src seams: a skew fails loud at collection; rebase onto
+# origin/main, or cross-check at the repo root).
+_EXEMPT_HELPER_MODULES = frozenset({"conftest"})
+
+
+def _specs_tokens(span: str) -> list[str]:
+    """The Step 5a SPECS pathspec tokens (test (14)'s extraction)."""
+    m = re.search(r'^\s*SPECS="([^"]+)"', span, flags=re.M)
+    assert m, "Step 5a must declare SPECS as a one-line double-quoted assignment"
+    return m.group(1).split()
+
+
+def _family_of_map(span: str) -> dict[str, str]:
+    """Every FAMILY_OF["<path>"]="<fam>" assignment in the span, keyed by
+    path. Comment-tolerant: only the line prefix through the closing quote
+    is matched, so a trailing `# ...` comment cannot hide an assignment."""
+    return {
+        m.group(1): m.group(2)
+        for m in re.finditer(r'^\s*FAMILY_OF\["([^"]+)"\]="(\w+)"', span, flags=re.M)
+    }
+
+
+def _family_synced_test_files(
+    tokens: list[str], family_of: dict[str, str]
+) -> dict[Path, list[tuple[str, str | None]]]:
+    """Enumerate the family-synced tests/*.py files mechanically from the
+    SPECS tokens: every existing repo file matched by a `:(glob)tests/...`
+    token plus every explicit `tests/*.py` token. Maps each file to its
+    sync ROUTES — one (token, family) tuple per SPECS token matching it,
+    family = FAMILY_OF[token] or None for a SINGLETON token (no FAMILY_OF
+    entry — the token is its own family). Each SPECS token syncs iff ITS
+    OWN family is clean (pass-2 per-token semantics), so every route is an
+    INDEPENDENT freshness channel: a multi-route file can arrive fresh
+    through ANY one of its routes."""
+    out: dict[Path, list[tuple[str, str | None]]] = {}
+    for tok in tokens:
+        if tok.startswith(":(glob)"):
+            pattern = tok[len(":(glob)") :]
+            if not pattern.startswith("tests/"):
+                continue
+            fam = family_of.get(tok)
+            for p in sorted(_REPO.glob(pattern)):
+                if p.suffix == ".py" and p.is_file():
+                    out.setdefault(p, []).append((tok, fam))
+        elif tok.startswith("tests/") and tok.endswith(".py"):
+            p = _REPO / tok
+            if p.is_file():
+                out.setdefault(p, []).append((tok, family_of.get(tok)))
+    return out
+
+
+def _tests_module_imports(src: str) -> set[str]:
+    """First-level `tests.<mod>` modules imported by a test file's source,
+    collected via `ast.parse` over the WHOLE module (module-level and
+    nested/function-body import statements alike):
+
+    - `from tests import a, b as c` -> {"a", "b"} (each alias name; a
+      Black/ruff-style parenthesized multiline form is the same ImportFrom
+      node, so it parses identically),
+    - `from tests.a import x` / `from tests.a.b import x` -> {"a"} (the
+      first component after "tests."),
+    - `import tests.a, tests.b` / `import tests.a as t` -> {"a", "b"}.
+
+    The AST never contains string literals as statements, so import-looking
+    lines inside docstrings / triple-quoted fixtures can never
+    false-positive. A multi-level package import (`tests.a.b`) is
+    deliberately REDUCED to its first component: the coverage target
+    becomes `tests/a.py`, a FILE path a package DIRECTORY can never
+    satisfy, so a new multi-level import FAILS guard (19) until it gets an
+    explicit disposition — fail-loud, never a silent escape (none exist
+    today). Known false negatives, disclosed by design: dynamic imports
+    (`importlib.import_module` / `__import__` on a string) have no static
+    import node, and RELATIVE imports (`from .mod import x` — level >= 1)
+    are not collected (no family-synced test uses them; the repo
+    convention is absolute `tests.` imports)."""
+    mods: set[str] = set()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                parts = alias.name.split(".")
+                if parts[0] == "tests" and len(parts) >= 2:
+                    mods.add(parts[1])
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            if node.module == "tests":
+                for alias in node.names:
+                    mods.add(alias.name)
+            elif node.module.startswith("tests."):
+                mods.add(node.module.split(".")[1])
+    return mods
+
+
+def _helper_coverage(
+    mod: str, tokens: list[str], family_of: dict[str, str]
+) -> tuple[bool, set[str]]:
+    """Coverage facts for tests/<mod>.py against the SPECS tokens, returned
+    as (singleton_covered, families). singleton_covered is True when the
+    helper's exact path is an EXPLICIT SPECS token with NO FAMILY_OF entry:
+    a singleton syncs whenever it is ITSELF clean, so no other file's dirt
+    can family-skip it — route-independent coverage (the #2352
+    disposition). families is the set of FAMILY_OF families of tokens
+    (glob or explicit) matching the helper. A singleton GLOB matching the
+    helper deliberately contributes NEITHER: its dirt scope spans every
+    file the glob matches, so another matched file's dirt can still skip
+    the helper (conservative; no such token exists today)."""
+    target = f"tests/{mod}.py"
+    singleton = False
+    fams: set[str] = set()
+    for tok in tokens:
+        if tok.startswith(":(glob)"):
+            if fnmatch.fnmatch(target, tok[len(":(glob)") :]):
+                fam = family_of.get(tok)
+                if fam is not None:
+                    fams.add(fam)
+        elif tok == target:
+            fam = family_of.get(tok)
+            if fam is None:
+                singleton = True
+            else:
+                fams.add(fam)
+    return singleton, fams
+
+
+def _import_covered(
+    mod: str,
+    importer_routes: list[tuple[str, str | None]],
+    tokens: list[str],
+    family_of: dict[str, str],
+) -> bool:
+    """True when tests/<mod>.py is guaranteed sync-coverable alongside an
+    importer that can arrive fresh through ANY of importer_routes. Because
+    each SPECS token syncs iff ITS OWN family is clean, every route is an
+    independent freshness channel, so coverage quantifies UNIVERSALLY over
+    the importer's routes:
+
+    - the helper is itself a SINGLETON SPECS token (route-independent —
+      syncs whenever itself clean), OR
+    - on EVERY route: the route carries a family F (a singleton importer
+      token carries none — only the singleton-helper arm can cover that
+      route) and some SPECS token matching the helper is assigned that
+      SAME family F.
+
+    An EXISTENTIAL read (covered through at least one of the importer's
+    families) is exactly the round-1 defect: an importer matched by tokens
+    in TWO families syncs fresh through EITHER, so helper coverage in only
+    one leaves the other route recreating the #2352 ModuleNotFoundError
+    half-sync."""
+    singleton, helper_fams = _helper_coverage(mod, tokens, family_of)
+    if singleton:
+        return True
+    if not importer_routes:
+        return False
+    return all(fam is not None and fam in helper_fams for _tok, fam in importer_routes)
+
+
+def _uncovered_imports(
+    files: dict[Path, list[tuple[str, str | None]]],
+    tokens: list[str],
+    family_of: dict[str, str],
+) -> list[str]:
+    """Guard (19)'s problem collector: one line per (family-synced test
+    file, uncovered tests.<mod> import) pair, naming the importer's sync
+    routes. Factored out so the pre-#2352-spec-shape non-vacuity test can
+    run the identical predicate against a mutated token list."""
+    problems: list[str] = []
+    for path in sorted(files):
+        routes = files[path]
+        src = path.read_text(encoding="utf-8")
+        for mod in sorted(_tests_module_imports(src)):
+            if mod in _EXEMPT_HELPER_MODULES:
+                continue
+            if not _import_covered(mod, routes, tokens, family_of):
+                route_desc = ", ".join(
+                    f"{tok} [{fam if fam is not None else 'singleton'}]" for tok, fam in routes
+                )
+                problems.append(
+                    f"{path.relative_to(_REPO).as_posix()} (routes: {route_desc}) "
+                    f"imports tests.{mod}"
+                )
+    return problems
+
+
+def test_family_synced_test_helper_imports_covered():
+    """#2352 forward guard: every `tests.<mod>` import in any FAMILY-SYNCED
+    test file must be sync-coverable on EVERY route through which the
+    importer can arrive fresh — per route, a same-family token/glob for the
+    helper; route-independently, the helper itself a SINGLETON token — so
+    the NEXT main-side helper module a family-synced test imports makes
+    THIS suite red on main (the skew is unshippable) instead of red-ing a
+    worktree's Step 9c gate with a ModuleNotFoundError half-sync (the
+    #2352 incident: 66 collection errors in the issue-2333 worktree).
+    Cross-family / partial-route coverage is deliberately NOT sufficient:
+    families dirty-skip independently and each matching SPECS token is its
+    own sync channel, so a helper covered on only SOME of an importer's
+    routes can still be skipped while the importer syncs fresh through
+    another. Imports are collected via `ast.parse` (parenthesized
+    multiline, comma-separated, and aliased forms included; string
+    literals invisible); the collector's disclosed false negatives —
+    dynamic/importlib imports, relative imports — keep the Step 9c gate as
+    the runtime backstop, and a multi-level `tests.a.b` import fails this
+    guard by construction (see _tests_module_imports)."""
+    text = _text()
+    span = _step5a_span(text)
+    tokens = _specs_tokens(span)
+    family_of = _family_of_map(span)
+    files = _family_synced_test_files(tokens, family_of)
+    # Enumeration sanity: the skill-pin glob alone matches dozens of files;
+    # an empty/thin enumeration means the extraction broke, not a clean tree.
+    assert len(files) >= 10, (
+        f"family-synced test-file enumeration looks broken: only "
+        f"{len(files)} files resolved from the SPECS tokens {tokens!r}"
+    )
+    problems = _uncovered_imports(files, tokens, family_of)
+    assert not problems, (
+        "family-synced test file(s) import a tests.<mod> helper the Step 5a "
+        "SPECS tokens cannot guarantee to sync alongside them on EVERY sync "
+        "route — the Step 5a family sync can pull these tests into a "
+        "worktree WITHOUT the helper (the #2352 ModuleNotFoundError "
+        "half-sync; 66 collection errors). Remedies: (a) add tests/<mod>.py "
+        "to SPECS + SPECS_10D as a SINGLETON token (the #2352 disposition — "
+        "required when the helper's importers span families, sync through a "
+        "singleton token, or live in unsynced tests), (b) add it as a "
+        "same-family token for EVERY family named by every importer's "
+        "routes (right only when all routes carry families and the helper "
+        "is assigned each of them), or (c) add the module to "
+        "_EXEMPT_HELPER_MODULES with a documented rationale (the conftest "
+        "shape). Uncovered imports:\n  " + "\n  ".join(problems)
+    )
+
+
+def test_tests_module_imports_collector_fixtures():
+    """#2352 round 2: the AST import collector handles ordinary valid
+    import syntax the round-1 line regexes missed — exact expected module
+    sets per fixture (the two BLOCKER-verified gaps plus the documented
+    reductions)."""
+    # (i) Black/ruff-style parenthesized multiline import-from: the regex
+    # matched only "(" -> empty set; AST sees one ImportFrom node.
+    src = "from tests import (\n    new_helper,\n    other_helper,\n)\n"
+    assert _tests_module_imports(src) == {"new_helper", "other_helper"}
+    # (ii) comma-separated plain import: the regex recorded only the first.
+    assert _tests_module_imports("import tests.a, tests.b\n") == {"a", "b"}
+    # (iii) aliased forms in all three shapes.
+    assert _tests_module_imports("from tests import helper_a as h\n") == {"helper_a"}
+    assert _tests_module_imports("from tests.foo import bar as baz\n") == {"foo"}
+    assert _tests_module_imports("import tests.mod_x as mx\n") == {"mod_x"}
+    # (iv) import-looking lines inside a triple-quoted string / docstring:
+    # must detect NOTHING (the regex false-positive class).
+    src = '"""\nfrom tests.phantom import x\nimport tests.ghost\n"""\nX = 1\n'
+    assert _tests_module_imports(src) == set()
+    # Documented multi-level reduction: tests.a.b records the FIRST
+    # component only (whose tests/a.py coverage target then fails guard 19
+    # by construction — a package dir is never a SPECS file token).
+    assert _tests_module_imports("from tests.pkg.sub import x\n") == {"pkg"}
+    assert _tests_module_imports("import tests.pkg.sub\n") == {"pkg"}
+    # Nested (function-body) imports are collected; non-tests imports are not.
+    src = "def f():\n    from tests.lazy_helper import thing\n    import os\n"
+    assert _tests_module_imports(src) == {"lazy_helper"}
+    assert _tests_module_imports("import os\nfrom pathlib import Path\n") == set()
+
+
+def test_import_covered_route_quantifier_fixtures():
+    """#2352 round 2: coverage quantifies UNIVERSALLY over an importer's
+    sync routes (synthetic-token fixtures per the reconciler's mechanizable
+    spec). The round-1 existential predicate returned covered on fixtures
+    (a) and (b); this pin holds the universal semantics."""
+    wf_glob = ":(glob)tests/test_wf_*.py"
+    tokens = [
+        wf_glob,
+        "tests/test_wf_lintish.py",
+        "tests/helper_wf.py",
+        "tests/helper_single.py",
+    ]
+    family_of = {
+        wf_glob: "workflow",
+        "tests/test_wf_lintish.py": "lint",
+        "tests/helper_wf.py": "workflow",
+        # tests/helper_single.py deliberately has NO entry — singleton.
+    }
+    # (a) importer syncs through a workflow-family glob AND a lint-family
+    # explicit token; helper covered only in the workflow family ->
+    # UNCOVERED (a dirty workflow family + clean lint family syncs the
+    # importer fresh through the lint route while the helper is skipped).
+    two_family_routes = [(wf_glob, "workflow"), ("tests/test_wf_lintish.py", "lint")]
+    assert not _import_covered("helper_wf", two_family_routes, tokens, family_of)
+    # (b) importer with a singleton route + a family route; helper only
+    # family-covered -> UNCOVERED (nothing guarantees co-sync with the
+    # importer's own singleton token, which syncs whenever ITSELF clean).
+    singleton_routes = [("tests/test_wf_selfsync.py", None), (wf_glob, "workflow")]
+    assert not _import_covered("helper_wf", singleton_routes, tokens, family_of)
+    # (c) a SINGLETON helper is route-independent: covered in both cases.
+    assert _import_covered("helper_single", two_family_routes, tokens, family_of)
+    assert _import_covered("helper_single", singleton_routes, tokens, family_of)
+    # Same-family multi-route overlap (the live test_guard_lessons_edit.py
+    # shape: guard glob + explicit guard token) stays covered when the
+    # helper is assigned that one shared family.
+    family_of_same = dict(family_of)
+    family_of_same["tests/test_wf_extra.py"] = "workflow"
+    same_family_routes = [(wf_glob, "workflow"), ("tests/test_wf_extra.py", "workflow")]
+    assert _import_covered(
+        "helper_wf", same_family_routes, [*tokens, "tests/test_wf_extra.py"], family_of_same
+    )
+    # A helper matched ONLY by a SINGLETON GLOB is deliberately NOT
+    # route-independent coverage (the glob's dirt scope spans every file it
+    # matches, so another matched file's dirt can still skip the helper).
+    tokens_glob = [":(glob)tests/helper_g*.py", wf_glob]
+    family_of_glob = {wf_glob: "workflow"}
+    assert not _import_covered("helper_glob", [(wf_glob, "workflow")], tokens_glob, family_of_glob)
+
+
+def test_guard_19_fails_on_pre_2352_spec_shape():
+    """Non-vacuity re-pin: with the #2352 singleton token removed from the
+    LIVE SPECS token list (the pre-fix spec shape), guard (19)'s predicate
+    reports the incident — every test_issue_skill_* pin test imports
+    tests.issue_skill_source, which no remaining token can sync. Run
+    against the real composed spec + real repo tree, so the check tracks
+    the live configuration rather than a frozen fixture."""
+    text = _text()
+    span = _step5a_span(text)
+    tokens = [t for t in _specs_tokens(span) if t != "tests/issue_skill_source.py"]
+    assert "tests/issue_skill_source.py" not in tokens
+    family_of = _family_of_map(span)
+    files = _family_synced_test_files(tokens, family_of)
+    problems = _uncovered_imports(files, tokens, family_of)
+    assert any("imports tests.issue_skill_source" in p for p in problems), (
+        "guard (19) must FAIL on the pre-#2352 spec shape (helper token "
+        f"absent) — the guard would be vacuous; got problems={problems!r}"
+    )

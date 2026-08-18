@@ -68,7 +68,13 @@ Touched-file -> test mapping (per touched file ``f``):
     separators; a leading ``".claude"`` component matches implicitly).
     Additive only, same contract as rules-pin: the skills file itself keeps
     the WORKFLOW_SURFACE skip, comment/docstring mentions count, and a
-    dynamically constructed filename is the accepted miss class.
+    dynamically constructed filename is the accepted miss class. A touched
+    ``.claude/skills/issue/steps/*.md`` companion (a step body the #2155
+    split relocated out of ``issue/SKILL.md``) ADDITIONALLY aliases to the
+    ``issue/SKILL.md`` token set plus the ``issue_skill_source`` composer
+    token — the pinning tests reference the SKILL.md path or the composer,
+    never the companion's own path, so its own tokens alone would map to
+    nothing.
   * any test registered in :data:`TRANSITIVE_CONSUMER_TESTS` for a touched
     file is ADDITIONALLY selected with reason
     ``transitive-consumer:<touched file>`` (#1589). A pinned literal, NOT
@@ -334,6 +340,10 @@ from typing import NamedTuple
 # pair of same-window registering PRs merge-conflict (#1584).
 WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 1 — task-workflow API
+    # NEW (#2158) — pre-split review guard predicate + lint surface pins:
+    # the task_workflow.pre_split_review_gate two-arm predicate + CLI
+    # exit-code mapping (#1336 r4 / #2061 incident replays).
+    "tests/test_pre_split_review_guard.py",
     "tests/test_task_workflow.py",
     "tests/test_task_workflow_list_children.py",
     "tests/test_task_workflow_post_marker_echo.py",
@@ -348,10 +358,18 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # data change or any workflow_lint.py edit re-runs the live-tree PASS
     # + threshold-branch coverage.
     "tests/test_workflow_lint_agent_spec_size.py",
+    # NEW (#2326) — workflow_lint --check-codex-concerns-persistence +
+    # no-flags bundling (the Codex "Concerns to persist" -> raise-concern
+    # blind-forwarding contract's four prose surfaces; incident #2321).
+    "tests/test_workflow_lint_codex_concerns_persistence.py",
     "tests/test_workflow_lint_dotenv_check.py",
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2158) — pre-split review guard predicate + lint surface pins:
+    # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
+    # files) + no-flags bundling.
+    "tests/test_workflow_lint_pre_split_guard.py",
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",
@@ -525,6 +543,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_round_boundary_duty_pin.py",
     # NEW (#2040) — 9a-ter across-cell shard-axis + detached checkpoint-cadence duties pin
     "tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py",
+    # NEW (#2155) — SKILL.md step-body split pins: pointer<->companion bijection,
+    # composition completeness, Companion-files carve-out sentence. This
+    # registration IS the coverage guarantee for the split (plan B.8) — the
+    # composer (tests/issue_skill_source.py) has no path-literal the discovery
+    # arms would otherwise map.
+    "tests/test_issue_skill_source.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
@@ -569,8 +593,20 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is the
     # ONLY gate that fires the pin on those changes.
     "tests/test_outroot_residue_prose_pins.py",
+    # NEW (#2148) — realized row-count reconciliation prose pins
+    # (upload-verifier.md Step 2.11 + verdict row + note-template rows=
+    # token, upload-policy.md § Realized row counts, section-reference
+    # § Step 2.11, pods.md teardown clause, CLAUDE.md recipe clause). Same
+    # rationale as the #2187 sibling above: `.claude/agents/*.md` +
+    # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is
+    # the ONLY gate that fires the pin on those changes.
+    "tests/test_realized_rows_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
+    # NEW (#2326) — scripts/persist_verdict_concerns.py forwarder semantics
+    # (all-or-nothing validation, require-block exit 3, idempotent replay,
+    # note->$MB resume-recovery extraction, stdout content discipline).
+    "tests/test_persist_verdict_concerns.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
     # NEW (#2015) — repo-root uncommitted-state (pre-commit stash race) prose
@@ -609,6 +645,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_precommit_gitleaks_merge_scope.py",
     "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
     "tests/test_fit_loop_batching_review_pin.py",  # NEW (#1397) — fit-loop batching review-lens pin
+    # NEW (#2325) — skill-doc headroom PostToolUse hook pin (warn-only,
+    # fail-open) incl. its settings.json registration + resolved-path assert:
+    # `.json` diffs map to no tests (_DATA_DOC_SUFFIXES), so the registration
+    # pin runs on every gate ONLY via this tuple.
+    "tests/test_guard_skill_doc_headroom.py",
     # NEW (#1577) — guard-script read-bounding hook pin: the selector's
     # stem/literal/dependency arms are .py-only, so a later .sh-hook /
     # settings.json diff re-runs this pin ONLY via this tuple.
@@ -881,13 +922,36 @@ def _skills_pin_tokens(rel_path: str) -> tuple[str, re.Pattern[str]]:
     return contiguous, join_re
 
 
+_ISSUE_STEPS_PIN_GLOB = ".claude/skills/issue/steps/*.md"
+_ISSUE_SKILL_SOURCE_TOKEN = "issue_skill_source"
+
+
+def _skills_pin_token_sets(rel_path: str) -> list[tuple[str, re.Pattern[str]]]:
+    """All (contiguous, join_re) alternatives *rel_path* aliases to (#2155).
+
+    A ``.claude/skills/issue/steps/*.md`` companion carries a step body the
+    #2155 split relocated out of ``issue/SKILL.md``; the tests pinning that
+    prose reference the SKILL.md path (their path constants) or the
+    ``tests/issue_skill_source`` composer (their read sites), never the
+    companion's own path — so a steps diff aliases to BOTH token sets on top
+    of its own (a steps-only diff must map NON-EMPTY, plan #2155 B.9). Every
+    other skills file keeps its single token pair.
+    """
+    out = [_skills_pin_tokens(rel_path)]
+    if _matches_any(rel_path, (_ISSUE_STEPS_PIN_GLOB,)):
+        out.append(_skills_pin_tokens(".claude/skills/issue/SKILL.md"))
+        out.append((_ISSUE_SKILL_SOURCE_TOKEN, re.compile(re.escape(_ISSUE_SKILL_SOURCE_TOKEN))))
+    return out
+
+
 def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
     """``{test_relpath: {touched .claude/skills/**/*.md files whose path its
     text references}}`` (#1851). Zero file reads when no skills file is
-    touched. Matching via :func:`_skills_pin_tokens` (contiguous substring OR
-    path-join regex); glob matching via :func:`_matches_any` so nested
-    reference files under a skill dir are covered too (the ``/**/``
-    zero-segment collapse).
+    touched. Matching via :func:`_skills_pin_token_sets` (contiguous substring
+    OR path-join regex, per alias — a ``issue/steps/*.md`` companion also
+    carries the ``issue/SKILL.md`` + ``issue_skill_source`` aliases, #2155);
+    glob matching via :func:`_matches_any` so nested reference files under a
+    skill dir are covered too (the ``/**/`` zero-segment collapse).
 
     Fail-soft (the #1299 read contract, mirroring :func:`rules_pin_hits`): a
     test file that cannot be read / decoded emits ONE stderr WARN and is
@@ -900,7 +964,7 @@ def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
     tests_dir = work_root / "tests"
     if not skills or not tests_dir.is_dir():
         return hits
-    tokens = {f: _skills_pin_tokens(f) for f in skills}
+    tokens = {f: _skills_pin_token_sets(f) for f in skills}
     n_scanned = 0
     n_failed = 0
     for test_path in sorted(tests_dir.rglob("test_*.py")):
@@ -916,8 +980,8 @@ def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
                 file=sys.stderr,
             )
             continue
-        for skill_file, (contiguous, join_re) in tokens.items():
-            if contiguous in text or join_re.search(text):
+        for skill_file, token_set in tokens.items():
+            if any(contiguous in text or join_re.search(text) for contiguous, join_re in token_set):
                 hits.setdefault(rel, set()).add(skill_file)
     if n_scanned and n_failed / n_scanned > 0.05:
         print(

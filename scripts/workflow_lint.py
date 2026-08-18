@@ -862,6 +862,24 @@ Behaviours:
   line directly above the fence opener. Untagged fences, prose
   inline-code recipes, heredoc bodies, and compound-line quoted-text
   false-exemptions are NAMED residuals (see the check docstring).
+* ``--check-codex-concerns-persistence`` (also bundled into the no-flags
+  default run): pin the #2326 Codex concerns-persistence contract across
+  its four prose surfaces — the issue/SKILL.md "Codex concerns persistence
+  at verdict collection" subsection (region-anchored; must name the
+  forwarder ``persist_verdict_concerns.py``, carry BOTH collection
+  invocations, and keep the resume-recovery clause with its recovery
+  invocation + predicate-leading sentence; the file also carries the
+  resume-table preamble pointer and the 5c-ter empty-ledger literal), a
+  LINE-START non-sentinel ``CONCERN:: `` grammar row (a standalone
+  ``CONCERN:: none`` line alone does not satisfy it) + the
+  ``CONCERN:: none`` sentinel
+  inside both emitting Codex composers' verdict templates
+  (codex-code-reviewer.md, codex-clean-result-critic.md), and the
+  ``**Prior-concerns ledger:**`` visibility line in code-reviewer.md
+  Step 0.8 (incident #2321: a Codex verdict carried 8 "Concerns to
+  persist" items, zero were persisted, and the round-2 prior-concerns
+  gate walked an empty ledger; token-presence pins strengthened per the
+  round-1 ``durability-pin-token-presence-gaps`` concern).
 
 Exit codes:
 
@@ -940,7 +958,9 @@ from explore_persona_space.workflow import (  # noqa: E402  (import after sys.pa
 )
 
 # Scope for reference-resolution. Mirrors the pre-commit hook `files:` regex
-# in `.pre-commit-config.yaml` so the lint and the trigger stay in sync.
+# in `.pre-commit-config.yaml` so the lint and the trigger stay in sync
+# (`_check_references` additionally scans the #2155 issue/steps/*.md
+# companions, mirrored by the regex's steps/ alternative).
 DOC_FILES: tuple[Path, ...] = (
     _REPO_ROOT / "CLAUDE.md",
     _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md",
@@ -2948,11 +2968,13 @@ def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
 
 
 def _check_references(workflow: WorkflowYaml) -> list[str]:
-    """Walk DOC_FILES and report unresolved ``(see workflow.yaml § X)``
-    references."""
+    """Walk DOC_FILES — plus the ``skills/issue/steps/*.md`` companions the
+    #2155 split relocated SKILL.md step bodies (and their references) into —
+    and report unresolved ``(see workflow.yaml § X)`` references. Companions
+    are scanned as separate files so reported line numbers stay physical."""
     errors: list[str] = []
     keys = _flatten_keys(workflow)
-    for path in DOC_FILES:
+    for path in (*DOC_FILES, *_issue_step_companions(_REPO_ROOT / ".claude" / "skills")):
         if not path.exists():
             continue
         for lineno, line in enumerate(path.read_text().splitlines(), start=1):
@@ -3018,6 +3040,66 @@ def _other_worktree_prefix(repo_root: Path) -> str | None:
         # not match `<X>/`.
         return f".claude/worktrees/{parts[idx + 1]}/"
     return None
+
+
+def _issue_step_companions(skills_root: Path) -> list[Path]:
+    """``<skills_root>/issue/steps/*.md`` — the per-step bodies split out of
+    ``.claude/skills/issue/SKILL.md`` (#2155).
+
+    Every check that scans ``skills/**/SKILL.md`` MUST also scan these, or the
+    split silently drops enforcement over the relocated prose instead of
+    failing loud — the inverse of the #850/#1159 pointer-reachability rule and
+    the same coverage-loss class that makes a grandfathered size entry go
+    stale. This mirrors how ``markers.md`` and ``templates/*.md`` are already
+    appended alongside the SKILL.md glob.
+
+    Returns [] when the directory is absent, so callers are split-agnostic.
+    """
+    steps = skills_root / "issue" / "steps"
+    if not steps.is_dir():
+        return []
+    return sorted(p for p in steps.glob("*.md") if p.is_file())
+
+
+_ISSUE_STEP_POINTER = re.compile(
+    r"^>\s+\*\*Full procedure:\*\*\s+`\.claude/skills/issue/steps/(\S+?)`"
+)
+_ISSUE_STEP_BODY_SPLIT = "\n---\n\n"
+
+
+def _read_workflow_doc(path: Path) -> str:
+    """Read a workflow doc as its LOGICAL self.
+
+    For ``.claude/skills/issue/SKILL.md`` that means splicing each relocated
+    step body back in at its ``> **Full procedure:**`` pointer, reconstructing
+    the pre-split document (#2155). Every anchor/region check that asserts
+    something lives "in SKILL.md" must see the logical document — otherwise
+    the split silently drops enforcement instead of failing loud, the same
+    coverage-loss class the ``_issue_step_companions`` glob extension closes
+    for the per-file scanners. Any other path reads through unchanged.
+    """
+    text = path.read_text(encoding="utf-8")
+    if path.name != "SKILL.md" or path.parent.name != "issue":
+        return text
+    steps_dir = path.parent / "steps"
+    if not steps_dir.is_dir():
+        return text
+    out: list[str] = []
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        m = _ISSUE_STEP_POINTER.match(lines[i])
+        if m is None:
+            out.append(lines[i])
+            i += 1
+            continue
+        while i < len(lines) and lines[i].startswith(">"):
+            i += 1
+        companion = steps_dir / m.group(1)
+        body = companion.read_text(encoding="utf-8") if companion.is_file() else ""
+        _, sep, tail = body.partition(_ISSUE_STEP_BODY_SPLIT)
+        out.append((tail if sep else body).rstrip("\n"))
+    return "\n".join(out)
 
 
 def _is_other_worktree_path(path: Path, current_worktree_prefix: str | None) -> bool:
@@ -3136,6 +3218,11 @@ def _iter_ask_target_files(repo_root: Path) -> list[Path]:
             p
             for p in skills_root.glob("**/SKILL.md")
             if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        )
+        files.extend(
+            p
+            for p in _issue_step_companions(skills_root)
+            if not _is_other_worktree_path(p, current_prefix)
         )
     return sorted(files)
 
@@ -3343,6 +3430,10 @@ def _resolve_autonomous_ask_target_files(roots: list[Path] | None) -> list[Path]
     files = []
     if issue_skill.exists():
         files.append(issue_skill)
+        # The #2155 split relocated the step bodies (and their AskUserQuestion
+        # gate paragraphs) into steps/ companions — scan them too, or the
+        # autonomous-asks lint silently loses the orchestrator's gates.
+        files.extend(_issue_step_companions(_REPO_ROOT / ".claude" / "skills"))
     if agents_dir.is_dir():
         files.extend(p for p in agents_dir.glob("*.md") if p.is_file())
     return sorted(files)
@@ -3564,6 +3655,11 @@ def _iter_skill_ref_target_files(repo_root: Path) -> list[Path]:
             p
             for p in skills.glob("**/SKILL.md")
             if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        ]
+        files += [
+            p
+            for p in _issue_step_companions(skills)
+            if not _is_other_worktree_path(p, current_prefix)
         ]
     if rules.exists():
         files += [
@@ -4772,6 +4868,7 @@ def _grep_qv_target_files(roots: list[Path] | None) -> list[Path]:
         scripts = _REPO_ROOT / "scripts"
         if skills.exists():
             files.extend(sorted(p for p in skills.rglob("SKILL.md") if p.is_file()))
+            files.extend(_issue_step_companions(skills))
         if agents.exists():
             files.extend(sorted(p for p in agents.glob("*.md") if p.is_file()))
         if scripts.exists():
@@ -5150,6 +5247,7 @@ def check_marker_registry(
         canonical_skills = _REPO_ROOT / ".claude" / "skills"
         if canonical_skills.is_dir():
             targets.extend(sorted(p for p in canonical_skills.glob("**/SKILL.md") if p.is_file()))
+            targets.extend(_issue_step_companions(canonical_skills))
         canonical_agents = _REPO_ROOT / ".claude" / "agents"
         if canonical_agents.is_dir():
             targets.extend(sorted(p for p in canonical_agents.glob("*.md") if p.is_file()))
@@ -5158,6 +5256,7 @@ def check_marker_registry(
             targets.append(skill_md)
         if skills_dir is not None and skills_dir.is_dir():
             targets.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+            targets.extend(_issue_step_companions(skills_dir))
         if agents_dir is not None and agents_dir.is_dir():
             targets.extend(sorted(p for p in agents_dir.glob("*.md") if p.is_file()))
     registered = {m.kind for m in workflow.markers}
@@ -5330,6 +5429,7 @@ def check_poller_marker_consumers(
         consumers: list[Path] = []
         if skills_dir.is_dir():
             consumers.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+            consumers.extend(_issue_step_companions(skills_dir))
         consumers.extend(
             _REPO_ROOT / "scripts" / name
             for name in (
@@ -10793,6 +10893,7 @@ def check_no_literal_round_marker_versions(*, repo_root: Path | None = None) -> 
     skills_dir = root / ".claude" / "skills"
     if skills_dir.is_dir():
         targets.extend(p for p in sorted(skills_dir.rglob("SKILL.md")) if p.is_file())
+        targets.extend(_issue_step_companions(skills_dir))
     markers_md = root / ".claude" / "skills" / "issue" / "markers.md"
     if markers_md.is_file():
         targets.append(markers_md)
@@ -11935,7 +12036,7 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
             f"marker-shape sub-recipe must live in the /issue skill."
         )
     else:
-        text = skill.read_text(encoding="utf-8")
+        text = _read_workflow_doc(skill)
         start = text.find("**5c-bis.")
         end = text.find("**5c-ter.")
         region = text[start:end] if (start != -1 and end != -1 and end > start) else ""
@@ -12001,7 +12102,7 @@ def check_authorized_stub_wiring(  # noqa: C901 -- flat per-surface token ladder
             f"PASS_AUTHORIZED_STUB grant row, #2171) must live in the /issue skill."
         )
     else:
-        text = skill.read_text(encoding="utf-8")
+        text = _read_workflow_doc(skill)
         idx = text.find("##### Step 6d.0:")
         if idx == -1:
             errors.append(
@@ -12356,6 +12457,198 @@ def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token 
                 f"'19 smoke blind-spot enumeration' (#2165) — the critic's "
                 f"always-loaded item roster would drop item 19 (the #606 "
                 f"silent-strip class)."
+            )
+    return errors
+
+
+def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces spanning eight files, #2158), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the pre-split review guard (#2158) is absent from ANY of its
+    seven surfaces (spanning eight files).
+
+    Task #1336 (round 4) dispatched the Step 5 code-review ensemble against a
+    Unit-A-only intermediate commit of a pre-split multi-unit round: two
+    subagents died and the task parked ~2 days on a review scoped to an
+    incomplete round. The fix (#2158) is a two-arm pure predicate
+    (``pre_split_review_gate``) + a thin CLI
+    (``scripts/pre_split_review_guard.py``) the Step 5 orchestrator runs
+    BEFORE any reviewer dispatch, plus the cross-session writer-arbitration
+    rule + read-pinning bullets the incident's sibling deaths motivated. This
+    check pins the guard across its surfaces, region-anchored, so a future
+    refactor cannot silently strip one (the #606 copy-list-omission class):
+
+    (1) ``scripts/pre_split_review_guard.py`` exists and names the library
+        entry ``pre_split_review_gate``;
+    (2) ``src/explore_persona_space/task_workflow.py`` defines
+        ``def pre_split_review_gate`` and the verdict token
+        ``PRE-SPLIT-INCOMPLETE``;
+    (3) 09-step-5.md — the ``**Pre-split completeness guard`` region (up to
+        the next paragraph opening ``**``) names
+        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``, and
+        ``remaining:``;
+    (4) 08-step-4.md — the breadcrumb grammar tokens
+        ``pre-split unit k/M complete:`` + ``; remaining:`` (grammar-parity
+        pin: an editor changing the grammar trips the check that guards the
+        parser keyed to it) AND the arm-B emitter-convention token
+        ``unit=<k>`` (dropping it un-mandates arm B's key in exactly the
+        pre-breadcrumb window where the #1336 v132 incident lived);
+    (5) 08-step-4.md — the shared-worktree note tokens ``EXPECTED shape`` +
+        ``cross-session-writer-arbitration.md``;
+    (6) ``.claude/rules/cross-session-writer-arbitration.md`` exists and
+        names ``never dispatch a concurrent writer`` + ``git show`` (the
+        read-pinning recipe);
+    (7) experiment-implementer.md AND implementer.md each carry the bullet
+        heading ``Read-pinning under external churn`` with ``git show``
+        inside the bullet region (up to the next line-start ``- **``) —
+        each FILE reported independently, so a per-file strip FAILs on its
+        own error string.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    verdict = "PRE-SPLIT-INCOMPLETE"
+    errors: list[str] = []
+
+    # (1) the thin CLI exists and names the library entry.
+    cli = root / "scripts" / "pre_split_review_guard.py"
+    if not cli.is_file():
+        errors.append(
+            f"{cli}: missing — the #2158 pre-split review-guard CLI must "
+            f"exist (#1336 r4: a review dispatched against a Unit-A-only "
+            f"intermediate commit cost 2 subagent deaths + a 2-day park)."
+        )
+    elif "pre_split_review_gate" not in cli.read_text(encoding="utf-8"):
+        errors.append(
+            f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
+            f"CLI must call the library predicate, not a private "
+            f"re-implementation."
+        )
+
+    # (2) the library predicate + verdict token.
+    tw = root / "src" / "explore_persona_space" / "task_workflow.py"
+    if not tw.is_file():
+        errors.append(
+            f"{tw}: missing — the #2158 pre_split_review_gate predicate "
+            f"must live in task_workflow.py."
+        )
+    else:
+        text = tw.read_text(encoding="utf-8")
+        if "def pre_split_review_gate" not in text:
+            errors.append(
+                f"{tw}: missing 'def pre_split_review_gate' (#2158) — the "
+                f"two-arm pre-split predicate must stay in the library so "
+                f"the CLI and tests share one implementation."
+            )
+        if verdict not in text:
+            errors.append(
+                f"{tw}: the verdict token {verdict!r} is gone (#2158) — the "
+                f"Step 5 guard block keys on that exact lead token."
+            )
+
+    # (3) 09-step-5.md: the guard block region.
+    step5 = root / ".claude" / "skills" / "issue" / "steps" / "09-step-5.md"
+    if not step5.is_file():
+        errors.append(
+            f"{step5}: missing — the #2158 pre-split completeness guard "
+            f"block must live in the Step 5 skill step."
+        )
+    else:
+        text = step5.read_text(encoding="utf-8")
+        idx = text.find("**Pre-split completeness guard")
+        if idx == -1:
+            errors.append(
+                f"{step5}: missing the '**Pre-split completeness guard' "
+                f"block (#2158) — Step 5 would dispatch reviewers with no "
+                f"pre-split gate (incident #1336 r4)."
+            )
+        else:
+            nxt = text.find("\n\n**", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            for token in ("pre_split_review_guard.py", verdict, "remaining:"):
+                if token not in region:
+                    errors.append(
+                        f"{step5}: the '**Pre-split completeness guard' "
+                        f"region no longer names {token!r} (#2158) — the "
+                        f"guard block must key on that exact token."
+                    )
+
+    # (4)+(5) 08-step-4.md: grammar-parity + emitter tokens, and the
+    # shared-worktree arbitration note.
+    step4 = root / ".claude" / "skills" / "issue" / "steps" / "08-step-4.md"
+    if not step4.is_file():
+        errors.append(
+            f"{step4}: missing — the #2158 pre-split breadcrumb grammar + "
+            f"shared-worktree note must live in the Step 4 skill step."
+        )
+    else:
+        text = step4.read_text(encoding="utf-8")
+        for token in ("pre-split unit k/M complete:", "; remaining:", "unit=<k>"):
+            if token not in text:
+                errors.append(
+                    f"{step4}: no longer carries the breadcrumb-grammar / "
+                    f"emitter-convention token {token!r} (#2158) — the "
+                    f"pre_split_review_gate parser (and its arm-B 'unit=' "
+                    f"key) is calibrated to that exact grammar."
+                )
+        for token in ("EXPECTED shape", "cross-session-writer-arbitration.md"):
+            if token not in text:
+                errors.append(
+                    f"{step4}: the shared-worktree note no longer names "
+                    f"{token!r} (#2158) — pre-split multi-unit rounds would "
+                    f"lose the cross-session writer-arbitration pointer."
+                )
+
+    # (6) the arbitration rule file.
+    rule = root / ".claude" / "rules" / "cross-session-writer-arbitration.md"
+    if not rule.is_file():
+        errors.append(
+            f"{rule}: missing — the #2158 cross-session writer-arbitration "
+            f"rule file must exist (probe + claim markers + "
+            f"sequence-or-split; #1336/#1586)."
+        )
+    else:
+        text = rule.read_text(encoding="utf-8")
+        for token in ("never dispatch a concurrent writer", "git show"):
+            if token not in text:
+                errors.append(
+                    f"{rule}: no longer names {token!r} (#2158) — the "
+                    f"arbitration verdict / read-pinning recipe would be "
+                    f"silently stripped."
+                )
+
+    # (7) both implementer specs: the read-pinning bullet, per FILE.
+    for agent_name in ("experiment-implementer.md", "implementer.md"):
+        agent = root / ".claude" / "agents" / agent_name
+        if not agent.is_file():
+            errors.append(
+                f"{agent}: missing — the #2158 read-pinning bullet must live in {agent_name}."
+            )
+            continue
+        text = agent.read_text(encoding="utf-8")
+        idx = text.find("Read-pinning under external churn")
+        if idx == -1:
+            errors.append(
+                f"{agent}: missing the 'Read-pinning under external churn' "
+                f"bullet (#2158) — an implementer editing a churning shared "
+                f"worktree would lose the pin-reads-to-BASE_SHA protocol "
+                f"(#1336 death #9)."
+            )
+            continue
+        nxt = text.find("\n- **", idx + 1)
+        bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+        if "git show" not in bullet:
+            errors.append(
+                f"{agent}: the 'Read-pinning under external churn' bullet "
+                f"no longer names 'git show' (#2158) — the snapshot-read "
+                f"recipe would be silently stripped from {agent_name}."
             )
     return errors
 
@@ -12965,6 +13258,245 @@ def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token l
     return errors
 
 
+def _codex_concerns_skill_errors(skill: Path) -> list[str]:
+    """Surface (1) of ``check_codex_concerns_persistence_lens`` (#2326): the
+    issue/SKILL.md poster-duty subsection pins (split out to keep the parent
+    check under the C901 cap; the parent docstring carries the contract)."""
+    forwarder = "persist_verdict_concerns.py"
+    invocation = "persist_verdict_concerns.py <N> --file"
+    predicate_sentence = "every resume-table row whose PREDICATE includes"
+    preamble_literal = "Every row below whose PREDICATE includes an EXISTING current-round"
+    empty_ledger_literal = "concerns ledger: empty — nothing to walk"
+    heading = "**Codex concerns persistence at verdict collection"
+    recovery = "**Resume recovery (crash between marker post and persist"
+    errors: list[str] = []
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #2326 codex-concerns-persistence poster "
+            f"duty must live in issue/SKILL.md."
+        )
+        return errors
+    text = _read_workflow_doc(skill)
+    idx = text.find(heading)
+    if idx == -1:
+        errors.append(
+            f"{skill}: missing the '{heading}' subsection (#2326) — "
+            f"without it the orchestrator never forwards Codex "
+            f"'Concerns to persist' rows to the ledger (incident #2321: "
+            f"8 emitted, 0 persisted, the round-2 gate walked an empty "
+            f"ledger)."
+        )
+        return errors
+    end = text.find("**5c. Apply ensemble decision rule.**", idx)
+    region = text[idx:end] if end != -1 else text[idx:]
+    if forwarder not in region:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer names the forwarder {forwarder!r} (#2326) — the "
+            f"blind-forward invocations must stay in the region."
+        )
+    rec_idx = region.find(recovery)
+    if rec_idx == -1:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer carries the '{recovery}' clause (#2326) — a "
+            f"crash between marker post and persist would reproduce "
+            f"the #2321 empty-ledger defect through the resume table."
+        )
+        collection = region
+    else:
+        collection = region[:rec_idx]
+        recovery_region = region[rec_idx:]
+        if invocation not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause carries no "
+                f"forwarder invocation ({invocation!r}) (#2326) — a "
+                f"heading-only recovery clause cannot re-run the "
+                f"persist at resume."
+            )
+        if predicate_sentence not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause no longer "
+                f"carries its predicate-leading sentence "
+                f"({predicate_sentence!r}) (#2326) — the recovery "
+                f"duty must stay anchored to the row PREDICATE (the "
+                f"one-twin-missing re-spawn rows included)."
+            )
+    if collection.count(invocation) < 2:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence COLLECTION "
+            f"sub-region carries {collection.count(invocation)} "
+            f"forwarder invocation(s) ({invocation!r}); the contract "
+            f"requires BOTH the pre-post validate gate and the "
+            f"post-post persist (#2326)."
+        )
+    if preamble_literal not in text:
+        errors.append(
+            f"{skill}: missing the resume-table preamble pointer "
+            f"({preamble_literal!r}) (#2326) — resume rows would "
+            f"advance past the recovery step (the crash-seam replay "
+            f"of the #2321 empty-ledger defect)."
+        )
+    if empty_ledger_literal not in text:
+        errors.append(
+            f"{skill}: missing the Step 5c-ter empty-ledger record "
+            f"literal ({empty_ledger_literal!r}) (#2326) — an empty "
+            f"ledger walk would leave no visible round record."
+        )
+    return errors
+
+
+def _codex_concerns_composer_errors(composer: Path, start_tag: str, end_tag: str) -> list[str]:
+    """Surfaces (2)/(3) of ``check_codex_concerns_persistence_lens`` (#2326):
+    the emitting composer's verdict-template pins — a LINE-START
+    NON-SENTINEL ``CONCERN:: `` grammar row (a standalone ``CONCERN:: none``
+    line does not satisfy it — the round-2 sentinel-only alias) + the
+    ``CONCERN:: none`` empty-set sentinel."""
+    row_token = "CONCERN:: "
+    none_sentinel = "CONCERN:: none"
+    errors: list[str] = []
+    if not composer.is_file():
+        errors.append(
+            f"{composer}: missing — the #2326 CONCERN:: row grammar must "
+            f"live in the composer's verdict template."
+        )
+        return errors
+    text = composer.read_text(encoding="utf-8")
+    start_match = re.search(rf"(?m)^{re.escape(start_tag)}", text)
+    if start_match is None:
+        errors.append(
+            f"{composer}: no line-start verdict-template start tag "
+            f"{start_tag!r} (#2326) — cannot anchor the template region."
+        )
+        return errors
+    end = text.find(end_tag, start_match.start())
+    region = text[start_match.start() : end] if end != -1 else text[start_match.start() :]
+    if re.search(rf"(?m)^{re.escape(row_token)}(?!none\b)", region) is None:
+        errors.append(
+            f"{composer}: the verdict-template region no longer carries "
+            f"a LINE-START {row_token!r} row grammar (#2326) — a "
+            f"mid-prose token mention (the containment clause) is not a "
+            f"template row, and a sentinel-only region (a standalone "
+            f"{none_sentinel!r} line as the sole line-start token, the "
+            f"#2326 round-2 alias) is not a grammar row either — Codex "
+            f"would emit prose-only concerns the blind forwarder cannot "
+            f"persist (the #2321 shape)."
+        )
+    if none_sentinel not in region:
+        errors.append(
+            f"{composer}: the verdict-template region no longer names "
+            f"the empty-set sentinel row {none_sentinel!r} (#2326) — "
+            f"Codex would have no machine shape for 'nothing to "
+            f"persist', and contract sites would exit 3 on every clean "
+            f"round."
+        )
+    return errors
+
+
+def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2326 Codex concerns-persistence contract is absent from
+    ANY of its four surfaces.
+
+    Incident #2321 (2026-08-16): a round-1 Codex code-review verdict carried
+    a "Concerns to persist" section with 8 items; NONE was persisted via
+    ``raise-concern``, so the round-2 prior-concerns gate (code-reviewer.md
+    Step 0.8) and Step 5c-ter walked an EMPTY ledger. The fix (#2326) makes
+    the Codex composers emit machine-readable ``CONCERN:: `` rows inside the
+    verdict marker envelope and makes the ORCHESTRATOR blind-forward them
+    via ``scripts/persist_verdict_concerns.py`` at every marker-mode Codex
+    verdict collection AND at every resume-table row whose predicate
+    includes an existing current-round codex marker. This check pins the
+    contract across its surfaces, region-anchored, so a future refactor
+    cannot silently strip one (the #606 copy-list-omission class):
+
+    (1) issue/SKILL.md — the "Codex concerns persistence at verdict
+        collection" subsection (region: its bold heading up to the
+        ``**5c. Apply ensemble decision rule.**`` heading) names the
+        forwarder ``persist_verdict_concerns.py``, keeps the
+        ``**Resume recovery`` clause inside the region, carries BOTH
+        collection invocations (pre-post validate + post-post persist)
+        in the COLLECTION sub-region and one invocation plus the
+        predicate-leading sentence ("every resume-table row whose
+        PREDICATE includes ...") in the RECOVERY sub-region; the file
+        additionally carries the resume-table preamble pointer ("Every
+        row below whose PREDICATE includes an EXISTING current-round
+        ...") and the Step 5c-ter empty-ledger record literal
+        (``concerns ledger: empty — nothing to walk``) — the
+        token-presence strengthening persisted as
+        ``durability-pin-token-presence-gaps`` (#2326 round 1);
+    (2) codex-code-reviewer.md — a LINE-START NON-SENTINEL ``CONCERN:: ``
+        grammar row AND the ``CONCERN:: none`` empty-set sentinel inside
+        the verdict-template region (line-start marker tags; a mid-prose
+        token mention — the containment clause — does not satisfy the
+        row pin, and neither does a standalone line-start
+        ``CONCERN:: none`` as the region's only token — the round-2
+        sentinel-only alias, EXECUTED by the #2326 reconciler:
+        sentinel-only corpus → 0 errors pre-fix);
+    (3) codex-clean-result-critic.md — same, its template region;
+    (4) code-reviewer.md — the literal ``**Prior-concerns ledger:**``
+        visibility line inside the ``### Step 0.8`` section body.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+
+    # (1) issue/SKILL.md: the poster-duty subsection region.
+    errors.extend(_codex_concerns_skill_errors(root / ".claude" / "skills" / "issue" / "SKILL.md"))
+
+    # (2)/(3) the two emitting Codex composers: row grammar in the template.
+    for rel, start_tag, end_tag in (
+        (
+            "codex-code-reviewer.md",
+            "<!-- epm:code-review-codex",
+            "<!-- /epm:code-review-codex -->",
+        ),
+        (
+            "codex-clean-result-critic.md",
+            "<!-- epm:clean-result-critique-codex",
+            "<!-- /epm:clean-result-critique-codex -->",
+        ),
+    ):
+        errors.extend(
+            _codex_concerns_composer_errors(root / ".claude" / "agents" / rel, start_tag, end_tag)
+        )
+
+    # (4) code-reviewer.md: the Step 0.8 ledger-visibility line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    ledger_line = "**Prior-concerns ledger:**"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2326 prior-concerns ledger "
+            f"visibility line must live in code-reviewer.md Step 0.8."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.8")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.8' section (#2326) — "
+                f"the prior-concerns walk (and its ledger-visibility line) "
+                f"must stay in the Claude reviewer."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if ledger_line not in body:
+                errors.append(
+                    f"{reviewer}: the '### Step 0.8' section body no longer "
+                    f"names {ledger_line!r} (#2326) — an empty concerns "
+                    f"ledger would pass vacuously with no visible record."
+                )
+    return errors
+
+
 def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the #2136 verdict-round freshness anchor is absent from the
     /issue SKILL.md durable-verdict-first surface.
@@ -13006,7 +13538,7 @@ def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
             f"in the /issue SKILL.md durable-verdict-first rule."
         )
         return errors
-    text = skill.read_text(encoding="utf-8")
+    text = _read_workflow_doc(skill)
     idx = text.find("Durable-verdict-first rule")
     if idx == -1:
         errors.append(
@@ -13309,7 +13841,7 @@ def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> li
     skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
     if not skill.is_file():
         return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
-    text = skill.read_text(encoding="utf-8")
+    text = _read_workflow_doc(skill)
     n_anchors = text.count(_STALE_LABEL_ANCHOR)
     if n_anchors == 0:
         return [
@@ -13421,7 +13953,7 @@ def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
                 f"{name}."
             )
             continue
-        text = path.read_text(encoding="utf-8")
+        text = _read_workflow_doc(path)
         start_m = re.search(start_re, text, flags=re.MULTILINE)
         if start_m is None:
             errors.append(
@@ -13545,7 +14077,7 @@ def check_crash_fix_relaunch_contract(*, repo_root: Path | None = None) -> list[
                 f"({name}) must live here (#1181)."
             )
             continue
-        text = path.read_text(encoding="utf-8")
+        text = _read_workflow_doc(path)
         n_anchors = text.count(anchor)
         if n_anchors == 0:
             errors.append(
@@ -13651,7 +14183,7 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
                 f"must live in all four VM-launch surfaces."
             )
             continue
-        n = p.read_text(encoding="utf-8").count(_VM_THREAD_CAP_PREFIX)
+        n = _read_workflow_doc(p).count(_VM_THREAD_CAP_PREFIX)
         if n < min_count:
             errors.append(
                 f"{p}: {n} occurrence(s) of the shared-VM thread-cap prefix "
@@ -13806,9 +14338,7 @@ def check_awk_elision_parity(*, repo_root: Path | None = None) -> list[str]:
                 f"program deliberately moved, update _AWK_ELISION_HOMES (#1153)."
             )
             continue
-        anchor_lines = [
-            ln for ln in p.read_text(encoding="utf-8").split("\n") if _AWK_ELISION_ANCHOR in ln
-        ]
+        anchor_lines = [ln for ln in _read_workflow_doc(p).split("\n") if _AWK_ELISION_ANCHOR in ln]
         if len(anchor_lines) != 1:
             errors.append(
                 f"{p}: expected exactly 1 line containing the awk elision anchor "
@@ -14128,7 +14658,19 @@ _LESSONS_ROW_RE = re.compile(
 # file 10041 B) could not land under the old cap. The raise buys EXACTLY
 # this row plus <=40 B headroom (10041 + 40 = 10081) — not general slack
 # (the #992 argued-raise form; the per-row and non-row caps still bind).
-_LESSONS_MAX_BYTES = 10081
+# 10081->10205 (#2155): the index sat at 10079/10081 (2 B headroom), so the
+# new research-pm-section-reference.md index row (+124 B incl. newline;
+# measured post-edit file 10203 B) could not land under the old cap. The
+# raise buys EXACTLY this row plus 2 B headroom (10203 + 2 = 10205, the
+# plan-§C.3 measured+~2 form) — not general slack (the #992 argued-raise
+# form; the per-row and non-row caps still bind).
+# 10205->10492 (#2158): the index sat at 10203/10205 (2 B headroom), so the
+# new cross-session-writer-arbitration.md index row (+249 B incl. newline;
+# measured post-edit file 10452 B) could not land under the old cap. The
+# raise buys EXACTLY this row plus <=40 B headroom (10452 + 40 = 10492) —
+# not general slack (the #992 argued-raise form; the per-row and non-row
+# caps still bind).
+_LESSONS_MAX_BYTES = 10492
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -14470,7 +15012,7 @@ def check_inline_round_duty_mirror(*, repo_root: Path | None = None) -> list[str
         errors.append(f"check-inline-round-duty-mirror: {claude_path} not found")
         return errors
     try:
-        skill_text = skill_path.read_text(encoding="utf-8")
+        skill_text = _read_workflow_doc(skill_path)
     except FileNotFoundError:
         errors.append(f"check-inline-round-duty-mirror: {skill_path} not found")
         return errors
@@ -14755,12 +15297,19 @@ def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale
             cap = AGENT_SPEC_SIZE_GRANDFATHER.get(name)
             if cap is not None:
                 if size > cap:
+                    suggested = ((size + 2_800) // 100) * 100
                     errors.append(
                         f".claude/agents/{name}: {size} bytes exceeds its "
-                        f"grandfather ratchet cap ({cap} bytes) — the spec "
-                        f"regrew past its recorded post-trim size; trim it "
-                        f"back (relocate per-scenario content to "
-                        f".claude/rules/, see #829)."
+                        f"grandfather ratchet cap ({cap} bytes) — the spec regrew past "
+                        f"its recorded cap. Remedies, in the designed order (#1753/#1727 "
+                        f"landing-bytes protocol): (a) raise the cap for this landing — "
+                        f"set the {name} line in .claude/config/agent_spec_size_caps.txt "
+                        f"to {suggested:_} (= measured + <=2.8 KB corridor margin) and "
+                        f"update _MIGRATION_SNAPSHOT in "
+                        f"tests/test_workflow_lint_agent_spec_caps.py in lockstep; or "
+                        f"(b) trim (relocate per-scenario content to .claude/rules/, "
+                        f"see #829). Verify in seconds: uv run python "
+                        f"scripts/workflow_lint.py --check-agent-spec-size"
                     )
                 else:
                     _warn(
@@ -14995,317 +15544,69 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 )
 
 # Grandfather-ratchet caps for skill docs still above SKILL_DOC_FAIL_BYTES,
-# keyed by path relative to .claude/skills/. Each cap = measured size at the
-# 2026-08-05 introduction + <= 3 KB margin; a grandfathered file FAILs above
-# its cap (regrowth ratchet) and FAILs as stale once it drops to
-# <= SKILL_DOC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed
-# (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
-# change). Each entry names its trim direction; none is licensed to grow.
+# keyed by path relative to .claude/skills/.
+#
+# Cap protocol (per landing; #1753/#1727 landing-bytes rule, corridor-max
+# form since #2325):
+#
+#     cap = ((measured_landing_bytes + 2_800) // 100) * 100
+#
+# Properties: headroom lands in [2,701, 2,800] B — strictly under the
+# 3,000 B SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES loose-cap bar, with
+# ~200-300 B of trim-slack so a small net-negative sibling landing does not
+# trip the loose-cap arm. Rationale for corridor-max over the older
+# measured + ~1-1.2 KB convention: growth dominates trims ~7:1 in this
+# ladder, and a regrowth trip costs a full Step 9c gate round (median
+# ~13 min), so buy the mechanical maximum every landing.
+#
+# Semantics: a grandfathered file FAILs above its cap (regrowth ratchet; the
+# FAIL message emits the exact replacement cap line), FAILs as stale once it
+# drops to <= SKILL_DOC_FAIL_BYTES ("remove the entry"), and ratchets DOWN
+# when trimmed (> 3 KB headroom FAILs until the cap is lowered in the same
+# change — the loose-cap message prints the exact new cap).
+#
+# RE-MEASURE at Step 10d against the merged tree, and again on EVERY merge
+# attempt: the moving-main class (a sibling landing skill-doc bytes inside
+# this branch's gate window) is the norm, not the exception — each ~1h gate
+# round hands a sibling time to land ~2 KB of SKILL.md prose.
+#
+# Full per-raise chronicle (every prior value + its incident): git log -p
+# --follow scripts/workflow_lint.py at commits before the #2325 trim (the
+# same history move #1718 made for the agent-spec caps).
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 963,447 B after #2312 added the Step 10d rewritten-branch
-    # arm (+18,660 B on #2302's 944,787 B main: the five mutual-non-ancestry
-    # descendancy guards at the push/pull copy sites — canonical snippet
-    # (1), the safe-case push, the zero-PR stale-ref arm, the post-gate
-    # re-sync push, the shape-2 retry — plus the fail-closed PR-head
-    # parity gate and the "Rewritten-branch landing route" subsection);
-    # cap = measured + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,203 B <= the 3,000 B loose-cap hygiene bar). MEASURED POST-MERGE:
-    # the branch absorbed #2302's landed +1,754 B before this cap was set,
-    # so the value is the real landing size, not a projection off a stale
-    # merge-base (a cap computed against the pre-#2302 base would have
-    # FAILED by 547 B the moment this branch landed).
-    # Prior: 945_400 —
-    # measured 944,138 B after #2302 round 2 de-duplicated the stale-sync
-    # residual prose (the Step 9c 1d parenthetical now cross-references
-    # "Step 5a § Base-identity invariant (#2302)" instead of restating it,
-    # -184 B on round 1's 944,322 B) and the cap was LOWERED back to the new
-    # minimum + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,262 B
-    # <= the 3,000 B loose-cap hygiene bar — a ratchet is a real cost;
-    # give budget back when prose shrinks).
-    # Prior: 945_600 — measured 944,322 B after #2302 round 1 documented the
-    # base-identity invariant at BOTH consumers of the Step 5a sibling-sync
-    # output (+1,938 B on the #2136 942,384 B base): the Step 5a
-    # "Base-identity invariant" paragraph (synced paths are base-identical BY
-    # CONSTRUCTION; selector `base_identical_excluded` + compare
-    # `base_identical_files` reporting; the stale-sync residual + its re-sync
-    # remedy) and the Step 9c 1d COMPARE_RC=0 bullet's content-test
-    # parenthetical (#2024 precondition 1 is a CONTENT test as of #2302).
-    # Prior: 943_600 —
-    # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
-    # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
-    # the fallback-only anchor-semantics paragraph, and the per-site
-    # opener table). Base was 941,014 B — ALREADY 114 B over the
-    # un-raised 940,900 cap (the #2285 prose pins, 740ed2a0a1, landed
-    # without a cap raise: a pre-existing no-flags red on main this raise
-    # also absorbs); cap = measured + ~1.2 KB (#1753/#1727 landing-bytes
-    # rule).
-    # Prior: 940_900 —
-    # measured 939,648 B after #2277 added the three owner-fence emitter
-    # insertions (+1,992 B on the post-#2265 937,656 B: the Step 8
-    # owner-fence refusal sentence + PASS owner= first-person duty, the
-    # 9a-ter PASS-shape extension with the co-located non-copy
-    # prohibition, and the 6d.2 heartbeat fence_until= recipe); cap =
-    # measured + ~1.2 KB (#1753/#1727 landing-bytes rule).
-    # Prior: 938_900 —
-    # measured 937,656 B LANDING bytes after #2265 added the Step 6d.2
-    # `pid-stale-workload-live` branch row (+3,106 B on origin/main's
-    # post-#2268 934,550 B: the non-terminal dead-veto status row — the
-    # never-post-epm:failure clause, the first-tick bracketed-pgrep
-    # contradiction probe, pid-file repair + epm:run-launched re-post, the
-    # decay arm and the POD-WIDE conclude/post-failure arm — plus the
-    # stalled|dead row's exclusion clause and the post-tick-duties
-    # contradiction-probe sentence); cap = measured + ~1.2 KB (#1753/#1727
-    # landing-bytes rule; headroom 1,244 B <= the 3,000 B loose-cap
-    # hygiene bar).
-    # Prior: 935_400 — measured 934,550 B after the #2268 trim (Lever A
-    # retelling condensation, 23 sites, -1,641 B on the 936,191 B
-    # #2256-union tree: dropped session-ids, dates, and narrative
-    # retellings per the 2026-08-05 editorial policy — operative rules,
-    # diagnostic signatures, and bare (#N) citations kept); cap was the
-    # RESTORED pre-#2256 fleet vintage 935_400, deliberately NOT
-    # measured + ~1 KB (#1753): stale pre-#2256 branch lint copies still
-    # carried cap 935,400, so matching it made the trimmed main file PASS
-    # under BOTH vintages (the #2221 stale-vintage gate-block class).
-    # Prior: 936_900 — measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
-    # merged into issue-2256 to pick up the coupled LESSONS cap raise):
-    # #2256 re-keyed the Step 10d gate single-flight probe /
-    # completion-read / kill-arm patterns from the transient gate-TREE
-    # token to the whole-life workload SCRIPT-path tokens (+1,529 B on its
-    # pre-merge base: the #2115 script-file-launcher coverage rationale at
-    # the trigger + surgical probes, the own-Bash-call reminder and the
-    # subshell-argv fork-without-exec note at the main kill-arm, and the
-    # surgical kill-arm's section reference replacing the stale L11949
-    # line reference), atop main's #2244 advance (934,312 B); cap =
-    # measured + ~1.4 KB (#1753/#1727 landing-bytes rule; the margin
-    # absorbs small main-side advance at the landing union — the #2074
-    # landing-union measurement class).
-    # Prior: 935_400 — measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
-    # `timeout` floor for EVERY parking lane (+1,871 B: the timeout-floor
-    # paragraph beside the 420 s park contract, the LAUNCHER_RC rc-capture
-    # paragraph, and the launch-recovery under-budgeted-timeout
-    # cross-reference); cap = measured + ~1 KB rounded up to the next 100 B
-    # (#1753 landing-bytes rule). Measured on the POST-REBASE landing tree:
-    # the branch was rebased onto a main that had already advanced to
-    # 932,441 B (#2126), so the pre-rebase 928,327 B measurement and its
-    # 929_400 cap are both superseded.
-    # Prior: 933_800 — measured 932,441 B branch-tip after #2126 hardened the two gate
-    # recipes (+5,985 B: the 1b gate-set cross-check + 1a selector-key pin
-    # (#1992), the every-relaunch pre-gate re-sync scope clause + four
-    # re-sync-then-re-run next-action messages (#2006), the detached-launch
-    # stdout-redirect rule + timeout-bounded wrapper + no-pid adopt
-    # recovery (measured, probe-detached-fd.txt), the verdict-conditional
-    # re-compose ban at both consumers (#2006), and the Guard-1
-    # per-disposition retry restore (#2087)); cap = measured + ~1.4 KB
-    # (#1753/#1727 landing-bytes rule; the margin absorbs small main-side
-    # advance at the landing union).
-    # Prior: 927_800 — measured 926,329 B branch-tip after #2240 made the Step 10d no-PR arm
-    # payload-aware (+5,831 B: USABLE_PR resolution over BOTH no-usable-PR
-    # cases — terminal PR #1897 and zero PR objects #2240 — with the
-    # origin-precondition push + rc-gated fresh-PR create, realized-outcome
-    # [step10d-no-pr-anomaly] notes, the loud novel-payload-but-no-usable-PR
-    # epm:merge-failed arm, the Step 4a prose correction, and the merge-site
-    # draft-ready comment); cap = measured + ~1.5 KB (#1753/#1727
-    # landing-bytes rule; the margin absorbs small main-side advance at the
-    # landing union).
-    # Prior: 921_700 — measured 920,127 B branch-tip after #2115 converted
-    # the two gate-script
-    # heredoc launchers (Step 10d lint gate + surgical twin) to Write-tool
-    # composition and added the Step 9c script-file-variant note (+1,554 B:
-    # the heredoc form ships the whole gate workload as Bash tool-call argv
-    # through the harness transport — the #2115 forever-pending-dispatch
-    # stall surface).
-    # Prior: 918_600 — measured 917,043 B at the #2074 Step-10d LANDING
-    # UNION (branch-tip 916,019 B — the Step 5 "Per-commit split-review
-    # dispatch (large rounds)" block, +3,660 B: T1 >4-commit / T2 >100 KB
-    # round-diff trigger, G=min(m,8) code-reviewer-lean sub-briefs,
-    # CONTRACT-BEARING routing, mechanical verdict composition + the
-    # split_review provenance line — plus +1,024 B of main-side advance
-    # since the fork; the gate's landing-union overlay measured the merged
-    # content, the #1721 class).
-    # Prior: 917_000 (branch-tip-measured first cut) / 913_400 —
-    # measured 912,359 B after the #2041 + #2208 + #2040 merge union on the
-    # 907,385 B pre-edit tree: #2041 inserted the Step 4b "Fan-out completion
-    # contract in every work-producing brief" paragraph (+1,068 B — same-turn
-    # durable landing, report-last, synchronous delegated gate-waits,
-    # join-time consolidation), #2208 the Step 5a sibling-arm
-    # import-satisfiability probe (+2,591 B), #2040 the 9a-ter across-cell
-    # shard-axis + detached checkpoint-cadence duties (+1,315 B); cap =
-    # merged landing bytes + ~1 KB (#1753 landing-bytes rule). Prior:
-    # 912_300 (#2040 alone) / 911_000 (#2208 alone) / 909_500 (#2041 alone)
-    # / 907_400 — measured 906,356 B after #2024 extended the Step 9c 1d
-    # COMPARE_RC=0 bullet with the `ordering_suspect` verdict class
-    # (+1,333 B); 905_400 — measured 904,929 B after #2015 inserted the
-    # § 9a-ter "Uncommitted-exposure window" block (+425 B on #2014's
-    # 904,504 B base); the remaining mass is the judgment tranche
-    # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
-    # legacy-path stub, GCP rollback-prose relocation).
-    # Prior: 942_000 — measured 941,014 B on main after TWO concurrent
-    # workflow-fix branches landed SKILL.md edits inside the same ~90 min:
-    # #2284 (a70965d3bb, plan-review-floor trigger attribution, +550 B) then
-    # #2285 (740ed2a0a1, Step 10d Guard 2 + trigger-point bullet state the
-    # post-#1723 status ordering, +816 B). Each measured its own landing
-    # bytes against a pre-#2284 main and fit the 1,252 B headroom alone
-    # (#2285's own gate certified 940,464 B / margin 436); their SUM
-    # overshot by 114 B, so main went red on this check between the two
-    # merges. This is the #1721 moving-main class the Step 10d gate's
-    # landing-union merge cannot fully close: the union is computed against
-    # origin/main AT GATE TIME, and a sibling wf-fix merge afterwards is
-    # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
-    # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
-    # always-loaded surface and the compaction tranche below still stands.
-    # Prior: 952_000 — #2296's FIRST Step 10d recovery merge (superseded above).
-    # Measured 950,705 B on the POST-MERGE tree, and the three deltas are
-    # exactly additive: merge base 108ce58854 held 942,384 B, main
-    # 10e9c165a3 added +2,403 B (#2302's base-identity-invariant prose at
-    # the two Step 5a/9c consumers), #2296 added +5,918 B (below). BOTH
-    # pre-merge caps predate the merged tree and would FAIL it — main's
-    # 945_400 by 5,305 B and #2296's own 949_600 by 1,105 B — so the higher
-    # cap is the correct resolution, not a regrowth licence (the same
-    # forward-resolution shape as #2136's, recorded below). This is the
-    # #1721 moving-main class in its two-surface form: each side measured
-    # its own landing against a pre-sibling main and fit its own headroom
-    # alone, and only the merge sees the sum. Cap = measured + ~1.3 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,295 B <= the 3,000 B
-    # loose-cap hygiene bar).
-    # Prior: 949_600 — #2296 measured 948,302 B PRE-merge (the Step 10d
-    # mapped-invariant BASELINE leg moved off the shared root onto a
-    # base-pinned detached sparse scratch via `step9c_baseline.py
-    # mapped-baseline`: the shared-form + surgical-form baseline blocks,
-    # the TG_SCRATCH sed clause at both <TREE> sites, the fail-closed
-    # rc-parse lines, the rewritten residual-risk items, and the
-    # bootstrap-safe $TG_S9B helper resolution + FALLBACK audit token at
-    # both baseline sites; +5,918 B over origin/main's 942,384 B). Cap =
-    # measured + ~1.3 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,298 B <= the 3,000 B loose-cap hygiene bar). Re-derived TWICE
-    # mid-round, both superseded and recorded here so the trail is not
-    # lost: 947_450 (measured 946,230 B) predates the $TG_S9B bootstrap
-    # fix and would FAIL by 321 B; 949_000 (measured 947,771 B) predates
-    # the round-2 reviewer Minors and would FAIL by nothing but records
-    # the wrong measurement.
-    # Prior: 943_600 — #2136 measured 942,384 B for THAT landing (the Step 5b
-    # durable-verdict anchor snippet + its per-site opening_kinds table,
-    # +1,370 B over main's 941,014 B). Merge-resolved forward from main's
-    # 942_000: that value predates this landing and would FAIL it by 384 B,
-    # so the higher cap is the correct resolution, not a regrowth licence
-    # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    # 953_900 — SECOND merge-resolve forward inside #2296's landing window.
-    # Measured 952,575 B on the post-merge tree, additive again: the first
-    # recovery merge's 950,705 B + #2303's +1,870 B = 952,575 B. BOTH candidate
-    # caps FAIL it — #2296's own 952_000 by 575 B, main's 947_700 by 4,875 B.
-    # Cap = measured + ~1.3 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,325 B <= the 3,000 B loose-cap hygiene bar).
-    #
-    # THIRD consecutive forward-resolution of this ONE constant inside a single
-    # landing window (#2302 -> #2303 -> here), which sharpens the class main's
-    # comment below names: the conflict is on the LINE, so no amount of headroom
-    # can prevent it — headroom only decides whether the merged tree is RED. And
-    # each ~1h Step 10d gate round hands a sibling wf-fix branch time to land
-    # ~2 KB of SKILL.md prose and bump this line again, so a SKILL.md-bearing
-    # branch should expect to re-measure PER MERGE ATTEMPT, not once per round.
-    # 947_700 — #2303 measured 946,657 B for THIS landing, and that figure is
-    # the SUM of two workflow-fix landings, not one: #2303's own Step 5a family
-    # work (+1,870 B over the 942,384 B base at 3ac07d46fd —
-    # .claude/config/agent_spec_size_caps.txt joins the lint family in BOTH
-    # copies, since the linter reads it at module import, #2293; and both sync
-    # commits gain rc-checked FATAL/exit-1 arms) PLUS #2302's sibling-arm
-    # landing (5bfb7eb6f0, +2,403 B), which reached main at 944,787 B / cap
-    # 945_400 while #2303 sat in its Step 9c + pre-push gates. Cap = landing
-    # bytes + ~1 KB (#1753 landing-bytes rule; headroom 1,043 B).
-    #
-    # This IS the #2284/#2285 moving-main class recorded above, caught rather
-    # than repeated: each branch fit the headroom it measured against ALONE
-    # (#2302 at 945_400, #2303 at 945_400 off a pre-#2302 base), and their SUM
-    # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
-    # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
-    # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
-    #
-    # 972_600 — MEASURED 971,235 B on the #2312 rewritten-branch landing merge for
-    # #2296: main's 965,317 B + this branch's +5,918 B, additive exactly as in
-    # every prior round of this chain. Both candidates FAIL it — main's 966_520 by
-    # 4,715 B and the branch's own 953_900 by 17,335 B. Cap = measured + ~1.4 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,365 B <= the 3,000 B loose-cap
-    # hygiene bar).
-    #
-    # Resolved IN THE SCRATCH per the § Rewritten-branch landing route, which is
-    # what makes this the LAST re-measure for #2296 rather than the fourth link in
-    # a chain: the branch tip — and the gate verdict SHA-bound to it — are left
-    # untouched, so no re-gate is owed. The three preceding re-measures each came
-    # from a branch-side recovery merge, and each re-opened the ~84-min gate window
-    # that let the next SKILL.md-bearing sibling (#2302, #2303, #2312) land first.
-    # That is the mechanism behind the "norm, not the exception" note below.
-    #
-    # 966_520 — MEASURED 965,317 B after #2312 added the Step 10d rewritten-branch
-    # arm (+18,660 B: the mutual-non-ancestry guard at all four push sites, the
-    # zero-PR stale-ref arm, the PR-head parity gate, and the § Rewritten-branch
-    # landing route) ON TOP of #2303's landed 946,657 B main. Cap = measured
-    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,203 B <= the 3,000 B
-    # loose-cap hygiene bar). Prior on this branch: 964_650 — computed against a
-    # pre-#2303 base (944,787 B) and STALE by 667 B the moment #2303 landed
-    # bbc5d75807 mid-gate; the re-measure duty #2303's own comment prescribes is
-    # what caught it, for the SECOND time on this branch (the first was #2302's
-    # +1,754 B, absorbed before the earlier cap was set). Two consecutive
-    # SKILL.md-bearing siblings landing inside one branch's gate window is now
-    # the norm, not the exception: re-measure at Step 10d, never at Step 4.
-    #
-    # 974_900 — #2317 MEASURED 973,681 B on the branch's own origin/main
-    # (ec10edbcb0) merge: main's 971,235 B + this branch's +2,446 B (the
-    # Step 9c 1b splice-shape guard: the --files-only tr-to-spaces sourcing
-    # note, the wc -l embedded-newline assertion + shell self-test, and the
-    # site-scope note), additive — the 1b region was untouched by
-    # #2296/#2312. Prior: 972_600 (#2296/#2312, above) and this branch's own
-    # 950_300 measured against the pre-#2296 base bbc5d75807 — the
-    # moving-main class again, absorbed by the branch-side re-merge BEFORE
-    # the gate this time. Cap = landing bytes + ~1.2 KB (#1753/#1727
-    # landing-bytes rule; headroom 1,219 B <= the 3,000 B loose-cap hygiene
-    # bar). Re-measure at Step 10d if main moves again.
-    #
-    # 980_400 — #2320 MEASURED 979,368 B on the branch's own origin/main
-    # (db6eb28cac) merge: main's 974,701 B + this branch's +4,667 B (the
-    # Guard-3 first-parent fix: the MB_VALID hard-stop block with the
-    # MB_FIRST_PARENT diagnostic, the unconditional content-check prose,
-    # the corrected #479 note, the retired-condition template rewrites +
-    # mb_first_parent note fields, and the #1144 stranded-MODIFIED
-    # surfacing scan), partly offset by the deleted BEHIND-threshold
-    # prose. Prior: 974_900 (#2317, above). Cap = landing bytes + ~1 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,032 B <= the 3,000 B
-    # loose-cap hygiene bar). Re-measure at Step 10d if main moves again.
-    #
-    # 983_400 — #2146 MEASURED 982,223 B after rounds 1-3 on this branch,
-    # against an UNMOVED origin/main SKILL.md (979,368 B at both the
-    # d1c3534a10 merge-base and the r3-time origin/main tip): main's
-    # 979,368 B + this branch's +2,855 B (r1: the Step 9a-ter "Inline-round
-    # session-survival backstop" block — the arm-iff-tick_triage.ISSUE_ACTIVE
-    # rule, the per-class no-arm verdicts with the four status enumerations
-    # the #2146 partition pin compares against the live tick_triage module,
-    # and the non-ACTIVE backstop chain; r2: the C1-C3 qualifier corrections;
-    # r3: the exact `plan_pending_over_cap` predicate wording —
-    # at-least-as-new, or no status-changed marker at all). Cap = measured
-    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,177 B <= the
-    # 3,000 B loose-cap hygiene bar). Prior: 982_700 — r1's measurement
-    # (981,524 B; headroom 1,176 B), left stale by the r2 qualifier splice
-    # (+561 B -> 982,085 B live / 615 B headroom, below the margin this
-    # ladder's own history calls normal for concurrent sibling landings).
-    # Prior: 980_400 (#2320, above). Re-measure at Step 10d if main moves
-    # again.
-    "issue/SKILL.md": 983_400,
-    # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
-    # the v3 body drain.
-    "clean-results/SPEC.md": 106_900,
-    # measured 87,195 B; problem-sweep prose + living-docs passes are the
-    # trim direction.
-    "daily/SKILL.md": 90_000,
-    # Prior: 72_100 — measured 72,748 B after #2276 back-filled the c62
-    # (backend pin-claim) + c63 (declared width vs launch width) escape
-    # entries into the Phase 1.5.0 canonical escapes block (+845 B,
-    # required by the verify_plan docstring sync test); cap = landing
-    # bytes + ~1 KB (#1753 landing-bytes rule).
-    # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
-    # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
-    # escapes block (+203 B, required by the verify_plan docstring sync
-    # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
-    # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
-    # of planner.md is the trim direction.
-    "adversarial-planner/SKILL.md": 73_750,
+    # measured 67,795 B @ #2155 2026-08-17 step-body split (router only —
+    # the 20 step bodies moved verbatim to issue/steps/, entries below;
+    # re-split against the rung-0 991,350 B monolith — its +1,747 B landed
+    # entirely inside steps/05+06, so the router byte count is unchanged);
+    # corridor-max ((measured+2_800)//100)*100 -> headroom 2,705 B.
+    # Prior: 994_100 (rung-0 main, pre-split 991,350 B) / 992_400 (#2326);
+    # chronicle: git log.
+    "issue/SKILL.md": 70_500,
+    # The four #2155 step companions over the 60,000 B FAIL bar, each
+    # grandfathered at measured + <=3 KB (deliberately NOT exempted via
+    # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
+    # remaining trim visible). Measured 2026-08-17 at the re-split commit;
+    # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
+    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
+    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 99_300 (#2352, 96,505 B).
+    "issue/steps/09-step-5.md": 100_300,
+    # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
+    # per-leg out/scratch isolation, +1,211 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 145_400,
+    "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
+    # measured 279,937 B @ #2348 (TG merge-base + classify port).
+    "issue/steps/18-step-10d.md": 282_700,
+    # measured 106,625 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
+    "clean-results/SPEC.md": 109_400,
+    # measured 88,010 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 90_000; chronicle: git log.
+    "daily/SKILL.md": 90_800,
+    # measured 73,229 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 73_750; chronicle: git log.
+    "adversarial-planner/SKILL.md": 76_000,
 }
 
 
@@ -15383,12 +15684,19 @@ def check_skill_doc_size(  # noqa: C901 -- flat per-entry hygiene ladder, mirror
             cap = SKILL_DOC_SIZE_GRANDFATHER.get(rel)
             if cap is not None:
                 if size > cap:
+                    suggested = ((size + 2_800) // 100) * 100
                     errors.append(
                         f".claude/skills/{rel}: {size} bytes exceeds its "
-                        f"grandfather ratchet cap ({cap} bytes) — the doc "
-                        f"regrew past its recorded post-trim size; trim it "
-                        f"back (story->citation compression, relocate "
-                        f"reference material to .claude/rules/)."
+                        f"grandfather ratchet cap ({cap} bytes) — the doc regrew past "
+                        f"its recorded cap. Remedies, in the designed order (#1753/#1727 "
+                        f"landing-bytes protocol): (a) raise the cap for this landing — "
+                        f"set SKILL_DOC_SIZE_GRANDFATHER['{rel}'] = {suggested:_} "
+                        f"(= measured + <=2.8 KB corridor margin) in "
+                        f"scripts/workflow_lint.py, re-measured at Step 10d against the "
+                        f"merged tree; or (b) trim (story->citation compression, "
+                        f"relocate reference material to .claude/rules/). Verify in "
+                        f"seconds: uv run python scripts/workflow_lint.py "
+                        f"--check-skill-doc-size"
                     )
                 else:
                     _warn(
@@ -16523,11 +16831,24 @@ def _gcp_pin_scan_files(root: Path) -> list[Path]:
         base_dir = root / base
         if base_dir.is_dir():
             out.extend(p for p in sorted(base_dir.glob(pattern)) if p.is_file())
+    # The #2155 split relocated the /issue step bodies to
+    # .claude/skills/issue/steps/*.md — outside the **/SKILL.md glob above —
+    # so append the companions (returns [] on a pre-split tree), or a future
+    # unannotated stale-GCP instruction in a step body silently evades the
+    # check (round-1 blocker gcp-pin-scan-misses-step-companions).
+    out.extend(_issue_step_companions(root / ".claude" / "skills"))
     for rel in _GCP_PIN_SCAN_FILES:
         p = root / rel
         if p.is_file():
             out.append(p)
-    return [p for p in out if not _gcp_pin_excluded(p, root)]
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for p in out:
+        if p in seen or _gcp_pin_excluded(p, root):
+            continue
+        seen.add(p)
+        result.append(p)
+    return result
 
 
 def _gcp_pin_py_literal_lines(text: str) -> set[int] | None:
@@ -17122,9 +17443,11 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_pre_split_review_guard": lambda wf: check_pre_split_review_guard(),
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
@@ -17233,9 +17556,13 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
     "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_pre_split_review_guard": CheckScope(
+        "global", (".claude/", "scripts/", "src/explore_persona_space/")
+    ),
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
@@ -17957,6 +18284,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "structurally bypassed). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-pre-split-review-guard",
+        action="store_true",
+        help="FAIL if the #2158 pre-split review guard is absent from any "
+        "of its seven surfaces (eight files): the "
+        "scripts/pre_split_review_guard.py CLI naming the "
+        "pre_split_review_gate library entry, the task_workflow.py "
+        "predicate + PRE-SPLIT-INCOMPLETE verdict token, the 09-step-5.md "
+        "'**Pre-split completeness guard' block, the 08-step-4.md "
+        "breadcrumb-grammar + unit=<k> emitter tokens, the 08-step-4.md "
+        "shared-worktree arbitration note, the "
+        "cross-session-writer-arbitration.md rule file, and the "
+        "read-pinning bullet in BOTH implementer specs (incident #1336 r4: "
+        "a review dispatched against a Unit-A-only intermediate commit "
+        "cost 2 subagent deaths + a 2-day park). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-null-gate-calibration-lens",
         action="store_true",
         help="FAIL if the #1491/#2144 null-statistic gate-calibration lens "
@@ -18002,6 +18346,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "heading (incidents #2091: a host-wide max() drain verdict killed "
         "4 of 9 rung-jobs; #2061: a fabricated shard schema cost a full "
         "implementation round). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-codex-concerns-persistence",
+        action="store_true",
+        help="FAIL if the #2326 Codex concerns-persistence contract is "
+        "absent from any of its four surfaces: the issue/SKILL.md 'Codex "
+        "concerns persistence at verdict collection' subsection (both "
+        "collection invocations + resume-recovery clause with its recovery "
+        "invocation and predicate-leading sentence, plus the resume-table "
+        "preamble pointer and 5c-ter empty-ledger literal), a line-start "
+        "non-sentinel CONCERN:: grammar row + the CONCERN:: none sentinel in the "
+        "codex-code-reviewer.md and codex-clean-result-critic.md "
+        "verdict templates, and the Prior-concerns-ledger visibility line "
+        "in code-reviewer.md Step 0.8 (incident #2321: 8 emitted concerns, "
+        "0 persisted, an empty ledger walked vacuously at round 2). "
+        "Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-verdict-round-anchor",
@@ -18603,9 +18963,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
+        or args.check_pre_split_review_guard
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_codex_concerns_persistence
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -18765,12 +19127,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_pre_split_review_guard or no_flags:
+        errors.extend(check_pre_split_review_guard())
     if args.check_null_gate_calibration_lens or no_flags:
         errors.extend(check_null_gate_calibration_lens())
     if args.check_two_tier_yield_floor or no_flags:
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_codex_concerns_persistence or no_flags:
+        errors.extend(check_codex_concerns_persistence_lens())
     if args.check_verdict_round_anchor or no_flags:
         errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:

@@ -17,9 +17,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
-_TEXT = SKILL_MD.read_text(encoding="utf-8")
+_TEXT = issue_skill_text()
 
 # Ban vocabulary that marks a `gh gist edit` mention as non-prescriptive
 # (checked CASE-INSENSITIVELY — the recipe's prose riders use lowercase

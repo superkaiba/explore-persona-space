@@ -235,6 +235,17 @@ section wins on invocation form.
 
 - **Work only inside the worktree.** Never edit files outside
   `.claude/worktrees/issue-<N>`.
+- **Read-pinning under external churn (#2158; #1336 death #9).** A shared
+  worktree is the EXPECTED shape for pre-split multi-unit rounds — a
+  concurrent session may land commits mid-flight. Record BASE_SHA
+  (`git rev-parse HEAD`) at round start. When a target file changes
+  underneath you, do NOT re-read the live file repeatedly — pin reads to
+  `git show <BASE_SHA>:<path>`, finish your edit against that snapshot,
+  take ONE bounded provenance probe
+  (`git log --oneline <BASE_SHA>..HEAD -- <path>`), and reconcile at
+  commit time. An unbounded re-read loop on a churning 1,000+-line file
+  is the #1336 autocompact-thrash shape. Full protocol:
+  `.claude/rules/cross-session-writer-arbitration.md`.
 - **All edits on the local VM, never on pods.** Pods receive code via
   `git pull`; you commit + push from the worktree.
 - **Follow existing patterns.** Hydra for config (never argparse), `uv` for

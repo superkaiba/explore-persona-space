@@ -30,6 +30,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).
 - crash-fix-rounds.md — retry/revision or post-code-fix relaunch (fix-engaged signal, stale-artifact + HF re-upload + sentinel wipe, ancestry+MooseFS, kill-relaunch, per-leg out-roots, symbol-rename grep, compute-character restate, mid-run push, shared-module propagate).
 - critic-lens-reference.md — a critic reviews under its assigned lens (pointer-loaded single-lens span).
+- cross-session-writer-arbitration.md — dispatching a writer into a worktree an independent live session may share (pre-split multi-unit builds), or a target file churns mid-edit (probe + claim markers + sequence-or-split; read-pinning to a SHA).
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - disk-hygiene.md — a staging path, cache cap, disk-guard alert, or evidence-gated deletion (data-disk quotas, guard tiers, preflight floor).
@@ -54,12 +55,13 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - pods.md — you provision, size, SSH to, or terminate a pod (intent tables, `pod.py` surface, API hard requirements, preflight, crons).
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - repo-root-uncommitted-state.md — tracked files left modified/deleted-but-uncommitted at the shared repo root, root files reverting/resurrecting within seconds, or verifying a commit landed under concurrency (pre-commit stash race; SHA-blob landing check).
+- research-pm-section-reference.md — the PM renders a STATUS part or runs the infra auto-dispatch items (pointer-loaded).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI; difference-vector legs sharing one SAMPLED baseline vs noise-free nulls; a numeric gate on a null statistic.
 - smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import.
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest, judge-monitor reads, or ANY orchestrator turn on a guard-surface round.
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
-- upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/3/4/6 recipe (pointer-loaded span).
+- upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/2.10/2.11/3/4/6 recipe (pointer-loaded).
 - vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - agents-vs-skills.md — you create/restructure anything under `.claude/` (decide agent vs skill).

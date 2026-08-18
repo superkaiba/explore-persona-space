@@ -236,7 +236,77 @@ name-set diff; a FAIL row flips the verifier verdict), upload-verifier
 Step 2.10, and the terminate guard's
 `outroot=<swept-clean|residue-committed|none>` attestation token —
 `pod.py terminate` refuses a `kind: experiment` teardown whose latest
-PASS note lacks it.
+PASS note lacks it. **Cross-leg content disambiguation (#2359):** the
+git arm is issue-scoped but not LEG-scoped, so on a multi-leg issue a
+sibling leg's committed same-named file could silently cover this leg's
+unpersisted file (#2333: leg-B's `upload_done.json`, sha256 `0a052e8b…`,
+read `outroot_residue: OK` off leg-A's committed `6f43c93d…` copy). A
+basename resolving ONLY via the git arm is therefore content-checked —
+git blob sha1 vs the committed candidate(s) when the disk bytes are
+locally readable (size equality as the cheap first pass; a mismatch is
+residue → FAIL naming both paths), and a pod-side listing row with no
+local bytes degrades to WARN carrying the literal token
+`outroot-residue-basename-git-only` (a byte-check duty for the
+verifier's exploratory pass, never a silent OK; residue FAIL dominates).
+Honestly-named residual: HF prefixes are leg-scoped by CALLER CONVENTION
+(`issue<N>_<slug>/…`), not by construction, and carry no content check —
+a caller passing an issue-wide multi-leg HF prefix re-opens the same
+cross-leg basename hole through the HF arm; scope each `--hf-prefix` to
+the leg under verification.
+
+**Realized row counts — the WITHIN-FILE sibling of the residue check
+above (#2148).** The residue check binds DISK to the upload filters and
+Step 2.9 binds the committed tree to the source tree, both at FILE
+grain; this binds the CONTENT of a present file to the run's input-side
+declaration. #2091 PASSed every file-level check while ~25% of rows were
+missing INSIDE present files, because the count check read the
+producer's `capture_rows` — the expectation echoed back. A producer's
+self-reported count field is NEVER the gate quantity (#2091's fields
+were wrong in BOTH directions: `capture_rows` over-reported pre-repair;
+`n_rows_captured` under-reports post-repair). The gate quantity is the
+DISTINCT count of the FULL row identity (unit key + any draw/rollout
+index) counted from the store's own `row_index*.jsonl` files: a healthy
+repaired store legitimately holds more lines than rows (a matching count
+is not a matching set applies WITHIN files too), and a unit-key-only
+count is satisfied by partial per-unit coverage. Producer duty: a store
+carrying a per-row index writes an index row for EVERY captured row (the
+per-row co-write is what makes the index a stronger proxy than any
+aggregate count field), and a resume path that adopts a partial shard
+recomputes its offset from that shard's realized line count, never from
+a nominal shard size. Enforcement:
+`scripts/verify_uploads.py::check_realized_row_counts` (`--expected-rows`
++ `--row-index-distinct-key`; shortfall/surplus FAIL, exemptions always
+a visible WARN), upload-verifier Step 2.11, and the terminate guard's
+`rows=<reconciled|no-declared-count|n/a>` attestation token — `pod.py
+terminate` refuses a `kind: experiment` teardown whose latest PASS note
+lacks it.
+
+**Realized row counts — the WITHIN-FILE sibling of the residue check
+above (#2148).** The residue check binds DISK to the upload filters and
+Step 2.9 binds the committed tree to the source tree, both at FILE
+grain; this binds the CONTENT of a present file to the run's input-side
+declaration. #2091 PASSed every file-level check while ~25% of rows were
+missing INSIDE present files, because the count check read the
+producer's `capture_rows` — the expectation echoed back. A producer's
+self-reported count field is NEVER the gate quantity (#2091's fields
+were wrong in BOTH directions: `capture_rows` over-reported pre-repair;
+`n_rows_captured` under-reports post-repair). The gate quantity is the
+DISTINCT count of the FULL row identity (unit key + any draw/rollout
+index) counted from the store's own `row_index*.jsonl` files: a healthy
+repaired store legitimately holds more lines than rows (a matching count
+is not a matching set applies WITHIN files too), and a unit-key-only
+count is satisfied by partial per-unit coverage. Producer duty: a store
+carrying a per-row index writes an index row for EVERY captured row (the
+per-row co-write is what makes the index a stronger proxy than any
+aggregate count field), and a resume path that adopts a partial shard
+recomputes its offset from that shard's realized line count, never from
+a nominal shard size. Enforcement:
+`scripts/verify_uploads.py::check_realized_row_counts` (`--expected-rows`
++ `--row-index-distinct-key`; shortfall/surplus FAIL, exemptions always
+a visible WARN), upload-verifier Step 2.11, and the terminate guard's
+`rows=<reconciled|no-declared-count|n/a>` attestation token — `pod.py
+terminate` refuses a `kind: experiment` teardown whose latest PASS note
+lacks it.
 
 **Regenerating a published artifact in place requires a version-bumped path or
 a regeneration note (#922/#779).** Re-uploading / reconstructing an

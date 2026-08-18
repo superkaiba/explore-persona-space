@@ -23,6 +23,8 @@ goes red.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parents[1]
 SKILL = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
@@ -47,7 +49,7 @@ def _norm(text: str) -> str:
 
 def test_skill_9a_ter_block_present():
     """The canonical block sits inside Step 9a-ter, before the lint gate."""
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert BLOCK_HEADING in text, "canonical staged-index block heading missing from SKILL.md"
     assert PROBE in _norm(text)
     assert "git add -f" in text

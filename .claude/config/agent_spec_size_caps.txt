@@ -14,9 +14,12 @@
 # preserved in `git log --follow scripts/workflow_lint.py` at commits before
 # the #1718 migration; new history accrues in this file's own git log.
 
-code-reviewer.md             107_300  # measured 106,285 B post-#2120 (Step 0.72 own-device-scoped GPU-state verdict gate + Blocker-tags host-wide-gpu-verdict entry); cap = measured + ~1.0 KB. Prior: 104_800.
-codex-clean-result-critic.md  48_400  # measured 47,431 B post the composer-common hard-rule dedupe (2026-08-05 compaction lineage); cap = measured + ~1 KB.
-codex-code-reviewer.md        50_500  # measured 49,481 B post-#2120 (Step 0.72 copy-list bullet + inlined-rubric 0.72 slot + Blocker-tags host-wide-gpu-verdict entry); cap = measured + ~1.0 KB. Prior: 49_200.
-experiment-implementer.md     67_800  # measured 66,804 B post-#2120 (Before-writing-code item 8 Schema-from-artifact banked-loader observed-keys duty + packed-format src-filter clause); cap = measured + ~1.0 KB. Prior: 65_500.
-experimenter.md               67_600  # measured 65,619 B post the 2026-08-05 compaction (bootstrap probe / GCP salvage / vLLM hang triad relocated to experimenter-section-reference.md); cap = measured + ~1 KB.
-research-pm.md                47_000  # #829 trim after the 5d84120ac9 overage to 47,861; cap = measured + ~0.2 KB. Prior: 46,187 B post-#1082, 43_500, 40_990.
+code-reviewer.md             109_600  # measured 106,857 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 107_300.
+codex-clean-result-critic.md  50_200  # measured 47,431 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 48_400.
+codex-code-reviewer.md        52_200  # measured 49,481 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 50_500.
+experiment-implementer.md     69_600  # measured 66,804 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 67_800.
+experimenter.md               72_500  # measured 69,756 B @ #2350 2026-08-17 (step 1c per-leg out/scratch isolation); corridor-max ((measured+2_800)//100)*100. Prior: 70_300 / 67_600.
+# research-pm.md entry REMOVED @ #2155 2026-08-16: the six-span relocation to
+# .claude/rules/research-pm-section-reference.md trimmed the spec to 29,011 B,
+# under AGENT_SPEC_FAIL_BYTES (40,000) — a dropped-under-cap entry is stale and
+# must be removed, never lowered. Prior: 49_700.

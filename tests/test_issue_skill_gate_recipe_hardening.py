@@ -59,11 +59,13 @@ import re
 import subprocess
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude/skills/issue/SKILL.md"
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _span(text: str, start_anchor: str, end_anchor: str) -> str:
@@ -389,6 +391,15 @@ def test_mapped_baseline_leg_runs_off_shared_root():
         # check the helper's stderr).
         assert 'uv run python "$TG_S9B" mapped-baseline --help' in span, (
             f"[{name}] the bootstrap helper-resolution probe must survive"
+        )
+        # #2348: the probe must ALSO require the classify-new-nodes subcommand,
+        # so a root copy predating it routes to the worktree fallback — the
+        # SAME bootstrap doctrine as mapped-baseline: without this, the round
+        # that ADDS the subcommand (and every root copy older than it) would
+        # drive a classify call that dies argparse exit 2 into the loud-WARN
+        # status-quo arm on every landing until the root catches up.
+        assert 'uv run python "$TG_S9B" classify-new-nodes --help' in span, (
+            f"[{name}] the bootstrap probe must cover the classify-new-nodes subcommand (#2348)"
         )
         # Quote-form-agnostic (reviewer Minor, round 2): the earlier literal
         # was keyed to the double-quoted spelling, so an UNQUOTED-path
