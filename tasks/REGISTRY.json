@@ -10296,8 +10296,8 @@
     "2332": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2332",
-      "status": "running",
+      "path": "tasks/completed/2332",
+      "status": "completed",
       "title": "Repack small-file HF prefixes to reclaim ~610k file-count slots without breaking readers"
     },
     "2333": {
