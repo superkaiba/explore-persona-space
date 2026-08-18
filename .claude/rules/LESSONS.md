@@ -30,6 +30,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).
 - crash-fix-rounds.md — retry/revision or post-code-fix relaunch (fix-engaged signal, stale-artifact + HF re-upload + sentinel wipe, ancestry+MooseFS, kill-relaunch, per-leg out-roots, symbol-rename grep, compute-character restate, mid-run push, shared-module propagate).
 - critic-lens-reference.md — a critic reviews under its assigned lens (pointer-loaded single-lens span).
+- cross-session-writer-arbitration.md — dispatching a writer into a worktree an independent live session may share (pre-split multi-unit builds), or a target file churns mid-edit (probe + claim markers + sequence-or-split; read-pinning to a SHA).
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - disk-hygiene.md — a staging path, cache cap, disk-guard alert, or evidence-gated deletion (data-disk quotas, guard tiers, preflight floor).

@@ -957,3 +957,137 @@ exact-count assert — assert the one-line verdict-header form exactly, and
 the instruction form on a whitespace-normalized copy
 (`re.sub(r'\s+', ' ', p)`). Also: a 9-char range SHA is a PREFIX of the
 10-char prior-tip SHA — count the long form first and subtract.
+
+**Adopted-own-FAIL fix round + orchestrator-fenced OPEN blocker (#2360 r2,
+2026-08-18):** two deltas on the #2332/#2147 shapes. (a) When the orchestrator
+leaves one of the twin's own persisted BLOCKERs OPEN but RECLASSIFIED
+out-of-band (here: Phase-V live validation ruled a SEQUENCING GATE —
+orchestrator-owned, implementer forbidden from provisioning), compose a
+three-part fence: never re-raise as a round defect, plan-adherence rows that
+depend on it are marked `pending <gate> (orchestrator-owned open gate)` not
+✗-against-the-round, and the already-persisted id gets the status-line
+vocabulary `OPEN-GATE (orchestrator-owned; not a round-N defect)` — while
+explicitly PERMITTING a Needs-user-eyeball / Recommendation mention as the
+outstanding gate. (b) A brief labeling a press lead "fix-round-introduced"
+can be WRONG about provenance — probe `git show <round-parent>:<path> | grep`
+at compose time (here the broadened lock-parse except was round-1-introduced,
+delta-untouched, unflagged in r1); compose the lead with verified provenance
+(fresh press on the merits, `substantive` if raised, weigh the design's
+declared fail-open posture) and flag the discrepancy in the return. Also:
+`grep -c '{{'` the PAYLOADS before asserting no-braces — a legit f-string
+`{{` in a new test scopes the assert to template-side + per-placeholder
+zero-counts. Rerunnable: `/tmp/codex-2360-r2-compose.py`.
+**Post-halt regression-round shape (#2333 r3, 2026-08-16):** when a binding
+reconciler PASS shipped, the pod then HALTED in production, and the fix
+round vendors a sibling-branch implementation: (a) brief-ordered
+by-reference markers work — main-checkout absolute events.jsonl + exact-kind
+`jq 'select(.kind==... and .version==N)'` (proven readable by Codex in r2);
+give the python3 fallback and the frozen-worktree-copy warning. (b) The
+reconciler-persisted upheld-non-blocking CONCERNs are REGRESSION duties,
+not closure: new `## Prior-concern regression check` section with
+NOT-REGRESSED / TOUCHED-VERIFIED / REGRESSED vocabulary, plus a
+stale-line-number warning (the fix shifts ledger-cited lines — key on
+symbols). Do NOT tell Codex to re-emit the inlined ledger rows as
+forwarder rows (already persisted; only NEW findings / a REGRESSED id).
+(c) Vendored-source fidelity is priority 1: pin the exact
+`show origin/<branch>:<file> | sed -n 'A,Bp'` command (verify the ref
+resolves in the worktree at compose time), and enumerate the deltas to
+adjudicate — verbatim-copy claim, relaxed asserts (occurrence count),
+dropped locus branches — with the instruction to VERIFY the implementer's
+"dead code for this universe" rationale against the pair construction, not
+the docstring. (d) Build the do-not-relitigate list from the reconciled
+marker's per-item table: DISCARDED items, RECORDED-DEVIATION-OK items, and
+its "Standing recommendations on PASS" are all non-duties for a focused
+fix round. The reconciled marker's posted top-level version can differ
+from its body head sentinel (v1 posted, body says v2 = the review round) —
+tell Codex not to be confused. (e) Add a machine-scannable
+`## Round-N fix verification` section (one verdict line per brief
+priority: vendored fidelity / halt path / relaxation safety / Step 4.5
+regression-test adequacy). (f) HEAD-drift robustness: committing agent
+memory to the SAME worktree branch mid-round moves HEAD past the round
+tip — word the prompt "at compose time HEAD was the round commit;
+reviewer-memory commits may follow, touching no round file; verify round
+files via `show <round-sha>:<path>`" instead of asserting HEAD identity
+(hit LIVE this compose: a parallel reviewer's memory commit landed on the
+branch between my assemble and my memory commit). Also: a PreToolUse-
+blocked compound Bash means NOTHING in it ran — a `cat >>` upstream of the
+blocked git verb never executed; re-apply the write (via the Edit tool,
+never a heredoc — #1756) before retrying the commit, and verify landing by
+blob read at HEAD, never by the commit line.
+
+**Cap-round crash-fix with a COMPLETED sibling leg (#2333 r5, 2026-08-17):**
+when one leg finished + uploaded under PRE-fix code and the fix targets the
+OTHER leg's crash, make completed-leg INVARIANCE the highest-consequence
+priority with a 5-part checklist: (a) verbatim-delegation byte-equality on
+the old-path branch (delegation, not reimplementation, is the argument);
+(b) legacy-record branch ORDER — the old-path check must precede any
+new-flag read (`rec.get` on records predating the schema); (c) no reader
+REQUIRES the new manifest key (compose-grep: writer-only); (d) old-path
+call-site rewires are pure refactor (identical values + assert behavior);
+(e) phase-done skip isolates the completed leg's store. Instruct "ANY
+finding that changes the completed leg's semantics is Critical". Compose
+the crash-diagnosis envelope from the epm:progress halt note when no
+epm:failure exists (variant g — cite the marker's own Dispatch-context
+provenance). A re-POSTED smoke-arch marker (vs r4's left-standing) flips
+that priority from left-standing-claim verification to CLAIM-SET
+verification vs the diff (bank-row accuracy + "verbatim from v<n-1>" + the
+no-architecture-change greps). Open concerns with NO closure assigned get
+regression-duty-ONLY framing plus named look-hardest rows where the diff
+touches a concern's neighborhood (here: a position-only edit inside a
+cap-regen pass vs the write-order concern; a record-schema change vs the
+blind-chunk-reuse concern class). Also state the missing `### (e)` heading
+is EXPECTED when the round claims no closures — else Codex invents a
+marker-shape objection.
+
+**Post-cap USER-GREENLIT scoped round (#2333 r6, 2026-08-17):** when a
+cap-5 FAIL+FAIL park is followed by a user greenlight for ONE scoped round,
+frame it explicitly as "greenlit scoped round past the cap-5 park, NOT
+round <n> of the loop" (sentinel = impl marker version). The CONTRACT
+replaces the plan: inline verbatim envelopes for (i) the greenlight
+progress note, (ii) the cap-park `epm:failure` residual excerpt, (iii) the
+ledger BLOCKER row, (iv) the prior twin's Critical Evidence/Fix — and when
+the two r(n-1) reviewers' rows were merged at park ("id-A == id-B" in the
+failure note), treat the un-persisted twin id as a PSEUDO-ID and say ONE
+closure adjudication covers both (tail: do-not-re-emit either). Decompose
+into C1-C7 with SCOPE as its own item (greenlight: out-of-scope hunk =
+substantive FAIL; NEW substantive blocker RE-PARKS — swap the cap-round
+"advance-or-surface" tags sentence for "re-park-or-relaunch"). Attest a
+REPURPOSED (e) heading (here "(e) Parent-module default behavior") is not
+the optional Concerns-addressed section — at most CONCERNS, closure runs
+off code. A marker DEVIATION NOTE about pre-existing collection errors
+gets the Step 0.9 provenance probe pinned in the prompt (zero commits in
+the round range on the failing file). Hand compose-time literal-grep
+ground truth for the implementer's sweep table NEUTRALLY when the table's
+"site" column cites the consumption point rather than the literal hit
+(adjudicate honesty, don't pre-resolve). Name any same-name-different-
+module decoy the caller sweep will hit (issue2094_run.py's own
+run_injection_gate).
+
+**Concern-closure round on a by-reference compose (#2333 r4, 2026-08-16):**
+when the round CLAIMS closure of a reconciler-persisted concern, the
+concern row's `evidence` field is the acceptance contract — inline it
+VERBATIM (mark it "this is the acceptance contract") and decompose it into
+per-item (i)/(ii)/(iii) adjudication lines in a dedicated fix-verification
+verdict section, with an explicit note where the implementation deviates
+from the evidence's LITERAL prescription under a recorded directive (here:
+S1 frozen-map restriction + orphan refusal vs the evidence's "re-derange";
+instruct adjudicate-as-faithful-or-not, not auto-flag). Three sibling
+duties this shape adds: (a) a reconciler "Standing recommendations on
+PASS" that is DIRECTIVE-PHRASED at this round ("Round 4: include X") but
+absent from the diff (compose-time grep) gets its own NEUTRAL adjudication
+block + a verdict line — named severity ceiling (Minor/CONCERNS-class,
+never a manufactured FAIL) so Codex neither ignores nor inflates it;
+(b) pre-trace INTERACTION regressions where the fix makes a prior
+concern's exposure WIDER (here: survivor rebuild makes donor maps depend
+on the drop set → the donor-chunk blind-resume concern's stale-cache risk
+now has a new axis) — hand it to Codex as the look-hardest regression row;
+(c) the closure concern gets its status line in the fix-verification
+section, NOT a row in the regression-check section, and the ledger's
+missing `addressed` event is declared EXPECTED (orchestrator business).
+Assert traps hit live: `grep -c` counts LINES not occurrences (the tail's
+CONCERN:: grammar block = 4 substring hits on 3 lines); per-id tail counts
+need a map when ids recur in instruction prose (ledger field + closure
+line + regression instruction); Python `len()` vs `wc -c` differ on
+em-dash-heavy prompts (~1 KB per 130 KB) — not drift. Worktree memory
+commits: the root-code-commit guard fires even on a `cd <wt> && git ...`
+compound — use `git -C "$WT" add/commit -- <path>` explicitly.
