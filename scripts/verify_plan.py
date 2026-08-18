@@ -8722,8 +8722,12 @@ def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
             name,
             f"{shown} — ONE unparseable planned_wall_h cell disables the poller's phase-ETA "
             f"tripwire for the WHOLE run (fail-safe; {len(budget.rows)} parseable row(s) "
-            "discarded with it; #2163/#2172): write a bare float in the `planned_wall_h` "
-            "cell and put the conditionality in the `basis` cell",
+            # NB: the range's en dash is written as a unicode escape — a
+            # literal trips RUF001 under the full-ruleset policy pin
+            # (tests/test_ruff_policy.py, #2179).
+            "discarded with it; #2163/#2172/#2179): write a bare float, a `≤X` bound, or "
+            "an `A\u2013B` range (the upper bound is used) in the `planned_wall_h` cell "
+            "and put the conditionality in the `basis` cell",
         )
     return _pass(cid, name, f"{len(budget.rows)} row(s), total {budget.total_h:.2f} h")
 

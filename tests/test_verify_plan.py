@@ -10445,8 +10445,15 @@ def test_c47_corpus_scan_old_rule_values_preserved():
     returns the SAME value. Asserts the scan completes and the violation
     set is EMPTY; deliberately does NOT pin the WARN count or the plan set
     (the corpus moves — counts are the implementer's §6 report, not a
-    regression surface)."""
-    from explore_persona_space.plan_wall_budget import locate_wall_cells, parse_wall_cell
+    regression surface). Range cells are exempt (#2179 AC7): a range now
+    parses as its UPPER bound BY DESIGN — the monotone corollary
+    (new >= old, no new disables) is pinned by
+    ``tests/test_plan_wall_budget.py::test_corpus_monotone_upper_bound_invariant``."""
+    from explore_persona_space.plan_wall_budget import (
+        is_range_cell,
+        locate_wall_cells,
+        parse_wall_cell,
+    )
 
     old_rule = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
     plans = sorted((REPO_ROOT / "tasks").glob("*/*/plans/plan.md"))
@@ -10460,6 +10467,8 @@ def test_c47_corpus_scan_old_rule_values_preserved():
             if located.short_row:
                 continue
             n_cells += 1
+            if is_range_cell(located.cell):
+                continue  # 2179: deliberate upper-bound deviation, exempt by design
             m = old_rule.match(located.cell)
             if m is None:
                 continue
