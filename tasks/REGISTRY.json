@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2373,
+  "highest_id": 2376,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9072,15 +9072,15 @@
     "2174": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2174",
-      "status": "running",
+      "path": "tasks/completed/2174",
+      "status": "completed",
       "title": "Fact-checker: exact-identity premise from a sample must be verified at the assert's grain"
     },
     "2175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2175",
-      "status": "running",
+      "path": "tasks/completed/2175",
+      "status": "completed",
       "title": "git_provenance() blind to untracked producing scripts \u2014 artifacts stamp a commit that lacks the code that made them"
     },
     "2176": {
@@ -9100,15 +9100,15 @@
     "2178": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2178",
-      "status": "proposed",
+      "path": "tasks/reviewing/2178",
+      "status": "reviewing",
       "title": "verify_plan.py: validate a plan's stated smoke-fixture size against realized fixtures, and flag a smoke claim whose producing script is absent from the modified-file list"
     },
     "2179": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2179",
-      "status": "proposed",
+      "path": "tasks/reviewing/2179",
+      "status": "reviewing",
       "title": "poll_pipeline ETA tripwire self-disables on plan \u00a79 calendar-latency rows; range cells silently parse as lower bound"
     },
     "218": {
@@ -9121,8 +9121,8 @@
     "2180": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2180",
-      "status": "proposed",
+      "path": "tasks/running/2180",
+      "status": "running",
       "title": "Headline matched-partial needs a support-restricted companion when the matching covariate is degenerate on most of the sample"
     },
     "2181": {
@@ -9142,8 +9142,8 @@
     "2183": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2183",
-      "status": "proposed",
+      "path": "tasks/running/2183",
+      "status": "running",
       "title": "Remediate 19 scripts/ drivers with repo_root()-derived sys.path inserts, then widen the #2181 check to scripts/"
     },
     "2184": {
@@ -10304,8 +10304,8 @@
       "goal": "Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2333",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2333",
+      "status": "followups_running",
       "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's whole-answer behavioral effect (MODERATE confidence)"
     },
     "2334": {
@@ -10593,8 +10593,8 @@
     "2371": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2371",
-      "status": "reviewing",
+      "path": "tasks/completed/2371",
+      "status": "completed",
       "title": "guard_root_code_commit.sh: disarm text-detectable prefixed cwd-movers outside the NAME=value set (+= append-assignment, time/wrapper prefixes) + complete residual-note"
     },
     "2372": {
@@ -10610,6 +10610,27 @@
       "path": "tasks/proposed/2373",
       "status": "proposed",
       "title": "Mechanize the shared-y heatmap tick-clobber check: sidecar image row counts + a verify_report gate"
+    },
+    "2374": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2374",
+      "status": "proposed",
+      "title": "Step 5a FAMILY_OF: couple .claude/rules/LESSONS.md with workflow_lint _LESSONS_* constants (same-diff pair split by family-atomic sync; 8 gate failures + 2h re-run in #2168)"
+    },
+    "2375": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2375",
+      "status": "proposed",
+      "title": "Pre-existing ordering flake on main: test_fig_two_by_two_quadrant_labels fails under the Step 9c co-selection prefix (empty mpl title) while passing single-file"
+    },
+    "2376": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2376",
+      "status": "proposed",
+      "title": "Adaptive Batch-API monitoring: auto-switch a stalled batch wave to sync when sync is faster"
     },
     "238": {
       "has_clean_result": false,
