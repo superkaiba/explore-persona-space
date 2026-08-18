@@ -1546,6 +1546,66 @@ landing_sha() {
   printf '%s' "$sha"
 }
 
+# landing_certified <path>: single certification decision for a gated pending
+# path, shared by the first cert pass AND the #1857 cert-retry pass (the same
+# no-divergence factoring rationale as landing_sha). rc=0 iff EVERY blob an
+# executable commit clause of this record can land for <path> is certified;
+# rc=1 uncertified (block); rc=2 exempt (no clause lands content).
+# r8 (#2371 r3, concern cross-clause-pathspec-evidence-authorizes-bare-blob):
+# the evidence flags are command-global, so a HETEROGENEOUS record — a BARE
+# commit clause chained with a clause carrying -a / pathspec evidence — can
+# land TWO different blobs for one path: the bare clause commits the STAGED
+# blob while the sibling clause's evidence binds landing_sha to WORKTREE
+# content. Certifying either blob alone authorizes the other's landing (the
+# r2 guard validated a certified worktree hash while the bare clause landed
+# a different, uncertified staged blob), so on such records BOTH blobs must
+# be certified — requiring more certs only over-tightens (block direction);
+# a fully-certified pair still permits. The staged-side requirement keys on
+# the SAME evidence disjunction as the landing_sha / cert_diag / fallback
+# sites conjoined with commit_bare_clause; the text_paths (chained-add)
+# route is deliberately NOT part of the key — an add clause re-stages
+# worktree content BEFORE the commit, so the stale staged blob cannot land
+# through it (commit-before-add orderings of that shape are a pre-existing
+# class outside this record family, like the trunk -a analogue was).
+landing_certified() {
+  local p="$1" sha="" bare_sha="" primary_exempt=0 staged_names ls_out
+  sha=$(landing_sha "$p") || primary_exempt=1
+  if [ "$commit_bare_clause" = 1 ] \
+    && { [ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] \
+      || [ "$pathspec_opaque" = 1 ]; }; then
+    # These two reads are ROUND-INTRODUCED and load-bearing, so they fail
+    # CLOSED on a git error (rc=1 blocks) — a failed read must never
+    # silently degrade the dual requirement back to the r2 single-binding
+    # permit (the failure-collapse class the r2 reconcile downgraded was
+    # downgradable ONLY because those reads pre-existed on trunk).
+    if ! staged_names=$(git -C "$GUARD_REPO" diff --cached --name-only -- "$p" 2>/dev/null); then
+      return 1 # failed staged-set read on a heterogeneous record
+    fi
+    if printf '%s\n' "$staged_names" | grep -qxF -- "$p"; then
+      if ! ls_out=$(git -C "$GUARD_REPO" ls-files -s -- "$p" 2>/dev/null); then
+        return 1 # failed index read on a heterogeneous record
+      fi
+      # The bare clause lands the STAGED blob for a staged-modified path.
+      # An empty second field here is provably a staged DELETION (p is in
+      # the staged set yet absent from the index): the bare clause lands
+      # no content and only the primary binding's requirement remains.
+      bare_sha=$(printf '%s' "$ls_out" | awk '{print $2}')
+    fi
+  fi
+  if [ "$primary_exempt" = 1 ] && [ -z "$bare_sha" ]; then
+    return 2 # deletion-exempt on every clause shape: no content lands
+  fi
+  if [ "$primary_exempt" = 0 ]; then
+    # A failed git read inside landing_sha echoes EMPTY; check_certified
+    # never matches an empty want, so the block direction is preserved.
+    check_certified "$p" "$sha" || return 1
+  fi
+  if [ -n "$bare_sha" ] && [ "$bare_sha" != "$sha" ]; then
+    check_certified "$p" "$bare_sha" || return 1
+  fi
+  return 0
+}
+
 # cert_diag <path>: one stable grep-able diagnostic line per uncertified path
 # (issue #1620 fix (c)); called ONLY in the block path (zero hot-path cost).
 # Format:
@@ -1556,12 +1616,16 @@ landing_sha() {
 # `none-for-path` is the lost-append/race signature; `sha-mismatch` = content
 # drifted since certification; `stale` = matching sha past MAX_AGE;
 # `want=EMPTY` exposes a failed git hash-object/ls-files read; `ok` would
-# contradict the block (itself diagnostic of a logic bug). Mirrors the
-# per-path loop's binding + landing-sha computation; reads globals scope /
-# has_dash_a / text_paths / GUARD_REPO / CERT / MAX_AGE at call time.
+# contradict the block UNLESS the line carries the r8 heterogeneous-record
+# suffix ` bare-staged-cert=<ok|uncertified>` — on a bare+pathspec/-a record
+# with divergent blobs (landing_certified's dual requirement) the block can
+# come from the bare clause's staged blob while the worktree leg reads ok.
+# Mirrors the per-path loop's binding + landing-sha computation; reads
+# globals scope / has_dash_a / text_paths / GUARD_REPO / CERT / MAX_AGE at
+# call time.
 cert_diag() {
   local p="$1" binding want stg wt now tag epoch csha cpath state age
-  local best_epoch="" best_sha="" certbytes="0" certmtime="-"
+  local best_epoch="" best_sha="" certbytes="0" certmtime="-" hetero_suffix=""
   stg=$(git -C "$GUARD_REPO" ls-files -s -- "$p" 2>/dev/null | awk '{print $2}')
   [ -n "$stg" ] || stg="-"
   wt=""
@@ -1609,8 +1673,23 @@ cert_diag() {
     certbytes=$(wc -c < "$CERT" 2>/dev/null | tr -d ' ' || echo '?')
     certmtime=$(stat -c %Y "$CERT" 2>/dev/null || echo '?')
   fi
-  printf 'cert-diag: %s binding=%s want=%.12s staged=%.12s worktree=%.12s cert=%s cert-file:%sB,mtime:%s\n' \
-    "$p" "$binding" "$want" "$stg" "$wt" "$state" "$certbytes" "$certmtime"
+  # r8 heterogeneous-record suffix: mirrors landing_certified's bare-clause
+  # staged-blob requirement so a dual-requirement block stays legible even
+  # when the primary (worktree) leg's cert state reads ok.
+  hetero_suffix=""
+  if [ "$commit_bare_clause" = 1 ] \
+    && { [ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] \
+      || [ "$pathspec_opaque" = 1 ]; } \
+    && [ "$stg" != "-" ] && [ "$stg" != "$want" ] \
+    && git -C "$GUARD_REPO" diff --cached --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
+    if check_certified "$p" "$stg"; then
+      hetero_suffix=" bare-staged-cert=ok"
+    else
+      hetero_suffix=" bare-staged-cert=uncertified"
+    fi
+  fi
+  printf 'cert-diag: %s binding=%s want=%.12s staged=%.12s worktree=%.12s cert=%s%s cert-file:%sB,mtime:%s\n' \
+    "$p" "$binding" "$want" "$stg" "$wt" "$state" "$hetero_suffix" "$certbytes" "$certmtime"
 }
 
 run_self_test() {
@@ -2260,12 +2339,21 @@ if [ "$scope" = 0 ]; then
   # (unknown cwd / opaque tokens), so the fail-closed read includes EVERY
   # worktree-modified file — the conservative superset, exactly as for -a; a
   # pathspec matching fewer files only over-tightens (block direction).
-  # NAMED RESIDUAL (pre-existing, r5-identical — no disarm can flip it):
-  # flag-form pathspec channels (--pathspec-from-file / --include /
-  # --interactive / --patch) set scope_unsafe, never scope, and carry NO
-  # positional candidates, so this read stays staged-only for them; those
-  # shapes never scoped under r5 either, so armed vs disarmed is
-  # verdict-identical there.
+  # NAMED RESIDUAL (flag-form pathspec channels: --pathspec-from-file /
+  # --include / --interactive / --patch). These flags set scope_unsafe,
+  # never scope, so the SCOPED read above never engages for them; whether
+  # THIS widened read engages instead depends only on the clause's
+  # POSITIONAL candidate stream. Argument-less spellings and the equals
+  # form (--pathspec-from-file=<file>) leave no positional candidate, so
+  # the read stays staged-only for them — r5-identical, armed vs disarmed
+  # verdict-identical. The SEPARATE-ARGUMENT spelling
+  # (--pathspec-from-file <file>) is NOT consumed by the flag arm (no
+  # skip_next), so its filename argument reaches classify_candidate as a
+  # positional candidate and sets commit_has_pathspec, ARMING this widened
+  # read — over-tightening only (block direction: under r5 the same record
+  # fell to the staged-only read, so r5→r7 moved that spelling
+  # permit→block, never the reverse). Positional pathspecs riding
+  # --include / --patch clauses arm it the same way.
   if [ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] || [ "$pathspec_opaque" = 1 ]; then
     mod=$(git -C "$GUARD_REPO" diff --name-only 2>/dev/null || true)
   fi
@@ -2280,15 +2368,21 @@ pending=$(printf '%s\n%s\n%s\n' "$staged" "$mod" "$text_paths" \
 # worktree content, so for any path covered by -a, named as a commit pathspec,
 # or named in a chained add clause, the landing content is the WORKTREE file;
 # the staged blob sha is authoritative ONLY for a plain commit of the staged
-# set. Space-safe iteration (while read, never for-in word-split): a gated
+# set. r8: on a HETEROGENEOUS record (a bare commit clause chained with a
+# -a / pathspec-evidence clause) BOTH the worktree AND the bare clause's
+# staged blob must be certified — landing_certified holds the whole
+# decision so this pass and the cert-retry pass cannot diverge (#1857).
+# Space-safe iteration (while read, never for-in word-split): a gated
 # path containing a space must fail toward BLOCK, never silently allow.
 uncertified_nl="" # newline-joined (space-safe); the block path's space-joined form is derived below
 while IFS= read -r p; do
   [ -n "$p" ] || continue
-  if sha=$(landing_sha "$p"); then
-    check_certified "$p" "$sha" || uncertified_nl="${uncertified_nl}${p}
-"
-  fi # landing_sha rc=1: deletion-exempt path — skip (no content lands)
+  landing_certified "$p"
+  case $? in
+    1) uncertified_nl="${uncertified_nl}${p}
+" ;;
+    2) : ;; # deletion-exempt path — skip (no clause lands content)
+  esac
 done <<EOF_PENDING
 $pending
 EOF_PENDING
@@ -2301,9 +2395,10 @@ EOF_PENDING
 # settle: the guard-time read != the cert sha, then the file settles back
 # within the window — the 07-28 incident) must not block a certified commit;
 # a STABLE mismatch keeps today's block verdict byte-for-byte. The retry
-# re-READS the landing sha via the same landing_sha function — it never
-# re-BINDS to a different content source (the #1620 binding rule is
-# unchanged). Delay knob: EPM_CERT_REHASH_DELAY_S (seconds, default 2; tests
+# re-READS the landing sha via the same landing_certified → landing_sha
+# path the first pass used — it never re-BINDS to a different content
+# source (the #1620 binding rule is unchanged, r8 dual requirement
+# included). Delay knob: EPM_CERT_REHASH_DELAY_S (seconds, default 2; tests
 # set 0 and/or PATH-shim `sleep`). `|| true`: a malformed delay makes sleep
 # fail — the re-check still runs immediately, so a genuine mismatch still
 # blocks (fail toward BLOCK; a failed sleep must never crash the guard into
@@ -2312,18 +2407,17 @@ sleep "${EPM_CERT_REHASH_DELAY_S:-2}" || true
 retry_uncertified_nl=""
 while IFS= read -r p; do
   [ -n "$p" ] || continue
-  if sha=$(landing_sha "$p"); then
-    if check_certified "$p" "$sha"; then
-      echo "cert-retry: $p recovered after re-hash (transient worktree flip)" >&2
-    else
-      retry_uncertified_nl="${retry_uncertified_nl}${p}
-"
-    fi
-  else
-    # Deleted between passes: mirror the first pass's deletion-exempt skip
-    # (no content lands for this path anymore).
-    echo "cert-retry: $p exempt after re-hash (deleted between passes)" >&2
-  fi
+  landing_certified "$p"
+  case $? in
+    0) echo "cert-retry: $p recovered after re-hash (transient worktree flip)" >&2 ;;
+    1) retry_uncertified_nl="${retry_uncertified_nl}${p}
+" ;;
+    2)
+      # Deleted between passes: mirror the first pass's deletion-exempt skip
+      # (no content lands for this path anymore).
+      echo "cert-retry: $p exempt after re-hash (deleted between passes)" >&2
+      ;;
+  esac
 done <<EOF_RETRY
 $uncertified_nl
 EOF_RETRY
