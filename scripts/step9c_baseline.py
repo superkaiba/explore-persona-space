@@ -1378,7 +1378,7 @@ def try_load_ledger(root: Path) -> dict | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         _log(f"ledger unreadable/invalid at {path}: {exc}")
         return None
     if (

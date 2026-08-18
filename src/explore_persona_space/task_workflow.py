@@ -4875,7 +4875,7 @@ def validate_paper_manifest(task_id: int) -> list[str]:
         return [f"no paper_manifest.json at {manifest_path.relative_to(repo_root())}"]
     try:
         manifest = json.loads(manifest_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         return [f"paper_manifest.json unreadable: {e}"]
     if manifest.get("schema") != "paper_manifest/v1":
         problems.append(f"schema is {manifest.get('schema')!r}, expected 'paper_manifest/v1'")

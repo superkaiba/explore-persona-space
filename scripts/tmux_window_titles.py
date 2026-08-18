@@ -259,7 +259,7 @@ def _load_state() -> dict:
     try:
         data = json.loads(STATE_PATH.read_text())
         return data if isinstance(data, dict) else {}
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return {}
 
 

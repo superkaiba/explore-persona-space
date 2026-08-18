@@ -4974,7 +4974,7 @@ def _load_state(state_file: Path, issue: int) -> dict[str, str]:
         return {}
     try:
         data = json.loads(state_file.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         log.warning("state file %s unreadable; treating as empty", state_file)
         return {}
     return data.get(str(issue), {})
@@ -4986,7 +4986,7 @@ def _save_state(state_file: Path, issue: int, payload: dict[str, str]) -> None:
     if state_file.exists():
         try:
             all_state = json.loads(state_file.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             all_state = {}
     all_state[str(issue)] = payload
     tmp = state_file.with_suffix(state_file.suffix + ".tmp")

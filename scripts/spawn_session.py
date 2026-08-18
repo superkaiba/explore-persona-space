@@ -321,7 +321,7 @@ def auth_outage_dispatch_hold(
             return None
         try:
             state = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             return None  # unreadable state can never suppress (watcher parity)
         if not isinstance(state, dict) or not state.get("active"):
             return None
@@ -1182,7 +1182,7 @@ def _load_campaign_registry_entry(issue: int) -> dict[str, Any] | None:
     path = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     return entry if isinstance(entry, dict) else None
 
@@ -1232,7 +1232,7 @@ def _load_pm_session_ids_ordered() -> list[str]:
         return []
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     sids = data.get("sids") if isinstance(data, dict) else None
     if not isinstance(sids, list):
@@ -1277,7 +1277,7 @@ def _load_session_issue_map() -> dict[str, int]:
         for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 continue
             sid = entry.get("happy_session_id")
             issue = entry.get("issue")
@@ -1403,7 +1403,7 @@ def _load_session_meta() -> dict[str, dict[str, Any]]:
         return {}
     try:
         raw = json.loads(SESSIONS_JSON.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     sessions = raw.get("sessions", {})
     return {sid: (entry.get("metadata") or {}) for sid, entry in sessions.items()}
@@ -1859,7 +1859,13 @@ def _live_children(*, strict: bool = False) -> list[dict[str, Any]]:
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError) as e:
+    except (
+        urllib.error.URLError,
+        OSError,
+        SystemExit,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ) as e:
         if strict:
             raise RuntimeError(f"daemon /list failed: {e}") from e
         return []
@@ -2368,7 +2374,13 @@ def _stop_session_raw(session_id: str) -> bool:
     try:
         with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_S) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError) as e:
+    except (
+        urllib.error.URLError,
+        OSError,
+        TimeoutError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ) as e:
         raise RuntimeError(f"daemon /stop-session transport failure: {e}") from e
     if not isinstance(data, dict) or not isinstance(data.get("success"), bool):
         raise RuntimeError(
@@ -3661,7 +3673,7 @@ def resolve_session_for_issue(
                 continue
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 continue
             sid = entry.get("happy_session_id")
             ts = entry.get("spawned_at", 0.0)

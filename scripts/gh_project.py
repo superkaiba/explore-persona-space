@@ -172,7 +172,7 @@ def _read_cached_meta(owner: str, number: int) -> ProjectMeta | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if time.time() - data.get("cached_at", 0) > ttl:
         return None

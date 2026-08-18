@@ -327,7 +327,7 @@ def _write_metadata_file(
         path = _resolve_state_path()
         try:
             on_disk = _read_metadata_file()
-        except (json.JSONDecodeError, OSError) as exc:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
             print(
                 f"[pod_lifecycle] WARN: never-drop guard skipped — cannot read "
                 f"{path}: {exc}; the atomic write below repairs it.",

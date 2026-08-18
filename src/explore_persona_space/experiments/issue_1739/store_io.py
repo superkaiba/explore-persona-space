@@ -326,7 +326,7 @@ def u_store_loadable(
         return False
     try:
         record = json.loads(record_path.read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return False
     regime_ok = (
         record.get("complete") is True
@@ -440,7 +440,7 @@ def stage_u_store(
         # Never downgrade a COMPLETE staging record with a probe-slice one.
         try:
             keep_existing = json.loads(record_path.read_text()).get("complete") is True
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             keep_existing = False
     if not keep_existing:
         tmp = record_path.with_name("staging_manifest.tmp.json")

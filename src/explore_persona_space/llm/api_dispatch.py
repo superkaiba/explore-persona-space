@@ -2054,7 +2054,7 @@ def record_headroom_observation(
                 loaded = json.loads(p.read_text())
                 if isinstance(loaded, dict):
                     current = loaded
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 current = {}
         iso = now_iso or _dt.datetime.now(_dt.UTC).isoformat()
         merged = merge_headroom_snapshot(

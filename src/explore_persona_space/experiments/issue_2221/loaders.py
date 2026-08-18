@@ -290,5 +290,5 @@ def resume_ok(path: Path, fingerprint: dict) -> bool:
         return False
     try:
         return json.loads(side.read_text()) == fingerprint
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False

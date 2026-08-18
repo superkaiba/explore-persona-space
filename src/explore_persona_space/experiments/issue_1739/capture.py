@@ -316,7 +316,7 @@ def shard_done(store_dir: Path | str, shard_idx: int, fingerprint: str) -> bool:
         return False
     try:
         return json.loads(meta_path.read_text()).get("fingerprint") == fingerprint
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
 
 

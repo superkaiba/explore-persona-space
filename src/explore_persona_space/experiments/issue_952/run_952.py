@@ -2090,7 +2090,7 @@ def _load_capture_done(base_dir: pathlib.Path, arm: str, regime: dict) -> dict |
         return None
     try:
         rec = json.loads(p.read_text())
-    except (OSError, json.JSONDecodeError) as e:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
         logger.warning("[1c-resume] unreadable sentinel %s (%s) — recapturing arm", p, e)
         return None
     if rec.get("regime") != regime:
@@ -2547,7 +2547,7 @@ def _init_battery_ckpt(
     if rpath.exists():
         try:
             on_disk = json.loads(rpath.read_text())
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             on_disk = None
         if on_disk != regime:
             stale = sorted(ck.glob("*.npz"))
@@ -3797,7 +3797,7 @@ def _read_persisted_fold_manifests(base_dir: pathlib.Path, fold: int) -> dict[st
     if j_path.exists():
         try:
             out["report_json"] = json.loads(j_path.read_text()).get("provenance_manifest")
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             out["report_json"] = None
     if npz_path.exists():
         try:
@@ -3916,7 +3916,7 @@ def _fold_resume_accepts(
         if gate_rec_path.exists():
             try:
                 gate_manifest = json.loads(gate_rec_path.read_text()).get("provenance_manifest")
-            except (OSError, json.JSONDecodeError):
+            except (OSError, json.JSONDecodeError, UnicodeDecodeError):
                 gate_manifest = None
         gate_rec_ok = kfold_manifest_match(gate_manifest, expected)[0]
     if (
@@ -3955,7 +3955,7 @@ def _pin_fold_ckpt_manifest(base_dir: pathlib.Path, fold: int, expected: dict) -
     if mpath.exists():
         try:
             prior = json.loads(mpath.read_text())
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             prior = None
         ok_prior, why_prior = kfold_manifest_match(prior, expected)
         if not ok_prior:
@@ -4324,7 +4324,7 @@ def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
             (base_dir / "eval_results" / "issue_952" / "phase0_verify.json").read_text()
         )
         deviation = rec.get("plan_deviation", deviation)
-    except (OSError, json.JSONDecodeError) as e:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
         logger.warning("phase0_verify.json unreadable for the results card (%s) — static note", e)
     hf_root = f"{ISSUE_SLUG}/followups/{FOLLOWUP_TAG}" if FOLLOWUP_TAG else ISSUE_SLUG
     card = {
