@@ -1028,6 +1028,350 @@ def test_c8c_cert_diag_stale(code_repo: Path, cert: Path) -> None:
     assert "cert=stale:" in r.stderr, r.stderr
 
 
+# --- provably-root cd prefix scope base (issue #2357) -----------------------
+# Every NEW-ARM allow node carries an EXPLICIT non-root cwd (cwd=tmp_path, or
+# the linked-worktree fixture in c17d): _run defaults the payload cwd to the
+# fixture repo root, where the pre-#2357 cwd_ok gate already allows these
+# commands — a default-cwd allow node would be vacuous for the new arm
+# (r1 MF-5). Differential expectation, stated once for the whole c17 family:
+# each allow command BLOCKS (rc=2) on the pre-#2357 guard from its non-root
+# cwd (the plan-§2 live trace recorded exactly this for the incident shapes)
+# and ALLOWS (rc=0) post-fix.
+
+_STALE_MARGIN_S = 21600 + 100  # default MAX_AGE (6 h) + margin
+
+
+def test_c17_cd_root_prefix_pathspec_commit_scopes_from_nonroot_cwd(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    _assert_allowed(
+        _run(
+            f"cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c17b_cd_root_prefix_compound_add_commit_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Incident shape (i): compound cd -> cp -> add -> commit + redirect +
+    # trailing SEQ clause (outside the cd->commit span — chain unaffected).
+    cmd = (
+        f"cd {foreign_repo} && cp tasks/t.md {tmp_path}/copy.md && git add tasks/t.md "
+        f'&& git commit -m "agent-memory: note" -- tasks/t.md > {tmp_path}/out.log 2>&1; '
+        'echo "commit rc=$?"'
+    )
+    _assert_allowed(_run(cmd, foreign_repo, cert, cwd=tmp_path))
+
+
+@pytest.mark.parametrize(
+    "cdform", ["{repo}", "{repo}/", '"{repo}"'], ids=["bare", "slash", "quoted"]
+)
+def test_c17c_cd_root_spelling_variants_scope(
+    cdform: str, foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    tgt = cdform.format(repo=foreign_repo)
+    _assert_allowed(
+        _run(f"cd {tgt} && git commit -m x -- tasks/t.md", foreign_repo, cert, cwd=tmp_path)
+    )
+
+
+def test_c17d_cd_root_prefix_from_linked_worktree_cwd_scopes(tmp_path: Path, cert: Path) -> None:
+    # THE incident cwd class: hook cwd inside a linked worktree. The
+    # cd-to-root sets retarget_evidence=1, which disables the #2066
+    # worktree-cwd allow gate — the #2357 arm is the ONLY allow path.
+    repo = _init_repo(tmp_path, "wtroot")
+    _stage(repo, "tasks/t.md", "note\n")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    _stage(repo, "scripts/foreign.py", "print(0)\n")  # foreign uncertified gated staged
+    wt = tmp_path / "wtroot-wt"
+    _git(repo, "worktree", "add", "-q", str(wt))
+    _assert_allowed(_run(f"cd {repo} && git commit -m x -- tasks/t.md", repo, cert, cwd=wt))
+
+
+def test_c17e_cd_root_prefix_pathspec_plus_redirect_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Incident shapes (ii)/(iii): the guard's own prescribed remediation shape
+    # under a cd-root prefix, from a non-root cwd.
+    cmd = (
+        f"cd {foreign_repo} && git commit -m x -- tasks/t.md > {tmp_path}/log 2>&1; "
+        f"echo rc=$?; tail -1 {tmp_path}/log"
+    )
+    _assert_allowed(_run(cmd, foreign_repo, cert, cwd=tmp_path))
+
+
+@pytest.mark.parametrize("prefix", ["true; ", "true\n"], ids=["seq", "nl"])
+def test_c17f_seq_nl_separated_root_cd_scopes(
+    prefix: str, foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Own-sep SEQ/NL arming in the ALLOW direction (the g3-matching set).
+    cmd = f"{prefix}cd {foreign_repo} && git commit -m x -- tasks/t.md"
+    _assert_allowed(_run(cmd, foreign_repo, cert, cwd=tmp_path))
+
+
+def test_c17g_cd_root_prefix_msgfile_commit_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Interaction pin: the #1949 -F message-file arm composing with the new base.
+    msgfile = tmp_path / "msg.txt"
+    msgfile.write_text("msg\n", encoding="utf-8")
+    _assert_allowed(
+        _run(
+            f"cd {foreign_repo} && git commit -F {msgfile} -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c18_commit_before_root_cd_stays_whole_index(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    _assert_blocked(
+        _run(f"git commit -m x -- tasks/t.md; cd {foreign_repo}", foreign_repo, cert, cwd=tmp_path)
+    )
+
+
+def test_c18b_or_separated_root_cd_stays_whole_index(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    _assert_blocked(
+        _run(
+            f"true || cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c18c_backgrounded_root_cd_stays_whole_index(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    _assert_blocked(
+        _run(f"cd {foreign_repo} & git commit -m x -- tasks/t.md", foreign_repo, cert, cwd=tmp_path)
+    )
+
+
+def test_c18d_root_cd_in_compound_context_stays_whole_index(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # PROBING form (r1 MF-3): the cd record LEADS with `cd` inside the while
+    # body (own-sep NL, all-AND chain to the commit) — ONLY the D4
+    # compound-context refusal blocks arming here.
+    cmd = f"while true\ndo\ncd {foreign_repo} && git commit -m x -- tasks/t.md\nbreak\ndone"
+    _assert_blocked(_run(cmd, foreign_repo, cert, cwd=tmp_path))
+
+
+def test_c18e_absolute_root_subdir_cd_stays_whole_index(foreign_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run(f"cd {foreign_repo}/tasks && git commit -m x -- t.md", foreign_repo, cert))
+
+
+def test_c18f_variable_root_cd_stays_whole_index(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Original-target rule (#1676 must-ask): a variable target resolving to
+    # the root never arms the new base (and disables scoping via cd_nonroot).
+    _assert_blocked(
+        _run(
+            f'R={foreign_repo}; cd "$R" && git commit -m x -- tasks/t.md',
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c19_cd_root_prefix_own_gated_uncertified_still_blocks(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # The widening never weakens cert enforcement under the new base.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && git commit -m x -- scripts/own.py",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c19b_cd_root_prefix_own_gated_fresh_worktree_cert_allows(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Binding rule preserved under the new base: a pathspec commit lands
+    # WORKTREE content, so the worktree-sha cert allows (c6 analogue).
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    _assert_allowed(
+        _run(
+            f"cd {foreign_repo} && git commit -m x -- scripts/own.py",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c21_all_stale_content_matching_block_leads_with_recertify_hint(
+    foreign_repo: Path, cert: Path
+) -> None:
+    # ALL uncertified paths stale-matching (want==staged==worktree, age past
+    # MAX_AGE) => the block leads with the STALE-CERT? re-certify hint BEFORE
+    # the foreign-payload attribution and before the escape hatch is named.
+    _cert_line(
+        cert,
+        "scripts/foreign.py",
+        _staged_sha(foreign_repo, "scripts/foreign.py"),
+        epoch=int(time.time()) - _STALE_MARGIN_S,
+    )
+    r = _run("git commit -m x", foreign_repo, cert)
+    _assert_blocked(r)
+    assert "STALE-CERT?" in r.stderr, r.stderr
+    assert r.stderr.index("STALE-CERT?") < r.stderr.index("FOREIGN-STAGED?"), r.stderr
+    assert r.stderr.index("STALE-CERT?") < r.stderr.index("EPM_ALLOW_ROOT_CODE_COMMIT"), r.stderr
+
+
+def test_c21b_stale_hint_absent_on_content_drift(foreign_repo: Path, cert: Path) -> None:
+    _cert_line(
+        cert,
+        "scripts/foreign.py",
+        _staged_sha(foreign_repo, "scripts/foreign.py"),
+        epoch=int(time.time()) - _STALE_MARGIN_S,
+    )
+    _write(foreign_repo, "scripts/foreign.py", "print(9)\n")  # worktree drifts from staged
+    r = _run("git commit -m x", foreign_repo, cert)
+    _assert_blocked(r)
+    assert "STALE-CERT?" not in r.stderr, r.stderr
+
+
+def test_c21c_stale_hint_absent_on_mixed_uncertified_set(foreign_repo: Path, cert: Path) -> None:
+    _cert_line(
+        cert,
+        "scripts/foreign.py",
+        _staged_sha(foreign_repo, "scripts/foreign.py"),
+        epoch=int(time.time()) - _STALE_MARGIN_S,
+    )
+    _stage(foreign_repo, "scripts/own2.py", "print(2)\n")  # certless second gated path
+    r = _run("git commit -m x", foreign_repo, cert)
+    _assert_blocked(r)
+    assert "STALE-CERT?" not in r.stderr, r.stderr
+
+
+def test_c22_foreign_para_names_cd_root_prefix_recovery(foreign_repo: Path, cert: Path) -> None:
+    # Presence pin (not exact-count): the FOREIGN-STAGED? paragraph names the
+    # cd-prefix recovery shape the #2357 widening actually honors.
+    r = _run("git commit -m x", foreign_repo, cert)
+    _assert_blocked(r)
+    assert "FOREIGN-STAGED?" in r.stderr, r.stderr
+    assert "cd <absolute repo root>" in r.stderr, r.stderr
+
+
+def test_c23_and_separated_root_cd_then_seq_commit_blocked(foreign_repo: Path, cert: Path) -> None:
+    # r1 MF-1: the cd is skipped by its failed && predecessor while the SEQ
+    # commit still runs at the subdir cwd, where own.py resolves to the gated
+    # scripts/own.py — the c11-class bypass the v3 predicate admitted.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"false && cd {foreign_repo}; git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c23b_and_separated_root_cd_then_or_commit_blocked(foreign_repo: Path, cert: Path) -> None:
+    _stage(foreign_repo, "scripts/inner.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"false && cd {foreign_repo} || git commit -m x -- inner.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c24_trailing_token_root_cd_never_arms(foreign_repo: Path, cert: Path) -> None:
+    # r1 MF-2: `cd <root> junk` fails deterministically ("too many
+    # arguments") while the SEQ-chained commit still runs at the subdir cwd.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} junk; git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c25_subshell_cd_root_or_commit_blocked(foreign_repo: Path, cert: Path) -> None:
+    # r1 MF-3: doubly refused — `(`-opener compound context (D4) AND the OR
+    # chain break (D3).
+    _stage(foreign_repo, "scripts/inner.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"(cd {foreign_repo}; false) || git commit -m x -- inner.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c25b_subshell_cd_root_and_chain_commit_blocked(foreign_repo: Path, cert: Path) -> None:
+    # r1 MF-3, the chain-dominance-alone bypass: the separator walk reads
+    # all-AND and the record lead-strip hides the paren from the cd arm — the
+    # SOLE refusing condition is the D4 `(`-opener check (mutation pin for
+    # the `(` arm specifically).
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"(cd {foreign_repo} && true) && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c26_own_sep_pipe_root_cd_blocked(foreign_repo: Path, cert: Path) -> None:
+    # r1 MF-4: a piped cd runs in a pipeline subshell — the parent cwd never
+    # moves while the && commit still runs at the subdir cwd.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"true | cd {foreign_repo} && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c26b_next_sep_pipe_root_cd_blocked(foreign_repo: Path, cert: Path) -> None:
+    # r1 MF-4: next-sep PIPE refusal (chain dominance subsumes it; the cell
+    # exists as a mutation pin on the PIPE token either way).
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} | true; git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # D — cd-latch variable resolution + unproven-cd diagnostics (issue #1676)
 # ---------------------------------------------------------------------------

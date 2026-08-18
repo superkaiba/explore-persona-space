@@ -107,6 +107,29 @@
 #   combined with an opener fails the same rawtail token-count parity and
 #   stays whole-index; (ii) the ADD-clause second pass keeps opener tokens
 #   opaque (out of incident scope — the exemption stays narrow).
+# - Provably-root cd prefix (#2357): pathspec SCOPING also engages when the
+#   command carries an exact-root `cd` — the same spelling set that keeps
+#   cd_nonroot=0 ($GUARD_REPO absolute [+ trailing /], ~/explore-persona-space[/],
+#   $HOME/explore-persona-space[/]) — whose own separator is START/SEQ/NL
+#   (g3-matching; AND excluded), with NO token after the target, next
+#   separator neither & nor |, no commit clause scanned BEFORE it, EVERY
+#   separator strictly between the cd and EVERY commit clause equal to &&
+#   (chain dominance: a commit that runs proves the cd executed and
+#   succeeded, so the pathspec-resolution base at the commit is the root),
+#   and NO compound/subshell-context record anywhere in the command.
+#   Fail-closed residuals (each stays conservatively whole-index):
+#   variable / $(..) / relative / subdir / quote-broken cd targets;
+#   AND/OR/BG/PIPE-separated cds (own separator); trailing-token cds
+#   (`cd <root> junk`); any non-AND separator between the cd and a commit —
+#   commits reached via `;`, newline, `||`, `|`, or `&` from the cd never
+#   scope; commit-before-cd orderings; compound-context commands INCLUDING
+#   parenthesized-subshell openers (`(cd <root> ...)` — the record
+#   lead-strip would otherwise hide the paren from the cd arm while a
+#   subshell cd never moves the parent cwd); `env --chdir` (scope_unsafe);
+#   quoted-spacey pathspecs (rawtail parity, #1928); double-slash or
+#   `/./`-bearing root spellings outside the pinned set; and the
+#   path-limited `git add --all --` exemption keeps its root-cwd-no-cd
+#   requirement (deliberately NOT widened).
 # - Compound gated-add + non-gated-pathspec commit (`git add scripts/x.py &&
 #   git commit -- docs/y.md`) still conservatively blocks: Layer-1 add-clause
 #   text paths stay ADDITIVE under the #1620 pathspec-scoped read too.
@@ -447,6 +470,34 @@ path_sane_component() {
   return 0
 }
 
+# compound_context_present: 0 iff ANY record in the caller's recs opens or
+# continues a compound statement — resolve_cd_var's g7 set (if/while/for/case/
+# function keywords, name() defs, bare `{` group openers), PLUS (#2357 r1
+# MF-3) a parenthesized-subshell OPENER: a record whose whitespace-stripped
+# masked text begins with `(`. Rationale for the `(` widening: classify_cmd's
+# record lead-strip removes leading `[({]` BEFORE the cd arm, so a subshell's
+# inner cd reads as a plain exact-root cd there while a subshell cd can NEVER
+# move the parent shell's cwd — `(cd <root> && true) && git commit -- p` is
+# an all-AND chain whose commit executes at the parent's unmoved cwd, the one
+# bypass chain dominance alone admits. THIS loop's record read strips
+# whitespace ONLY, so the `(` survives here and the record-level check is
+# well-posed. Reads the caller's recs/n via bash dynamic scoping (the
+# resolve_cd_var / classify_candidate mechanism). Factored out of
+# resolve_cd_var's g7 (#1857 landing_sha precedent) so its call site and the
+# #2357 post-loop verdict cannot diverge; the `(` widening is strictly
+# TIGHTENING for resolve_cd_var (fail-closed direction).
+compound_context_present() {
+  local j m
+  for ((j = 0; j + 2 < n; j += 3)); do
+    m=$(printf '%s' "${recs[j + 1]}" | sed -E 's/^[[:space:]]+//')
+    if printf '%s' "$m" | grep -qE \
+      '^(if|then|elif|else|fi|while|until|for|do|done|case|esac|function)([[:space:]]|$)|^[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(\)|^\{([[:space:]]|$)|^\('; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 # resolve_cd_var <name> <suffix> <cd_record_index>: variable-resolution arm of
 # the cd-latch (issue #1676 fix (a) — incident #1644: a worktree-bound
 # `cd "$WT" && ... && git commit` compound was classified as a root commit).
@@ -463,7 +514,9 @@ path_sane_component() {
 # today's fail-closed behavior:
 #   g7 compound-context: NO record in the command may open/continue a
 #      compound statement (if/while/for/case/function keywords, name() defs,
-#      bare `{` group openers) — the masker tracks quote/heredoc state only
+#      bare `{` group openers; factored to compound_context_present, #2357,
+#      which additionally refuses parenthesized-subshell `(` openers —
+#      strictly tightening here) — the masker tracks quote/heredoc state only
 #      (no brace/keyword depth), so a compound-BODY line surfaces as its own
 #      NL-tagged record and would otherwise read as unconditionally executed
 #      while being conditional (or dead) at runtime;
@@ -497,14 +550,13 @@ resolve_cd_var() {
   resolved_tgt="" resolve_reason=""
 
   # g7 — compound-context refusal (whole command; reason wins over g1-g6).
-  for ((j = 0; j + 2 < n; j += 3)); do
-    m=$(printf '%s' "${recs[j + 1]}" | sed -E 's/^[[:space:]]+//')
-    if printf '%s' "$m" | grep -qE \
-      '^(if|then|elif|else|fi|while|until|for|do|done|case|esac|function)([[:space:]]|$)|^[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(\)|^\{([[:space:]]|$)'; then
-      resolve_reason=compound-context
-      return 1
-    fi
-  done
+  # Factored to compound_context_present (#2357 D4); the reason token stays
+  # at THIS call site and the return polarity is preserved. The helper's
+  # `(`-opener widening is strictly tightening here (fail-closed direction).
+  if compound_context_present; then
+    resolve_reason=compound-context
+    return 1
+  fi
 
   # g1 + g2 — whole-clause assignment anchor, exactly one, preceding the cd.
   for ((j = 0; j + 2 < n; j += 3)); do
@@ -756,6 +808,12 @@ classify_cmd() {
   # pass below; consumed by the Layer-2 cwd gate + scoped read.
   commit_has_pathspec=0 pathspec_opaque=0 commit_bare_clause=0 scope_unsafe=0
   cd_nonroot=0 commit_pathspecs="" add_pathspecs=""
+  # Provably-root-cd scope-base state (issue #2357): armed by the exact-root
+  # cd arm below, broken by any non-AND separator (chain dominance, D3a),
+  # ordered by the commit-verb bits (D3b), reduced to cd_root_base in the
+  # post-loop verdict; consumed by the Layer-2 scope gate as an
+  # OR-alternative to cwd_ok.
+  cd_root_seen=0 cd_and_chain=0 commit_before_root_cd=0 commit_off_chain=0 cd_root_base=0
   # Unproven-cd tracking (issue #1676 fix (b)): one entry per cd clause whose
   # FINAL verdict (after any resolution attempt) is unproven — consumed by
   # the block path's cd-diag lines; never read on the allow path.
@@ -776,9 +834,16 @@ classify_cmd() {
   mapfile -t recs <<< "$triplets"
 
   local n=${#recs[@]} i sep masked raw lead raw_lead tgt cpfx mtgt ctgt latched=0 verb
-  local vname vsuffix
+  local vname vsuffix tgt_trail nsep
   for ((i = 0; i + 2 < n; i += 3)); do
     sep=${recs[i]} masked=${recs[i + 1]} raw=${recs[i + 2]}
+    # #2357 chain-break (D3a): any non-AND separator after an armed root cd
+    # breaks the cd->commit AND-dominance chain. FIRST statement of the loop
+    # body — before the comment-strip, the empty-lead continue, and every
+    # case dispatch — so no record class can skip it (the cd arm itself ends
+    # in `continue`). A re-arming exact-root cd re-sets the chain in its own
+    # arm below (its SEQ/NL separator breaks the old chain here first).
+    if [ "$cd_root_seen" = 1 ] && [ "$sep" != AND ]; then cd_and_chain=0; fi
     [ "$sep" = AND ] || latched=0
 
     # Genuine-comment strip, belt only: the masker already drops comment
@@ -800,6 +865,14 @@ classify_cmd() {
     if printf '%s' "$lead" | grep -qE '^cd([[:space:]]|$)'; then
       tgt=$(printf '%s' "$raw_lead" | sed -E 's/^cd[[:space:]]*//' | awk '{print $1}' \
         | sed -E "s/^[\"']//; s/[\"']\$//")
+      # #2357: the post-target remainder of the SAME raw lead (everything
+      # after the first whitespace-delimited word). Non-empty => the cd
+      # carries a trailing token — bash cd then fails deterministically
+      # ("too many arguments") while a SEQ/OR-chained commit still runs
+      # (r1 MF-2) — which refuses ARMING only; cd_nonroot is untouched for
+      # an exact-root trailing-token cd (today's behavior at root cwd).
+      tgt_trail=$(printf '%s' "$raw_lead" \
+        | sed -E 's/^cd[[:space:]]*//; s/^[^[:space:]]+[[:space:]]*//')
       cd_latch_verdict "$tgt"
       resolve_reason=not-a-variable
       if [ "$cd_verdict" = unproven ] && [[ $tgt =~ $CD_VAR_TGT_ERE ]]; then
@@ -835,9 +908,42 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
       # bit-identical (GUARD_REPO defaults to $REPO); hermetic test repos
       # keep scoping on for a cd to their own root.
       case "$tgt" in
-        "$GUARD_REPO" | "$GUARD_REPO"/) : ;;
-        '~/explore-persona-space' | '~/explore-persona-space/') : ;;
-        '$HOME/explore-persona-space' | '$HOME/explore-persona-space/') : ;;
+        "$GUARD_REPO" | "$GUARD_REPO"/ | '~/explore-persona-space' | '~/explore-persona-space/' \
+          | '$HOME/explore-persona-space' | '$HOME/explore-persona-space/')
+          # #2357: exact-root cd — candidate scope-base mover (pattern union
+          # of the three former keep-arms; semantics-preserving — the same
+          # six spellings keep cd_nonroot=0, everything else falls to `*)`).
+          # Arm only when ALL of:
+          #  (1) own separator in {START, SEQ, NL} — g3-matching
+          #      (resolve_cd_var g3). AND is EXCLUDED: an AND-separated cd
+          #      can itself be SKIPPED by an earlier failure in its && chain
+          #      while a later SEQ/OR-separated commit still runs at the
+          #      hook cwd (r1 MF-1).
+          #  (2) NO token after the target on this record (r1 MF-2, the
+          #      tgt_trail computation above).
+          #  (3) next record's separator not BG/PIPE: a trailing & or |
+          #      backgrounds/subshells the cd — the parent shell's cwd never
+          #      moves. (Chain dominance, D3/D5, subsumes this; kept as a
+          #      cheap local belt-and-suspenders refusal.)
+          # Chain dominance (D3) + the compound/subshell-context refusal
+          # (D4, compound_context_present) complete the predicate in the
+          # post-loop verdict (D5). Arming RE-SETS cd_and_chain=1: the chain
+          # is measured from the MOST RECENT armed cd (a fresh `; cd <root>`
+          # re-establishes the base — its SEQ record already broke any prior
+          # chain via the D3a line above).
+          case "$sep" in
+            START | SEQ | NL)
+              if [ -z "$tgt_trail" ]; then
+                nsep=""
+                [ $((i + 3)) -lt "$n" ] && nsep=${recs[i + 3]}
+                case "$nsep" in
+                  BG | PIPE) : ;;
+                  *) cd_root_seen=1 cd_and_chain=1 ;;
+                esac
+              fi
+              ;;
+          esac
+          ;;
         *) cd_nonroot=1 ;;
       esac
       continue
@@ -892,6 +998,18 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
 
     if [ "$verb" = commit ]; then
       root_commit=1
+      # #2357 (D3b) base-order + chain-dominance bits: a commit clause
+      # scanned BEFORE any armed root-cd executes against the (unproven)
+      # hook cwd; a commit whose chain back to the armed cd carries ANY
+      # non-AND separator can run even when the cd was skipped or failed
+      # (r1 MF-1). A chain break AFTER a commit record does not
+      # retroactively uncover it — later separators cannot change where an
+      # earlier commit ran.
+      if [ "$cd_root_seen" = 0 ]; then
+        commit_before_root_cd=1
+      elif [ "$cd_and_chain" = 0 ]; then
+        commit_off_chain=1
+      fi
     fi
 
     # Token scan (noglob: a literal `scripts/*.py` token must never expand
@@ -1133,6 +1251,21 @@ $tok"
       fi
     fi
   done
+
+  # #2357 (D5) post-loop verdict: the provably-root-cd scope base. Armed only
+  # when an exact-root cd armed (D2), NO commit clause was scanned before it,
+  # NO commit's chain back to it carries a non-AND separator (chain
+  # dominance: commit-runs => every predecessor in the chain, the cd
+  # included, executed and succeeded => the pathspec-resolution base at the
+  # commit is the root — a failed or skipped cd short-circuits the whole &&
+  # chain, so no armed command's commit ever runs off-base), and NO record
+  # opens a compound/subshell context (D4). Consumed by the Layer-2 scope
+  # gate as an OR-alternative to cwd_ok.
+  cd_root_base=0
+  if [ "$cd_root_seen" = 1 ] && [ "$commit_before_root_cd" = 0 ] \
+    && [ "$commit_off_chain" = 0 ] && ! compound_context_present; then
+    cd_root_base=1
+  fi
   return 0
 }
 
@@ -1292,6 +1425,12 @@ run_self_test() {
   printf 'print(0)\n' > "$RFOR/scripts/foreign.py"
   echo note > "$RFOR/tasks/t.md"
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
+  # #2357 F-walk payload: a second staged uncertified gated file whose
+  # BASENAME resolves cwd-relatively from the scripts/ subdir (B49/B50).
+  # No-flip: scoped allow rows ignore foreign staged files by construction,
+  # and every whole-index block row already had a gated foreign file staged.
+  printf 'print(1)\n' > "$RFOR/scripts/own.py"
+  git -C "$RFOR" add scripts/own.py
 
   # Root repo + linked WORKTREE (issue #2066 worktree-cwd allow gate, cases
   # W1-W16): `git worktree add` needs a commit to branch from, so an
@@ -1439,6 +1578,38 @@ MSG" "$RFOR"
     "git commit -F /dev/stdin <<'MSG'
 docs: fold interim notes
 MSG" "$RFOR"
+
+  # --- provably-root cd prefix scope base (issue #2357) ---
+  # New-arm ALLOW rows run from a NON-root case_cwd ($TMP): at the default
+  # root cwd the pre-#2357 cwd_ok gate already scopes these commands, so the
+  # non-root cwd is the load-bearing distinction (r1 MF-5). B49/B50 run from
+  # a root SUBDIR with a staged gated relative pathspec — the c11-class
+  # bypass shape the arming refusals must keep blocked.
+  run_case "A27 cd-to-root + pathspec + redirect scopes from non-root cwd (#2357)" 0 \
+    "cd $RFOR && git commit -m x -- tasks/t.md > /tmp/i2357_selftest.log 2>&1" "$RFOR" '' "$TMP"
+  run_case "B44 cd-to-root prefix scopes past foreign staged (#2357)" 0 \
+    "cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
+  run_case "B45 cd-to-root + add+commit compound scopes (#2357)" 0 \
+    "cd $RFOR && git add tasks/t.md && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
+  run_case "B46 commit BEFORE root cd stays whole-index (#2357)" 2 \
+    "git commit -m x -- tasks/t.md; cd $RFOR" "$RFOR" '' "$TMP"
+  run_case "B47 OR-separated root cd never arms (#2357)" 2 \
+    "true || cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
+  run_case "B48 root cd INSIDE compound body never arms (#2357 r1 MF-3)" 2 \
+    "while true
+do
+cd $RFOR && git commit -m x -- tasks/t.md
+break
+done" "$RFOR" '' "$TMP"
+  run_case "B49 AND-separated root cd + SEQ commit never arms (#2357 r1 MF-1)" 2 \
+    "false && cd $RFOR; git commit -m x -- own.py" "$RFOR" '' "$RFOR/scripts"
+  run_case "B50 own-sep PIPE root cd never arms (#2357 r1 MF-4)" 2 \
+    "true | cd $RFOR && git commit -m x -- own.py" "$RFOR" '' "$RFOR/scripts"
+  run_case "B51 SEQ-separated root cd scopes (allow direction, #2357)" 0 \
+    "true; cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
+  run_case "B52 NL-separated root cd scopes (allow direction, #2357)" 0 \
+    "true
+cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
 
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
   run_case "A20 path-limited add --all with artifact pathspec" 0 \
@@ -1738,8 +1909,14 @@ EOF_ADDSTATUS
 fi
 
 scope=0
-if [ "$cwd_ok" = 1 ] && [ "$cd_nonroot" = 0 ] && [ "$has_dash_a" = 0 ] \
-  && [ "$scope_unsafe" = 0 ] && [ "$commit_bare_clause" = 0 ] \
+# #2357 (D6): cd_root_base joins cwd_ok as an OR-alternative scope BASE — it
+# proves every commit clause executes AT the root (chain dominance), exactly
+# the property cwd_ok proves today; every other poisoning bit stays ANDed
+# unchanged. The path-limited add--all resolution gate above is deliberately
+# NOT widened (root-cwd-only, #1977 — widening an EXEMPTION is a separate
+# risk decision).
+if { [ "$cwd_ok" = 1 ] || [ "$cd_root_base" = 1 ]; } && [ "$cd_nonroot" = 0 ] \
+  && [ "$has_dash_a" = 0 ] && [ "$scope_unsafe" = 0 ] && [ "$commit_bare_clause" = 0 ] \
   && [ "$pathspec_opaque" = 0 ] && [ "$commit_has_pathspec" = 1 ] && [ -n "$commit_pathspecs" ]; then
   scope=1
 fi
@@ -1837,12 +2014,60 @@ EOF_JOIN
 [ -z "${uncertified:-}" ] && exit 0
 
 # Block-path diagnostics (issue #1620 fix (c)): one cert-diag line per
-# uncertified path, interpolated right after the BLOCKED line.
+# uncertified path, interpolated right after the BLOCKED line. The same loop
+# classifies each just-composed line for the #2357 (D9) stale-cert hint: a
+# path is "stale-matching" iff its cert state is stale AND its want/staged/
+# worktree 12-char sha fields are all equal and none is EMPTY/`-`.
 diag_lines=""
+all_stale_matching=1
+n_uncert=0
 for p in $uncertified; do
-  diag_lines="$diag_lines$(cert_diag "$p")
+  dline=$(cert_diag "$p")
+  diag_lines="$diag_lines$dline
 "
+  n_uncert=$((n_uncert + 1))
+  case "$dline" in
+    *' cert=stale:'*)
+      d_want=$(printf '%s' "$dline" | sed -nE 's/.* want=([^[:space:]]+).*/\1/p')
+      d_stg=$(printf '%s' "$dline" | sed -nE 's/.* staged=([^[:space:]]+).*/\1/p')
+      d_wt=$(printf '%s' "$dline" | sed -nE 's/.* worktree=([^[:space:]]+).*/\1/p')
+      case "$d_want" in
+        '' | EMPTY | -) all_stale_matching=0 ;;
+        *)
+          { [ "$d_want" = "$d_stg" ] && [ "$d_want" = "$d_wt" ]; } || all_stale_matching=0
+          ;;
+      esac
+      ;;
+    *) all_stale_matching=0 ;;
+  esac
 done
+
+# #2357 (D7) scope-diag: the scope-eligibility bit vector, block path only
+# (zero hot-path cost; cert-diag/cd-diag precedent). The #2332-incident
+# attribution took a transcript-level forensic session; this makes the next
+# one a one-line read. Emitted only when scope=0 — a scoped block's
+# attribution is already unambiguous.
+scope_diag=""
+if [ "$scope" = 0 ]; then
+  scope_diag="scope-diag: scope=0 cwd_ok=$cwd_ok cd_root_base=$cd_root_base cd_root_seen=$cd_root_seen commit_off_chain=$commit_off_chain cd_nonroot=$cd_nonroot scope_unsafe=$scope_unsafe pathspec_opaque=$pathspec_opaque commit_bare_clause=$commit_bare_clause has_dash_a=$has_dash_a commit_has_pathspec=$commit_has_pathspec
+"
+fi
+
+# #2357 (D9) stale-cert re-certify hint: when EVERY uncertified path is
+# stale-matching (>=1 exists), the block leads with the re-certify paragraph
+# BEFORE any foreign-payload attribution — the #2332 incident's block message
+# attributed a stale-but-content-matching cert as a foreign uncertified
+# payload, which misled remediation. A mixed set (any drifted or certless
+# path) genuinely needs the full uncertified-payload remediation, so the hint
+# stays silent there.
+stale_para=""
+if [ "$n_uncert" -ge 1 ] && [ "$all_stale_matching" = 1 ]; then
+  stale_para="STALE-CERT? Every path above matches its certificate sha (want==staged==worktree)
+— the cert merely exceeded max age (${MAX_AGE}s). No content drift and likely no
+foreign payload: re-run the inline payload lint gate on these paths (command
+above) to re-certify, then retry the commit.
+"
+fi
 
 # Foreign-staged recovery paragraph (issue #1620 fix (b)): fires only on the
 # whole-index (scope=0) path when >=1 uncertified path came from the shared
@@ -1859,8 +2084,10 @@ if [ "$foreign" = 1 ]; then
   foreign_para="FOREIGN-STAGED? Path(s) above came from the shared STAGED INDEX, not your
 command line. Another session's staging? Commit ONLY your own paths from the
 repo root — a pathspec-limited commit is never blocked by foreign staged
-files: git commit -m \"<msg>\" -- <your paths>  (unquoted paths, run at the
-repo root; the guard scopes its check to the pathspec). Plain output
+files: git commit -m \"<msg>\" -- <your paths>  (unquoted paths; run at the
+repo root, or with a leading cd <absolute repo root> &&  prefix — the literal
+absolute path, not a variable, with every clause up to the commit joined by
+&& (#2357) — the guard scopes its check to the pathspec). Plain output
 redirections on the commit clause are tolerated since #1928.
 "
 fi
@@ -1906,7 +2133,7 @@ The <round-slug> makes the path ROUND-unique (e.g. r2-fu1); the bare
 issue-keyed name issue-<N>-inline-payload.txt is REFUSED by the gate (#1948:
 concurrent same-issue rounds clobber the shared path).
 On PASS it certifies each path's exact content; re-run after any further edit.
-${diag_lines}${foreign_para}${cd_para}If your blocked command COMPOUNDED "git add ... && git commit ...", the add
+${diag_lines}${scope_diag}${stale_para}${foreign_para}${cd_para}If your blocked command COMPOUNDED "git add ... && git commit ...", the add
 never ran either — re-stage before retrying the commit (2026-07-28: a retry
 without the add hit a pathspec error).
 Genuinely pre-existing red on a MODIFIED payload file the gate refused, or an
