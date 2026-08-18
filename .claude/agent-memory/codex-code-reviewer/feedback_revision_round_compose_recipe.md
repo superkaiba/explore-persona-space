@@ -835,3 +835,34 @@ re-locate every cited site in the round-N state. (f) By-path Step-3
 verification: envelope greps adapt to extraction-command + ts + id-token
 asserts over the final prompt (own-head==1 / close==1 / prior-heads==0 /
 exactly one line-start grammar row).
+
+**FAIL+FAIL AGREEMENT fix round on a TEXT-MATCH-mechanism fix (#2357 r4,
+2026-08-18):** when round N-1 was Claude-FAIL + Codex-FAIL in AGREEMENT (no
+reconciler; both reviewers' concern ids persisted), inline BOTH verdicts as
+acceptance contracts (#2332 form: tags stripped; blockquote their
+`CONCERN:: ` rows per #2329-rclose — asserts: line-start rows==1,
+blockquoted==3) and state "they name the SAME defect class; where their
+emphases differ, BOTH bind". Three composable deltas: (a) when the fix is a
+TEXT-MATCH mechanism (an ERE union grepped over raw record text), extend the
+static-trace calibration with a dedicated rule — adjudicate what the union
+MATCHES on RAW text (anchoring, tab/multi-space whitespace, quote-adjacent
+vs MID-WORD quoting, raw-vs-masked copy, embedded-newline record-splitting),
+never merely case-arm entry; the residual hunt becomes a text-shape
+enumeration and the over-tightening check is its inverse (which INNOCENT
+texts match — e.g. commit messages mentioning the vocabulary). (b)
+Marker-waived pre-existing residuals ("measured main=0") on a no-execute
+twin compose as W-rows (PRE-EXISTING-VERIFIED | CONTRADICTED) with three
+STATIC duties: blob-diff the deciding-machinery symbols across
+origin/main-vs-HEAD (attest at compose time that the round delta touches
+neither symbol — a cheap grep of the round diff), trace WHY main allows each
+shape, confirm the round adds a belt not a widening; genuine pre-existing
+routes via Step 0.9, CONTRADICTED = Critical substantive. (c) The brief
+misattributed round history AGAIN (claimed both overruled PASSes were
+Codex's; r1's was Claude's — same error as the r3 brief): verify every
+round's history against events.jsonl and compose from that, flagging the
+discrepancy in the return. Also: a fresh-sections rebuild can safely reuse
+the prior round's trigger-dense span + plan/marker envelopes + hard-bounds +
+rubric via count-asserted anchors even when EVERY middle section is
+rewritten (task context, calibration, concerns, adjudication, attestations,
+review focus) — sweep leftover round tokens with grep-and-eyeball scoped
+outside the inlined envelopes.
