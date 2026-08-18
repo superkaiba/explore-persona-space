@@ -34,6 +34,10 @@ Contract:
   untracked IMPORTED module beside a tracked entrypoint is still invisible —
   tree-wide untracked coverage was rejected for the fleet-noise cost above.
 - Bounded: 5s subprocess timeout per git call.
+- Literal pathspecs: every git call routes through `_run_git`, which passes
+  the global `--literal-pathspecs` option, so glob metacharacters (`[`, `*`,
+  `?`) in a filename can never match a tracked SIBLING and misclassify an
+  untracked producing script as "tracked" (#2175 r2).
 """
 
 from __future__ import annotations
@@ -77,9 +81,19 @@ class GitProvenance:
 
 
 def _run_git(args: list[str], cwd: Path | None) -> str | None:
+    """Run git with ``--literal-pathspecs``; return stdout, or None on failure.
+
+    ``--literal-pathspecs`` (a global option, placed BEFORE the subcommand) is
+    load-bearing for every pathspec-taking probe in this module: without it,
+    glob metacharacters (``[``, ``*``, ``?``) in a filename make the pathspec a
+    PATTERN, so an untracked ``scripts/foo[1].py`` argv[0] would MATCH a
+    tracked sibling ``scripts/foo1.py`` and be misclassified as "tracked" —
+    defeating the #2175 untracked-producing-script invariant. The option is
+    inert for calls that carry no pathspec (rev-parse, tree-wide status).
+    """
     try:
         result = subprocess.run(
-            ["git", *args],
+            ["git", "--literal-pathspecs", *args],
             cwd=str(cwd) if cwd else None,
             capture_output=True,
             text=True,
@@ -143,6 +157,12 @@ def _argv0_git_state(argv0: str | None, cwd: Path | None = None) -> tuple[str | 
     subprocess param would reopen a wrong-file misattribution channel. An
     outside-repo absolute pathspec exits rc=128 → `(None, None)`, which is
     exactly how the pytest-binary default degrades in tmp_path fixture repos.
+    Every git call routes through `_run_git`, which passes
+    `--literal-pathspecs` so glob metacharacters in the resolved path can
+    never match a tracked SIBLING (#2175 r2). Resolution failures — a
+    symlink loop raises `RuntimeError` on py3.11 (`OSError` on newer
+    Pythons), null bytes raise `ValueError` — degrade to `(None, None)`
+    per the module's never-crash contract.
 
     The load-bearing ignored-file branch: a gitignored argv[0] (e.g.
     `.venv/bin/pytest`) yields EMPTY porcelain output under
@@ -155,7 +175,7 @@ def _argv0_git_state(argv0: str | None, cwd: Path | None = None) -> tuple[str | 
         resolved = Path(argv0).resolve()
         if not resolved.is_file():
             return None, None
-    except OSError:
+    except (OSError, RuntimeError, ValueError):
         return None, None
     abs_path = str(resolved)
 
@@ -172,7 +192,7 @@ def _argv0_git_state(argv0: str | None, cwd: Path | None = None) -> tuple[str | 
             return None, None
         try:
             rel = str(resolved.relative_to(Path(toplevel.strip()).resolve()))
-        except ValueError:
+        except (OSError, RuntimeError, ValueError):
             return None, None
         return "tracked", rel
 

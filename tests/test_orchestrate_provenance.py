@@ -144,6 +144,50 @@ def test_untracked_argv0_flags_dirty_and_records_state(tmp_path: Path) -> None:
     assert md["git_argv0_path"] == "scripts/foo.py"
 
 
+def test_untracked_argv0_with_glob_metachars_not_misread_as_tracked_sibling(
+    tmp_path: Path,
+) -> None:
+    """#2175 r2 BLOCKER regression (argv0-pathspec-not-literal): without
+    `--literal-pathspecs`, the bracketed untracked argv0 `scripts/foo[1].py`
+    is a git PATTERN matching the tracked sibling `scripts/foo1.py`, so the
+    ls-files probe reads rc=0 and the untracked producing script stamps a
+    falsely clean "tracked" provenance. The fix must classify it untracked,
+    fold it into dirty, and report the LITERAL bracketed path (porcelain does
+    not quote ASCII bracket names; verified live against git 2.34)."""
+    _init_repo(tmp_path)
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    tracked_sibling = scripts / "foo1.py"
+    tracked_sibling.write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "scripts/foo1.py"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-q", "-m", "sibling"], check=True)
+    bracketed = scripts / "foo[1].py"
+    bracketed.write_text("y = 2\n")
+    prov = git_provenance(cwd=tmp_path, argv0=str(bracketed))
+    assert prov.argv0_state == "untracked"
+    assert prov.argv0_path == "scripts/foo[1].py"
+    assert prov.dirty is True
+    assert "scripts/foo[1].py" in prov.dirty_paths
+    # The tracked sibling is clean and must NOT be dragged into the record.
+    assert "scripts/foo1.py" not in prov.dirty_paths
+
+
+def test_symlink_loop_argv0_degrades_to_none_without_crash(tmp_path: Path) -> None:
+    """#2175 r2 CONCERN regression (argv0-resolve-symlink-loop-runtimeerror):
+    `Path.resolve()` on a symlink loop raises RuntimeError on py3.11 (OSError
+    on newer Pythons) — the never-crash contract must degrade to (None, None)
+    instead of letting it escape `git_provenance`."""
+    _init_repo(tmp_path)
+    loop_a = tmp_path / "loop_a.py"
+    loop_b = tmp_path / "loop_b.py"
+    loop_a.symlink_to(loop_b)
+    loop_b.symlink_to(loop_a)
+    prov = git_provenance(cwd=tmp_path, argv0=str(loop_a))
+    assert prov.argv0_state is None
+    assert prov.argv0_path is None
+    assert prov.dirty is False  # the tracked scan is untouched by the degrade
+
+
 def test_tracked_clean_argv0_reads_tracked_and_clean(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     script = tmp_path / "runner.py"
