@@ -70,7 +70,7 @@
 
 - [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — one conceded mismatch in a fresh block ⇒ sweep ALL rows against BOTH candidate sources; only source-divergent rows verify anything (#2333 r2)
 
-- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 25 BLOCKING spec-text rules (#923, #833)
+- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 26 BLOCKING spec-text rules incl. Lens-11 skipped-result enumeration + unverified exemption tokens; DISCARD X (DV-scoped title vs secondary-DV flip) / Y (plan-registered power narration) (#923, #833, #2333 crc r1)
 - [Clean-result bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md) — v4 split: bare #N in Methodology table Source col / Results caption (L2) + reuse bullet missing the permanent path (b) (L5) are grounded (#722)
 - [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — always re-scan for named tests (Wilson/Fisher/Mann-Whitney), ± (#378)
 - [Cross-loop CI conflict (interp vs clean-result)](feedback_cross_loop_ci_conflict.md) — interp-critic-required CIs / prior-gate house style / caption CIs survive Codex's Lens-7 FAIL; add "Do NOT remove" lines. #478, #509, #464.
