@@ -1091,3 +1091,23 @@ line + regression instruction); Python `len()` vs `wc -c` differ on
 em-dash-heavy prompts (~1 KB per 130 KB) — not drift. Worktree memory
 commits: the root-code-commit guard fires even on a `cd <wt> && git ...`
 compound — use `git -C "$WT" add/commit -- <path>` explicitly.
+
+**Upheld-own-FAIL fix round with an addressed-not-open ledger (#2371 r2,
+2026-08-18):** when the implementer runs `address-concern` BEFORE the review
+(latest event `addressed`, so `--open-only` returns `[]` on a round whose whole
+point is closure), do NOT read the empty open-set as the #1090-fu1-r2
+ledger-empty shape — the row EXISTS: inline BOTH events in a snapshot envelope,
+set the ledger-field literal to
+`empty (0 open; 1 addressed-r2 pending verification: <id>)` (count-assert ×3:
+attestation + Step 0.8 + tail header), and frame the addressed row as the
+implementer's CLAIM whose verification IS the round. Acceptance contract =
+reconciler ruling verbatim (tag-stripped; its EXECUTED flip grid is the
+criterion) + the twin's own r1 Fix/Mechanizable/sweep lines QUOTED as a short
+blockquote (not the full own verdict — enough to adjudicate WHICH sanctioned
+fix option was chosen, without anchoring). Closure decomposes C1-C6 with the
+implementer's NAMED RESIDUAL as its own element carrying a TRUE/FALSE flip
+test (TRUE = pre-existing class the ruling already fenced, route Step 0.9;
+FALSE = a round-added atom flips it, blocker NOT closed, substantive FAIL).
+Assert trap: backticked heading mentions contain the bare-heading substring —
+assert total == verbatim + backticked (5 == 1 + 4) plus the `\n<heading>\n`
+line form == 1, never a bare heading count == 1.

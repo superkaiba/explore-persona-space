@@ -150,6 +150,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | contrastive-negatives | LESSONS.md | v2-owner: methodology-baselines-critic |
 | crash-fix-rounds | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
 | critic-lens-reference | LESSONS.md | v2-owner: statistics-critic + methodology-baselines-critic + efficiency-critic |
+| cross-session-writer-arbitration | LESSONS.md | v2-owner: orchestrator (writer-dispatch arbitration + read-pinning; workflow-version-independent) |
 | data-realism | LESSONS.md | v2-owner: methodology-baselines-critic |
 | diff-size-budget | LESSONS.md | v2-owner: code-correctness-critic + plan-adherence-critic + efficiency-critic |
 | disk-hygiene | LESSONS.md | v2-owner: efficiency-critic (plan-time footprint routing) + vm_disk_guard.py cron |
