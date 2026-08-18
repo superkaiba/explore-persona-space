@@ -32,6 +32,17 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    structurally cannot see (constant defined in one commit / consumed at a
    different grain in another; waivers detached by later refactors;
    committed-artifact grain vs consumer assumptions).
+6. **Multi-unit rounds: only the FINAL unit posts `epm:results`** (#2168 r1:
+   note head "unit 3 of 3 (FINAL)"; units 1-2 posted `[unit k/N]`
+   `epm:progress` notes). Two duties, applicable to ANY round whose fetched
+   marker head matches `unit \d+ of \d+`: (a) inline the earlier units'
+   progress notes in a supplementary `---BEGIN/END UNIT PROGRESS NOTES---`
+   envelope (filter events.jsonl on `note.startswith('[unit ')`); (b) tell
+   Codex the Step 0.5 gate scores the inlined `epm:results` body and that
+   thin early-unit coverage is at most a present-but-imperfect CONCERNS —
+   otherwise an adversarial twin reads "unit K of K" as "the report does not
+   cover the round" and false-FAILs `marker-shape` (the #489 class in a new
+   costume).
 
 **Why:** the whole-round view is the ONLY reviewer seeing commit
 interactions; a mis-based diff (origin/main) or a leaked split-token
