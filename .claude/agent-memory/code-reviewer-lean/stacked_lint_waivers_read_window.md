@@ -21,6 +21,16 @@ underscore-prefixed LOCAL port (`_retry_transient(` — `_` is a word char,
 no boundary), so standalone-port scripts NEED the waiver even though they
 genuinely retry.
 
+Sibling scanner (#2333 R2 g2): `check_hub_verify_retry` is AST-based with NO
+wrap detection at all — every Load-ctx `.list_repo_tree(`/`.list_repo_files(`/
+`.file_exists(` attribute is flagged even when it sits DIRECTLY inside
+`retry_transient(lambda: list(api.X(...)))`; the waiver is the only escape.
+Placement: the hit lineno is the attribute node's line, so the waiver comment
+may legally sit on the line above it INSIDE the call parens. `list()`
+materialization inside the retried lambda is the load-bearing detail (cursor
+pagination retried); certify via the check function with `scripts_dir=` on the
+parent blob (expect 1 error) vs HEAD (expect 0).
+
 **How to apply:** reviewing any waiver-placement fix or a standalone script
 porting repo helpers under new (esp. `_`-prefixed) names: (1) certify with
 the scanner FUNCTION as a live probe on the parent-commit blob

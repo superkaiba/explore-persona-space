@@ -45,3 +45,25 @@ persisted per-chunk telemetry; revision pin's anchor+counts bind was the plan's
 own stated runtime bind; n<d unreachable under fail-loud count pins; post-init
 validation pure efficiency; exception-teardown fail-path-only) — verify facts,
 then re-derive severity from the operational path yourself.
+
+**Second datapoint (#2333 r2, revision round — reconciled PASS + 6 CONCERNs, 0 blockers):**
+on a BLOCKER-FIX round, Codex re-filed closed r1 items as `NOT-ADDRESSED` by
+silently RESTATING each concern stronger than its r1 wording — adjudicate
+against the r1 concern LINE pulled verbatim from the r1 verdict (the #952-r2
+grep-the-quoted-contract check, now a per-item procedure): r1
+"bank/donor phases IGNORE 8-worker sharding → races/duplication" was closed by
+a loud single-worker guard + recorded named deviation (r2 restated it as
+"must implement 8-way"); r1 "S1 not gated per cell" was closed at the
+registered anchor-separation-survivor grain (r2 restated the floor as
+per-(arm,cell) USABLE pairs — never registered); r1 "fitness probe has no
+implementation" was closed by a live-run conservative probe (r2 demanded reuse
+loaders the plan's "ANY failed check ⇒ selfgen" clause makes optional). Also a
+§9 arithmetic tell: Codex read pod-billed gpu_h columns (wall × 8) as per-GPU
+serial work to inflate a minutes-scale deviation to "0.8–1.6 GPU-hours".
+Claude-side miss confirming [[claude-misses-invariant-comment-smell]]: the
+split g1 credited a docstring's "update shard + va store + done record
+atomically" while the code commits the JSONL (carrying the `regenerated_at`
+resume key) BEFORE the va-store replace — a real crash-window
+new-text/stale-V_a permanence Codex alone caught (upheld as CONCERN:
+secondary-DV, seconds-wide window, rare branch). Trust the split PASS only
+after re-reading multi-file commit sequences the docstrings call atomic.
