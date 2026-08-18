@@ -7,9 +7,14 @@
 # sharded one pair per GPU, consuming the live t5d round's diagonal cloud
 # exports (missing diagonals -> pending JSONs, retried on a bounded loop).
 #
-# PILOT GATE: the FIRST battery (base:sft, gsm8k_test1319, reencode) runs
+# PILOT GATE: the FIRST battery (base:sft, gsm8k_test1319, first arrow) runs
 # alone; its wall is recorded to $PILOTFILE and echoed with a x140
 # projection. Nothing self-aborts on it (#1092) — the operator reads it.
+#
+# ARM SELECT (EPM_1336_ARM=fwd|rev, default fwd): the rev round harvests the
+# 10 BANKED reverse off-policy trees (encoder s on target text t) into
+# layer30_clouds/inserted_rev/ and runs the rev_reencode + content_srcenc
+# ladder batteries against the (all-banked) diagonal clouds.
 #
 # Usage: bash scripts/issue1336_insertarm_driver.sh
 set -uo pipefail
@@ -17,6 +22,13 @@ set -uo pipefail
 REPO=/workspace/explore-persona-space
 BRANCH=${EPM_1336_BRANCH:-issue-1336-insertarm}
 FIX_SHA="${EPM_1336_INSERTARM_FIX_SHA:?set EPM_1336_INSERTARM_FIX_SHA to this rounds commit}"
+ARM=${EPM_1336_ARM:-fwd}
+case "$ARM" in
+  fwd) ARROWS_CSV="reencode,content"; CLOUD_SUBDIR="inserted" ;;
+  rev) ARROWS_CSV="rev_reencode,content_srcenc"; CLOUD_SUBDIR="inserted_rev" ;;
+  *) echo "FATAL: EPM_1336_ARM must be fwd|rev (got $ARM)" >&2; exit 6 ;;
+esac
+PILOT_ARROW="${ARROWS_CSV%%,*}"
 
 OUT=${EPM_1336_OUT:-/workspace/eval_results/issue_1336/arrow_ladders}
 STAGE=${EPM_1336_STAGE:-/workspace/data/issue_1336/insertarm_stage}
@@ -38,9 +50,9 @@ rm -f "$SENTINEL"
 write_sentinel() {
   local rc=$1 ncomplete=$2 npending=$3
   cat > "$SENTINEL.tmp" <<JSON
-{"issue": 1336, "round": "insertarm", "rc": $rc,
+{"issue": 1336, "round": "insertarm", "arm": "$ARM", "rc": $rc,
  "batteries_complete": $ncomplete, "batteries_pending": $npending,
- "out_root": "$OUT", "clouds_prefix": "issue1336_rlvr_ladder/analysis_tensors/layer30_clouds/inserted",
+ "out_root": "$OUT", "clouds_prefix": "issue1336_rlvr_ladder/analysis_tensors/layer30_clouds/$CLOUD_SUBDIR",
  "mirror_prefix": "issue1336_rlvr_ladder/eval_results_mirror_insertarm/arrow_ladders",
  "finished_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
 JSON
@@ -81,7 +93,7 @@ count_pending()  { grep -ls '"status": "pending_dependency"' "$OUT"/arrow_*.json
 
 # ---- Phase H: harvest inserted clouds, sharded by pair (network-bound). ----
 HPAR=${EPM_1336_HARVEST_PAR:-4}
-echo "[phaseH] START $(date -u +%FT%TZ) par=$HPAR pairs=$PAIRS_ALL"
+echo "[phaseH] START $(date -u +%FT%TZ) arm=$ARM par=$HPAR pairs=$PAIRS_ALL"
 h0=$(date +%s)
 pairs=(${PAIRS_ALL//,/ })
 declare -a hpids=()
@@ -92,7 +104,7 @@ for ((w = 0; w < HPAR; w++)); do
   [ -n "$subset" ] || continue
   OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 NUMEXPR_NUM_THREADS=4 \
   uv run python scripts/issue1336_insertarm_clouds.py \
-    --pairs "$subset" --stage-root "$STAGE/w$w" --local-out "$CLOUDS/inserted" \
+    --pairs "$subset" --arm "$ARM" --stage-root "$STAGE/w$w" --local-out "$CLOUDS/$CLOUD_SUBDIR" \
     --layer "$LAYER" > "$LOGDIR/issue-1336-insertarm-harvest-w$w.log" 2>&1 &
   hpids+=($!)
   echo "[phaseH] worker $w pid=${hpids[-1]} pairs=$subset"
@@ -111,11 +123,11 @@ fi
 echo "[phaseH] disk after:"; df -h /workspace | tail -1
 
 # ---- Phase L pilot: ONE battery, wall recorded; no self-abort (#1092). -----
-echo "[pilot] START $(date -u +%FT%TZ)"
+echo "[pilot] START $(date -u +%FT%TZ) arrow=$PILOT_ARROW"
 p0=$(date +%s)
 CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
 uv run python scripts/issue1336_arrow_ladders.py \
-  --pair base:sft --arrows reencode --corpora gsm8k_test1319 \
+  --pair base:sft --arrows "$PILOT_ARROW" --corpora gsm8k_test1319 \
   --clouds-root "$CLOUDS/pool" --out-root "$OUT" --layer "$LAYER" \
   > "$LOGDIR/issue-1336-insertarm-pilot.log" 2>&1
 prc=$?
@@ -141,7 +153,8 @@ run_wave_pass() {
       local omp=$(( NCPU / NGPU )); [ "$omp" -lt 2 ] && omp=2; [ "$omp" -gt 16 ] && omp=16
       CUDA_VISIBLE_DEVICES=$slot OMP_NUM_THREADS=$omp MKL_NUM_THREADS=$omp OPENBLAS_NUM_THREADS=$omp NUMEXPR_NUM_THREADS=$omp \
       uv run python scripts/issue1336_arrow_ladders.py \
-        --pair "$pair" --clouds-root "$CLOUDS/pool" --out-root "$OUT" --layer "$LAYER" \
+        --pair "$pair" --arrows "$ARROWS_CSV" --clouds-root "$CLOUDS/pool" \
+        --out-root "$OUT" --layer "$LAYER" \
         >> "$LOGDIR/issue-1336-insertarm-arrows-${pair/:/__}.log" 2>&1 &
       wpids+=($!); wpairs+=("$pair")
       idx=$((idx + 1)); slot=$((slot + 1))

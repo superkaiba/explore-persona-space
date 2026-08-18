@@ -59,6 +59,9 @@ from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E
 from explore_persona_space.orchestrate import hub  # noqa: E402
 
 INSERTED_PREFIX = f"{cm.HF_PREFIX_1336}/analysis_tensors/layer30_clouds/inserted"
+# Reverse arm (encoder = EARLIER stage s, text = LATER stage t's on-policy rollouts):
+# same schema/conventions, separate Hub prefix so forward/reverse cells never collide.
+INSERTED_REV_PREFIX = f"{cm.HF_PREFIX_1336}/analysis_tensors/layer30_clouds/inserted_rev"
 
 # Forward pairs: stage(s) < stage(t) over the 5-checkpoint ladder.
 FORWARD_PAIRS: tuple[tuple[str, str], ...] = tuple(
@@ -159,14 +162,16 @@ def harvest_cell(
     layer: int,
     upload: bool,
     api,
+    prefix: str = INSERTED_PREFIX,
+    arm_label: str = "inserted (teacher-forced matched text: encoder E_t on source text T_s)",
 ) -> str:
     """One cell end-to-end: skip-if-uploaded -> stage -> slice -> npz -> upload -> reap."""
     name = inserted_cloud_name(encoder, text_source, corpus)
-    expected = [f"{INSERTED_PREFIX}/{name}.npz", f"{INSERTED_PREFIX}/{name}.meta.json"]
+    expected = [f"{prefix}/{name}.npz", f"{prefix}/{name}.meta.json"]
     if upload:
         # verify_repo_paths_uploaded returns the MISSING paths (empty = all present)
         missing = hub.verify_repo_paths_uploaded(
-            api, cm.HF_DATA_REPO, expected, path_in_repo=INSERTED_PREFIX, repo_type="dataset"
+            api, cm.HF_DATA_REPO, expected, path_in_repo=prefix, repo_type="dataset"
         )
         if not missing:
             return "skipped-uploaded"
@@ -194,7 +199,7 @@ def harvest_cell(
     (local_out / f"{name}.meta.json").write_text(
         json.dumps(
             {
-                "arm": "inserted (teacher-forced matched text: encoder E_t on source text T_s)",
+                "arm": arm_label,
                 "encoder": encoder,
                 "text_source": text_source,
                 "corpus": corpus,
@@ -218,14 +223,14 @@ def harvest_cell(
     if upload:
         from huggingface_hub import upload_folder
 
-        hub.assert_hub_dir_filecounts(local_out, INSERTED_PREFIX, allow_patterns=[f"{name}.*"])
+        hub.assert_hub_dir_filecounts(local_out, prefix, allow_patterns=[f"{name}.*"])
         retry_hub_409(
             lambda: hub.retry_transient(
                 lambda: upload_folder(
                     repo_id=cm.HF_DATA_REPO,
                     repo_type="dataset",
                     folder_path=str(local_out),
-                    path_in_repo=INSERTED_PREFIX,
+                    path_in_repo=prefix,
                     allow_patterns=[f"{name}.*"],
                     commit_message=f"issue-1336 inserted-arm clouds: {name}",
                 ),
@@ -234,7 +239,7 @@ def harvest_cell(
             what=f"inserted-cloud upload {name}",
         )
         still_missing = hub.verify_repo_paths_uploaded(
-            api, cm.HF_DATA_REPO, expected, path_in_repo=INSERTED_PREFIX, repo_type="dataset"
+            api, cm.HF_DATA_REPO, expected, path_in_repo=prefix, repo_type="dataset"
         )
         assert not still_missing, f"post-upload verify FAILED for {name}: missing {still_missing}"
         # reap the staged shards + local npz the moment the upload verifies
@@ -287,6 +292,15 @@ def main() -> int:
     ap.add_argument("--stage-root", type=Path, default=Path("data/issue_1336/insertarm_stage"))
     ap.add_argument("--local-out", type=Path, default=Path("data/issue_1336/insertarm_clouds"))
     ap.add_argument("--layer", type=int, default=30)
+    ap.add_argument(
+        "--arm",
+        choices=("fwd", "rev"),
+        default="fwd",
+        help=(
+            "fwd: encoder=t on source text s -> inserted/ (forward round). "
+            "rev: encoder=s on target text t -> inserted_rev/ (reverse round)."
+        ),
+    )
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
@@ -308,22 +322,33 @@ def main() -> int:
     for s, t in pairs:
         assert s in cm.MODELS and t in cm.MODELS and s != t, f"bad pair {s}:{t}"
     units = [(s, t, c) for (s, t) in pairs for c in corpora]
-    print(f"[harvest] {len(units)} units ({len(pairs)} pairs x {len(corpora)} corpora)")
+    print(
+        f"[harvest] arm={args.arm} {len(units)} units ({len(pairs)} pairs x {len(corpora)} corpora)"
+    )
     t_start = time.time()
     for k, (s, t, c) in enumerate(units):
         u0 = time.time()
+        # fwd: encoder = LATER stage t on the earlier stage s's text (inserted/).
+        # rev: encoder = EARLIER stage s on the later stage t's text (inserted_rev/).
+        enc, src = (t, s) if args.arm == "fwd" else (s, t)
         status = harvest_cell(
-            t,
-            s,
+            enc,
+            src,
             c,
             stage_root=args.stage_root,
             local_out=args.local_out,
             layer=args.layer,
             upload=not args.skip_upload,
             api=api,
+            prefix=INSERTED_PREFIX if args.arm == "fwd" else INSERTED_REV_PREFIX,
+            arm_label=(
+                "inserted (teacher-forced matched text: encoder E_t on source text T_s)"
+                if args.arm == "fwd"
+                else "inserted_rev (teacher-forced matched text: encoder E_s on target text T_t)"
+            ),
         )
         print(
-            f"[harvest] unit {k + 1}/{len(units)} {t}_txt_{s}_chat_{c} {status} "
+            f"[harvest] unit {k + 1}/{len(units)} {enc}_txt_{src}_chat_{c} {status} "
             f"elapsed={time.time() - u0:.0f}s total={time.time() - t_start:.0f}s",
             flush=True,
         )

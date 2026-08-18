@@ -88,13 +88,18 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 from issue1336_insertarm_clouds import (  # noqa: E402
     FORWARD_PAIRS,
     INSERTED_PREFIX,
+    INSERTED_REV_PREFIX,
     inserted_cloud_name,
     retry_hub_409,
 )
 
 CLOUDS_PREFIX = f"{cm.HF_PREFIX_1336}/analysis_tensors/layer30_clouds"
 RUNGS = ("identity", "id_bias", "rigid", "rigid_scale", "affine")
-ARROWS = ("reencode", "content")
+# Forward arrows read the inserted/ clouds (encoder t on source text s);
+# reverse arrows read the inserted_rev/ clouds (encoder s on target text t):
+#   rev_reencode:   X = E_s(T_t), Y = E_t(T_t)  (s->t re-encoding on TARGET text)
+#   content_srcenc: X = E_s(T_s), Y = E_s(T_t)  (content shift under the SOURCE encoder)
+ARROWS = ("reencode", "content", "rev_reencode", "content_srcenc")
 BOOT_SEED_BASE = 5600  # + v2 chat-surface index (distinct from 5000/5300 bases)
 
 
@@ -214,8 +219,12 @@ def run_battery(
         if prior.get("status") == "complete":
             return "skipped-complete"
 
-    ins_rel = f"{INSERTED_PREFIX}/{inserted_cloud_name(tgt, src, corpus)}.npz"
-    diag_stage = src if arrow == "reencode" else tgt
+    if arrow in ("reencode", "content"):
+        ins_rel = f"{INSERTED_PREFIX}/{inserted_cloud_name(tgt, src, corpus)}.npz"
+        diag_stage = src if arrow == "reencode" else tgt
+    else:  # rev_reencode / content_srcenc: inserted_rev cloud = encoder s on target text t
+        ins_rel = f"{INSERTED_REV_PREFIX}/{inserted_cloud_name(src, tgt, corpus)}.npz"
+        diag_stage = tgt if arrow == "rev_reencode" else src
     diag_rel = f"{CLOUDS_PREFIX}/clouds_{diag_stage}_chat_{corpus}.npz"
     ins_path = _fetch_cloud(ins_rel, clouds_root)
     diag_path = _fetch_cloud(diag_rel, clouds_root)
@@ -230,8 +239,12 @@ def run_battery(
     diag = _load_cloud(diag_path)
     if arrow == "reencode":
         a, b = diag, ins  # X = E_s(T_s), Y = E_t(T_s)
-    else:
+    elif arrow == "content":
         a, b = ins, diag  # X = E_t(T_s), Y = E_t(T_t)
+    elif arrow == "rev_reencode":
+        a, b = ins, diag  # X = E_s(T_t), Y = E_t(T_t)
+    else:  # content_srcenc
+        a, b = diag, ins  # X = E_s(T_s), Y = E_s(T_t)
     ids, ia, ib = la._align_rows(a["conv_ids"], b["conv_ids"])
     n = len(ids)
     assert n >= 50, f"{name}: aligned intersection too small (n={n})"
@@ -369,12 +382,24 @@ def _smoke(out_root: Path) -> None:
     # content = M -> Yt; both rotation+bias so rigid must win both arrows.
     M = Xs @ R1 + 0.05 * rng.normal(size=(n, d)) + 0.3
     Yt = M @ R2 + 0.05 * rng.normal(size=(n, d)) - 0.2
+    # Reverse-arm inserted cloud M2 = E_s(T_t): rotation+bias off the source
+    # diagonal Xs, so content_srcenc (Xs -> M2) AND rev_reencode (M2 -> Yt, a
+    # composition of rotations + bias) are both rigid-winnable by construction.
+    R3, _ = np.linalg.qr(rng.normal(size=(d, d)))
+    M2 = Xs @ R3 + 0.05 * rng.normal(size=(n, d)) + 0.1
     with tempfile.TemporaryDirectory(prefix="arrow_smoke_") as td:
         root = Path(td)
         np.savez(
             root / f"{inserted_cloud_name('dpo', 'base', 'gsm8k_test1319')}.npz",
             X30=M.astype(np.float16),
             Y30=M.astype(np.float16),
+            conv_ids=ids,
+            folds=fc._cv_folds(ids, cm.N_FOLDS, cm.FIT_SEED).astype(np.int64),
+        )
+        np.savez(
+            root / f"{inserted_cloud_name('base', 'dpo', 'gsm8k_test1319')}.npz",
+            X30=M2.astype(np.float16),
+            Y30=M2.astype(np.float16),
             conv_ids=ids,
             folds=fc._cv_folds(ids, cm.N_FOLDS, cm.FIT_SEED).astype(np.int64),
         )
