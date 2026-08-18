@@ -183,14 +183,16 @@ Check catalog (id — classification — kind scope)
                                 calibration rule, #2276)
   c63 §9 declared GPU width vs  WARN-only, conditional    all kinds
       launch-fence width
+  c64 sampled exactness claim   WARN-only, conditional    all kinds
+      vs runtime-assert grain
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63) also SKIP when their content trigger does
-not fire.
+55, 56, 57, 58, 59, 61, 62, 63, 64) also SKIP when their content trigger
+does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -344,6 +346,11 @@ labeled-line forms):
     e.g. a narrow smoke launch beside a wide production provision; a plan
     genuinely dispatching N-wide through the fence instead adds
     `--gpus <N>` to it, or re-costs the §9 walls at the realized width)
+  - ``N/A — no sampled exactness claims`` (check 64 — the exactness
+    vocabulary is incidental or quotes an incident/sibling, not this
+    plan's own sampled exactness premise; a plan with a genuine sampled
+    exactness claim instead verifies it at full grain, or restates it as
+    a bound — "no deviation observed in N of M" — and softens the assert)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -12036,6 +12043,165 @@ def check_declared_width_vs_launch(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 64: sampled exactness claim vs runtime-assert grain (#2174) ─────
+# Origin: #2163 — plan §12 A11 asserted byte-identity / `n_distinct_rows = 1`
+# at `Confidence: High (measured)` from a 10-shard/706-row probe (0.5% of the
+# 142,000-row population), registered a Phase-0 full-store assert on it, and
+# the census died rc=1 on 258 deviating rows AFTER provisioning. A sample
+# only ever establishes "no counterexample observed in N of M", never "zero
+# counterexamples exist". Trigger + satisfier are text heuristics, so c64
+# SHIPS WARN-ONLY (the c34/c43/c63 posture); the binding gate is the Phase
+# 1.5 fact-checker EXACTNESS-CLAIM GRAIN CHECK (adversarial-planner
+# SKILL.md) + planner.md section 12's bound-restatement clause.
+
+#: Exactness-identity vocabulary on non-fenced lines. Deliberately narrow:
+#: a sampled VALUE claim (a lambda, a byte count, a key set) never matches,
+#: and the byte-identical arm is scoped to DATA nouns (rows/vectors/...)
+#: because the corpus's dominant `byte-identical` idiom is CODE-equality
+#: prose ("every existing caller byte-identical", "path must stay
+#: byte-identical", "byte-identical with no flags" — 2026-08-18 sweep),
+#: which asserts behavior preservation, not a sampled data identity; the
+#: noun scoping also drops negated uses ("(not byte-identical) endpoint
+#: sample").
+_C64_EXACTNESS_RE = re.compile(
+    r"\b(?:rows?|vectors?|shards?|files?|tensors?|copies)\b[^\n]{0,40}byte[- ]identical"
+    r"|byte[- ]identical[^\n]{0,40}\b(?:rows?|vectors?|shards?|files?|tensors?|copies)\b"
+    r"|n_distinct(?:_rows|_prefix)?\s*={1,2}\s*1\b"
+    r"|exactly zero"
+    r"|zero (?:cross-context )?variance"
+    r"|max\|[^|\n]{0,40}\|\s*=\s*0(?![.\d])"
+    r"|all pairwise[^\n]{0,40}=\s*1\.0+"
+    r"|EVERY row\b"
+    r"|\bno exceptions\b",
+)
+
+#: Sample-size markers near the exactness line — SAMPLING-EXPLICIT forms
+#: only ("10 sampled shards", "10-shard", "706-row sample", "a sample of
+#: 706", "706 of 142,000 rows"). Deliberately NOT bare "N rows"/"N shards":
+#: row counts and store-shard counts are ubiquitous in plan prose — the
+#: 2026-08-18 calibration sweep measured 227/4,331 corpus file-WARNs under
+#: the loose form (byte-identical GUARD/code-equality prose beside
+#: incidental row counts). The number atom uses proper thousands grouping
+#: so "137, sampled-quar" cannot read as "137 sampled".
+_C64_SAMPLE_RE = re.compile(
+    r"\b\d+(?:,\d{3})*[-\s]sampled\b"
+    r"|\b\d+(?:,\d{3})*-shard\b"
+    r"|\b\d+(?:,\d{3})*-row\s+(?:sample|probe|subset)\b"
+    r"|\b(?:sample|probe|subset)\s+of\s+\d+(?:,\d{3})*\b"
+    r"|\b\d+(?:,\d{3})*\s+of\s+\d+(?:,\d{3})*\s+(?:rows|shards)\b",
+    re.IGNORECASE,
+)
+
+#: Full-grain phrases — satisfy ONLY beside completed-verification
+#: vocabulary on the SAME line (see the deferred-verification veto).
+_C64_FULL_GRAIN_RE = re.compile(
+    r"full[- ]grain"
+    r"|over the full"
+    r"|entire (?:store|corpus|population|dataset)"
+    r"|all \d[\d,]* rows"
+    r"|full (?:staged )?(?:store|corpus|population|dataset)",
+    re.IGNORECASE,
+)
+
+#: Completed-verification vocabulary (the satisfier's second conjunct).
+_C64_COMPLETED_RE = re.compile(
+    r"\bverified\b|\bmeasured\b|\bconfirmed\b|\bcounted\b", re.IGNORECASE
+)
+
+#: Deferred-verification phrasing VETOES a full-grain phrase on its line:
+#: "Phase 0 re-asserts ... over the FULL staged store" is a deferral, not a
+#: completed verification — the #2163 A11 How-to-verify line itself (the
+#: founding incident MUST WARN; pinned by the verbatim-replay test).
+_C64_DEFERRED_RE = re.compile(
+    r"\bre-?asserts?\b|\bwill\b[^\n]{0,40}\bassert\b|\bre-?checks?\s+at\s+runtime\b",
+    re.IGNORECASE,
+)
+
+#: Bound restatement — the second remedy; window-level satisfier.
+_C64_BOUND_RE = re.compile(r"no (?:deviation|counterexample)s? observed in", re.IGNORECASE)
+
+
+def check_exactness_grain(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds, both modes: a non-fenced line
+    asserting an EXACT identity (byte-identical / ``n_distinct == 1`` /
+    exactly zero / zero variance / EVERY row / no exceptions /
+    ``max|.| = 0`` / all pairwise = 1.0) with a SAMPLE-SIZE marker in the
+    +-3-line window and NO satisfier there WARNs: a sample only ever
+    establishes "no counterexample observed in N of M", never "zero
+    counterexamples exist", so a runtime assert built on the exact claim
+    crashes at the first full-population read (#2163). Satisfiers,
+    window-level: (a) COMPLETED full-grain verification — a full-grain
+    phrase on a line that ALSO carries completed-verification vocabulary
+    (verified/measured/confirmed/counted) and NO deferred-verification
+    phrasing (re-asserts / will ... assert / re-checks at runtime: the
+    #2163 A11 "Phase 0 re-asserts ... over the FULL staged store" line is
+    a deferral and must NOT satisfy); (b) a bound restatement ("no
+    deviation observed in N of M rows"). Escape: the standalone
+    'N/A — no sampled exactness claims' line, unwrapped. NEVER FAILs (the
+    c34/c43 posture — trigger + satisfier are text heuristics; the
+    binding gate is the Phase 1.5 fact-checker EXACTNESS-CLAIM GRAIN
+    CHECK)."""
+    del kind  # all kinds: an infra plan's sampled exactness premise crashes the same way
+    cid, name = "c64_exactness_grain", "sampled exactness claim vs runtime-assert grain"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    hits: list[tuple[int, str]] = []
+    n_satisfied = 0
+    for i, line in enumerate(lines):
+        if mask[i]:
+            continue
+        m = _C64_EXACTNESS_RE.search(line)
+        if not m:
+            continue
+        lo, hi = max(0, i - 3), min(len(lines), i + 4)
+        window = [lines[j] for j in range(lo, hi) if not mask[j]]
+        if not any(_C64_SAMPLE_RE.search(w) for w in window):
+            continue
+        satisfied = False
+        for w in window:
+            if _C64_BOUND_RE.search(w):
+                satisfied = True
+                break
+            if (
+                _C64_FULL_GRAIN_RE.search(w)
+                and _C64_COMPLETED_RE.search(w)
+                and not _C64_DEFERRED_RE.search(w)
+            ):
+                satisfied = True
+                break
+        if satisfied:
+            n_satisfied += 1
+        else:
+            hits.append((i + 1, m.group(0)))
+    if not hits and not n_satisfied:
+        return _skip(cid, name, "no sampled exactness claim on non-fenced lines")
+    if not hits:
+        return _pass(
+            cid,
+            name,
+            f"every sampled exactness claim ({n_satisfied}) carries a window-level "
+            "satisfier (completed full-grain verification, or a bound restatement)",
+        )
+    if _standalone_na_declared(plan, r"no sampled exactness claims"):
+        return _pass(cid, name, "explicit N/A declared (no sampled exactness claims)")
+    lineno, token = hits[0]
+    more = f" (+{len(hits) - 1} more)" if len(hits) > 1 else ""
+    return _warn(
+        cid,
+        name,
+        f"line {lineno} asserts an EXACT identity ({token!r}) with a sample-size marker "
+        f"in the +-3-line window and no full-grain satisfier{more} — a sample only "
+        'establishes "no counterexample observed in N of M", never "zero counterexamples '
+        'exist", so a runtime assert built on it crashes at the first full-population '
+        "read (#2163: 706 of 142,000 rows probed; the full-store assert died on 258 "
+        "deviating rows, after provisioning). Verify at full grain NOW (often exactly "
+        "the read the asserting phase already performs), or restate the claim as a "
+        'bound ("no deviation observed in N of M rows") AND soften the assert to the '
+        "invariant the bound supports, or declare 'N/A — no sampled exactness claims' "
+        "on its own line, unwrapped (no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -12098,6 +12264,7 @@ CHECKS = [
     check_gpu_hours_token_conflict,
     check_slurm_mem_coverage,
     check_declared_width_vs_launch,
+    check_exactness_grain,
 ]
 
 

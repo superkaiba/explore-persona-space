@@ -578,6 +578,12 @@ violated premise is a plan defect — amend / re-scope BEFORE production,
 never leave it to the production assert. Full sub-rule + worked
 example: `planner-section-reference.md` § 12.
 
+An EXACTNESS claim (byte-identical / `n_distinct == 1` / zero variance /
+"every row") grounded on a SAMPLE is stated as a BOUND ("no deviation
+observed in N of M") unless verified at full grain; a runtime assert
+built on it demands only what the stated grain supports (#2163; full
+sub-rule: § 12 reference).
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md` § 12. Assumptions — read that section BEFORE writing.
 
 ## Goal-currency guard (re-read the Goal before returning — #922)
