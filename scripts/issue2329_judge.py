@@ -1005,22 +1005,49 @@ def phase_pilot(cfg: JudgeConfig) -> int:
     for rid, us in build_anchor_behavior_items(anchor_rows, pairs).items():
         beh.setdefault(rid, []).extend(us)
 
+    # 4th element = allow_subresolution_pilot, scoped PER FAMILY (#2124 guard).
+    # coherence + value-rubric are SATISFIABLE at 204 (measured 2026-08-17:
+    # verdict=PASS arms=4 draws=204 failures=0 for both), so they keep the
+    # config-time refusal ARMED — if their arm sizes ever regress below the
+    # rule-26(b) floor of 51 the guard must fail loud, not silently degrade to a
+    # sub-resolution read. This is deliberately STRICTER than the gate3pre call
+    # site, which passes the flag unconditionally.
+    #
+    # query-rubric is ITEM-LIMITED and no target_total_draws can fix it: its four
+    # realized arms hold 30 / 20 / 20 / 20 items against the 51 needed, and the
+    # production instrument is pinned at n_draws=1 (rules 23/26 — the pilot runs
+    # the EXACT production instrument, one draw per item). So it is checked at
+    # REALIZED CAPACITY. Two things this does NOT do: it does not loosen
+    # parse_fail_threshold (still 0.02, applied to whatever rate is observable),
+    # and it does not touch rule 26(a)'s truncation check, which _gate_verdict
+    # applies unconditionally. The honest residual is RESOLUTION: the parse-fail
+    # check for this family can only resolve 1/20 = 5.0% on the three 20-item
+    # arms and 1/30 = 3.33% on the anchor arm, NOT 2% — recorded per family below
+    # as parse_fail_resolution_pct and carried into the report as a caveat.
+    #
+    # NOTE: _family_min_effective_floor is deliberately NOT used here. It asserts
+    # a SINGLE-ARM precondition (a scalar floor compared against every arm would
+    # under-enforce the larger arms of a multi-arm family), and this family has
+    # four arms. It is not needed either: the default verdict floor
+    # min_effective_draws_per_arm=10 is cleared by every arm (smallest 20).
     fam_reps = {
-        "coherence": (J94.COHERENCE_RUBRIC_ID, coh, PILOT_TARGET_COHERENCE),
+        "coherence": (J94.COHERENCE_RUBRIC_ID, coh, PILOT_TARGET_COHERENCE, False),
         "value-rubric": (
             _family_representative(beh, registry, query_family=False),
             None,
             PILOT_TARGET_BEHAVIOR,
+            False,
         ),
         "query-rubric": (
             _family_representative(beh, registry, query_family=True),
             None,
             PILOT_TARGET_BEHAVIOR,
+            True,
         ),
     }
     per_family: dict[str, dict] = {}
     all_pass = True
-    for family, (rid, units, target) in fam_reps.items():
+    for family, (rid, units, target, allow_sub) in fam_reps.items():
         units = units if units is not None else beh[rid]
         J94._validate_units(units)
         arms: dict[str, list[tuple[str, str, str]]] = {}
@@ -1034,16 +1061,28 @@ def phase_pilot(cfg: JudgeConfig) -> int:
             save_raw_dir=cfg.raw_dir / "pilot" / rid,
             n_draws=JUDGE_N_DRAWS,
             target_total_draws=target,
+            allow_subresolution_pilot=allow_sub,
             judge_model=cfg.judge_model,
             report_path=cfg.gates_dir / "pilot" / f"{family}.json",
             seed=PILOT_SEED,
         )
+        # Item-capacity bound on what the parse-fail check can RESOLVE for this
+        # family: the smallest arm's realized draw count sets the smallest
+        # observable nonzero rate (1/n). Equals the rule-26(b) 2% target only
+        # when every arm holds >= 51 draws; recorded (not silently dropped) so
+        # the report can carry the sub-resolution caveat per family.
+        min_arm_draws = min(len(items) for items in arms.values()) * JUDGE_N_DRAWS
         per_family[family] = {
             "rubric_id": rid,
             "verdict": report.verdict,
             "failures": report.failures,
             "warnings": report.warnings,
             "n_total_draws": report.n_total_draws,
+            "subresolution_allowed": allow_sub,
+            "min_arm_capacity_draws": min_arm_draws,
+            "parse_fail_resolution_pct": round(100.0 / min_arm_draws, 4)
+            if min_arm_draws > 0
+            else None,
         }
         all_pass &= report.passed
         logger.info(
