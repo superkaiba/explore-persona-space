@@ -1283,7 +1283,7 @@ def run_all_pairs(
         if ckpt_path is not None and ckpt_path.exists():
             try:
                 prior = json.loads(ckpt_path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 prior = None
             if prior is not None and _ckpt_meta_satisfies(prior.get("meta"), meta):
                 out["pairs"][pair_key] = prior["arms"]
@@ -1545,7 +1545,7 @@ def run_pairs_generalized(
         if ckpt_path is not None and ckpt_path.exists():
             try:
                 prior = json.loads(ckpt_path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 prior = None
             if prior is not None and _ckpt_meta_satisfies(prior.get("meta"), meta):
                 out["pairs"][pair_key] = prior["arms"]

@@ -351,7 +351,7 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     except FileExistsError:
         try:
             rec = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError) as e:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
             raise RuntimeError(
                 f"unparseable claim file {path} — inconsistent claim state, refusing "
                 "to guess (delete it manually after diagnosing the writer)"
@@ -2586,7 +2586,7 @@ def _margin_state(cfg: RunConfig) -> dict:
     for p in sorted(cfg.manifest_dir.glob("margin_anchors_w*_done.json")):
         try:
             recs.append(json.loads(p.read_text()))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
     anchors_done = False
     for w in {int(r.get("num_workers", 0)) for r in recs}:

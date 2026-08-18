@@ -163,7 +163,7 @@ def _resume_skip_ok(spectra_path: Path, cell: AdapterCell, revision: str) -> boo
     """
     try:
         meta = json.loads(spectra_path.read_text()).get("meta") or {}
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         logger.warning(
             "resume invalid (unreadable spectra JSON) %s: %s — recomputing", spectra_path, exc
         )

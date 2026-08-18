@@ -182,7 +182,7 @@ def rejudge_read(
             if _HEX_CACHE_RE.match(f.name):
                 try:
                     rec = json.loads(f.read_text())
-                except (json.JSONDecodeError, OSError):
+                except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                     continue
                 if isinstance(rec, dict) and _is_529(rec):
                     f.unlink()

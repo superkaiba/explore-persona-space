@@ -221,7 +221,7 @@ def gate_slice_status(out_dir: Path) -> str:
     report_path = out_dir / "gate_report.json"
     try:
         report = json.loads(report_path.read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return "pending"
     if not report.get("chosen_rung"):
         return "gate_failed"
@@ -229,7 +229,7 @@ def gate_slice_status(out_dir: Path) -> str:
     for c in report.get("gate_contexts", []):
         try:
             json.loads((rollouts / f"{c}.json").read_text())
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             return "pending"
     return "ready"
 

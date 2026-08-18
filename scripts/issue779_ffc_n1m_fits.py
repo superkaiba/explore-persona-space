@@ -245,7 +245,7 @@ def _load_stream_ckpt(ckpt_dir: Path, layer: int, fingerprint: str, hf_prefix: s
         return None
     try:
         meta = json.loads(cur_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if (
         meta.get("fingerprint") != fingerprint
@@ -471,7 +471,7 @@ def _ml_load_cursor(mm_dir: Path) -> dict | None:
         return None
     try:
         return json.loads(cur.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
 
 

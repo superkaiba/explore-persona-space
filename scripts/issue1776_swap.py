@@ -793,7 +793,7 @@ def cmd_build(args) -> int:
     if report_path.exists() and not args.force:
         try:
             prior = json.loads(report_path.read_text()).get("inputs")
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             prior = None
         if prior == fp and (args.out_dir / "deltas.pt").exists():
             print(f"[swap-build] MATCHING fingerprint — skip (resume): {report_path}", flush=True)
@@ -1316,7 +1316,7 @@ def cmd_build_patch(args) -> int:
     if report_path.exists() and not args.force:
         try:
             prior = json.loads(report_path.read_text()).get("inputs")
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             prior = None
         if prior == fp and (args.out_dir / "patch_vectors.pt").exists():
             print(f"[patch-build] MATCHING fingerprint — skip (resume): {report_path}", flush=True)
@@ -3339,7 +3339,7 @@ def cmd_final_sentinel(args) -> int:
                 res = json.loads(success_path.read_text())
                 note["judge_triggered"] = res.get("judge_triggered")
                 note["judge_trigger_reads"] = res.get("judge_trigger_reads")
-            except (json.JSONDecodeError, OSError) as exc:
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
                 note["judge_triggered"] = f"unreadable ({exc})"
     payload = {
         "sentinel_schema_version": 1,

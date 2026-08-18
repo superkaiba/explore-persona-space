@@ -258,7 +258,7 @@ def _mover_done_count_advisory() -> str:
     try:
         st = json.loads(MOVER_STATE.read_text())
         return f"mover done-count={len(st.get('done', {}))} failed={len(st.get('failed', {}))}"
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return "mover state.json unavailable"
 
 
@@ -1303,7 +1303,7 @@ def _sizing_mode_hints(sizing_path: Path | None = None) -> dict[str, str]:
     )
     try:
         sizing = json.loads(p.read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return {}
     out: dict[str, str] = {}
     for prefix, info in (sizing.get("prefixes") or {}).items():

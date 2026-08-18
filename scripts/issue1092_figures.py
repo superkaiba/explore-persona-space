@@ -193,7 +193,7 @@ def _fingerprint_matches(meta_path: Path, fingerprint: str) -> bool:
         return False
     try:
         return _load_json(meta_path).get("input_fingerprint") == fingerprint
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
 
 

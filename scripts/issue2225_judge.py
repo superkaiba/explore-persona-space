@@ -307,7 +307,7 @@ def _unit_done(path: Path, fingerprint: dict) -> bool:
     try:
         with open(path, encoding="utf-8") as f:
             return json.load(f).get("unit_fingerprint") == fingerprint
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
 
 

@@ -492,7 +492,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     report["overlap_dedup"] = prior["overlap_dedup"]
                 done = [(t, lk) for t in report["transfer"] for lk in report["transfer"][t]]
                 _log(f"resume: reusing {len(done)} completed cells: {done}")
-        except (json.JSONDecodeError, OSError) as exc:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
             _log(f"resume: prior JSON unusable ({exc!r}); starting fresh")
 
     staged = T.stage_inputs(stage_args)
