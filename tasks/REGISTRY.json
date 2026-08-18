@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2373,
+  "highest_id": 2374,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10610,6 +10610,13 @@
       "path": "tasks/proposed/2373",
       "status": "proposed",
       "title": "Mechanize the shared-y heatmap tick-clobber check: sidecar image row counts + a verify_report gate"
+    },
+    "2374": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2374",
+      "status": "proposed",
+      "title": "Step 5a FAMILY_OF: couple .claude/rules/LESSONS.md with workflow_lint _LESSONS_* constants (same-diff pair split by family-atomic sync; 8 gate failures + 2h re-run in #2168)"
     },
     "238": {
       "has_clean_result": false,
