@@ -10593,8 +10593,8 @@
     "2371": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2371",
-      "status": "proposed",
+      "path": "tasks/planning/2371",
+      "status": "planning",
       "title": "guard_root_code_commit.sh: disarm text-detectable prefixed cwd-movers outside the NAME=value set (+= append-assignment, time/wrapper prefixes) + complete residual-note"
     },
     "2372": {
