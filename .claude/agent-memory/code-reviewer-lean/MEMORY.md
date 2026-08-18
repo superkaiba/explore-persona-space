@@ -34,3 +34,4 @@
 - [Stacked lint waivers vs read window](stacked_lint_waivers_read_window.md) — two waiver comments above one call push the outer to i-2, inert; `_`-prefixed local ports escape \b wrap regexes; certify via scanner probe on parent blob vs HEAD (#2330 R1 g4)
 - [vLLM-port terminal + self-ref parity](vllm_port_terminal_and_selfref_parity.md) — exception paths must reach os._exit; a self-emitted parity reference only certifies venv drift (#2330 R1 g1)
 - [Categorical rubric over numeric parse layer](categorical_rubric_numeric_parse_bridge.md) — mechanical 100/0/REFUSAL encoding + label-first reduce + audit counters; UNCLEAR dropped from n_valid (#2356 R3-2)
+- [Mechanical sweep commit review recipe](mechanical_sweep_commit_review_recipe.md) — 5 probes (ins/del arithmetic, rider awk, length awk, attr grep, residual-predicate grep) certify a many-file one-token sweep (#2168 R1 g2)
