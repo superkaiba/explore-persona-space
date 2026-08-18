@@ -114,15 +114,24 @@
 #   recognized cwd-moving record ANYWHERE in the armed chain after the
 #   canonical cd DISARMS the widening — a non-canonical cd (r3), and (r4)
 #   every record matching the cwd-mover family (pushd/popd, source/`.`,
-#   eval, builtin/command wrappers, quoted/escaped cd spellings) or the
+#   eval, builtin/command wrappers, quoted/escaped cd spellings — each
+#   also recognized (r5) behind ZERO-OR-MORE leading legal assignment
+#   prefixes (NAME=value pairs before the mover word), matched on the
+#   raw AND the masked record lead so a QUOTED assignment value cannot
+#   hide the prefix) or the
 #   retarget vocabulary (WT_CWD_ALLOW_SCREEN_ERE: `git -C`/`env -C`
 #   short dir wrappers, --chdir/--work-tree/--git-dir, GIT_DIR=-family
 #   assignments — even as a mention inside message text: conservative by
 #   design) — only a chain whose LAST recognized cwd-moving record before
 #   every commit is the literal absolute-root cd scopes; a later canonical
 #   arming cd re-establishes the base. UNRECOGNIZED movers remain a named
-#   residual of the widening: mid-word-quoted spellings (`pu'sh'd`) and a
-#   mover held in a variable ride an armed chain undetected (fail-open for
+#   residual of the widening: mid-word-quoted spellings (`pu'sh'd`), a
+#   mover held in a variable, a mover reached through a PREDEFINED shell
+#   function or alias (the invoked name carries no mover text — accepted
+#   text-unprovable indirection), and an assignment prefix whose VALUE
+#   the masker cannot flatten (a bare command-substitution value with
+#   internal whitespace, an array-form value) ride an armed chain
+#   undetected (fail-open for
 #   the widening ONLY — never wider than the pre-#2357 root-cwd behavior);
 #   compound/subshell contexts stay refused by D4 regardless. The symbolic
 #   ALIAS root spellings (~/explore-persona-space[/],
@@ -285,7 +294,23 @@ WT_CWD_ALLOW_SCREEN_ERE='--chdir|--work-tree|--git-dir|core\.worktree|GIT_(DIR|W
 # argument). The dot-source spelling lives HERE and not in the screen ERE:
 # lead-anchored, it cannot fire on the blanket-add-dot token the screen's
 # residual note protects.
-CWD_MOVER_LEAD_ERE='^["'\''\\]*(cd|pushd|popd|source|\.|eval|builtin|command)["'\''\\]*([[:space:]]|$)'
+# #2357 r5 (reconcile v4 — the same two concerns re-opened): a record
+# carrying leading legal ASSIGNMENT PREFIXES (NAME=value pairs before the
+# command word — bash still executes the suffixed mover) defeated the `^`
+# anchor, and dot-source is the ONE mover family with no whole-record
+# screen fallback (the lone dot stays deliberately unscreened above), so
+# an assignment-prefixed dot-source record rode an armed chain undisarmed
+# — the executed r4 false-allow. Fix: tolerate ZERO-OR-MORE NAME=value
+# prefixes before the WHOLE family alternation (uniform — the prefixed
+# cd/pushd/popd/source/dot/eval/builtin/command spellings all disarm
+# identically; the group is zero-width, so every pre-r5 match is
+# unchanged). The value class [^[:space:]]* is exact on THIS (raw) copy
+# only for unquoted values; the disarm site therefore ALSO greps the
+# MASKED lead, where a QUOTED value's interior (spaces included) is
+# spaceless filler — see the disarm-site note. The `builtin`/`command`
+# family members double as the wrapper path for dot-source: a
+# builtin-wrapped source record matches at the wrapper word itself.
+CWD_MOVER_LEAD_ERE='^([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*["'\''\\]*(cd|pushd|popd|source|\.|eval|builtin|command)["'\''\\]*([[:space:]]|$)'
 FILL=$'\001' # masker filler byte for string-literal interiors (never IFS, never a separator)
 # cd VARIABLE-target shape (issue #1676): exactly $NAME / ${NAME}, optionally
 # followed by a literal /suffix — the only unproven-target family eligible for
@@ -1073,13 +1098,26 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
     # whole-index — because narrowing it to pre-commit movers would trade
     # the D5 end-state belt (cd_root_seen=1 && cd_base_disarmed=0) for
     # per-commit snapshots, an allow-direction risk; do not "fix" this as
-    # a bug. NAMED RESIDUAL (fail-open for the widening, at-or-below
-    # origin/main behavior everywhere else): mover spellings the text
-    # cannot recognize — mid-word-quoted forms (`pu'sh'd`), a mover held
-    # in a variable ($X where X=pushd) — ride an armed chain undetected;
-    # compound/subshell contexts stay refused by D4 regardless.
+    # a bug. (r5, reconcile v4) The mover-family grep runs on BOTH lead
+    # copies: the RAW lead catches quoted/escaped MOVER words (which are
+    # filler on the masked copy), and the MASKED lead catches QUOTED
+    # assignment VALUES in the r5 prefix group — a quoted value's
+    # interior (spaces included) is spaceless filler on the masked copy,
+    # so the NAME=value prefix completes there while the raw text hides
+    # it. The union only ADDS disarm triggers (block direction). NAMED
+    # RESIDUAL (fail-open for the widening, at-or-below origin/main
+    # behavior everywhere else): mover spellings the text cannot
+    # recognize — mid-word-quoted forms (`pu'sh'd`), a mover held in a
+    # variable ($X where X=pushd), a mover reached through a PREDEFINED
+    # shell function or alias (the invoked name carries no mover text —
+    # accepted text-unprovable indirection), and an assignment prefix
+    # whose VALUE the masker cannot flatten (a bare command-substitution
+    # value with internal whitespace, an array-form value) — ride an
+    # armed chain undetected; compound/subshell contexts stay refused by
+    # D4 regardless.
     if [ "$cd_root_seen" = 1 ]; then
       if printf '%s' "$raw_lead" | grep -qE -e "$CWD_MOVER_LEAD_ERE" \
+        || printf '%s' "$lead" | grep -qE -e "$CWD_MOVER_LEAD_ERE" \
         || printf '%s' "$raw" | grep -qE -e "$WT_CWD_ALLOW_SCREEN_ERE"; then
         cd_root_seen=0 cd_base_disarmed=1
       fi
@@ -1814,6 +1852,30 @@ cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
     "$RFOR"
   run_case "A28 mover BEFORE arming cd still scopes (allow direction, #2357 r4)" 0 \
     "pushd scripts; cd $RFOR && git commit -m x -- tasks/t.md" \
+    "$RFOR" '' "$TMP"
+  # r5 (reconcile v4 — the same two concerns re-opened): leading legal
+  # ASSIGNMENT PREFIXES before a mover record defeated the ^-anchored
+  # family match, and dot-source has no whole-record-screen fallback —
+  # the executed r4 false-allow (B66: origin/main=2 / r4=0 / r5=2). B67
+  # pins the MASKED-lead arm (quoted assignment value — invisible on the
+  # raw text); B68 pins the builtin-wrapped dot-source path (family-
+  # covered since r4); B69 pins multi-assignment + a non-dot family
+  # member (uniform prefix group). A29 pins armed-only (an assignment-
+  # prefixed mover BEFORE the arming cd never disarms).
+  run_case "B66 assignment-prefixed dot-source riding armed chain disarms (#2357 r5)" 2 \
+    "cd $RFOR && FOO=bar . scripts/env.sh && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B67 quoted-value assignment-prefixed dot-source disarms (#2357 r5)" 2 \
+    "cd $RFOR && FOO=\"a b\" . scripts/env.sh && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B68 builtin-wrapped dot-source riding armed chain disarms (#2357 r5)" 2 \
+    "cd $RFOR && builtin . scripts/env.sh && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B69 multi-assignment-prefixed pushd riding armed chain disarms (#2357 r5)" 2 \
+    "cd $RFOR && A=1 B=2 pushd scripts && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "A29 assignment-prefixed mover BEFORE arming cd still scopes (#2357 r5)" 0 \
+    "FOO=bar . scripts/env.sh; cd $RFOR && git commit -m x -- tasks/t.md" \
     "$RFOR" '' "$TMP"
 
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---

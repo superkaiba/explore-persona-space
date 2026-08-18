@@ -1620,6 +1620,97 @@ def test_c30_noncd_mover_riding_armed_canonical_chain_blocked(
     )
 
 
+# --- c30b family (r5, reconcile epm:review-reconcile v4 — concerns
+# non-cd-cwd-mover-rides-armed-chain / unmodeled-cwd-mover-survives-scope-base
+# RE-OPENED): a record carrying a leading legal ASSIGNMENT PREFIX in front of
+# a mover defeated the ^-anchored CWD_MOVER_LEAD_ERE, and dot-source is the
+# ONE mover family with no whole-record-screen fallback (the lone dot is
+# deliberately unscreened), so the record rode the armed chain undisarmed.
+# Executed rc differential (hermetic blob probe, 2026-08-18, this fixture
+# shape): assign-prefixed dot-source AND its quoted-value variant were
+# origin/main=2, r4(22e76689e2)=0 (the round-introduced false-allow), r5=2.
+# The r5 fix tolerates zero-or-more NAME=value prefixes before the WHOLE
+# mover family (uniform, not dot-only), and the disarm site greps the MASKED
+# lead too: a QUOTED assignment value hides its interior space on the raw
+# text but is spaceless filler on the masked copy (the quoted-value param
+# below pins exactly that arm). builtin-dot-source pins the wrapper path
+# (family-covered since r4: the wrapper word itself matches).
+_C30B_PREFIXED_MOVERS = [
+    pytest.param("FOO=bar . scripts/env.sh", id="assign-dot-source"),  # the r4 crux
+    pytest.param('FOO="a b" . scripts/env.sh', id="quoted-value-assign-dot-source"),
+    pytest.param("A=1 B=2 . scripts/env.sh", id="multi-assign-dot-source"),
+    pytest.param("FOO=bar source scripts/env.sh", id="assign-source"),  # screen-covered control
+    pytest.param("FOO=bar pushd scripts", id="assign-pushd"),
+    pytest.param("FOO=bar eval 'cd scripts'", id="assign-eval-cd"),
+    pytest.param("builtin . scripts/env.sh", id="builtin-dot-source"),
+    pytest.param("FOO=bar builtin . scripts/env.sh", id="assign-builtin-dot-source"),
+]
+
+
+@pytest.mark.parametrize("mover", _C30B_PREFIXED_MOVERS)
+def test_c30b_assignment_prefixed_mover_riding_armed_chain_blocked(
+    mover: str, foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && {mover} && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+# The r5 assignment-prefix group, verbatim from CWD_MOVER_LEAD_ERE. Kept as a
+# module constant so the c30c revert-pin fails LOUD (count assert below) if
+# the fixed spelling ever drifts instead of silently pinning nothing.
+_R5_PREFIX_GROUP = "([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*"
+
+
+def test_c30c_prefix_group_is_load_bearing_prefixed_dot_source_permitted_without_it(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    """Regression proof the r4 hole was REAL: strip the r5 assignment-prefix
+    group out of a copy of the live guard — reconstructing the r3/r4
+    CWD_MOVER_LEAD_ERE spelling byte-for-byte — and assert that copy PERMITS
+    the assignment-prefixed dot-source crux (rc=0; the executed r4
+    false-allow: origin/main=2 / r4 blob 22e76689e2=0) while the fixed guard
+    BLOCKS the same command (rc=2, whole-index). A ``git show <r4-sha>:...``
+    blob pin is NOT durable here: Step 10d lands via rebase-merge, which
+    rewrites branch commit SHAs, so the pre-fix matcher is reconstructed
+    textually instead and the count assert fails loud on any drift."""
+    text = SCRIPT.read_text(encoding="utf-8")
+    assert text.count(_R5_PREFIX_GROUP) == 1, "fixed CWD_MOVER_LEAD_ERE spelling drifted"
+    r4_guard = tmp_path / "guard_r4_matcher.sh"
+    r4_guard.write_text(text.replace(_R5_PREFIX_GROUP, "", 1), encoding="utf-8")
+    r4_guard.chmod(0o755)
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    crux = f"cd {foreign_repo} && FOO=bar . scripts/env.sh && git commit -m x -- own.py"
+    _assert_allowed(_run(crux, foreign_repo, cert, script=r4_guard, cwd=foreign_repo / "scripts"))
+    _assert_blocked(_run(crux, foreign_repo, cert, cwd=foreign_repo / "scripts"))
+
+
+def test_c32b_assignment_prefixed_mover_before_arming_cd_still_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Allow pin (over-tightening protection, c32 sibling): the r5-widened
+    # disarm stays ARMED-ONLY — an assignment-prefixed dot-source BEFORE the
+    # arming canonical cd never disarms, and the pathspec still scopes past
+    # the foreign uncertified staged file.
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_allowed(
+        _run(
+            f"FOO=bar . scripts/env.sh; cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
 def test_c31_short_dashc_root_wrapper_on_commit_refuses_scoping(
     foreign_repo: Path, cert: Path
 ) -> None:
