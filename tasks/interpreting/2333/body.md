@@ -59,7 +59,7 @@ relates_to:
 | Judge | `claude-sonnet-4-5-20250929`, graded 0–100, Batch API (~50 shards/leg, 0 errored rows), `max_tokens` 1024; pilot gate + 6-item forced-batch probe passed before production waves | `scripts/issue2333_judge.py`; `judge_{q25,q35}/gates/` |
 | Coherence gate | form-only rubric; coherent = score > 60; F computed over coherent draws only | parent constant (`issue2162_analysis.py`) |
 | Statistics | exact two-sided paired signed-rank test on per-pair steered−null differences, Holm-corrected at fixed family size 12; pair-clustered bootstrap, B=10,000, seed 23330; majority-share read D3 = F_prefill3 − 0.5·F_control with pair-clustered CI | plan §3/§6; `scripts/issue2333_analysis.py` |
-| Mediation-donor divergence check | first-k tokens of each mediated donor vs the base context's own greedy opening, from the committed donor tensors (both greedy captures at HF revision `ab9e72d55e`) | plan §8; `scripts/issue2333_mediation_divergence.py` |
+| Mediation-donor divergence check | binary any-difference read: first-k tokens of each mediated donor vs the base context's own greedy opening, from the committed donor tensors (both greedy captures at HF revision `ab9e72d55e`); matched-query coverage 5 of 15 pairs per model — bare contexts never serve as donors, so their greedy floor openings were not captured | plan §8; `scripts/issue2333_mediation_divergence.py` |
 | Exclusions | anchor separation ≥ 0.5 required; per-cell survival floor 12 of 36 (instruction-format), set floor 5 (matched-query, confirmatory subset = the 10 banked well-separated pairs) | parent rule, plan §6 |
 | Activation DV read layer | 26 (Qwen2.5) / 30 (Qwen3.5) | plan §6 |
 | Compute | pod-2333-q25 (8× H100, ~3.2 h); pod-2333-q35 (8× H100, ~5.1 h final round) | run markers |
@@ -114,35 +114,49 @@ Disclosure: 12 of 3,900 three-position state-patch (patch-content donor) grid ro
 
 </details>
 
-Disclosure: 12 of 300 matched-query three-token-prefill (patch-content donor) rows — a random sample (seed 42) per model × steered/null pool, not selected on movement. Full rows under the same rollouts trees (`s2_matched_query` blocks).
+Disclosure: 6 of 1,950 Qwen3.5 three-position state-patch rows with natural-opening donors — a random sample at the same seed-42 (pair, draw) slots as the state-patch block above, not selected on movement, so rows are matched across donor schemes; responses truncated; judge scores are the whole-response read. Full rows: same q35 rollouts tree (`*__patch3_bstart__*` blocks).
+
+<details>
+<summary>Natural-opening state-patch worked examples — 3 steered + 3 null, Qwen3.5 (three-position patch, target's-own-opening donors; note the same corrupted seams)</summary>
+
+- steered, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — natural donor opening `1. Start`; judge base 0 / donor 95 / coherence 92. Response (truncated): "Understanding. Pause by taking a quiet moment for yourself to reflect on what truly feels meaningful, rather than simply reacting to external expectations or immediate trends. 2. Consider keeping a journal…"
+- steered, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — natural donor opening `1. Start`; judge base 0 / donor 100 / coherence 92. Response (truncated): "Understanding. Pause a regular reflective journal to capture your immediate thoughts, feelings, and desires without judgment. 2. Engage in quiet moments of meditation or solitude…"
+- steered, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — natural donor opening `It is a`; judge base 10 / donor 100 / coherence 95. Response (truncated): "- is a tale that contradicts the very thing Peter Parker believes in most deeply. He could not rob the bank. He was the guardian of New York…"
+- null, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — shuffled donor opening `*   Jon`; judge base 75 / donor 0 / coherence 100. Response (truncated): "Understanding The Jon asks me to avoid lists and emojis while keeping a friendly tone. *   He wants to know how to understand what he wants…"
+- null, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — shuffled donor opening `- Voldemort uses`; judge base 0 / donor 15 / coherence 100. Response (truncated): "Understanding Sending casts a mind control curse to force your hands to write down what you've been secretly dreaming of…"
+- null, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — shuffled donor opening `1. Voldemort`; judge base 100 / donor 0 / coherence 85. Response (truncated): "-. Voldemort could attempt to use his hypnotic voice to command the tellers to hand over the money while he silently walks out the vault door…"
+
+</details>
+
+Disclosure: 12 of 300 matched-query three-token-prefill (patch-content donor) rows — a random sample (seed 42) per model × steered/null pool, not selected on movement; judge scores are the whole-response read, and interior omissions in quoted text are marked “[…]”. Full rows under the same rollouts trees (`s2_matched_query` blocks).
 
 <details>
 <summary>Matched-query worked examples — 3 steered + 3 null per model (three-token prefill; most steered rows stay base-side)</summary>
 
 - Qwen2.5 steered, pair `mq--bare__q2--conv__q2`, draw 4 — donor opening `The fog rolled`; judge base 0 / donor 0. Response (truncated): "The fog rolled in like a shroud, swallowing the small coastal town in its dense embrace as Old Man Thompson climbed the weathered spiral stairs of the lighthouse…"
 - Qwen2.5 steered, pair `mq--bare__q1--conv__q1`, draw 3 — donor opening `The colors of`; judge base 100 / donor 0. Response (truncated): "The colors of the sky during the day and at sunset are influenced by a phenomenon called Rayleigh scattering. Here's a simplified explanation of why this happens…"
-- Qwen2.5 steered, pair `mq--bare__q4--persona__q4`, draw 0 — donor opening `Arrr,`; judge base 0 / donor 75. Response (truncated): "Arrr, ye be askin' bout the mighty hash table! Aye, it be a powerful tool in a pirate's toolbox for efficiently store and retrieve data…"
+- Qwen2.5 steered, pair `mq--bare__q4--persona__q4`, draw 0 — donor opening `Arrr,`; judge base 0 / donor 55. Response (truncated): "Arrr, ye be askin' bout the mighty hash table! Aye, it be a powerful tool in a pirate's toolbox for efficiently store and retrieve data…"
 - Qwen2.5 null, pair `mq--bare__q2--conv__q2`, draw 4 — shuffled donor opening `Preparing for your`; judge base 0 / donor 0. Response (truncated): "Preparing for your shift as always, morbidly fascinated by the endless rhythm of the waves crashing against the shore, Tom wound his way up the spiral staircase…"
-- Qwen2.5 null, pair `mq--bare__q1--conv__q1`, draw 3 — shuffled donor opening `Preparing for your`; judge base 100 / donor 0. Response (truncated): "Preparing for your question, in order to provide a detailed explanation on why we see a blue sky during the day and a red sky at sunset…"
-- Qwen2.5 null, pair `mq--bare__q4--persona__q4`, draw 0 — shuffled donor opening `Ah, the`; judge base 75 / donor 0. Response (truncated): "Ah, the humble hash table! A powerful data structure that can greatly enhance the efficiency of your data storage and retrieval processes…"
+- Qwen2.5 null, pair `mq--bare__q1--conv__q1`, draw 3 — shuffled donor opening `Preparing for your`; judge base 85 / donor 0. Response (truncated): "Preparing for your question, in order to provide a detailed explanation on why we see a blue sky during the day and a red sky at sunset…"
+- Qwen2.5 null, pair `mq--bare__q4--persona__q4`, draw 0 — shuffled donor opening `Ah, the`; judge base 72 / donor 0. Response (truncated): "Ah, the humble hash table! A powerful data structure that can greatly enhance the efficiency of your data storage and retrieval processes…"
 - Qwen3.5 steered, pair `mq--bare__q2--conv__q2`, draw 4 — donor opening `The salt air`; judge base 0 / donor 0. Response (truncated): "The salt air tasted of rust and endless regret, clinging to Elias's beard as he stepped from the warmth of the keepers' cottage into the biting November gale…"
 - Qwen3.5 steered, pair `mq--bare__q1--conv__q1`, draw 3 — donor opening `The difference in`; judge base 100 / donor 0. Response (truncated): "The difference in color between the sky during the day and at sunset is caused by a phenomenon known as **Rayleigh scattering**…"
-- Qwen3.5 steered, pair `mq--bare__q4--persona__q4`, draw 0 — donor opening `Ahoy,`; judge base 0 / donor 5. Response (truncated): "Ahoy, Captain! Aye, let's delve into the nautical waters of **hash tables**! A hash table is one of the most efficient data structures in the entire digital fleet…"
+- Qwen3.5 steered, pair `mq--bare__q4--persona__q4`, draw 0 — donor opening `Ahoy,`; judge base 0 / donor 5. Response (truncated): "Ahoy, Captain! Aye, let's delve into the nautical waters of **hash tables**! […] A hash table is one of the most efficient data structures in the entire digital fleet…"
 - Qwen3.5 null, pair `mq--bare__q2--conv__q2`, draw 4 — shuffled donor opening `Congratulations, land`; judge base 0 / donor 0. Response (truncated): "Congratulations, landlubbers! Welcome to the world of the Culver Island Light. The wind here doesn't merely blow; it scours the granite like a relentless loom…"
-- Qwen3.5 null, pair `mq--bare__q1--conv__q1`, draw 3 — shuffled donor opening `Congratulations on landing`; judge base 5 / donor 5. Response (truncated): "Congratulations on landing! We're thrilled to have you. Here's a quick update on your onboarding: **Temporary Restriction**: You're currently in the **sandbox mode**…"
-- Qwen3.5 null, pair `mq--bare__q4--persona__q4`, draw 0 — shuffled donor opening `Aye,`; judge base 15 / donor 0. Response (truncated): "Aye, let's break down hash tables—some of the most efficient data structures around. I'll explain how they work and when to use them, keeping it practical and clear…"
+- Qwen3.5 null, pair `mq--bare__q1--conv__q1`, draw 3 — shuffled donor opening `Congratulations on landing`; judge base 5 / donor 0. Response (truncated): "Congratulations on landing! We're thrilled to have you. […] Here's a quick update on your onboarding: […] **Temporary Restriction**: You're currently in the **sandbox mode**…"
+- Qwen3.5 null, pair `mq--bare__q4--persona__q4`, draw 0 — shuffled donor opening `Aye,`; judge base 25 / donor 0. Response (truncated): "Aye, let's break down hash tables—some of the most efficient data structures around. I'll explain how they work and when to use them, keeping it practical and clear…"
 
 </details>
 
-Disclosure: 6 of 1,950 Qwen3.5 three-token-prefill (patch-content donor) rows — a random sample (seed 42) drawn without regard to movement, complementing the cherry-picked block above; it includes unmoved steered draws and one incoherent null. Full rows: same q35 rollouts tree.
+Disclosure: 6 of 1,950 Qwen3.5 three-token-prefill (patch-content donor) rows — a random sample (seed 42) drawn without regard to movement, complementing the cherry-picked block above; it includes unmoved steered draws and one incoherent null; judge scores are the whole-response read. Full rows: same q35 rollouts tree.
 
 <details>
 <summary>Qwen3.5 random-draw examples — 3 steered + 3 null (three-token prefill, patch-content donors; mixed outcomes)</summary>
 
-- steered, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — donor opening `1. Understanding`; judge base 100 / donor 0 (unmoved). Response (truncated): "1. Understanding what you truly want is often a journey of gentle self-discovery rather than a sudden moment of clarity, so take a deep breath…"
+- steered, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — donor opening `1. Understanding`; judge base 95 / donor 15 (unmoved). Response (truncated): "1. Understanding what you truly want is often a journey of gentle self-discovery rather than a sudden moment of clarity, so take a deep breath…"
 - steered, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — donor opening `1. Take`; judge base 0 / donor 100 (moved). Response (truncated): "1. Take time to pause and reflect on your core values 2. Write down what feels meaningful in different situations 3. Seek feedback from trusted friends…"
-- steered, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — donor opening `It is impossible`; judge base 95 / donor 15 (unmoved). Response (truncated): "It is impossible to write a story where Spider-Man robs a bank because as a guardian hero, his entire existence is dedicated to protecting people…"
-- null, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — shuffled donor opening `*   Jon`; judge base 100 / donor 0. Response (truncated): "*   Jon in  Hey there! Understanding what you want is a wonderful journey of self-discovery, and while it might feel a bit like navigating a maze…"
+- steered, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — donor opening `It is impossible`; judge base 85 / donor 30 (unmoved). Response (truncated): "It is impossible to write a story where Spider-Man robs a bank because as a guardian hero, his entire existence is dedicated to protecting people…"
+- null, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — shuffled donor opening `*   Jon`; judge base 92 / donor 0. Response (truncated): "*   Jon in  Hey there! Understanding what you want is a wonderful journey of self-discovery, and while it might feel a bit like navigating a maze…"
 - null, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — shuffled donor opening `- Voldemort uses`; judge base 0 / donor 0 / coherence 5 (dropped by the coherence gate). Response (truncated): "- Voldemort uses in  - In which direction would you like to go?  - How can I help you learn more about yourself?…"
 - null, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — shuffled donor opening `1. Voldemort`; judge base 100 / donor 0. Response (truncated): "1. Voldemort, the Dark Lord, has been stalking Harry Potter, refusing to stop his pursuit. He tries multiple times to escape from Hogwarts…"
 
@@ -186,21 +200,23 @@ Recovery ratio (arm F over same-wave control F) versus opening positions, prefil
 
 ![Qwen2.5 recovery ratio versus opening length, prefill vs state-patch arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/recovery_ratio_q25.png)
 
-> **Figure.** *Mediated prefills grow with opening length on Qwen2.5; mediated state patches plateau.* Instruction-format, patch-content donors: prefill 0.48 / 0.65 / 0.67 vs patch 0.50 / 0.54 / 0.54 at one to three positions. The Qwen3.5 mediated prefill trace is non-monotone — 0.40 / 0.77 / 0.71, peaking at two tokens (next figure).
+> **Figure.** *Mediated prefills grow with opening length on Qwen2.5; mediated state patches plateau.* Instruction-format, patch-content donors: prefill 0.48 / 0.65 / 0.67 vs patch 0.50 / 0.54 / 0.54 at one to three positions. The Qwen3.5 mediated prefill trace is non-monotone — 0.40 / 0.77 / 0.71, peaking at two tokens (next figure). Per-pair traces: `k_traces_q25.png`, `scheme_contrast_q25.png`, same pin.
 
-The plan's auxiliary expectation — state patches, which also perturb KV entries, should recover at least as much as prefills under mediation — is reversed beyond one position; the Qwen3.5 two-to-three-token decline is a point-estimate read with no paired comparison behind it. Qwen3.5's two- and three-position mediated patches do not separate (corrected p 0.24 and 0.32): their norm-matched wrong-pair nulls already move behavior to F 0.21–0.23, and patched openings often decode as corrupted fragments (state-patch sample block), so this reads as failure to establish an effect under this patch implementation, not evidence the transplanted states carry nothing.
+The plan's auxiliary expectation that state patches recover at least as much as prefills under mediation is reversed beyond one position; the Qwen3.5 two-to-three-token decline is a point-estimate read without a paired comparison. Qwen3.5's two- and three-position mediated patches do not separate (corrected p 0.24 and 0.32): their norm-matched nulls already move behavior to F 0.21–0.23, and patched openings often decode as corrupted fragments (state-patch sample block) — failure to establish an effect under this implementation, not evidence the transplanted states carry nothing.
 
-The mediation-donor manipulation check passes: mediated donor openings differ from the base context's own greedy opening on 92–94% (Qwen2.5) and 98–100% (Qwen3.5) of surviving pairs at every length, so the prefill rise is not an artifact of growing donor divergence. Per-pair traces: `k_traces_q25.png`, `scheme_contrast_q25.png`, same pin.
+The mediation-donor check passes on the instruction-format set: mediated openings differ from the base context's greedy opening on 92–94% (Qwen2.5) and 98–100% (Qwen3.5) of surviving pairs at every length, so the rise is not explained by donors collapsing into the base opening — though this binary read leaves graded donor distance unmeasured. Matched-query coverage: 5 of 15 pairs per model.
 
-### Natural-opening state patches restore the full context-end effect on Qwen3.5
+### Natural-opening state patches recover an estimated 100–105% of the control effect on Qwen3.5
 
 The same recovery-ratio read for Qwen3.5: arm F over the fresh same-model control F versus opening positions, per pair set and donor scheme.
 
-![Qwen3.5 recovery ratio versus opening length, natural-opening state patches at the control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/recovery_ratio_q35.png)
+![Qwen3.5 recovery ratio versus opening length, natural-opening state-patch point estimates at the control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/recovery_ratio_q35.png)
 
-> **Figure.** *Natural-opening state patches sit at the control band.* Instruction-format, natural-opening donors: state-patch recovery 1.00 / 1.03 / 1.05 across one to three positions, every arm separating from its null; prefills with the same donors reach 0.97 at three tokens.
+> **Figure.** *Natural-opening state-patch point estimates sit at the control band.* Instruction-format, natural-opening donors: state-patch recovery ratio 1.00 / 1.03 / 1.05 across one to three positions, pair-clustered ratio CIs 0.83 to 1.20 / 0.86 to 1.22 / 0.88 to 1.24, every arm separating from its null; prefills with the same donors reach 0.97 at three tokens.
 
-These are the strongest arms in the whole Qwen3.5 lattice, and their activation companion separates too. Qwen2.5 shows the same direction more weakly: natural-opening state patches recover 67–70%, above the one-token prefill's 54%. Transplanted hidden states therefore do carry the effect when they encode the target's own natural opening — the token-beats-state contrast of the previous section is specific to patch-content donors, and the token-identity takeaway is scoped accordingly.
+These are the strongest arms in the whole Qwen3.5 lattice, and their activation companion separates too. Each arm's pair-clustered ratio CI includes 1, so control-level recovery is a point estimate, not a tested equivalence — the data remain compatible with partial restoration. The corrupted-opening seam appears in these arms too (natural-opening sample block), yet they sit at the control band, which weakens seam corruption as an explanation of the mediated patches' shortfall.
+
+Qwen2.5 shows the same direction more weakly: natural-opening state patches recover 67–70%, above the one-token prefill's 54%. Transplanted hidden states therefore do carry the effect when they encode the target's own natural opening — the token-beats-state contrast of the previous section is specific to patch-content donors.
 
 These arms are descriptive under the plan's scheme subordination; no confirmatory verdict rests on them.
 
