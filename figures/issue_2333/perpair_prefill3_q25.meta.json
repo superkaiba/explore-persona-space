@@ -1,0 +1,1387 @@
+{
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "48de85816c0a44d8",
+  "git_commit": "c9a0c9ec",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
+  ],
+  "created": "2026-08-18T05:57:33Z",
+  "figsize": [
+    4.6,
+    4.2
+  ],
+  "points": [
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.46,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5076142131979695,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0025062656641603475,
+      "behavioral movement F \u2014 steered (true donor)": 0.9097744360902256,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.05714285714285723,
+      "behavioral movement F \u2014 steered (true donor)": -0.05714285714285723,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.07500000000000001,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.018867924528301844,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.11103701233744584,
+      "behavioral movement F \u2014 steered (true donor)": -0.0030010003334444172,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.0647517039922103,
+      "behavioral movement F \u2014 steered (true donor)": 0.4259980525803311,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.2961762799740764,
+      "behavioral movement F \u2014 steered (true donor)": 0.08619572261827611,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.2,
+      "behavioral movement F \u2014 steered (true donor)": 0.315,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0050000000000000044,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.8638655462184874,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.032640949554896104,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5617128463476071,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5727554179566563,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.3022670025188917,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.51,
+      "behavioral movement F \u2014 steered (true donor)": 0.9299999999999999,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.3499999999999999,
+      "behavioral movement F \u2014 steered (true donor)": -0.04374999999999997,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.418705035971223,
+      "behavioral movement F \u2014 steered (true donor)": 0.7755395683453238,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.4751286449399657,
+      "behavioral movement F \u2014 steered (true donor)": 1.020583190394511,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.9257798494083901,
+      "behavioral movement F \u2014 steered (true donor)": -0.04230907135173907,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 1.0,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5289672544080605,
+      "behavioral movement F \u2014 steered (true donor)": 0.9773299748110832,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.056603773584905655,
+      "behavioral movement F \u2014 steered (true donor)": 1.1308176100628933,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.10240963855421685,
+      "behavioral movement F \u2014 steered (true donor)": 1.0180722891566265,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.01180637544273908,
+      "behavioral movement F \u2014 steered (true donor)": 0.022432113341204252,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.4523809523809526,
+      "behavioral movement F \u2014 steered (true donor)": 0.8174603174603178,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.2222222222222222,
+      "behavioral movement F \u2014 steered (true donor)": 0.22222222222222224,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.030769230769230767,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.3545454545454546,
+      "behavioral movement F \u2014 steered (true donor)": 0.9000000000000002,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.4102564102564103,
+      "behavioral movement F \u2014 steered (true donor)": 1.041025641025641,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.05213270142180096,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.07547169811320777,
+      "behavioral movement F \u2014 steered (true donor)": -0.0880503144654089,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.09036144578313247,
+      "behavioral movement F \u2014 steered (true donor)": 0.2590361445783133,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.021251475796930364,
+      "behavioral movement F \u2014 steered (true donor)": 1.0280401416765053,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.13492063492063527,
+      "behavioral movement F \u2014 steered (true donor)": -0.03968253968254008,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.013333333333333345,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.4615384615384614,
+      "behavioral movement F \u2014 steered (true donor)": 0.09230769230769222,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.4818181818181817,
+      "behavioral movement F \u2014 steered (true donor)": -0.1000000000000001,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.88,
+      "behavioral movement F \u2014 steered (true donor)": -0.10256410256410255,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.23696682464454977,
+      "behavioral movement F \u2014 steered (true donor)": 0.9478672985781991,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.05499999999999999,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.0152284263959391,
+      "behavioral movement F \u2014 steered (true donor)": 0.9340101522842639,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 1.0025062656641606,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.10571428571428569,
+      "behavioral movement F \u2014 steered (true donor)": 1.0571428571428572,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.26000000000000006,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.005390835579514829,
+      "behavioral movement F \u2014 steered (true donor)": 1.0026954177897573,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.03896103896103894,
+      "behavioral movement F \u2014 steered (true donor)": 0.8961038961038962,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.02467489163054357,
+      "behavioral movement F \u2014 steered (true donor)": 0.16722240746915637,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.1621226874391431,
+      "behavioral movement F \u2014 steered (true donor)": 0.5065238558909445,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.08425145819831503,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.05499999999999999,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.3264094955489614,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.3476070528967255,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5201238390092879,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.43073047858942065,
+      "behavioral movement F \u2014 steered (true donor)": -0.0025188916876574333,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.18,
+      "behavioral movement F \u2014 steered (true donor)": 0.2,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.21874999999999997,
+      "behavioral movement F \u2014 steered (true donor)": 0.002499999999999933,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.02302158273381297,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.020583190394511168,
+      "behavioral movement F \u2014 steered (true donor)": 0.10806174957118352,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.08712800286841156,
+      "behavioral movement F \u2014 steered (true donor)": -0.0032269630692005054,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.4584382871536524,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.06801007556675064,
+      "behavioral movement F \u2014 steered (true donor)": 0.0075566750629723,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.12919896640826872,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0050000000000000044,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.20999999999999996,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.020000000000000018,
+      "behavioral movement F \u2014 steered (true donor)": 0.007000000000000006,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.12306731219740748,
+      "behavioral movement F \u2014 steered (true donor)": -0.12306731219740748,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.05066666666666665,
+      "behavioral movement F \u2014 steered (true donor)": 0.05599999999999999,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.12359550561797751,
+      "behavioral movement F \u2014 steered (true donor)": 0.10112359550561795,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.38235294117647056,
+      "behavioral movement F \u2014 steered (true donor)": 0.8644501278772379,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.6285714285714284,
+      "behavioral movement F \u2014 steered (true donor)": 0.7371428571428572,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.032581453634085135,
+      "behavioral movement F \u2014 steered (true donor)": 0.9899749373433585,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5535714285714286,
+      "behavioral movement F \u2014 steered (true donor)": 0.9583333333333333,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.73,
+      "behavioral movement F \u2014 steered (true donor)": 0.138,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.395,
+      "behavioral movement F \u2014 steered (true donor)": 0.58,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5320334261838441,
+      "behavioral movement F \u2014 steered (true donor)": 0.5877437325905294,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.22339082877576777,
+      "behavioral movement F \u2014 steered (true donor)": 0.9680269246949936,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.2385786802030457,
+      "behavioral movement F \u2014 steered (true donor)": 0.9593908629441624,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.979088471849866,
+      "behavioral movement F \u2014 steered (true donor)": 0.0053619302949062305,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.6066838046272494,
+      "behavioral movement F \u2014 steered (true donor)": 0.5398457583547559,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5228794642857143,
+      "behavioral movement F \u2014 steered (true donor)": -0.0044642857142857435,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.18500000000000003,
+      "behavioral movement F \u2014 steered (true donor)": 0.765,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.011764705882352941,
+      "behavioral movement F \u2014 steered (true donor)": 1.1058823529411765,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.8020833333333334,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.9847715736040609,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.02,
+      "behavioral movement F \u2014 steered (true donor)": 0.64,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.053475935828877004,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.4084919472913616,
+      "behavioral movement F \u2014 steered (true donor)": 0.9487554904831624,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.006622516556291391,
+      "behavioral movement F \u2014 steered (true donor)": 1.1721854304635764,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.10714285714285716,
+      "behavioral movement F \u2014 steered (true donor)": -0.3928571428571429,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.9743589743589743,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.08,
+      "behavioral movement F \u2014 steered (true donor)": 0.925,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.04500000000000004,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.41200000000000003,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.11853448275862072,
+      "behavioral movement F \u2014 steered (true donor)": -0.12428160919540233,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.30463144161774297,
+      "behavioral movement F \u2014 steered (true donor)": -0.30463144161774297,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.07500000000000001,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.02010050251256283,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.6153846153846154,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.31722054380664655,
+      "behavioral movement F \u2014 steered (true donor)": 0.9818731117824773,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5949367088607594,
+      "behavioral movement F \u2014 steered (true donor)": 0.6,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5652173913043478,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.16000000000000003,
+      "behavioral movement F \u2014 steered (true donor)": 0.07,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.39375,
+      "behavioral movement F \u2014 steered (true donor)": 0.925,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.9971098265895955,
+      "behavioral movement F \u2014 steered (true donor)": 0.9739884393063585,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.2523961661341853,
+      "behavioral movement F \u2014 steered (true donor)": 0.8722044728434505,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.10099999999999998,
+      "behavioral movement F \u2014 steered (true donor)": 0.87,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.07780979827089332,
+      "behavioral movement F \u2014 steered (true donor)": -0.04322766570605192,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.4629156010230178,
+      "behavioral movement F \u2014 steered (true donor)": 0.805626598465473,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5313283208020051,
+      "behavioral movement F \u2014 steered (true donor)": 0.987468671679198,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.2153846153846154,
+      "behavioral movement F \u2014 steered (true donor)": 0.9641025641025642,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 1.0052910052910053,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.7931034482758621,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.13333333333333333,
+      "behavioral movement F \u2014 steered (true donor)": 0.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.02551020408163265,
+      "behavioral movement F \u2014 steered (true donor)": 0.8826530612244898,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.07239819004524889,
+      "behavioral movement F \u2014 steered (true donor)": 0.1809954751131222,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.09715370018975335,
+      "behavioral movement F \u2014 steered (true donor)": 0.8652751423149907,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.21108490566037735,
+      "behavioral movement F \u2014 steered (true donor)": 1.338443396226415,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.18,
+      "behavioral movement F \u2014 steered (true donor)": 0.42,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0,
+      "behavioral movement F \u2014 steered (true donor)": 0.9834254143646408,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.005376344086021518,
+      "behavioral movement F \u2014 steered (true donor)": 1.0053763440860217,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.003747323340470976,
+      "behavioral movement F \u2014 steered (true donor)": 0.0016059957173448142,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.0051948051948052,
+      "behavioral movement F \u2014 steered (true donor)": 0.02909090909090912,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.006788511749347322,
+      "behavioral movement F \u2014 steered (true donor)": 0.06527415143603144,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.03369756246656977,
+      "behavioral movement F \u2014 steered (true donor)": 0.006647818445786017,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.027732463295269252,
+      "behavioral movement F \u2014 steered (true donor)": 0.34747145187601947,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.07304785894206561,
+      "behavioral movement F \u2014 steered (true donor)": 1.0,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.02103642893791684,
+      "behavioral movement F \u2014 steered (true donor)": 0.004617752693689075,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.004832214765100675,
+      "behavioral movement F \u2014 steered (true donor)": 0.15302013422818794,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.108729743857815,
+      "behavioral movement F \u2014 steered (true donor)": 0.2341871406168322,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.017214397496087594,
+      "behavioral movement F \u2014 steered (true donor)": 0.1027647365675535,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.0058729311265350356,
+      "behavioral movement F \u2014 steered (true donor)": 0.012279765082754891,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.0034482758620689876,
+      "behavioral movement F \u2014 steered (true donor)": -0.008620689655172382,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5111228813559322,
+      "behavioral movement F \u2014 steered (true donor)": 0.9984110169491525,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.274442538593482,
+      "behavioral movement F \u2014 steered (true donor)": 0.9834190966266437,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.564681724845996,
+      "behavioral movement F \u2014 steered (true donor)": 0.982546201232033,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.6360097644652636,
+      "behavioral movement F \u2014 steered (true donor)": 0.9744672428580854,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.24710830704521555,
+      "behavioral movement F \u2014 steered (true donor)": 0.09463722397476337,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.6987341772151898,
+      "behavioral movement F \u2014 steered (true donor)": 0.8962025316455696,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.6596306068601583,
+      "behavioral movement F \u2014 steered (true donor)": 0.9762532981530341,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.3733064283655232,
+      "behavioral movement F \u2014 steered (true donor)": 1.0824445085038914,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.49753963914707494,
+      "behavioral movement F \u2014 steered (true donor)": 0.9322033898305085,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.655367231638418,
+      "behavioral movement F \u2014 steered (true donor)": 0.8135593220338982,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.46315789473684205,
+      "behavioral movement F \u2014 steered (true donor)": 0.994736842105263,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.5376884422110553,
+      "behavioral movement F \u2014 steered (true donor)": 0.9849246231155778,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.04469273743016759,
+      "behavioral movement F \u2014 steered (true donor)": 0.9094972067039105,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.02705515088449532,
+      "behavioral movement F \u2014 steered (true donor)": 0.8740894901144642,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.012269938650306747,
+      "behavioral movement F \u2014 steered (true donor)": 1.067484662576687,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.006309148264984228,
+      "behavioral movement F \u2014 steered (true donor)": -0.00946372239747634,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.05181918412348402,
+      "behavioral movement F \u2014 steered (true donor)": 1.0374862183020948,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.37931034482758624,
+      "behavioral movement F \u2014 steered (true donor)": 0.7586206896551726,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.047375160051216385,
+      "behavioral movement F \u2014 steered (true donor)": 1.1101152368758,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0030674846625766894,
+      "behavioral movement F \u2014 steered (true donor)": 0.9335378323108384,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.35832414553472985,
+      "behavioral movement F \u2014 steered (true donor)": 0.8390297684674751,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.11140235910878112,
+      "behavioral movement F \u2014 steered (true donor)": 1.0602883355176933,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.011111111111111113,
+      "behavioral movement F \u2014 steered (true donor)": 0.9555555555555556,
+      "series": "instruction-format pairs (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.4299655568312284,
+      "behavioral movement F \u2014 steered (true donor)": 0.41504018369690004,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.0234857849196539,
+      "behavioral movement F \u2014 steered (true donor)": -0.027812113720642774,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.029482551143200992,
+      "behavioral movement F \u2014 steered (true donor)": 0.5553549939831529,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.26392282958199353,
+      "behavioral movement F \u2014 steered (true donor)": 0.642443729903537,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.48737474949899806,
+      "behavioral movement F \u2014 steered (true donor)": 0.48309953239812964,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.0943775100401605,
+      "behavioral movement F \u2014 steered (true donor)": -0.03882195448460512,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.054502369668246495,
+      "behavioral movement F \u2014 steered (true donor)": 0.3601895734597156,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": -0.16862170087976522,
+      "behavioral movement F \u2014 steered (true donor)": -0.17448680351906157,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.07114503816793898,
+      "behavioral movement F \u2014 steered (true donor)": -0.14045801526717572,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 shuffled-donor null": 0.04045911047345755,
+      "behavioral movement F \u2014 steered (true donor)": -0.07431850789096149,
+      "series": "pirate matched-query pairs (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 182,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B: three-token prefill, patch-content donors \u2014 per pair",
+        "xlabel": "behavioral movement F \u2014 shuffled-donor null",
+        "ylabel": "behavioral movement F \u2014 steered (true donor)",
+        "legend_labels": [
+          "instruction-format pairs (n=172)",
+          "pirate matched-query pairs (n=10)"
+        ],
+        "xticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ],
+        "yticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75"
+        ]
+      }
+    ],
+    "series": [
+      "instruction-format pairs (n=172)",
+      "pirate matched-query pairs (n=10)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

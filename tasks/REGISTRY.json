@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2365,
+  "highest_id": 2373,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8951,8 +8951,8 @@
     "2158": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2158",
-      "status": "running",
+      "path": "tasks/completed/2158",
+      "status": "completed",
       "title": "Pre-split intermediate-unit review guard + cross-session shared-worktree writer arbitration"
     },
     "2159": {
@@ -9044,8 +9044,8 @@
     "2170": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2170",
-      "status": "proposed",
+      "path": "tasks/completed/2170",
+      "status": "completed",
       "title": "code-style resume-key clause: forbid hashing raw bytes of a RECOMPUTED float array (platform-dependent key discards valid checkpoints)"
     },
     "2171": {
@@ -9065,22 +9065,22 @@
     "2173": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2173",
-      "status": "proposed",
+      "path": "tasks/completed/2173",
+      "status": "completed",
       "title": "workflow-fix: test_backend_poll module-mode test fails only in large collections, always classified NEW by the Step 9c oracle"
     },
     "2174": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2174",
-      "status": "proposed",
+      "path": "tasks/running/2174",
+      "status": "running",
       "title": "Fact-checker: exact-identity premise from a sample must be verified at the assert's grain"
     },
     "2175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2175",
-      "status": "proposed",
+      "path": "tasks/running/2175",
+      "status": "running",
       "title": "git_provenance() blind to untracked producing scripts \u2014 artifacts stamp a commit that lacks the code that made them"
     },
     "2176": {
@@ -10265,11 +10265,11 @@
     },
     "2329": {
       "goal": "Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention, thinking disabled): which minimal-pair information types are decodable at the context vector, which are causally usable via single-position patching (F_act/F_beh vs nulls), whether fitted context-to-answer maps predict the realized patched shift per type x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias and shuffled nulls).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2329",
-      "status": "running",
-      "title": "Qwen3.5-9B rerun of the #2162 minimal-pair context-vector pipeline (thinking disabled)"
+      "path": "tasks/awaiting_promotion/2329",
+      "status": "awaiting_promotion",
+      "title": "Experiment: Do the #2162 minimal-pair context-vector findings transfer to Qwen3.5-9B with thinking disabled?"
     },
     "233": {
       "has_clean_result": false,
@@ -10304,8 +10304,8 @@
       "goal": "Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2333",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/2333",
+      "status": "awaiting_promotion",
       "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's whole-answer behavioral effect (MODERATE confidence)"
     },
     "2334": {
@@ -10367,8 +10367,8 @@
     "2341": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2341",
-      "status": "proposed",
+      "path": "tasks/archived/2341",
+      "status": "archived",
       "title": "workflow-fix: guard_root_code_commit.sh pathspec scoping does not engage (non-code commits wedged by foreign staged code files)"
     },
     "2342": {
@@ -10488,8 +10488,8 @@
     "2357": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2357",
-      "status": "running",
+      "path": "tasks/completed/2357",
+      "status": "completed",
       "title": "guard_root_code_commit.sh: pathspec-limited root commits blocked by foreign staged code files (scoping defect)"
     },
     "2358": {
@@ -10502,15 +10502,15 @@
     "2359": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2359",
-      "status": "reviewing",
+      "path": "tasks/completed/2359",
+      "status": "completed",
       "title": "verify_uploads.py outroot-residue: basename match vs issue-scoped git trees lets a sibling leg's committed file cover this leg's unpersisted file"
     },
     "2360": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2360",
-      "status": "running",
+      "path": "tasks/completed/2360",
+      "status": "completed",
       "title": "Preflight passes a pod venv whose lock-pinned package has no metadata and cannot import (sympy half-install breaks the whole transformers stack)"
     },
     "2361": {
@@ -10548,12 +10548,68 @@
       "status": "proposed",
       "title": "Cloudflare email obfuscation silently rewrites model-generation text in every eps.superkaiba.com dashboard (served bytes != committed bytes)"
     },
+    "2366": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2366",
+      "status": "proposed",
+      "title": "eval/capability.py: same narrow PackageNotFoundError catch breaks on the announced importlib.metadata KeyError"
+    },
+    "2367": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2367",
+      "status": "proposed",
+      "title": "verify_task_body: flag caption-unit vs figure-sidecar count drift (check-45 family)"
+    },
+    "2368": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2368",
+      "status": "proposed",
+      "title": "test_bootstrap_pod_git_credentials.py extracts ssh payloads by first-quote scan (same shape #2360 r3 hardened); sweep tests/ for siblings"
+    },
+    "2369": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2369",
+      "status": "proposed",
+      "title": "workflow-fix: test_tick_triage module-level NOW makes fixtures wall-clock-sensitive in long gate sessions"
+    },
     "237": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/237",
       "status": "completed",
       "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos \u22650.97 (MODERATE confidence)"
+    },
+    "2370": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2370",
+      "status": "proposed",
+      "title": "guard_root_code_commit.sh: pathspec scoping fails to exempt foreign staged files (blocks its own remediation form)"
+    },
+    "2371": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2371",
+      "status": "reviewing",
+      "title": "guard_root_code_commit.sh: disarm text-detectable prefixed cwd-movers outside the NAME=value set (+= append-assignment, time/wrapper prefixes) + complete residual-note"
+    },
+    "2372": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2372",
+      "status": "proposed",
+      "title": "workflow-fix: guard_repo_root_branch.sh \u2014 sticky-scope invalidator anchors before legal assignment prefixes (#2357 cwd-mover-lead sibling)"
+    },
+    "2373": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2373",
+      "status": "proposed",
+      "title": "Mechanize the shared-y heatmap tick-clobber check: sidecar image row counts + a verify_report gate"
     },
     "238": {
       "has_clean_result": false,

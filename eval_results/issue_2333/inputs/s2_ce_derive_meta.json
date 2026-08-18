@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "crosscheck": {
+    "steered": {
+      "rederived": 0.5119660265924316,
+      "vendored": 0.5119660265924316,
+      "abs_diff": 0.0
+    },
+    "null": {
+      "rederived": 0.0968565105293711,
+      "vendored": 0.09685651052937112,
+      "abs_diff": 2.7755575615628914e-17
+    }
+  },
+  "tolerance": 0.01,
+  "wellsep_pair_ids": [
+    "mq--bare__q1--persona__q1",
+    "mq--bare__q2--persona__q2",
+    "mq--bare__q3--persona__q3",
+    "mq--bare__q4--persona__q4",
+    "mq--bare__q5--persona__q5",
+    "mq--persona__q1--conv__q1",
+    "mq--persona__q2--conv__q2",
+    "mq--persona__q3--conv__q3",
+    "mq--persona__q4--conv__q4",
+    "mq--persona__q5--conv__q5"
+  ],
+  "excluded_pair_ids": [
+    "mq--bare__q1--conv__q1",
+    "mq--bare__q2--conv__q2",
+    "mq--bare__q3--conv__q3",
+    "mq--bare__q4--conv__q4",
+    "mq--bare__q5--conv__q5"
+  ],
+  "pins": {
+    "fu1": "c5d7de56d182a0eb6ea1b36f22851fedf5969d8c",
+    "family": "matched_query|ce|joint_all|replace|A|f_beh_prefix"
+  },
+  "repro": {
+    "git_commit": "c087684a",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

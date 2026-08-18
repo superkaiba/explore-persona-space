@@ -1,0 +1,826 @@
+{
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "091a4c62bced428e",
+  "git_commit": "c9a0c9ec",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
+  ],
+  "created": "2026-08-18T05:57:26Z",
+  "figsize": [
+    9.6,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.5214592215576535,
+      "error": 0.13846984570866813,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": 0.07487486329361752,
+      "error": 0.10942212015957888,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": 0.10736429964075862,
+      "error": 0.13576491104472038,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.25236791084522625,
+      "error": 0.18611665890579548,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": 0.054722563237710145,
+      "error": 0.06515757956388547,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.21921043482186148,
+      "error": 0.13892396033279072,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.20002306185589883,
+      "error": 0.1872842342984881,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": -0.0016539212704633293,
+      "error": 0.05908472352899073,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": 0.08935908299835618,
+      "error": 0.09131921956539038,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.13931210115224707,
+      "error": 0.13137723494124315,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": 0.010082771613603289,
+      "error": 0.10407438180350567,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": 0.027392770615899065,
+      "error": 0.13617941527569288,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": 0.10283340400282992,
+      "error": 0.12866790591718646,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "behavioral movement F": 0.5214592215576535,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "behavioral movement F": 0.5214592215576535,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.5214592215576535,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": 0.07487486329361752,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": 0.10736429964075862,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.25236791084522625,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": 0.054722563237710145,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.21921043482186148,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.20002306185589883,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.36721299506640775,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": -0.03264949096329367,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": -0.022726625132950887,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.058279811674729814,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": -0.0014670489268566247,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.08067999671064813,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.01188430177389338,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.644152686483744,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": 0.18619474935586408,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": 0.2488031969564899,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.43051312948632076,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": 0.12884811020091433,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.3585279173762296,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.38645277037086956,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": -0.0016539212704633293,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": 0.08935908299835618,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.13931210115224707,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": 0.010082771613603289,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": 0.027392770615899065,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": 0.10283340400282992,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": -0.06777910780379602,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": -0.0002764473396964645,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.01007643020131832,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": -0.1030005964560634,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": -0.10390636036294601,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": -0.01817987622355048,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": 0.050390339254185436,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": 0.1823619917910843,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.2728309000838046,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": 0.10514816715094795,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": 0.16845247018843978,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": 0.23915593561082243,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.11,
+      "y": 0.5214592215576535,
+      "error": 0.13846984570866813,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.89,
+      "y": 0.149646051883682,
+      "error": 0.12451654821074865,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.89,
+      "y": 0.1761803781638418,
+      "error": 0.12632151939712458,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.89,
+      "y": 0.21594836464693973,
+      "error": 0.1269190714764927,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.89,
+      "y": 0.06116889383332057,
+      "error": 0.052554341367371527,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 4.89,
+      "y": 0.19574940304766283,
+      "error": 0.14782340987455136,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 5.89,
+      "y": 0.2668493391533807,
+      "error": 0.18072447065446978,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.11,
+      "y": 0.03870647348724856,
+      "error": 0.05654955407567616,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 2.11,
+      "y": 0.026916295595257746,
+      "error": 0.09580110151073537,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.11,
+      "y": 0.11131211874243678,
+      "error": 0.12868912085323744,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 4.11,
+      "y": 0.005029208738042929,
+      "error": 0.08481229107229574,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 5.11,
+      "y": 0.0523227649966165,
+      "error": 0.12342550518086784,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 6.11,
+      "y": 0.11571850743452243,
+      "error": 0.10252976883937459,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.5214592215576535,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.5214592215576535,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.11,
+      "y": 0.5214592215576535,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.89,
+      "y": 0.149646051883682,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.89,
+      "y": 0.1761803781638418,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.89,
+      "y": 0.21594836464693973,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.89,
+      "y": 0.06116889383332057,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.89,
+      "y": 0.19574940304766283,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.89,
+      "y": 0.2668493391533807,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": -0.11,
+      "y": 0.36721299506640775,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.89,
+      "y": 0.03347467367327962,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.89,
+      "y": 0.056902485076994566,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.89,
+      "y": 0.08036123635435982,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.89,
+      "y": 0.012413033294348001,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.89,
+      "y": 0.04879614397830068,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.89,
+      "y": 0.08467382577634916,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": -0.11,
+      "y": 0.644152686483744,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.89,
+      "y": 0.2825077700947769,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.89,
+      "y": 0.30954552387124373,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.89,
+      "y": 0.3341993793073452,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.89,
+      "y": 0.11752171602909106,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.89,
+      "y": 0.3444429637274034,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.89,
+      "y": 0.44612276708528875,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.11,
+      "y": 0.03870647348724856,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.11,
+      "y": 0.026916295595257746,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.11,
+      "y": 0.11131211874243678,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.11,
+      "y": 0.005029208738042929,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.11,
+      "y": 0.0523227649966165,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.11,
+      "y": 0.11571850743452243,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.11,
+      "y": -0.016340356037407612,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.11,
+      "y": -0.07149080349934747,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.11,
+      "y": -0.005347776430397008,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.11,
+      "y": -0.0853661155108065,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.11,
+      "y": -0.05698253191539405,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.11,
+      "y": 0.023292186941187967,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.11,
+      "y": 0.09675875211394472,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.11,
+      "y": 0.12011139952212327,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.11,
+      "y": 0.25203046527607786,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.11,
+      "y": 0.08425846663378497,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.11,
+      "y": 0.18986847844634164,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.11,
+      "y": 0.22835172461993716,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 108,
+  "text": {
+    "suptitle": "Qwen2.5-7B \u2014 pirate matched-query pairs: snowball recovery profile",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "patch-content donors (confirmatory)",
+        "ylabel": "behavioral movement F",
+        "legend_labels": [
+          "full context-end patch, same wave (95% CI band)",
+          "steered (true donor)",
+          "shuffled-donor null"
+        ],
+        "xticklabels": [
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "natural-opening donors (descriptive)",
+        "xticklabels": [
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
+        ]
+      }
+    ],
+    "series": [
+      "full context-end patch, same wave (95% CI band)",
+      "steered (true donor)",
+      "shuffled-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

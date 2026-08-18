@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "median": 100.0,
+  "frac_gt60": 0.9969230769230769,
+  "n_kept": 1950,
+  "n_dropped": 0,
+  "thresholds": {
+    "median_min": 80.0,
+    "gt60_frac_min": 0.9,
+    "coherence_threshold": 60.0
+  },
+  "repro": {
+    "git_commit": "c087684a",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

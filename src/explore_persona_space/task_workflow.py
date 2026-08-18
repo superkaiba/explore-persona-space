@@ -2126,6 +2126,159 @@ def stage_dispatch_should_skip(
     )
 
 
+# --- Pre-split review gate (#2158; incidents #1336 r4 + #2061) --------------
+
+_PRE_SPLIT_LINE_RE = re.compile(r"^pre-split unit (?P<k>[A-Za-z0-9]+)/(?P<m>\d+)\b")
+_PRE_SPLIT_REMAINING_RE = re.compile(r"\bremaining(?:\s+units)?\s*:\s*(?P<rem>.*)$", re.IGNORECASE)
+_PRE_SPLIT_EMPTY_REMAINING = frozenset({"", "none", "-", "(none)"})
+_IMPLEMENTATION_MARKER_KINDS = frozenset({"epm:experiment-implementation", "epm:results"})
+
+
+def pre_split_review_gate(events: list[dict]) -> dict:
+    """Pre-split completeness gate for the Step 5 review dispatch (#2158).
+
+    Refuses a code-review dispatch while a #1810 pre-split multi-unit round is
+    mid-flight (incidents #1336 r4 + #2061). Pure function over an append-only
+    events list (index order == time order — never parses ``ts``). Returns
+    ``{"verdict", "reason", "remaining", "breadcrumb_index",
+    "unit_dispatch_index", "impl_index"}``. Verdicts:
+
+    - ``REVIEW-OK``: no pre-split state in flight, or an implementation marker
+      (``epm:experiment-implementation`` / ``epm:results``) POSTDATES (higher
+      index) both arms.
+    - ``PRE-SPLIT-INCOMPLETE``: the latest split signal has no later
+      implementation marker. Two arms, max index wins:
+
+      arm A — latest LINE-ANCHORED candidate ``pre-split unit <k>/<M> ...``
+      (k ALPHANUMERIC — #2061's lettered ``A/5``..``D/5`` are candidates; M
+      digits-only = the STRUCTURAL exclusion of the literal ``k/M`` template,
+      "M" not being a digit) in any ``epm:progress`` note, whose SAME line
+      carries a parseable NON-empty remaining field. The remaining recognizer
+      is deliberately LENIENT — case-insensitive ``remaining:`` /
+      ``remaining units:``, no leading semicolon — covering the measured
+      drift: ``; remaining:`` (#1336), ``. Remaining units: B (...)`` (#2061
+      row 52), ``Remaining: C (...)`` (row 65). An EMPTY parsed remaining
+      field (blank / ``none`` / ``-`` / ``(none)``, case-insensitive) is a
+      completed split — arm A does not fire (empty is parseable, never
+      unparseable). Notes are scanned via ``note.split("\\n")``, NEVER
+      ``splitlines()`` (gotchas.md JSONL trap). v155's "NEARLY COMPLETE"
+      matches — the arm keys on prefix + same-line remaining, not the word
+      "complete".
+
+      arm B — latest ``epm:progress`` note whose lstripped note STARTS with
+      ``"stage-dispatch "`` and whose ``_breadcrumb_fields()`` give
+      ``_normalize_stage(stage) == "implementing"`` AND ``"unit"`` in fields
+      (only pre-split rounds emit unit-scoped implementing dispatches — the
+      #1336 v131 shape; fires at the real v132 incident, 2 days before the
+      first breadcrumb). DELIBERATELY note-anchored: a stage-dispatch token
+      EMBEDDED mid-note (#2061 row 65, offset 617 — a QUOTE of the unit-C
+      dispatch) does NOT trip arm B; broadened arm A carries those rows.
+
+    - ``BREADCRUMB-UNPARSEABLE``: the latest live signal is a candidate line
+      whose SAME line carries no parseable remaining field — fail loud, never
+      fail open: a recognized candidate NEVER falls through to REVIEW-OK (the
+      #2061 fail-open shape). A live arm-B signal at a HIGHER index than the
+      unparseable candidate supersedes it (max index wins ->
+      PRE-SPLIT-INCOMPLETE, still nonzero at the CLI).
+
+    Incident-trace verdicts (plan v2 §12, measured 2026-08-17): #1336 — arm B
+    FIRES at the v132 premature Unit-A review dispatch (the latest
+    implementation-class marker, ``epm:results`` v7, predates the v131 unit=A
+    dispatch); arm A FIRES across the v147..v163 mid-split resume window;
+    CLEARS at ``epm:experiment-implementation`` v14. #2061 — the lettered
+    row-52 / row-65 prefixes FIRE arm A (where a digits-only parser fails
+    open); the full history CLEARS (the line-75 marker postdates the last
+    candidate).
+
+    Accepted residual: a POST-COMPLETION ``epm:progress`` note quoting a
+    breadcrumb line verbatim at column 0 (alphanumeric unit + non-empty
+    same-line remaining) re-arms arm A until the next implementation marker —
+    low likelihood, self-recovering, refusal is loud (exit 2 names the line),
+    never fail-open.
+    """
+    impl_index: int | None = None
+    breadcrumb_index: int | None = None
+    breadcrumb_line: str | None = None
+    breadcrumb_remaining: str | None = None
+    breadcrumb_parseable = False
+    unit_dispatch_index: int | None = None
+
+    for idx, event in enumerate(events):
+        kind = event.get("kind", "")
+        if kind in _IMPLEMENTATION_MARKER_KINDS:
+            impl_index = idx
+            continue
+        if kind != "epm:progress":
+            continue
+        note = (event.get("note", "") or "").lstrip()
+        for line in note.split("\n"):  # never splitlines() — gotchas.md JSONL trap
+            if _PRE_SPLIT_LINE_RE.match(line):
+                breadcrumb_index = idx
+                breadcrumb_line = line
+                match = _PRE_SPLIT_REMAINING_RE.search(line)
+                breadcrumb_parseable = match is not None
+                breadcrumb_remaining = match.group("rem").strip() if match else None
+        if note.startswith("stage-dispatch "):
+            fields = _breadcrumb_fields(note)
+            if _normalize_stage(fields.get("stage", "")) == "implementing" and "unit" in fields:
+                unit_dispatch_index = idx
+
+    def _live(idx: int | None) -> bool:
+        return idx is not None and (impl_index is None or idx > impl_index)
+
+    a_live = _live(breadcrumb_index)
+    b_live = _live(unit_dispatch_index)
+    a_empty = (
+        a_live
+        and breadcrumb_parseable
+        and breadcrumb_remaining is not None
+        and breadcrumb_remaining.lower() in _PRE_SPLIT_EMPTY_REMAINING
+    )
+    a_fires = a_live and breadcrumb_parseable and not a_empty
+    a_unparseable = a_live and not breadcrumb_parseable
+
+    result: dict[str, Any] = {
+        "verdict": "REVIEW-OK",
+        "reason": "",
+        "remaining": None,
+        "breadcrumb_index": breadcrumb_index,
+        "unit_dispatch_index": unit_dispatch_index,
+        "impl_index": impl_index,
+    }
+
+    b_supersedes = b_live and (breadcrumb_index is None or unit_dispatch_index > breadcrumb_index)
+    if a_unparseable and not b_supersedes:
+        result["verdict"] = "BREADCRUMB-UNPARSEABLE"
+        result["reason"] = (
+            f"breadcrumb candidate at events index {breadcrumb_index} has no parseable "
+            f"same-line remaining field: {(breadcrumb_line or '')[:160]!r}"
+        )
+        return result
+    if a_fires or b_live:
+        result["verdict"] = "PRE-SPLIT-INCOMPLETE"
+        if a_fires and (not b_live or breadcrumb_index >= unit_dispatch_index):
+            result["remaining"] = breadcrumb_remaining
+            result["reason"] = (
+                f"arm A: pre-split breadcrumb at events index {breadcrumb_index} "
+                f"({(breadcrumb_line or '')[:160]!r}) carries a non-empty remaining "
+                "field with no later implementation marker"
+            )
+        else:
+            result["remaining"] = breadcrumb_remaining if a_fires else None
+            result["reason"] = (
+                "arm B: unit-scoped implementing stage-dispatch at events index "
+                f"{unit_dispatch_index} has no later implementation marker"
+            )
+        return result
+    if breadcrumb_index is None and unit_dispatch_index is None:
+        result["reason"] = "no pre-split signals in events"
+    else:
+        result["reason"] = (
+            f"implementation marker at events index {impl_index} postdates every pre-split signal"
+        )
+    return result
+
+
 # --- Ensemble verdict presence (#1149; mechanizes SKILL.md Step 5b ---
 # --- durable-verdict-first rule items 1 + 3)                        ---
 

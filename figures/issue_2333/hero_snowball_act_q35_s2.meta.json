@@ -1,0 +1,827 @@
+{
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "f13784f4b41545b7",
+  "git_commit": "c9a0c9ec",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
+  ],
+  "created": "2026-08-18T05:58:00Z",
+  "figsize": [
+    9.6,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.11,
+      "activation movement F (secondary DV)": 0.3072506137192249,
+      "error": 0.11986119595356283,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.89,
+      "activation movement F (secondary DV)": 0.10908890552818776,
+      "error": 0.06872058314271269,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.89,
+      "activation movement F (secondary DV)": 0.15574226044118405,
+      "error": 0.11120949862059204,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.89,
+      "activation movement F (secondary DV)": 0.16607983447611332,
+      "error": 0.11147522561717774,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.89,
+      "activation movement F (secondary DV)": 0.044589494448155166,
+      "error": 0.03105196820106357,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.89,
+      "activation movement F (secondary DV)": 0.12140142701100558,
+      "error": 0.07285421802516792,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.89,
+      "activation movement F (secondary DV)": 0.16259671188890934,
+      "error": 0.13315362574066958,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.11,
+      "activation movement F (secondary DV)": 0.09430071245878935,
+      "error": 0.06348762368783355,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.11,
+      "activation movement F (secondary DV)": 0.1274434629827738,
+      "error": 0.10775907766772432,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.11,
+      "activation movement F (secondary DV)": 0.15781483091413975,
+      "error": 0.12907758552581067,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.11,
+      "activation movement F (secondary DV)": 0.01577149439835921,
+      "error": 0.023424141977739052,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.11,
+      "activation movement F (secondary DV)": 0.08581436704844236,
+      "error": 0.08481897890567776,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.11,
+      "activation movement F (secondary DV)": 0.10202970169484615,
+      "error": 0.07419543063966554,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "activation movement F (secondary DV)": 0.3072506137192249,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "activation movement F (secondary DV)": 0.3072506137192249,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.11,
+      "activation movement F (secondary DV)": 0.3072506137192249,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.89,
+      "activation movement F (secondary DV)": 0.10908890552818776,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.89,
+      "activation movement F (secondary DV)": 0.15574226044118405,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.89,
+      "activation movement F (secondary DV)": 0.16607983447611332,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.89,
+      "activation movement F (secondary DV)": 0.044589494448155166,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.89,
+      "activation movement F (secondary DV)": 0.12140142701100558,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.89,
+      "activation movement F (secondary DV)": 0.16259671188890934,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.11,
+      "activation movement F (secondary DV)": 0.19824542311951518,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.89,
+      "activation movement F (secondary DV)": 0.053765345588326456,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.89,
+      "activation movement F (secondary DV)": 0.06823933979496359,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.89,
+      "activation movement F (secondary DV)": 0.07780176247470082,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.89,
+      "activation movement F (secondary DV)": 0.015492406839039179,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.89,
+      "activation movement F (secondary DV)": 0.05285147659480573,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.89,
+      "activation movement F (secondary DV)": 0.04889382880181074,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.11,
+      "activation movement F (secondary DV)": 0.43796781502664084,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.89,
+      "activation movement F (secondary DV)": 0.19120651187375184,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.89,
+      "activation movement F (secondary DV)": 0.2906583370361477,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.89,
+      "activation movement F (secondary DV)": 0.3007522137090563,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.89,
+      "activation movement F (secondary DV)": 0.07759634324116632,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.89,
+      "activation movement F (secondary DV)": 0.19855991264514158,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.89,
+      "activation movement F (secondary DV)": 0.3152010802831499,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.11,
+      "activation movement F (secondary DV)": 0.09430071245878935,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.11,
+      "activation movement F (secondary DV)": 0.1274434629827738,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.11,
+      "activation movement F (secondary DV)": 0.15781483091413975,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.11,
+      "activation movement F (secondary DV)": 0.01577149439835921,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.11,
+      "activation movement F (secondary DV)": 0.08581436704844236,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.11,
+      "activation movement F (secondary DV)": 0.10202970169484615,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.11,
+      "activation movement F (secondary DV)": 0.03421776705421508,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.11,
+      "activation movement F (secondary DV)": 0.03173959689214825,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.11,
+      "activation movement F (secondary DV)": 0.047168748360127216,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.11,
+      "activation movement F (secondary DV)": -0.007368104332999791,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.11,
+      "activation movement F (secondary DV)": 0.014183721505105495,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.11,
+      "activation movement F (secondary DV)": 0.03614521143725141,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.11,
+      "activation movement F (secondary DV)": 0.16119301442988218,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.11,
+      "activation movement F (secondary DV)": 0.24725775222759688,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.11,
+      "activation movement F (secondary DV)": 0.3053239194117486,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.11,
+      "activation movement F (secondary DV)": 0.03948017962247831,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.11,
+      "activation movement F (secondary DV)": 0.183821679316461,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.11,
+      "activation movement F (secondary DV)": 0.18453607271658248,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.11,
+      "y": 0.3072506137192249,
+      "error": 0.11986119595356283,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.89,
+      "y": 0.0999440098181367,
+      "error": 0.0795132821239531,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.89,
+      "y": 0.08050527647137642,
+      "error": 0.0307941155321896,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.89,
+      "y": 0.11120805405080318,
+      "error": 0.03711951436009258,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.89,
+      "y": 0.044589494448155166,
+      "error": 0.03105196820106357,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 4.89,
+      "y": 0.16673679514788092,
+      "error": 0.13073881064832674,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 5.89,
+      "y": 0.15947534162551164,
+      "error": 0.12637691768351939,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.11,
+      "y": 0.026693683955818413,
+      "error": 0.03063786015962251,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 2.11,
+      "y": 0.06597618381492794,
+      "error": 0.032976997974328695,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.11,
+      "y": 0.07695105541497468,
+      "error": 0.05920002406230196,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 4.11,
+      "y": 0.01577149439835921,
+      "error": 0.023424141977739052,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 5.11,
+      "y": 0.07381052728742361,
+      "error": 0.08272867877327371,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 6.11,
+      "y": 0.06147846425883472,
+      "error": 0.048356129922321994,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.3072506137192249,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.3072506137192249,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.11,
+      "y": 0.3072506137192249,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.89,
+      "y": 0.0999440098181367,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.89,
+      "y": 0.08050527647137642,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.89,
+      "y": 0.11120805405080318,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.89,
+      "y": 0.044589494448155166,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.89,
+      "y": 0.16673679514788092,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.89,
+      "y": 0.15947534162551164,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": -0.11,
+      "y": 0.19824542311951518,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.89,
+      "y": 0.0397134815948084,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.89,
+      "y": 0.05096911607310176,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.89,
+      "y": 0.07754210510291158,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.89,
+      "y": 0.015492406839039179,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.89,
+      "y": 0.05903018203913235,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.89,
+      "y": 0.053838314809836446,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": -0.11,
+      "y": 0.43796781502664084,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.89,
+      "y": 0.1987400458427146,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.89,
+      "y": 0.11255734713748096,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.89,
+      "y": 0.15178113382309674,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.89,
+      "y": 0.07759634324116632,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.89,
+      "y": 0.3205078033357858,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.89,
+      "y": 0.30659215017687524,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.11,
+      "y": 0.026693683955818413,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.11,
+      "y": 0.06597618381492794,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.11,
+      "y": 0.07695105541497468,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.11,
+      "y": 0.01577149439835921,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.11,
+      "y": 0.07381052728742361,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.11,
+      "y": 0.06147846425883472,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.11,
+      "y": -0.005936401041690263,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.11,
+      "y": 0.03492745965719223,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.11,
+      "y": 0.026517107877880336,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.11,
+      "y": -0.007368104332999791,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.11,
+      "y": 0.007038401317549875,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.11,
+      "y": 0.017342719256412238,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.11,
+      "y": 0.055339319277554755,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.11,
+      "y": 0.10088145560584962,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.11,
+      "y": 0.14491715600248425,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.11,
+      "y": 0.03948017962247831,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.11,
+      "y": 0.1724957588640973,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.11,
+      "y": 0.11405497910105623,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 108,
+  "text": {
+    "suptitle": "Qwen3.5-9B \u2014 pirate matched-query pairs: snowball recovery profile \u2014 activation DV",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "patch-content donors (confirmatory)",
+        "ylabel": "activation movement F (secondary DV)",
+        "legend_labels": [
+          "full context-end patch, same wave (95% CI band)",
+          "steered (true donor)",
+          "shuffled-donor null"
+        ],
+        "xticklabels": [
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "natural-opening donors (descriptive)",
+        "xticklabels": [
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
+        ]
+      }
+    ],
+    "series": [
+      "full context-end patch, same wave (95% CI band)",
+      "steered (true donor)",
+      "shuffled-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
