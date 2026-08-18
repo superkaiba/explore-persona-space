@@ -489,16 +489,56 @@ def create_vllm_engine(
 
 
 def cleanup_vllm(llm) -> None:
-    """Free GPU memory after vLLM inference.
+    """Free GPU memory after vLLM inference — SYNCHRONOUS v1 EngineCore reap.
 
-    Deletes the engine, runs garbage collection, and empties the CUDA cache.
+    vLLM v1's EngineCore runs in a SEPARATE subprocess; a bare ``del llm`` does
+    NOT reap it synchronously, so its reserved KV cache (~gpu_memory_utilization
+    of HBM) stays pinned until the OS eventually collects it — long enough that
+    the NEXT ``LLM(...)`` init in the SAME process finds too little free memory
+    and raises ``ValueError: Free memory ... less than desired
+    gpu_memory_utilization`` (#2356 gen->regen on one GPU; #653). Drive the
+    documented teardown explicitly BEFORE ``del`` (mirrors the canonical
+    ``analysis.representation_shift._reap_vllm_engine``): engine-core shutdown
+    (v1 ``llm_engine.engine_core.shutdown()`` reaps the MP worker; v0 fallback
+    ``model_executor.shutdown()``), destroy the torch.distributed process group
+    if one was initialized, then del + gc + empty_cache + ipc_collect + a short
+    sleep (subprocess teardown is async). Every attribute access is
+    ``getattr``-guarded so it NO-OPs on a differing API surface.
+
     Call this in a finally block after generate().
     """
-    del llm
-    gc.collect()
     try:
         import torch
 
+        engine = getattr(llm, "llm_engine", None)
+        if engine is not None:
+            # vLLM v1: the EngineCore lives behind an EngineCoreClient whose
+            # shutdown() reaps the worker subprocess (MPClient._finalizer).
+            engine_core = getattr(engine, "engine_core", None)
+            shutdown = getattr(engine_core, "shutdown", None)
+            if callable(shutdown):
+                shutdown()
+            else:
+                # vLLM v0 fallback: the model_executor owns the workers directly.
+                executor = getattr(engine, "model_executor", None)
+                exec_shutdown = getattr(executor, "shutdown", None)
+                if callable(exec_shutdown):
+                    exec_shutdown()
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            torch.distributed.destroy_process_group()
+    except Exception as e:
+        logger.debug("vLLM engine-core reap failed (non-fatal): %s", e)
+    del llm
+    gc.collect()
+    try:
+        import time
+
+        import torch
+
         torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        # Subprocess teardown + driver-side memory release are async; give the
+        # OS a beat so the next same-GPU LLM() init sees the freed HBM (#2356).
+        time.sleep(1.0)
     except Exception as e:
         logger.debug("CUDA cleanup failed (non-fatal): %s", e)
