@@ -82,6 +82,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 15 Mapping-baselines pair (identity+bias baseline + kNN retrieval) + pooling-convention disclosure | critic.md Statistics 15 | v2-owner: statistics-critic |
 | 16 Unit of analysis / measurement grain | critic.md Statistics 16 | v2-owner: statistics-critic |
 | 17 Rate-denominator provenance (measured vs application denominator; stage-chained rates) | critic.md Statistics 17 | v2-owner: statistics-critic |
+| 18 Matched-covariate support (support-restricted companion) | critic.md Statistics 18 | v2-owner: statistics-critic |
 
 ## C. Monolithic `critic` — Alternative Explanations lens items
 
