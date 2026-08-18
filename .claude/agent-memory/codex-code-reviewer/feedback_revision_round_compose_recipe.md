@@ -866,3 +866,24 @@ rubric via count-asserted anchors even when EVERY middle section is
 rewritten (task context, calibration, concerns, adjudication, attestations,
 review focus) — sweep leftover round tokens with grep-and-eyeball scoped
 outside the inlined envelopes.
+
+**Second consecutive reconciler-fix round + kind-spelling trap (#2223 napp
+r4, 2026-08-17):** two deltas on the r3 by-path shape. (a) The
+`epm:review-reconciliation` row's BODY head tag spells a DIFFERENT kind
+(`<!-- epm:review-reconcile v3 -->`) than the JSON `kind` — on top of the
+round-sentinel-vs-JSON-version mismatch, tell Codex explicitly not to key
+the row by its body tag (key by exact JSON kind + top-level version + ts).
+(b) When round N-1's reconciliation is the SECOND on the task, the
+do-not-relitigate fence STACKS: carry the round-(N-2) fence items forward
+verbatim (labeled by source ruling) plus the new ruling's discarded items
+(here: turn-level siblings = plan-conformant estimator design;
+facet-sink severity capped at the implemented fix, incl. the ruling's
+"Observed but not raised" permitted-innerHTML set — restate that set so the
+twin doesn't demand escaping past it). Recommended-but-implemented items
+with no ledger row compose as pseudo-IDs (#1092-r4 pattern) whose
+acceptance text = the ruling's "Recommended …" paragraph + the impl
+marker's per-item disposition table; a brief that names semantic axes for
+one item (e.g. sentinel: both-DVs-then-write / dry-run exclusion / legacy
+WARN tolerance / no healthy-tree deadlock) gets those axes spelled out as
+per-property duties with an added INVERTED-state probe (sentinel present,
+DV file absent).
