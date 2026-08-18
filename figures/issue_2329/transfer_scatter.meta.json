@@ -1,0 +1,408 @@
+{
+  "commit": "0066444b",
+  "render_id": "3c0359706cb249c9",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:18:19Z",
+  "figsize": [
+    13.0,
+    6.0
+  ],
+  "points": [
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.3450902596194535,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.4273483469620712,
+      "label": "constraint_knowledge",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.01058254008998482,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.014678816586367903,
+      "label": "fact_assistant_animal",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.0015255442093742202,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.00445289337365331,
+      "label": "fact_novel_queried",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.006154117870756012,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.034035126663945134,
+      "label": "fact_user_name",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.7448112937357374,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 1.2919864501879421,
+      "label": "icl_task_mapping",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.7072340885274486,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.5269726080788221,
+      "label": "instr_format",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.1645206899248346,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.7005507385993215,
+      "label": "instr_language",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.011089590914729972,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.02733401954587584,
+      "label": "list_numeric_detail",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.15092326790956073,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.1000934918815578,
+      "label": "persona_prompted",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.0064549186456450795,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.002692518060285873,
+      "label": "prior_topic",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.0022927742392245837,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.06923041658763347,
+      "label": "query_content",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.38488038033816435,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.3193576725149248,
+      "label": "reasoning_style",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.37974675720960527,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.3202859227695584,
+      "label": "refusal_boundary",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.20577617328519862,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.08426644418509825,
+      "label": "user_emotion",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.14159108624111516,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.1891448021805831,
+      "label": "user_expertise",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.44225099924763517,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 0.44779555837908,
+      "label": "verbosity",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.07624339296986357,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": -0.07624339296986357,
+      "series": "identity (perfect transfer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 1.3571402522430758,
+      "per-type mean F_beh \u2014 Qwen3.5-9B (this run)": 1.3571402522430758,
+      "series": "identity (perfect transfer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.10464334627559291,
+      "y": 0.2546769677168104,
+      "label": "constraint_knowledge",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.007935741909988947,
+      "y": 0.03504494797246529,
+      "label": "fact_assistant_animal",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.005160148792972494,
+      "y": -9.25611718012347e-05,
+      "label": "fact_novel_queried",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.006129921173793668,
+      "y": -0.010342000517812769,
+      "label": "fact_user_name",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.0004986440650654743,
+      "y": 0.08723535119527898,
+      "label": "icl_task_mapping",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.00987786167045765,
+      "y": 0.0037332504169990052,
+      "label": "instr_format",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.01167932445789034,
+      "y": -0.0007262089838586818,
+      "label": "instr_language",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.0031886222308378518,
+      "y": 0.019847324700084615,
+      "label": "list_numeric_detail",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.012208817412636543,
+      "y": 0.021428591855875898,
+      "label": "persona_prompted",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.001633548377959007,
+      "y": -0.0010085197551963003,
+      "label": "prior_topic",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.039952374136912244,
+      "y": 0.06557505934650337,
+      "label": "reasoning_style",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.039734958537253576,
+      "y": 0.06605961803273043,
+      "label": "refusal_boundary",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.0649819494584838,
+      "y": 0.029096423401676102,
+      "label": "user_emotion",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -1.1985886783500648e-05,
+      "y": 0.05799535517405848,
+      "label": "user_expertise",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 0.020152934581820027,
+      "y": 0.02299119572364087,
+      "label": "verbosity",
+      "series": "shared P1 cell",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": -0.06281925828326837,
+      "y": -0.06281925828326837,
+      "series": "identity (perfect transfer)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)": 1.0506104408706318,
+      "y": 1.0506104408706318,
+      "series": "identity (perfect transfer)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 35,
+  "text": {
+    "suptitle": "Per-type F_beh transfer over 31 shared P1 (cell x slot) units: Spearman rho=0.831 (p=7.4e-09), pair-clustered 95% CI [0.583, 0.864]",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "slot = ce",
+        "xlabel": "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)",
+        "ylabel": "per-type mean F_beh \u2014 Qwen3.5-9B (this run)",
+        "legend_labels": [
+          "shared P1 cell",
+          "identity (perfect transfer)"
+        ],
+        "annotations": [
+          "constraint_knowledge",
+          "fact_assistant_animal",
+          "fact_novel_queried",
+          "fact_user_name",
+          "icl_task_mapping",
+          "instr_format",
+          "instr_language",
+          "list_numeric_detail",
+          "persona_prompted",
+          "prior_topic",
+          "query_content",
+          "reasoning_style",
+          "refusal_boundary",
+          "user_emotion",
+          "user_expertise",
+          "verbosity"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      },
+      {
+        "title_left": "slot = pe",
+        "xlabel": "per-type mean F_beh \u2014 Qwen2.5-7B parent (#2162, committed)",
+        "annotations": [
+          "constraint_knowledge",
+          "fact_assistant_animal",
+          "fact_novel_queried",
+          "fact_user_name",
+          "icl_task_mapping",
+          "instr_format",
+          "instr_language",
+          "list_numeric_detail",
+          "persona_prompted",
+          "prior_topic",
+          "reasoning_style",
+          "refusal_boundary",
+          "user_emotion",
+          "user_expertise",
+          "verbosity"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      }
+    ],
+    "series": [
+      "identity (perfect transfer)",
+      "shared P1 cell"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "transfer_scatter",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/transfer.json"
+  ],
+  "transfer_stats": {
+    "rho": 0.8306451612903227,
+    "p": 7.35889393424165e-09,
+    "ci95_pair_clustered": [
+      0.5830645161290322,
+      0.8641129032258065
+    ],
+    "n_shared_p1_units": 31,
+    "criterion": "plan \u00a76 prediction 8 \u2014 transfer correlation: Spearman rho(F_beh_2329, F_beh_2162) over shared P1 cells at cell grain, pair-clustered bootstrap 95% CI; ONE registered test outside the three families (alpha = 0.05)",
+    "div9_flags": {
+      "dropped_cells": {},
+      "repaired_cells": [],
+      "note": "divergence-9 token-identity drops/repairs in the frozen 2329 bank (realized at freeze: see bank.json token_identity)"
+    }
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "commit": "0066444b",
+  "render_id": "f4cb6285d5e0465d",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:17:56Z",
+  "figsize": [
+    14.0,
+    10.0
+  ],
+  "points": [
+    {
+      "category": "conflict_format_fwd|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.1268136673436779,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "conflict_persona_fwd|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.18899789829708172,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "conflict_persona_rev|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.21910381046672317,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "conflict_persona_rev|pe",
+      "crosstype-null F_beh (mean per donor type)": -0.04686806725969855,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "demo_persona|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.30744900403568554,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "fact_novel_queried|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.06744691255720471,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "instr_format|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.036507931048677215,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "instr_language|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.4181613914210631,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "language_implied|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.3189128935171158,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "load_fact_user_name_l3|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.16340848084239634,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "query_content|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.05627581752845709,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "reasoning_style|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.11838628948601693,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "recency_fact_user_name_d5|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.06513816528185945,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "recency_instr_format_d5|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.07677763960796864,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "recency_persona_prompted_d3|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.05923594005237076,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "recency_persona_prompted_d5|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.23951994596763349,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "recency_persona_prompted_d5|pe",
+      "crosstype-null F_beh (mean per donor type)": 0.09077038677307225,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "recency_prior_topic_d3|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.12268488933860278,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "refusal_boundary|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.13441321726126998,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "user_emotion|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.09810015141256388,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "user_expertise|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.0922985332630165,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "verbosity|ce",
+      "crosstype-null F_beh (mean per donor type)": 0.22894731164372836,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "verbosity|pe",
+      "crosstype-null F_beh (mean per donor type)": -0.053497228801891304,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "shuffled-null F_beh (mean per donor value)": 0.6057915360478267,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.6,
+      "shuffled-null F_beh (mean per donor value)": 0.026435424238465854,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "shuffled-null F_beh (mean per donor value)": 0.570361459756187,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 2.6,
+      "shuffled-null F_beh (mean per donor value)": -0.013320843866618534,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "shuffled-null F_beh (mean per donor value)": 0.031038486929887983,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "refusal_boundary|ce",
+      "shuffled-null F_beh (mean per donor value)": 0.17917358356026045,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "shuffled-null F_beh (mean per donor value)": 0.687744082491227,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 6.6,
+      "shuffled-null F_beh (mean per donor value)": -0.04504507472758536,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "category": "refusal_boundary|pe",
+      "shuffled-null F_beh (mean per donor value)": 0.014598699566458765,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 7.8,
+      "shuffled-null F_beh (mean per donor value)": 0.5433928237455273,
+      "_kind": "bar",
+      "_group": 32
+    }
+  ],
+  "n_series": 33,
+  "total_points": 33,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-type null split by donor type \u2014 23 recipient cells whose pooled crosstype 95% CI excludes 0",
+        "ylabel": "crosstype-null F_beh (mean per donor type)",
+        "annotations": [
+          "fact_assistant_animal (n=25)",
+          "fact_novel_queried (n=28)",
+          "query_content (n=28)",
+          "query_content (n=28)",
+          "reasoning_style (n=14)",
+          "instr_language (n=33)",
+          "persona_prompted (n=33)",
+          "icl_task_mapping (n=36)",
+          "persona_prompted (n=36)",
+          "verbosity (n=33)",
+          "demo_format (n=35)",
+          "list_numeric_detail (n=27)",
+          "prior_topic (n=33)",
+          "language_implied (n=28)",
+          "instr_format (n=29)",
+          "instr_format (n=24)",
+          "instr_format (n=24)",
+          "constraint_knowledge (n=27)",
+          "prior_topic (n=25)",
+          "fact_user_name (n=15)",
+          "fact_user_name (n=27)",
+          "fact_user_name (n=33)",
+          "fact_user_name (n=33)"
+        ],
+        "xticklabels": [
+          "conflict_format_fwd|ce",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe",
+          "demo_persona|ce",
+          "fact_novel_queried|ce",
+          "instr_format|ce",
+          "instr_language|ce",
+          "language_implied|ce",
+          "load_fact_user_name_l3|ce",
+          "query_content|ce",
+          "reasoning_style|ce",
+          "recency_fact_user_name_d5|ce",
+          "recency_instr_format_d5|ce",
+          "recency_persona_prompted_d3|ce",
+          "recency_persona_prompted_d5|ce",
+          "recency_persona_prompted_d5|pe",
+          "recency_prior_topic_d3|ce",
+          "refusal_boundary|ce",
+          "user_emotion|ce",
+          "user_expertise|ce",
+          "verbosity|ce",
+          "verbosity|pe"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "Shuffled null split by donor value \u2014 ordinal value sets (refusal_boundary, constraint_knowledge) with either null CI excluding 0",
+        "ylabel": "shuffled-null F_beh (mean per donor value)",
+        "annotations": [
+          "v1 (n=6)",
+          "v3 (n=6)",
+          "v1 (n=6)",
+          "v3 (n=6)",
+          "v1 (n=10)",
+          "v2 (n=10)",
+          "v3 (n=5)",
+          "v1 (n=10)",
+          "v2 (n=10)",
+          "v3 (n=5)"
+        ],
+        "xticklabels": [
+          "constraint_knowledge|ce",
+          "constraint_knowledge|pe",
+          "refusal_boundary|ce",
+          "refusal_boundary|pe"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "crosstype_null_by_donor",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/stats.json",
+    "eval_results/issue_2329/f_metrics/null_crosstype_cells.jsonl",
+    "eval_results/issue_2329/f_metrics/null_shuffled_cells.jsonl"
+  ]
+}

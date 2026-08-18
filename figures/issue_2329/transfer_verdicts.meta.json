@@ -1,0 +1,93 @@
+{
+  "commit": "0066444b",
+  "render_id": "1218eebfb7994824",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:18:22Z",
+  "figsize": [
+    7.5,
+    6.5
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Causal-verdict transfer, parent -> this run (n=75 shared cells; each verdict valid within its own family's analysis-time m)\nHolm m realized/ceiling: P1 28/31 (parent 25) \u00b7 P2 12/15 (parent 10) \u00b7 P3 27/28 (parent 26)",
+        "xlabel": "causal verdict \u2014 Qwen3.5-9B (this run)",
+        "ylabel": "causal verdict \u2014 Qwen2.5-7B parent (#2162)",
+        "annotations": [
+          "5",
+          "0",
+          "0",
+          "3",
+          "52",
+          "2",
+          "0",
+          "8",
+          "5"
+        ],
+        "xticklabels": [
+          "positive",
+          "null",
+          "untestable-causal"
+        ],
+        "yticklabels": [
+          "positive",
+          "null",
+          "untestable-causal"
+        ]
+      },
+      {
+        "ylabel": "shared (cell x slot) units",
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "transfer_verdicts",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/transfer.json"
+  ],
+  "family_m_child": {
+    "P1": {
+      "realized_m": 28,
+      "constructional_ceiling": 31,
+      "parent_realized_m": 25
+    },
+    "P2": {
+      "realized_m": 12,
+      "constructional_ceiling": 15,
+      "parent_realized_m": 10
+    },
+    "P3": {
+      "realized_m": 27,
+      "constructional_ceiling": 28,
+      "parent_realized_m": 26
+    }
+  },
+  "family_m_parent_realized": {
+    "P2": 10,
+    "P1": 25,
+    "P3": 26
+  },
+  "agreement_counts": {
+    "null->null": 52,
+    "null->positive": 3,
+    "null->untestable-causal": 2,
+    "positive->positive": 5,
+    "untestable-causal->null": 8,
+    "untestable-causal->untestable-causal": 5
+  }
+}

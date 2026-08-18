@@ -1,0 +1,1423 @@
+{
+  "commit": "0066444b",
+  "render_id": "c59de9874df343cf",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:18:16Z",
+  "figsize": [
+    10.0,
+    6.0
+  ],
+  "points": [
+    {
+      "x": -0.11734754640968087,
+      "per-pair stage-2 F_beh": 1.693069306930693,
+      "label": "icl_task_mapping::v1-v2::w11",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1372208887035158,
+      "per-pair stage-2 F_beh": 0.888888888888889,
+      "label": "icl_task_mapping::v1-v2::w4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.15837811415321215,
+      "per-pair stage-2 F_beh": 1.2972972972972971,
+      "label": "icl_task_mapping::v1-v2::w7",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10002758577425774,
+      "per-pair stage-2 F_beh": 1.446927374301676,
+      "label": "icl_task_mapping::v3-v1::w11",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.10314123147345755,
+      "per-pair stage-2 F_beh": 1.8450704225352115,
+      "label": "icl_task_mapping::v3-v1::w12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09435570094399506,
+      "per-pair stage-2 F_beh": 0.728813559322034,
+      "label": "icl_task_mapping::v3-v1::w4",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.09324889303235102,
+      "per-pair stage-2 F_beh": 0.7029702970297029,
+      "label": "icl_task_mapping::v1-v2::w11",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0754596953838774,
+      "per-pair stage-2 F_beh": 1.5061728395061729,
+      "label": "icl_task_mapping::v1-v2::w4",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.16091573062189962,
+      "per-pair stage-2 F_beh": 0.9729729729729729,
+      "label": "icl_task_mapping::v1-v2::w7",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.10574109277807306,
+      "per-pair stage-2 F_beh": 0.888268156424581,
+      "label": "icl_task_mapping::v3-v1::w11",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.14711180040139177,
+      "per-pair stage-2 F_beh": 0.4366197183098591,
+      "label": "icl_task_mapping::v3-v1::w12",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.14313837306395802,
+      "per-pair stage-2 F_beh": 0.3050847457627119,
+      "label": "icl_task_mapping::v3-v1::w4",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.916984452287249,
+      "per-pair stage-2 F_beh": 0.934243803743045,
+      "label": "instr_language::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.8923668264526076,
+      "per-pair stage-2 F_beh": 0.1911021233569262,
+      "label": "instr_language::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.9156642643081228,
+      "per-pair stage-2 F_beh": 1.0030364372469636,
+      "label": "instr_language::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.8465504212974587,
+      "per-pair stage-2 F_beh": 0.06710393541876893,
+      "label": "instr_language::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.9243508110692478,
+      "per-pair stage-2 F_beh": -0.00200400801603201,
+      "label": "instr_language::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8736280207495163,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "instr_language::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9031234019382784,
+      "per-pair stage-2 F_beh": -0.020429009193054154,
+      "label": "instr_language::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8915075417770062,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "instr_language::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.8361623876240549,
+      "per-pair stage-2 F_beh": 1.0005012531328321,
+      "label": "instr_language::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9189015439020822,
+      "per-pair stage-2 F_beh": 1.0035605289928788,
+      "label": "instr_language::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.8355972133929808,
+      "per-pair stage-2 F_beh": 1.010611419909045,
+      "label": "instr_language::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.8602574701978775,
+      "per-pair stage-2 F_beh": 1.0030090270812437,
+      "label": "instr_language::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.8780806460846042,
+      "per-pair stage-2 F_beh": 1.0209825997952917,
+      "label": "instr_language::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.8779029369701717,
+      "per-pair stage-2 F_beh": 1.0116396761133604,
+      "label": "instr_language::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.8937342173417951,
+      "per-pair stage-2 F_beh": 0.5017561465127948,
+      "label": "instr_language::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.929701861308961,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_language::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.8786963952705862,
+      "per-pair stage-2 F_beh": 1.0240902101486418,
+      "label": "instr_language::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.8761743264583722,
+      "per-pair stage-2 F_beh": -0.003530005042864294,
+      "label": "instr_language::v2-v3::n5",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.902519494136269,
+      "per-pair stage-2 F_beh": -0.0035720360605544627,
+      "label": "instr_language::v2-v3::n6",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.8698023423437535,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_language::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.9091755189431981,
+      "per-pair stage-2 F_beh": 0.019637462235649564,
+      "label": "instr_language::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.8707596320131707,
+      "per-pair stage-2 F_beh": 1.0045362903225805,
+      "label": "instr_language::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.8923584304626975,
+      "per-pair stage-2 F_beh": 1.0070886075949368,
+      "label": "instr_language::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.8589211110869697,
+      "per-pair stage-2 F_beh": 1.0050352467270895,
+      "label": "instr_language::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.836138427753861,
+      "per-pair stage-2 F_beh": -0.018452075858534044,
+      "label": "instr_language::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.9068306936474443,
+      "per-pair stage-2 F_beh": 1.0050454086781029,
+      "label": "instr_language::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.8415335686023244,
+      "per-pair stage-2 F_beh": -0.0035193564605329342,
+      "label": "instr_language::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.8752629422076994,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_language::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.8429738127076559,
+      "per-pair stage-2 F_beh": 1.0025150905432596,
+      "label": "instr_language::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 0.9099370179788984,
+      "per-pair stage-2 F_beh": 1.0025252525252524,
+      "label": "instr_language::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 0.8323335112541026,
+      "per-pair stage-2 F_beh": -0.0020060180541624333,
+      "label": "instr_language::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 1.1063453629267201,
+      "per-pair stage-2 F_beh": 0.49418310571573093,
+      "label": "instr_language::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 1.144975721597408,
+      "per-pair stage-2 F_beh": -0.011122345803842274,
+      "label": "instr_language::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.11020847542276,
+      "per-pair stage-2 F_beh": -0.009109311740890696,
+      "label": "instr_language::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 1.166776325165835,
+      "per-pair stage-2 F_beh": -0.008577194752774983,
+      "label": "instr_language::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.1321936845262257,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "instr_language::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 1.119824917149113,
+      "per-pair stage-2 F_beh": -0.011235955056179735,
+      "label": "instr_language::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 1.1592474421153398,
+      "per-pair stage-2 F_beh": -0.020429009193054154,
+      "label": "instr_language::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.1314758667228129,
+      "per-pair stage-2 F_beh": -0.02040816326530614,
+      "label": "instr_language::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.1019734006104236,
+      "per-pair stage-2 F_beh": -0.002005012531328267,
+      "label": "instr_language::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 1.091273941821363,
+      "per-pair stage-2 F_beh": -0.013733468972533016,
+      "label": "instr_language::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 1.1461435209192965,
+      "per-pair stage-2 F_beh": 0.025265285497726147,
+      "label": "instr_language::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.0713896787817314,
+      "per-pair stage-2 F_beh": 1.0030090270812437,
+      "label": "instr_language::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 1.115569317573423,
+      "per-pair stage-2 F_beh": -0.0025588536335721048,
+      "label": "instr_language::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 1.1346449425327951,
+      "per-pair stage-2 F_beh": -0.0005060728744939276,
+      "label": "instr_language::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 1.0840510529967395,
+      "per-pair stage-2 F_beh": 0.17561465127947817,
+      "label": "instr_language::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 1.1492291634945788,
+      "per-pair stage-2 F_beh": 0.460276781137878,
+      "label": "instr_language::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 1.1511881257943433,
+      "per-pair stage-2 F_beh": 0.5058168942842691,
+      "label": "instr_language::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 1.1622067850967868,
+      "per-pair stage-2 F_beh": -0.0005035246727089632,
+      "label": "instr_language::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 1.1073784507055797,
+      "per-pair stage-2 F_beh": 0.4753024193548387,
+      "label": "instr_language::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.0760807543428403,
+      "per-pair stage-2 F_beh": -0.005569620253164506,
+      "label": "instr_language::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.1479160850455583,
+      "per-pair stage-2 F_beh": 0.013091641490433098,
+      "label": "instr_language::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 1.0903236620193855,
+      "per-pair stage-2 F_beh": -0.018452075858534044,
+      "label": "instr_language::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 1.0850734859082525,
+      "per-pair stage-2 F_beh": -0.004036326942482345,
+      "label": "instr_language::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 1.1679359614366387,
+      "per-pair stage-2 F_beh": -0.0035193564605329342,
+      "label": "instr_language::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 1.147514153339657,
+      "per-pair stage-2 F_beh": 0.5030743432084963,
+      "label": "instr_language::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 1.1632910593201744,
+      "per-pair stage-2 F_beh": -0.0035211267605633834,
+      "label": "instr_language::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 1.134311275323946,
+      "per-pair stage-2 F_beh": 0.49747474747474746,
+      "label": "instr_language::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 1.152309907007308,
+      "per-pair stage-2 F_beh": 0.49949849548645936,
+      "label": "instr_language::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 1.1254495259502135,
+      "per-pair stage-2 F_beh": 0.4881253158160687,
+      "label": "instr_language::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 1.8574803501082466,
+      "per-pair stage-2 F_beh": 1.0010050251256282,
+      "label": "language_implied::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 1.8983690944163936,
+      "per-pair stage-2 F_beh": 1.0015408320493067,
+      "label": "language_implied::v1-v2::n10",
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 1.8336571483288724,
+      "per-pair stage-2 F_beh": 1.000504668180671,
+      "label": "language_implied::v1-v2::n11",
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 1.9248460478636829,
+      "per-pair stage-2 F_beh": -0.027806385169927873,
+      "label": "language_implied::v1-v2::n12",
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 1.8831036739984626,
+      "per-pair stage-2 F_beh": -0.0010010010010010019,
+      "label": "language_implied::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 1.8946258600066577,
+      "per-pair stage-2 F_beh": 1.003019627579265,
+      "label": "language_implied::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 1.9139585807219945,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "language_implied::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 1.921227028602409,
+      "per-pair stage-2 F_beh": 1.0025662959794697,
+      "label": "language_implied::v1-v2::n5",
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 1.9265193028117875,
+      "per-pair stage-2 F_beh": 1.001757469244288,
+      "label": "language_implied::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 1.8324349318643993,
+      "per-pair stage-2 F_beh": 1.000561482313307,
+      "label": "language_implied::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.8660714395549904,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "language_implied::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.9259018821303018,
+      "per-pair stage-2 F_beh": -0.005535983895319526,
+      "label": "language_implied::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 1.8995232401750386,
+      "per-pair stage-2 F_beh": 0.009054325955734414,
+      "label": "language_implied::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 1.8664199079084833,
+      "per-pair stage-2 F_beh": -0.002079542500649801,
+      "label": "language_implied::v2-v3::n12",
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 1.8591598683846138,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "language_implied::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 1.833442090715934,
+      "per-pair stage-2 F_beh": -0.0030272452068617586,
+      "label": "language_implied::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 1.8691614910253636,
+      "per-pair stage-2 F_beh": 1.0060362173038229,
+      "label": "language_implied::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 1.8452249269302388,
+      "per-pair stage-2 F_beh": 1.021462639109698,
+      "label": "language_implied::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 1.8721727062708529,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "language_implied::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 1.8858316064972436,
+      "per-pair stage-2 F_beh": 0.004050632911392409,
+      "label": "language_implied::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 1.8384227408374652,
+      "per-pair stage-2 F_beh": 1.004020549475095,
+      "label": "language_implied::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 1.8306016236903013,
+      "per-pair stage-2 F_beh": 1.0141987829614605,
+      "label": "language_implied::v3-v1::n10",
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 1.8341954098944326,
+      "per-pair stage-2 F_beh": -0.0045317220543806686,
+      "label": "language_implied::v3-v1::n11",
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 1.8657223993641314,
+      "per-pair stage-2 F_beh": -0.004524886877828058,
+      "label": "language_implied::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 1.8920465592417413,
+      "per-pair stage-2 F_beh": -0.002508780732564032,
+      "label": "language_implied::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 1.8726349213739217,
+      "per-pair stage-2 F_beh": 1.0035158211953792,
+      "label": "language_implied::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 1.8330800863161474,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "language_implied::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 1.877666192786748,
+      "per-pair stage-2 F_beh": -0.011122345803842217,
+      "label": "language_implied::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 1.9032890245498308,
+      "per-pair stage-2 F_beh": -0.002508780732564032,
+      "label": "language_implied::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 2.127707373471603,
+      "per-pair stage-2 F_beh": 0.4984924623115578,
+      "label": "language_implied::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 2.153779335983852,
+      "per-pair stage-2 F_beh": 0.49583648750946246,
+      "label": "language_implied::v1-v2::n11",
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 2.1574675425431935,
+      "per-pair stage-2 F_beh": -0.0010010010010010019,
+      "label": "language_implied::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 2.1299850620117247,
+      "per-pair stage-2 F_beh": -0.0035228988424760976,
+      "label": "language_implied::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 2.1123085597334432,
+      "per-pair stage-2 F_beh": 0.49315762797769896,
+      "label": "language_implied::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 2.1407849913017105,
+      "per-pair stage-2 F_beh": 0.4850615114235501,
+      "label": "language_implied::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 2.153192928968642,
+      "per-pair stage-2 F_beh": -0.010106681639528306,
+      "label": "language_implied::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 2.0943047566695445,
+      "per-pair stage-2 F_beh": 0.04809619238476958,
+      "label": "language_implied::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 2.1169546275657094,
+      "per-pair stage-2 F_beh": 0.4977352793155511,
+      "label": "language_implied::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 2.1404026904503826,
+      "per-pair stage-2 F_beh": -0.0010060362173038239,
+      "label": "language_implied::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 2.162849372921108,
+      "per-pair stage-2 F_beh": -0.00151635497147803,
+      "label": "language_implied::v2-v3::n10",
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 2.089520704677934,
+      "per-pair stage-2 F_beh": -0.0005094243504839537,
+      "label": "language_implied::v2-v3::n11",
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 2.0938559898213533,
+      "per-pair stage-2 F_beh": 0.501002004008016,
+      "label": "language_implied::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 2.1590623893047685,
+      "per-pair stage-2 F_beh": 0.5015136226034309,
+      "label": "language_implied::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 2.0970800628993436,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "language_implied::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.151173050248754,
+      "per-pair stage-2 F_beh": 0.009652509652509685,
+      "label": "language_implied::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 2.0920895776968043,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "language_implied::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 2.096787398991104,
+      "per-pair stage-2 F_beh": 0.5014518650882287,
+      "label": "language_implied::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 2.0939060616135867,
+      "per-pair stage-2 F_beh": 0.49899295065458205,
+      "label": "language_implied::v3-v1::n11",
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 2.1518772786716123,
+      "per-pair stage-2 F_beh": 0.4985901051012561,
+      "label": "language_implied::v3-v1::n12",
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 2.152948643959796,
+      "per-pair stage-2 F_beh": 0.47310206133735544,
+      "label": "language_implied::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 2.1059603681801806,
+      "per-pair stage-2 F_beh": 0.49924736578023077,
+      "label": "language_implied::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 2.1015694357265966,
+      "per-pair stage-2 F_beh": -0.0010045203415369169,
+      "label": "language_implied::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 2.1418848008947404,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "language_implied::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 2.150747673638266,
+      "per-pair stage-2 F_beh": -0.07025246981339195,
+      "label": "language_implied::v3-v1::n6",
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 2.141789795802964,
+      "per-pair stage-2 F_beh": -0.011122345803842217,
+      "label": "language_implied::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 2.1292965892048152,
+      "per-pair stage-2 F_beh": 0.49924736578023077,
+      "label": "language_implied::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 2.91942741372955,
+      "per-pair stage-2 F_beh": -0.009852216748768482,
+      "label": "recency_persona_prompted_d3::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 2.9279421155316943,
+      "per-pair stage-2 F_beh": -0.05609114811568804,
+      "label": "recency_persona_prompted_d3::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 2.88557978184875,
+      "per-pair stage-2 F_beh": -0.0242424242424242,
+      "label": "recency_persona_prompted_d3::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 2.922996988624557,
+      "per-pair stage-2 F_beh": -0.09974424552429668,
+      "label": "recency_persona_prompted_d3::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 2.910236998290882,
+      "per-pair stage-2 F_beh": 0.3236060448150078,
+      "label": "recency_persona_prompted_d3::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 2.9259882334924807,
+      "per-pair stage-2 F_beh": 0.7077922077922079,
+      "label": "recency_persona_prompted_d3::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 2.8324503632076943,
+      "per-pair stage-2 F_beh": 0.45821917808219187,
+      "label": "recency_persona_prompted_d3::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 2.9206482125032616,
+      "per-pair stage-2 F_beh": -0.07120933087783916,
+      "label": "recency_persona_prompted_d3::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "x": 2.893960715912588,
+      "per-pair stage-2 F_beh": -0.003970880211780134,
+      "label": "recency_persona_prompted_d3::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "x": 2.855317536610382,
+      "per-pair stage-2 F_beh": 0.12004466778336124,
+      "label": "recency_persona_prompted_d3::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "x": 2.8769093680563453,
+      "per-pair stage-2 F_beh": 0.13753327417923694,
+      "label": "recency_persona_prompted_d3::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "x": 2.888234603434344,
+      "per-pair stage-2 F_beh": -0.048819742489270304,
+      "label": "recency_persona_prompted_d3::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "x": 2.920941035160757,
+      "per-pair stage-2 F_beh": 0.3062426383981155,
+      "label": "recency_persona_prompted_d3::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "x": 2.862848561546651,
+      "per-pair stage-2 F_beh": -0.0010188487009679071,
+      "label": "recency_persona_prompted_d3::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "x": 2.8461167262114575,
+      "per-pair stage-2 F_beh": -0.12561403508771934,
+      "label": "recency_persona_prompted_d3::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "x": 2.914043521657096,
+      "per-pair stage-2 F_beh": -0.015197568389057763,
+      "label": "recency_persona_prompted_d3::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "x": 2.912868121425759,
+      "per-pair stage-2 F_beh": 0.1922304085733423,
+      "label": "recency_persona_prompted_d3::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "x": 2.884918900035941,
+      "per-pair stage-2 F_beh": -0.012711864406779672,
+      "label": "recency_persona_prompted_d3::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "x": 2.9150110213558933,
+      "per-pair stage-2 F_beh": 0.038751345532831036,
+      "label": "recency_persona_prompted_d3::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "x": 2.86004114813431,
+      "per-pair stage-2 F_beh": -0.024180548092423388,
+      "label": "recency_persona_prompted_d3::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "x": 2.8644052751050344,
+      "per-pair stage-2 F_beh": -0.0301974448315912,
+      "label": "recency_persona_prompted_d3::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "x": 2.8761284882482268,
+      "per-pair stage-2 F_beh": 0.12990455991516442,
+      "label": "recency_persona_prompted_d3::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "x": 2.886563385409539,
+      "per-pair stage-2 F_beh": 0.39301310043668125,
+      "label": "recency_persona_prompted_d3::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "x": 2.8613830528272706,
+      "per-pair stage-2 F_beh": 0.07432057681641709,
+      "label": "recency_persona_prompted_d3::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "x": 2.8391208376170303,
+      "per-pair stage-2 F_beh": 0.23489932885906048,
+      "label": "recency_persona_prompted_d3::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "x": 2.888659106971966,
+      "per-pair stage-2 F_beh": 0.05492227979274616,
+      "label": "recency_persona_prompted_d3::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "x": 2.9153063785676356,
+      "per-pair stage-2 F_beh": 0.3897058823529412,
+      "label": "recency_persona_prompted_d3::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "x": 3.1042056861170897,
+      "per-pair stage-2 F_beh": -0.020799124247400127,
+      "label": "recency_persona_prompted_d3::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "x": 3.1567894964935155,
+      "per-pair stage-2 F_beh": -0.05609114811568804,
+      "label": "recency_persona_prompted_d3::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "x": 3.1050963145896913,
+      "per-pair stage-2 F_beh": -0.05179063360881541,
+      "label": "recency_persona_prompted_d3::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "x": 3.088640680943135,
+      "per-pair stage-2 F_beh": 0.3478260869565217,
+      "label": "recency_persona_prompted_d3::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "x": 3.152753114407829,
+      "per-pair stage-2 F_beh": 0.10474205315268366,
+      "label": "recency_persona_prompted_d3::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "x": 3.0964560664111263,
+      "per-pair stage-2 F_beh": -0.37012987012987003,
+      "label": "recency_persona_prompted_d3::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "x": 3.1166889571452407,
+      "per-pair stage-2 F_beh": -0.0417808219178081,
+      "label": "recency_persona_prompted_d3::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "x": 3.144023794826952,
+      "per-pair stage-2 F_beh": -0.12031921424186615,
+      "label": "recency_persona_prompted_d3::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "x": 3.1650692705491625,
+      "per-pair stage-2 F_beh": -0.01720714758438107,
+      "label": "recency_persona_prompted_d3::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "x": 3.089750836200285,
+      "per-pair stage-2 F_beh": -0.10619469026548684,
+      "label": "recency_persona_prompted_d3::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "x": 3.0842604712993755,
+      "per-pair stage-2 F_beh": 0.0809603573422669,
+      "label": "recency_persona_prompted_d3::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "x": 3.167876275819939,
+      "per-pair stage-2 F_beh": 0.1818988464951198,
+      "label": "recency_persona_prompted_d3::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "x": 3.0716969661759945,
+      "per-pair stage-2 F_beh": 0.015557939914163162,
+      "label": "recency_persona_prompted_d3::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "x": 3.1133179226146517,
+      "per-pair stage-2 F_beh": -0.1060070671378091,
+      "label": "recency_persona_prompted_d3::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "x": 3.1178357514745407,
+      "per-pair stage-2 F_beh": 0.38104941416199695,
+      "label": "recency_persona_prompted_d3::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "x": 3.1222638368868534,
+      "per-pair stage-2 F_beh": 0.20421052631578945,
+      "label": "recency_persona_prompted_d3::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "x": 3.1123366321624406,
+      "per-pair stage-2 F_beh": 0.045592705167173224,
+      "label": "recency_persona_prompted_d3::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "x": 3.1130534338984748,
+      "per-pair stage-2 F_beh": 0.32618888144675157,
+      "label": "recency_persona_prompted_d3::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "x": 3.1490745650391374,
+      "per-pair stage-2 F_beh": -0.03919491525423732,
+      "label": "recency_persona_prompted_d3::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "x": 3.0815911295111973,
+      "per-pair stage-2 F_beh": -0.04198062432723356,
+      "label": "recency_persona_prompted_d3::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "x": 3.1560648436932297,
+      "per-pair stage-2 F_beh": 0.0026867275658248872,
+      "label": "recency_persona_prompted_d3::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "x": 3.122850641831681,
+      "per-pair stage-2 F_beh": -0.012775842044134738,
+      "label": "recency_persona_prompted_d3::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "x": 3.1075305240958597,
+      "per-pair stage-2 F_beh": 0.007953340402969312,
+      "label": "recency_persona_prompted_d3::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "x": 3.160162309145412,
+      "per-pair stage-2 F_beh": 0.39301310043668125,
+      "label": "recency_persona_prompted_d3::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "x": 3.1589507413425704,
+      "per-pair stage-2 F_beh": 0.4070992789794786,
+      "label": "recency_persona_prompted_d3::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "x": 3.1168475041873362,
+      "per-pair stage-2 F_beh": -0.08846857840146417,
+      "label": "recency_persona_prompted_d3::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "x": 3.1058809364972606,
+      "per-pair stage-2 F_beh": -0.022797927461139858,
+      "label": "recency_persona_prompted_d3::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 181
+    }
+  ],
+  "n_series": 182,
+  "total_points": 182,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Stage-2 per-pair F_beh at each survivor's best (layer, dose) \u2014 post-selection, F_act-selected survivors (divergence 6) \u2014 steered (blue) vs shuffled null (grey), pair-id labeled",
+        "ylabel": "per-pair stage-2 F_beh",
+        "annotations": [
+          "icl_task_mapping::v1-v2::w11",
+          "icl_task_mapping::v1-v2::w4",
+          "icl_task_mapping::v1-v2::w7",
+          "icl_task_mapping::v3-v1::w11",
+          "icl_task_mapping::v3-v1::w12",
+          "icl_task_mapping::v3-v1::w4",
+          "icl_task_mapping::v1-v2::w11",
+          "icl_task_mapping::v1-v2::w4",
+          "icl_task_mapping::v1-v2::w7",
+          "icl_task_mapping::v3-v1::w11",
+          "icl_task_mapping::v3-v1::w12",
+          "icl_task_mapping::v3-v1::w4",
+          "L23,d1",
+          "instr_language::v1-v2::d1",
+          "instr_language::v1-v2::d2",
+          "instr_language::v1-v2::d3",
+          "instr_language::v1-v2::n1",
+          "instr_language::v1-v2::n2",
+          "instr_language::v1-v2::n3",
+          "instr_language::v1-v2::n4",
+          "instr_language::v1-v2::n7",
+          "instr_language::v1-v2::n8",
+          "instr_language::v1-v2::n9",
+          "instr_language::v2-v3::d1",
+          "instr_language::v2-v3::d2",
+          "instr_language::v2-v3::d3",
+          "instr_language::v2-v3::n1",
+          "instr_language::v2-v3::n2",
+          "instr_language::v2-v3::n3",
+          "instr_language::v2-v3::n4",
+          "instr_language::v2-v3::n5",
+          "instr_language::v2-v3::n6",
+          "instr_language::v2-v3::n7",
+          "instr_language::v2-v3::n8",
+          "instr_language::v2-v3::n9",
+          "instr_language::v3-v1::d1",
+          "instr_language::v3-v1::d2",
+          "instr_language::v3-v1::d3",
+          "instr_language::v3-v1::n1",
+          "instr_language::v3-v1::n2",
+          "instr_language::v3-v1::n3",
+          "instr_language::v3-v1::n4",
+          "instr_language::v3-v1::n7",
+          "instr_language::v3-v1::n8",
+          "instr_language::v1-v2::d1",
+          "instr_language::v1-v2::d2",
+          "instr_language::v1-v2::d3",
+          "instr_language::v1-v2::n1",
+          "instr_language::v1-v2::n2",
+          "instr_language::v1-v2::n3",
+          "instr_language::v1-v2::n4",
+          "instr_language::v1-v2::n7",
+          "instr_language::v1-v2::n8",
+          "instr_language::v1-v2::n9",
+          "instr_language::v2-v3::d1",
+          "instr_language::v2-v3::d2",
+          "instr_language::v2-v3::d3",
+          "instr_language::v2-v3::n1",
+          "instr_language::v2-v3::n2",
+          "instr_language::v2-v3::n4",
+          "instr_language::v2-v3::n7",
+          "instr_language::v2-v3::n8",
+          "instr_language::v2-v3::n9",
+          "instr_language::v3-v1::d1",
+          "instr_language::v3-v1::d2",
+          "instr_language::v3-v1::d3",
+          "instr_language::v3-v1::n1",
+          "instr_language::v3-v1::n2",
+          "instr_language::v3-v1::n3",
+          "instr_language::v3-v1::n4",
+          "instr_language::v3-v1::n7",
+          "instr_language::v3-v1::n8",
+          "instr_language::v3-v1::n9",
+          "L23,d4",
+          "language_implied::v1-v2::n1",
+          "language_implied::v1-v2::n10",
+          "language_implied::v1-v2::n11",
+          "language_implied::v1-v2::n12",
+          "language_implied::v1-v2::n2",
+          "language_implied::v1-v2::n3",
+          "language_implied::v1-v2::n4",
+          "language_implied::v1-v2::n5",
+          "language_implied::v1-v2::n6",
+          "language_implied::v1-v2::n7",
+          "language_implied::v1-v2::n8",
+          "language_implied::v1-v2::n9",
+          "language_implied::v2-v3::n1",
+          "language_implied::v2-v3::n12",
+          "language_implied::v2-v3::n2",
+          "language_implied::v2-v3::n3",
+          "language_implied::v2-v3::n4",
+          "language_implied::v2-v3::n7",
+          "language_implied::v2-v3::n8",
+          "language_implied::v2-v3::n9",
+          "language_implied::v3-v1::n1",
+          "language_implied::v3-v1::n10",
+          "language_implied::v3-v1::n11",
+          "language_implied::v3-v1::n2",
+          "language_implied::v3-v1::n3",
+          "language_implied::v3-v1::n4"
+        ],
+        "xticklabels": [
+          "icl_task_mapping|ce",
+          "instr_language|ce",
+          "language_implied|ce",
+          "recency_persona_prompted_d3|ce"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "layer_profile_stage2_perpair",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/stage2_cells.jsonl"
+  ]
+}
