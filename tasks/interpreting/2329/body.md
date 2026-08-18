@@ -25,7 +25,7 @@ relates_to:
 # Experiment: Do the #2162 minimal-pair context-vector findings transfer to Qwen3.5-9B with thinking disabled?
 <!-- report-v1 -->
 
-**Detailed writeup:** https://github.com/superkaiba/explore-persona-space/blob/6d905e2de66ca87b04743c375d309b3cc56a747d/docs/reports/issue_2329_detailed.md
+**Detailed writeup:** https://github.com/superkaiba/explore-persona-space/blob/60e1c290fd1a65cd9de1101f85c7971756270a61/docs/reports/issue_2329_detailed.md
 
 ## Motivation
 
@@ -148,7 +148,7 @@ relates_to:
 
 Planned manifest items not produced as figures:
 
-- Bank dashboard + Result-0 qualitative gallery (`qualitative_dashboards`) — **not run** as a figure: Not a matplotlib figure: this manifest item is delivered as HTML artifacts outside the plotter figure set — docs/issue2329_bank_dashboard.html (bank dashboard, 224 KB) and docs/issue2329_result0_gallery.html (Result-0 qualitative gallery, 13 MB), both present and content-non-empty in the issue-2329 worktree. No PNG view exists to splice into the report body. Delivered as HTML: [Bank dashboard](https://github.com/superkaiba/explore-persona-space/blob/f56349a511210ec3011b12e93f6704b8201b0ded/docs/issue2329_bank_dashboard.html), [Result-0 qualitative gallery](https://github.com/superkaiba/explore-persona-space/blob/f56349a511210ec3011b12e93f6704b8201b0ded/docs/issue2329_result0_gallery.html).
+- Bank dashboard + Result-0 qualitative gallery (`qualitative_dashboards`) — **not run** as a figure: Not a matplotlib figure: this manifest item is delivered as HTML artifacts outside the plotter figure set — docs/issue2329_bank_dashboard.html (bank dashboard, 224 KB) and docs/issue2329_result0_gallery.html (Result-0 qualitative gallery, 13 MB), both present and content-non-empty in the issue-2329 worktree. No PNG view exists to splice into the report body. Delivered as HTML: [Bank dashboard](https://github.com/superkaiba/explore-persona-space/blob/91b22ffd0e564665001a423c9ad5ee680e2b03c0/docs/issue2329_bank_dashboard.html), [Result-0 qualitative gallery](https://github.com/superkaiba/explore-persona-space/blob/91b22ffd0e564665001a423c9ad5ee680e2b03c0/docs/issue2329_result0_gallery.html).
 
 ### Per-type fraction-of-swap at each slot
 
@@ -162,7 +162,7 @@ Planned manifest items not produced as figures:
 - Error bars are 95% pair-clustered bootstrap CIs; n = post-exclusion pairs per type (printed in the x tick labels, 0-36), after the anchor-separation exclusion |ceiling - floor| >= 0.5.
 - Per-unit view (hero_ftype_perpair): every surviving pair as one labeled point (6,125 points across both slots and the three arms; pair id in the point label; no aggregation).
 
-![Per-type fraction-of-swap at each slot — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/hero_ftype.png)
+![Per-type fraction-of-swap at each slot — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/hero_ftype.png)
 
 **Takeaways**
 
@@ -180,7 +180,7 @@ Planned manifest items not produced as figures:
 - Per-family realized/ceiling Holm m is printed in the title; 1 cell without probe rows and 1 untestable cell without steered F are omitted.
 - Points concentrate near probe AUC = 1.0, so the per-point cell labels overlap heavily in that region.
 
-![Read x write 2x2 (probe AUC vs causal F_beh) — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/two_by_two.png)
+![Read x write 2x2 (probe AUC vs causal F_beh) — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/two_by_two.png)
 
 **Takeaways**
 
@@ -195,10 +195,10 @@ Planned manifest items not produced as figures:
 - The max-selected permutation band's upper bound (97.5% quantile of the per-draw re-maxed B = 1,000 carrier-level label-permutation null) is annotated; per-layer curves are the diagnostic display, the max-over-layers read is the headline statistic.
 - n per curve = 24 contexts per value-pair × 3 value-pairs (pre-exclusion; pe curves omit no-prefix contexts).
 
-- Aggregate view (layer_profile): heatmaps of leave-one-carrier-out (LOCO, 12 carrier groups) linear probe AUC per layer; rows = type-cells (39 for slot ce, 37 for slot pe), x = depth as fraction of the 32-layer stack, color = LOCO AUC (0.3-1.0), dashed verticals = full-attention layers.
+- Aggregate view (layer_profile): two heatmap panels of leave-one-carrier-out (LOCO, 12 carrier groups) linear probe AUC per layer, each with its own independent y-axis of type-cell rows — 39 rows in the ce panel, 37 in the pe panel (persona_prompted and persona_role_header appear only in the ce panel); x = depth as fraction of the 32-layer stack, color = LOCO AUC (0.3-1.0), dashed verticals = full-attention layers.
 - Per-unit views (probe_layer_curves_ce / _pe): one small-multiple panel per type-cell with the macro AUC-vs-depth curve over value-pairs (blue), thin per-value-pair curves/points, and the within-carrier permutation 95% band per layer (grey; B=1000).
 
-![Per-layer probe AUC curves with permutation bands — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/layer_profile.png)
+![Per-layer probe AUC curves with permutation bands — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/layer_profile.png)
 
 **Takeaways**
 
@@ -216,7 +216,7 @@ Planned manifest items not produced as figures:
 - x = patched layer in {9, 15, 16, 19, 23, 25, 30}, with depth as fraction of the 32-layer stack in parentheses and * marking full-attention layers; the survivor set is post-selection (F_act-selected), so this view is exploratory.
 - Per-unit view (layer_profile_stage2_perpair): 182 per-pair stage-2 F_beh points at each survivor's best (layer, dose), steered (blue) vs shuffled-donor null (grey), pair-id labeled.
 
-![Stage-2 layer-by-dose injectability profile — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/layer_profile_stage2.png)
+![Stage-2 layer-by-dose injectability profile — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/layer_profile_stage2.png)
 
 **Takeaways**
 
@@ -235,7 +235,7 @@ Planned manifest items not produced as figures:
 
 - Planned but NOT produced: conflict balance shift (judge_demo - judge_instr)/100, -1..1 — quantity never computed; no balance-shift code in scripts/issue2329_figures.py (grep for balance|judge_demo|judge_instr returns no matches); conflict cells are rendered as steered F_beh bars on the shared axis
 
-![Route contrasts and conflict balance — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/route_contrasts.png)
+![Route contrasts and conflict balance — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/route_contrasts.png)
 
 **Takeaways**
 
@@ -253,7 +253,7 @@ Planned manifest items not produced as figures:
 - Error bars are 95% pair-clustered CIs; the grey band is the shuffled-donor null's 95% CI.
 - Per-unit view (recency_load_perpair): 5,724 per-pair steered F_beh trajectory points across recency and load levels (ce solid, pe dashed), shown at full range and in zoom panels restricted to |F_beh| <= 2.
 
-![Recency and load curves — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/dose_position.png)
+![Recency and load curves — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/dose_position.png)
 
 **Takeaways**
 
@@ -267,10 +267,10 @@ Planned manifest items not produced as figures:
 - Plotted beside two mandatory baselines: the identity+learned-bias predictor (v̂ = v_C + b, b = train-fold mean of (v_A − v_C); applicable since input/output share d = 4096) and kNN retrieval P(true target within top-k) at k ∈ {1, 5, 10}, euclidean + cosine, chance = k/n_pool stated.
 - x-axis = fraction-of-stack, full-attention layers marked; n_train vs d printed on the figure. Banked parent maps are NOT plotted (dimension-inapplicable, divergence 8).
 
-- Left panel: held-out R-squared (context grain, leave-one-carrier-out) of the dof-capped GCV ridge map v_C -> v_A per layer, x = depth as fraction of the 32-layer stack, alongside the identity and identity + learned-bias baselines; y-axis spans roughly -35 to 5; the title states n_train ~ 12,870 > d = 4,096 (well-posed).
+- Left panel: held-out R-squared (context grain, leave-one-carrier-out) of the dof-capped GCV ridge map v_C -> v_A per layer, x = depth as fraction of the 32-layer stack, alongside the identity and identity + learned-bias baselines; the title states n_train ~ 12,870 > d = 4,096 (well-posed).
 - Right panel: kNN retrieval read of the fitted map, P(true target in top-5) among the held-out pool, cosine and euclidean, with the chance level 0.004 drawn; dashed verticals mark full-attention layers in both panels.
 
-![Per-layer context-to-answer map skill with baselines — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/mapshift/mapshift_r2.png)
+![Per-layer context-to-answer map skill with baselines — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/mapshift/mapshift_r2.png)
 
 **Takeaways**
 
@@ -285,9 +285,9 @@ Planned manifest items not produced as figures:
 - Per-cell points behind the per-type × layer summary; n = cells/pairs entering each correlation (printed per panel).
 
 - y = cosine similarity between the map-predicted answer-state shift and the realized patched shift, per layer (x = depth as fraction of the 32-layer stack); left panel restricted to the 8 stored-and-used cells, right panel all 39 cells.
-- Series: the bank-fit map summary curve, thin per-type-cell curves, the raw context shift with no map applied, and the null patch arms (shuffled / cross-type donors); dashed verticals mark full-attention layers; per-cell curves are the per-unit data behind the summary.
+- Series: the bank-fit map summary curve, per-type-cell point markers, the raw context shift with no map applied, and the null patch arms (shuffled / cross-type donors); dashed verticals mark full-attention layers; the per-cell points are the per-unit data behind the summary.
 
-![Predicted vs realized patched shift — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/mapshift/mapshift_shift_prediction.png)
+![Predicted vs realized patched shift — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/mapshift/mapshift_shift_prediction.png)
 
 **Takeaways**
 
@@ -304,7 +304,7 @@ Planned manifest items not produced as figures:
 - y = paired 2AFC accuracy (cosine similarity, span pooling): the fraction of pairs where the map-predicted answer state sits closer to its own context's real answer than to the alternative pair member; x = layer depth as fraction of the 32-layer stack.
 - Series with per-layer error bars: map fit on this bank, identity + bias, and identity baselines; the grey band is the carrier-blocked deranged null 95% band around the chance line at 0.5; dashed verticals mark full-attention layers.
 
-![2AFC minimal-pair answer discrimination — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/mapshift/dv3_2afc.png)
+![2AFC minimal-pair answer discrimination — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/mapshift/dv3_2afc.png)
 
 **Takeaways**
 
@@ -322,7 +322,7 @@ Planned manifest items not produced as figures:
 - The suptitle states Spearman rho = 0.831 (p = 7.4e-09), pair-clustered 95% CI [0.583, 0.864].
 - Companion view (transfer_verdicts): 3x3 heatmap of causal-verdict transfer (positive / null / untestable-causal), parent verdict vs this run's verdict, over n = 75 shared (cell x slot) units, with per-family realized/ceiling Holm m printed in the title.
 
-![Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/transfer_scatter.png)
+![Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/transfer_scatter.png)
 
 **Takeaways**
 
@@ -340,7 +340,7 @@ Planned manifest items not produced as figures:
 - anchor_separation_diag: per-pair anchor separation (ceiling - floor, judge-contrast units; K = 10 draws) per type (1,364 points), with the |separation| >= 0.5 keep threshold and kept/total pair counts printed per type. act_beh_agreement: mean F_act (read at layer 30 of 32) vs mean F_beh per (cell x slot x arm), with per-arm Spearman rho printed (steered 0.747, shuffled 0.529, crosstype 0.599; n = 74-75 screened cells per arm).
 - margin_validation: teacher-forced fixed-pool margin shift (patched - floor anchor) vs steered F_beh, per-(cell x slot) means (blue, registered grain, n_cells = 72, rho = 0.451, p = 7e-05) over per-pair companions (grey, n_pairs = 2,508, rho = 0.35); the main panel's y-range is stretched by a few extreme per-pair values and the inset zoom (|margin shift| < 1, |F_beh| < 3) carries the readable view. crosstype_null_by_donor: cross-type-null F_beh split by donor type for the 23 recipient cells whose pooled cross-type 95% CI excludes 0, plus shuffled-null F_beh split by donor value for the ordinal value sets (constraint_knowledge, refusal_boundary).
 
-![Diagnostics dump — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/diagnostics.png)
+![Diagnostics dump — aggregate view](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/diagnostics.png)
 
 **Takeaways**
 
