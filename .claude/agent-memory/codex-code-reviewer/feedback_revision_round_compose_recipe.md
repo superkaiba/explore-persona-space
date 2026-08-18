@@ -887,3 +887,30 @@ one item (e.g. sentinel: both-DVs-then-write / dry-run exclusion / legacy
 WARN tolerance / no healthy-tree deadlock) gets those axes spelled out as
 per-property duties with an added INVERTED-state probe (sentinel present,
 DV file absent).
+
+**Cap round after a THIRD consecutive reconciler-FAIL (#2223 napp r5,
+2026-08-18):** three deltas on the r3/r4 by-path shape. (a) The
+do-not-relitigate fence now stacks THREE rulings; two fence items need
+explicit spelling or the twin predictably re-FAILs: (i) when the new
+ruling CORRECTED the twin's own aggravator inside an UPHELD finding (the
+r4 honesty note: "pre-sentinel behavior would have surfaced it" does NOT
+hold — the pre-round tree consumed the same state silently), restate the
+correction in the twin's own-verdict context input so it does not repeat
+the disproven aggravator while verifying its upheld item; (ii) when the
+prescribed fix DELIBERATELY preserves a permissive path (hash-less
+sentinel → treated-as-absent → legacy WARN + consume), add a
+"the-prescription-is-not-a-defect" fence bullet quoting the ruling's own
+routing — otherwise the residual hunt re-raises the prescribed
+backward-tolerance as the blocker's leftover. (b) A closure duty whose
+blocker spans Required items 1+2+3 under ONE concern id composes as one
+ledger status line with per-item sub-structure (writer binding / reader
+validation with an enumerated mixed-pair state machine (a)-(f) /
+three-part test integrity incl. an explicit fails-pre-fix control-flow
+duty), plus a dedicated attention point rendering the reader's realized
+state→outcome mapping as a short table. (c) Assert-side trap: an
+instruction literal that LINE-WRAPS in the composed prose ("Record
+`**Diff acquisition:** sha-range <range>`" split across lines) defeats an
+exact-count assert — assert the one-line verdict-header form exactly, and
+the instruction form on a whitespace-normalized copy
+(`re.sub(r'\s+', ' ', p)`). Also: a 9-char range SHA is a PREFIX of the
+10-char prior-tip SHA — count the long form first and subtract.
