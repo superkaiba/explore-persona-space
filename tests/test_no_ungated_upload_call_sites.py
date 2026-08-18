@@ -98,7 +98,6 @@ GRANDFATHERED = {
     "scripts/issue2223_drift.py",
     "scripts/issue2254_preimage.py",
     "scripts/issue2330_qwen35_generate_capture.py",
-    "scripts/issue2332_repack_prefixes.py",
     "scripts/issue540_jsrb_predictor.py",
     "scripts/issue545_sweep.py",
     "scripts/issue588_smoke_artifact.py",
