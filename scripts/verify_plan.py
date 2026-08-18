@@ -12062,7 +12062,12 @@ def check_declared_width_vs_launch(plan: str, kind: str) -> CheckResult:
 #: byte-identical", "byte-identical with no flags" — 2026-08-18 sweep),
 #: which asserts behavior preservation, not a sampled data identity; the
 #: noun scoping also drops negated uses ("(not byte-identical) endpoint
-#: sample").
+#: sample"). Case-INSENSITIVE as of round 2 (the reconciler-deferred
+#: trigger-case concern, applied after the 2026-08-18 corpus re-sweep
+#: measured 8 < 10 defensible file-WARNs with IGNORECASE on: the
+#: sample-marker window is the binding FP control — lowercase "every row"
+#: alone appears 245x across 157 plans, but only 3 meta-plan self-hits
+#: survive the window + satisfier gates).
 _C64_EXACTNESS_RE = re.compile(
     r"\b(?:rows?|vectors?|shards?|files?|tensors?|copies)\b[^\n]{0,40}byte[- ]identical"
     r"|byte[- ]identical[^\n]{0,40}\b(?:rows?|vectors?|shards?|files?|tensors?|copies)\b"
@@ -12073,6 +12078,7 @@ _C64_EXACTNESS_RE = re.compile(
     r"|all pairwise[^\n]{0,40}=\s*1\.0+"
     r"|EVERY row\b"
     r"|\bno exceptions\b",
+    re.IGNORECASE,
 )
 
 #: Sample-size markers near the exactness line — SAMPLING-EXPLICIT forms
@@ -12111,9 +12117,19 @@ _C64_COMPLETED_RE = re.compile(
 #: Deferred-verification phrasing VETOES a full-grain phrase on its line:
 #: "Phase 0 re-asserts ... over the FULL staged store" is a deferral, not a
 #: completed verification — the #2163 A11 How-to-verify line itself (the
-#: founding incident MUST WARN; pinned by the verbatim-replay test).
+#: founding incident MUST WARN; pinned by the verbatim-replay test). The
+#: veto also covers NEGATED completion ("not verified", "never measured",
+#: "unverified") and PROSPECTIVE completion ("will be verified", "to be
+#: measured") — completion vocabulary under negation or in the future
+#: tense is not a completed verification (round-1 review concern
+#: c64-completion-polarity). Line-scoped and conservative by design: a
+#: false veto only converts a satisfier line back into the WARN-only
+#: default.
 _C64_DEFERRED_RE = re.compile(
-    r"\bre-?asserts?\b|\bwill\b[^\n]{0,40}\bassert\b|\bre-?checks?\s+at\s+runtime\b",
+    r"\bre-?asserts?\b|\bwill\b[^\n]{0,40}\bassert\b|\bre-?checks?\s+at\s+runtime\b"
+    r"|\b(?:not|never)\b[^\n]{0,20}\b(?:verified|measured|confirmed|counted)\b"
+    r"|\bun(?:verified|measured|confirmed|counted)\b"
+    r"|\b(?:will|to)\s+be\s+(?:verified|measured|confirmed|counted)\b",
     re.IGNORECASE,
 )
 
@@ -12133,7 +12149,9 @@ def check_exactness_grain(plan: str, kind: str) -> CheckResult:
     window-level: (a) COMPLETED full-grain verification — a full-grain
     phrase on a line that ALSO carries completed-verification vocabulary
     (verified/measured/confirmed/counted) and NO deferred-verification
-    phrasing (re-asserts / will ... assert / re-checks at runtime: the
+    phrasing (re-asserts / will ... assert / re-checks at runtime — nor
+    NEGATED ("not/never ... verified", "unverified") or PROSPECTIVE
+    ("will be / to be verified") completion: the
     #2163 A11 "Phase 0 re-asserts ... over the FULL staged store" line is
     a deferral and must NOT satisfy); (b) a bound restatement ("no
     deviation observed in N of M rows"). Escape: the standalone

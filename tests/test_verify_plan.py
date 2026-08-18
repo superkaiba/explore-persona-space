@@ -13023,6 +13023,39 @@ def test_c64_full_grain_verified_passes():
     assert "satisfier" in r.detail
 
 
+def test_c64_negated_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): NEGATED
+    # completion vocabulary beside a full-grain phrase is NOT a satisfier —
+    # "not verified at full grain" keeps the WARN (the veto arm, not the
+    # completed-verification satisfier, wins).
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Not verified at full grain (142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
+def test_c64_prospective_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): PROSPECTIVE
+    # completion ("will be verified ...") is a deferral, not a completed
+    # verification — keeps the WARN.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "How to verify: will be verified at full grain (all 142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
 def test_c64_bound_restatement_passes():
     # The second remedy: the claim restated as a sampled BOUND in the same
     # window -> PASS.
@@ -13036,6 +13069,23 @@ def test_c64_bound_restatement_passes():
     )
     r = _run(plan)[1][C64]
     assert r.status == "PASS", r.detail
+
+
+def test_c64_trigger_case_insensitive():
+    # Round-2 (reconciler-deferred concern c64-trigger-case, APPLIED after
+    # the corpus re-sweep measured 8 < 10 defensible file-WARNs with
+    # re.IGNORECASE on): sentence-initial / ordinary-casing exactness
+    # phrases fire the trigger.
+    for claim in (
+        "- **A2** Exactly zero deviating rows expected.",
+        "- **A2** No exceptions across the store.",
+        "- **A2** every row is byte-identical to the first row.",
+    ):
+        plan = GOOD_PLAN + (
+            f"\n## 12. Assumptions\n\n{claim}\n  Source: probed a 10-shard / 706-row sample.\n"
+        )
+        r = _run(plan)[1][C64]
+        assert r.status == "WARN", (claim, r.detail)
 
 
 def test_c64_escape_literal_passes():

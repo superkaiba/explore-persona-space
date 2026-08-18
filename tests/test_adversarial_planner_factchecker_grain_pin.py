@@ -37,10 +37,20 @@ def test_planner_repro_card_carries_grain_clause():
 
 
 def test_skill_factchecker_carries_exactness_grain_lens():
-    """The Phase 1.5 template keeps the #2174 exactness-grain lens tokens (AC1+AC2)."""
+    """The Phase 1.5 template keeps the #2174 exactness-grain lens tokens (AC1+AC2).
+
+    Beyond the two lens-name tokens, one token per REMEDY clause is pinned
+    (round 2, NIT exactness-lens-pin-too-shallow): deleting either remedy
+    from the lens text reds this pin, not just deleting the lens wholesale.
+    """
     text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text(encoding="utf-8")
     assert "EXACTNESS-CLAIM GRAIN CHECK" in text
     assert "GRAIN-MISMATCH" in text
+    # Remedy 1: verify at full grain NOW (the lens's "Name BOTH remedies" clause).
+    assert "verify at full grain NOW" in text
+    # Remedy 2: restate as a bound + soften the assert.
+    assert "restate the assumption as a bound" in text
+    assert "soften the assert" in text
 
 
 def test_planner_surfaces_carry_exactness_bound_clause():
