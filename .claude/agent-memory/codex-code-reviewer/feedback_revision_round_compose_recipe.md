@@ -957,3 +957,23 @@ exact-count assert — assert the one-line verdict-header form exactly, and
 the instruction form on a whitespace-normalized copy
 (`re.sub(r'\s+', ' ', p)`). Also: a 9-char range SHA is a PREFIX of the
 10-char prior-tip SHA — count the long form first and subtract.
+
+**Adopted-own-FAIL fix round + orchestrator-fenced OPEN blocker (#2360 r2,
+2026-08-18):** two deltas on the #2332/#2147 shapes. (a) When the orchestrator
+leaves one of the twin's own persisted BLOCKERs OPEN but RECLASSIFIED
+out-of-band (here: Phase-V live validation ruled a SEQUENCING GATE —
+orchestrator-owned, implementer forbidden from provisioning), compose a
+three-part fence: never re-raise as a round defect, plan-adherence rows that
+depend on it are marked `pending <gate> (orchestrator-owned open gate)` not
+✗-against-the-round, and the already-persisted id gets the status-line
+vocabulary `OPEN-GATE (orchestrator-owned; not a round-N defect)` — while
+explicitly PERMITTING a Needs-user-eyeball / Recommendation mention as the
+outstanding gate. (b) A brief labeling a press lead "fix-round-introduced"
+can be WRONG about provenance — probe `git show <round-parent>:<path> | grep`
+at compose time (here the broadened lock-parse except was round-1-introduced,
+delta-untouched, unflagged in r1); compose the lead with verified provenance
+(fresh press on the merits, `substantive` if raised, weigh the design's
+declared fail-open posture) and flag the discrepancy in the return. Also:
+`grep -c '{{'` the PAYLOADS before asserting no-braces — a legit f-string
+`{{` in a new test scopes the assert to template-side + per-placeholder
+zero-counts. Rerunnable: `/tmp/codex-2360-r2-compose.py`.
