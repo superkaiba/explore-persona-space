@@ -14472,7 +14472,13 @@ _LESSONS_ROW_RE = re.compile(
 # raise buys EXACTLY this row plus 2 B headroom (10203 + 2 = 10205, the
 # plan-§C.3 measured+~2 form) — not general slack (the #992 argued-raise
 # form; the per-row and non-row caps still bind).
-_LESSONS_MAX_BYTES = 10205
+# 10205->10492 (#2158): the index sat at 10203/10205 (2 B headroom), so the
+# new cross-session-writer-arbitration.md index row (+249 B incl. newline;
+# measured post-edit file 10452 B) could not land under the old cap. The
+# raise buys EXACTLY this row plus <=40 B headroom (10452 + 40 = 10492) —
+# not general slack (the #992 argued-raise form; the per-row and non-row
+# caps still bind).
+_LESSONS_MAX_BYTES = 10492
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -15389,7 +15395,10 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    "issue/steps/09-step-5.md": 99_300,  # measured 96,505 B @ #2352 2026-08-17
+    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
+    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 99_300 (#2352, 96,505 B).
+    "issue/steps/09-step-5.md": 100_300,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).

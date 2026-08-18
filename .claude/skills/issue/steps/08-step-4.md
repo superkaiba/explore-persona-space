@@ -227,6 +227,19 @@ available at dispatch time); the
 Step 5b recipe stays unchanged as the backstop for unforeseen thrash
 deaths.
 
+Shared-worktree note (#2158): a shared worktree is the EXPECTED shape for
+a multi-unit split — the units build on one branch, and a branch checks
+out in exactly one worktree — so an INDEPENDENT concurrent session may
+legitimately be working in the same tree. Cross-session writer
+arbitration (probe for live writers, durable file-set claim markers,
+sequence-after-commit or split file sets) is therefore a NORMAL
+pre-dispatch requirement here, not an edge case:
+`.claude/rules/cross-session-writer-arbitration.md`. Emitter convention
+(arm B of the pre-split review guard, #2158): each unit's `stage-dispatch`
+note carries `unit=<k>` — the guard's second arm keys on that token, and
+a pre-split round that omits it gets zero arm-B protection in exactly the
+pre-breadcrumb window where the #1336 v132 incident lived.
+
 Brief passed to the implementer:
 - The plan path (the `plans/plan.md` symlink, NOT the body text)
 - Task number + worktree path + branch name
