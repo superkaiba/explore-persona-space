@@ -1798,6 +1798,119 @@ def test_c30f_env_dot_source_not_reachable_stays_scoped(foreign_repo: Path, cert
     )
 
 
+# --- c30g family (r7, #2371 revision round 2; concern
+# disarm-fallback-drops-worktree-pathspecs): a recognized r6 disarm routes
+# the record to the scope=0 whole-index fallback, which pre-r7 read STAGED
+# names only and bound the STAGED blob — but a pathspec-form commit lands
+# WORKTREE content, and a cwd-INDEPENDENT repo-top pathspec
+# (`:/scripts/own.py`) lands it regardless of the unknown post-mover cwd.
+# So an uncertified worktree edit rode either NEW r6 prefix family to a
+# PERMIT where the r5 matcher (armed base intact => scoped worktree read)
+# BLOCKED — the reconciler-executed block->permit flip (4/4 scenario
+# cells). The r7 repair keys the fallback's worktree read AND the landing
+# binding on pathspec-form evidence (commit_has_pathspec /
+# pathspec_opaque), the conservative superset; every cell below BLOCKS on
+# the fixed guard.
+_R7_WORKTREE_EVIDENCE_COND = (
+    '[ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] || [ "$pathspec_opaque" = 1 ]'
+)
+# Pre-r7 evidence key (-a only) — the c30g2 revert-pin swaps this back in at
+# all three sites (fallback mod read, landing_sha, cert_diag) to reconstruct
+# the pre-fix fallback textually (c30c/c30e convention: no `git show` blob
+# pins — Step 10d rebase-merge rewrites branch SHAs; count asserts fail loud
+# on spelling drift).
+_PRE_R7_EVIDENCE_COND = '[ "$has_dash_a" = 1 ]'
+
+_C30G_MOVERS = [
+    pytest.param("FOO+=bar . scripts/env.sh", id="append-assign-dot-source"),
+    pytest.param("time . scripts/env.sh", id="time-dot-source"),
+]
+
+
+def _committed_then_edited_repo(
+    tmp_path: Path, name: str, *, staged_cert: Path | None = None
+) -> Path:
+    """Repo with scripts/own.py + scripts/env.sh COMMITTED (tracked), then
+    own.py worktree-edited (uncertified). With ``staged_cert`` set, an
+    intermediate staged blob is added and certified BEFORE the worktree edit
+    (the certified-older-staged-blob variant: the cert is real but binds
+    content the pathspec commit does NOT land)."""
+    repo = _init_repo(tmp_path, name)
+    _stage(repo, "scripts/own.py", "print(1)\n")
+    _stage(repo, "scripts/env.sh", "cd scripts\n")
+    _git(repo, "-c", "user.email=t@e", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    if staged_cert is not None:
+        _stage(repo, "scripts/own.py", "print(2)\n")
+        _cert_line(staged_cert, "scripts/own.py", _staged_sha(repo, "scripts/own.py"))
+    _write(repo, "scripts/own.py", "print(99)\n")  # uncertified worktree edit
+    return repo
+
+
+@pytest.mark.parametrize("mover", _C30G_MOVERS)
+def test_c30g_disarmed_repo_top_pathspec_unstaged_worktree_edit_blocked(
+    mover: str, tmp_path: Path, cert: Path
+) -> None:
+    # S1: nothing staged; the ONLY uncertified content is the worktree edit
+    # the repo-top pathspec commit lands. Pre-r7 the disarmed fallback saw an
+    # empty staged set and permitted at the artifact-only early-allow.
+    repo = _committed_then_edited_repo(tmp_path, "wtland_s1")
+    _assert_blocked(
+        _run(
+            f"cd {repo} && {mover} && git commit -m x -- :/scripts/own.py",
+            repo,
+            cert,
+            cwd=repo / "scripts",
+        )
+    )
+
+
+@pytest.mark.parametrize("mover", _C30G_MOVERS)
+def test_c30g_disarmed_repo_top_pathspec_certified_older_staged_blob_blocked(
+    mover: str, tmp_path: Path, cert: Path
+) -> None:
+    # S2: an OLDER staged blob is certified; the pathspec commit lands the
+    # fresher UNCERTIFIED worktree edit. Pre-r7 the disarmed fallback bound
+    # the staged blob and validated the wrong content (permit).
+    repo = _committed_then_edited_repo(tmp_path, "wtland_s2", staged_cert=cert)
+    _assert_blocked(
+        _run(
+            f"cd {repo} && {mover} && git commit -m x -- :/scripts/own.py",
+            repo,
+            cert,
+            cwd=repo / "scripts",
+        )
+    )
+
+
+def test_c30g2_pre_r7_fallback_permits_worktree_landing_fixed_guard_blocks(
+    tmp_path: Path,
+) -> None:
+    """Revert-pin proof the r7 repair is load-bearing: swap the r7 evidence
+    key back to the pre-r7 ``-a``-only form at ALL THREE sites (fallback mod
+    read, landing_sha, cert_diag) and assert that copy PERMITS all four
+    scenario cells (both new prefix families x {unstaged edit,
+    certified-older-staged-blob} — rc=0, the reconciler-executed
+    block->permit flip) while the fixed guard BLOCKS every cell (rc=2)."""
+    text = SCRIPT.read_text(encoding="utf-8")
+    assert text.count(_R7_WORKTREE_EVIDENCE_COND) == 3, "r7 evidence condition drifted"
+    pre_guard = tmp_path / "guard_pre_r7.sh"
+    pre_guard.write_text(
+        text.replace(_R7_WORKTREE_EVIDENCE_COND, _PRE_R7_EVIDENCE_COND), encoding="utf-8"
+    )
+    pre_guard.chmod(0o755)
+    for i, mover in enumerate(("FOO+=bar . scripts/env.sh", "time . scripts/env.sh")):
+        for j, with_staged_cert in enumerate((False, True)):
+            case_cert = tmp_path / f"cert_{i}_{j}.txt"
+            repo = _committed_then_edited_repo(
+                tmp_path,
+                f"wtland_pre_{i}_{j}",
+                staged_cert=case_cert if with_staged_cert else None,
+            )
+            crux = f"cd {repo} && {mover} && git commit -m x -- :/scripts/own.py"
+            _assert_allowed(_run(crux, repo, case_cert, script=pre_guard, cwd=repo / "scripts"))
+            _assert_blocked(_run(crux, repo, case_cert, cwd=repo / "scripts"))
+
+
 def test_c32b_assignment_prefixed_mover_before_arming_cd_still_scopes(
     foreign_repo: Path, cert: Path, tmp_path: Path
 ) -> None:

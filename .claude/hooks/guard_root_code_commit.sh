@@ -1132,7 +1132,13 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
     # so the NAME=value prefix completes there while the raw text hides
     # it; (r6 #2371) the masked-lead arm covers quoted APPEND-assignment
     # values (NAME+='a b' . x) identically. The union only ADDS disarm
-    # triggers (block direction). NAMED
+    # triggers, and a disarm is block-direction END TO END as of r7 (#2371
+    # rev 2): the scope=0 fallback it routes into reads the worktree
+    # superset for pathspec-form commits and binds landing content (see
+    # the whole-index fallback + landing_sha) — pre-r7 that fallback read
+    # staged names only, so a recognized disarm could PERMIT an
+    # uncertified worktree edit landing via a cwd-independent pathspec
+    # (concern disarm-fallback-drops-worktree-pathspecs). NAMED
     # RESIDUAL (fail-open for the widening, at-or-below origin/main
     # behavior everywhere else): mover spellings the text cannot
     # recognize — mid-word-quoted forms (`pu'sh'd`), a mover held in a
@@ -1513,9 +1519,16 @@ landing_sha() {
   # Scoped read engaged => a pathspec commit lands WORKTREE content for every
   # pending path (BINDING RULE at the loop below; issue #1620).
   [ "${scope:-0}" = 1 ] && worktree_shape=1
-  if [ "$has_dash_a" = 1 ] \
+  # r7 (#2371 rev 2, concern disarm-fallback-drops-worktree-pathspecs): a
+  # pathspec-form commit (clean OR opaque positional candidates) lands
+  # WORKTREE content exactly like -a, and under scope=0 the pathspec is
+  # unresolvable — bind the worktree hash for every worktree-modified
+  # pending path (block direction: staged-blob binding here validated a
+  # certified OLDER staged blob while a fresher uncertified worktree edit
+  # was what the pathspec commit actually landed).
+  if { [ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] || [ "$pathspec_opaque" = 1 ]; } \
     && git -C "$GUARD_REPO" diff --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
-    worktree_shape=1 # -a re-stages worktree content
+    worktree_shape=1 # -a / pathspec-form commit lands worktree content
   fi
   if printf '%s\n' "$text_paths" | grep -qxF -- "$p"; then
     worktree_shape=1 # commit pathspec / chained add-clause
@@ -1558,9 +1571,9 @@ cert_diag() {
   [ -n "$wt" ] || wt="-"
   binding=staged
   [ "${scope:-0}" = 1 ] && binding=worktree
-  if [ "$has_dash_a" = 1 ] \
+  if { [ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] || [ "$pathspec_opaque" = 1 ]; } \
     && git -C "$GUARD_REPO" diff --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
-    binding=worktree
+    binding=worktree # mirrors landing_sha's r7 pathspec-form evidence key
   fi
   if printf '%s\n' "$text_paths" | grep -qxF -- "$p"; then
     binding=worktree
@@ -2137,7 +2150,10 @@ fi
 # AT the repo root (git resolves pathspecs against the executing cwd, never
 # $GUARD_REPO — MF-1), the staged/modified reads are scoped to those
 # pathspecs. Every ambiguity falls back to the whole-index check (block
-# direction). The hook_cwd / cwd_ok reads live ABOVE the worktree-cwd allow
+# direction: for a pathspec-form commit the fallback reads staged plus ALL
+# worktree-modified files and binds worktree content — r7 #2371 rev 2;
+# staged-only there was the disarm-fallback-drops-worktree-pathspecs
+# permit). The hook_cwd / cwd_ok reads live ABOVE the worktree-cwd allow
 # gate (#2066); their computation is unchanged.
 
 # Path-limited `git add -A|--all -- <pathspec>` resolution (issue #1977): the
@@ -2235,7 +2251,24 @@ if [ "$scope" = 0 ]; then
     exit 2
   fi
   mod=""
-  [ "$has_dash_a" = 1 ] && mod=$(git -C "$GUARD_REPO" diff --name-only 2>/dev/null || true)
+  # r7 (#2371 rev 2, concern disarm-fallback-drops-worktree-pathspecs): this
+  # fallback read staged names only, so a record whose scope base was
+  # DISARMED (recognized mover) could PERMIT an uncertified worktree edit
+  # that a cwd-independent repo-top pathspec commit lands — the exact BLOCK
+  # the armed scoped read enforces. A pathspec-form commit lands WORKTREE
+  # content (BINDING RULE below) and its pathspec is unresolvable here
+  # (unknown cwd / opaque tokens), so the fail-closed read includes EVERY
+  # worktree-modified file — the conservative superset, exactly as for -a; a
+  # pathspec matching fewer files only over-tightens (block direction).
+  # NAMED RESIDUAL (pre-existing, r5-identical — no disarm can flip it):
+  # flag-form pathspec channels (--pathspec-from-file / --include /
+  # --interactive / --patch) set scope_unsafe, never scope, and carry NO
+  # positional candidates, so this read stays staged-only for them; those
+  # shapes never scoped under r5 either, so armed vs disarmed is
+  # verdict-identical there.
+  if [ "$has_dash_a" = 1 ] || [ "$commit_has_pathspec" = 1 ] || [ "$pathspec_opaque" = 1 ]; then
+    mod=$(git -C "$GUARD_REPO" diff --name-only 2>/dev/null || true)
+  fi
 fi
 pending=$(printf '%s\n%s\n%s\n' "$staged" "$mod" "$text_paths" \
   | grep -E "$GATED_PATH_ERE" | sort -u)
