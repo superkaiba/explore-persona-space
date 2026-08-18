@@ -1,0 +1,1 @@
+{"ts": "2026-08-18T15:50:14Z", "event": "raised", "concern_id": "c64-completion-polarity", "severity": "BLOCKER", "summary": "Negated or future full-grain verification is incorrectly accepted as completed verification, suppressing the WARN.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
