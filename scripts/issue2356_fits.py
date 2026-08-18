@@ -270,7 +270,7 @@ def _upload_file(args: argparse.Namespace, local: Path, rel: str) -> None:
         logger.info("[upload] skipped (--no-upload): %s", rel)
         return
     hub = _hub()
-    hub._upload(
+    base_url = hub._upload(
         local_path=local,
         repo_id=hub.DEFAULT_DATASET_REPO,
         repo_type="dataset",
@@ -278,6 +278,8 @@ def _upload_file(args: argparse.Namespace, local: Path, rel: str) -> None:
         raise_on_error=True,
         upload_as_file=True,
     )
+    if not base_url:
+        raise RuntimeError(f"upload returned no path ({rel}/{local.name})")
     logger.info("[upload] %s -> %s/%s/%s", local.name, _hf_prefix(args), rel, local.name)
 
 
@@ -290,13 +292,15 @@ def _upload_dir(args: argparse.Namespace, local_dir: Path, rel: str, expected: l
 
     hub = _hub()
     # HUB_DIR_FILECOUNT_EXEMPT: map bundles are <=29 files per condition dir.
-    hub._upload(
+    base_url = hub._upload(
         local_path=local_dir,
         repo_id=hub.DEFAULT_DATASET_REPO,
         repo_type="dataset",
         path_in_repo=f"{_hf_prefix(args)}/{rel}",
         raise_on_error=True,
     )
+    if not base_url:
+        raise RuntimeError(f"upload returned no path ({rel}/)")
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         hub.DEFAULT_DATASET_REPO,

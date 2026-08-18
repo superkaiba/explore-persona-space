@@ -669,13 +669,15 @@ def phase_upload(args: argparse.Namespace) -> None:
     raw_root = _out_root(args) / "eval_results" / prefix / "raw_completions"
     if raw_root.exists():
         # HUB_DIR_FILECOUNT_EXEMPT: per-arm subdirs hold a handful of shard JSONs.
-        hub._upload(
+        base_url = hub._upload(
             local_path=raw_root,
             repo_id=DATA_REPO,
             repo_type="dataset",
             path_in_repo=f"{prefix}/raw_completions",
             raise_on_error=True,
         )
+        if not base_url:
+            raise RuntimeError(f"raw_completions upload returned no path ({prefix})")
         expected = [
             f"{c}/shard{s}.json"
             for c in CORPORA
@@ -697,13 +699,15 @@ def phase_upload(args: argparse.Namespace) -> None:
     if merged.exists():
         # HUB_DIR_FILECOUNT_EXEMPT: capture stores are sharded per prompt_sha well
         # under the 10k/dir cap for smoke; production sharding is handled at means.
-        hub._upload(
+        base_url = hub._upload(
             local_path=merged,
             repo_id=DATA_REPO,
             repo_type="dataset",
             path_in_repo=f"{prefix}/summary_stores",
             raise_on_error=True,
         )
+        if not base_url:
+            raise RuntimeError(f"summary_stores upload returned no path ({prefix})")
         missing = hub.verify_repo_paths_uploaded(
             HfApi(),
             DATA_REPO,

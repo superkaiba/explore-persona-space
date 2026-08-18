@@ -739,13 +739,15 @@ def upload_corpus_text(args: argparse.Namespace) -> None:
         raise FileNotFoundError(f"corpus text dir missing: {text_dir}")
     path_in_repo = f"{prefix}/corpus"
     # HUB_DIR_FILECOUNT_EXEMPT: three JSONL files, far under the 10k/dir cap.
-    hub._upload(
+    base_url = hub._upload(
         local_path=text_dir,
         repo_id=DATA_REPO,
         repo_type="dataset",
         path_in_repo=path_in_repo,
         raise_on_error=True,
     )
+    if not base_url:
+        raise RuntimeError(f"corpus text upload returned no path ({path_in_repo})")
     expected = [f"{c}.jsonl" for c in ("armA", "armB", "generic")]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(), DATA_REPO, expected, path_in_repo=path_in_repo, repo_type="dataset"
