@@ -1,0 +1,1 @@
+{"ts": "2026-08-18T02:53:39Z", "event": "raised", "concern_id": "mutable-symbolic-root-proof", "severity": "BLOCKER", "summary": "Environment-dependent aliases can arm non-root scoping without proving the runtime directory-change destination.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
