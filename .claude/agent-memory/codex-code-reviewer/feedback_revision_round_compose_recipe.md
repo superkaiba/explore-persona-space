@@ -729,6 +729,21 @@ heading), and expect legitimate history-prose hits when sweeping round tokens
 ("verified closed by review round 2") — grep-and-eyeball beats a bare
 count==0 assert for those.
 
+**Tag-stripped inlined verdicts still collide on TITLE + schema headings
+(#2357 r2, 2026-08-17):** stripping the inlined prior verdict's marker tags
+(the #2332 form) removes the TAG collisions but not the TEXT ones — the r1
+verdict's own `# Codex Code Review: … (r1)` title line and its `## Issues
+Found` heading both still live in the prompt, so (a) the template-tail
+sentinel+title update must anchor on the TWO-LINE pair
+`<!-- …codex v<n-1> -->\n# Codex Code Review: … (r<n-1>)` (unique — the
+stripped inlined copy lost its tag line), and (b) a schema-section insert
+before `## Issues Found` must anchor on a template-only neighbor (the
+`- [...]` placeholder line), never the bare heading. Upheld-blocker fix
+rounds also want a `## Round-1 closure ledger` SCHEMA section in the verdict
+template (per-element C-row status lines + a non-gating standing-rec row) —
+mentions of it in prose line-wrap, so count-assert the heading only where
+verbatim.
+
 **Post-reconciler-binding-FAIL fix round (mixed rulings; #2332 r4,
 2026-08-16):** when the prior round ended Claude-PASS / own-twin-FAIL /
 reconciler BINDING FAIL with MIXED per-blocker rulings (upheld + downgraded +
