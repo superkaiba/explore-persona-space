@@ -9079,8 +9079,8 @@
     "2175": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2175",
-      "status": "running",
+      "path": "tasks/reviewing/2175",
+      "status": "reviewing",
       "title": "git_provenance() blind to untracked producing scripts \u2014 artifacts stamp a commit that lacks the code that made them"
     },
     "2176": {
