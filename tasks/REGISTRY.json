@@ -10306,7 +10306,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2333",
       "status": "interpreting",
-      "title": "Snowball test: do context-vector patch effects run through the first few answer tokens? First-k token patches + prefills vs ce patch, both models"
+      "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's whole-answer behavioral effect (MODERATE confidence)"
     },
     "2334": {
       "has_clean_result": false,
