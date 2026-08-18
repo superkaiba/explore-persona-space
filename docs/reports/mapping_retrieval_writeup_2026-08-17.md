@@ -87,6 +87,16 @@ Run 2026-08-18 (#1738 round `avg-target-maps`, ~11 GPU-h of 8×H200): a matched-
 
 Training on averaged draws changes the map by ≤ +0.004 R² and ≤ +0.2pp acc@1 in every eval cell — least squares on single noisy draws already estimates the conditional-mean answer, exactly as #1073 found on the single-turn corpus. Training-set size dominates: the 88k map beats both 20k maps by ~0.02 R² / ~5pp raw acc@1. Caveat carried: 8.2% of draws hit the recipe-inherited 1,024-token generation cap (a property of the whole corpus line, matched to the original draws by construction).
 
+**Phase B — the full convention battery on the new maps** (single-draw full pool → draw-averaged full-pool-replacement, the §4 convention; commit `1b80740702`):
+
+| map | raw euclid | whitened cos | CSLS-whitened | dbl-strength CSLS |
+|---|---|---|---|---|
+| ridge 88k | 0.816 → 0.909 | 0.954 → 0.987 | 0.976 → 0.994 | 0.985 → 0.995 |
+| single-trained 20k | 0.765 → 0.869 | 0.932 → 0.974 | 0.967 → 0.988 | 0.976 → 0.990 |
+| avg-trained 20k | 0.767 → 0.870 | 0.934 → 0.975 | 0.968 → 0.990 | 0.979 → 0.990 |
+
+Two additional reads: (1) the two 20k maps stay essentially equal under every convention (avg-trained ahead by 0.06–0.26pp in 7 of 8 cells) — the training-side null extends from R² to every retrieval read. (2) **The clean conventions compress the n-gap**: the 88k map's advantage over 20k shrinks from 5.1pp (raw euclidean) to 0.5–0.8pp (CSLS-whitened) — most of what 4× more training data buys in raw space is the same hub/anisotropy handling that whitening + CSLS provide closed-form.
+
 ## 9. Open
 - **Prefix arm untested under clean conventions** — history-only retrieval reads 0.207 raw; nobody knows how much of that deficit is hub artifact. Free read on banked predictions, not yet run.
 
