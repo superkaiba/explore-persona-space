@@ -41,8 +41,15 @@ SMOKE_OUT=/tmp/issue-2223-nap-smoke/responses
 echo "[phase=bootstrap_external]"
 bash scripts/issue2203_pod_bootstrap_engine.sh
 # FUSE-wedge prevention for the N-way uv fan-out below (#1689): resolve once,
-# then pin no-sync for every child.
-uv sync --locked >/dev/null 2>&1 || true
+# then pin no-sync for every child. Fail LOUD on a failed resolve — UV_NO_SYNC=1
+# over an unresolved venv would silently run a stale env for every child.
+rc=0
+uv sync --locked > /tmp/issue-2223-uv-sync.log 2>&1 || rc=$?
+echo "[nap-p1] uv sync rc=$rc"
+if [ "$rc" -ne 0 ]; then
+  tail -40 /tmp/issue-2223-uv-sync.log
+  exit "$rc"
+fi
 export UV_NO_SYNC=1
 
 # GPU ids from the inherited CVD when set (never re-pin literal indices over a
@@ -76,7 +83,7 @@ echo "[nap-p1] get_config probe rc=$rc"
 
 # (b) tiny REAL step-1 slice (2 roles x 2 questions, 1 GPU) — proves the
 # vLLM engine + chat template + row schema BEFORE the production fan-out.
-SMOKE_ROLES=$(ls "$REPO/external/assistant-axis/data/prompts/roles"/*.json \
+SMOKE_ROLES=$(ls "$REPO/external/assistant-axis/data/roles/instructions"/*.json \
   | head -2 | xargs -n1 basename | sed 's/\.json$//' | paste -sd, -)
 echo "[nap-p1] smoke roles: $SMOKE_ROLES"
 rm -rf "$SMOKE_OUT"

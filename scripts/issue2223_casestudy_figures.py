@@ -5,18 +5,21 @@ Reads the per-cell replay JSONs (+ optional judged scores) written by
 and emits, PER MODEL, per scenario x layer config, into
 ``<fig-dir>/<model_slug>/``:
 
-  drift_<scenario>_<layers>:  3 panels (answer-token mean / context vector /
-      prefix vector), x = turn, y = Lu assistant-axis projection averaged over
-      the PAPER BAND layers (the same metric in both layer configs so lines
-      are comparable), one line per arm.
+  drift_<scenario>_<layers>:  2 rows x 3 readout panels (answer-token mean /
+      context vector / prefix vector), x = turn, y = Lu assistant-axis
+      projection, one line per arm. Row 1 (PRIMARY) = the LAYER-32
+      projection (the paper's steering-selected mid layer); row 2
+      (secondary) = the PAPER-BAND layer mean. When no cell stores layer 32
+      (tiny smoke models), only the band row renders (logged).
   harm_<scenario>_<layers>:   per-turn judge score (0-100), one line per arm.
   avg_<dv>_<scenario>:        per-arm AVERAGE (over turns) grouped bars —
       one facet per layer config, bars ordered + colored by AXIS FAMILY
       (anchor / answer / ctx_native / ctx_faithful / ctx_preimage), dashed
       unsteered + cap_alltoken reference lines with the anchor-seed min-max
       band shaded (anchors run at seeds 42/43/44).
-  avg_drift_<scenario>:       same bar shape for the mean answer-token
-      band-layer projection.
+  avg_drift_l32_<scenario> / avg_drift_band_<scenario>: same bar shape for
+      the mean answer-token projection — layer-32 PRIMARY (skipped + logged
+      when layer 32 is absent) and band-mean secondary.
 
 NAP-round support: ``--round-subdir`` reads the round's tree
 (``<out-root>/<slug>/<subdir>/...``) and writes figures under
@@ -68,6 +71,9 @@ READOUT_TITLES = {
 
 ANCHOR_ARMS = ("unsteered", "cap_alltoken")
 ANCHOR_SEEDS = (42, 43, 44)
+# PRIMARY drift readout layer (plan §4: the paper's steering-selected mid layer;
+# cells store projections at ALL model layers, so layer 32 is present for 32b).
+PRIMARY_DRIFT_LAYER = 32
 FAMILY_ORDER = ("anchor", "answer", "ctx_native", "prefix_native", "ctx_faithful", "ctx_preimage")
 
 
@@ -107,6 +113,22 @@ def _band_mean_projection(cell: dict, rec: dict, readout: str) -> float | None:
     return (sum(vals) / len(vals)) if vals else None
 
 
+def _layer_projection(cell: dict, rec: dict, readout: str, layer: int) -> float | None:
+    """Single-layer assistant-axis projection (None when the layer is absent)."""
+    return rec["projections"].get(readout, {}).get(str(layer))
+
+
+def _cells_have_layer(cells: dict[str, dict], layer: int) -> bool:
+    """True when any cell stores a projection at ``layer`` (tiny models lack 32)."""
+    key = str(layer)
+    return any(
+        key in rec["projections"].get(r, {})
+        for cell in cells.values()
+        for rec in cell["turns"]
+        for r in READOUTS
+    )
+
+
 def _arm_cell(cells: dict[str, dict], arm: str, layers_cfg: str) -> dict | None:
     key = f"na__{arm}" if arm == "unsteered" else f"{layers_cfg}__{arm}"
     return cells.get(key)
@@ -124,34 +146,57 @@ def fig_drift(
 
     from explore_persona_space.analysis.paper_plots import savefig_paper
 
-    fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.6), sharex=True)
+    have_l32 = _cells_have_layer(cells, PRIMARY_DRIFT_LAYER)
+    if not have_l32:
+        print(
+            f"[figures] {scenario}/{layers_cfg}: no cell stores layer "
+            f"{PRIMARY_DRIFT_LAYER} — rendering band-mean row only",
+            flush=True,
+        )
+    rows: list[tuple[str, str]] = []
+    if have_l32:
+        rows.append(("l32", f"layer {PRIMARY_DRIFT_LAYER} (primary)"))
+    rows.append(("band", "band-layer mean" + (" (secondary)" if have_l32 else "")))
+    fig, axes = plt.subplots(
+        len(rows), 3, figsize=(12.5, 3.6 * len(rows)), sharex=True, squeeze=False
+    )
     any_line = False
     for arm in arms:
         cell = _arm_cell(cells, arm, layers_cfg)
         if cell is None:
             continue
         turns = [rec["turn"] for rec in cell["turns"]]
-        for ax, readout in zip(axes, READOUTS, strict=True):
-            ys = [_band_mean_projection(cell, rec, readout) for rec in cell["turns"]]
-            pts = [(t, y) for t, y in zip(turns, ys, strict=True) if y is not None]
-            if not pts:
-                continue
-            ax.plot(
-                [p[0] for p in pts],
-                [p[1] for p in pts],
-                marker="o",
-                markersize=2.5,
-                linewidth=1.2,
-                label=arm,
-                color=colors[arm],
-            )
-            any_line = True
+        for ri, (row_kind, _row_label) in enumerate(rows):
+            for ax, readout in zip(axes[ri], READOUTS, strict=True):
+                if row_kind == "l32":
+                    ys = [
+                        _layer_projection(cell, rec, readout, PRIMARY_DRIFT_LAYER)
+                        for rec in cell["turns"]
+                    ]
+                else:
+                    ys = [_band_mean_projection(cell, rec, readout) for rec in cell["turns"]]
+                pts = [(t, y) for t, y in zip(turns, ys, strict=True) if y is not None]
+                if not pts:
+                    continue
+                ax.plot(
+                    [p[0] for p in pts],
+                    [p[1] for p in pts],
+                    marker="o",
+                    markersize=2.5,
+                    linewidth=1.2,
+                    label=arm,
+                    color=colors[arm],
+                )
+                any_line = True
     assert any_line, f"no plottable cells for {scenario}/{layers_cfg}"
-    for ax, readout in zip(axes, READOUTS, strict=True):
-        ax.set_title(READOUT_TITLES[readout])
-        ax.set_xlabel("turn")
-    axes[0].set_ylabel("assistant-axis projection (band-layer mean)")
-    axes[-1].legend(fontsize=6, loc="best", ncol=1)
+    for ri, (_row_kind, row_label) in enumerate(rows):
+        for ax, readout in zip(axes[ri], READOUTS, strict=True):
+            if ri == 0:
+                ax.set_title(READOUT_TITLES[readout])
+            if ri == len(rows) - 1:
+                ax.set_xlabel("turn")
+        axes[ri][0].set_ylabel(f"axis projection ({row_label})")
+    axes[0][-1].legend(fontsize=6, loc="best", ncol=1)
     fig.suptitle(f"{scenario} — {layers_cfg} layers", fontsize=10)
     fig.tight_layout()
     paths = savefig_paper(fig, f"drift_{scenario}_{layers_cfg}", dir=out_dir, formats=("png",))
@@ -219,8 +264,17 @@ def fig_score(
 
 
 def _cell_mean_drift(cell: dict) -> float | None:
-    """Mean over turns of the answer-token band-layer projection (the drift DV)."""
+    """Mean over turns of the answer-token band-layer projection (secondary drift DV)."""
     vals = [_band_mean_projection(cell, rec, "answer_mean") for rec in cell["turns"]]
+    vals = [v for v in vals if v is not None]
+    return (sum(vals) / len(vals)) if vals else None
+
+
+def _cell_mean_drift32(cell: dict) -> float | None:
+    """Mean over turns of the answer-token LAYER-32 projection (primary drift DV)."""
+    vals = [
+        _layer_projection(cell, rec, "answer_mean", PRIMARY_DRIFT_LAYER) for rec in cell["turns"]
+    ]
     vals = [v for v in vals if v is not None]
     return (sum(vals) / len(vals)) if vals else None
 
@@ -419,11 +473,26 @@ def main(argv: list[str] | None = None) -> int:
                     ylim=(-2, 102),
                     layer_cfgs=lcs,
                 )
+                if _cells_have_layer(cells, PRIMARY_DRIFT_LAYER):
+                    fig_avg_bars(
+                        sc,
+                        fig_dir,
+                        "avg_drift_l32",
+                        f"axis projection (layer {PRIMARY_DRIFT_LAYER} primary, mean over turns)",
+                        lambda key, cc=cells: _cell_mean_drift32(cc[key]) if key in cc else None,
+                        layer_cfgs=lcs,
+                    )
+                else:
+                    print(
+                        f"[figures] {slug}/{sc}: no cell stores layer "
+                        f"{PRIMARY_DRIFT_LAYER} — skipping avg_drift_l32",
+                        flush=True,
+                    )
                 fig_avg_bars(
                     sc,
                     fig_dir,
-                    "avg_drift",
-                    "assistant-axis projection (band mean, mean over turns)",
+                    "avg_drift_band",
+                    "axis projection (band mean secondary, mean over turns)",
                     lambda key, cc=cells: _cell_mean_drift(cc[key]) if key in cc else None,
                     layer_cfgs=lcs,
                 )

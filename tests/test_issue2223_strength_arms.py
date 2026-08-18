@@ -393,6 +393,14 @@ def test_phase_judge_empty_assistant_scored_zero_not_dropped(tmp_path, monkeypat
         # the judged turn keeps its judge-produced score, no empty flag
         assert rows["1"]["score"] == 80.0 and "empty" not in rows["1"]
         assert payload["n_empty_turns"] == 1
+        # rule-29 per-cell accounting fields (r2 review: pin the schema)
+        acc = payload["per_arm_accounting"]["band__steer_ctx_k8"]
+        assert acc["n_items"] == 1  # only the non-empty turn was judged
+        assert acc["n_items_complete"] == 1
+        assert acc["n_api_refusal"] == 0
+        assert acc["n_transport_lost"] == 0
+        assert acc["n_empty"] == 1
+        assert acc["frac_items_complete"] == 1.0
     # the judge API never saw the empty turn (both DV batches)
     assert len(judged_batches) == 2
     for batch in judged_batches:
@@ -414,11 +422,423 @@ def test_strength_geometry_guard_rejects_pre_strength_taumap():
     # a PRE-strength extraction: tau_map.json lacked the strength maps entirely
     # (load_cs_geometry's tau_map.get(..., {}) yields empty dicts)
     pre = dict(geom, cap_percentile_tau={}, alpha={})
+    # band=[0, 1]: the 32b band is FIXED [46..53]; the 2-layer synthetic geom
+    # pins the coverage logic itself, not the production band constant.
     with pytest.raises(RuntimeError, match=r"--phase extract"):
         R._check_strength_geometry(
-            pre, ["cap_ctx_p100", "steer_ctx_k8"], Path("/x"), "32b", Path("/o")
+            pre, ["cap_ctx_p100", "steer_ctx_k8"], Path("/x"), "32b", Path("/o"), band=[0, 1]
         )
     # original (non-strength) arms never trip the guard on the same pre geom
-    R._check_strength_geometry(pre, ["cap_ctx", "unsteered"], Path("/x"), "32b", Path("/o"))
+    R._check_strength_geometry(
+        pre, ["cap_ctx", "unsteered"], Path("/x"), "32b", Path("/o"), band=[0, 1]
+    )
     # a complete geom passes for every new18 arm
-    R._check_strength_geometry(geom, list(R.NEW_STRENGTH_ARMS), Path("/x"), "32b", Path("/o"))
+    R._check_strength_geometry(
+        geom, list(R.NEW_STRENGTH_ARMS), Path("/x"), "32b", Path("/o"), band=[0, 1]
+    )
+
+
+def _synth_geom_newaxis(layers, H, seed=9):
+    """_synth_geom extended with the ctx_faithful / ctx_preimage families."""
+    geom = _synth_geom(layers, H, seed=seed)
+    for fam in R.NEWAXIS_FAMILIES:
+        geom["native_axes"][fam] = {li: torch.randn(H) for li in layers}
+        geom["floor_tau"][fam] = {"context-end": {li: -1.5 for li in layers}}
+        geom["cap_percentile_tau"][fam] = {
+            "context-end": {
+                p: {li: 1.0 + 0.1 * i for li in layers}
+                for i, p in enumerate(("p50", "p75", "p90", "p100"))
+            }
+        }
+        geom["alpha"][fam] = {
+            "context-end": {f"k{k}": {li: 0.3 * k for li in layers} for k in R.STEER_KS}
+        }
+    return geom
+
+
+def test_newaxis_geometry_guard_synthetic_deletions():
+    """r2 fix 4: the guard covers the FULL new-axis key set per band layer —
+    deleting any single required entry (axis layer / floor / percentile τ /
+    alpha k / default state) fails LOUD pre-model with a complete report."""
+    import copy
+
+    import pytest
+
+    layers = [0, 1]
+    band = [0, 1]
+    base = _synth_geom_newaxis(layers, 8)
+    # complete geom passes for EVERY new-axis arm (band-only domain)
+    R._check_strength_geometry(base, list(R.NEWAXIS_ARMS), Path("/x"), "32b", Path("/o"), band=band)
+    pre_arm = next(a for a in R.NEWAXIS_ARMS if R.CS_ARMS[a]["axis"] == "ctx_preimage")
+    fai_arm = next(a for a in R.NEWAXIS_ARMS if R.CS_ARMS[a]["axis"] == "ctx_faithful")
+    steer_arm = next(a for a in R.NEWAXIS_ARMS if R.CS_ARMS[a]["op"] == "steer" and "k8" in a)
+
+    g = copy.deepcopy(base)
+    del g["native_axes"]["ctx_preimage"][1]  # axis file missing a band layer
+    with pytest.raises(RuntimeError, match=r"axis\[ctx_preimage\] layers \[1\]"):
+        R._check_strength_geometry(g, [pre_arm], Path("/x"), "32b", Path("/o"), band=band)
+    with pytest.raises(RuntimeError, match=r"--phase extract_newaxes"):
+        R._check_strength_geometry(g, [pre_arm], Path("/x"), "32b", Path("/o"), band=band)
+
+    g = copy.deepcopy(base)
+    del g["floor_tau"]["ctx_faithful"]  # whole floor family absent
+    axisrep = next(
+        a
+        for a in R.NEWAXIS_ARMS
+        if R.CS_ARMS[a]["axis"] == "ctx_faithful" and R.CS_ARMS[a]["op"] == "axis_replace"
+    )
+    with pytest.raises(RuntimeError, match=r"floor_tau\[ctx_faithful\].*ABSENT"):
+        R._check_strength_geometry(g, [axisrep], Path("/x"), "32b", Path("/o"), band=band)
+
+    g = copy.deepcopy(base)
+    fam = R.CS_ARMS[steer_arm]["axis"]
+    del g["alpha"][fam]["context-end"]["k8"][0]  # one alpha layer gone
+    with pytest.raises(RuntimeError, match=r"alpha\[" + fam + r"\].*layers \[0\]"):
+        R._check_strength_geometry(g, [steer_arm], Path("/x"), "32b", Path("/o"), band=band)
+
+    g = copy.deepcopy(base)
+    del g["default_states"]["context"]  # default state absent
+    with pytest.raises(RuntimeError, match=r"default_states\[context\] ABSENT"):
+        R._check_strength_geometry(g, [fai_arm], Path("/x"), "32b", Path("/o"), band=band)
+
+    # deleting an UNRELATED family never trips a faithful-only request
+    g = copy.deepcopy(base)
+    del g["native_axes"]["ctx_preimage"]
+    R._check_strength_geometry(g, [fai_arm], Path("/x"), "32b", Path("/o"), band=band)
+
+
+# --------------------------------------------------------------------------- #
+# 8. extract_newaxes idempotency sentinel (r2 fix 6)
+# --------------------------------------------------------------------------- #
+def _newaxes_env(tmp_path):
+    import torch as _t
+
+    out_root = tmp_path / "cs"
+    ext_dir = out_root / R.model_slug("tiny") / "extractions"
+    ext_dir.mkdir(parents=True)
+    for fname in R.NEWAXIS_FILES.values():
+        _t.save({0: _t.randn(8), 1: _t.randn(8)}, ext_dir / fname)
+    args = _Args(
+        model="tiny",
+        smoke=True,
+        out_root=str(out_root),
+        n_roles=2,
+        n_questions=3,
+        force=False,
+    )
+    return out_root, ext_dir, args
+
+
+def test_extract_newaxes_sentinel_skips_before_model_load(tmp_path, monkeypatch):
+    """A regime-matching completion sentinel returns BEFORE any model load
+    (loader monkeypatched to raise); --force bypasses the sentinel."""
+    import json
+
+    import pytest
+
+    _out_root, ext_dir, args = _newaxes_env(tmp_path)
+    regime = R._newaxes_regime(args, ext_dir)
+    (ext_dir / R.NEWAXES_SENTINEL).write_text(json.dumps({"regime": regime}))
+
+    def _boom(*a, **k):
+        raise AssertionError("model must not load on a sentinel-matched re-run")
+
+    monkeypatch.setattr(R, "load_model_and_tokenizer", _boom)
+    checked: list = []
+    monkeypatch.setattr(R, "load_cs_geometry", lambda *a, **k: checked.append((a, k)) or {})
+    got = R.phase_extract_newaxes(args)
+    assert got == ext_dir
+    assert checked, "the skip path must re-run the geometry completeness check"
+
+    # --force bypasses the sentinel and proceeds toward the pool capture
+    monkeypatch.setattr(R, "_extraction_questions", lambda n: ["q"] * n)
+    monkeypatch.setattr(R, "_committed_tau_map", lambda d: ({}, "x"))
+    args.force = True
+    tau = {
+        "model": R.MODEL_FOR["tiny"],
+        "floor_tau": {},
+        "cap_percentile_tau": {},
+        "alpha": {},
+        "source": {},
+    }
+    (ext_dir / "tau_map.json").write_text(json.dumps(tau))
+    with pytest.raises(AssertionError, match="model must not load"):
+        R.phase_extract_newaxes(args)
+
+
+def test_extract_newaxes_stale_sentinel_recomputes(tmp_path, monkeypatch):
+    """A sentinel whose recorded regime differs (changed axis sha) recomputes."""
+    import json
+
+    import pytest
+    import torch as _t
+
+    _out_root, ext_dir, args = _newaxes_env(tmp_path)
+    regime = R._newaxes_regime(args, ext_dir)
+    (ext_dir / R.NEWAXES_SENTINEL).write_text(json.dumps({"regime": regime}))
+    # rewrite one axis file -> its sha changes -> sentinel is STALE
+    _t.save({0: _t.randn(8), 1: _t.randn(8)}, ext_dir / R.NEWAXIS_FILES["ctx_preimage"])
+    tau = {
+        "model": R.MODEL_FOR["tiny"],
+        "floor_tau": {},
+        "cap_percentile_tau": {},
+        "alpha": {},
+        "source": {},
+    }
+    (ext_dir / "tau_map.json").write_text(json.dumps(tau))
+    monkeypatch.setattr(R, "_extraction_questions", lambda n: ["q"] * n)
+
+    def _boom(*a, **k):
+        raise AssertionError("recompute reached the model load")
+
+    monkeypatch.setattr(R, "load_model_and_tokenizer", _boom)
+    with pytest.raises(AssertionError, match="recompute reached"):
+        R.phase_extract_newaxes(args)
+
+
+# --------------------------------------------------------------------------- #
+# 9. phase_generate resume contract (r2 fix 7a)
+# --------------------------------------------------------------------------- #
+_FROZEN = {
+    "scenarios": {
+        "selfharm": {"user_turns": ["u1", "u2", "u3"], "source_sha256": "f" * 16},
+    }
+}
+
+
+def _gen_geom(H=8):
+    torch.manual_seed(3)
+    return {
+        "answer_axis": {0: torch.randn(H), 1: torch.randn(H)},
+        "ext_sha": {"tau_map.json": "aa", "answer_axis.pt": "bb"},
+    }
+
+
+def _gen_args(out_root):
+    return _Args(
+        model="tiny",
+        smoke=True,
+        out_root=str(out_root),
+        scenario=None,
+        scenarios="selfharm",
+        arm="all",
+        arms="cap_ctx",
+        seeds="42",
+        layers="band",
+        num_shards=1,
+        shard_id=0,
+        round_subdir=None,
+    )
+
+
+def test_phase_generate_checks_geometry_before_model_load(tmp_path, monkeypatch):
+    """Order pin: the geometry-completeness check fires BEFORE any model load."""
+    import pytest
+
+    monkeypatch.setattr(R, "load_frozen", lambda p: _FROZEN)
+
+    def _geom_boom(*a, **k):
+        raise RuntimeError("geometry checked first")
+
+    def _model_boom(*a, **k):
+        raise AssertionError("model must not load before the geometry check")
+
+    monkeypatch.setattr(R, "load_cs_geometry", _geom_boom)
+    monkeypatch.setattr(R, "load_model_and_tokenizer", _model_boom)
+    with pytest.raises(RuntimeError, match="geometry checked first"):
+        R.phase_generate(_gen_args(tmp_path / "cs"))
+
+
+def test_phase_generate_pending_predicate_validates_regime(tmp_path, monkeypatch):
+    """A completed cell JSON with a MISMATCHED recorded regime raises LOUD
+    (never silently kept or redone); a MATCHING regime early-returns with the
+    model never loaded."""
+    import json
+
+    import pytest
+
+    out_root = tmp_path / "cs"
+    geom = _gen_geom()
+    monkeypatch.setattr(R, "load_frozen", lambda p: _FROZEN)
+    monkeypatch.setattr(R, "load_cs_geometry", lambda *a, **k: geom)
+
+    def _model_boom(*a, **k):
+        raise AssertionError("model must not load on a zero-pending resume")
+
+    monkeypatch.setattr(R, "load_model_and_tokenizer", _model_boom)
+
+    model_out = out_root / R.model_slug("tiny")
+    sc_dir = model_out / "selfharm"
+    (sc_dir / "turns").mkdir(parents=True)
+    cell = R.cell_name("band", "cap_ctx", 42)
+    (sc_dir / f"{cell}.json").write_text("{}")
+
+    # (a) WRONG recorded regime -> loud ValueError from check_regime
+    wrong = R._cell_regime("tiny", "selfharm", "cap_ctx", "band", 42, _FROZEN, geom, 2, True)
+    wrong = dict(wrong, frozen_sha="STALE")
+    (sc_dir / "turns" / f"{cell}.regime.json").write_text(json.dumps(wrong))
+    with pytest.raises(ValueError):
+        R.phase_generate(_gen_args(out_root))
+
+    # (b) matching regime -> zero-pending early return, model never loaded
+    right = R._cell_regime("tiny", "selfharm", "cap_ctx", "band", 42, _FROZEN, geom, 2, True)
+    (sc_dir / "turns" / f"{cell}.regime.json").write_text(json.dumps(right))
+    assert R.phase_generate(_gen_args(out_root)) == model_out
+
+    # (c) cell JSON without its regime file -> inconsistent resume state
+    (sc_dir / "turns" / f"{cell}.regime.json").unlink()
+    with pytest.raises(AssertionError, match="inconsistent resume state"):
+        R.phase_generate(_gen_args(out_root))
+
+
+# --------------------------------------------------------------------------- #
+# 10. NAP-round scenario defaulting (r2 fix 10)
+# --------------------------------------------------------------------------- #
+def test_resolve_scenarios_nap_round_defaults_to_two_scenarios():
+    a = _Args(scenario=None, scenarios=None, round_subdir=R.NAP_ROUND_SUBDIR)
+    assert R.resolve_scenarios(a) == list(R.NAP_ROUND_SCENARIOS) == ["selfharm", "delusion"]
+    # non-round bare launch keeps ALL scenarios
+    b = _Args(scenario=None, scenarios=None, round_subdir=None)
+    assert R.resolve_scenarios(b) == list(R.SCENARIOS)
+    # an explicit flag always wins over the round default
+    c = _Args(scenario="jailbreak", scenarios=None, round_subdir=R.NAP_ROUND_SUBDIR)
+    assert R.resolve_scenarios(c) == ["jailbreak"]
+
+
+# --------------------------------------------------------------------------- #
+# 11. capture pipeline — default-role pool / H1 gate / skip ledger (r2 fixes 1,3,7b)
+# --------------------------------------------------------------------------- #
+from scripts import issue2223_native_preimage_capture as CAP  # noqa: E402
+
+
+def test_h1_classification_three_outcomes():
+    g = CAP._h1_classification([0.95, 0.92], 0.80)
+    assert g["classification"] == "pass" and g["band_all_pass"] and g["mid_pass"]
+    assert g["band_min_cos"] == 0.92
+    # ALL quantifier: ONE band layer under 0.90 flips band_all_pass even at a
+    # high mean
+    g = CAP._h1_classification([0.99, 0.89], 0.80)
+    assert g["classification"] == "mixed-floors-inconclusive-proceed"
+    assert not g["band_all_pass"] and g["mid_pass"]
+    g = CAP._h1_classification([0.95, 0.92], 0.50)
+    assert g["classification"] == "mixed-floors-inconclusive-proceed"
+    g = CAP._h1_classification([0.95, 0.80], 0.50)
+    assert g["classification"] == "kill-pipeline-fidelity-fail"
+    assert not g["verdict_informational"]
+
+
+def test_is_default_role_paper_semantics():
+    assert CAP._is_default_role("default")
+    assert CAP._is_default_role("default_v2")
+    assert not CAP._is_default_role("assistant")  # assistant is an ORDINARY scored role
+
+
+def _mini_store(tmp_path, rows):
+    """One-chunk store + per-role score files. rows: (role, key, score|None)."""
+    import json
+
+    import torch as _t
+
+    store = tmp_path / "store"
+    store.mkdir()
+    H = 4
+    ans = _t.stack([_t.full((H,), float(i + 1)) for i in range(len(rows))])
+    ctx = ans * 10.0
+    _t.save(
+        {
+            "answer_mean": ans.half(),
+            "context_end": ctx.half(),
+            "keys": [(r, k) for r, k, _ in rows],
+        },
+        store / "shard00_chunk0000.pt",
+    )
+    scores_dir = tmp_path / "scores"
+    scores_dir.mkdir()
+    by_role: dict[str, dict] = {}
+    for r, k, s in rows:
+        if s is not None:
+            by_role.setdefault(r, {})[k] = s
+    for r, d in by_role.items():
+        (scores_dir / f"{r}.json").write_text(json.dumps(d))
+    return store, scores_dir
+
+
+def test_stream_role_sums_default_unfiltered_assistant_score3(tmp_path):
+    """r2 fix 3: the default pool keeps ALL rows UNFILTERED (no score file at
+    all); assistant + every other role keep score==3 rows only; roles with a
+    missing score file are counted-skipped, never crash."""
+    rows = [
+        ("default", "d1", None),  # default pool: NO score file, kept anyway
+        ("default", "d2", None),
+        ("assistant", "a1", 3),  # kept (score==3)
+        ("assistant", "a2", 1),  # dropped (sub-threshold)
+        ("pirate", "p1", 3),  # kept
+        ("nurse", "n1", None),  # role with NO score file -> counted-skipped
+    ]
+    store, scores_dir = _mini_store(tmp_path, rows)
+    sums_ans, sums_ctx, counts, kept_roles, stats = CAP._stream_role_sums(
+        store, scores_dir, min_count=1, smoke=False, min_kept_roles=1
+    )
+    assert stats["default_pool_roles"] == ["default"]
+    assert stats["default_pool_rows"] == 2 and counts["default"] == 2
+    assert counts["assistant"] == 1  # a2 filtered out
+    assert kept_roles == ["assistant", "pirate"]
+    assert stats["roles_missing_scores"] == ["nurse"]
+    assert stats["n_roles_missing_scores"] == 1
+    # value pin: assistant sum == the a1 row only (row 3 -> value 3.0)
+    assert torch.allclose(sums_ans["assistant"], torch.full((4,), 3.0))
+    assert torch.allclose(sums_ctx["assistant"], torch.full((4,), 30.0))
+    # default sum == d1 + d2 (values 1.0 + 2.0)
+    assert torch.allclose(sums_ans["default"], torch.full((4,), 3.0))
+
+
+def test_stream_role_sums_kept_roles_floor(tmp_path):
+    """The min-kept-roles floor fails LOUD in production mode; smoke demotes it."""
+    import pytest
+
+    rows = [("default", "d1", None), ("assistant", "a1", 3)]
+    store, scores_dir = _mini_store(tmp_path, rows)
+    with pytest.raises(AssertionError, match="floor 5"):
+        CAP._stream_role_sums(store, scores_dir, min_count=1, smoke=False, min_kept_roles=5)
+    # smoke demotes the floor (and min_count) to 1
+    _a, _c, _n, kept, stats = CAP._stream_role_sums(
+        store, scores_dir, min_count=50, smoke=True, min_kept_roles=5
+    )
+    assert kept == ["assistant"] and stats["min_kept_roles_effective"] == 1
+
+
+def test_load_done_keys_includes_skip_ledger(tmp_path):
+    """r2 fix 7b: durably-skipped rows are DONE for resume (zero-pending rerun),
+    with per-reason counts persisted."""
+    import json
+
+    import torch as _t
+
+    store = tmp_path / "store"
+    store.mkdir()
+    _t.save(
+        {"answer_mean": _t.zeros(1, 4), "context_end": _t.zeros(1, 4), "keys": [("r", "k1")]},
+        store / "shard00_chunk0000.pt",
+    )
+    (store / "shard00_chunk0000.keys.json").write_text(json.dumps({"keys": [["r", "k1"]], "n": 1}))
+    CAP._write_skip_ledger(
+        store,
+        0,
+        [
+            {"role": "r", "key": "k2", "reason": "overlength (5000>4096)"},
+            {"role": "r", "key": "k3", "reason": "empty-response"},
+            {"role": "r", "key": "k4", "reason": "overlength (9000>4096)"},
+        ],
+    )
+    done, next_chunk, prior = CAP._load_done_keys(store, 0)
+    assert done == {("r", "k1"), ("r", "k2"), ("r", "k3"), ("r", "k4")}
+    assert next_chunk == 1 and len(prior) == 3
+    ledger = json.loads(CAP._skip_ledger_path(store, 0).read_text())
+    assert ledger["n"] == 3
+    assert ledger["reasons"] == {"overlength": 2, "empty-response": 1}
+    # a shard with ONLY skips (no chunk ever flushed) is still fully done
+    store2 = tmp_path / "store2"
+    store2.mkdir()
+    CAP._write_skip_ledger(store2, 0, [{"role": "r", "key": "k9", "reason": "empty-response"}])
+    done2, next2, _p2 = CAP._load_done_keys(store2, 0)
+    assert done2 == {("r", "k9")} and next2 == 0

@@ -175,14 +175,21 @@ def phase_fixture(args) -> Path:
     so the capture→map→axes chain smokes on CPU — an enumerated smoke
     SUBSTITUTION (smoke-blind-spots rule). Shape mirrors step-1 exactly:
     per-role JSONL rows {system_prompt, prompt_index, question_index, question,
-    conversation, label} and per-role score JSONs {key: 0-3}.
+    conversation, label} and per-role score JSONs {key: 0-3}. Role semantics
+    mirror the paper corpus: ``default`` is the UNFILTERED default-pool role
+    (no scores file — 4_vectors keys the unfiltered branch on ``"default" in
+    role``); ``assistant`` is an ORDINARY SCORED role (it has eval_prompt +
+    questions upstream and goes through the score==3 filter like any other).
     """
     assert args.smoke, "--phase fixture is smoke-only (production consumes real step-1 output)"
     responses_dir = Path(args.responses_dir)
     scores_dir = Path(args.scores_dir)
     responses_dir.mkdir(parents=True, exist_ok=True)
     scores_dir.mkdir(parents=True, exist_ok=True)
-    roles = {"assistant": "You are a helpful assistant."}
+    roles = {
+        "default": "You are a helpful assistant.",
+        "assistant": "You are a helpful assistant.",
+    }
     roles.update({r: f"You are a {r}. Stay in character." for r in _FIXTURE_ROLES})
     for role, system in roles.items():
         rows = []
@@ -203,8 +210,9 @@ def phase_fixture(args) -> Path:
                     }
                 )
         (responses_dir / f"{role}.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
-        if role != "assistant":
-            # one sub-threshold row exercises the score==3 filter branch.
+        if "default" not in role:
+            # every scored role (assistant INCLUDED) gets one sub-threshold row
+            # so the score==3 filter branch is exercised per role.
             scores = {_resp_key(r): 3 for r in rows}
             scores[_resp_key(rows[0])] = 1
             _atomic_write_json(scores_dir / f"{role}.json", scores)
@@ -237,8 +245,39 @@ def _store_regime(args, band: list[int], mid: int, store_layers: list[int], n_ro
     )
 
 
-def _load_done_keys(store_dir: Path, shard_id: int) -> tuple[set, int]:
-    """(done row keys, next chunk index) from this shard's completed sidecars."""
+def _skip_ledger_path(store_dir: Path, shard_id: int) -> Path:
+    return store_dir / f"shard{shard_id:02d}_skipped.json"
+
+
+def _load_skip_ledger(store_dir: Path, shard_id: int) -> list[dict]:
+    """Prior skipped rows ({role, key, reason}) from this shard's durable ledger."""
+    p = _skip_ledger_path(store_dir, shard_id)
+    return json.loads(p.read_text())["skipped"] if p.exists() else []
+
+
+def _write_skip_ledger(store_dir: Path, shard_id: int, skipped: list[dict]) -> None:
+    """Atomically persist the shard's FULL accumulated skip set (resume-durable).
+
+    SKIPPED rows (empty-response / over-max-len) enter the shard's done
+    predicate through this ledger, so a rerun is zero-pending even when the
+    trailing rows of a run were all skips (no chunk flush ever carried them).
+    """
+    reasons: dict[str, int] = {}
+    for s in skipped:
+        reasons[s["reason"].split(" (")[0]] = reasons.get(s["reason"].split(" (")[0], 0) + 1
+    _atomic_write_json(
+        _skip_ledger_path(store_dir, shard_id),
+        {"skipped": skipped, "n": len(skipped), "reasons": reasons},
+    )
+
+
+def _load_done_keys(store_dir: Path, shard_id: int) -> tuple[set, int, list[dict]]:
+    """(done row keys incl. durably-skipped ones, next chunk index, prior skips).
+
+    Done = keys stored in completed chunk sidecars ∪ keys in the shard's skip
+    ledger — a skipped (empty / over-length) row is DONE for resume purposes
+    (re-rendering it would re-skip it identically; the ledger keeps the reason).
+    """
     done: set = set()
     next_chunk = 0
     for sidecar in sorted(store_dir.glob(f"shard{shard_id:02d}_chunk*.keys.json")):
@@ -249,7 +288,9 @@ def _load_done_keys(store_dir: Path, shard_id: int) -> tuple[set, int]:
         done.update((r, k) for r, k in meta["keys"])
         idx = int(sidecar.name.split("_chunk")[1].split(".")[0])
         next_chunk = max(next_chunk, idx + 1)
-    return done, next_chunk
+    prior_skips = _load_skip_ledger(store_dir, shard_id)
+    done.update((s["role"], s["key"]) for s in prior_skips)
+    return done, next_chunk, prior_skips
 
 
 def phase_capture(args) -> Path:
@@ -288,11 +329,12 @@ def phase_capture(args) -> Path:
     else:
         _atomic_write_json(regime_path, regime)
 
-    done, next_chunk = _load_done_keys(store_dir, shard_id)
+    done, next_chunk, prior_skips = _load_done_keys(store_dir, shard_id)
     pending = [(r, k, c) for r, k, c in my_rows if (r, k) not in done]
     _log(
         f"[nap-capture] shard {shard_id}/{n_shards}: {len(my_rows)} rows, "
-        f"{len(done)} done, {len(pending)} pending (layers={store_layers})"
+        f"{len(done)} done (incl. {len(prior_skips)} durably-skipped), "
+        f"{len(pending)} pending (layers={store_layers})"
     )
     if not pending:
         _log("[nap-capture] zero pending rows — headroom preamble skipped; nothing to do")
@@ -313,12 +355,16 @@ def phase_capture(args) -> Path:
     buf_keys: list[tuple[str, str]] = []
     buf_ctx: list[torch.Tensor] = []
     buf_ans: list[torch.Tensor] = []
-    skipped: list[dict] = []
+    new_skips: list[dict] = []
     chunk_idx = next_chunk
     n_done = 0
 
     def _flush():
-        nonlocal chunk_idx, buf_keys, buf_ctx, buf_ans, skipped
+        nonlocal chunk_idx, buf_keys, buf_ctx, buf_ans
+        # skip persistence FIRST and INDEPENDENT of the stored buffer: trailing
+        # skips with an empty buffer must still land durably (resume contract).
+        if new_skips:
+            _write_skip_ledger(store_dir, shard_id, prior_skips + new_skips)
         if not buf_keys:
             return
         pt = store_dir / f"shard{shard_id:02d}_chunk{chunk_idx:05d}.pt"
@@ -335,14 +381,14 @@ def phase_capture(args) -> Path:
         os.replace(tmp, pt)
         _atomic_write_json(
             pt.with_name(pt.name.replace(".pt", ".keys.json")),
-            {"keys": [list(k) for k in buf_keys], "skipped": skipped, "n": len(buf_keys)},
+            {"keys": [list(k) for k in buf_keys], "n": len(buf_keys)},
         )
         _log(
             f"[nap-capture] chunk shard{shard_id:02d}_chunk{chunk_idx:05d} "
-            f"n={len(buf_keys)} skipped={len(skipped)} elapsed={time.time() - t0:.0f}s"
+            f"n={len(buf_keys)} skipped_so_far={len(new_skips)} elapsed={time.time() - t0:.0f}s"
         )
         chunk_idx += 1
-        buf_keys, buf_ctx, buf_ans, skipped = [], [], [], []
+        buf_keys, buf_ctx, buf_ans = [], [], []
 
     for k0 in range(0, len(pending), batch):
         chunk = pending[k0 : k0 + batch]
@@ -350,10 +396,10 @@ def phase_capture(args) -> Path:
         for role, key, conv in chunk:
             prompt_ids, resp_ids = _render_prompt(tok, model_key, conv)
             if not resp_ids:
-                skipped.append({"role": role, "key": key, "reason": "empty-response"})
+                new_skips.append({"role": role, "key": key, "reason": "empty-response"})
                 continue
             if len(prompt_ids) + len(resp_ids) > int(args.max_len):
-                skipped.append(
+                new_skips.append(
                     {
                         "role": role,
                         "key": key,
@@ -393,7 +439,22 @@ def phase_capture(args) -> Path:
                 f"elapsed={time.time() - t0:.0f}s"
             )
     _flush()
-    _log(f"[nap-capture] shard {shard_id} DONE: {n_done} rows in {time.time() - t0:.0f}s")
+    # Reconciliation: every shard row must now be stored OR durably skipped —
+    # a rerun over this store is zero-pending by construction.
+    done2, _nc, skips2 = _load_done_keys(store_dir, shard_id)
+    left = [(r, k) for r, k, _c in my_rows if (r, k) not in done2]
+    assert not left, (
+        f"reconcile FAILED: {len(left)} shard rows neither stored nor skip-ledgered: {left[:5]}"
+    )
+    reasons: dict[str, int] = {}
+    for s in skips2:
+        reasons[s["reason"].split(" (")[0]] = reasons.get(s["reason"].split(" (")[0], 0) + 1
+    _log(
+        f"[nap-capture] shard {shard_id} DONE: {n_done} rows processed in "
+        f"{time.time() - t0:.0f}s; reconcile: {len(my_rows)} shard rows = "
+        f"{len(my_rows) - len(skips2)} stored + {len(skips2)} skipped "
+        f"(reasons={reasons}), 0 pending"
+    )
     return store_dir
 
 
@@ -415,8 +476,10 @@ def _store_meta(store_dir: Path) -> dict:
 def _load_store(store_dir: Path):
     """Materialize the full store (fp16 CPU): (keys, roles, layers, ctx, ans).
 
-    ~10.4 GB at n=55,200 for the 32b leg — used by the MAP phase (GPU pod) and
-    the axes stability pass; the axes MEAN pass streams instead.
+    ~10.4 GB at n=55,200 for the 32b leg — used ONLY by the MAP phase (GPU
+    pod). The axes phase never materializes: the role-mean pass streams
+    (:func:`_stream_role_sums`) and the stability refits stream sufficient
+    statistics (:func:`_fold_maps_for_stability`).
     """
     import torch
 
@@ -537,8 +600,17 @@ def phase_map(args) -> Path:
 
     for li in band:
         Mp, bp = map_dir / f"M_{li}.pt", map_dir / f"b_{li}.pt"
-        if Mp.exists() and bp.exists() and str(li) in metrics["map"]:
-            _log(f"[nap-map] layer {li} COMPLETE — skip")
+        prior = metrics["map"].get(str(li))
+        # resume predicate keyed on the output-affecting regime keys (λ grid +
+        # pool size), not bare file existence — a λ-grid change recomputes.
+        if (
+            Mp.exists()
+            and bp.exists()
+            and prior is not None
+            and prior.get("lambda_grid") == lambdas
+            and prior.get("n_pool") == n
+        ):
+            _log(f"[nap-map] layer {li} COMPLETE (λ grid + pool match) — skip")
             continue
         t0 = time.time()
         i = lidx[li]
@@ -630,18 +702,36 @@ def _load_scores(scores_dir: Path, role: str) -> dict | None:
     return json.loads(p.read_text()) if p.exists() else None
 
 
-def _stream_role_sums(store_dir: Path, scores_dir: Path, min_count: int, smoke: bool):
+def _is_default_role(role: str) -> bool:
+    """Paper 4_vectors/5_axis default-pool membership: ``"default" in role``.
+
+    The default pool keeps ALL rows unfiltered (compute_mean_vector); every
+    OTHER role — ``assistant`` INCLUDED (it is an ordinary scored role in the
+    paper corpus) — goes through the score==3 filter (compute_pos_3_vector).
+    """
+    return "default" in role
+
+
+def _stream_role_sums(
+    store_dir: Path,
+    scores_dir: Path,
+    min_count: int,
+    smoke: bool,
+    min_kept_roles: int = 1,
+):
     """One streaming pass → per-role kept sums (answer_mean + context_end, fp32).
 
-    Filter: role=="assistant" keeps ALL rows (the paper's unfiltered default
-    side); every other role keeps score==3 rows only (paper 4_vectors). Roles
-    with a missing score file are SKIPPED (counted); roles below min_count are
-    DROPPED from the role mean (counted). Smoke demotes min_count to 1 (an
-    enumerated smoke gate-downgrade).
+    Filter (paper 4_vectors semantics): roles with ``"default"`` in the name
+    keep ALL rows (the unfiltered default pool); every other role — assistant
+    included — keeps score==3 rows only. Roles with a missing score file are
+    SKIPPED (counted, warn-equivalent); roles below min_count are DROPPED from
+    the role mean (counted). Smoke demotes min_count AND the kept-roles floor
+    to 1 (enumerated smoke gate-downgrades).
     """
     import torch
 
     eff_min = 1 if smoke else min_count
+    eff_floor = 1 if smoke else max(1, int(min_kept_roles))
     sums_ans: dict[str, torch.Tensor] = {}
     sums_ctx: dict[str, torch.Tensor] = {}
     counts: dict[str, int] = {}
@@ -652,7 +742,7 @@ def _stream_role_sums(store_dir: Path, scores_dir: Path, min_count: int, smoke: 
         ans = blob["answer_mean"].float()
         ctx = blob["context_end"].float()
         for r, (role, key) in enumerate(blob["keys"]):
-            if role == "assistant":
+            if _is_default_role(role):
                 keep = True
             else:
                 if role not in score_cache:
@@ -671,19 +761,30 @@ def _stream_role_sums(store_dir: Path, scores_dir: Path, min_count: int, smoke: 
                 sums_ans[role] = ans[r].clone()
                 sums_ctx[role] = ctx[r].clone()
             counts[role] = counts.get(role, 0) + 1
-    assert counts.get("assistant", 0) >= 1, "no assistant (default) rows in the store"
-    kept_roles = sorted(r for r, c in counts.items() if r != "assistant" and c >= eff_min)
-    below = sorted(r for r, c in counts.items() if r != "assistant" and c < eff_min)
+    default_roles = sorted(r for r in counts if _is_default_role(r))
+    assert default_roles, f"no default-pool rows in the store (roles={sorted(counts)[:8]}...)"
+    kept_roles = sorted(r for r, c in counts.items() if not _is_default_role(r) and c >= eff_min)
+    below = sorted(r for r, c in counts.items() if not _is_default_role(r) and c < eff_min)
     assert kept_roles, f"no role passes min_count={eff_min} (counts={counts})"
+    # Kept-roles floor: a catastrophically missing/empty score set must fail
+    # LOUD here, not surface as a silently role-starved axis (#2223 r2).
+    assert len(kept_roles) >= eff_floor, (
+        f"only {len(kept_roles)} scored roles pass min_count={eff_min} "
+        f"(< floor {eff_floor}); missing score files for {len(missing_scores)} roles "
+        f"— check --scores-dir (roles_missing_scores={sorted(missing_scores)[:8]}...)"
+    )
     stats = {
         "min_count": min_count,
         "min_count_effective": eff_min,
+        "min_kept_roles": min_kept_roles,
+        "min_kept_roles_effective": eff_floor,
+        "default_pool_roles": default_roles,
+        "default_pool_rows": int(sum(counts[r] for r in default_roles)),
         "n_roles_kept": len(kept_roles),
         "n_roles_below_min_count": len(below),
         "roles_below_min_count": below,
         "n_roles_missing_scores": len(missing_scores),
         "roles_missing_scores": sorted(missing_scores),
-        "assistant_rows": counts["assistant"],
         "role_rows_kept": int(sum(counts[r] for r in kept_roles)),
         "smoke": smoke,
     }
@@ -796,6 +897,37 @@ def _fold_maps_for_stability(
     return out
 
 
+def _h1_classification(h1_band: list[float], h1_mid: float) -> dict:
+    """Plan §3 H1 verdict: ALL-quantifier band floor (0.90) + mid floor (0.71).
+
+    ``pass``  = EVERY band-layer cos >= 0.90 AND mid cos >= 0.71.
+    ``kill-pipeline-fidelity-fail`` = >=1 band cos < 0.90 AND mid < 0.71
+    (BOTH floors failed — the plan's Pipeline-fidelity-fail predicate).
+    ``mixed-floors-inconclusive-proceed`` = exactly one floor failed — the
+    fidelity label is pre-committed Inconclusive and the run PROCEEDS
+    (plan §7 P2-boundary mixed adjudication).
+    """
+    assert h1_band, "empty band cosine list"
+    band_all = all(c >= 0.90 for c in h1_band)
+    mid_ok = h1_mid >= 0.71
+    if band_all and mid_ok:
+        cls = "pass"
+    elif not band_all and not mid_ok:
+        cls = "kill-pipeline-fidelity-fail"
+    else:
+        cls = "mixed-floors-inconclusive-proceed"
+    return {
+        "band_min_cos": min(h1_band),
+        "band_mean_cos": sum(h1_band) / len(h1_band),
+        "band_all_pass": band_all,
+        "mid_cos": h1_mid,
+        "mid_pass": mid_ok,
+        "thresholds_informational": {"band_all": 0.90, "mid": 0.71},
+        "classification": cls,
+        "verdict_informational": bool(band_all and mid_ok),
+    }
+
+
 def phase_axes(args) -> Path:
     """Filtered axes + preimage + axis_cos.json + preimage diagnostics/stability."""
     import torch
@@ -817,11 +949,19 @@ def phase_axes(args) -> Path:
     mid = int(meta["mid_layer"])
 
     sums_ans, sums_ctx, counts, kept_roles, pool_stats = _stream_role_sums(
-        store_dir, scores_dir, int(args.min_count), smoke
+        store_dir,
+        scores_dir,
+        int(args.min_count),
+        smoke,
+        min_kept_roles=int(args.min_kept_roles),
     )
     lidx = {li: i for i, li in enumerate(layers)}
-    a_mean_ans = sums_ans["assistant"] / counts["assistant"]  # (L, H)
-    a_mean_ctx = sums_ctx["assistant"] / counts["assistant"]
+    # paper 5_axis: default side = mean over stacked DEFAULT-POOL per-role mean
+    # vectors ("default" in role, unfiltered); role side = mean over stacked
+    # score-3 per-role means (assistant is an ordinary member of the role side).
+    default_roles = pool_stats["default_pool_roles"]
+    a_mean_ans = torch.stack([sums_ans[r] / counts[r] for r in default_roles]).mean(dim=0)
+    a_mean_ctx = torch.stack([sums_ctx[r] / counts[r] for r in default_roles]).mean(dim=0)
     role_ans = torch.stack([sums_ans[r] / counts[r] for r in kept_roles]).mean(dim=0)
     role_ctx = torch.stack([sums_ctx[r] / counts[r] for r in kept_roles]).mean(dim=0)
 
@@ -839,7 +979,11 @@ def phase_axes(args) -> Path:
         v_preimage[li] = v
         recon = M @ v + b
         diag["reconstruction_cos"] = _cos(recon, ans_reex[li])
-        diag["amplification_norm_ratio"] = float(v.norm() / delta.norm())
+        # REGISTERED quantity (plan §4): ‖v_ctx_preimage‖ / ‖answer_axis_reextracted‖.
+        diag["amplification_norm_ratio"] = float(v.norm() / ans_reex[li].norm())
+        # bias-subtracted companion (‖v‖ / ‖Δ‖, Δ = axis − b) kept under a
+        # DISTINCT name — never the registered ratio.
+        diag["amplification_norm_ratio_bias_subtracted"] = float(v.norm() / delta.norm())
         pre_diag[str(li)] = diag
 
     # grouped-fold preimage stability (ridge-stabilized normal-equation solves —
@@ -920,25 +1064,49 @@ def phase_axes(args) -> Path:
         ref = {int(li): v.float() for li, v in raw.items()}
         ref_src = "own extraction answer_axis.pt"
 
+    # H3 row: cos(v_ctx_preimage, CURRENT teacher-forced ctx_native) per band
+    # layer — the runner extraction's native_axes.pt (plan §4). Production
+    # fails LOUD when absent; smoke may run before the runner extraction and
+    # records null rows (enumerated smoke gate-downgrade).
+    native_p = ext_dir / "native_axes.pt"
+    ctx_native_cur: dict[int, object] | None = None
+    if native_p.exists():
+        nat = torch.load(native_p, map_location="cpu", weights_only=False)
+        assert "ctx_native" in nat, f"native_axes.pt lacks ctx_native (has {sorted(nat)})"
+        ctx_native_cur = {int(li): v.float() for li, v in nat["ctx_native"].items()}
+        missing_nat = [li for li in band if li not in ctx_native_cur]
+        assert not missing_nat, f"native_axes.pt ctx_native lacks band layers {missing_nat}"
+        ctx_native_src = str(native_p)
+    else:
+        if not smoke:
+            raise AssertionError(
+                f"{native_p} absent — run the runner --phase extract first (the H3 "
+                "table requires the CURRENT teacher-forced ctx_native axis)"
+            )
+        ctx_native_src = f"ABSENT ({native_p}) — smoke-only null rows"
+        _log(f"[nap-axes] WARNING (smoke): {native_p} absent — H3 ctx_native rows null")
+
     h1_band = [_cos(ans_reex[li], ref[li]) for li in band]
     h1_mid = _cos(ans_reex[mid], ref[mid])
     axis_cos = {
         "reference_axis_source": ref_src,
+        "ctx_native_source": ctx_native_src,
         "cos_reextracted_vs_reference": {str(li): _cos(ans_reex[li], ref[li]) for li in layers},
-        "h1_gate": {
-            "band_mean_cos": sum(h1_band) / len(h1_band),
-            "mid_layer": mid,
-            "mid_cos": h1_mid,
-            "thresholds_informational": {"band": 0.90, "mid": 0.71},
-            "verdict_informational": bool(sum(h1_band) / len(h1_band) >= 0.90 and h1_mid >= 0.71),
-        },
-        # H3 cosine table — anchor rows: cos(preimage, answer_reextracted) and
-        # cos(faithful, answer_reextracted) per band layer.
+        "h1_gate": {**_h1_classification(h1_band, h1_mid), "mid_layer": mid},
+        # H3 cosine table per band layer: preimage-vs-faithful + preimage-vs-
+        # CURRENT-ctx_native (plan §4) + anchor rows vs answer_reextracted /
+        # the reference axis.
         "h3_table": {
             str(li): {
                 "cos_faithful_vs_answer_reextracted": _cos(v_faithful[li], ans_reex[li]),
                 "cos_preimage_vs_answer_reextracted": _cos(v_preimage[li], ans_reex[li]),
                 "cos_faithful_vs_preimage": _cos(v_faithful[li], v_preimage[li]),
+                "cos_preimage_vs_ctx_native_current": (
+                    _cos(v_preimage[li], ctx_native_cur[li]) if ctx_native_cur else None
+                ),
+                "cos_faithful_vs_ctx_native_current": (
+                    _cos(v_faithful[li], ctx_native_cur[li]) if ctx_native_cur else None
+                ),
                 "cos_faithful_vs_reference": _cos(v_faithful[li], ref[li]),
                 "cos_preimage_vs_reference": _cos(v_preimage[li], ref[li]),
             }
@@ -1111,6 +1279,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--num-shards", type=int, default=1)
     ap.add_argument("--lambdas", default=DEFAULT_LAMBDAS, help="GCV λ grid (comma list)")
     ap.add_argument("--min-count", type=int, default=50, help="paper min score-3 rows per role")
+    ap.add_argument(
+        "--min-kept-roles",
+        type=int,
+        default=100,
+        help="fail-loud floor on scored roles passing min_count (smoke: 1); a "
+        "catastrophically missing scores dir must never yield a role-starved axis",
+    )
     ap.add_argument(
         "--stability-folds", type=int, default=5, help="grouped-fold preimage stability (0=skip)"
     )

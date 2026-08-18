@@ -91,6 +91,11 @@ load_dotenv()
 ISSUE = 2223
 LABEL = "casestudy_replay"
 SCENARIOS = ("jailbreak", "delusion", "selfharm")
+# The NAP round's registered scope: 2 of the 3 scenarios (plan §5 — jailbreak
+# is OUT of scope for this round). A default launch carrying this round's
+# --round-subdir resolves to exactly these (resolve_scenarios).
+NAP_ROUND_SUBDIR = "native_axis_fidelity_preimage"
+NAP_ROUND_SCENARIOS = ("selfharm", "delusion")
 
 # Per-cell disk demand for the resume-aware generate headroom preamble (#1333
 # pattern): a cell JSON + its per-turn checkpoints total well under 10 MB.
@@ -1054,6 +1059,34 @@ def _committed_tau_map(ext_dir: Path) -> tuple[dict, str]:
     return json.loads(blob), src
 
 
+def _newaxes_regime(args, ext_dir: Path) -> dict:
+    """Output-affecting regime keys for the extract_newaxes completion sentinel.
+
+    Keyed on the new-axis file shas + pool construction + (for 32b) the pinned
+    base sha — everything that changes the merged τ/α. Deliberately EXCLUDES
+    the non-32b base tau_map sha: the phase rewrites that file, so keying on it
+    would self-invalidate every completed run.
+    """
+    from scripts import issue2203_common as C
+
+    model_key = args.model
+    smoke = bool(args.smoke)
+    return C.regime_fingerprint(
+        round_label=LABEL,
+        phase="extract_newaxes",
+        model=MODEL_FOR[model_key],
+        smoke=smoke,
+        n_roles=2 if smoke else int(args.n_roles),
+        n_questions=3 if smoke else int(args.n_questions),
+        base_sha256_pinned=TAU_MAP_AEE68_SHA256 if model_key == "32b" else None,
+        tau_pool="default+role prefill" if is_inhouse(model_key) else "default prefill",
+        **{f"newaxis_{fam}": _sha256_file(ext_dir / f) for fam, f in NEWAXIS_FILES.items()},
+    )
+
+
+NEWAXES_SENTINEL = "extract_newaxes_done.json"
+
+
 def phase_extract_newaxes(args) -> Path:
     """Merge the NAP-round ctx_faithful / ctx_preimage τ/α into ``tau_map.json``.
 
@@ -1081,6 +1114,27 @@ def phase_extract_newaxes(args) -> Path:
         f"scripts/issue2223_native_preimage_capture.py --phase axes --model {model_key} "
         f"--out-root {out_root}"
     )
+    # Idempotency: a regime-matching completion sentinel returns BEFORE any
+    # model load (a bare re-run must not re-capture the pool / rewrite τ/α);
+    # --force overrides. A STALE sentinel (changed axis shas / pool knobs) is
+    # logged and the phase recomputes (the merge is deterministic in its
+    # inputs; base keys stay verbatim by construction).
+    sentinel = ext_dir / NEWAXES_SENTINEL
+    regime = _newaxes_regime(args, ext_dir)
+    if sentinel.exists() and not bool(getattr(args, "force", False)):
+        recorded = json.loads(sentinel.read_text()).get("regime")
+        if recorded == regime:
+            # completeness re-check on the merged map + axis files, then skip.
+            load_cs_geometry(model_key, out_root, arms=list(NEWAXIS_ARMS))
+            _log(
+                "[phase=extract_newaxes] completion sentinel matches regime — "
+                "skip (--force to re-run)"
+            )
+            return ext_dir
+        diff_keys = sorted(
+            k for k in set(recorded or {}) | set(regime) if (recorded or {}).get(k) != regime.get(k)
+        )
+        _log(f"[phase=extract_newaxes] sentinel STALE (changed: {diff_keys}) — recomputing")
     fam_axes: dict[str, dict[int, object]] = {}
     for fam, fname in NEWAXIS_FILES.items():
         raw = torch.load(ext_dir / fname, map_location="cpu", weights_only=False)
@@ -1149,9 +1203,16 @@ def phase_extract_newaxes(args) -> Path:
     del model
     # self-check: the merged map + axis files satisfy the new-axis arms' geometry.
     load_cs_geometry(model_key, out_root, arms=list(NEWAXIS_ARMS))
+    # completion sentinel LAST (after the self-check): a crash before this line
+    # leaves no sentinel, so the next run recomputes rather than false-skips.
+    _atomic_write_json(
+        ext_dir / NEWAXES_SENTINEL,
+        {"regime": regime, "metadata": C.repro_metadata({"issue": ISSUE, "label": LABEL})},
+    )
     _log(
         f"[phase=extract_newaxes] merged {sorted(fam_axes)} τ/α into "
-        f"{ext_dir / 'tau_map.json'} (base: {base_src}; geometry self-check OK)"
+        f"{ext_dir / 'tau_map.json'} (base: {base_src}; geometry self-check OK; "
+        f"sentinel {NEWAXES_SENTINEL} written)"
     )
     return ext_dir
 
@@ -1160,49 +1221,111 @@ def phase_extract_newaxes(args) -> Path:
 
 
 def _check_strength_geometry(
-    geom: dict, arms: list[str], ext_dir: Path, model_key: str, out_root: Path
+    geom: dict,
+    arms: list[str],
+    ext_dir: Path,
+    model_key: str,
+    out_root: Path,
+    *,
+    layer_cfgs: list[str] | None = None,
+    band: list[int] | None = None,
 ) -> None:
-    """Fail fast when a requested strength/new18 arm needs τ/α maps the extraction lacks.
+    """Fail fast (pre-model-load) with a COMPLETE missing-geometry-key report.
 
-    A strength arm run against a PRE-strength extraction dir (a ``tau_map.json``
-    written before the 18-arm follow-up: no ``cap_percentile_tau`` / ``alpha``
-    keys) would otherwise die as a bare ``KeyError`` in :func:`build_cs_stack`
-    AFTER the model loads. No-op for valid geoms and for non-strength arms.
+    For EVERY requested caphook arm, over each layer domain the run would
+    realize (NEWAXIS families: band-only; every other arm: each requested
+    layer config — ``band`` → the resolved band, ``all`` → every layer of the
+    extraction's answer axis), require per-layer coverage of the exact keys
+    :func:`build_cs_stack` dereferences:
+
+    - the axis vector (``answer_axis`` / ``native_axes[fam]`` — axis_replace
+      arms included);
+    - τ: ``cap_percentile_tau[axis][pos][pct]`` for percentile-cap arms, else
+      ``floor_tau[axis][pos]`` (the steer / axis_replace telemetry floor and
+      the p25 cap edit alike);
+    - α: ``alpha[axis][pos][k{K}]`` for steer arms;
+    - the default state (``default_states[context|prefix]``).
+
+    Raises ONE RuntimeError enumerating every missing entry. A partial /
+    pre-strength ``tau_map.json`` — or an axis file missing a band layer —
+    would otherwise die as a bare KeyError in :func:`build_cs_stack` AFTER
+    the model loads. No-op for valid geoms and engine-none arms.
     """
+    n_layers = len(geom["answer_axis"])
+    band = list(band) if band is not None else resolved_band(model_key, n_layers)
+    layer_cfgs = list(layer_cfgs) if layer_cfgs else list(LAYER_CONFIGS)
     missing: list[str] = []
+
+    def _cover(label: str, mapping, layers: list[int]) -> None:
+        if not mapping:
+            missing.append(f"{label} ABSENT")
+            return
+        gone = [li for li in layers if mapping.get(li) is None]
+        if gone:
+            missing.append(f"{label} layers {gone}")
+
     for arm in arms:
-        if arm not in STRENGTH_ARMS:
+        spec = CS_ARMS.get(arm)
+        if spec is None or spec.get("engine") != "caphook":
             continue
-        spec = CS_ARMS[arm]
-        axis, pos = spec["axis"], spec["position_set"]
-        if "percentile" in spec:
-            pct = spec["percentile"]
-            if geom["cap_percentile_tau"].get(axis, {}).get(pos, {}).get(pct) is None:
-                missing.append(f"{arm}: cap_percentile_tau[{axis}][{pos}][{pct}]")
-        if spec["op"] == "steer":
-            kkey = f"k{spec['k']}"
-            if geom["alpha"].get(axis, {}).get(pos, {}).get(kkey) is None:
-                missing.append(f"{arm}: alpha[{axis}][{pos}][{kkey}]")
+        axis, pos, op = spec["axis"], spec["position_set"], spec["op"]
+        domains = ["band"] if axis in NEWAXIS_FAMILIES else layer_cfgs
+        for lc in domains:
+            layer_list = band if lc == "band" else list(range(n_layers))
+            tag = f"{arm}[{lc}]"
+            axis_map = geom["answer_axis"] if axis == "answer" else geom["native_axes"].get(axis)
+            _cover(f"{tag}: axis[{axis}]", axis_map, layer_list)
+            if "percentile" in spec:
+                pct = spec["percentile"]
+                sel = geom["cap_percentile_tau"].get(axis, {}).get(pos, {}).get(pct)
+                _cover(f"{tag}: cap_percentile_tau[{axis}][{pos}][{pct}]", sel, layer_list)
+            else:
+                _cover(
+                    f"{tag}: floor_tau[{axis}][{pos}]",
+                    geom["floor_tau"].get(axis, {}).get(pos),
+                    layer_list,
+                )
+            if op == "steer":
+                kkey = f"k{spec['k']}"
+                _cover(
+                    f"{tag}: alpha[{axis}][{pos}][{kkey}]",
+                    geom["alpha"].get(axis, {}).get(pos, {}).get(kkey),
+                    layer_list,
+                )
+            hdef = "context" if pos == "context-end" else "prefix"
+            _cover(f"{tag}: default_states[{hdef}]", geom["default_states"].get(hdef), layer_list)
     if missing:
-        newaxis_hit = any(CS_ARMS[a]["axis"] in NEWAXIS_FAMILIES for a in arms if a in CS_ARMS)
+        newaxis_hit = any(
+            CS_ARMS[a]["axis"] in NEWAXIS_FAMILIES
+            for a in arms
+            if a in CS_ARMS and "axis" in CS_ARMS[a]
+        )
         fix = (
             f"--phase extract_newaxes --model {model_key}"
             if newaxis_hit
             else f"--phase extract --model {model_key}"
         )
         raise RuntimeError(
-            f"tau_map.json under {ext_dir} lacks strength-arm τ/α maps for: {missing}. "
+            f"extraction geometry under {ext_dir} is INCOMPLETE for the requested arms "
+            f"({len(missing)} missing entries): {missing}. "
             f"Re-run: uv run python scripts/issue2223_casestudy_replay.py {fix} "
             f"--out-root {out_root}"
         )
 
 
-def load_cs_geometry(model_key: str, out_root: Path, arms: list[str] | None = None) -> dict:
+def load_cs_geometry(
+    model_key: str,
+    out_root: Path,
+    arms: list[str] | None = None,
+    layer_cfgs: list[str] | None = None,
+) -> dict:
     """Load the extraction artifacts the generate phase consumes (fail loud).
 
-    ``arms`` (when given) enables the upfront strength-arm geometry check —
-    :func:`_check_strength_geometry` — so a strength arm against a pre-strength
+    ``arms`` (when given) enables the upfront geometry-completeness check —
+    :func:`_check_strength_geometry` — so an arm against an incomplete
     extraction fails BEFORE the model loads, not as a ``KeyError`` after.
+    ``layer_cfgs`` scopes that check to the run's requested layer configs
+    (default: every config).
     """
     import torch
 
@@ -1260,7 +1383,7 @@ def load_cs_geometry(model_key: str, out_root: Path, arms: list[str] | None = No
         geom["native_axes"][fam] = {int(li): v.float() for li, v in raw.items()}
         geom["ext_sha"][p.name] = _sha256_file(p)
     if arms:
-        _check_strength_geometry(geom, arms, ext_dir, model_key, out_root)
+        _check_strength_geometry(geom, arms, ext_dir, model_key, out_root, layer_cfgs=layer_cfgs)
     if MODELS[model_key]["axis_source"] == "published":
         cfg_path = ext_dir / "lu_capping_config.pt"
         assert cfg_path.exists(), f"{cfg_path} absent — re-run --phase extract"
@@ -1468,7 +1591,13 @@ def resolve_arms(args) -> list[str]:
 
 
 def resolve_scenarios(args) -> list[str]:
-    """Scenario list from ``--scenarios`` (comma-list or ``all``) else ``--scenario``."""
+    """Scenario list from ``--scenarios`` (comma-list or ``all``) else ``--scenario``.
+
+    When NEITHER flag is given, a NAP-round launch (``--round-subdir`` ==
+    :data:`NAP_ROUND_SUBDIR`) defaults to the round's TWO in-scope scenarios —
+    a bare default launch must not silently 1.5× the spend by running the
+    out-of-scope third scenario (jailbreak). Non-round launches keep ``all``.
+    """
     if args.scenarios:
         tok = args.scenarios.strip()
         if tok == "all":
@@ -1477,7 +1606,11 @@ def resolve_scenarios(args) -> list[str]:
         unknown = [s for s in names if s not in SCENARIOS]
         assert not unknown, f"unknown scenario(s): {unknown}"
         return names
-    return list(SCENARIOS) if args.scenario == "all" else [args.scenario]
+    if args.scenario:
+        return list(SCENARIOS) if args.scenario == "all" else [args.scenario]
+    if getattr(args, "round_subdir", None) == NAP_ROUND_SUBDIR:
+        return list(NAP_ROUND_SCENARIOS)
+    return list(SCENARIOS)
 
 
 def enumerate_cells(scenarios: list[str], arms: list[str], layer_cfgs: list[str]):
@@ -1524,6 +1657,47 @@ def resolve_seeds(args) -> list[int]:
     return seeds
 
 
+def _cell_regime(
+    model_key: str,
+    scenario: str,
+    arm: str,
+    layers_cfg: str,
+    seed: int,
+    frozen: dict,
+    geom: dict,
+    n_layers: int,
+    smoke: bool,
+) -> dict:
+    """The ONE cell-regime fingerprint (shared by :func:`_run_cell` and the
+    pre-model resume validation in :func:`phase_generate` — never duplicated,
+    so the two sites cannot drift)."""
+    from scripts import issue2203_common as C
+
+    sc_frozen = frozen["scenarios"][scenario]
+    user_turns = sc_frozen["user_turns"]
+    max_turns = min(len(user_turns), 2 if smoke else len(user_turns))
+    band = resolved_band(model_key, n_layers)
+    layer_list = (
+        [] if layers_cfg == "na" else (band if layers_cfg == "band" else list(range(n_layers)))
+    )
+    return C.regime_fingerprint(
+        round_label=LABEL,
+        scenario=scenario,
+        arm=arm,
+        layers_cfg=layers_cfg,
+        layer_list=layer_list,
+        model=MODEL_FOR[model_key],
+        system_prompt_sha=hashlib.sha256(DEFAULT_SYSTEM_PROMPT.encode()).hexdigest()[:16],
+        frozen_sha=sc_frozen["source_sha256"],
+        n_turns=max_turns,
+        enable_thinking=bool(MODELS[model_key]["thinking"]),
+        smoke=smoke,
+        seed_base=seed,
+        **{f"ext_{k}": v for k, v in geom["ext_sha"].items()},
+        **DECODE[model_key],
+    )
+
+
 def _run_cell(
     model,
     tok,
@@ -1564,22 +1738,7 @@ def _run_cell(
         [] if layers_cfg == "na" else (band if layers_cfg == "band" else list(range(n_layers)))
     )
 
-    regime = C.regime_fingerprint(
-        round_label=LABEL,
-        scenario=scenario,
-        arm=arm,
-        layers_cfg=layers_cfg,
-        layer_list=layer_list,
-        model=MODEL_FOR[model_key],
-        system_prompt_sha=hashlib.sha256(DEFAULT_SYSTEM_PROMPT.encode()).hexdigest()[:16],
-        frozen_sha=sc_frozen["source_sha256"],
-        n_turns=max_turns,
-        enable_thinking=bool(enable_thinking),
-        smoke=smoke,
-        seed_base=seed,
-        **{f"ext_{k}": v for k, v in geom["ext_sha"].items()},
-        **dec,
-    )
+    regime = _cell_regime(model_key, scenario, arm, layers_cfg, seed, frozen, geom, n_layers, smoke)
     regime_path = out_root / scenario / "turns" / f"{cell}.regime.json"
     if regime_path.exists():
         C.check_regime(json.loads(regime_path.read_text()), regime, regime_path)
@@ -1766,13 +1925,14 @@ def phase_generate(args) -> Path:
     scenarios = resolve_scenarios(args)
     arms = resolve_arms(args)
     seeds = resolve_seeds(args)
-    # arms= enables the upfront strength-arm geometry check (fail BEFORE model load)
-    geom = load_cs_geometry(model_key, out_root, arms=arms)
+    layer_cfgs = list(LAYER_CONFIGS) if args.layers == "both" else [args.layers]
+    # arms+layer_cfgs enable the upfront per-arm/per-layer geometry-completeness
+    # check (fail BEFORE model load)
+    geom = load_cs_geometry(model_key, out_root, arms=arms, layer_cfgs=layer_cfgs)
     model_out = out_root / model_slug(model_key)
     if args.round_subdir:
         model_out = model_out / args.round_subdir
 
-    layer_cfgs = list(LAYER_CONFIGS) if args.layers == "both" else [args.layers]
     cells = enumerate_cells(scenarios, arms, layer_cfgs)
     jobs = [(sc, arm, lc, seed) for seed in seeds for (sc, arm, lc) in cells]
     n = max(1, int(args.num_shards))
@@ -1784,14 +1944,35 @@ def phase_generate(args) -> Path:
         f"seeds={seeds}, subdir={args.round_subdir}): {jobs}"
     )
 
-    # Resume-aware headroom preamble (#1333 / plan §12): need scales to the
-    # PENDING subset under the SAME predicate the per-cell resume uses
-    # (cell JSON exists ⇒ complete); zero pending ⇒ skip with one INFO line.
-    pending = [
-        j for j in jobs if not (model_out / j[0] / f"{cell_name(j[2], j[1], j[3])}.json").exists()
-    ]
+    # Resume-aware pending predicate (#1333 / plan §12): a job is COMPLETE only
+    # when its cell JSON exists AND its recorded regime fingerprint matches the
+    # CURRENT regime — never bare filename existence. check_regime raises LOUD
+    # on a mismatch (a completed cell under a different regime is never
+    # silently kept OR silently redone). n_layers pre-model comes from the
+    # extraction's answer axis (== model.config.num_hidden_layers for every
+    # real extraction; _run_cell re-checks under the model-config value).
+    from scripts import issue2203_common as C
+
+    n_layers_geom = len(geom["answer_axis"])
+    pending = []
+    for j in jobs:
+        sc_j, arm_j, lc_j, seed_j = j
+        cell_j = cell_name(lc_j, arm_j, seed_j)
+        cj = model_out / sc_j / f"{cell_j}.json"
+        if not cj.exists():
+            pending.append(j)
+            continue
+        rp = model_out / sc_j / "turns" / f"{cell_j}.regime.json"
+        assert rp.exists(), f"{cj} exists without {rp} — inconsistent resume state"
+        expected = _cell_regime(
+            model_key, sc_j, arm_j, lc_j, seed_j, frozen, geom, n_layers_geom, smoke
+        )
+        C.check_regime(json.loads(rp.read_text()), expected, rp)
     if not pending:
-        _log("[phase=generate] zero pending cells — headroom preamble skipped; nothing to do")
+        _log(
+            "[phase=generate] zero pending cells (all cell JSONs present, regimes "
+            "validated) — headroom preamble skipped; nothing to do"
+        )
         return model_out
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
@@ -2076,7 +2257,15 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--phase", choices=sorted(PHASES), required=False)
     ap.add_argument("--model", choices=sorted(MODEL_FOR), default="32b")
-    ap.add_argument("--scenario", choices=[*SCENARIOS, "all"], default="all")
+    ap.add_argument(
+        "--scenario",
+        choices=[*SCENARIOS, "all"],
+        default=None,
+        help="single scenario or 'all'; when NEITHER --scenario nor --scenarios is "
+        "given, a NAP-round launch (--round-subdir native_axis_fidelity_preimage) "
+        "defaults to selfharm,delusion (the round's registered scope); other "
+        "launches default to all",
+    )
     ap.add_argument("--arm", choices=[*ARM_ORDER, "all"], default="all")
     ap.add_argument(
         "--arms",
@@ -2116,6 +2305,11 @@ def build_parser() -> argparse.ArgumentParser:
         "(default <ext_dir>/paper_pipeline/axis.pt; absent → phase0 fallback)",
     )
     ap.add_argument("--judge-draws", type=int, default=3)
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="extract_newaxes: re-run even when the completion sentinel matches",
+    )
     ap.add_argument("--dry-run", action="store_true", help="judge: compose requests only")
     ap.add_argument("--shard-id", type=int, default=0)
     ap.add_argument("--num-shards", type=int, default=1)

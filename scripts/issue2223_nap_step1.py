@@ -145,12 +145,17 @@ def run(args) -> int:
     RoleResponseGenerator = _load_assistant_axis_submodule("generation").RoleResponseGenerator
 
     ext = assistant_axis_dir()
-    roles_dir = Path(args.roles_dir) if args.roles_dir else ext / "data" / "prompts" / "roles"
+    # Pinned-checkout layout (a98961956): roles at data/roles/instructions/
+    # (276 role JSONs incl. assistant.json + default.json), questions at
+    # data/extraction_questions.jsonl — the upstream pipeline/1_generate.py
+    # argparse defaults. data/prompts/ does NOT exist in the checkout.
+    roles_dir = Path(args.roles_dir) if args.roles_dir else ext / "data" / "roles" / "instructions"
     questions_file = (
         Path(args.questions_file)
         if args.questions_file
-        else ext / "data" / "prompts" / "questions.jsonl"
+        else ext / "data" / "extraction_questions.jsonl"
     )
+    assert questions_file.exists(), f"questions file absent: {questions_file}"
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -163,6 +168,15 @@ def run(args) -> int:
 
     role_files = sorted(roles_dir.glob("*.json"))
     assert role_files, f"no role JSONs under {roles_dir}"
+    if args.roles_dir is None:
+        # Layout guard for the DEFAULT dir only (an explicit --roles-dir may be
+        # a deliberate subset): the pinned checkout carries exactly 276 role
+        # JSONs — any other count means a wrong/stale external checkout.
+        assert len(role_files) == 276, (
+            f"pinned assistant-axis checkout should carry 276 role JSONs under "
+            f"{roles_dir}, found {len(role_files)} — wrong/stale external checkout "
+            "(re-run scripts/issue2203_pod_bootstrap_engine.sh)"
+        )
     if args.roles:
         wanted = {r.strip() for r in args.roles.split(",") if r.strip()}
         role_files = [f for f in role_files if f.stem in wanted]
@@ -225,9 +239,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--model", default="Qwen/Qwen3-32B")
     ap.add_argument("--output-dir", required=False, help="per-role JSONL destination")
-    ap.add_argument("--roles-dir", default=None, help="default: <external>/data/prompts/roles")
+    ap.add_argument("--roles-dir", default=None, help="default: <external>/data/roles/instructions")
     ap.add_argument(
-        "--questions-file", default=None, help="default: <external>/data/prompts/questions.jsonl"
+        "--questions-file",
+        default=None,
+        help="default: <external>/data/extraction_questions.jsonl",
     )
     ap.add_argument("--roles", default=None, help="comma list of role stems (smoke slices)")
     ap.add_argument(
