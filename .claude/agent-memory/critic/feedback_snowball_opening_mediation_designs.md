@@ -41,6 +41,23 @@ is noise.
    pairs) is NOT a confound — identical openings + a large banked ce effect
    is itself evidence against snowball-sufficiency; the token-divergence-rate
    manipulation check is the right diagnostic.
+6. Amendment rounds (v8, new cell set, recipe held — APPROVE): sibling-wave
+   ANCHOR reuse is licensed when token-identity + capture-parity gates bind
+   the reused generations to this run's own capture AND the anchors are
+   re-judged in the same wave (removes judge-wave drift; identical-text
+   offset table for free). A recovery-RATIO lattice (R_k vs 1) stays
+   interpretable because the fresh same-wave ce denominator carries its own
+   null variant = a same-wave separation diagnostic; weak/unseparated
+   control ⇒ R unstable, but the difference-form D3 stays primary —
+   analyzer concern, never REVISE. Residual anchor cap-hit above the grid's
+   own >2% bar on the REUSE path = concern not REVISE when the construct
+   (language) commits early and anchors enter only as shared per-pair
+   normalization (bias ~cancels in paired/ratio reads).
+7. Amendment plans carry stale-draft numerics: check the §12 divergence
+   list's booking figures against the §0 machine-readable est line + §9
+   totals (v8 carried "14 booked" from a pre-correction draft vs the real
+   36 worst-case) — concern/consistency-checker turf, not conclusion-
+   changing when §9's basis is measured-pilot-grounded.
 6. **3-value cycle null is a MIXTURE on language cells** (#2333 v8): a
    value-constrained derangement guarantees donor-B ≠ recipient-B but NOT
    ≠ recipient-A, so with 3 values the null openings split into inert
