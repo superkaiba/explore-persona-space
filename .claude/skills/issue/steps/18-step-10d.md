@@ -1213,6 +1213,7 @@ tests BEFORE anything lands:
     TG_RC=0; TG_BASE_RC=0; TG_CRASH=no
     : > /tmp/issue-<N>-tg-new.txt
     : > /tmp/issue-<N>-tg-new-nodes.txt
+    : > /tmp/issue-<N>-tg-unclassifiable-nodes.txt
     if ! timeout --kill-after=30s 120s uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
         --map-files /tmp/issue-<N>-own-diff.txt --repo-root "$WT" \
         > /tmp/issue-<N>-tg-map.txt 2>/tmp/issue-<N>-tg-map-err.txt; then
@@ -1234,7 +1235,8 @@ tests BEFORE anything lands:
         TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
       fi
       # BASELINE leg — a DETACHED SPARSE SCRATCH tree cut at the resolved
-      # landing base, NEVER the shared repo root (#2296): every fleet
+      # baseline base (the branch MERGE-BASE, #2348 — resolved below), NEVER
+      # the shared repo root (#2296): every fleet
       # commit's pre-commit stash cycle reverts the root working tree
       # repo-wide for the hook window (#2015), which killed this leg mid-run
       # on #2288 and made every gated red read NEW. The helper reuses the
@@ -1268,17 +1270,29 @@ tests BEFORE anything lands:
       # via its own pyproject/uv.lock). Both copies lacking it fails CLOSED.
       TG_S9B="$REPO_ROOT/scripts/step9c_baseline.py"
       TG_S9B_SRC=root
-      uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
+      { uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
+        && uv run python "$TG_S9B" classify-new-nodes --help >/dev/null 2>&1; } \
         || { TG_S9B="$WT/scripts/step9c_baseline.py"; TG_S9B_SRC=FALLBACK-worktree; }
       echo "[step10d] mapped-baseline helper: $TG_S9B_SRC ($TG_S9B)"
+      # Baseline base = the MERGE-BASE (fork point), NOT current origin/main
+      # (#2348): the gated leg runs the branch TIP, so an origin/main-cut
+      # baseline diverges from it by main's drift since fork — #2155's false
+      # block was a main-side C901 fix (#2345) reaching origin/main 5 min
+      # before base resolution: baseline green on the fixed copy, tip red on
+      # the fork-vintage copy, and comm -23 read it as NEW. merge-base makes
+      # the two trees differ only by the payload; a resolution failure
+      # degrades LOUDLY to origin/main (pre-#2348 status quo).
+      TG_BASE_REF=$(git -C "$WT" merge-base origin/main HEAD 2>/dev/null) \
+        || { TG_BASE_REF=origin/main; echo "WARN: merge-base resolution failed — TG baseline at origin/main (drift residual live for this run)"; }
       TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
         "$TG_S9B" mapped-baseline \
         --map-files /tmp/issue-<N>-own-diff.txt --root "$REPO_ROOT" \
-        --cones-from "$WT" --base origin/main --timeout-s "$TG_T" \
+        --cones-from "$WT" --base "$TG_BASE_REF" --timeout-s "$TG_T" \
         --out /tmp/issue-<N>-tg-baseline.txt \
         2>/tmp/issue-<N>-tg-baseline-err.txt) \
         || TG_CRASH=yes
       TG_SCRATCH=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^scratch_path=//p' | tail -1)
+      TG_BASE_SELECTED=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^selected_path=//p' | tail -1)
       TG_BASE_RC=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^rc=//p' | tail -1)
       [ -n "${TG_BASE_RC:-}" ] || { TG_BASE_RC=0; TG_CRASH=yes; }   # fail CLOSED
       # GATED leg — worktree copy on the payload-bearing branch-tip tree
@@ -1359,6 +1373,27 @@ tests BEFORE anything lands:
       done
       comm -23 /tmp/issue-<N>-tg-gated-nodes.txt \
         /tmp/issue-<N>-tg-baseline-nodes.txt > /tmp/issue-<N>-tg-new-nodes.txt
+      # SET-mismatch split (#2348): comm can only subtract what the baseline
+      # COULD RUN. A NEW-classified node whose test file was never SELECTED
+      # on the baseline tree was never compared — keep it blocking only when
+      # payload-attributable (file in the baseline selection => a real
+      # both-trees delta; file in the own-diff => branch-new/payload test,
+      # NEW by construction), else route it to the distinct "unclassifiable
+      # — pristine-oracle needed" WARN arm (recorded in the merge note;
+      # never a silent pass, never an automatic block). Helper failure or a
+      # missing selected-list fails toward the status quo (all keep
+      # blocking); the in-place rewrite is atomic (write-tmp + os.replace).
+      # (The tg-unclassifiable-nodes.txt stale-file init is HOISTED to the
+      # top of the block, beside the tg-new-nodes.txt init.)
+      if [ -s /tmp/issue-<N>-tg-new-nodes.txt ]; then
+        uv run python "$TG_S9B" classify-new-nodes \
+          --new-nodes /tmp/issue-<N>-tg-new-nodes.txt \
+          --baseline-selected "${TG_BASE_SELECTED:-/__eps_no_selected__}" \
+          --own-diff /tmp/issue-<N>-own-diff.txt \
+          --out-block /tmp/issue-<N>-tg-new-nodes.txt \
+          --out-unclassifiable /tmp/issue-<N>-tg-unclassifiable-nodes.txt \
+          || echo "WARN: classify-new-nodes failed — every NEW node kept blocking (status quo)"
+      fi
     fi
     # Normalize failure lines: keep per-error `workflow_lint: <err>` lines,
     # DROP the PASS / `FAIL (N error(s))` summary lines (their COUNT changes
@@ -1484,7 +1519,7 @@ tests BEFORE anything lands:
     # Fail-soft diagnostic tails (Recipe exit-code hygiene, Step 9c 1b):
     # empty/absent on a PASS by design — never a bare trailing grep/cat/
     # [ -s ] leg here (it would exit 1 and read as a tool error).
-    for f in lint-new lint-owndiff tg-new tg-new-nodes; do
+    for f in lint-new lint-owndiff tg-new tg-new-nodes tg-unclassifiable-nodes; do
       if [ -s "/tmp/issue-<N>-$f.txt" ]; then echo "--- $f ---"; head -20 "/tmp/issue-<N>-$f.txt"; fi
     done; true
   fi
@@ -1551,7 +1586,25 @@ tests BEFORE anything lands:
   is structurally blind to it — NEW failed/error node ids = gated − baseline
   (`comm -23`, `/tmp/issue-<N>-tg-new-nodes.txt`), the ` - <msg>` suffix
   stripped via `sed` (never awk field-2: space-bearing string param ids must
-  survive intact). Node-grain widens the block surface to genuinely flaky
+  survive intact). The BASELINE is cut at the branch's MERGE-BASE (fork
+  point), never current origin/main (#2348): the gated leg runs the branch
+  TIP, so an origin/main-cut baseline diverges from it by main's drift since
+  fork — #2155's false block was a main-side fix (#2345) reaching origin/main
+  minutes before base resolution (baseline green on the fixed copy, tip red
+  on the fork-vintage copy; `comm -23` read it as NEW); merge-base makes the
+  two trees differ only by the payload, and a resolution failure degrades
+  LOUDLY to origin/main. After the node-grain comm, the `classify-new-nodes`
+  split (#2348) routes each NEW node by baseline OBSERVABILITY against the
+  helper's `selected_path=` sidecar (the test files the baseline COULD run):
+  file in the baseline selection ⇒ keeps blocking (a real both-trees delta);
+  file in the own-diff ⇒ keeps blocking (branch-new/payload test — NEW by
+  construction, unchanged doctrine); anything else routes to the distinct
+  `unclassifiable — pristine-oracle needed` WARN arm
+  (`/tmp/issue-<N>-tg-unclassifiable-nodes.txt`) — RECORDED in the
+  `epm:merged` / `epm:merge-failed` note whenever non-empty (the
+  completion-read tail prints it), never a silent pass, never an automatic
+  block; helper failure / a missing selected-list fails toward the status quo
+  (every NEW node keeps blocking). Node-grain widens the block surface to genuinely flaky
   mapped tests; the existing "re-run the gate ONCE → `epm:merge-failed`"
   recovery covers that, and baseline subtraction still removes deterministic
   trunk red. Each pytest leg is bounded at the selector-sized `${TG_T}` —
@@ -1584,8 +1637,24 @@ tests BEFORE anything lands:
   (#1560), narrowing the drift window to (α) non-family rules-pin tests
   (prose-pin skew) and (β) the `explore_persona_space.workflow` seam,
   same remedy for both: rebase onto origin/main / cross-check at the repo
-  root); (b) the baseline leg runs on a detached sparse scratch tree cut at
-  the resolved landing base (#2296 — the pre-#2296 shared-root baseline was
+  root). The false-block INVERSE of this drift — an offense FIXED on main
+  after fork false-blocking a stale tip (#2155/#2345) — is CLOSED by the
+  merge-base-pinned baseline (#2348): a fork-vintage red is red in BOTH legs
+  and subtracts. The pinning opens a narrow NEW false-PASS window on forms
+  (i)/(ii): a payload that REINTRODUCES a fork-vintage red main has since
+  fixed subtracts out (same failure identity in both legs) where an
+  origin/main baseline would have blocked — fail-safe, trunk Step 9c catches
+  it post-merge. Two further residuals: selector-VINTAGE drift (the gated
+  selection uses the ROOT selector copy while the baseline uses the
+  merge-base scratch copy, so arms added on main since fork can still
+  produce gated-only selections of non-payload tests — those route to the
+  `unclassifiable` WARN arm, #2348, never an automatic block), and a
+  data-driven within-file parametrization drift inside an untouched file
+  (its file IS in the baseline selection, so a tip-only node there keeps
+  blocking — stays under the test-VERSION-drift class, doc-only);
+  (b) the baseline leg runs on a detached sparse scratch tree cut at
+  the resolved baseline base (the branch merge-base, #2348; #2296 — the
+  pre-#2296 shared-root baseline was
   killed mid-run by the #2015 pre-commit stash cycle on #2288: process DEATH
   empties the baseline, so every gated red read NEW — maximally fail-CLOSED,
   the OPPOSITE direction of the retired "dirt can only enlarge the baseline
@@ -1719,7 +1788,12 @@ tests BEFORE anything lands:
   ORIGINAL per-form GATED placement (gated = the `$WT` copy on the
   branch-tip / post-merge tree on forms (i)/(ii); the root copy on form
   (iii)); their BASELINE runs a detached sparse scratch tree cut at the
-  resolved landing base via `step9c_baseline.py mapped-baseline` on ALL
+  resolved MERGE-BASE of origin/main and the tree the gated leg runs —
+  forms (i)/(ii): `git -C "$WT" merge-base origin/main HEAD` (the fork
+  point); form (iii): `git -C "$REPO_ROOT" merge-base origin/main HEAD`
+  (#2348 — the baseline base matches the gated tree's VINTAGE, so main's
+  drift since fork can never read as NEW; #2155/#2345) — via
+  `step9c_baseline.py mapped-baseline` on ALL
   THREE forms (#2296 — never the shared repo root, which the #2015 stash
   cycle reverts repo-wide); the LINT legs on forms (i)/(ii) run the
   #1212 gate tree. (i) Safe case: LINT legs — gated = the gate-tree copy
@@ -1794,14 +1868,19 @@ tests BEFORE anything lands:
   and extending the set is the fix (the #1154 `docs/` pins are the
   precedent); (c) the mapped invariant-TEST legs keep the branch-tip test
   copies (path-(i) test-VERSION drift,
-  fail-safe direction; the baseline runs a base-pinned scratch, #2296) —
+  fail-safe direction; the baseline runs a MERGE-BASE-pinned scratch —
+  #2348, closing the false-block INVERSE where an offense fixed on main
+  after fork read NEW on a stale tip, incident #2155/#2345; #2296) —
   the lint/guard family is now Step-5a-synced AND
   pre-gate re-synced from origin/main (#1560), so the remaining drift
   window is (α) non-family rules-pin tests (prose-pin skew; symptom: a
   gated-only red in a rules-mentioning test the family does not cover)
   and (β) the `explore_persona_space.workflow` seam, both with the same
   remedy (rebase onto origin/main / cross-check at the repo root); the
-  trunk pytest remains their backstop; (d) both-sides-modified
+  trunk pytest remains their backstop — and a NEW node whose test file
+  the baseline never SELECTED (the set-mismatch class, #2348) routes to
+  the `unclassifiable — pristine-oracle needed` WARN arm, RECORDED in
+  the merge note whenever non-empty, never an automatic block; (d) both-sides-modified
   overlay paths are now 3-WAY-MERGED on the gated legs (the landing-union
   overlay, #1753, generalizing #1456 to every payload path;
   `scripts/workflow_lint.py` keeps its dedicated #1456 block) — the
@@ -3550,6 +3629,7 @@ Decision tree:
   TG_RC=0; TG_BASE_RC=0; TG_CRASH=no
   : > /tmp/issue-<N>-tg-new.txt
   : > /tmp/issue-<N>-tg-new-nodes.txt
+  : > /tmp/issue-<N>-tg-unclassifiable-nodes.txt
   if ! timeout --kill-after=30s 120s uv run python "$REPO_ROOT/scripts/select_step9c_tests.py" \
       --map-files /tmp/issue-<N>-additive-files.txt --repo-root "$REPO_ROOT" \
       > /tmp/issue-<N>-tg-map.txt 2>/tmp/issue-<N>-tg-map-err.txt; then
@@ -3587,17 +3667,33 @@ Decision tree:
     # a still-missing subcommand fails CLOSED below.
     TG_S9B="$REPO_ROOT/scripts/step9c_baseline.py"
     TG_S9B_SRC=root
-    uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
+    { uv run python "$TG_S9B" mapped-baseline --help >/dev/null 2>&1 \
+      && uv run python "$TG_S9B" classify-new-nodes --help >/dev/null 2>&1; } \
       || { TG_S9B="${WT:-$REPO_ROOT}/scripts/step9c_baseline.py"; TG_S9B_SRC=FALLBACK-worktree; }
     echo "[step10d] mapped-baseline helper: $TG_S9B_SRC ($TG_S9B)"
+    # Baseline base = the MERGE-BASE of origin/main and the ROOT tree's HEAD
+    # (#2348). Principle: the baseline base must match the VINTAGE OF THE
+    # TREE THE GATED LEG RUNS — form (iii)'s gated leg runs the ROOT tree
+    # (current local main + payload), so merge-base resolves in $REPO_ROOT
+    # (= local main; strictly better than bare origin/main when the fetched
+    # ref leads local main) — NEVER the worktree-fallback form used by the
+    # cones source below: with a worktree in scope that would anchor the
+    # baseline at the branch FORK POINT while the gated leg runs current
+    # main, so any mapped test main broke since fork would read NEW and the
+    # classify split would keep it blocking (its file is in the baseline
+    # selection) — reintroducing the false-block class on this fence. A
+    # resolution failure degrades LOUDLY to origin/main.
+    TG_BASE_REF=$(git -C "$REPO_ROOT" merge-base origin/main HEAD 2>/dev/null) \
+      || { TG_BASE_REF=origin/main; echo "WARN: merge-base resolution failed — TG baseline at origin/main (drift residual live for this run)"; }
     TG_BASE_OUT=$(timeout --kill-after=30s $((TG_T + 420))s uv run python \
       "$TG_S9B" mapped-baseline \
       --map-files /tmp/issue-<N>-additive-files.txt --root "$REPO_ROOT" \
-      --cones-from "${WT:-$REPO_ROOT}" --base origin/main --timeout-s "$TG_T" \
+      --cones-from "${WT:-$REPO_ROOT}" --base "$TG_BASE_REF" --timeout-s "$TG_T" \
       --out /tmp/issue-<N>-tg-baseline.txt \
       2>/tmp/issue-<N>-tg-baseline-err.txt) \
       || TG_CRASH=yes
     TG_SCRATCH=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^scratch_path=//p' | tail -1)
+    TG_BASE_SELECTED=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^selected_path=//p' | tail -1)
     TG_BASE_RC=$(printf '%s\n' "$TG_BASE_OUT" | sed -n 's/^rc=//p' | tail -1)
     [ -n "${TG_BASE_RC:-}" ] || { TG_BASE_RC=0; TG_CRASH=yes; }   # fail CLOSED
   fi
@@ -3700,6 +3796,19 @@ Decision tree:
     done
     comm -23 /tmp/issue-<N>-tg-gated-nodes.txt \
       /tmp/issue-<N>-tg-baseline-nodes.txt > /tmp/issue-<N>-tg-new-nodes.txt
+    # SET-mismatch split (#2348) — same rationale + fail directions as the
+    # shared gate block's classify step (own-diff here = the additive-files
+    # list; the tg-unclassifiable-nodes.txt stale-file init is HOISTED to
+    # the top of the block, beside the tg-new-nodes.txt init):
+    if [ -s /tmp/issue-<N>-tg-new-nodes.txt ]; then
+      uv run python "$TG_S9B" classify-new-nodes \
+        --new-nodes /tmp/issue-<N>-tg-new-nodes.txt \
+        --baseline-selected "${TG_BASE_SELECTED:-/__eps_no_selected__}" \
+        --own-diff /tmp/issue-<N>-additive-files.txt \
+        --out-block /tmp/issue-<N>-tg-new-nodes.txt \
+        --out-unclassifiable /tmp/issue-<N>-tg-unclassifiable-nodes.txt \
+        || echo "WARN: classify-new-nodes failed — every NEW node kept blocking (status quo)"
+    fi
   fi
   # TG basetemp reaped after BOTH legs (no-op when routing never resolved).
   [ -n "${TG_BASETEMP:-}" ] && rm -rf "$TG_BASETEMP" || true

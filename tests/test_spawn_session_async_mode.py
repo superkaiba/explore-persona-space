@@ -9,8 +9,10 @@ What this pins:
   ``epm:session-mode`` marker.
 - ``--session-mode async`` WITHOUT ``--auto`` is refused (SystemExit).
 - Fresh-spawn default resolution: explicit flag > registry entry > durable
-  marker > ``EPM_SPAWN_DEFAULT_SESSION_MODE`` (``kind: experiment`` ONLY) >
-  legacy auto.
+  marker > ``~/.eps-autonomous/spawn-defaults.json`` config default (scoped
+  by ``kind_scope`` AND the ``min_task_id`` id cutoff; fail-soft on any
+  malformed field) > ``EPM_SPAWN_DEFAULT_SESSION_MODE`` (``kind:
+  experiment`` ONLY) > legacy auto.
 - ``_record_session_mode_marker`` idempotence (matching newest marker posts
   nothing; auto-with-no-history posts nothing; the explicit downgrade posts).
 - NO-FLAGS REGRESSION: with ``--session-mode`` omitted and every resolution
@@ -263,6 +265,119 @@ def test_env_default_scoped_to_experiment_kind(chain_env, monkeypatch, kind, exp
 
 
 def test_env_default_unset_resolves_legacy_auto(chain_env, monkeypatch):
+    """Also the config-file NO-FILE regression: chain_env's registry dir has
+    no spawn-defaults.json, so with every other link empty this pins the
+    byte-identical legacy resolution (the full-spawn twin is
+    test_legacy_auto_spawn_env_and_registry_byte_identical)."""
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
+    args = _issue_args(session_mode=None)
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"
+
+
+# ─── spawn-defaults config file (mission-control dogfood activation) ─────────
+
+
+def _write_spawn_defaults(reg, **overrides) -> None:
+    """Write a well-formed spawn-defaults.json into the (monkeypatched)
+    registry dir; overrides shape individual fields per test."""
+    reg.mkdir(parents=True, exist_ok=True)
+    cfg = {
+        "session_mode_default": "async",
+        "kind_scope": ["experiment"],
+        "min_task_id": _FAKE_ISSUE,
+        "set_by": "test",
+        "set_at": "2026-08-17T00:00:00Z",
+    }
+    cfg.update(overrides)
+    (reg / ss.SPAWN_DEFAULTS_FILENAME).write_text(json.dumps(cfg))
+
+
+def test_config_file_applies_experiment_at_cutoff(chain_env, monkeypatch):
+    """kind in kind_scope + id >= min_task_id -> the config default applies."""
+    _write_spawn_defaults(chain_env)
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
+    args = _issue_args(session_mode=None)
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "async"
+
+
+def test_config_file_below_cutoff_stays_legacy(chain_env, monkeypatch):
+    """id < min_task_id -> legacy auto: existing tasks (incl. re-dispatches
+    of the pre-activation proposed queue) never flip async."""
+    _write_spawn_defaults(chain_env, min_task_id=_FAKE_ISSUE + 1)
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
+    args = _issue_args(session_mode=None)
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"
+
+
+def test_config_file_kind_out_of_scope_stays_legacy(chain_env, monkeypatch):
+    _write_spawn_defaults(chain_env)
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "infra"}})
+    args = _issue_args(session_mode=None)
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "{not json",  # unparseable
+        json.dumps(["async"]),  # not a dict
+        json.dumps(  # unrecognized mode
+            {"session_mode_default": "asap", "kind_scope": ["experiment"], "min_task_id": 1}
+        ),
+        json.dumps(  # kind_scope not a list
+            {"session_mode_default": "async", "kind_scope": "experiment", "min_task_id": 1}
+        ),
+        json.dumps(  # min_task_id missing
+            {"session_mode_default": "async", "kind_scope": ["experiment"]}
+        ),
+        json.dumps(  # min_task_id not an int
+            {"session_mode_default": "async", "kind_scope": ["experiment"], "min_task_id": "1"}
+        ),
+        json.dumps(  # bool is an int subclass but not an id
+            {"session_mode_default": "async", "kind_scope": ["experiment"], "min_task_id": True}
+        ),
+    ],
+)
+def test_config_file_malformed_stays_legacy(chain_env, monkeypatch, raw):
+    """Any out-of-shape spawn-defaults file fails soft to legacy auto."""
+    chain_env.mkdir(parents=True, exist_ok=True)
+    (chain_env / ss.SPAWN_DEFAULTS_FILENAME).write_text(raw)
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
+    args = _issue_args(session_mode=None)
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"
+
+
+def test_explicit_flag_beats_config_file(chain_env, monkeypatch):
+    """Explicit --session-mode auto wins over a config-async default (were
+    the config consulted first, this would resolve async)."""
+    _write_spawn_defaults(chain_env)
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
+    args = _issue_args(session_mode="auto")
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"
+
+
+def test_registry_beats_config_file(chain_env, monkeypatch):
+    _write_spawn_defaults(chain_env)
+    (chain_env / f"issue-{_FAKE_ISSUE}.json").write_text(json.dumps({"session_mode": "auto"}))
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
+    args = _issue_args(session_mode=None)
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"
+
+
+def test_marker_beats_config_file(chain_env, monkeypatch):
+    """A task-durable downgrade marker wins over the fleet config default."""
+    _write_spawn_defaults(chain_env)
+    monkeypatch.setattr(ss, "list_events", lambda issue: [_mode_marker("auto")])
+    monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
+    args = _issue_args(session_mode=None)
+    assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"
+
+
+def test_config_file_beats_env_default(chain_env, monkeypatch):
+    """The config file sits ABOVE the env var: an explicit config 'auto'
+    pins legacy even when the process env says async."""
+    _write_spawn_defaults(chain_env, session_mode_default="auto")
+    monkeypatch.setenv("EPM_SPAWN_DEFAULT_SESSION_MODE", "async")
     monkeypatch.setattr(ss, "get_task", lambda issue: {"frontmatter": {"kind": "experiment"}})
     args = _issue_args(session_mode=None)
     assert ss._resolve_spawn_session_mode(args, _FAKE_ISSUE) == "auto"

@@ -15390,9 +15390,13 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
     "issue/steps/09-step-5.md": 99_300,  # measured 96,505 B @ #2352 2026-08-17
-    "issue/steps/10-step-6.md": 144_200,  # measured 141,432 B
+    # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
+    # per-leg out/scratch isolation, +1,211 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    "issue/steps/18-step-10d.md": 274_800,  # measured 272,064 B
+    # measured 279,937 B @ #2348 (TG merge-base + classify port).
+    "issue/steps/18-step-10d.md": 282_700,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,

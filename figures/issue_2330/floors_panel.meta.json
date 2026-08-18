@@ -1,0 +1,177 @@
+{
+  "commit": "fa54cfc2",
+  "render_id": "bca4621da3cf4e42",
+  "git_commit": "fa54cfc2",
+  "git_dirty": false,
+  "created": "2026-08-17T07:10:26Z",
+  "figsize": [
+    7.6,
+    3.9
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "held-out test R\u00b2": -0.018747758160412076,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "held-out test R\u00b2": -0.021444141821280516,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.715,
+      "held-out test R\u00b2": 0.07897574456515888,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.715,
+      "held-out test R\u00b2": -0.887969758435714,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.715,
+      "held-out test R\u00b2": -2.5318451061482716,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "held-out test R\u00b2": -0.021822720532156836,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "held-out test R\u00b2": -0.02313357237457403,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.905,
+      "held-out test R\u00b2": 0.07850085818418506,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.905,
+      "held-out test R\u00b2": -0.8902840682568358,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.905,
+      "held-out test R\u00b2": -2.5318451061482716,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "held-out test R\u00b2": -0.017228906121578236,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "held-out test R\u00b2": -0.0189581993840362,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.095,
+      "held-out test R\u00b2": 0.018489044900116824,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.095,
+      "held-out test R\u00b2": -2.0650161770136446,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.095,
+      "held-out test R\u00b2": -4.106325437276113,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "held-out test R\u00b2": -0.01752763820351899,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "held-out test R\u00b2": -0.019451898221653163,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.285,
+      "held-out test R\u00b2": 0.018471061328314664,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.285,
+      "held-out test R\u00b2": -2.067012529218911,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.285,
+      "held-out test R\u00b2": -4.106325437276113,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Baseline floors per cell (primary layers)",
+        "ylabel": "held-out test R\u00b2",
+        "legend_labels": [
+          "Qwen2.5-7B 5k-fit",
+          "Qwen2.5-7B 10k-fit",
+          "Qwen3.5-9B 5k-fit",
+          "Qwen3.5-9B 10k-fit"
+        ],
+        "xticklabels": [
+          "shuffled pairing",
+          "train mean",
+          "scaled identity",
+          "identity + bias",
+          "identity copy"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ]
+      }
+    ],
+    "series": [
+      "Qwen2.5-7B 5k-fit",
+      "Qwen2.5-7B 10k-fit",
+      "Qwen3.5-9B 5k-fit",
+      "Qwen3.5-9B 10k-fit"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

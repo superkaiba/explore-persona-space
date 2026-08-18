@@ -106,6 +106,12 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # watcher GC'd its entry at the terminal transition (#472, 2026-06-10).
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
+# Persistent fleet-wide spawn defaults (CONTRACTS §2.2): the mission-control
+# dogfood activation lever read by _config_file_session_mode. Lives beside the
+# per-issue registry entries so every resolver (PM session, watcher, daemon)
+# sees one file regardless of process env.
+SPAWN_DEFAULTS_FILENAME = "spawn-defaults.json"
+
 # ─── per-issue dispatch lease (#843 M1) ──────────────────────────────────────
 #
 # Atomic create-or-fail claim taken by `spawn-issue --auto` BEFORE the daemon
@@ -933,16 +939,17 @@ def _marker_session_mode(issue: int) -> str | None:
 
 
 def _task_kind_for_mode_default(issue: int) -> str | None:
-    """Task ``kind`` frontmatter for the EPM_SPAWN_DEFAULT_SESSION_MODE
-    scoping (the env default applies ONLY to ``kind: experiment``). An
-    unreadable kind returns ``None`` — the default then does NOT apply
-    (fail toward legacy auto, never toward flipping a task async)."""
+    """Task ``kind`` frontmatter for the session-mode DEFAULT scoping (both
+    the spawn-defaults config file and EPM_SPAWN_DEFAULT_SESSION_MODE apply
+    only to in-scope kinds). An unreadable kind returns ``None`` — no
+    default then applies (fail toward legacy auto, never toward flipping a
+    task async)."""
     try:
         fm = get_task(issue).get("frontmatter") or {}
     except (OSError, ValueError, RuntimeError) as e:
         print(
             f"  WARNING: kind read failed for #{issue} ({e}); "
-            "EPM_SPAWN_DEFAULT_SESSION_MODE not applied (legacy auto)",
+            "session-mode default not applied (legacy auto)",
             file=sys.stderr,
         )
         return None
@@ -950,14 +957,57 @@ def _task_kind_for_mode_default(issue: int) -> str | None:
     return kind if isinstance(kind, str) else None
 
 
+def _config_file_session_mode(issue: int) -> str | None:
+    """Persistent fleet-wide session-mode default from
+    ``~/.eps-autonomous/spawn-defaults.json`` (CONTRACTS §2.2; the
+    mission-control dogfood ACTIVATION lever — unlike the env default it is
+    process-independent, so the PM session, watcher builders, and daemon all
+    resolve the same answer). Expected shape::
+
+        {"session_mode_default": "async", "kind_scope": ["experiment"],
+         "min_task_id": 2360, "set_by": "...", "set_at": "..."}
+
+    Applies ONLY when the file parses, ``session_mode_default`` is a
+    recognized mode, the task ``kind`` is in ``kind_scope``, AND
+    ``issue >= min_task_id`` — the id cutoff (recorded at activation as
+    max-existing-id + 1) is what keeps every pre-activation task, including
+    re-dispatches of the then-current proposed queue, on legacy behavior.
+    Fail-soft: a missing/unreadable/malformed file or any out-of-shape
+    field skips this link (returns ``None`` → next link), never blocks a
+    spawn and never flips a legacy task async."""
+    try:
+        cfg = json.loads((AUTONOMOUS_REGISTRY_DIR / SPAWN_DEFAULTS_FILENAME).read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(cfg, dict):
+        return None
+    mode = cfg.get("session_mode_default")
+    kind_scope = cfg.get("kind_scope")
+    min_task_id = cfg.get("min_task_id")
+    if mode not in SESSION_MODES:
+        return None
+    if not (isinstance(kind_scope, list) and all(isinstance(k, str) for k in kind_scope)):
+        return None
+    if isinstance(min_task_id, bool) or not isinstance(min_task_id, int):
+        return None
+    if issue < min_task_id:
+        return None
+    kind = _task_kind_for_mode_default(issue)
+    if kind is None or kind not in kind_scope:
+        return None
+    return mode
+
+
 def _resolve_spawn_session_mode(args: argparse.Namespace, issue: int) -> str:
     """Resolve the session mode for a ``spawn-issue --auto`` dispatch
     (CONTRACTS §2.2, fixed order): explicit ``--session-mode`` flag >
     registry-entry ``session_mode`` field > newest ``epm:session-mode``
-    marker > ``EPM_SPAWN_DEFAULT_SESSION_MODE=async`` (scoped to
-    ``kind: experiment`` tasks only) > legacy ``"auto"``. Every unreadable
-    signal falls to the next link — a resolution failure never blocks a
-    spawn and never flips a legacy task async."""
+    marker > spawn-defaults CONFIG FILE (kind- and id-cutoff-scoped, see
+    ``_config_file_session_mode``) > ``EPM_SPAWN_DEFAULT_SESSION_MODE=async``
+    (per-process override, scoped to ``kind: experiment`` tasks only) >
+    legacy ``"auto"``. Every unreadable signal falls to the next link — a
+    resolution failure never blocks a spawn and never flips a legacy task
+    async."""
     explicit = getattr(args, "session_mode", None)
     if explicit in SESSION_MODES:
         return explicit
@@ -965,6 +1015,9 @@ def _resolve_spawn_session_mode(args: argparse.Namespace, issue: int) -> str:
     if mode is not None:
         return mode
     mode = _marker_session_mode(issue)
+    if mode is not None:
+        return mode
+    mode = _config_file_session_mode(issue)
     if mode is not None:
         return mode
     env_default = os.environ.get("EPM_SPAWN_DEFAULT_SESSION_MODE", "").strip().lower()
@@ -2537,7 +2590,8 @@ def _spawn_issue_session(
     the lease — see :func:`release_dispatch_lease`)."""
     # Mission-control rung 0 (CONTRACTS §2.2): resolve the session mode ONCE
     # for --auto dispatches (explicit --session-mode > registry entry >
-    # durable epm:session-mode marker > EPM_SPAWN_DEFAULT_SESSION_MODE for
+    # durable epm:session-mode marker > spawn-defaults.json config default
+    # (kind + id-cutoff scoped) > EPM_SPAWN_DEFAULT_SESSION_MODE for
     # kind: experiment > legacy "auto"). Bespoke --initial-prompt one-shots
     # and bare sessions stay legacy auto by construction.
     session_mode = _resolve_spawn_session_mode(args, issue) if args.auto else "auto"
@@ -3702,8 +3756,10 @@ def main(argv: list[str] | None = None) -> None:
             "— user gates park as durable epm:ask markers (the Step-2c plan gate "
             "never self-approves) and the session EXITs at each park. Omitted: "
             "resolve registry entry > epm:session-mode marker > "
-            "EPM_SPAWN_DEFAULT_SESSION_MODE (kind: experiment only) > legacy "
-            "'auto' (byte-identical pre-rung-0 behavior). Requires --auto."
+            "~/.eps-autonomous/spawn-defaults.json (kind_scope + min_task_id "
+            "cutoff) > EPM_SPAWN_DEFAULT_SESSION_MODE (kind: experiment only) "
+            "> legacy 'auto' (byte-identical pre-rung-0 behavior). "
+            "Requires --auto."
         ),
     )
     _add_claude_session_args(p_issue)

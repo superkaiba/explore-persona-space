@@ -543,7 +543,7 @@ this probe (same class as the gotchas #1310 signature probe).
 **Dispatch-input/env/flag preflight (REQUIRED before any instance-booting
 dispatch; #1964 — extends the argv dry-run above; same trigger + same
 byte-identical-re-dispatch exemption).** The argv dry-run validates PARSE
-+ early post-parse validation only; the four probes below cover what it
++ early post-parse validation only; the five probes below cover what it
 deliberately excludes — each is a VM-side check costing seconds, run
 BEFORE provisioning (#1739/#1689/#1345/#1902/#1946/#1900 — all
 discoverable pre-boot).
@@ -594,6 +594,24 @@ each probe's one-line disposition in the dispatch note.
   in the relaunch note. Machine-sized caps (`--rss-cap-gb`, thread caps,
   width) are RE-DERIVED for the TARGET machine on any cross-machine move
   — a sidecar cap is sized to the machine that wrote it (#1946).
+- **(e) Per-leg out/scratch isolation for concurrent same-driver legs.**
+  Binds at orchestrator dispatch time — for multi-leg rounds (follow-up
+  legs, secondary phases, teammate-built legs) AND for any SINGLE-leg
+  dispatch composed while a same-driver / layout-sharing sibling leg is
+  or may be live on the target machine (an already-live sibling that
+  inherited a shared out-dir env var from an earlier dispatch/preamble
+  counts; #2330 fu1: both fu1 launchers inherited one
+  `EPM_I2330_OUT_DIR`, identical `shard00_chunk*.pt` basenames silently
+  cross-poisoned a dense upload and killed the sibling's terminal
+  flush). Collision test: same or layout-sharing driver + same split
+  name + overlapping shard indices means the legs' chunk basenames
+  collide; on a possible collision the dispatch derives a PER-LEG
+  out/scratch root BEFORE launch. The non-collision escape is BASENAME
+  DISJOINTNESS (disjoint splits / disjoint shard indices / disjoint
+  output basename-layouts) — driver difference alone is NOT sufficient.
+  One-line disposition in the dispatch note. Canonical recipe incl. the
+  basename-disjointness escape wording:
+  `.claude/agents/experimenter.md` "During Execution" step 1c.
 
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it

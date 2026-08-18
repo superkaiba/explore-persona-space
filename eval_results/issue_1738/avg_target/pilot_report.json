@@ -1,0 +1,14 @@
+{
+  "gate": "avgtgt-pilot",
+  "pilot_kept_contexts": 50,
+  "pilot_units": 200,
+  "pilot_unit_wall_s": 52.0,
+  "pilot_total_wall_s": 644.3666794300079,
+  "measured_s_per_unit": 0.26,
+  "load_overhead_s": 592.3666794300079,
+  "projected_total_units": 80000,
+  "projected_gpu_h": 7.094148176511129,
+  "projected_wall_h_8way": 0.8867685220638911,
+  "fence_gpu_h": 20.0,
+  "verdict": "PASS"
+}

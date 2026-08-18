@@ -1,0 +1,361 @@
+{
+  "commit": "d3d6017b+dirty",
+  "render_id": "e737fac6fd9a494e",
+  "git_commit": "d3d6017b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2202/residual_read/percontext_ranks_margins.npz",
+    "eval_results/issue_2202/residual_read/summary.json",
+    "scripts/issue2202_fold_figs.py",
+    "scripts/issue2202_residual_read.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-17T22:44:00Z",
+  "figsize": [
+    6.8,
+    4.0
+  ],
+  "points": [
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.125745,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.11593,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.106114,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.096299,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.086483,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.076668,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.066852,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.057037,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.047222,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.037406,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.027591,
+      "covered rows (log scale)": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.017775,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": -0.00796,
+      "covered rows (log scale)": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.001856,
+      "covered rows (log scale)": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.011671,
+      "covered rows (log scale)": 8.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.021486,
+      "covered rows (log scale)": 8.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.031302,
+      "covered rows (log scale)": 11.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.041117,
+      "covered rows (log scale)": 19.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.050933,
+      "covered rows (log scale)": 28.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.060748,
+      "covered rows (log scale)": 33.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.070564,
+      "covered rows (log scale)": 40.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.080379,
+      "covered rows (log scale)": 48.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.090194,
+      "covered rows (log scale)": 57.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.10001,
+      "covered rows (log scale)": 64.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.109825,
+      "covered rows (log scale)": 63.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.119641,
+      "covered rows (log scale)": 81.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.129456,
+      "covered rows (log scale)": 91.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.139272,
+      "covered rows (log scale)": 97.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.149087,
+      "covered rows (log scale)": 101.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.158902,
+      "covered rows (log scale)": 111.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.168718,
+      "covered rows (log scale)": 101.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.178533,
+      "covered rows (log scale)": 114.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.188349,
+      "covered rows (log scale)": 111.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.198164,
+      "covered rows (log scale)": 122.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.20798,
+      "covered rows (log scale)": 118.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.217795,
+      "covered rows (log scale)": 109.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.22761,
+      "covered rows (log scale)": 76.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.237426,
+      "covered rows (log scale)": 79.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.247241,
+      "covered rows (log scale)": 72.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.257057,
+      "covered rows (log scale)": 59.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.266872,
+      "covered rows (log scale)": 50.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.276688,
+      "covered rows (log scale)": 39.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.286503,
+      "covered rows (log scale)": 17.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.296318,
+      "covered rows (log scale)": 15.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.306134,
+      "covered rows (log scale)": 13.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.315949,
+      "covered rows (log scale)": 7.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.325765,
+      "covered rows (log scale)": 6.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.33558,
+      "covered rows (log scale)": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.345396,
+      "covered rows (log scale)": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.355211,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.365026,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.374842,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.384657,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.394473,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.404288,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.414104,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.423919,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.433734,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.44355,
+      "covered rows (log scale)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "retrieval margin: true-target minus best-competitor score": 0.453365,
+      "covered rows (log scale)": 1.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Residual failures are near-misses in the margin distribution",
+        "xlabel": "retrieval margin: true-target minus best-competitor score",
+        "ylabel": "covered rows (log scale)",
+        "legend_labels": [
+          "covered rows (n = 1,988)",
+          "failure region, margin below 0 (n = 11)",
+          "pool median (+0.175)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2352,
+  "highest_id": 2359,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9450,8 +9450,8 @@
       "goal": "Reproduce Lu et al. (arXiv 2601.10387) persona-drift results \u2014 per-turn mean response-token activation projections onto the Assistant Axis over synthetic multi-turn conversations (4 domains x 100 conversations, auditor-simulated user, <=15 turns; Fig. 4 + appendix) and the first-turn projection vs second-turn harmful-response-rate correlation (Fig. 5, r=0.39-0.52) \u2014 on Qwen-3-32B with the paper's published vectors (faithful anchor) and Qwen-2.5-7B-Instruct with the in-house #2203 axis, reporting the paper-faithful response-token read alongside prefix-vector and context-vector projection arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2223",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2223",
+      "status": "followups_running",
       "title": "Every-token capping cuts the reproduced Assistant-Axis persona drift on Qwen3-32B by roughly a third but does not eliminate it (MODERATE confidence)"
     },
     "2224": {
@@ -10282,8 +10282,8 @@
       "goal": "Compare context-to-answer map quality between Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled) on matched LMSYS prompts with each model's own on-policy generations: per-layer ridge maps fit at 5k and 10k training generations per model, compared on held-out R2 (plus ceiling-normalized secondary, identity+bias/kNN companions, shuffled-pairing null).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2330",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2330",
+      "status": "awaiting_promotion",
       "title": "Qwen2.5-7B-Instruct's context-to-answer map outscores Qwen3.5-9B's at matched LMSYS data, an edge from a peak at its middle captured layer rather than a uniform deficit (MODERATE confidence)"
     },
     "2331": {
@@ -10296,16 +10296,16 @@
     "2332": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2332",
-      "status": "running",
+      "path": "tasks/completed/2332",
+      "status": "completed",
       "title": "Repack small-file HF prefixes to reclaim ~610k file-count slots without breaking readers"
     },
     "2333": {
       "goal": "Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2333",
-      "status": "running",
+      "path": "tasks/verifying/2333",
+      "status": "verifying",
       "title": "Snowball test: do context-vector patch effects run through the first few answer tokens? First-k token patches + prefills vs ce patch, both models"
     },
     "2334": {
@@ -10417,8 +10417,8 @@
     "2348": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2348",
-      "status": "running",
+      "path": "tasks/completed/2348",
+      "status": "completed",
       "title": "workflow-fix: Step 10d pre-push gate mapped-test legs compare failure sets over different collections (false block on pre-existing main-red)"
     },
     "2349": {
@@ -10438,8 +10438,8 @@
     "2350": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2350",
-      "status": "running",
+      "path": "tasks/completed/2350",
+      "status": "completed",
       "title": "Experimenter launcher composition: mandatory per-leg out/scratch dir isolation for concurrent same-driver legs (#2330 fu1 dense-store poisoning)"
     },
     "2351": {
@@ -10452,9 +10452,59 @@
     "2352": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2352",
-      "status": "running",
+      "path": "tasks/reviewing/2352",
+      "status": "reviewing",
       "title": "Step 5a spec-freshness: add tests/issue_skill_source.py to FAMILY_workflow (half-sync reds test_issue_skill_* collection)"
+    },
+    "2353": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2353",
+      "status": "completed",
+      "title": "verify_task_body: WARN-level per-unit-or-exemption check for every v4 result section (multi-point aggregate figures escape the current single-aggregate-stat trigger)"
+    },
+    "2354": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2354",
+      "status": "proposed",
+      "title": "worktree_audit.py stale-sweep reaps an active inline-round worktree (pod-side work + parked parent look idle)"
+    },
+    "2355": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2355",
+      "status": "proposed",
+      "title": "workflow_lint _hf_routing_file_errors false-positives on HF-call text inside docstrings"
+    },
+    "2356": {
+      "goal": "Predict Qwen2.5-7B-Instruct's binary refuse-vs-comply/answer decision across TWO behavioral regimes \u2014 (A) harmful-compliance flip-pairs and (B) over-refusal on borderline dual-use prompts \u2014 and compare four predictors of that behavior under a fair group-level train/eval split, run separately on each arm (the headline must hold in BOTH) plus a cross-regime transfer check: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation under a label-blind map-training ablation (#3a generic-only vs #3b generic + train-split in-domain), (4) linear probe on the actual answer activation (ceiling); additionally evaluate whether the context->answer map DISCRIMINATES answers via the #2202 whitened-cosine retrieval battery (which doubles as the map-quality gate for predictor 3).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2356",
+      "status": "running",
+      "title": "Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer / actual-answer probes)"
+    },
+    "2357": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2357",
+      "status": "running",
+      "title": "guard_root_code_commit.sh: pathspec-limited root commits blocked by foreign staged code files (scoping defect)"
+    },
+    "2358": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2358",
+      "status": "proposed",
+      "title": "Repack issue1739_ctxmap once #1739 quiesces (43,905 slots; deferred by G-1739/G-writer in #2332)"
+    },
+    "2359": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2359",
+      "status": "running",
+      "title": "verify_uploads.py outroot-residue: basename match vs issue-scoped git trees lets a sibling leg's committed file cover this leg's unpersisted file"
     },
     "237": {
       "has_clean_result": true,
