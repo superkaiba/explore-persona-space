@@ -110,11 +110,22 @@
 # - Provably-root cd prefix (#2357): pathspec SCOPING also engages when the
 #   command carries a CANONICAL ABSOLUTE root `cd` ($GUARD_REPO absolute
 #   [+ trailing /] ONLY — the r2 arming set) AND that cd is the LAST
-#   cwd-moving cd before every commit clause (r3): a NON-canonical cd
-#   ANYWHERE in the armed chain after the canonical one DISARMS the
-#   widening — only a chain whose LAST pre-commit cd is the literal
-#   absolute root scopes; a later canonical arming cd re-establishes the
-#   base. The symbolic ALIAS root spellings (~/explore-persona-space[/],
+#   RECOGNIZED cwd-moving record before every commit clause (r3+r4): any
+#   recognized cwd-moving record ANYWHERE in the armed chain after the
+#   canonical cd DISARMS the widening — a non-canonical cd (r3), and (r4)
+#   every record matching the cwd-mover family (pushd/popd, source/`.`,
+#   eval, builtin/command wrappers, quoted/escaped cd spellings) or the
+#   retarget vocabulary (WT_CWD_ALLOW_SCREEN_ERE: `git -C`/`env -C`
+#   short dir wrappers, --chdir/--work-tree/--git-dir, GIT_DIR=-family
+#   assignments — even as a mention inside message text: conservative by
+#   design) — only a chain whose LAST recognized cwd-moving record before
+#   every commit is the literal absolute-root cd scopes; a later canonical
+#   arming cd re-establishes the base. UNRECOGNIZED movers remain a named
+#   residual of the widening: mid-word-quoted spellings (`pu'sh'd`) and a
+#   mover held in a variable ride an armed chain undetected (fail-open for
+#   the widening ONLY — never wider than the pre-#2357 root-cwd behavior);
+#   compound/subshell contexts stay refused by D4 regardless. The symbolic
+#   ALIAS root spellings (~/explore-persona-space[/],
 #   $HOME/explore-persona-space[/]) NEVER arm the widening AND, riding an
 #   armed chain, DISARM it (r3): they keep their legacy non-poisoning
 #   classification (cd_nonroot stays 0 — root-cwd behavior unchanged) but
@@ -130,9 +141,11 @@
 #   Fail-closed residuals (each stays conservatively whole-index):
 #   symbolic-alias root spellings (the ~/ and $HOME/ forms above —
 #   legacy-kept non-poisoning, never arming, and DISARMING when they ride
-#   an armed chain, r3); any non-canonical cd between the armed canonical
-#   cd and a commit (riding alias / subdir / relative / variable — the
-#   disarm above);
+#   an armed chain, r3); any recognized cwd-moving record between the
+#   armed canonical cd and a commit (riding alias / subdir / relative /
+#   variable cd, and the r4 non-cd mover family — the disarm above; the
+#   disarm also fires on a mover AFTER the final commit clause:
+#   deliberate over-tightening, see the disarm site);
 #   variable / $(..) / relative / subdir / quote-broken cd targets;
 #   AND/OR/BG/PIPE-separated cds (own separator); trailing-token cds
 #   (`cd <root> junk`); any non-AND separator between the cd and a commit —
@@ -140,7 +153,9 @@
 #   scope; commit-before-cd orderings; compound-context commands INCLUDING
 #   parenthesized-subshell openers (`(cd <root> ...)` — the record
 #   lead-strip would otherwise hide the paren from the cd arm while a
-#   subshell cd never moves the parent cwd); `env --chdir` (scope_unsafe);
+#   subshell cd never moves the parent cwd); `env --chdir` AND the short
+#   pre-verb `-C <dir>` wrapper spellings incl. the exact-root `git -C`
+#   form, whose waiver is refused (scope_unsafe, r4);
 #   quoted-spacey pathspecs (rawtail parity, #1928); double-slash or
 #   `/./`-bearing root spellings outside the pinned set; and the
 #   path-limited `git add --all --` exemption keeps its root-cwd-no-cd
@@ -251,6 +266,26 @@ GATED_PATH_ERE='^(scripts/.*\.py|src/.+|tests/.*\.py)$'
 # accidents-not-adversaries, header parity). Both stay named in the header
 # known-limitations block.
 WT_CWD_ALLOW_SCREEN_ERE='--chdir|--work-tree|--git-dir|core\.worktree|GIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR)=|(^|[^[:alnum:]_])[^[:alnum:][:space:]_]*cd[^[:alnum:][:space:]_]*([^[:alnum:]_]|$)|pushd|popd|(^|[^[:alnum:]_])source([[:space:]]|$)|(^|[[:space:]])-[A-Za-z]*C([[:space:]=]|$)'
+# #2357 r4 (concerns non-cd-cwd-mover-rides-armed-chain /
+# unmodeled-cwd-mover-survives-scope-base): lead-anchored cwd-mover FAMILY
+# for the per-record armed-chain disarm in classify_cmd. Tolerates adjacent
+# quote/backslash chars so the `\cd`, `'cd'`, `"source"`, `'.'` spellings —
+# which bash quote-removal still executes as the builtin — match at the
+# record lead; `./script` does NOT match (the trailing class requires
+# whitespace/EOL right after the word, and a `/` follows here). `cd` itself
+# is listed ONLY for the quoted/escaped spellings: a plain-lead `cd` record
+# is classified by the dedicated cd arm above the mover check and never
+# reaches it. `eval` matches regardless of its argument (an eval'd string
+# can move the cwd invisibly); `builtin`/`command` match regardless of the
+# wrapped word (conservative — a `command`-prefixed record in an armed
+# commit chain is rare and the disarm only narrows the #2357 widening).
+# Paired at the disarm site with a raw-record grep of the
+# WT_CWD_ALLOW_SCREEN_ERE retarget vocabulary above (catches mid-record
+# movers: `git -C` / `env -C`, GIT_DIR=, --work-tree, a cd inside an eval
+# argument). The dot-source spelling lives HERE and not in the screen ERE:
+# lead-anchored, it cannot fire on the blanket-add-dot token the screen's
+# residual note protects.
+CWD_MOVER_LEAD_ERE='^["'\''\\]*(cd|pushd|popd|source|\.|eval|builtin|command)["'\''\\]*([[:space:]]|$)'
 FILL=$'\001' # masker filler byte for string-literal interiors (never IFS, never a separator)
 # cd VARIABLE-target shape (issue #1676): exactly $NAME / ${NAME}, optionally
 # followed by a literal /suffix — the only unproven-target family eligible for
@@ -986,7 +1021,9 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
           # later canonical arming cd re-establishes the base (its arm
           # clears cd_base_disarmed). cd_nonroot stays untouched — the
           # disarm gates ONLY the #2357 widening, never the legacy
-          # root-cwd path.
+          # root-cwd path. DELIBERATE: also fires on an alias cd AFTER the
+          # final commit (fail-closed over-tightening — see the r4 mover
+          # disarm note; do not "fix" as a bug).
           if [ "$cd_root_seen" = 1 ]; then
             cd_root_seen=0 cd_base_disarmed=1
           fi
@@ -998,13 +1035,54 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
           # gate globally for these spellings; the disarm keeps the
           # cd_root_base predicate locally sound (the LAST cwd-moving cd
           # before every commit must be the canonical absolute root)
-          # without leaning on that distant AND-term.
+          # without leaning on that distant AND-term. DELIBERATE: also
+          # fires on a cd AFTER the final commit (fail-closed
+          # over-tightening — see the r4 mover disarm note).
           if [ "$cd_root_seen" = 1 ]; then
             cd_root_seen=0 cd_base_disarmed=1
           fi
           ;;
       esac
       continue
+    fi
+
+    # #2357 r4 (concerns non-cd-cwd-mover-rides-armed-chain /
+    # unmodeled-cwd-mover-survives-scope-base): PER-RECORD conservative
+    # invalidation for cwd/repository movers NOT spelled as a plain-lead
+    # `cd`. The r3 disarm arms above fire only on records the `^cd`
+    # dispatch recognizes; a successful cwd-moving construct spelled any
+    # other way (pushd/popd, prefixed/escaped/quoted builtin-cd spellings,
+    # eval, source/., a short `-C <dir>` wrapper) moved the real
+    # pathspec-resolution base while cd_root_seen stayed 1 — the executed
+    # r3 false-allow class. Trigger set = the lead-anchored mover family
+    # (CWD_MOVER_LEAD_ERE — covers the `.`-source lead the screen ERE
+    # deliberately cannot spell) UNION the hook's own retarget vocabulary
+    # (WT_CWD_ALLOW_SCREEN_ERE), both grepped on the RAW record text —
+    # quoted/escaped mover spellings are filler on the masked copy.
+    # Deliberately conservative, fail closed for the widening only: a
+    # commit message that merely MENTIONS mover vocabulary also disarms
+    # (scoping degrades to origin/main's whole-index read; sibling
+    # precedent: scripts/guard_repo_root_branch.sh's cd/pushd/popd sticky
+    # scope invalidation). Armed-only (cd_root_seen=1): a mover BEFORE the
+    # arming cd never disarms (the canonical cd establishes the base in
+    # its own arm), legacy root-cwd behavior is untouched (cd_nonroot is
+    # NOT set here), and a later canonical arming cd re-establishes the
+    # base. DELIBERATE over-tightening (r3 Minor, kept): the disarm also
+    # fires on a mover AFTER the final commit clause — converting some
+    # sound `git commit -- p; pushd x` chains from scoped-allow to
+    # whole-index — because narrowing it to pre-commit movers would trade
+    # the D5 end-state belt (cd_root_seen=1 && cd_base_disarmed=0) for
+    # per-commit snapshots, an allow-direction risk; do not "fix" this as
+    # a bug. NAMED RESIDUAL (fail-open for the widening, at-or-below
+    # origin/main behavior everywhere else): mover spellings the text
+    # cannot recognize — mid-word-quoted forms (`pu'sh'd`), a mover held
+    # in a variable ($X where X=pushd) — ride an armed chain undetected;
+    # compound/subshell contexts stay refused by D4 regardless.
+    if [ "$cd_root_seen" = 1 ]; then
+      if printf '%s' "$raw_lead" | grep -qE -e "$CWD_MOVER_LEAD_ERE" \
+        || printf '%s' "$raw" | grep -qE -e "$WT_CWD_ALLOW_SCREEN_ERE"; then
+        cd_root_seen=0 cd_base_disarmed=1
+      fi
     fi
 
     # `git -C <path>` waiver — LEAD-ANCHORED (round-3 fix): detection on the
@@ -1117,8 +1195,15 @@ $tok" ;;
       for tok in $masked; do
         if [ "$saw_verb" = 0 ]; then
           # Pre-verb cwd-changing wrapper (env --chdir=DIR git commit ...)
-          # moves the pathspec-resolution base: never scope.
-          case "$tok" in --chdir*) scope_unsafe=1 ;; esac
+          # moves the pathspec-resolution base: never scope. r4 (#2357,
+          # concern unmodeled-cwd-mover-survives-scope-base): the SHORT
+          # per-invocation directory-flag spellings get the same treatment
+          # — `-C <dir>` / `-C<dir>` (git's dir wrapper; also env's -C) and
+          # a cluster ending in C (`-iC`). Parity with --chdir: never scope
+          # regardless of target, the exact-root spelling included (its
+          # waiver is REFUSED above, so it is the one -C form that reaches
+          # this scan; forcing the whole-index read there is fail closed).
+          case "$tok" in --chdir* | -C* | -[A-Za-z]*C) scope_unsafe=1 ;; esac
           [ "$tok" = commit ] && saw_verb=1
           continue
         fi
@@ -1265,9 +1350,11 @@ EOF_RAWTAIL
         if [ "$a_saw_verb" = 0 ]; then
           # Pre-verb cwd-changing wrapper (env --chdir=DIR git add ...)
           # moves the pathspec-resolution base — exemption-INELIGIBLE
-          # (mirror of the commit pass's scope_unsafe arm). A pre-verb
-          # blanket-shaped token is not the sanctioned shape either.
-          case "$tok" in --chdir* | -A | --all | .) a_eligible=0 ;; esac
+          # (mirror of the commit pass's scope_unsafe arm, incl. the r4
+          # short -C dir-wrapper spellings — same parity as the commit
+          # pass). A pre-verb blanket-shaped token is not the sanctioned
+          # shape either.
+          case "$tok" in --chdir* | -C* | -[A-Za-z]*C | -A | --all | .) a_eligible=0 ;; esac
           [ "$tok" = add ] && a_saw_verb=1
           continue
         fi
@@ -1699,6 +1786,34 @@ cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
     "$RFOR" '' "$TMP"
   run_case "B59 disarm-then-canonical-re-arm still scopes (allow direction, #2357 r3)" 0 \
     "cd $RFOR && cd ~/explore-persona-space; cd $RFOR && git commit -m x -- tasks/t.md" \
+    "$RFOR" '' "$TMP"
+  # r4 (concerns non-cd-cwd-mover-rides-armed-chain /
+  # unmodeled-cwd-mover-survives-scope-base): NON-`cd`-spelled cwd movers
+  # riding an armed canonical chain disarm the widening (B60-B64), the
+  # short pre-verb -C dir wrapper on the commit clause refuses scoping
+  # (B65 — canonical-root literal: the one -C form whose waiver is refused
+  # so it reaches the commit scan), and a mover BEFORE the arming cd never
+  # disarms (A28, allow direction).
+  run_case "B60 pushd riding armed canonical chain disarms (#2357 r4)" 2 \
+    "cd $RFOR && pushd scripts && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B61 backslash-escaped cd riding armed chain disarms (#2357 r4)" 2 \
+    "cd $RFOR && \\cd scripts && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B62 command-prefixed cd riding armed chain disarms (#2357 r4)" 2 \
+    "cd $RFOR && command cd scripts && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B63 eval'd cd riding armed chain disarms (#2357 r4)" 2 \
+    "cd $RFOR && eval 'cd scripts' && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B64 dot-source riding armed chain disarms (#2357 r4)" 2 \
+    "cd $RFOR && . scripts/env.sh && git commit -m x -- own.py" \
+    "$RFOR" '' "$RFOR/scripts"
+  run_case "B65 short -C root wrapper on commit refuses scoping (#2357 r4)" 2 \
+    "git -C /home/thomasjiralerspong/explore-persona-space commit -m x -- tasks/t.md" \
+    "$RFOR"
+  run_case "A28 mover BEFORE arming cd still scopes (allow direction, #2357 r4)" 0 \
+    "pushd scripts; cd $RFOR && git commit -m x -- tasks/t.md" \
     "$RFOR" '' "$TMP"
 
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
@@ -2139,7 +2254,7 @@ done
 # attribution is already unambiguous.
 scope_diag=""
 if [ "$scope" = 0 ]; then
-  scope_diag="scope-diag: scope=0 cwd_ok=$cwd_ok cd_root_base=$cd_root_base cd_root_seen=$cd_root_seen cd_base_disarmed=$cd_base_disarmed commit_off_chain=$commit_off_chain cd_nonroot=$cd_nonroot scope_unsafe=$scope_unsafe pathspec_opaque=$pathspec_opaque commit_bare_clause=$commit_bare_clause has_dash_a=$has_dash_a commit_has_pathspec=$commit_has_pathspec
+  scope_diag="scope-diag: scope=0 cwd_ok=$cwd_ok cd_root_base=$cd_root_base cd_root_seen=$cd_root_seen cd_base_disarmed=$cd_base_disarmed commit_before_root_cd=$commit_before_root_cd commit_off_chain=$commit_off_chain cd_nonroot=$cd_nonroot scope_unsafe=$scope_unsafe pathspec_opaque=$pathspec_opaque commit_bare_clause=$commit_bare_clause has_dash_a=$has_dash_a commit_has_pathspec=$commit_has_pathspec
 "
 fi
 
@@ -2177,11 +2292,13 @@ repo root — a pathspec-limited commit is never blocked by foreign staged
 files: git commit -m \"<msg>\" -- <your paths>  (unquoted paths; run at the
 repo root, or with a leading cd <absolute repo root> &&  prefix — the literal
 absolute path, not a variable, with every clause up to the commit joined by
-&& AND no other cd between it and the commit: the cd to the literal absolute
-root must be the LAST cd before the commit — any later non-canonical cd
-(alias/subdir/relative) disarms the scoping (#2357) — the guard scopes its
-check to the pathspec). Plain output redirections on the commit clause are
-tolerated since #1928.
+&& AND no other cwd-moving record between it and the commit: the cd to the
+literal absolute root must be the LAST recognized cwd-moving record before
+the commit — any later recognized cwd-moving record (a non-canonical cd,
+pushd/popd, source/., eval, a -C/--chdir directory wrapper, or a mere
+mention of mover vocabulary in message text) disarms the scoping (#2357) —
+the guard scopes its check to the pathspec). Plain output redirections on
+the commit clause are tolerated since #1928.
 "
 fi
 

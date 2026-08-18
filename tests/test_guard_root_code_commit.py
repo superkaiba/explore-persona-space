@@ -1581,6 +1581,91 @@ def test_c29c_alias_then_and_separated_canonical_never_arms(
     )
 
 
+# --- c30 family (r4, concerns non-cd-cwd-mover-rides-armed-chain /
+# unmodeled-cwd-mover-survives-scope-base): a cwd-moving record NOT spelled
+# as a plain-lead `cd` riding an armed canonical chain DISARMS the widening.
+# The r3 disarm fired only on `^cd`-dispatched records, so pushd/popd,
+# prefixed/escaped/quoted builtin-cd spellings, eval'd cds, and sourced
+# scripts moved the real pathspec-resolution base while cd_root_seen stayed
+# 1 — executed rc differential (hermetic blob probe, 2026-08-18): every
+# instance below was origin/main=2, r3(b307923fc1)=0, r4=2. Same fixture
+# shape as c28: root-SUBDIR cwd, staged uncertified gated file, cwd-relative
+# pathspec; post-fix the whole-index read blocks (exit 2).
+_C30_MOVERS = [
+    pytest.param("pushd scripts", id="pushd"),
+    pytest.param("popd", id="popd"),
+    pytest.param("builtin cd scripts", id="builtin-cd"),
+    pytest.param("command cd scripts", id="command-cd"),
+    pytest.param("\\cd scripts", id="backslash-cd"),
+    pytest.param("'cd' scripts", id="quoted-cd"),
+    pytest.param("eval 'cd scripts'", id="eval-cd"),
+    pytest.param(". scripts/env.sh", id="dot-source"),
+    pytest.param("source scripts/env.sh", id="source"),
+]
+
+
+@pytest.mark.parametrize("mover", _C30_MOVERS)
+def test_c30_noncd_mover_riding_armed_canonical_chain_blocked(
+    mover: str, foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && {mover} && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c31_short_dashc_root_wrapper_on_commit_refuses_scoping(
+    foreign_repo: Path, cert: Path
+) -> None:
+    # r4: the SHORT pre-verb -C dir wrapper on the commit clause sets
+    # scope_unsafe (parity with the long --chdir form, c14b). The
+    # canonical-root spelling is the one -C form whose waiver is REFUSED
+    # (b7), so it reaches the commit scan; pre-fix it scoped root-pinned
+    # (rc differential: origin/main=0, r3=0 — a PRE-EXISTING scoped allow —
+    # r4=2, strictly tighter).
+    _assert_blocked(_run(f"git -C {_CANONICAL_ROOT} commit -m x -- tasks/t.md", foreign_repo, cert))
+
+
+def test_c31b_short_dashc_root_wrapper_riding_armed_chain_blocked(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # The armed-chain composition of c31 — the family-(e) instance the
+    # widening INTRODUCED (rc differential: origin/main=2, r3=0, r4=2):
+    # both the r4 mover disarm (the -C retarget vocabulary in the raw
+    # record) and the pre-verb scope_unsafe arm force the whole-index read.
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && git -C {_CANONICAL_ROOT} commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c32_mover_before_arming_cd_still_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Allow pin (over-tightening protection for the r4 mover disarm): the
+    # disarm is ARMED-ONLY, so a mover BEFORE the arming canonical cd never
+    # disarms — the SEQ-separated canonical cd establishes the base and the
+    # pathspec still scopes past the foreign uncertified staged file.
+    _assert_allowed(
+        _run(
+            f"pushd scripts; cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # D — cd-latch variable resolution + unproven-cd diagnostics (issue #1676)
 # ---------------------------------------------------------------------------
