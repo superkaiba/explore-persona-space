@@ -216,13 +216,16 @@ For each finding, propose the simplest non-mechanism explanation:
   sign/effect-stability claim; #1434: frozen [−0.949, −0.467] vs
   inherited [−0.957, +0.866] in the same JSON"
 - "The activity-matched / partialled headline is carried by the population
-  where the matching covariate is one giant tie — check the recorded
-  match_tie_fraction (modal-value share of the complete-case sample): above
-  0.5 the matched design does no work on the modal block, and the
-  support-restricted companion (the same statistic off the modal tie block)
-  is what carries the claim; #2163: tie fraction 0.897 — both named
-  predictors were ~0 on the support and `A_W` sign-flipped in the same
-  committed JSON"
+  where the matching covariate is one giant tie — read the recorded
+  match_tie_fraction (modal-value share of the complete-case sample), or
+  recompute the modal-value share from the committed artifact when absent
+  (the #2163 catch WAS a raw-artifact recompute; the known-positive artifact
+  class records NO tie-fraction field, so an absent field is the expected
+  shape, never a discharge): above 0.5 the matched design does no work on
+  the modal block, and the support-restricted companion (the same statistic
+  off the modal tie block) is what carries the claim; #2163: tie fraction
+  0.897 — both named predictors were ~0 on the support and `A_W`
+  sign-flipped in the same committed JSON"
 
 If the interpretation doesn't address or rule out the alternative, flag it.
 

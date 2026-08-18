@@ -156,6 +156,127 @@ def test_audit_degenerate_limit_still_reports_degenerate():
     assert out["degenerate"] is True and out["fires"] is True
 
 
+def test_audit_exact_boundary_half_does_not_fire():
+    # r2 (#2180 concern boundary-and-prose-pin-gaps): the threshold is a
+    # STRICT `>` — tie_fraction exactly 0.5 is NOT degenerate (non-degenerate
+    # verdict, no firing), pinning the boundary semantics.
+    out = ms.audit_matched_artifact({}, tie_fraction=0.5)
+    assert out["degenerate"] is False
+    assert out["fires"] is False
+
+
+# ------------------------------------------------- unit: companion hardening (r2)
+
+
+def test_audit_on_support_none_placeholder_is_not_companion():
+    # A null placeholder under a *_on_support key is NOT a companion read
+    # (#2180 concern companion-false-negative).
+    art = {"results": {"partial_on_support": None}}
+    out = ms.audit_matched_artifact(art, tie_fraction=0.9)
+    assert out["has_support_companion"] is False
+    assert out["fires"] is True
+
+
+def test_audit_unsupported_named_block_is_not_support_defined():
+    # "unsupported"-style names must not substring-match the support token.
+    art = {
+        "pools": {
+            "unsupported_rows": {"n": 5, "partial": 0.1},
+            "full": {"n": 10, "partial": 0.2},
+        }
+    }
+    out = ms.audit_matched_artifact(art, tie_fraction=0.9)
+    assert out["has_support_companion"] is False
+    assert out["fires"] is True
+
+
+def test_audit_population_block_with_only_n_is_not_companion():
+    # A support-defined sub-block carrying ONLY a sample-size key has no
+    # audited-statistic payload — structure without a companion read.
+    art = {
+        "populations": {
+            "full": {"n": 10, "partial": 0.2},
+            "support": {"n": 3},
+        }
+    }
+    out = ms.audit_matched_artifact(art, tie_fraction=0.9)
+    assert out["has_support_companion"] is False
+    assert out["fires"] is True
+
+
+def test_audit_root_level_population_block_is_companion():
+    # The scanned root may itself BE the per-population dict (round-1 Claude
+    # minor: arm (b) previously scanned dict VALUES only, missing the root).
+    art = {
+        "full": {"n": 10, "partial": 0.2},
+        "train_active": {"n": 3, "definition": "rows with count > 0", "partial": -0.01},
+    }
+    out = ms.audit_matched_artifact(art, tie_fraction=0.9)
+    assert out["has_support_companion"] is True
+    assert out["fires"] is False
+
+
+def test_audit_result_path_scopes_companion_to_headline_dv():
+    # Per-DV scoping (#2180 concern companion-false-negative, cross-DV arm):
+    # a SIBLING DV's companion must not read as coverage for THIS headline.
+    art = {
+        "per_dv": {
+            "dv_with_companion": {"partial": 0.24, "partial_on_support": -0.003},
+            "dv_headline": {"partial": 0.21},
+        }
+    }
+    out = ms.audit_matched_artifact(art, tie_fraction=0.9, result_path=("per_dv", "dv_headline"))
+    assert out["has_support_companion"] is False
+    assert out["fires"] is True
+    assert out["companion_scope"] == "per_dv/dv_headline"
+    out2 = ms.audit_matched_artifact(art, tie_fraction=0.9, result_path="per_dv/dv_with_companion")
+    assert out2["has_support_companion"] is True
+    assert out2["fires"] is False
+    # Artifact-global default (backward compat): the sibling companion IS
+    # visible — exactly the contamination result_path exists to cut; the
+    # docstring names the per-DV call as the correct grain.
+    out3 = ms.audit_matched_artifact(art, tie_fraction=0.9)
+    assert out3["has_support_companion"] is True
+    assert out3["companion_scope"] == "artifact-global"
+
+
+def test_audit_result_path_unresolvable_raises():
+    with pytest.raises(ValueError, match="result_path"):
+        ms.audit_matched_artifact({"per_dv": {}}, tie_fraction=0.9, result_path="per_dv/nope")
+
+
+# ------------------------------------------------- unit: fail-fast validation (r2)
+
+
+def test_audit_recorded_nan_tie_fraction_raises():
+    # A recorded NaN must RAISE, never silently read fires=False
+    # (#2180 concern audit-nonfinite-silent-pass; nan > 0.5 is False).
+    with pytest.raises(ValueError, match="finite"):
+        ms.audit_matched_artifact({"match_tie_fraction": float("nan")})
+
+
+def test_audit_recorded_inf_tie_fraction_raises():
+    with pytest.raises(ValueError, match="finite"):
+        ms.audit_matched_artifact({"match_tie_fraction": float("inf")})
+
+
+def test_audit_recorded_bool_is_not_a_tie_fraction_source():
+    # bool is an int subclass; a boolean field is never a tie fraction
+    # (round-1 Claude minor, folded into r2).
+    with pytest.raises(ValueError, match="no tie-fraction source"):
+        ms.audit_matched_artifact({"match_tie_fraction": True})
+
+
+def test_audit_threshold_nan_raises():
+    with pytest.raises(ValueError, match="threshold"):
+        ms.audit_matched_artifact({}, tie_fraction=0.4, threshold=float("nan"))
+
+
+def test_audit_threshold_out_of_range_raises():
+    with pytest.raises(ValueError, match=r"\(0, 1\)"):
+        ms.audit_matched_artifact({}, tie_fraction=0.4, threshold=1.5)
+
+
 # ------------------------------------------------------- regression: #2163 fixtures
 
 
@@ -240,6 +361,30 @@ def test_interpretation_critic_lens3_carries_degenerate_matching_bullet():
     assert "match_tie_fraction" in tail
     assert "support-restricted companion" in tail
     assert "#2163" in tail
+    # r2 (#2180 concern missing-recompute-fallback): the recompute fallback is
+    # the load-bearing half — the #2163 known-positive artifact records ZERO
+    # tie-fraction fields, so a read-the-field-only instruction has no object
+    # on exactly the artifact class the lens exists to catch. Pin BOTH the
+    # recompute instruction and the absent-field trigger vocabulary so silent
+    # removal fails this test.
+    assert "recompute the modal-value share" in tail
+    assert "when absent" in tail
+
+
+def test_lens_reference_item18_pins_grain_and_degenerate_limit():
+    """r2 (#2180 concern boundary-and-prose-pin-gaps): pin the per-headline
+    audit grain + the tied-fraction-near-1.0 degenerate-limit remedy in
+    critic-lens-reference item 18."""
+    text = (REPO / ".claude/rules/critic-lens-reference.md").read_text(encoding="utf-8")
+    span = text.split("### Statistics & Measurement lens", 1)[1]
+    span = span.split("### Alternative Explanations lens", 1)[0]
+    # Per-headline grain (wrap-robust: the phrase line-wraps in the lens file).
+    assert "AUDIT GRAIN: per" in span
+    assert "HEADLINE STATISTIC" in span
+    # Degenerate-limit remedy: near-1.0 tied fraction => drop/replace the
+    # covariate, not a companion read.
+    assert "Degenerate limit: at tied fraction" in span
+    assert "dropping or replacing the matching covariate" in span
 
 
 def test_critic_capsule_names_item_18():

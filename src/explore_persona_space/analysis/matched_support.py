@@ -30,7 +30,11 @@ denominator, and are False in the support mask).
 AUDIT GRAIN: per HEADLINE STATISTIC, not per artifact — one artifact can
 carry DVs at different complete-case samples (#2163: the `carried` DV at
 n=13,282 is already effectively support-restricted while its siblings sit at
-n=128,450). Audit the sample the headline rests on.
+n=128,450). Audit the sample the headline rests on, and pass ``result_path=``
+to :func:`audit_matched_artifact` to scope the companion scan to the audited
+DV's subtree — the correct grain per the lens text. The artifact-global
+default (kept for backward compatibility with pool-level artifacts) can read
+a SIBLING DV's companion as coverage for the headline DV.
 
 Degenerate limit: at tied fraction ~ 1.0 the support is (near-)empty and the
 companion is uncomputable — the remedy is dropping or replacing the matching
@@ -40,6 +44,8 @@ there; the lens text carries the remedy.
 
 from __future__ import annotations
 
+import re
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -54,11 +60,19 @@ __all__ = [
 
 DEFAULT_TIE_THRESHOLD = 0.5
 
-# Tokens marking a population sub-block as SUPPORT-DEFINED (matched against the
-# lowercased block name + its recorded ``definition`` text). Chosen against the
-# #2163 reference shape: `train_active`'s definition carries "> 0" while
+# A population sub-block is SUPPORT-DEFINED when its lowercased name or
+# recorded ``definition`` text carries the word "support" as a standalone
+# token (underscore/hyphen-separated counts; "unsupported"/"supported" do
+# NOT — #2180 r2 hardening) or a nonzero-restriction token. Chosen against
+# the #2163 reference shape: `train_active`'s definition carries "> 0" while
 # `never_active`'s "== 0" matches none of these.
-_SUPPORT_TOKENS = ("support", "> 0", ">0", "nonzero", "non-zero")
+_SUPPORT_WORD_RE = re.compile(r"(?<![a-z])support(?![a-z])")
+_SUPPORT_TOKENS = ("> 0", ">0", "nonzero", "non-zero")
+
+# Sample-size / bookkeeping keys that do NOT count as an audited statistic
+# when deciding whether a support-defined block actually CARRIES the
+# companion read (a bare ``{"n": ...}`` block is not a companion).
+_NON_STATISTIC_KEYS = frozenset({"n", "n_complete_case", "definition"})
 
 
 def _valid_values(x: Any, fn: str) -> np.ndarray:
@@ -137,11 +151,16 @@ def _resolve_recorded_tie_fraction(artifact: dict) -> float:
     block is keyed ``"full"`` (the complete-case pool in the #2163
     ``population_partials.json`` reference shape) when that is unique;
     otherwise raise — an ambiguous audit must be loud, never a silent pick.
+    Bools are excluded (``isinstance(True, int)`` holds; a boolean is never a
+    tie fraction). Finiteness/range validation is centralized in
+    :func:`audit_matched_artifact` so a recorded NaN/inf RAISES there.
     """
     hits = [
         (path, float(value))
         for path, key, value in _walk(artifact)
-        if key == "match_tie_fraction" and isinstance(value, int | float)
+        if key == "match_tie_fraction"
+        and isinstance(value, int | float)
+        and not isinstance(value, bool)
     ]
     if not hits:
         raise ValueError(
@@ -161,35 +180,92 @@ def _resolve_recorded_tie_fraction(artifact: dict) -> float:
 
 def _block_is_support_defined(name: Any, block: dict) -> bool:
     """A population sub-block is support-defined when its name or recorded
-    ``definition`` text carries a support token (see ``_SUPPORT_TOKENS``)."""
+    ``definition`` text carries a support token — the word "support" at
+    token boundary (so "unsupported"-style names do NOT qualify) or a
+    nonzero-restriction token (see ``_SUPPORT_TOKENS``)."""
     text = str(name).lower() + " " + str(block.get("definition", "")).lower()
+    if _SUPPORT_WORD_RE.search(text):
+        return True
     return any(tok in text for tok in _SUPPORT_TOKENS)
 
 
-def _has_support_companion(artifact: dict) -> bool:
-    """Detect a support-restricted companion, either arm:
+def _block_has_statistic(block: dict) -> bool:
+    """True when the block carries an audited-statistic payload beyond its
+    sample-size / definition bookkeeping keys — a bare ``{"n": ...}`` block
+    is structure without a companion read (#2180 r2 hardening)."""
+    return any(key not in _NON_STATISTIC_KEYS and value is not None for key, value in block.items())
+
+
+def _population_block_companion(node: Any) -> bool:
+    """Arm (b) predicate on ONE dict node: >= 2 sub-dicts each carrying an
+    ``n`` / ``n_complete_case`` sample-size field, with >= 1 sub-block BOTH
+    support-defined by name/definition token AND carrying an audited
+    statistic beyond its size/definition keys (the #2163
+    ``population_partials.json`` reference shape)."""
+    if not isinstance(node, dict):
+        return False
+    sized = {
+        name: block
+        for name, block in node.items()
+        if isinstance(block, dict) and ("n" in block or "n_complete_case" in block)
+    }
+    if len(sized) < 2:
+        return False
+    return any(
+        _block_is_support_defined(name, block) and _block_has_statistic(block)
+        for name, block in sized.items()
+    )
+
+
+def _has_support_companion(node: Any) -> bool:
+    """Detect a support-restricted companion within ``node``, either arm:
 
     (a) any ``*_on_support``-suffixed key (or a key literally named
-        ``on_support``) at any depth;
-    (b) a per-population block at any depth: a dict holding >= 2 sub-dicts
-        that each carry an ``n`` or ``n_complete_case`` sample-size field,
-        with >= 1 sub-block support-defined by name/definition token match
-        (the #2163 ``population_partials.json`` reference shape).
+        ``on_support``) at any depth whose value is NOT None — a null
+        placeholder is not a companion (#2180 r2 hardening);
+    (b) a per-population block at any depth — INCLUDING ``node`` itself
+        (the scanned root may BE the population dict) — per
+        :func:`_population_block_companion`.
     """
-    for _path, key, value in _walk(artifact):
-        if isinstance(key, str) and (key == "on_support" or key.endswith("_on_support")):
+    if _population_block_companion(node):
+        return True
+    for _path, key, value in _walk(node):
+        if (
+            isinstance(key, str)
+            and (key == "on_support" or key.endswith("_on_support"))
+            and value is not None
+        ):
             return True
-        if isinstance(value, dict):
-            sized = {
-                name: block
-                for name, block in value.items()
-                if isinstance(block, dict) and ("n" in block or "n_complete_case" in block)
-            }
-            if len(sized) >= 2 and any(
-                _block_is_support_defined(name, block) for name, block in sized.items()
-            ):
-                return True
+        if _population_block_companion(value):
+            return True
     return False
+
+
+def _resolve_result_path(artifact: dict, result_path: str | Sequence[Any]) -> tuple[dict, str]:
+    """Resolve ``result_path`` (a ``"/"``-separated string or key sequence)
+    to the headline DV's subtree; raise loud when it does not resolve to a
+    dict — an indeterminate audit scope is never a silent artifact-global
+    fallback."""
+    keys: list[Any]
+    if isinstance(result_path, str):
+        keys = [k for k in result_path.split("/") if k]
+    else:
+        keys = list(result_path)
+    if not keys:
+        raise ValueError("audit_matched_artifact: result_path is empty")
+    node: Any = artifact
+    for k in keys:
+        if not isinstance(node, dict) or k not in node:
+            raise ValueError(
+                f"audit_matched_artifact: result_path {keys!r} does not resolve — missing key {k!r}"
+            )
+        node = node[k]
+    if not isinstance(node, dict):
+        raise ValueError(
+            f"audit_matched_artifact: result_path {keys!r} resolves to "
+            f"{type(node).__name__}, need a dict subtree"
+        )
+    return node, "/".join(str(k) for k in keys)
 
 
 def audit_matched_artifact(
@@ -198,6 +274,7 @@ def audit_matched_artifact(
     tie_fraction: float | None = None,
     covariate: Any | None = None,
     threshold: float = DEFAULT_TIE_THRESHOLD,
+    result_path: str | Sequence[Any] | None = None,
 ) -> dict:
     """Mechanical lens-item-18 audit of a matched/partial-statistic artifact.
 
@@ -205,18 +282,28 @@ def audit_matched_artifact(
     ``covariate`` values (:func:`tied_fraction`; pass the complete-case
     column) -> recorded ``match_tie_fraction`` field in the artifact.
     Raises ``ValueError`` when none resolves (a silent default would let a
-    degenerate covariate pass unaudited).
+    degenerate covariate pass unaudited). The RESOLVED tie fraction is
+    validated after all three source branches — finite and in [0, 1], so a
+    recorded NaN/inf RAISES rather than silently reading ``fires=False``
+    (``nan > threshold`` is False); ``threshold`` must be finite and in
+    (0, 1).
+
+    ``result_path`` scopes the COMPANION scan to one headline DV's subtree —
+    the correct audit grain (one artifact can carry DVs at different
+    complete-case samples, and a SIBLING DV's ``*_on_support`` field is not
+    coverage for THIS headline). The artifact-global scan remains the
+    default for backward compatibility with pool-level artifacts.
+    Tie-fraction resolution stays artifact-global either way (the recorded
+    field is a property of the analysis pool, not of one DV).
 
     Returns ``{degenerate, tie_fraction, tie_fraction_source,
-    has_support_companion, fires, threshold}`` with
+    has_support_companion, fires, threshold, companion_scope}`` with
     ``fires = degenerate and not has_support_companion``.
     """
     if not isinstance(artifact, dict):
         raise ValueError(f"audit_matched_artifact: artifact must be a dict, got {type(artifact)}")
     if tie_fraction is not None:
         tf = float(tie_fraction)
-        if not np.isfinite(tf) or not 0.0 <= tf <= 1.0:
-            raise ValueError(f"audit_matched_artifact: tie_fraction must be in [0, 1], got {tf}")
         source = "explicit-arg"
     elif covariate is not None:
         tf = tied_fraction(covariate)
@@ -224,13 +311,31 @@ def audit_matched_artifact(
     else:
         tf = _resolve_recorded_tie_fraction(artifact)
         source = "recorded-field"
-    degenerate = tf > threshold
-    has_companion = _has_support_companion(artifact)
+    # Centralized fail-fast validation AFTER all three source branches
+    # (#2180 r2): a NaN/inf from ANY source must raise, never silently
+    # compare False against the threshold.
+    if not np.isfinite(tf) or not 0.0 <= tf <= 1.0:
+        raise ValueError(
+            f"audit_matched_artifact: tie_fraction must be finite and in [0, 1], "
+            f"got {tf} (source={source})"
+        )
+    thr = float(threshold)
+    if not np.isfinite(thr) or not 0.0 < thr < 1.0:
+        raise ValueError(
+            f"audit_matched_artifact: threshold must be finite and in (0, 1), got {threshold}"
+        )
+    scope_node: dict = artifact
+    companion_scope = "artifact-global"
+    if result_path is not None:
+        scope_node, companion_scope = _resolve_result_path(artifact, result_path)
+    degenerate = tf > thr
+    has_companion = _has_support_companion(scope_node)
     return {
         "degenerate": degenerate,
         "tie_fraction": tf,
         "tie_fraction_source": source,
         "has_support_companion": has_companion,
         "fires": degenerate and not has_companion,
-        "threshold": threshold,
+        "threshold": thr,
+        "companion_scope": companion_scope,
     }
