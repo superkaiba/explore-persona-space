@@ -751,3 +751,19 @@ production function; fakes only at named seams) an explicit closure element
 — the hollow-composition class the ruling itself established. A
 minors-interaction the ruling flags ("fix together with the must-fix") gets
 its own closure row.
+
+**FAIL+FAIL union scoped to OWN-twin ids only (#2223 napp r2, 2026-08-17):**
+the #2332 union entry ("inline BOTH prior verdicts as acceptance contracts")
+yields to a brief that scopes closure to the twin's OWN persisted ledger ids —
+when the orchestrator persisted ONLY the Codex `CONCERN::` rows (13 ids) and
+the brief says "verify its own N ids", reference ONLY the Codex r1 verdict
+(by-path extraction on exact kind+version) and add an explicit
+independence line: do NOT fetch/quote the parallel Claude verdict — the
+Claude round-2 reviewer carries its own items. Also composable with the
+by-path discipline: on a by-path round the acceptance contract is an
+events.jsonl extraction command (exact kind + version + ts), not an inlined
+envelope, so the #2145/#2332 tag-arithmetic collapses to own-head==1 /
+close==1 / prior-head==0. Status-line vocabulary can follow the brief's
+tokens (RESOLVED/UNRESOLVED) with ACCEPTED-NON-CHANGE/OVERTURNED added for
+recorded non-changes; UNRESOLVED on a BLOCKER id = substantive FAIL, an
+honestly-open CONCERN id re-raises at its own severity.
