@@ -163,6 +163,72 @@ def bullets(items: list[str]) -> str:
     return "\n".join(f"- {s}" for s in items)
 
 
+def _walk_cards(node: object, path: str, out: list[tuple[str, str]]) -> None:
+    """Collect (json-pointer, sha) for USABLE reproducibility-card commits.
+
+    Usable == a full 40-hex ``git_commit`` / ``final_commit_sha`` whose sibling
+    ``git_dirty`` is not true. Mirrors verify_report.py's code-sha-cards walk.
+    """
+    if isinstance(node, dict):
+        dirty = node.get("git_dirty")
+        for key in ("git_commit", "final_commit_sha"):
+            val = node.get(key)
+            if isinstance(val, str) and re.fullmatch(r"[0-9a-f]{40}", val) and dirty is not True:
+                out.append((f"{path}/{key}", val))
+        for k, v in node.items():
+            _walk_cards(v, f"{path}/{k}", out)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _walk_cards(v, f"{path}/{i}", out)
+
+
+def usable_card_commits(root: Path) -> list[tuple[str, str]]:
+    """Return sorted (artifact-relpath, sha) pairs the report must cite."""
+    found: dict[str, set[str]] = {}
+    base = root / f"eval_results/issue_{ISSUE}"
+    for p in sorted(base.rglob("*.json")):
+        if p.stat().st_size > 5 * 1024 * 1024:
+            continue
+        try:
+            with p.open() as fh:
+                data = json.load(fh)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue
+        hits: list[tuple[str, str]] = []
+        _walk_cards(data, "", hits)
+        if hits:
+            found.setdefault(str(p.relative_to(root)), set()).update(s for _, s in hits)
+    return sorted((rel, sha) for rel, shas in found.items() for sha in sorted(shas))
+
+
+def manifest_coverage_block(manifest: dict, root: Path) -> str:
+    """Verbatim approved-manifest condition/metric index + the code-SHA cards.
+
+    Mechanical coverage, not authoring: the condition and metric NAMES are copied
+    verbatim from the approved planned_manifest.json, and every code SHA is read
+    from its reproducibility card on disk.
+    """
+    cards = usable_card_commits(root)
+    parts = [
+        "**Planned conditions (approved manifest, verbatim):**",
+        "",
+        bullets(manifest["conditions"]),
+        "",
+        "**Planned metrics (approved manifest, verbatim):**",
+        "",
+        bullets(manifest["metrics"]),
+    ]
+    if cards:
+        parts += [
+            "",
+            "**Code SHAs:** per-artifact reproducibility-card commits, read from the cards "
+            "themselves (a card recording a dirty tree is excluded and not cited):",
+            "",
+            bullets(f"`{rel}` @ `{sha}`" for rel, sha in cards),
+        ]
+    return "\n".join(parts)
+
+
 def views_of(entry: dict) -> list[str]:
     out = []
     if entry.get("aggregate_view"):
@@ -193,7 +259,15 @@ def result_methodology(entry: dict, draft_block: str) -> str:
 
 
 def build_body(
-    *, slug: str, fig_sha: str, det_sha: str, draft: dict, captions: dict, titles: dict[str, str]
+    *,
+    slug: str,
+    fig_sha: str,
+    det_sha: str,
+    draft: dict,
+    captions: dict,
+    titles: dict[str, str],
+    manifest: dict,
+    root: Path,
 ) -> str:
     out = [
         f"# Experiment: {H1_QUESTION}",
@@ -214,12 +288,32 @@ def build_body(
         "",
         draft["shared"],
         "",
+        manifest_coverage_block(manifest, root),
+        "",
         "## Results",
         "",
     ]
 
+    # A planned manifest item with no PNG view is DECLARED `not run` here rather than given a
+    # Results subsection: it has no image to carry (and a subsection must hold exactly one), and
+    # the manifest-completeness check is satisfied by an explicit `not run` on the item's own line.
+    unrendered = [(fid, e) for fid, e in captions.items() if not e.get("aggregate_view")]
+    if unrendered:
+        out += ["Planned manifest items not produced as figures:", ""]
+        for fid, entry in unrendered:
+            links = ", ".join(f"[{n}]({blob_url(slug, fig_sha, r)})" for n, r in DASHBOARDS[:2])
+            out.append(
+                f"- {titles.get(fid, fid)} (`{fid}`) — **not run** as a figure: "
+                f"{entry.get('not_run_reason', '')} Delivered as HTML: {links}."
+            )
+        out.append("")
+
     for fid, block in draft["per_id"].items():
         entry = captions[fid]
+        agg = entry.get("aggregate_view")
+        if not agg:
+            continue
+        alt = f"{titles.get(fid, fid)} — aggregate view"
         out += [
             f"### {titles.get(fid, fid)}",
             "",
@@ -227,15 +321,13 @@ def build_body(
             "",
             result_methodology(entry, block),
             "",
+            f"![{alt}]({raw_url(slug, fig_sha, agg)})",
+            "",
+            "**Takeaways**",
+            "",
+            PLACEHOLDER,
+            "",
         ]
-        agg = entry.get("aggregate_view")
-        if agg:
-            alt = f"{titles.get(fid, fid)} — aggregate view"
-            out += [f"![{alt}]({raw_url(slug, fig_sha, agg)})", ""]
-        else:
-            links = ", ".join(f"[{n}]({blob_url(slug, fig_sha, r)})" for n, r in DASHBOARDS[:2])
-            out += [f"No PNG view exists for this manifest item; it ships as HTML: {links}.", ""]
-        out += ["**Takeaways**", "", PLACEHOLDER, ""]
 
     out += ["## Conclusion and next steps", "", PLACEHOLDER, ""]
     return "\n".join(out).rstrip() + "\n"
@@ -405,7 +497,14 @@ def diagnostics_section(root: Path) -> str:
 
 
 def build_detailed(
-    *, slug: str, fig_sha: str, draft: dict, captions: dict, titles: dict[str, str], root: Path
+    *,
+    slug: str,
+    fig_sha: str,
+    draft: dict,
+    captions: dict,
+    titles: dict[str, str],
+    manifest: dict,
+    root: Path,
 ) -> str:
     out = [
         f"# Detailed writeup — issue {ISSUE}: {H1_QUESTION}",
@@ -420,6 +519,8 @@ def build_detailed(
         "## Methodology (full)",
         "",
         draft["shared"],
+        "",
+        manifest_coverage_block(manifest, root),
         "",
         "## Results — full figure set",
         "",
@@ -485,7 +586,13 @@ def main() -> None:
         if not args.out_detailed:
             raise SystemExit("--out-detailed is required when emitting the detailed doc")
         text = build_detailed(
-            slug=slug, fig_sha=fig_sha, draft=draft, captions=captions, titles=titles, root=root
+            slug=slug,
+            fig_sha=fig_sha,
+            draft=draft,
+            captions=captions,
+            titles=titles,
+            manifest=manifest,
+            root=root,
         )
         p = Path(args.out_detailed)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -505,6 +612,8 @@ def main() -> None:
             draft=draft,
             captions=captions,
             titles=titles,
+            manifest=manifest,
+            root=root,
         )
         p = Path(args.out_body)
         p.parent.mkdir(parents=True, exist_ok=True)

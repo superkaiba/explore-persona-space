@@ -80,6 +80,41 @@
   - **Transfer correlation (per-type F vs parent)** — Spearman ρ between this run's and the parent's per-(type-cell × slot) steered mean F_beh over P1-family cells surviving exclusion in BOTH runs, pair-clustered bootstrap 95% CI. The registered prediction-8 test; Spearman because the transfer claim is about ordering of types, not calibrated effect sizes across architectures.
   - **Cap-hit fraction** — per cell × stage: fraction of draws whose completion reached the token cap (re-tokenized-length basis, base-cap attribution). Reported per the standing generation-cap rule with the >2% re-generation trigger; a diagnostic for silent truncation censoring, not a behavioral DV.
 
+**Planned conditions (approved manifest, verbatim):**
+
+- Steered (donor-value patch)
+- Shuffled-donor null (same type, value-constrained)
+- Cross-type-donor null
+- Unpatched floor anchor
+- Generate-under-donor ceiling anchor
+- Context-end slot
+- Prefix-end slot
+- Route-conflict cells
+- Recency cells (depth 3/5)
+- Load cells (load 3/5)
+- Query-content control
+- Filler-swap disruption control
+- Stage-2 layer-by-dose confirmation (F_act-selected)
+- Parent-model comparison (Qwen2.5-7B, #2162)
+
+**Planned metrics (approved manifest, verbatim):**
+
+- fraction-of-swap behavioral score (F_beh)
+- activation fraction-of-swap (F_act)
+- teacher-forced positive-vs-negative margin
+- linear read-probe AUC
+- coherence rate
+- conflict balance shift
+- held-out map R-squared (context-to-answer)
+- 2AFC discrimination accuracy
+- predicted-vs-realized shift correlation
+- transfer correlation (per-type F vs parent)
+- cap-hit fraction
+
+**Code SHAs:** per-artifact reproducibility-card commits, read from the cards themselves (a card recording a dirty tree is excluded and not cited):
+
+- `eval_results/issue_2329/cap_hit/cap_hit_report_anchors_preregen.json` @ `f0255552a7249f18ce2bec5782a447e7ca10832b`
+
 ## Results — full figure set
 
 ### Per-type fraction-of-swap at each slot
