@@ -37,12 +37,8 @@
     "family": "matched_query|ce|joint_all|replace|A|f_beh_prefix"
   },
   "repro": {
-    "git_commit": "886c9772",
-    "git_dirty": true,
-    "git_dirty_paths": [
-      "src/explore_persona_space/analysis/extraction.py",
-      "tests/sparse_cones.txt"
-    ],
+    "git_commit": "c087684a",
+    "git_dirty": false,
     "script": "scripts/issue2094_judge.py"
   }
 }

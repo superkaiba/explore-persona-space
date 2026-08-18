@@ -1,0 +1,777 @@
+{
+  "commit": "c087684a+dirty",
+  "render_id": "1fc0515149894239",
+  "git_commit": "c087684a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2333/inputs/s2_ce_derive_meta.json"
+  ],
+  "created": "2026-08-18T04:22:13Z",
+  "figsize": [
+    9.6,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.11,
+      "F_beh (anchor-normalized)": 0.280269883450591,
+      "error": 0.1587826228364171,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.89,
+      "F_beh (anchor-normalized)": 0.1523247218499558,
+      "error": 0.11071254460449487,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.89,
+      "F_beh (anchor-normalized)": 0.20271274187675248,
+      "error": 0.1527170262059239,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.89,
+      "F_beh (anchor-normalized)": 0.2245303388515585,
+      "error": 0.15651835065827288,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.89,
+      "F_beh (anchor-normalized)": 0.10442965781287243,
+      "error": 0.10139785608026691,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.89,
+      "F_beh (anchor-normalized)": 0.22383881752371582,
+      "error": 0.13977854186102032,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.89,
+      "F_beh (anchor-normalized)": 0.21368864883477934,
+      "error": 0.15202677560626543,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.11,
+      "F_beh (anchor-normalized)": 0.12057686503045717,
+      "error": 0.11596162837777235,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.11,
+      "F_beh (anchor-normalized)": 0.13157469902693336,
+      "error": 0.11368260384555312,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.11,
+      "F_beh (anchor-normalized)": 0.13179840939388993,
+      "error": 0.13691412062242309,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.11,
+      "F_beh (anchor-normalized)": 0.02521522042443105,
+      "error": 0.06068452283943039,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.11,
+      "F_beh (anchor-normalized)": 0.14022473585973727,
+      "error": 0.12219232134975183,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.11,
+      "F_beh (anchor-normalized)": 0.11359163936792915,
+      "error": 0.11653548763623954,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "F_beh (anchor-normalized)": 0.280269883450591,
+      "series": "ce same-wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "F_beh (anchor-normalized)": 0.280269883450591,
+      "series": "ce same-wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.11,
+      "F_beh (anchor-normalized)": 0.280269883450591,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.89,
+      "F_beh (anchor-normalized)": 0.1523247218499558,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.89,
+      "F_beh (anchor-normalized)": 0.20271274187675248,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.89,
+      "F_beh (anchor-normalized)": 0.2245303388515585,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.89,
+      "F_beh (anchor-normalized)": 0.10442965781287243,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.89,
+      "F_beh (anchor-normalized)": 0.22383881752371582,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.89,
+      "F_beh (anchor-normalized)": 0.21368864883477934,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.11,
+      "F_beh (anchor-normalized)": 0.13375803756299479,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.89,
+      "F_beh (anchor-normalized)": 0.04588579565751333,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.89,
+      "F_beh (anchor-normalized)": 0.059276367662910556,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.89,
+      "F_beh (anchor-normalized)": 0.07724208330854876,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.89,
+      "F_beh (anchor-normalized)": 0.008541049287072403,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.89,
+      "F_beh (anchor-normalized)": 0.08973163828370773,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.89,
+      "F_beh (anchor-normalized)": 0.06869390280659554,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.11,
+      "F_beh (anchor-normalized)": 0.45132328323582893,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.89,
+      "F_beh (anchor-normalized)": 0.26731088486650306,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.89,
+      "F_beh (anchor-normalized)": 0.36471042007475835,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.89,
+      "F_beh (anchor-normalized)": 0.3902787846250945,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.89,
+      "F_beh (anchor-normalized)": 0.21133676144760624,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.89,
+      "F_beh (anchor-normalized)": 0.36928872200574836,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.89,
+      "F_beh (anchor-normalized)": 0.3727474540191264,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.11,
+      "F_beh (anchor-normalized)": 0.12057686503045717,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.11,
+      "F_beh (anchor-normalized)": 0.13157469902693336,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.11,
+      "F_beh (anchor-normalized)": 0.13179840939388993,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.11,
+      "F_beh (anchor-normalized)": 0.02521522042443105,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.11,
+      "F_beh (anchor-normalized)": 0.14022473585973727,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.11,
+      "F_beh (anchor-normalized)": 0.11359163936792915,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.11,
+      "F_beh (anchor-normalized)": 0.01352439253361222,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.11,
+      "F_beh (anchor-normalized)": 0.030200539655153846,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.11,
+      "F_beh (anchor-normalized)": 0.007925841468736344,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.11,
+      "F_beh (anchor-normalized)": -0.026067901846145512,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.11,
+      "F_beh (anchor-normalized)": 0.030996578241497263,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.11,
+      "F_beh (anchor-normalized)": 0.016461960806493592,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.11,
+      "F_beh (anchor-normalized)": 0.24544764928915694,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.11,
+      "F_beh (anchor-normalized)": 0.2575657473462601,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.11,
+      "F_beh (anchor-normalized)": 0.2817540827135825,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.11,
+      "F_beh (anchor-normalized)": 0.09530114383271526,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.11,
+      "F_beh (anchor-normalized)": 0.2753812209410009,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.11,
+      "F_beh (anchor-normalized)": 0.24953293607897267,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.11,
+      "y": 0.280269883450591,
+      "error": 0.1587826228364171,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.89,
+      "y": 0.1488928740540507,
+      "error": 0.13908433242917356,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.89,
+      "y": 0.13129646794931946,
+      "error": 0.07659526616403735,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.89,
+      "y": 0.186037497705597,
+      "error": 0.11935016489673422,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.89,
+      "y": 0.10443624423597139,
+      "error": 0.10281295327336065,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 4.89,
+      "y": 0.22630369676462875,
+      "error": 0.16598185580903155,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 5.89,
+      "y": 0.21029207810598755,
+      "error": 0.1597129683346214,
+      "series": "steered (ce same-wave)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.11,
+      "y": 0.0423043794586018,
+      "error": 0.08796797454858149,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 2.11,
+      "y": 0.08424454476705794,
+      "error": 0.06995732564963919,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.11,
+      "y": 0.11133005422992678,
+      "error": 0.10142445728120078,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 4.11,
+      "y": 0.04323484844998528,
+      "error": 0.055742797737415056,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 5.11,
+      "y": 0.10966288718835755,
+      "error": 0.11930823156211615,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 6.11,
+      "y": 0.13631650179807991,
+      "error": 0.10499461256684775,
+      "series": "null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.280269883450591,
+      "series": "ce same-wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.280269883450591,
+      "series": "ce same-wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.11,
+      "y": 0.280269883450591,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.89,
+      "y": 0.1488928740540507,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.89,
+      "y": 0.13129646794931946,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.89,
+      "y": 0.186037497705597,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.89,
+      "y": 0.10443624423597139,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.89,
+      "y": 0.22630369676462875,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.89,
+      "y": 0.21029207810598755,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": -0.11,
+      "y": 0.13375803756299479,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.89,
+      "y": 0.02935432273854513,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.89,
+      "y": 0.058017355127932546,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.89,
+      "y": 0.07308361989434264,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.89,
+      "y": 0.005479053364291678,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.89,
+      "y": 0.06889752410885552,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.89,
+      "y": 0.06017248356507876,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": -0.11,
+      "y": 0.45132328323582893,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.89,
+      "y": 0.3075229875968923,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.89,
+      "y": 0.21120788745600724,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.89,
+      "y": 0.3117839496878111,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.89,
+      "y": 0.21110495991101297,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.89,
+      "y": 0.4008612357269186,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.89,
+      "y": 0.37959842023432155,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.11,
+      "y": 0.0423043794586018,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.11,
+      "y": 0.08424454476705794,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.11,
+      "y": 0.11133005422992678,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.11,
+      "y": 0.04323484844998528,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.11,
+      "y": 0.10966288718835755,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.11,
+      "y": 0.13631650179807991,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.11,
+      "y": -0.041767858316187303,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.11,
+      "y": 0.0154321169836725,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.11,
+      "y": 0.017154790788196664,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.11,
+      "y": -0.003698649979880224,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.11,
+      "y": 0.009773478556833678,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.11,
+      "y": 0.04070512562356021,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.11,
+      "y": 0.1341680907809757,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.11,
+      "y": 0.15534676828295088,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.11,
+      "y": 0.22000370535059824,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.11,
+      "y": 0.10778694549494988,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.11,
+      "y": 0.24838994168106598,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.11,
+      "y": 0.2506943507572557,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 108,
+  "text": {
+    "suptitle": "q35 / s2: snowball recovery profile",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "scheme = med",
+        "ylabel": "F_beh (anchor-normalized)",
+        "legend_labels": [
+          "ce same-wave (95% CI band)",
+          "steered (ce same-wave)",
+          "null"
+        ],
+        "xticklabels": [
+          "ce",
+          "patch1",
+          "patch2",
+          "patch3",
+          "prefill1",
+          "prefill2",
+          "prefill3"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "scheme = bstart (natural-opening)",
+        "xticklabels": [
+          "ce",
+          "patch1",
+          "patch2",
+          "patch3",
+          "prefill1",
+          "prefill2",
+          "prefill3"
+        ]
+      }
+    ],
+    "series": [
+      "ce same-wave (95% CI band)",
+      "steered (ce same-wave)",
+      "null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

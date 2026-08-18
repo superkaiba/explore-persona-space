@@ -1,0 +1,14 @@
+{
+  "model_tag": "q35",
+  "offset_semantics": "same-wave re-judge of q25-generated banked ce text minus the banked q25 F values; instrument offset only — CROSS-MODEL wave (q35 instrument on q25 text)",
+  "s1": {
+    "mean_offset": 0.0736072542841219,
+    "sd": 0.5750454013202718,
+    "n_pairs": 180
+  },
+  "s2": {
+    "mean_offset": -0.6905343078792716,
+    "sd": 1.5092537055059516,
+    "n_pairs": 14
+  }
+}

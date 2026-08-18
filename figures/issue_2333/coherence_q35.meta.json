@@ -1,0 +1,115 @@
+{
+  "commit": "c087684a+dirty",
+  "render_id": "eccaa7245958443d",
+  "git_commit": "c087684a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2333/inputs/s2_ce_derive_meta.json"
+  ],
+  "created": "2026-08-18T04:22:40Z",
+  "figsize": [
+    7.2,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "patch1_med",
+      "coherent fraction (judge > 60)": 0.9882051282051282,
+      "_kind": "bar"
+    },
+    {
+      "category": "patch1_bstart",
+      "coherent fraction (judge > 60)": 0.9882051282051282,
+      "_kind": "bar"
+    },
+    {
+      "category": "patch2_med",
+      "coherent fraction (judge > 60)": 0.9861538461538462,
+      "_kind": "bar"
+    },
+    {
+      "category": "patch2_bstart",
+      "coherent fraction (judge > 60)": 0.9907692307692307,
+      "_kind": "bar"
+    },
+    {
+      "category": "patch3_med",
+      "coherent fraction (judge > 60)": 0.9769230769230769,
+      "_kind": "bar"
+    },
+    {
+      "category": "patch3_bstart",
+      "coherent fraction (judge > 60)": 0.982051282051282,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefill1_med",
+      "coherent fraction (judge > 60)": 0.9753846153846154,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefill1_bstart",
+      "coherent fraction (judge > 60)": 0.9774358974358974,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefill2_med",
+      "coherent fraction (judge > 60)": 0.9805128205128205,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefill2_bstart",
+      "coherent fraction (judge > 60)": 0.977948717948718,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefill3_med",
+      "coherent fraction (judge > 60)": 0.98,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefill3_bstart",
+      "coherent fraction (judge > 60)": 0.9794871794871794,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "q35: coherence survival per arm",
+        "ylabel": "coherent fraction (judge > 60)",
+        "xticklabels": [
+          "patch1_med",
+          "patch1_bstart",
+          "patch2_med",
+          "patch2_bstart",
+          "patch3_med",
+          "patch3_bstart",
+          "prefill1_med",
+          "prefill1_bstart",
+          "prefill2_med",
+          "prefill2_bstart",
+          "prefill3_med",
+          "prefill3_bstart"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

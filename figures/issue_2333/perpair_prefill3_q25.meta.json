@@ -1,0 +1,1337 @@
+{
+  "commit": "c087684a+dirty",
+  "render_id": "4d8b41f687bc4b02",
+  "git_commit": "c087684a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2333/inputs/s2_ce_derive_meta.json"
+  ],
+  "created": "2026-08-18T04:21:53Z",
+  "figsize": [
+    4.6,
+    4.2
+  ],
+  "points": [
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.46,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5076142131979695,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0025062656641603475,
+      "F_beh \u2014 steered donor": 0.9097744360902256,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.05714285714285723,
+      "F_beh \u2014 steered donor": -0.05714285714285723,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.07500000000000001,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.018867924528301844,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.11103701233744584,
+      "F_beh \u2014 steered donor": -0.0030010003334444172,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.0647517039922103,
+      "F_beh \u2014 steered donor": 0.4259980525803311,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.2961762799740764,
+      "F_beh \u2014 steered donor": 0.08619572261827611,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.2,
+      "F_beh \u2014 steered donor": 0.315,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0050000000000000044,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.8638655462184874,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.032640949554896104,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5617128463476071,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5727554179566563,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.3022670025188917,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.51,
+      "F_beh \u2014 steered donor": 0.9299999999999999,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.3499999999999999,
+      "F_beh \u2014 steered donor": -0.04374999999999997,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.418705035971223,
+      "F_beh \u2014 steered donor": 0.7755395683453238,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.4751286449399657,
+      "F_beh \u2014 steered donor": 1.020583190394511,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.9257798494083901,
+      "F_beh \u2014 steered donor": -0.04230907135173907,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 1.0,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5289672544080605,
+      "F_beh \u2014 steered donor": 0.9773299748110832,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.056603773584905655,
+      "F_beh \u2014 steered donor": 1.1308176100628933,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.10240963855421685,
+      "F_beh \u2014 steered donor": 1.0180722891566265,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.01180637544273908,
+      "F_beh \u2014 steered donor": 0.022432113341204252,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.4523809523809526,
+      "F_beh \u2014 steered donor": 0.8174603174603178,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.2222222222222222,
+      "F_beh \u2014 steered donor": 0.22222222222222224,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.030769230769230767,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.3545454545454546,
+      "F_beh \u2014 steered donor": 0.9000000000000002,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.4102564102564103,
+      "F_beh \u2014 steered donor": 1.041025641025641,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.05213270142180096,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.07547169811320777,
+      "F_beh \u2014 steered donor": -0.0880503144654089,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.09036144578313247,
+      "F_beh \u2014 steered donor": 0.2590361445783133,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.021251475796930364,
+      "F_beh \u2014 steered donor": 1.0280401416765053,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.13492063492063527,
+      "F_beh \u2014 steered donor": -0.03968253968254008,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.013333333333333345,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.4615384615384614,
+      "F_beh \u2014 steered donor": 0.09230769230769222,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.4818181818181817,
+      "F_beh \u2014 steered donor": -0.1000000000000001,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.88,
+      "F_beh \u2014 steered donor": -0.10256410256410255,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.23696682464454977,
+      "F_beh \u2014 steered donor": 0.9478672985781991,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.05499999999999999,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.0152284263959391,
+      "F_beh \u2014 steered donor": 0.9340101522842639,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 1.0025062656641606,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.10571428571428569,
+      "F_beh \u2014 steered donor": 1.0571428571428572,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.26000000000000006,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.005390835579514829,
+      "F_beh \u2014 steered donor": 1.0026954177897573,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.03896103896103894,
+      "F_beh \u2014 steered donor": 0.8961038961038962,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.02467489163054357,
+      "F_beh \u2014 steered donor": 0.16722240746915637,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.1621226874391431,
+      "F_beh \u2014 steered donor": 0.5065238558909445,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.08425145819831503,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.05499999999999999,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.3264094955489614,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.3476070528967255,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5201238390092879,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.43073047858942065,
+      "F_beh \u2014 steered donor": -0.0025188916876574333,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.18,
+      "F_beh \u2014 steered donor": 0.2,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.21874999999999997,
+      "F_beh \u2014 steered donor": 0.002499999999999933,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.02302158273381297,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.020583190394511168,
+      "F_beh \u2014 steered donor": 0.10806174957118352,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.08712800286841156,
+      "F_beh \u2014 steered donor": -0.0032269630692005054,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.4584382871536524,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.06801007556675064,
+      "F_beh \u2014 steered donor": 0.0075566750629723,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.12919896640826872,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0050000000000000044,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.20999999999999996,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.020000000000000018,
+      "F_beh \u2014 steered donor": 0.007000000000000006,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.12306731219740748,
+      "F_beh \u2014 steered donor": -0.12306731219740748,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.05066666666666665,
+      "F_beh \u2014 steered donor": 0.05599999999999999,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.12359550561797751,
+      "F_beh \u2014 steered donor": 0.10112359550561795,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.38235294117647056,
+      "F_beh \u2014 steered donor": 0.8644501278772379,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.6285714285714284,
+      "F_beh \u2014 steered donor": 0.7371428571428572,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.032581453634085135,
+      "F_beh \u2014 steered donor": 0.9899749373433585,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5535714285714286,
+      "F_beh \u2014 steered donor": 0.9583333333333333,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.73,
+      "F_beh \u2014 steered donor": 0.138,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.395,
+      "F_beh \u2014 steered donor": 0.58,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5320334261838441,
+      "F_beh \u2014 steered donor": 0.5877437325905294,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.22339082877576777,
+      "F_beh \u2014 steered donor": 0.9680269246949936,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.2385786802030457,
+      "F_beh \u2014 steered donor": 0.9593908629441624,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.979088471849866,
+      "F_beh \u2014 steered donor": 0.0053619302949062305,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.6066838046272494,
+      "F_beh \u2014 steered donor": 0.5398457583547559,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5228794642857143,
+      "F_beh \u2014 steered donor": -0.0044642857142857435,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.18500000000000003,
+      "F_beh \u2014 steered donor": 0.765,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.011764705882352941,
+      "F_beh \u2014 steered donor": 1.1058823529411765,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.8020833333333334,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.9847715736040609,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.02,
+      "F_beh \u2014 steered donor": 0.64,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.053475935828877004,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.4084919472913616,
+      "F_beh \u2014 steered donor": 0.9487554904831624,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.006622516556291391,
+      "F_beh \u2014 steered donor": 1.1721854304635764,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.10714285714285716,
+      "F_beh \u2014 steered donor": -0.3928571428571429,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.9743589743589743,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.08,
+      "F_beh \u2014 steered donor": 0.925,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.04500000000000004,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.41200000000000003,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.11853448275862072,
+      "F_beh \u2014 steered donor": -0.12428160919540233,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.30463144161774297,
+      "F_beh \u2014 steered donor": -0.30463144161774297,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.07500000000000001,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.02010050251256283,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.6153846153846154,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.31722054380664655,
+      "F_beh \u2014 steered donor": 0.9818731117824773,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5949367088607594,
+      "F_beh \u2014 steered donor": 0.6,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5652173913043478,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.16000000000000003,
+      "F_beh \u2014 steered donor": 0.07,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.39375,
+      "F_beh \u2014 steered donor": 0.925,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.9971098265895955,
+      "F_beh \u2014 steered donor": 0.9739884393063585,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.2523961661341853,
+      "F_beh \u2014 steered donor": 0.8722044728434505,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.10099999999999998,
+      "F_beh \u2014 steered donor": 0.87,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.07780979827089332,
+      "F_beh \u2014 steered donor": -0.04322766570605192,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.4629156010230178,
+      "F_beh \u2014 steered donor": 0.805626598465473,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5313283208020051,
+      "F_beh \u2014 steered donor": 0.987468671679198,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.2153846153846154,
+      "F_beh \u2014 steered donor": 0.9641025641025642,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 1.0052910052910053,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.7931034482758621,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.13333333333333333,
+      "F_beh \u2014 steered donor": 0.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.02551020408163265,
+      "F_beh \u2014 steered donor": 0.8826530612244898,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.07239819004524889,
+      "F_beh \u2014 steered donor": 0.1809954751131222,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.09715370018975335,
+      "F_beh \u2014 steered donor": 0.8652751423149907,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.21108490566037735,
+      "F_beh \u2014 steered donor": 1.338443396226415,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.18,
+      "F_beh \u2014 steered donor": 0.42,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0,
+      "F_beh \u2014 steered donor": 0.9834254143646408,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.005376344086021518,
+      "F_beh \u2014 steered donor": 1.0053763440860217,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.003747323340470976,
+      "F_beh \u2014 steered donor": 0.0016059957173448142,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.0051948051948052,
+      "F_beh \u2014 steered donor": 0.02909090909090912,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.006788511749347322,
+      "F_beh \u2014 steered donor": 0.06527415143603144,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.03369756246656977,
+      "F_beh \u2014 steered donor": 0.006647818445786017,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.027732463295269252,
+      "F_beh \u2014 steered donor": 0.34747145187601947,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.07304785894206561,
+      "F_beh \u2014 steered donor": 1.0,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.02103642893791684,
+      "F_beh \u2014 steered donor": 0.004617752693689075,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.004832214765100675,
+      "F_beh \u2014 steered donor": 0.15302013422818794,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.108729743857815,
+      "F_beh \u2014 steered donor": 0.2341871406168322,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.017214397496087594,
+      "F_beh \u2014 steered donor": 0.1027647365675535,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.0058729311265350356,
+      "F_beh \u2014 steered donor": 0.012279765082754891,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.0034482758620689876,
+      "F_beh \u2014 steered donor": -0.008620689655172382,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5111228813559322,
+      "F_beh \u2014 steered donor": 0.9984110169491525,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.274442538593482,
+      "F_beh \u2014 steered donor": 0.9834190966266437,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.564681724845996,
+      "F_beh \u2014 steered donor": 0.982546201232033,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.6360097644652636,
+      "F_beh \u2014 steered donor": 0.9744672428580854,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.24710830704521555,
+      "F_beh \u2014 steered donor": 0.09463722397476337,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.6987341772151898,
+      "F_beh \u2014 steered donor": 0.8962025316455696,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.6596306068601583,
+      "F_beh \u2014 steered donor": 0.9762532981530341,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.3733064283655232,
+      "F_beh \u2014 steered donor": 1.0824445085038914,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.49753963914707494,
+      "F_beh \u2014 steered donor": 0.9322033898305085,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.655367231638418,
+      "F_beh \u2014 steered donor": 0.8135593220338982,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.46315789473684205,
+      "F_beh \u2014 steered donor": 0.994736842105263,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.5376884422110553,
+      "F_beh \u2014 steered donor": 0.9849246231155778,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.04469273743016759,
+      "F_beh \u2014 steered donor": 0.9094972067039105,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.02705515088449532,
+      "F_beh \u2014 steered donor": 0.8740894901144642,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.012269938650306747,
+      "F_beh \u2014 steered donor": 1.067484662576687,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.006309148264984228,
+      "F_beh \u2014 steered donor": -0.00946372239747634,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.05181918412348402,
+      "F_beh \u2014 steered donor": 1.0374862183020948,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.37931034482758624,
+      "F_beh \u2014 steered donor": 0.7586206896551726,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.047375160051216385,
+      "F_beh \u2014 steered donor": 1.1101152368758,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0030674846625766894,
+      "F_beh \u2014 steered donor": 0.9335378323108384,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.35832414553472985,
+      "F_beh \u2014 steered donor": 0.8390297684674751,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.11140235910878112,
+      "F_beh \u2014 steered donor": 1.0602883355176933,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.011111111111111113,
+      "F_beh \u2014 steered donor": 0.9555555555555556,
+      "series": "s1 (n=172)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.4299655568312284,
+      "F_beh \u2014 steered donor": 0.41504018369690004,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.0234857849196539,
+      "F_beh \u2014 steered donor": -0.027812113720642774,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.029482551143200992,
+      "F_beh \u2014 steered donor": 0.5553549939831529,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.26392282958199353,
+      "F_beh \u2014 steered donor": 0.642443729903537,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.48737474949899806,
+      "F_beh \u2014 steered donor": 0.48309953239812964,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.0943775100401605,
+      "F_beh \u2014 steered donor": -0.03882195448460512,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.054502369668246495,
+      "F_beh \u2014 steered donor": 0.3601895734597156,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": -0.16862170087976522,
+      "F_beh \u2014 steered donor": -0.17448680351906157,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.07114503816793898,
+      "F_beh \u2014 steered donor": -0.14045801526717572,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_beh \u2014 shuffled-donor null": 0.04045911047345755,
+      "F_beh \u2014 steered donor": -0.07431850789096149,
+      "series": "s2 (n=10)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 182,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "q25: prefill-3 (med), per pair",
+        "xlabel": "F_beh \u2014 shuffled-donor null",
+        "ylabel": "F_beh \u2014 steered donor",
+        "legend_labels": [
+          "s1 (n=172)",
+          "s2 (n=10)"
+        ],
+        "xticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ],
+        "yticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75"
+        ]
+      }
+    ],
+    "series": [
+      "s1 (n=172)",
+      "s2 (n=10)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

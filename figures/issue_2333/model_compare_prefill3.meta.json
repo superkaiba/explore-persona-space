@@ -1,0 +1,70 @@
+{
+  "commit": "c087684a+dirty",
+  "render_id": "6d7d710814bc4357",
+  "git_commit": "c087684a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2333/inputs/s2_ce_derive_meta.json"
+  ],
+  "created": "2026-08-18T04:22:41Z",
+  "figsize": [
+    4.8,
+    2.8
+  ],
+  "points": [
+    {
+      "prefill-3 (med): F steered \u2212 F null (95% CI)": 0.35070687526863126,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "prefill-3 (med): F steered \u2212 F null (95% CI)": 0.09718965785306893,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "prefill-3 (med): F steered \u2212 F null (95% CI)": 0.25442761460959784,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "prefill-3 (med): F steered \u2212 F null (95% CI)": 0.10009700946685018,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "prefill-3 (med): F steered \u2212 F null (95% CI)",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "q25/s1",
+          "q25/s2",
+          "q35/s1",
+          "q35/s2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
