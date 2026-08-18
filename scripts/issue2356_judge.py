@@ -273,14 +273,20 @@ def _label_from_parsed(parsed: Any) -> str | None:
 def _labels_from_result(
     result, save_raw_path: Path
 ) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
-    """Label-FIRST reduce (R3-2): the categorical ``label`` field persisted in
-    save_raw is AUTHORITATIVE; the numeric score (mechanical 100/0 encoding) is
-    the fallback when no label field survived. Returns (labels, audit).
+    """Label-FIRST reduce (R3-2, hardened R4-1): the categorical ``label``
+    field persisted in save_raw is the ONLY source of an engage/refuse label.
+    A reply whose label field is missing / foreign / UNCLEAR is DROPPED
+    (label "UNCLEAR") — NEVER score-coerced (llm-judging rule 9: the
+    mechanical 100/0 score encoding is a score, not a category; deriving the
+    category from it re-coerces exactly the malformed returns the drop rule
+    exists to exclude). Returns (labels, audit).
 
     labels: item_id -> {"score": mean-or-None, "label": engage|refuse|UNCLEAR}.
-    audit counters: n_label_from_field / n_label_fallback_from_score /
-    n_label_score_disagreements (label wins, counted) / n_label_without_score
-    (valid label on a score-dropped item — accepted) / n_unclear.
+    audit counters: n_label_from_field / n_label_unclear_no_field (no usable
+    label field survived -> dropped) / n_label_unclear_tie (cross-draw tie ->
+    dropped; dead at LABELING_N_DRAWS=1) / n_label_score_disagreements
+    (label wins, counted) / n_label_without_score (valid label on a
+    score-dropped item — accepted) / n_unclear.
     """
     per_item_field_labels: dict[str, list[str]] = defaultdict(list)
     if save_raw_path.exists():
@@ -291,14 +297,15 @@ def _labels_from_result(
                 per_item_field_labels[_cid_to_item_id(cid)].append(lab)
     audit = {
         "n_label_from_field": 0,
-        "n_label_fallback_from_score": 0,
+        "n_label_unclear_no_field": 0,
+        "n_label_unclear_tie": 0,
         "n_label_score_disagreements": 0,
         "n_label_without_score": 0,
         "n_unclear": 0,
     }
     labels: dict[str, dict[str, Any]] = {}
     for item_id, score in (result.scores or {}).items():
-        score_label = _label_from_score(score)
+        score_label = _label_from_score(score)  # audit-only comparison, never a label source
         field_labels = per_item_field_labels.get(item_id, [])
         if field_labels:
             n_eng = sum(1 for lab in field_labels if lab == "engage")
@@ -307,16 +314,20 @@ def _labels_from_result(
                 label = "engage"
             elif n_ref > n_eng:
                 label = "refuse"
-            else:  # tie across draws -> score-derived
-                label = score_label
+            else:  # cross-draw tie: no usable category -> DROP (R4-1)
+                label = "UNCLEAR"
+                audit["n_label_unclear_tie"] += 1
             audit["n_label_from_field"] += 1
             if score is None:
                 audit["n_label_without_score"] += 1
             elif label != score_label:
                 audit["n_label_score_disagreements"] += 1
         else:
-            label = score_label
-            audit["n_label_fallback_from_score"] += 1
+            # R4-1: missing/foreign/UNCLEAR label field -> DROP, never
+            # score-coerce ({"label": "MAYBE", "score": 100} must not enter
+            # the DV as engage via the mechanical score encoding).
+            label = "UNCLEAR"
+            audit["n_label_unclear_no_field"] += 1
         if label == "UNCLEAR":
             audit["n_unclear"] += 1
         labels[item_id] = {"score": score, "label": label}

@@ -1023,20 +1023,51 @@ def phase_capture(args: argparse.Namespace, shard: int) -> None:
     # render-identity gate) BEFORE the expensive 7B model load. The split
     # greedy/samples records (R3-7) are joined by prompt_sha into one merged
     # per-prompt view (the shape _capture_corpus consumes).
+    #
+    # R4 concern (capture completeness, pre-model-load): the EXPECTED sha set
+    # per corpus is re-derived from the SAME `_shard_rows(_load_corpus_rows)`
+    # arithmetic gen used — a missing/partial greedy shard file for any
+    # corpus (previously a silent `continue`) fails HERE, and for the
+    # multi-sample arms the samples partition must sha-EQUAL the greedy
+    # partition (gen writes both for every arm row; sample-level rejects
+    # happen later, at capture).
     corpora_entries: dict[str, list[dict[str, Any]]] = {}
     for corpus in CORPORA:
+        expected = {
+            r["prompt_sha"]
+            for r in _shard_rows(_load_corpus_rows(args, corpus), shard, args.n_shards)
+        }
         g_entries, _ = _read_raw_shard(raw_root / corpus / "greedy", shard)
+        g_shas = {e["prompt_sha"] for e in g_entries}
+        if g_shas != expected:
+            missing = sorted(expected - g_shas)
+            unexpected = sorted(g_shas - expected)
+            raise RuntimeError(
+                f"[capture shard {shard}] {corpus}: greedy partition != expected shard rows "
+                f"(have {len(g_shas)}, expected {len(expected)}; missing first-3 "
+                f"{missing[:3]}, unexpected first-3 {unexpected[:3]}) — re-run gen"
+            )
         if not g_entries:
-            continue
+            continue  # corpus legitimately empty for this shard (expected empty too)
         _render_identity_gate(tokenizer, g_entries)
         s_entries, _ = _read_raw_shard(raw_root / corpus / "samples", shard)
         s_by_sha = {e["prompt_sha"]: e for e in s_entries}
-        orphans = sorted(set(s_by_sha) - {e["prompt_sha"] for e in g_entries})
-        if orphans:
-            raise RuntimeError(
-                f"[capture shard {shard}] {corpus}: {len(orphans)} samples entries "
-                f"lack a greedy entry (first: {orphans[:3]})"
-            )
+        if corpus in ARMS_MULTI:
+            if set(s_by_sha) != g_shas:
+                miss_s = sorted(g_shas - set(s_by_sha))
+                orph_s = sorted(set(s_by_sha) - g_shas)
+                raise RuntimeError(
+                    f"[capture shard {shard}] {corpus}: samples partition != greedy partition "
+                    f"({len(s_by_sha)} vs {len(g_shas)}; missing-samples first-3 {miss_s[:3]}, "
+                    f"orphan-samples first-3 {orph_s[:3]}) — gen writes both for arm corpora"
+                )
+        else:
+            orphans = sorted(set(s_by_sha) - g_shas)
+            if orphans:
+                raise RuntimeError(
+                    f"[capture shard {shard}] {corpus}: {len(orphans)} samples entries "
+                    f"lack a greedy entry (first: {orphans[:3]})"
+                )
         for e in g_entries:
             if e["prompt_sha"] in s_by_sha:
                 e["samples"] = s_by_sha[e["prompt_sha"]]["samples"]
@@ -1249,15 +1280,19 @@ def phase_means(args: argparse.Namespace) -> None:
                 "matching sentinel) — run capture to completion first"
             )
 
-    # index: corpus -> prompt_sha -> source capture npz
+    # index: corpus -> prompt_sha -> source capture npz (+ per-sha key
+    # suffixes for guard 2b's required-key completeness check)
     index: dict[str, dict[str, Path]] = {}
+    key_suffixes: dict[str, dict[str, set[str]]] = {}
     for shard_dir in sorted(stores_root.glob("shard*")):
         for npz in sorted(shard_dir.glob("*.shard*.npz")):
             corpus = npz.name.split(".")[0]
             with np.load(npz) as data:
-                shas = sorted({k.split("__")[0] for k in data.files})
-            for sha in shas:
+                keys = list(data.files)
+            for key in keys:
+                sha, _, suffix = key.partition("__")
                 index.setdefault(corpus, {})[sha] = npz
+                key_suffixes.setdefault(corpus, {}).setdefault(sha, set()).add(suffix)
     if not index:
         raise RuntimeError(f"[means] no capture npz shards under {stores_root} — run capture first")
 
@@ -1266,6 +1301,7 @@ def phase_means(args: argparse.Namespace) -> None:
     # present in the captured index.
     raw_root = _out_root(args) / "eval_results" / _hf_prefix(args) / "raw_completions"
     rejected: dict[str, set[str]] = {}
+    rm_rejected: dict[str, set[str]] = {}  # kind=rollout_mean: ALL samples empty
     for rej_file in sorted(stores_root.glob("shard*/capture_rejects.shard*.jsonl")):
         with open(rej_file, encoding="utf-8") as fh:
             for line in fh:  # text-mode iteration, never .splitlines() (#950)
@@ -1275,6 +1311,8 @@ def phase_means(args: argparse.Namespace) -> None:
                 r = json.loads(s_line)
                 if r.get("kind") == "greedy":
                     rejected.setdefault(r["corpus"], set()).add(r["prompt_sha"])
+                elif r.get("kind") == "rollout_mean":
+                    rm_rejected.setdefault(r["corpus"], set()).add(r["prompt_sha"])
     for corpus in CORPORA:
         gen_shas: set[str] = set()
         greedy_dir = raw_root / corpus / "greedy"
@@ -1291,6 +1329,33 @@ def phase_means(args: argparse.Namespace) -> None:
                 f"missing from capture stores (first 5: {missing_shas[:5]}) — capture "
                 "is incomplete"
             )
+
+    # R4 concern (key-blind means): guard 2b — per-sha required-KEY
+    # completeness. Guard 2 reconciles SHAs only, and the index above is
+    # key-blind (any key attests the sha), so a greedy-only capture with a
+    # lost samples partition would previously merge + upload and fail late
+    # in downstream asserts. Every captured sha needs v_C + v_A_greedy;
+    # every multi-sample-arm sha additionally needs the sampled-vector keys
+    # unless ALL its samples were rejected (recorded kind=rollout_mean).
+    sample_keys = {"v_A_sample_k", "v_A_sample_idx", "v_A_rollout_mean"}
+    base_keys = {"v_C", "v_A_greedy"}
+    violations: list[str] = []
+    for corpus in sorted(index):
+        for sha in sorted(index[corpus]):
+            suf = key_suffixes[corpus][sha]
+            if not base_keys <= suf:
+                violations.append(f"{corpus}/{sha}: missing {sorted(base_keys - suf)}")
+            elif (
+                corpus in ARMS_MULTI
+                and sha not in rm_rejected.get(corpus, set())
+                and not sample_keys <= suf
+            ):
+                violations.append(f"{corpus}/{sha}: missing {sorted(sample_keys - suf)}")
+    if violations:
+        raise RuntimeError(
+            f"[means] {len(violations)} captured prompts with missing store keys "
+            f"(first 5: {violations[:5]}) — capture is key-incomplete"
+        )
 
     row_index: list[dict[str, Any]] = []
     n_merged = 0

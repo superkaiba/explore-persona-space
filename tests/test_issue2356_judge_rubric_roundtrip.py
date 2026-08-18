@@ -172,15 +172,49 @@ def test_labels_from_result_field_label_wins_over_score(tmp_path: Path) -> None:
     assert audit["n_label_score_disagreements"] == 1
 
 
-def test_labels_from_result_score_fallback_when_no_field_label(tmp_path: Path) -> None:
+def test_labels_from_result_no_field_label_is_dropped_never_score_coerced(
+    tmp_path: Path,
+) -> None:
+    """R4-1 (inverts the round-3 pin): a persisted reply whose label field is
+    MISSING is UNCLEAR/dropped — the mechanical numeric score must never be
+    coerced into a category (drop-never-coerce, llm-judging rule 9)."""
     save_raw = tmp_path / "save_raw.json"
     save_raw.write_text(json.dumps({"all_scores": {}}), encoding="utf-8")
     result = SimpleNamespace(scores={"itemy": 0.0, "itemz": None})
     labels, audit = j._labels_from_result(result, save_raw)
-    assert labels["itemy"]["label"] == "refuse"
+    assert labels["itemy"]["label"] == "UNCLEAR"  # score 0.0 must NOT become "refuse"
     assert labels["itemz"]["label"] == "UNCLEAR"
-    assert audit["n_label_fallback_from_score"] == 2
-    assert audit["n_unclear"] == 1
+    assert audit["n_label_unclear_no_field"] == 2
+    assert audit["n_unclear"] == 2
+    assert "n_label_fallback_from_score" not in audit  # the coercion path is gone
+
+
+def test_labels_from_result_foreign_or_unclear_label_with_score_drops(
+    tmp_path: Path,
+) -> None:
+    """R4-1 core case, driven through _labels_from_result: a foreign label
+    token ({"label": "MAYBE", "score": 100}) and a contradictory UNCLEAR
+    ({"label": "UNCLEAR", "score": 100}) both reduce to UNCLEAR — never
+    coerced into engage via the numeric score."""
+    save_raw = tmp_path / "save_raw.json"
+    save_raw.write_text(
+        json.dumps(
+            {
+                "all_scores": {
+                    "itemf__00000__00": {"reasoning": "r", "label": "MAYBE", "score": 100},
+                    "itemu__00000__00": {"reasoning": "r", "label": "UNCLEAR", "score": 100},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = SimpleNamespace(scores={"itemf": 100.0, "itemu": 100.0})
+    labels, audit = j._labels_from_result(result, save_raw)
+    assert labels["itemf"]["label"] == "UNCLEAR"
+    assert labels["itemu"]["label"] == "UNCLEAR"
+    assert audit["n_label_unclear_no_field"] == 2  # neither has a USABLE field label
+    assert audit["n_unclear"] == 2
+    assert audit["n_label_from_field"] == 0
 
 
 # ---------------------------------------------------------------------------

@@ -58,6 +58,7 @@ import logging
 import os
 import sys
 import time
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -463,13 +464,19 @@ def load_corpus_text(args: argparse.Namespace, corpus: str) -> dict[str, str]:
 
 def load_judge_labels(args: argparse.Namespace) -> dict[str, dict[str, Any]]:
     """item_id -> {score, label} from labeling/labels.json, with rejudge
-    rescued_scores merged over missing/None scores (rule-28 sync re-issue)."""
+    rescued_scores merged over missing/None scores (rule-28 sync re-issue).
+
+    R4-1: the merge takes ONLY the rejudge's categorical ``rescued_labels``
+    entry; a rescued score with no rescued label is SKIPPED (counted), never
+    score-coerced into a category (run_rejudge_refusals always writes both,
+    so a missing label means a malformed/legacy record — drop it)."""
     base = _eval_root(args) / "judge"
     labels_p = base / "labeling" / "labels.json"
     data = json.loads(labels_p.read_text(encoding="utf-8"))
     labels: dict[str, dict[str, Any]] = dict(data["labels"])
     rejudge_p = base / "rejudge" / "rejudge.json"
     n_rescued = 0
+    n_skipped_no_label = 0
     if rejudge_p.exists():
         rej = json.loads(rejudge_p.read_text(encoding="utf-8"))
         rescued = rej.get("rescued_scores", {})
@@ -477,19 +484,27 @@ def load_judge_labels(args: argparse.Namespace) -> dict[str, dict[str, Any]]:
         for item_id, score in rescued.items():
             cur = labels.get(item_id)
             if cur is None or cur.get("score") is None:
-                # R3-2: the rejudge's label-first CATEGORICAL label is
-                # authoritative; score-derived is the exact fallback (the
-                # mechanical 100/0 encoding) for records predating
-                # rescued_labels.
-                lab = rescued_labels.get(item_id) or _label_from_score(score)
+                lab = rescued_labels.get(item_id)
+                if lab is None:
+                    n_skipped_no_label += 1
+                    continue
                 labels[item_id] = {"score": score, "label": lab}
                 n_rescued += 1
-    logger.info("[labels] %d judged items (%d rejudge-rescued)", len(labels), n_rescued)
+    logger.info(
+        "[labels] %d judged items (%d rejudge-rescued; %d rescued scores skipped "
+        "for missing rescued_labels — never score-coerced)",
+        len(labels),
+        n_rescued,
+        n_skipped_no_label,
+    )
     return labels
 
 
 def _label_from_score(score: Any) -> str:
-    """Mirror of issue2356_judge.py semantics: None -> UNCLEAR; >=50 engage."""
+    """SELFTEST-ONLY synthetic-label generator mirroring the mechanical 100/0
+    score encoding (None -> UNCLEAR; >=50 engage). NEVER used to derive a
+    label from a persisted judge score on the production path (R4-1:
+    missing/foreign/UNCLEAR labels are dropped, not score-coerced)."""
     if score is None:
         return "UNCLEAR"
     return "engage" if float(score) >= 50 else "refuse"
@@ -510,13 +525,17 @@ def row_label_from_draws(
     draws; label engage iff rate >= hi, refuse iff rate <= lo, else None
     (middle dropped); rows with < min_valid valid draws are label=None with
     reason recorded. Greedy label carried separately (battery pool labels).
+
+    R4-1: ONLY the persisted categorical ``label`` field counts as a valid
+    draw; an UNCLEAR / missing label is dropped, never derived from the
+    numeric score (drop-never-coerce).
     """
     draw_labels = []
     for k in range(k_samples):
         item = labels.get(f"{sha}.s{k:02d}")
         if item is None:
             continue
-        lab = item.get("label") or _label_from_score(item.get("score"))
+        lab = item.get("label")
         if lab in ("engage", "refuse"):
             draw_labels.append(lab)
     n_valid = len(draw_labels)
@@ -534,7 +553,7 @@ def row_label_from_draws(
     greedy_item = labels.get(f"{sha}.greedy")
     greedy_label = None
     if greedy_item is not None:
-        gl = greedy_item.get("label") or _label_from_score(greedy_item.get("score"))
+        gl = greedy_item.get("label")  # R4-1: label-only, never score-derived
         if gl in ("engage", "refuse"):
             greedy_label = gl
     return {
@@ -1789,6 +1808,22 @@ def phase_probes(args: argparse.Namespace) -> None:
         n_folds = ad.splits["n_folds"]
         z3a, z3a_full = _latents_for(args, ad, "3a_generic", max_rank, "full" in ladder)
 
+        # R4-2: EXTRA judge-labeled rows — rate != None, captured, OUTSIDE the
+        # balanced set (middle-band rows + balanced-subsample-excluded rows).
+        # Each is scored OOF under its group's owning M1 fold (group_fold
+        # covers EVERY group — asserted at phase_groups) at that fold's
+        # selected configurations; together with the balanced OOF rows they
+        # form the all-labeled score surface the registered rate-Spearman
+        # (stats phase) consumes. NEVER reuse ad.y for these rows: it is
+        # built over balanced rows only and extras may have label None.
+        bal_set = set(ad.bal)
+        group_fold = ad.splits["group_fold"]
+        extra_by_fold: dict[int, list[str]] = {}
+        for s in ad.rows:
+            if s in bal_set or ad.labels[s].get("rate") is None:
+                continue
+            extra_by_fold.setdefault(int(group_fold[ad.group_of[s]]), []).append(s)
+
         for k in range(n_folds):
             unit_key = f"{arm}_fold{k}"
             unit_path = unit_dir / f"{unit_key}.json"
@@ -1900,6 +1935,76 @@ def phase_probes(args: argparse.Namespace) -> None:
                         row["auroc"][name] = _auroc(sc[0], y_ev)
                     unit["ladder"].append(row)
 
+            # R4-2: score this fold's EXTRA labeled rows at the fold's
+            # selected configurations. These are deterministic refits of the
+            # SAME fold models: the dual-Gram GCV ridge fits each layer
+            # independently (a single-layer refit reproduces that layer's
+            # model exactly), and rank-r latents are prefix columns of the
+            # max-rank latents (map_z / PCA), so the single-config refit
+            # equals the model that scored the fold's eval rows.
+            extra = sorted(extra_by_fold.get(k, []))
+            unit["extra_row_ids"] = extra
+            unit["scores_extra"] = {}
+            if extra:
+                y_tr_bal = np.array([ad.y[s] for s in tr])
+
+                def _one_layer(source: np.ndarray, shas: list[str], ell: int) -> np.ndarray:
+                    """(1, n, d) fp32 single-layer slice (== ad.feats(...)[[ell-1]])."""
+                    idx2 = [ad.pos[s] for s in shas]
+                    return np.ascontiguousarray(np.asarray(source[idx2, ell], dtype=np.float32))[
+                        None
+                    ]
+
+                for pred_x, source_x in ((PRED_CTX, ad.vc), (PRED_ANS, ad.ans)):
+                    ell_x = int(unit["meta"][pred_x]["layer"])
+                    sc_x, _ = _dual_ridge(
+                        _one_layer(source_x, tr, ell_x),
+                        y_tr_bal,
+                        _one_layer(source_x, extra, ell_x),
+                        args,
+                    )
+                    unit["scores_extra"][pred_x] = sc_x[0].tolist()
+
+                ell_x = int(unit["meta"][PRED_DIM]["layer"])
+                unit["scores_extra"][PRED_DIM] = _dim_scores(
+                    _one_layer(ad.vc, tr, ell_x), y_tr_bal, _one_layer(ad.vc, extra, ell_x)
+                )[0].tolist()
+
+                def _z_cond(cond: str, ell: int, r: int | str, shas: list[str]) -> np.ndarray:
+                    bundle = load_map_bundle(args, cond, ell)
+                    rr = int(bundle["S"].shape[0]) if r == "full" else int(r)
+                    x = np.asarray(ad.vc[[ad.pos[s] for s in shas], ell], dtype=np.float32)
+                    return map_z(bundle, x, rr)
+
+                for pred_x, cond_x in ((PRED_3A, "3a_generic"), (PRED_3B, f"3b_{arm}_fold{k}")):
+                    ell_x = int(unit["meta"][pred_x]["layer"])
+                    r_x = unit["meta"][pred_x]["rank"]
+                    sc_x, _ = _dual_ridge(
+                        _z_cond(cond_x, ell_x, r_x, tr)[None],
+                        y_tr_bal,
+                        _z_cond(cond_x, ell_x, r_x, extra)[None],
+                        args,
+                    )
+                    unit["scores_extra"][pred_x] = sc_x[0].tolist()
+
+                ell_x = int(unit["meta"][PRED_PCA]["layer"])
+                r_pca = int(unit["meta"][PRED_PCA]["rank"])  # PCA ladder is finite-only
+                pca_cache = _out_root(args) / "pca" / f"generic_l{ell_x:02d}_q{max_rank}.npz"
+                with np.load(pca_cache) as dpc:
+                    p_mean = dpc["mean"].astype(np.float64)
+                    p_v = dpc["V"].astype(np.float64)
+
+                def _pca_x(shas: list[str]) -> np.ndarray:
+                    xa = np.asarray(ad.vc[[ad.pos[s] for s in shas], ell_x], dtype=np.float64)
+                    return ((xa - p_mean) @ p_v)[:, :r_pca]
+
+                sc_x, _ = _dual_ridge(_pca_x(tr)[None], y_tr_bal, _pca_x(extra)[None], args)
+                unit["scores_extra"][PRED_PCA] = sc_x[0].tolist()
+
+                unit["scores_extra"][PRED_TEXT] = _text_surface_scores(
+                    ad, texts, tr, extra, seed_k, with_indicators=True
+                ).tolist()
+
             _atomic_json(unit_path, unit)
             _progress("probes", k + 1, n_folds, unit_key, t0)
 
@@ -1907,6 +2012,7 @@ def phase_probes(args: argparse.Namespace) -> None:
         scores: dict[str, dict[str, Any]] = {}
         meta_by_fold: dict[str, Any] = {}
         ladder_rows: list[dict[str, Any]] = []
+        extras_units: list[tuple[int, list[str], dict[str, list[float]]]] = []
         for k in range(n_folds):
             unit = json.loads((unit_dir / f"{arm}_fold{k}.json").read_text(encoding="utf-8"))
             meta_by_fold[str(k)] = unit["meta"]
@@ -1919,6 +2025,7 @@ def phase_probes(args: argparse.Namespace) -> None:
                     rec[pred] = vals[j]
             for row in unit["ladder"]:
                 ladder_rows.append({"fold": k, **row})
+            extras_units.append((k, unit.get("extra_row_ids", []), unit.get("scores_extra", {})))
         for sha, rec in scores.items():
             js = judge_scores.get(sha)
             if js is not None and js.get("p_refuse") is not None:
@@ -1940,23 +2047,68 @@ def phase_probes(args: argparse.Namespace) -> None:
                             sha, {"y": ad.y[sha], "group_id": ad.group_of[sha], "fold": -1}
                         )[PRED_LODO] = float(sc[j])
 
+        # R4-2: assemble + persist the ALL-LABELED score surface — balanced
+        # OOF rows (copies of their score recs) + extra rows scored at their
+        # owning fold's selected configurations. Label vectors for extras are
+        # taken from ad.labels (extras may have label None — middle band);
+        # ad.y is NEVER indexed for them.
+        all_lab: dict[str, dict[str, Any]] = {}
+        for sha, rec in scores.items():
+            if rec.get("fold", -1) < 0:
+                continue
+            lab_row = ad.labels[sha]
+            all_lab[sha] = {
+                **rec,
+                "balanced": True,
+                "rate": lab_row["rate"],
+                "label": lab_row["label"],
+            }
+        n_extra = 0
+        for k, extra_ids, sc_extra in extras_units:
+            for j, sha in enumerate(extra_ids):
+                lab_row = ad.labels[sha]
+                rec = {
+                    "group_id": ad.group_of[sha],
+                    "fold": k,
+                    "balanced": False,
+                    "rate": lab_row["rate"],
+                    "label": lab_row["label"],
+                }
+                for pred, vals in sc_extra.items():
+                    rec[pred] = vals[j]
+                js = judge_scores.get(sha)
+                if js is not None and js.get("p_refuse") is not None:
+                    rec[PRED_JUDGE] = float(js["p_refuse"])
+                all_lab[sha] = rec
+                n_extra += 1
+
         out = {
             "arm": arm,
             "n_folds": n_folds,
             "scores": scores,
+            "scores_all_labeled": all_lab,
             "ladder": ladder_rows,
             "selection": meta_by_fold,
             "notes": {
                 "orientation": "all scores oriented as P(REFUSE); y=1 is refuse",
                 "pca_control": "finite ladder ranks only (matched-rank control)",
                 "ladder": "fits at the fold's selected layer/(layer,rank)",
+                "scores_all_labeled": "every judge-labeled row with rate != None: "
+                "balanced rows carry their OOF scores; extra rows (middle-band + "
+                "balanced-subsample-excluded) are scored under their group's owning "
+                "M1 fold at that fold's selected configurations (registered "
+                "assignment — group_fold covers every group, so no unassigned-group "
+                "fallback exists). judge_fewshot is present only where the judge "
+                "wave scored the row (balanced eval rows).",
             },
             "meta": _provenance(),
         }
         p = _results_dir(args) / f"predictor_scores_{arm}.json"
         _atomic_json(p, out)
         _upload_file(args, p, "results")
-        logger.info("[probes] %s: %d scored rows", arm, len(scores))
+        logger.info(
+            "[probes] %s: %d scored rows (+%d extra all-labeled rows)", arm, len(scores), n_extra
+        )
 
     _write_sentinel(sent, fp, {"phase": "probes"})
     logger.info("[phase=probes done]")
@@ -2134,11 +2286,9 @@ def _draw_avg_targets(
         picks: list[int] = []  # row indices into vk
         for row, k in sorted(enumerate(idxs), key=lambda t: t[1]):
             item = judge_labels.get(f"{sha}.s{k:02d}")
-            lab = (
-                None
-                if item is None
-                else (item.get("label") or _label_from_score(item.get("score")))
-            )
+            # R4-1: categorical label only — an UNCLEAR/missing label never
+            # matches row_label (drop-never-coerce; no score derivation).
+            lab = None if item is None else item.get("label")
             if lab == row_label:
                 picks.append(row)
             if len(picks) >= args.k_draw_avg:
@@ -2273,24 +2423,52 @@ def phase_battery(args: argparse.Namespace) -> None:
                 stats_cache[key] = st
             return st
 
+        whiten_handled: set[str] = set()  # per-run dedupe across conds sharing (fold, layer)
+
         def _persist_whiten(k: int, layer: int, mu: np.ndarray, l_mat: np.ndarray) -> None:
+            # R4-3: fingerprint-gated persist — bare existence never skips.
+            # Each bundle embeds the battery fingerprint; a stale/unreadable
+            # bundle (same out-root re-run after split/input/code changes) is
+            # atomically REPLACED, and the upload runs on every first touch
+            # per run (idempotent), so a crash between write and upload can
+            # never strand a local-only bundle.
             wpath = whiten_dir / f"{arm}__fold{k}__l{layer:02d}.npz"
-            if wpath.exists():
+            if wpath.name in whiten_handled:
                 return
-            mu_c = np.asarray(ad.vc[fold_train_pos[k], layer], np.float64).mean(axis=0)
-            tmp = wpath.with_name(wpath.stem + ".tmp.npz")
-            np.savez(
-                tmp,
-                mu_A=mu,
-                mu_C=mu_c,
-                L=l_mat,
-                lam=np.float64(PRIMARY_LAMBDA),
-                n_train=np.int64(len(fold_train_pos[k])),
-                layer=np.int64(layer),
-                fold=np.int64(k),
-            )
-            os.replace(tmp, wpath)
+            stale_reason: str | None = None
+            fresh = True
+            if wpath.exists():
+                try:
+                    with np.load(wpath, allow_pickle=False) as d:
+                        fresh = "fingerprint" not in d.files or str(d["fingerprint"]) != fp
+                    if fresh:
+                        stale_reason = "fingerprint mismatch"
+                except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
+                    fresh = True
+                    stale_reason = f"unreadable ({type(exc).__name__})"
+            if fresh:
+                if stale_reason is not None:
+                    logger.info(
+                        "[battery] whiten bundle %s stale (%s) -> replaced",
+                        wpath.name,
+                        stale_reason,
+                    )
+                mu_c = np.asarray(ad.vc[fold_train_pos[k], layer], np.float64).mean(axis=0)
+                tmp = wpath.with_name(wpath.stem + ".tmp.npz")
+                np.savez(
+                    tmp,
+                    mu_A=mu,
+                    mu_C=mu_c,
+                    L=l_mat,
+                    lam=np.float64(PRIMARY_LAMBDA),
+                    n_train=np.int64(len(fold_train_pos[k])),
+                    layer=np.int64(layer),
+                    fold=np.int64(k),
+                    fingerprint=np.asarray(fp),
+                )
+                os.replace(tmp, wpath)
             _upload_file(args, wpath, "analysis_tensors/whiten")
+            whiten_handled.add(wpath.name)
 
         def _parts_for(
             targets: list[str], layer: int
@@ -2501,8 +2679,26 @@ def phase_battery(args: argparse.Namespace) -> None:
             for i, s in enumerate(targets_3a):
                 curve_ix.setdefault(fold_of_group[ad.group_of[s]], []).append(i)
             part_curve = {k: np.asarray(v, dtype=np.int64) for k, v in curve_ix.items()}
+            # R4 concern (battery-curve checkpointing): the curve spans
+            # 2 arms x 28 layers x n_folds fold-stat computations (>50-unit
+            # trigger) — persist each LAYER's acc the moment it completes
+            # (per-layer sub-unit rows in units.jsonl) + a per-layer
+            # progress line, with per-layer resume on re-entry.
             accs: list[float] = []
-            for ell in ad.layers:
+            n_layers = len(ad.layers)
+            for li, ell in enumerate(ad.layers):
+                lkey = f"{curve_key}|l{ell:02d}"
+                lrow = done_units.get(lkey)
+                if lrow is not None:
+                    accs.append(float(lrow["result"]["acc_at_1_whitened"]))
+                    _progress(
+                        "battery",
+                        unit_i,
+                        n_units_total,
+                        f"{lkey} ({li + 1}/{n_layers} resume-skip)",
+                        t0,
+                    )
+                    continue
                 bundle_l = load_map_bundle(args, "3a_generic", ell)
                 preds_l = map_predict(bundle_l, np.asarray(ad.vc[x_idx, ell], dtype=np.float32))
                 pool_l = np.asarray(ad.ans[:, ell], dtype=np.float64)
@@ -2521,6 +2717,15 @@ def phase_battery(args: argparse.Namespace) -> None:
                     )
                     acc_fl[ix] = np.asarray(n_closer) == 0
                 accs.append(float(acc_fl.mean()))
+                _append_jsonl(
+                    units_path,
+                    {
+                        "unit": lkey,
+                        "fingerprint": fp,
+                        "result": {"layer": int(ell), "acc_at_1_whitened": accs[-1]},
+                    },
+                )
+                _progress("battery", unit_i, n_units_total, f"{lkey} ({li + 1}/{n_layers})", t0)
             curve_3a[arm] = {
                 "layers": [int(x) for x in ad.layers],
                 "acc_at_1_whitened": accs,
@@ -2845,6 +3050,20 @@ def phase_stats(args: argparse.Namespace) -> None:
     inputs = {
         arm: _sha256_file(_results_dir(args) / f"predictor_scores_{arm}.json") for arm in ARMS
     }
+    # R4-4: the phase ALSO consumes per-arm labels.json (via _ArmData in the
+    # permutation null) and transfer.json (transfer_aurocs) — both enter the
+    # fingerprint so a label re-issue (rejudge rescue) or a transfer re-run
+    # can never leave a matching sentinel serving stale stats.json. Transfer
+    # is REQUIRED (run --phase transfer before stats; optionality removed).
+    for arm in ARMS:
+        inputs[f"{arm}_labels"] = _sha256_file(_eval_root(args) / arm / "labels.json")
+    transfer_p = _results_dir(args) / "transfer.json"
+    if not transfer_p.exists():
+        raise FileNotFoundError(
+            f"[stats] transfer.json missing ({transfer_p}) — stats consumes "
+            "transfer_aurocs; run --phase transfer before stats (R4-4)"
+        )
+    inputs["transfer"] = _sha256_file(transfer_p)
     fp = _phase_fingerprint(args, "stats", inputs)
     sent = _sentinel_path(args, "stats")
     if _sentinel_ok(sent, fp, resume=not args.no_resume):
@@ -2950,27 +3169,43 @@ def phase_stats(args: argparse.Namespace) -> None:
         else:
             recovery = {"skipped": "missing predictor draws for #2/#3a/#4"}
 
-        # R3-3: registered Spearman rho(arm score, continuous refuse-rate)
-        # per predictor over ALL judge-labeled rows (rate != None), incl.
-        # middle-band rows the binary label drops — the graded companion.
+        # R4-2: registered Spearman rho(arm score, continuous refuse-rate)
+        # per predictor over the ALL-LABELED score surface (probes phase:
+        # balanced OOF rows + middle-band / balanced-subsample-excluded rows
+        # scored under their group's owning fold at that fold's selected
+        # configuration) — per plan §Statistics "over ALL labeled prompts".
         from scipy.stats import spearmanr
 
-        lab_rows = load_arm_labels(args, arm)["rows"]
+        all_lab = data.get("scores_all_labeled")
+        if not all_lab:
+            raise RuntimeError(
+                f"{arm}: predictor_scores_{arm}.json lacks scores_all_labeled — "
+                "re-run --phase probes (R4-2 all-labeled surface) before stats"
+            )
         spearman_rate: dict[str, Any] = {}
         for p in preds_present:
             pairs = [
-                (float(rec[p]), 1.0 - float(lab_rows[s]["rate"]))
-                for s, rec in rows.items()
+                (float(rec[p]), 1.0 - float(rec["rate"]), bool(rec.get("balanced")))
+                for rec in all_lab.values()
                 if p in rec
                 and rec[p] is not None
                 and np.isfinite(rec[p])
-                and lab_rows.get(s, {}).get("rate") is not None
+                and rec.get("rate") is not None
             ]
+            n_bal_p = sum(1 for _, _, b in pairs if b)
+            entry_sr: dict[str, Any] = {
+                "n": len(pairs),
+                "n_balanced": n_bal_p,
+                "n_extra": len(pairs) - n_bal_p,
+            }
             if len(pairs) >= 3:
-                rho, pval = spearmanr([a for a, _ in pairs], [b for _, b in pairs])
-                spearman_rate[p] = {"rho": float(rho), "p": float(pval), "n": len(pairs)}
+                rho, pval = spearmanr([a for a, _, _ in pairs], [b for _, b, _ in pairs])
+                entry_sr["rho"] = float(rho)
+                entry_sr["p"] = float(pval)
             else:
-                spearman_rate[p] = {"rho": None, "p": None, "n": len(pairs)}
+                entry_sr["rho"] = None
+                entry_sr["p"] = None
+            spearman_rate[p] = entry_sr
 
         # ladder summary: per (pred, n_lab) mean over folds per seed -> mean+-sd
         ladder_summary: dict[str, dict[str, Any]] = {}
@@ -3035,17 +3270,17 @@ def phase_stats(args: argparse.Namespace) -> None:
         "delta_int_ci_by_arm": {a: (list(c) if c else None) for a, c in delta_int_ci.items()},
         "verdict": verdict,
     }
-    transfer_p = _results_dir(args) / "transfer.json"
-    if transfer_p.exists():
-        tr = json.loads(transfer_p.read_text(encoding="utf-8"))
-        out["transfer_aurocs"] = {
-            k: {
-                "auroc": v["auroc"],
-                "auroc_ci95": v.get("auroc_ci95"),
-                "n_boot_finite": v.get("n_boot_finite"),
-            }
-            for k, v in tr.get("directions", {}).items()
+    # R4-4: transfer.json is a required, fingerprinted input (checked at
+    # phase entry above) — read unconditionally.
+    tr = json.loads(transfer_p.read_text(encoding="utf-8"))
+    out["transfer_aurocs"] = {
+        k: {
+            "auroc": v["auroc"],
+            "auroc_ci95": v.get("auroc_ci95"),
+            "n_boot_finite": v.get("n_boot_finite"),
         }
+        for k, v in tr.get("directions", {}).items()
+    }
     out["notes"] = {
         "common_mask": "rows with ALL headline predictor scores present; rows with a "
         "missing judge score are EXCLUDED, never imputed to 50 (registered delta_int)",
@@ -3054,8 +3289,12 @@ def phase_stats(args: argparse.Namespace) -> None:
         "bootstrap": f"paired group bootstrap, {args.n_boot} draws, seed {args.boot_seed}, "
         "weighted Mann-Whitney AUROC over ONE common per-arm row mask; per-draw "
         "boot_aurocs persisted per predictor (shared draw index across predictors)",
-        "spearman_rate": "rho(score, 1 - engage_rate) over ALL judge-labeled rows "
-        "(rate != None, middle band included); positive = score tracks refuse",
+        "spearman_rate": "rho(score, 1 - engage_rate) per predictor over the ALL-LABELED "
+        "score surface (scores_all_labeled: every judge-labeled row with rate != None — "
+        "balanced OOF rows plus middle-band and balanced-subsample-excluded rows scored "
+        "under their group's owning M1 fold at that fold's selected configuration); "
+        "per-predictor n/n_balanced/n_extra reported — judge_fewshot covers only "
+        "judge-wave-scored (balanced eval) rows; positive = score tracks refuse",
         "recovery_fraction": "registered ceiling read; ratio CI masks draws with "
         "|denominator| <= 0.02",
     }
@@ -3242,11 +3481,16 @@ def _selftest(_: argparse.Namespace) -> int:
     manifests: dict[str, list[dict[str, Any]]] = {"armA": [], "armB": [], "generic": []}
     texts: dict[str, list[dict[str, str]]] = {"armA": [], "armB": [], "generic": []}
 
-    def add_labels(sha: str, y: int) -> None:
+    def add_labels(sha: str, y: int, *, mixed: bool = False) -> None:
+        """mixed=True plants a MIDDLE-BAND row (R4-2): alternating engage/
+        refuse draw labels -> rate 0.5 (between lo=0.3 and hi=0.7 at
+        n_valid=6 >= min_valid=5) -> row label None -> the row is an
+        all-labeled-surface EXTRA, never a balanced row."""
         score = 10.0 if y else 90.0  # y=1 refuse -> low engage score
         label_items[f"{sha}.greedy"] = {"score": score, "label": _label_from_score(score)}
         for k in range(k_samp):
-            label_items[f"{sha}.s{k:02d}"] = {"score": score, "label": _label_from_score(score)}
+            s_k = (10.0 if k % 2 else 90.0) if mixed else score
+            label_items[f"{sha}.s{k:02d}"] = {"score": s_k, "label": _label_from_score(s_k)}
         # judge.py persists 0-100 (p_refuse = 100 - p_answer); mirror that scale
         p_ref = float(np.clip(80.0 * y + 10.0 + rng.normal(scale=3.0), 0.0, 100.0))
         pred_scores[sha] = {"p_answer": 100.0 - p_ref, "p_refuse": p_ref, "arm": "", "fold": 0}
@@ -3266,7 +3510,10 @@ def _selftest(_: argparse.Namespace) -> int:
             )
             texts["armA"].append({"prompt_sha": sha, "prompt": mk_text()})
             mk_store(sha, y, True)
-            add_labels(sha, y)
+            # R4-2: one middle-band armA row (b=11, j=1 -> "a111"); its group
+            # then holds 1 refuse vs 2 comply, so the matched-pair balanced
+            # set drops one comply too -> BOTH extra classes exist for armA.
+            add_labels(sha, y, mixed=(b == 11 and j == 1))
     dup_text = mk_text()
     for i in range(40):
         sha = f"b{i:04d}"
@@ -3282,7 +3529,9 @@ def _selftest(_: argparse.Namespace) -> int:
         t = dup_text + " please" if i == 39 else (dup_text if i == 38 else mk_text())
         texts["armB"].append({"prompt_sha": sha, "prompt": t})
         mk_store(sha, y, True)
-        add_labels(sha, y)
+        # R4-2: one middle-band armB row (i=37, clear of the 38/39 dup pair);
+        # the majority subsample already leaves comply extras for armB.
+        add_labels(sha, y, mixed=(i == 37))
 
     for corpus in CORPORA:
         _atomic_json(
@@ -3401,6 +3650,75 @@ def _selftest(_: argparse.Namespace) -> int:
         assert sr["n"] > 0 and (sr["rho"] is None or np.isfinite(sr["rho"])), sr
         assert len(st["arms"][arm]["predictors"][PRED_CTX]["boot_aurocs"]) == 50, arm
         assert st["transfer_aurocs"], st.get("transfer_aurocs")
+    # R4-2: the ALL-LABELED score surface exists per arm, carries extras
+    # (middle-band + balanced-subsample-excluded), and the stats Spearman
+    # runs over exactly that surface (n == finite-ctx surface rows).
+    for arm in ARMS:
+        ps = json.loads((eval_root / "results" / f"predictor_scores_{arm}.json").read_text())
+        surf = ps["scores_all_labeled"]
+        n_bal_surface = sum(1 for r in surf.values() if r["balanced"])
+        n_extra_surface = len(surf) - n_bal_surface
+        assert n_extra_surface > 0, (arm, n_extra_surface)
+        assert all(r.get("rate") is not None for r in surf.values()), arm
+        n_ctx_surface = sum(
+            1 for r in surf.values() if r.get(PRED_CTX) is not None and np.isfinite(r[PRED_CTX])
+        )
+        sr = st["arms"][arm]["spearman_rate"][PRED_CTX]
+        assert sr["n"] == n_ctx_surface, (arm, sr, n_ctx_surface)
+        assert sr["n_extra"] > 0 and sr["n"] == sr["n_balanced"] + sr["n_extra"], (arm, sr)
+    surf_a = json.loads((eval_root / "results" / "predictor_scores_armA.json").read_text())[
+        "scores_all_labeled"
+    ]
+    mb = surf_a.get("a111")  # the planted middle-band row (b=11, j=1)
+    assert mb is not None and mb["label"] is None and mb["rate"] == 0.5, mb
+    assert mb["balanced"] is False and np.isfinite(mb[PRED_CTX]), mb
+    # R4-3: every whiten bundle embeds the battery fingerprint; a doctored
+    # (stale-fingerprint) bundle is atomically REPLACED on a battery re-run
+    # (bare existence never skips the persist).
+    wfiles = sorted((out_root / "whiten").glob("*__fold*__l*.npz"))
+    assert wfiles, "no whiten bundles persisted"
+    with np.load(wfiles[0], allow_pickle=False) as dd:
+        assert "fingerprint" in dd.files, sorted(dd.files)
+        fp_good = str(dd["fingerprint"])
+    for wf in wfiles:
+        with np.load(wf, allow_pickle=False) as dd:
+            assert str(dd["fingerprint"]) == fp_good, (wf.name, str(dd["fingerprint"]))
+    wp = wfiles[0]
+    with np.load(wp, allow_pickle=False) as dd:
+        stale_payload = {kk: dd[kk] for kk in dd.files if kk != "fingerprint"}
+    tmp_w = wp.with_name(wp.stem + ".tmp.npz")
+    np.savez(tmp_w, fingerprint=np.asarray("stale-round3-fp"), **stale_payload)
+    os.replace(tmp_w, wp)
+    _sentinel_path(args, "battery").unlink()
+    phase_battery(args)  # units resume-skip; the stale bundle must be replaced
+    with np.load(wp, allow_pickle=False) as dd:
+        assert str(dd["fingerprint"]) == fp_good, str(dd["fingerprint"])
+    # R4-4a: the stats fingerprint covers the labels artifacts — a
+    # byte-different (parse-identical) labels.json forces a re-run.
+    sent_stats = _sentinel_path(args, "stats")
+    fp_stats_before = json.loads(sent_stats.read_text())["fingerprint"]
+    labels_a = eval_root / "armA" / "labels.json"
+    labels_a.write_text(  # compact separators: byte-different from _atomic_json's indent=1
+        json.dumps(json.loads(labels_a.read_text(encoding="utf-8")), separators=(",", ":")),
+        encoding="utf-8",
+    )
+    phase_stats(args)
+    fp_stats_after = json.loads(sent_stats.read_text())["fingerprint"]
+    assert fp_stats_after != fp_stats_before, "stats fingerprint ignores labels.json"
+    # R4-4b: transfer.json is REQUIRED before stats (optionality removed).
+    # Save + restore the bytes: downstream consumers of the selftest scratch
+    # (issue2356_figures --selftest renders transfer_2x2 from it) need the
+    # end-state COMPLETE, and phase_transfer would resume-skip on its intact
+    # sentinel rather than rewrite the file.
+    transfer_p = eval_root / "results" / "transfer.json"
+    transfer_bytes = transfer_p.read_bytes()
+    transfer_p.unlink()
+    try:
+        phase_stats(args)
+        raise AssertionError("phase_stats must refuse to run without transfer.json")
+    except FileNotFoundError as exc:
+        assert "transfer" in str(exc), exc
+    transfer_p.write_bytes(transfer_bytes)
     print(f"[selftest] PASS (all six phases; scratch={base})", flush=True)
     shutil.rmtree(base, ignore_errors=True)
     return 0
