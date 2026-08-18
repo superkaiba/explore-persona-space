@@ -105,6 +105,19 @@ PRED_LODO = "ctx_ridge_lodo"
 
 HEADLINE_PREDS = (PRED_JUDGE, PRED_CTX, PRED_DIM, PRED_3A, PRED_3B, PRED_PCA, PRED_ANS, PRED_TEXT)
 
+# A4: the plan-registered paired-contrast set is {#2-#1, #3a-#2, #3b-#3a,
+# #4-#3a, #3a-PCA, #2-text_surface}; ans_minus_ctx (#4-#2) is kept for
+# continuity but labeled registered=False in stats.json.
+CONTRAST_SPECS: tuple[tuple[str, str, str, bool], ...] = (
+    ("delta_int", PRED_CTX, PRED_JUDGE, True),
+    ("ctx_minus_text_surface", PRED_CTX, PRED_TEXT, True),
+    ("map3a_minus_ctx", PRED_3A, PRED_CTX, True),
+    ("map3a_minus_pca", PRED_3A, PRED_PCA, True),
+    ("map3b_minus_map3a", PRED_3B, PRED_3A, True),
+    ("ans_minus_map3a", PRED_ANS, PRED_3A, True),
+    ("ans_minus_ctx", PRED_ANS, PRED_CTX, False),
+)
+
 
 def _hf_prefix(args: argparse.Namespace) -> str:
     return HF_PREFIX_SMOKE if args.smoke else HF_PREFIX
@@ -314,11 +327,15 @@ def _upload_dir(args: argparse.Namespace, local_dir: Path, rel: str, expected: l
 
 
 def _stage_summary_stores(args: argparse.Namespace, shas: list[str]) -> Path:
-    """Ensure per-sha store npzs exist locally; stage missing ones from the Hub.
+    """Ensure per-sha store npzs exist locally, EXTRACTING them from the pod's
+    CONSOLIDATED summary-store shards (B1 layout:
+    ``{prefix}/summary_stores/<corpus>.meansNNNN.npz`` + ``row_index.jsonl`` —
+    the per-sha Hub layout was dropped: >10k files/dir is a HubDirFileCountError).
 
-    Files live at {prefix}/summary_stores/<sha>.npz (unit-1 upload layout).
-    Resume-safe: existing files are skipped. Fail-loud on any missing sha
-    after staging.
+    Keys inside a consolidated shard are ``<sha>__<name>``; extraction writes the
+    per-sha npz with bare ``<name>`` keys so every downstream reader is unchanged.
+    Resume-safe (existing per-sha files skipped); fail-loud on any sha missing
+    from the row_index or its shard after staging.
     """
     dest = _stores_dir(args)
     dest.mkdir(parents=True, exist_ok=True)
@@ -331,43 +348,61 @@ def _stage_summary_stores(args: argparse.Namespace, shas: list[str]) -> Path:
     if missing:
         from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
-        need_gb = max(1.0, len(missing) * 3.5e-3)  # ~3.5 MB/file upper bound
+        need_gb = max(1.0, len(missing) * 3.5e-3)  # ~3.5 MB/prompt upper bound
         assert_out_root_headroom(dest, need_gb * 1.5, phase="stage_summary_stores")
         hub = _hub()
         t0 = time.time()
-        if len(missing) > 500:
-            # Bulk path: stage_hub_prefix mirrors at dest_dir/<repo-rel path>
-            # (verbatim prefix mirror — gotchas.md), then files move into dest.
-            mirror = _out_root(args) / "hf_mirror"
-            hub.stage_hub_prefix(
-                hub.DEFAULT_DATASET_REPO,
-                f"{_hf_prefix(args)}/summary_stores",
-                mirror,
-                repo_type="dataset",
+        # stage_hub_prefix mirrors at dest_dir/<repo-rel path> (verbatim prefix
+        # mirror — gotchas.md); the consolidated store is ~n_prompts/500 files.
+        mirror = _out_root(args) / "hf_mirror"
+        hub.stage_hub_prefix(
+            hub.DEFAULT_DATASET_REPO,
+            f"{_hf_prefix(args)}/summary_stores",
+            mirror,
+            repo_type="dataset",
+        )
+        staged_root = mirror / _hf_prefix(args) / "summary_stores"
+        assert staged_root.is_dir(), staged_root  # mirror-root arithmetic check
+        row_index_p = staged_root / "row_index.jsonl"
+        if not row_index_p.exists():
+            raise RuntimeError(
+                f"row_index.jsonl missing under {staged_root} — pod means/upload incomplete"
             )
-            staged_root = mirror / _hf_prefix(args) / "summary_stores"
-            assert staged_root.is_dir(), staged_root  # mirror-root arithmetic check
-            for i, sha in enumerate(missing):
-                src = staged_root / f"{sha}.npz"
-                if src.exists():
-                    os.replace(src, dest / f"{sha}.npz")
-                if (i + 1) % 500 == 0 or i + 1 == len(missing):
-                    _progress("stage_stores", i + 1, len(missing), sha[:12], t0)
-        else:
-            from huggingface_hub import hf_hub_download
-
-            for i, sha in enumerate(missing):
-                hub.retry_transient(
-                    hf_hub_download,
-                    repo_id=hub.DEFAULT_DATASET_REPO,
-                    repo_type="dataset",
-                    filename=f"{_hf_prefix(args)}/summary_stores/{sha}.npz",
-                    local_dir=dest / "_hfstage",
-                )
-                src = dest / "_hfstage" / _hf_prefix(args) / "summary_stores" / f"{sha}.npz"
-                os.replace(src, dest / f"{sha}.npz")
-                if (i + 1) % 100 == 0 or i + 1 == len(missing):
-                    _progress("stage_stores", i + 1, len(missing), sha[:12], t0)
+        sha_to_shard: dict[str, str] = {}
+        with open(row_index_p, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    row = json.loads(line)
+                    sha_to_shard[row["prompt_sha"]] = row["shard_file"]
+        unknown = sorted(set(missing) - set(sha_to_shard))
+        if unknown:
+            raise RuntimeError(
+                f"{len(unknown)} requested shas absent from row_index "
+                f"(first {unknown[0][:16]}) — capture/means dropped them?"
+            )
+        by_shard: dict[str, list[str]] = {}
+        for s in missing:
+            by_shard.setdefault(sha_to_shard[s], []).append(s)
+        done = 0
+        for shard_file, shard_shas in sorted(by_shard.items()):
+            src = staged_root / shard_file
+            with np.load(src) as data:
+                keys_by_sha: dict[str, list[str]] = {}
+                for key in data.files:
+                    keys_by_sha.setdefault(key.split("__")[0], []).append(key)
+                for sha in shard_shas:
+                    payload = {k.split("__", 1)[1]: data[k] for k in keys_by_sha.get(sha, [])}
+                    if not payload:
+                        raise RuntimeError(
+                            f"sha {sha[:16]} listed in row_index but absent from {shard_file}"
+                        )
+                    tmp = dest / f"{sha}.tmp.npz"  # keep .npz suffix (np.savez appends)
+                    np.savez(tmp, **payload)
+                    os.replace(tmp, dest / f"{sha}.npz")
+                    done += 1
+                    if done % 500 == 0 or done == len(missing):
+                        _progress("stage_stores", done, len(missing), sha[:12], t0)
     still = [s for s in shas if not (dest / f"{s}.npz").exists()]
     if still:
         raise RuntimeError(f"stores still missing after staging: {len(still)} (first {still[0]})")
@@ -505,11 +540,17 @@ def row_label_from_draws(
 
 
 def load_predictor_scores(args: argparse.Namespace) -> dict[str, dict[str, Any]]:
-    """row_id -> {p_answer, p_refuse, arm, fold} from the judge predictor."""
+    """row_id -> {p_answer, p_refuse, arm, fold} from the judge predictor.
+
+    FAIL-LOUD on a missing artifact (B9): judge read #1 is a registered predictor
+    arm — silently returning {} would ship an all-NaN arm as a completed probe run.
+    """
     p = _eval_root(args) / "judge" / "predictor" / "predictor_scores.json"
     if not p.exists():
-        logger.warning("[judge] predictor_scores.json absent at %s (judge #1 will be NaN)", p)
-        return {}
+        raise FileNotFoundError(
+            f"judge predictor artifact missing: {p} — run issue2356_judge.py --mode predictor "
+            "before the probes phase (registered predictor arm #1)"
+        )
     return json.loads(p.read_text(encoding="utf-8"))["scores"]
 
 
@@ -1073,6 +1114,12 @@ def build_map_inputs_3b(
     return ids
 
 
+# Plan-registered map-fit ridge grid (plan §0 + §4 Step F). Passed EXPLICITLY to
+# the primal core (A1: the core's own default is a 6-point grid — relying on it
+# silently deviated from the registered grid AND falsified the persisted note).
+RIDGE_LAMBDAS_PLAN = np.logspace(-2.0, 4.0, 13)
+
+
 def _svd_robust(w: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """SVD with gesvd fallback on gesdd non-convergence (#722 r3 class)."""
     try:
@@ -1082,6 +1129,28 @@ def _svd_robust(w: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         logger.warning("[maps] gesdd non-convergence -> gesvd fallback")
         return scipy_svd(w, full_matrices=False, lapack_driver="gesvd")
+
+
+def _svd_robust_batched(w: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """ONE batched SVD across the leading (layer-chunk) axis via torch.linalg.svd
+    (A5: the round-1 loop ran a serial LAPACK SVD per condition x layer). Falls
+    back per-slice to `_svd_robust` (gesvd ladder) on non-convergence — never a
+    Gram jitter (gotchas.md cuda-eigh / gesdd family)."""
+    import torch as _torch
+
+    try:
+        u, s, vh = _torch.linalg.svd(
+            _torch.from_numpy(np.ascontiguousarray(w.astype(np.float64))), full_matrices=False
+        )
+        return u.numpy(), s.numpy(), vh.numpy()
+    except Exception:
+        logger.warning("[maps] batched torch SVD failed -> per-slice LAPACK fallback")
+        outs = [_svd_robust(w[j]) for j in range(w.shape[0])]
+        return (
+            np.stack([o[0] for o in outs]),
+            np.stack([o[1] for o in outs]),
+            np.stack([o[2] for o in outs]),
+        )
 
 
 def _std_stats(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -1228,11 +1297,18 @@ def phase_maps(args: argparse.Namespace) -> None:
                 f"primal map fit requires n_train > d ({xtr.shape[1]} <= {d_model})"
             )
             preds, weights = ridge_fit_predict_primal_layer_batched(
-                xtr, ytr, xev, device=args.device, return_weights=True, layer_chunk=len(chunk)
+                xtr,
+                ytr,
+                xev,
+                lambdas=RIDGE_LAMBDAS_PLAN,  # plan-registered grid (A1), never the core default
+                device=args.device,
+                return_weights=True,
+                layer_chunk=len(chunk),
             )
+            u_all, s_all, vt_all = _svd_robust_batched(np.asarray(weights))
             for j, ell in enumerate(chunk):
                 xmu, xsd, ymu = _std_stats(xtr[j].astype(np.float64), ytr[j].astype(np.float64))
-                u, s, vt = _svd_robust(weights[j])
+                u, s, vt = u_all[j], s_all[j], vt_all[j]
                 out = _map_bundle_path(args, cond, ell)
                 tmp = out.with_name(f"layer{ell:02d}.tmp.npz")  # keep .npz suffix (np.savez)
                 np.savez(
@@ -1292,7 +1368,8 @@ def phase_maps(args: argparse.Namespace) -> None:
         "layers": layers,
         "generic": {"n_fit": int(len(fit_idx)), "n_heldout": int(n_held)},
         "notes": {
-            "lambda_grid": "logspace(-2,4,13) GCV per slice (primal core default)",
+            "lambda_grid": "logspace(-2,4,13) GCV per slice (RIDGE_LAMBDAS_PLAN passed "
+            "explicitly to ridge_fit_predict_primal_layer_batched; plan-registered grid)",
             "selected_lambda": "not exposed by the primal core (n>d regime); "
             "dual-fit lambda diagnostics are reported in the probes phase",
         },
@@ -1907,6 +1984,15 @@ def _top1_indices(pred: np.ndarray, pool: np.ndarray, chunk: int = 512) -> np.nd
     return out
 
 
+def _modal_layer(vals: list[int]) -> int:
+    """Modal value; ties break to the SMALLEST layer (deterministic)."""
+    from collections import Counter
+
+    counts = Counter(vals)
+    best = max(counts.values())
+    return min(v for v, c in counts.items() if c == best)
+
+
 def _battery_metrics(
     pred: np.ndarray,
     pool: np.ndarray,
@@ -1914,10 +2000,13 @@ def _battery_metrics(
     *,
     mu_a: np.ndarray,
     chol_l: np.ndarray,
+    groups: list[str],
     n_boot: int,
     boot_seed: int,
 ) -> dict[str, Any]:
-    """One battery read: 4 metric spaces + S2 bootstrap gate on the primary."""
+    """One battery read: 4 metric spaces + S2 GROUP-bootstrap gate on the
+    primary (A2: resample eval GROUPS with replacement — Arm-A targets
+    cluster in base_id groups, so a row-iid CI is anti-conservative)."""
     _ensure_scripts_on_syspath()
     import issue2202_failchar as fc
     import issue2202_freshwhiten_avg as fw
@@ -1947,12 +2036,13 @@ def _battery_metrics(
         "median_rank": float(np.median(r2ranks)),
         "mrr": float(np.mean(1.0 / r2ranks)),
     }
-    # S2 gate: one-sided bootstrap over targets on the PRIMARY read
-    rng = np.random.default_rng(boot_seed)
+    # S2 gate: one-sided GROUP bootstrap over eval groups on the PRIMARY read
     flags = acc1_flags["whitened_cosine"].astype(np.float64)
-    if n_boot > 0 and len(flags) > 1:
-        draws = rng.integers(0, len(flags), size=(n_boot, len(flags)))
-        boot = flags[draws].mean(axis=1)
+    assert len(groups) == len(true_idx), (len(groups), len(true_idx))
+    n_groups = len(set(groups))
+    if n_boot > 0 and n_groups > 1:
+        w, _ = _group_bootstrap_weights(list(groups), n_boot, boot_seed)
+        boot = (w * flags[None, :]).sum(axis=1) / np.maximum(w.sum(axis=1), 1e-12)
         ci_lower = float(np.percentile(boot, 5.0))
     else:
         ci_lower = float("nan")
@@ -1960,6 +2050,8 @@ def _battery_metrics(
         "primary": "whitened_cosine.acc_at_1",
         "ci_lower_5pct": ci_lower,
         "chance": chance,
+        "bootstrap": "group",
+        "n_groups": int(n_groups),
         "pass": bool(ci_lower > chance) if np.isfinite(ci_lower) else None,
     }
     out["_acc1_flags_whitened"] = acc1_flags["whitened_cosine"].tolist()
@@ -2005,10 +2097,21 @@ def _draw_avg_targets(
 
 
 def phase_battery(args: argparse.Namespace) -> None:
-    """P7 battery: per (arm x map condition x target-variant) retrieval reads."""
+    """P7 battery: per (arm x map condition x target-variant) retrieval reads.
+
+    A3 structure: #3a cells run at the MODAL probe-selected 3a layer across
+    folds; #3b cells run at each fold's probe-selected 3b layer (both read
+    from predictor_scores_{arm}.json "selection"); a pooled-3b cell
+    re-reduces the persisted per-target whitened acc@1 flags across folds;
+    and an exploratory all-layer #3a acc@1 curve is emitted per arm. The
+    generic-R2 layer is recorded as reference only, never a cell placement.
+    """
     inputs = {c: manifest_sha(args, c) for c in CORPORA}
     for arm in ARMS:
         inputs[f"{arm}_splits"] = _sha256_file(_eval_root(args) / arm / "splits.json")
+        inputs[f"{arm}_labels"] = _sha256_file(_eval_root(args) / arm / "labels.json")
+        inputs[f"{arm}_scores"] = _sha256_file(_results_dir(args) / f"predictor_scores_{arm}.json")
+    inputs["map_diagnostics"] = _sha256_file(_results_dir(args) / "map_diagnostics.json")
     fp = _phase_fingerprint(args, "battery", inputs)
     sent = _sentinel_path(args, "battery")
     if _sentinel_ok(sent, fp, resume=not args.no_resume):
@@ -2021,8 +2124,10 @@ def phase_battery(args: argparse.Namespace) -> None:
         shrunk_cholesky_from_cov,
     )
 
+    _ensure_scripts_on_syspath()
+    import issue2202_failchar as fc
+
     diag = json.loads((_results_dir(args) / "map_diagnostics.json").read_text(encoding="utf-8"))
-    layer = int(diag["conditions"]["3a_generic"]["best_layer_by_generic_r2"])
     judge_labels = load_judge_labels(args)
     gx, _ = _load_cons(args, "generic", "v_C")
     gy, _ = _load_cons(args, "generic", "v_A_greedy")
@@ -2036,7 +2141,17 @@ def phase_battery(args: argparse.Namespace) -> None:
     whiten_dir = _out_root(args) / "whiten"
     whiten_dir.mkdir(parents=True, exist_ok=True)
 
+    def _whiten_stats(ytr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        mu = ytr.mean(axis=0)
+        centered = ytr - mu
+        cov = (centered.T @ centered) / len(ytr)
+        return mu, shrunk_cholesky_from_cov(cov, PRIMARY_LAMBDA)
+
     results: dict[str, Any] = {}
+    pooled_3b: dict[str, Any] = {}
+    curve_3a: dict[str, Any] = {}
+    layer_sel_out: dict[str, Any] = {}
+    flags_by_unit: dict[str, dict[str, Any]] = {}
     manifests = {arm: load_manifest(args, arm) for arm in ARMS}
     group_of_all = {
         arm: json.loads((_eval_root(args) / arm / "groups.json").read_text())["group_of"]
@@ -2047,21 +2162,32 @@ def phase_battery(args: argparse.Namespace) -> None:
     unit_i = 0
     for arm in ARMS:
         ad = _ArmData(args, arm)
-        pool = np.asarray(ad.ans[:, layer], dtype=np.float64)  # ALL greedy answers
         pool_greedy_label = [ad.labels[s]["greedy_label"] for s in ad.rows]
         labeled = [s for s in ad.rows if ad.labels[s]["label"] is not None]
         n_folds = ad.splits["n_folds"]
+        # A3: probe-selected layers from the probes phase's persisted selection
+        sel = json.loads(
+            (_results_dir(args) / f"predictor_scores_{arm}.json").read_text(encoding="utf-8")
+        )["selection"]
+        lay3a_by_fold = [int(sel[str(k)][PRED_3A]["layer"]) for k in range(n_folds)]
+        layer_3a = _modal_layer(lay3a_by_fold)
+        layer_3b = {k: int(sel[str(k)][PRED_3B]["layer"]) for k in range(n_folds)}
+        layer_sel_out[arm] = {
+            "3a_layers_by_fold": {str(k): lay3a_by_fold[k] for k in range(n_folds)},
+            "3a_modal_layer": int(layer_3a),
+            "3b_layers_by_fold": {str(k): int(layer_3b[k]) for k in range(n_folds)},
+        }
         conds = ["3a_generic"] + [f"3b_{arm}_fold{k}" for k in range(n_folds)]
-        n_units_total += len(conds) * 2
-        gen_xtr = np.asarray(gx[fit_idx, layer], dtype=np.float64)
-        gen_ytr = np.asarray(gy[fit_idx, layer], dtype=np.float64)
+        n_units_total += len(conds) * 2 + 1  # +1: the all-layer 3a curve unit
 
         for cond in conds:
             fold = None if cond == "3a_generic" else int(cond.rsplit("fold", 1)[1])
             if fold is None:
+                cond_layer = int(layer_3a)
                 targets = list(labeled)
                 extra_ids: list[str] = []
             else:
+                cond_layer = int(layer_3b[fold])
                 eval_groups = set(ad.splits["folds"][str(fold)]["eval_groups"])
                 targets = [s for s in labeled if ad.group_of[s] in eval_groups]
                 extra_ids = build_map_inputs_3b(
@@ -2072,24 +2198,24 @@ def phase_battery(args: argparse.Namespace) -> None:
             if not targets:
                 logger.warning("[battery] %s/%s: no targets, skipped", arm, cond)
                 continue
+            pool = np.asarray(ad.ans[:, cond_layer], dtype=np.float64)  # ALL greedy answers
+            gen_xtr = np.asarray(gx[fit_idx, cond_layer], dtype=np.float64)
+            gen_ytr = np.asarray(gy[fit_idx, cond_layer], dtype=np.float64)
             # whiten stats: THIS run's map-fit train answers (generic fit +
-            # in-domain train-group answers for 3b), at the battery layer.
+            # in-domain train-group answers for 3b), at the CELL's layer.
             extra_pos = [ad.pos[s] for s in extra_ids]
             ytr = (
-                np.concatenate([gen_ytr, np.asarray(ad.ans[extra_pos, layer], np.float64)])
+                np.concatenate([gen_ytr, np.asarray(ad.ans[extra_pos, cond_layer], np.float64)])
                 if extra_pos
                 else gen_ytr
             )
             xtr = (
-                np.concatenate([gen_xtr, np.asarray(ad.vc[extra_pos, layer], np.float64)])
+                np.concatenate([gen_xtr, np.asarray(ad.vc[extra_pos, cond_layer], np.float64)])
                 if extra_pos
                 else gen_xtr
             )
-            mu_a = ytr.mean(axis=0)
-            centered = ytr - mu_a
-            cov = (centered.T @ centered) / len(ytr)
-            chol_l = shrunk_cholesky_from_cov(cov, PRIMARY_LAMBDA)
-            wpath = whiten_dir / f"{arm}__{cond}.npz"
+            mu_a, chol_l = _whiten_stats(ytr)
+            wpath = whiten_dir / f"{arm}__{cond}__l{cond_layer:02d}.npz"
             if not wpath.exists():
                 tmp = wpath.with_name(wpath.stem + ".tmp.npz")
                 np.savez(
@@ -2099,29 +2225,32 @@ def phase_battery(args: argparse.Namespace) -> None:
                     L=chol_l,
                     lam=np.float64(PRIMARY_LAMBDA),
                     n_train=np.int64(len(ytr)),
+                    layer=np.int64(cond_layer),
                 )
                 os.replace(tmp, wpath)
                 _upload_file(args, wpath, "analysis_tensors/whiten")
 
-            bundle = load_map_bundle(args, cond, layer)
-            x_t = np.asarray(ad.vc[[ad.pos[s] for s in targets], layer], dtype=np.float32)
+            bundle = load_map_bundle(args, cond, cond_layer)
+            x_t = np.asarray(ad.vc[[ad.pos[s] for s in targets], cond_layer], dtype=np.float32)
             preds = map_predict(bundle, x_t)
             ib_pred = identity_bias_predict(xtr, ytr, x_t.astype(np.float64))
             true_idx = np.array([ad.pos[s] for s in targets], dtype=np.int64)
+            groups_t = [ad.group_of[s] for s in targets]
 
             for variant in ("greedy", "draw_avg"):
                 unit_i += 1
                 unit_key = f"{arm}|{cond}|{variant}"
                 if unit_key in done_units:
-                    results.setdefault(arm, {}).setdefault(cond, {})[variant] = done_units[
-                        unit_key
-                    ]["result"]
+                    row = done_units[unit_key]
+                    results.setdefault(arm, {}).setdefault(cond, {})[variant] = row["result"]
+                    if row.get("flags") is not None:
+                        flags_by_unit[unit_key] = row["flags"]
                     _progress("battery", unit_i, n_units_total, f"{unit_key} (resume-skip)", t0)
                     continue
                 pool_v = pool
                 n_fb = 0
                 if variant == "draw_avg":
-                    da, n_fb = _draw_avg_targets(args, ad, judge_labels, targets, layer)
+                    da, n_fb = _draw_avg_targets(args, ad, judge_labels, targets, cond_layer)
                     pool_v = pool.copy()
                     for s in targets:
                         pool_v[ad.pos[s]] = da[s]
@@ -2131,11 +2260,20 @@ def phase_battery(args: argparse.Namespace) -> None:
                     true_idx,
                     mu_a=mu_a,
                     chol_l=chol_l,
+                    groups=groups_t,
                     n_boot=args.n_boot,
                     boot_seed=args.boot_seed,
                 )
+                # A3: PERSIST the per-target whitened flags (pooled reads are
+                # re-reductions) instead of dropping them.
                 acc1_flags = np.array(res.pop("_acc1_flags_whitened"), dtype=bool)
-                y_t = np.array([ad.y[s] if s in ad.y else 0 for s in targets])
+                flags_rec = {
+                    "target_shas": list(targets),
+                    "groups": list(groups_t),
+                    "flags": [bool(b) for b in acc1_flags],
+                    "layer": int(cond_layer),
+                }
+                flags_by_unit[unit_key] = flags_rec
                 lab_t = [ad.labels[s]["label"] for s in targets]
                 res["behavior_split_acc1_whitened"] = {
                     lab: float(acc1_flags[[x == lab for x in lab_t]].mean())
@@ -2150,7 +2288,7 @@ def phase_battery(args: argparse.Namespace) -> None:
                 ]
                 res["nn_behavior_match_rate"] = float(np.mean(match_flags)) if match_flags else None
                 res["n_draw_avg_fallback_greedy"] = int(n_fb)
-                del y_t
+                res["layer"] = int(cond_layer)
                 # identity+bias baseline pushed through the SAME battery
                 ib_res = _battery_metrics(
                     ib_pred,
@@ -2158,23 +2296,128 @@ def phase_battery(args: argparse.Namespace) -> None:
                     true_idx,
                     mu_a=mu_a,
                     chol_l=chol_l,
+                    groups=groups_t,
                     n_boot=args.n_boot,
                     boot_seed=args.boot_seed,
                 )
                 ib_res.pop("_acc1_flags_whitened", None)
                 res["identity_bias_baseline"] = ib_res
                 results.setdefault(arm, {}).setdefault(cond, {})[variant] = res
-                _append_jsonl(units_path, {"unit": unit_key, "fingerprint": fp, "result": res})
+                _append_jsonl(
+                    units_path,
+                    {"unit": unit_key, "fingerprint": fp, "result": res, "flags": flags_rec},
+                )
                 _progress("battery", unit_i, n_units_total, unit_key, t0)
 
+        # ------- pooled-3b: re-reduce persisted per-target flags across folds
+        for variant in ("greedy", "draw_avg"):
+            fold_units = [f"{arm}|3b_{arm}_fold{k}|{variant}" for k in range(n_folds)]
+            present = [u for u in fold_units if u in flags_by_unit]
+            if not present:
+                logger.warning("[battery] %s pooled-3b/%s: no fold flags, skipped", arm, variant)
+                continue
+            flags = np.concatenate(
+                [np.asarray(flags_by_unit[u]["flags"], dtype=np.float64) for u in present]
+            )
+            groups_p = [g for u in present for g in flags_by_unit[u]["groups"]]
+            n_pool = int(ad.ans.shape[0])
+            chance = 1.0 / n_pool
+            n_groups = len(set(groups_p))
+            if args.n_boot > 0 and n_groups > 1:
+                w, _ = _group_bootstrap_weights(groups_p, args.n_boot, args.boot_seed)
+                boot = (w * flags[None, :]).sum(axis=1) / np.maximum(w.sum(axis=1), 1e-12)
+                ci_lower = float(np.percentile(boot, 5.0))
+            else:
+                ci_lower = float("nan")
+            pooled_3b.setdefault(arm, {})[variant] = {
+                "n_targets": int(len(flags)),
+                "n_pool": n_pool,
+                "chance": chance,
+                "acc_at_1_whitened": float(flags.mean()),
+                "folds_pooled": [u.rsplit("fold", 1)[1].split("|")[0] for u in present],
+                "layers_by_fold": {str(k): int(layer_3b[k]) for k in range(n_folds)},
+                "s2_gate": {
+                    "primary": "whitened_cosine.acc_at_1",
+                    "ci_lower_5pct": ci_lower,
+                    "chance": chance,
+                    "bootstrap": "group",
+                    "n_groups": int(n_groups),
+                    "pass": bool(ci_lower > chance) if np.isfinite(ci_lower) else None,
+                },
+                "note": "re-reduction of persisted per-target whitened acc@1 flags pooled "
+                "across folds (per-fold probe-selected #3b layers)",
+            }
+
+        # ------- exploratory all-layer #3a acc@1 curve (greedy targets) ------
+        unit_i += 1
+        curve_key = f"{arm}|3a_curve|greedy"
+        if curve_key in done_units:
+            curve_3a[arm] = done_units[curve_key]["result"]
+            _progress("battery", unit_i, n_units_total, f"{curve_key} (resume-skip)", t0)
+        else:
+            targets_3a = list(labeled)
+            true_idx_3a = np.array([ad.pos[s] for s in targets_3a], dtype=np.int64)
+            x_idx = [ad.pos[s] for s in targets_3a]
+            accs: list[float] = []
+            for ell in ad.layers:
+                mu_l, chol_ell = _whiten_stats(np.asarray(gy[fit_idx, ell], dtype=np.float64))
+                bundle_l = load_map_bundle(args, "3a_generic", ell)
+                preds_l = map_predict(bundle_l, np.asarray(ad.vc[x_idx, ell], dtype=np.float32))
+                pool_l = np.asarray(ad.ans[:, ell], dtype=np.float64)
+                _, _, n_closer = fc.ranks_of_targets(
+                    _whiten(preds_l, mu_l, chol_ell),
+                    _whiten(pool_l, mu_l, chol_ell),
+                    true_idx_3a,
+                    "cosine",
+                    phase="battery_3a_curve",
+                )
+                accs.append(float((np.asarray(n_closer) == 0).mean()))
+            curve_3a[arm] = {
+                "layers": [int(x) for x in ad.layers],
+                "acc_at_1_whitened": accs,
+                "n_targets": int(len(targets_3a)),
+                "note": "exploratory all-layer #3a whitened-cosine acc@1 "
+                "(greedy targets; no bootstrap)",
+            }
+            _append_jsonl(
+                units_path, {"unit": curve_key, "fingerprint": fp, "result": curve_3a[arm]}
+            )
+            _progress("battery", unit_i, n_units_total, curve_key, t0)
+
+        # ------- persist the arm's per-target flags (durable, uploadable) ----
+        fl_path = _results_dir(args) / f"battery_acc1_flags_{arm}.json"
+        _atomic_json(
+            fl_path,
+            {
+                "arm": arm,
+                "units": {
+                    u: flags_by_unit[u] for u in sorted(flags_by_unit) if u.startswith(f"{arm}|")
+                },
+                "meta": _provenance(),
+            },
+        )
+        _upload_file(args, fl_path, "results")
+
     out = {
-        "battery_layer": layer,
+        "layer_selection": layer_sel_out,
+        "generic_r2_reference_layer": int(
+            diag["conditions"]["3a_generic"]["best_layer_by_generic_r2"]
+        ),
         "results": results,
+        "pooled_3b": pooled_3b,
+        "curve_3a": curve_3a,
         "notes": {
-            "primary": "whitened_cosine acc@1 vs chance=1/n_pool (one-sided 5th-pct gate)",
-            "whiten": "shrunk Cholesky lam=0.1 from THIS run's map-fit train answers",
+            "primary": "whitened_cosine acc@1 vs chance=1/n_pool "
+            "(one-sided GROUP-bootstrap 5th-pct gate)",
+            "layers": "A3: #3a cells at the MODAL probe-selected 3a layer; #3b cells at each "
+            "fold's probe-selected 3b layer (predictor_scores selection); the generic-R2 "
+            "layer is reference only",
+            "whiten": "shrunk Cholesky lam=0.1 from THIS run's map-fit train answers at the "
+            "cell's layer",
             "draw_avg": f"first {args.k_draw_avg} same-label sampled draws (deterministic)",
             "pool": "ALL captured greedy answers of the arm",
+            "flags": "per-target whitened acc@1 flags persisted to "
+            "battery_acc1_flags_<arm>.json (pooled reads are re-reductions)",
         },
         "meta": _provenance(),
     }
@@ -2477,13 +2720,7 @@ def phase_stats(args: argparse.Namespace) -> None:
             table[p] = entry
 
         contrasts: dict[str, Any] = {}
-        for name, a, b in (
-            ("delta_int", PRED_CTX, PRED_JUDGE),
-            ("ctx_minus_text_surface", PRED_CTX, PRED_TEXT),
-            ("map3a_minus_pca", PRED_3A, PRED_PCA),
-            ("map3b_minus_map3a", PRED_3B, PRED_3A),
-            ("ans_minus_ctx", PRED_ANS, PRED_CTX),
-        ):
+        for name, a, b, registered in CONTRAST_SPECS:
             if a in boot_aurocs and b in boot_aurocs:
                 diff = boot_aurocs[a] - boot_aurocs[b]
                 ci = (float(np.nanpercentile(diff, 2.5)), float(np.nanpercentile(diff, 97.5)))
@@ -2491,6 +2728,7 @@ def phase_stats(args: argparse.Namespace) -> None:
                     "point": table[a]["auroc"] - table[b]["auroc"],
                     "ci95": list(ci),
                     "n_draws": int(args.n_boot),
+                    "registered": registered,
                 }
                 if name == "delta_int":
                     delta_int_ci[arm] = ci
@@ -2645,7 +2883,12 @@ def _import_check() -> None:
         (
             ridge_fit_predict_primal_layer_batched,
             (a, a, e3),
-            {"device": "cpu", "return_weights": True, "layer_chunk": 2},
+            {
+                "lambdas": RIDGE_LAMBDAS_PLAN,
+                "device": "cpu",
+                "return_weights": True,
+                "layer_chunk": 2,
+            },
         ),
         (identity_bias_predict, (m2, m2, m2), {}),
         (knn_retrieval, (m2, m2), {"ks": (1, 5, 10), "metric": "euclidean"}),
@@ -2749,8 +2992,9 @@ def _selftest(_: argparse.Namespace) -> int:
         label_items[f"{sha}.greedy"] = {"score": score, "label": _label_from_score(score)}
         for k in range(k_samp):
             label_items[f"{sha}.s{k:02d}"] = {"score": score, "label": _label_from_score(score)}
-        p_ref = float(np.clip(0.8 * y + 0.1 + rng.normal(scale=0.03), 0, 1))
-        pred_scores[sha] = {"p_answer": 1 - p_ref, "p_refuse": p_ref, "arm": "", "fold": 0}
+        # judge.py persists 0-100 (p_refuse = 100 - p_answer); mirror that scale
+        p_ref = float(np.clip(80.0 * y + 10.0 + rng.normal(scale=3.0), 0.0, 100.0))
+        pred_scores[sha] = {"p_answer": 100.0 - p_ref, "p_refuse": p_ref, "arm": "", "fold": 0}
 
     for i in range(60):
         sha = f"g{i:04d}"
@@ -2864,6 +3108,20 @@ def _selftest(_: argparse.Namespace) -> int:
     bt = json.loads((eval_root / "results" / "map_discrimination.json").read_text())
     acc = bt["results"]["armA"]["3a_generic"]["greedy"]["whitened_cosine"]["acc_at_1"]
     assert acc > bt["results"]["armA"]["3a_generic"]["greedy"]["chance"], acc
+    for arm in ARMS:  # A2/A3: group bootstrap, pooled-3b, all-layer curve, flags
+        gate = bt["results"][arm]["3a_generic"]["greedy"]["s2_gate"]
+        assert gate["bootstrap"] == "group" and gate["n_groups"] > 1, gate
+        pooled = bt["pooled_3b"][arm]["greedy"]
+        assert pooled["s2_gate"]["bootstrap"] == "group", pooled
+        assert 0.0 <= pooled["acc_at_1_whitened"] <= 1.0, pooled
+        curve = bt["curve_3a"][arm]
+        assert len(curve["layers"]) == len(curve["acc_at_1_whitened"]) > 0, curve
+        fl = json.loads((eval_root / "results" / f"battery_acc1_flags_{arm}.json").read_text())
+        n_flag_units = len(fl["units"])
+        assert n_flag_units >= 2, (arm, n_flag_units)
+    stc = st["arms"]["armA"]["contrasts"]  # A4: registered contrast set
+    assert "map3a_minus_ctx" in stc and "ans_minus_map3a" in stc, sorted(stc)
+    assert stc["ans_minus_ctx"]["registered"] is False, stc["ans_minus_ctx"]
     assert (eval_root / "results" / "transfer.json").exists()
     print(f"[selftest] PASS (all six phases; scratch={base})", flush=True)
     shutil.rmtree(base, ignore_errors=True)

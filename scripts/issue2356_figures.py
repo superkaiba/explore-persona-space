@@ -140,9 +140,11 @@ SPACE_COLOR = dict(zip(BATTERY_SPACES, paper_palette(len(BATTERY_SPACES))))
 CONTRASTS: list[tuple[str, str]] = [
     ("delta_int", "ctx - judge (delta_int)"),
     ("ctx_minus_text_surface", "ctx - text-surface"),
+    ("map3a_minus_ctx", "map3a - ctx"),
     ("map3a_minus_pca", "map3a - PCA"),
     ("map3b_minus_map3a", "map3b - map3a"),
-    ("ans_minus_ctx", "answer - ctx"),
+    ("ans_minus_map3a", "answer - map3a"),
+    ("ans_minus_ctx", "answer - ctx (unregistered)"),
 ]
 
 # Input registry: ctx key -> path relative to --eval-root.
@@ -510,7 +512,8 @@ def fig_judge_calibration(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
             if r.get(PRED_JUDGE) is not None and r.get("fold", -1) >= 0
         ]
         if len(pts) >= 4:
-            sc = np.array([x for x, _ in pts], dtype=np.float64)
+            # judge.py persists p_refuse on the 0-100 scale; normalize to [0,1]
+            sc = np.array([x for x, _ in pts], dtype=np.float64) / 100.0
             yy = np.array([y for _, y in pts], dtype=np.float64)
             bins = np.linspace(0, 1, 11)
             ix = np.clip(np.digitize(sc, bins) - 1, 0, 9)
@@ -1201,7 +1204,10 @@ def render_all(
             continue
         fp = _entry_fingerprint(requires, shas, extra=f"{style}|{','.join(formats)}")
         prior = manifest.get(name, {})
-        prior_outs = [fig_dir / f"{s}.png" for s in prior.get("stems", [])]
+        # D3: the cache checks EVERY fingerprinted format, never .png alone —
+        # a deleted pdf beside a surviving png must re-render, and non-png
+        # --formats runs must be cacheable at all.
+        prior_outs = [fig_dir / f"{s}.{fmt}" for s in prior.get("stems", []) for fmt in formats]
         if (
             resume
             and prior.get("fingerprint") == fp

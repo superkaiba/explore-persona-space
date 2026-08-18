@@ -215,6 +215,12 @@ def _write_outputs(
     p.text_jsonl.parent.mkdir(parents=True, exist_ok=True)
     p.manifest.parent.mkdir(parents=True, exist_ok=True)
     p.done.parent.mkdir(parents=True, exist_ok=True)
+    # D1: prompt TEXT (incl. the Arm-A harmful bank text) lives on HF ONLY —
+    # a scoped .gitignore beside the JSONLs keeps a `git add eval_results/...`
+    # from ever committing it, wherever the out-root resolves.
+    gi = p.text_jsonl.parent / ".gitignore"
+    if not gi.exists():
+        gi.write_text("# prompt TEXT lives on HF only — never in git (D1)\n*\n!.gitignore\n")
 
     tmp_text = p.text_jsonl.with_suffix(".jsonl.tmp")
     with open(tmp_text, "w", encoding="utf-8") as fh:
@@ -625,13 +631,31 @@ def _arm_prompts_for_disjointness(args: argparse.Namespace) -> list[str]:
 def build_generic(args: argparse.Namespace, tokenizer) -> None:
     keep = int(args.generic_keep)
     stream_limit = int(args.stream_limit) if args.stream_limit else None
+    # D2: the WildChat fallback fires ONLY on ACCESS-class failures (gated repo
+    # / 401 / 403 / repo-not-found); a transient network or server error must
+    # fail loud, never silently switch the corpus source.
+    from huggingface_hub.errors import GatedRepoError, HfHubHTTPError, RepositoryNotFoundError
+
     repo = LMSYS_REPO
     try:
         revision = _resolve_dataset_revision(repo)
-    except Exception:  # noqa: BLE001 — fall back to WildChat on any LMSYS access failure
-        logger.warning("[generic] LMSYS access failed; falling back to WildChat-1M")
+    except (GatedRepoError, RepositoryNotFoundError) as err:
+        logger.warning(
+            "[generic] LMSYS access refused (%s); falling back to WildChat-1M",
+            type(err).__name__,
+        )
         repo = WILDCHAT_REPO
         revision = _resolve_dataset_revision(repo)
+    except HfHubHTTPError as err:
+        status = getattr(getattr(err, "response", None), "status_code", None)
+        if status not in (401, 403):
+            raise
+        logger.warning(
+            "[generic] LMSYS access refused (HTTP %s); falling back to WildChat-1M", status
+        )
+        repo = WILDCHAT_REPO
+        revision = _resolve_dataset_revision(repo)
+    source_label = "lmsys-first-turn-en" if repo == LMSYS_REPO else "wildchat-first-turn-en"
 
     fingerprint = _fingerprint(
         {
@@ -701,13 +725,12 @@ def build_generic(args: argparse.Namespace, tokenizer) -> None:
         revision[:12],
     )
 
+    # D2: the per-row source label records the REALIZED repo, never a hardcoded one
     rows = [
-        {"prompt_sha": r["prompt_sha"], "prompt": r["prompt"], "source": "lmsys-first-turn-en"}
+        {"prompt_sha": r["prompt_sha"], "prompt": r["prompt"], "source": source_label}
         for r in kept_rows
     ]
-    manifest_rows = [
-        {"prompt_sha": r["prompt_sha"], "source": "lmsys-first-turn-en"} for r in kept_rows
-    ]
+    manifest_rows = [{"prompt_sha": r["prompt_sha"], "source": source_label} for r in kept_rows]
     _write_outputs(
         p,
         rows,

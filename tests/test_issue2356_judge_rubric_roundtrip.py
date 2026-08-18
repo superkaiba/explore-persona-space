@@ -157,3 +157,82 @@ def test_max_tokens_meet_single_rationale_floor() -> None:
 
 def test_judge_model_is_project_sonnet_pin() -> None:
     assert j.JUDGE_MODEL == "claude-sonnet-4-5-20250929"
+
+
+# ---------------------------------------------------------------------------
+# Round-2 pins: B4 (repaired-text accessors), D2-adjacent (fail-loud source),
+# C1 (batch-vs-sync overlap wiring), C2 (real per-fold pilot demos)
+# ---------------------------------------------------------------------------
+
+import inspect  # noqa: E402
+
+
+def test_iter_rollout_items_prefers_regen8192(tmp_path: Path) -> None:
+    """B4 pin: an M2-flagged sample's repaired ``regen8192`` text (and the
+    greedy's ``greedy_regen8192``) is what reaches the judge — never the
+    truncated original."""
+    corpus_dir = tmp_path / "armA"
+    corpus_dir.mkdir(parents=True)
+    entry = {
+        "prompt_sha": "aa11",
+        "prompt": "q-text",
+        "greedy": {"text": "greedy-truncated"},
+        "greedy_regen8192": {"text": "greedy-repaired"},
+        "samples": [
+            {"text": "s0-ok"},
+            {"text": "s1-truncated", "regen8192": {"text": "s1-repaired"}},
+        ],
+    }
+    (corpus_dir / "shard0.json").write_text(json.dumps([entry]), encoding="utf-8")
+    items = {iid: (q, a) for iid, q, a in j._iter_rollout_items(tmp_path, "armA")}
+    assert items["aa11.greedy"] == ("q-text", "greedy-repaired")
+    assert items["aa11.s00"] == ("q-text", "s0-ok")
+    assert items["aa11.s01"] == ("q-text", "s1-repaired")
+
+
+def test_labeling_pilot_arms_fail_loud_on_missing_source(tmp_path: Path) -> None:
+    """An armB row without its persisted per-row ``source`` is a KeyError —
+    never a silent default into one pilot arm (the gen phase persists it)."""
+    bdir = tmp_path / "armB"
+    bdir.mkdir(parents=True)
+    (bdir / "shard0.json").write_text(
+        json.dumps([{"prompt_sha": "bb22", "prompt": "q", "greedy": {"text": "a"}}]),
+        encoding="utf-8",
+    )
+    with pytest.raises(KeyError):
+        j._labeling_pilot_arms(tmp_path)
+
+
+def test_labeling_pilot_arms_split_by_true_source(tmp_path: Path) -> None:
+    bdir = tmp_path / "armB"
+    bdir.mkdir(parents=True)
+    rows = [
+        {"prompt_sha": "b1", "prompt": "q1", "source": "or-bench-hard-1k", "greedy": {"text": "a"}},
+        {
+            "prompt_sha": "b2",
+            "prompt": "q2",
+            "source": "phtest-controversial",
+            "greedy": {"text": "a"},
+        },
+    ]
+    (bdir / "shard0.json").write_text(json.dumps(rows), encoding="utf-8")
+    arms = j._labeling_pilot_arms(tmp_path)
+    assert [iid for iid, _, _ in arms["armB_orbench"]] == ["b1.greedy"]
+    assert [iid for iid, _, _ in arms["armB_phtest"]] == ["b2.greedy"]
+
+
+def test_rejudge_wires_dual_scored_overlap() -> None:
+    """C1 pin: the rejudge leg dual-scores an OVERLAP_N seeded sample of
+    batch-SUCCEEDED rows and reports the batch-vs-sync offset."""
+    assert j.OVERLAP_N == 200
+    src = inspect.getsource(j.run_rejudge_refusals)
+    assert "OVERLAP_N" in src and "batch_vs_sync_overlap" in src
+    assert "offset_batch_minus_sync" in src
+
+
+def test_predictor_pilot_uses_real_per_fold_demos() -> None:
+    """C2 pin: the predictor pilot builds the SAME per-fold few-shot blocks the
+    production wave dispatches — the placeholder demo block is banned."""
+    src = inspect.getsource(j.run_predictor_pilot)
+    assert "_build_few_shot_demos" in src and "_load_train_rows" in src
+    assert "(example block)" not in src

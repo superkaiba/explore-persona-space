@@ -1,0 +1,3 @@
+# prompt TEXT lives on HF only — never in git (D1)
+*
+!.gitignore

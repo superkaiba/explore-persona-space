@@ -49,3 +49,79 @@ def test_fingerprint_still_keys_inputs_and_flags() -> None:
     args2 = fits.build_argparser().parse_args(["--phase", "groups", "--n-folds", "4"])
     c = fits._phase_fingerprint(args2, "groups", {"m": "x"})
     assert a != c
+
+
+# ---------------------------------------------------------------------------
+# Round-2 pins: A1 (plan lambda grid), A2 (group bootstrap), A3 (modal layer),
+# A4 (registered contrast set)
+# ---------------------------------------------------------------------------
+
+import inspect  # noqa: E402
+
+import numpy as np  # noqa: E402
+
+
+def test_plan_lambda_grid_is_registered_and_passed() -> None:
+    """A1 pin: the map-fit lambda grid is logspace(-2,4,13) and phase_maps
+    passes it EXPLICITLY (the primal core's 6-point default is never used)."""
+    assert np.allclose(fits.RIDGE_LAMBDAS_PLAN, np.logspace(-2.0, 4.0, 13))
+    src = inspect.getsource(fits.phase_maps)
+    assert "lambdas=RIDGE_LAMBDAS_PLAN" in src, "phase_maps must pass the plan grid explicitly"
+
+
+def test_battery_s2_gate_uses_group_bootstrap() -> None:
+    """A2 pin (fails pre-fix): the S2 gate resamples eval GROUPS; with flags
+    perfectly correlated within groups the group-bootstrap 5th-pct lower bound
+    sits BELOW the row-iid one (row-iid was anti-conservatively narrow)."""
+    rng = np.random.default_rng(0)
+    d = 3
+    pool = rng.normal(size=(24, d)) * 5.0  # well-separated pool rows
+    true_idx = np.arange(12)
+    pred = pool[true_idx].copy()
+    # bad group g2 (targets 8..11): point EXACTLY at a different pool row
+    pred[8:12] = pool[20:24]
+    groups = ["g0"] * 4 + ["g1"] * 4 + ["g2"] * 4
+    n_boot, boot_seed = 2000, 123
+    res = fits._battery_metrics(
+        pred,
+        pool,
+        true_idx,
+        mu_a=np.zeros(d),
+        chol_l=np.eye(d),
+        groups=groups,
+        n_boot=n_boot,
+        boot_seed=boot_seed,
+    )
+    gate = res["s2_gate"]
+    assert gate["bootstrap"] == "group" and gate["n_groups"] == 3, gate
+    flags = np.array(res["_acc1_flags_whitened"], dtype=np.float64)
+    assert flags[:8].all() and not flags[8:].any(), flags  # planted 2 good / 1 bad group
+    # row-iid CI (the pre-fix computation) for comparison, same seed/draws
+    rng2 = np.random.default_rng(boot_seed)
+    draws = rng2.integers(0, len(flags), size=(n_boot, len(flags)))
+    row_iid_ci = float(np.percentile(flags[draws].mean(axis=1), 5.0))
+    assert gate["ci_lower_5pct"] < row_iid_ci, (gate["ci_lower_5pct"], row_iid_ci)
+
+
+def test_modal_layer_tie_breaks_smallest() -> None:
+    assert fits._modal_layer([3, 3, 5, 5, 7]) == 3
+    assert fits._modal_layer([5]) == 5
+    assert fits._modal_layer([7, 4, 7]) == 7
+
+
+def test_registered_contrast_set_matches_plan() -> None:
+    """A4 pin: registered = {#2-#1, #3a-#2, #3b-#3a, #4-#3a, #3a-PCA,
+    #2-text_surface}; ans_minus_ctx (#4-#2) is present but unregistered."""
+    registered = {n for n, _, _, reg in fits.CONTRAST_SPECS if reg}
+    assert registered == {
+        "delta_int",
+        "ctx_minus_text_surface",
+        "map3a_minus_ctx",
+        "map3a_minus_pca",
+        "map3b_minus_map3a",
+        "ans_minus_map3a",
+    }
+    assert {n for n, _, _, reg in fits.CONTRAST_SPECS if not reg} == {"ans_minus_ctx"}
+    spec = {n: (a, b) for n, a, b, _ in fits.CONTRAST_SPECS}
+    assert spec["map3a_minus_ctx"] == (fits.PRED_3A, fits.PRED_CTX)
+    assert spec["ans_minus_map3a"] == (fits.PRED_ANS, fits.PRED_3A)
