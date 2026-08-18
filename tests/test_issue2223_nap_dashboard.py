@@ -49,6 +49,35 @@ def test_facet_options_built_via_textcontent_not_innerhtml():
     assert "dv.innerHTML = '<option>harm</option>" in js
 
 
+def test_render_html_emits_facet_createelement_path_in_output_bytes():
+    """r5 CONCERN dashboard-render-smoke-missing: drive the PRODUCTION
+    ``render_html`` on a tiny fixture and assert the facet construction
+    (createElement + textContent) and the permitted innerHTML set on the
+    EMITTED HTML/JS bytes — not on ``D._JS`` read directly."""
+    import re
+
+    rec = {
+        "cell": "band__cap_ctx__s42",
+        "scenario": "selfharm",
+        "layers": "band",
+        "family": "ctx_native",
+        "op": "cap",
+        "strength": "p90",
+        "arm": "cap_ctx",
+        "turns": [{"turn": 1, "harm": 0.0, "coherence": 80.0}],
+    }
+    meta = {"model": "test-model", "round": "nap-r5", "model_root": "/tmp/x"}
+    out = D.render_html([rec], meta, {})
+    assert out.startswith("<!doctype html>")
+    # facet <option> construction reaches the emitted script bytes via the
+    # createElement + textContent path; the concat sink stays gone.
+    assert 'document.createElement("option")' in out
+    assert "opt.textContent = v" in out and "opt.selected = true" in out
+    assert "sel.innerHTML" not in out
+    # permitted innerHTML set, asserted on the FULL emitted document.
+    assert sorted(set(re.findall(r"(\w+)\.innerHTML", out))) == ["div", "dv", "svg"]
+
+
 def test_render_diagnostics_escapes_injection_shaped_values():
     """An injection-shaped diagnostic string (h1 classification) renders
     escaped in BOTH the table cell and the raw-JSON details block."""

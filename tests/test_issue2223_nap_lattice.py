@@ -594,9 +594,30 @@ def test_run_writes_lattice_verdict_json(tmp_path, capsys):
     assert v["per_cell"]["selfharm__band"]["verdict"] == "Reproduced-and-unchanged"
     assert v["verdict_posted"] is True
     assert "metadata" in v and v["constants"]["p3b_cap"] == 6
-    # sentinel present → no WARN on a re-run.
+    # r5: a hash-less (pre-fix) sentinel is treated as ABSENT → still WARNs.
     (judged / "judge_complete_selfharm.json").write_text(
         json.dumps({"scenario": "selfharm", "dvs": ["harm", "coherence"]})
+    )
+    L.run(args)
+    assert "WARN: no judge-completion sentinel" in capsys.readouterr().out
+    # content-BOUND sentinel (r5) matching the current DV bytes → no WARN.
+    import hashlib
+
+    (judged / "judge_complete_selfharm.json").write_text(
+        json.dumps(
+            {
+                "scenario": "selfharm",
+                "dvs": ["harm", "coherence"],
+                "dv_sha256": {
+                    "scores_selfharm.json": hashlib.sha256(
+                        (judged / "scores_selfharm.json").read_bytes()
+                    ).hexdigest(),
+                    "coherence_selfharm.json": hashlib.sha256(
+                        (judged / "coherence_selfharm.json").read_bytes()
+                    ).hexdigest(),
+                },
+            }
+        )
     )
     L.run(args)
     assert "WARN: no judge-completion sentinel" not in capsys.readouterr().out
@@ -644,7 +665,14 @@ def test_phase_judge_writes_completion_sentinel_after_both_dvs(tmp_path, monkeyp
     ``judge_complete_{sc}.json`` sentinel AFTER both DV writes (harm then
     coherence) — a crash between the two ``_judge_dv`` calls leaves NO
     sentinel — and a dry-run composes requests without writing one.
-    ``_judge_dv`` (the Batch-API boundary) is the ONLY fake, autospec'd."""
+    ``_judge_dv`` (the Batch-API boundary) is the ONLY fake, autospec'd.
+
+    r5 (reconciler required fix 3b): ``_atomic_write_json`` is instrumented
+    with a signature-bound DELEGATING wrapper (the real function still runs)
+    and the observed write order is asserted ``["harm", "coherence",
+    "sentinel"]``; the sentinel payload content-binds the sha256 of the
+    exact DV-file bytes as written."""
+    import hashlib
     import json
     from types import SimpleNamespace
     from unittest.mock import create_autospec
@@ -662,9 +690,31 @@ def test_phase_judge_writes_completion_sentinel_after_both_dvs(tmp_path, monkeyp
             }
         )
     )
+    events: list[str] = []
+    real_write = R._atomic_write_json
+
+    def _spy_write(path, obj) -> None:
+        """Signature-bound delegating wrapper: mirrors _atomic_write_json(path, obj)."""
+        name = Path(path).name
+        if name.startswith("scores_"):
+            events.append("harm")
+        elif name.startswith("coherence_"):
+            events.append("coherence")
+        elif name.startswith("judge_complete_"):
+            events.append("sentinel")
+        return real_write(path, obj)
+
+    monkeypatch.setattr(R, "_atomic_write_json", _spy_write)
     calls: list[str] = []
-    fake = create_autospec(R._judge_dv)
-    fake.side_effect = lambda dv, *a, **k: calls.append(dv)
+
+    def _fake_judge(dv, rubric, note, sc, items, empty_ids, out_root, judged_dir, args):
+        calls.append(dv)
+        if args.dry_run:
+            return  # real _judge_dv composes requests and returns pre-write
+        name = f"scores_{sc}.json" if dv == "harm" else f"{dv}_{sc}.json"
+        R._atomic_write_json(judged_dir / name, {"dv": dv, "cells": {}})
+
+    fake = create_autospec(R._judge_dv, side_effect=_fake_judge)
     monkeypatch.setattr(R, "_judge_dv", fake)
     args = SimpleNamespace(
         out_root=str(out_root),
@@ -678,13 +728,109 @@ def test_phase_judge_writes_completion_sentinel_after_both_dvs(tmp_path, monkeyp
     judged = R.phase_judge(args)
     sp = judged / "judge_complete_selfharm.json"
     assert calls == ["harm", "coherence"]  # sentinel lands strictly after both
+    assert events == ["harm", "coherence", "sentinel"]  # observed WRITE order
     assert sp.exists()
     payload = json.loads(sp.read_text())
     assert payload["scenario"] == "selfharm"
     assert payload["dvs"] == ["harm", "coherence"]
     assert payload["n_judged_items"] == 1 and payload["n_empty_turns"] == 0
+    # r5: the sentinel binds the EXACT bytes of both DV files as written.
+    assert payload["dv_sha256"] == {
+        "scores_selfharm.json": hashlib.sha256(
+            (judged / "scores_selfharm.json").read_bytes()
+        ).hexdigest(),
+        "coherence_selfharm.json": hashlib.sha256(
+            (judged / "coherence_selfharm.json").read_bytes()
+        ).hexdigest(),
+    }
     # dry-run: requests composed, NO sentinel written.
     sp.unlink()
     args.dry_run = True
     R.phase_judge(args)
     assert not sp.exists()
+
+
+def test_failed_rejudge_leaves_bound_sentinel_and_run_raises_mismatch(tmp_path, monkeypatch):
+    """r5 (reconciler required fix 3a, concern judge-completion-sentinel-stale):
+    a complete run-1 tree (both DV files + valid content-bound sentinel)
+    followed by a re-judge whose autospecced ``_judge_dv`` writes FRESH harm
+    then RAISES on coherence leaves fresh-harm + stale-coherence under the
+    run-1 sentinel. The re-judge exception propagates, AND a subsequent
+    ``run()`` on the resulting mixed tree raises the hash-mismatch error —
+    never a silent reduce of the cross-generation pair."""
+    import json
+    from types import SimpleNamespace
+    from unittest.mock import create_autospec
+
+    import pytest
+
+    out_root = tmp_path / "cs"
+    slug = R.model_slug("32b")
+    model_root = out_root / slug / L.NAP_ROUND_SUBDIR
+    sc_dir = model_root / "selfharm"
+    sc_dir.mkdir(parents=True)
+    (sc_dir / "band__cap_ctx.json").write_text(
+        json.dumps(
+            {
+                "layers": "band",
+                "arm": "cap_ctx",
+                "seed_base": 42,
+                "turns": [{"turn": 1, "user": "u", "assistant": "a"}],
+            }
+        )
+    )
+    ext = out_root / slug / "extractions"
+    ext.mkdir(parents=True)
+    (ext / "axis_cos.json").write_text(json.dumps({"h1_gate": H1_PASS, "band_layers": BAND}))
+    (ext / "map_metrics.json").write_text(json.dumps(MAP_OK))
+    jargs = SimpleNamespace(
+        out_root=str(out_root),
+        model="32b",
+        round_subdir=L.NAP_ROUND_SUBDIR,
+        scenarios="selfharm",
+        scenario=None,
+        dry_run=False,
+        judge_draws=5,
+    )
+
+    real_judge_dv = R._judge_dv  # autospec the REAL boundary for both runs
+
+    # Run 1: complete judge phase (both DV writes land) → content-bound sentinel.
+    def _judge_run1(dv, rubric, note, sc, items, empty_ids, out_root, judged_dir, args):
+        name = f"scores_{sc}.json" if dv == "harm" else f"{dv}_{sc}.json"
+        R._atomic_write_json(judged_dir / name, {"dv": dv, "generation": 1, "cells": {}})
+
+    monkeypatch.setattr(R, "_judge_dv", create_autospec(real_judge_dv, side_effect=_judge_run1))
+    judged = R.phase_judge(jargs)
+    sp = judged / "judge_complete_selfharm.json"
+    run1_sentinel = sp.read_bytes()
+    assert "dv_sha256" in json.loads(run1_sentinel)
+
+    # Run 2 (re-judge): fresh harm bytes land, then the coherence Batch wave
+    # dies — the exception PROPAGATES and the run-1 sentinel is left behind.
+    def _judge_run2(dv, rubric, note, sc, items, empty_ids, out_root, judged_dir, args):
+        if dv == "coherence":
+            raise RuntimeError("coherence Batch wave died mid-rerun")
+        R._atomic_write_json(
+            judged_dir / f"scores_{sc}.json", {"dv": dv, "generation": 2, "cells": {}}
+        )
+
+    monkeypatch.setattr(R, "_judge_dv", create_autospec(real_judge_dv, side_effect=_judge_run2))
+    with pytest.raises(RuntimeError, match="coherence Batch wave died"):
+        R.phase_judge(jargs)
+    assert sp.read_bytes() == run1_sentinel  # stale run-1 sentinel still present
+
+    # The lattice reducer REFUSES the mixed fresh-harm/stale-coherence pair.
+    largs = SimpleNamespace(
+        out_root=str(out_root),
+        model="32b",
+        round_subdir=L.NAP_ROUND_SUBDIR,
+        scenarios="selfharm",
+        layer_cfgs="band",
+        extractions_dir=None,
+        out=None,
+    )
+    with pytest.raises(RuntimeError, match=r"stale/mixed judge outputs") as ei:
+        L.run(largs)
+    assert "scores_selfharm.json" in str(ei.value)  # names the mismatched file
+    assert "--phase judge" in str(ei.value)  # names the remedy

@@ -2299,6 +2299,16 @@ def phase_judge(args) -> Path:
             # both DV writes land — the lattice reducer uses it to distinguish
             # a crashed half-written judge phase (harm written, coherence not)
             # from complete inputs. Never written on dry-run (no scores land).
+            # r5 (reconciler required fix 1): the sentinel CONTENT-BINDS the
+            # exact bytes of both DV files (read back after the two _judge_dv
+            # writes) — bare existence let a crashed re-judge leave a run-1
+            # sentinel blessing a mixed fresh-harm/stale-coherence pair.
+            # Deliberately NOT an unlink-at-entry: a bare unlink drops the
+            # crashed-rerun tree into the legacy WARN branch, which still
+            # consumes the mixed pair; the binding is the load-bearing
+            # mechanism (the lattice reader recomputes + compares).
+            harm_p = judged_dir / f"scores_{sc}.json"
+            coh_p = judged_dir / f"coherence_{sc}.json"
             sentinel = judged_dir / f"judge_complete_{sc}.json"
             _atomic_write_json(
                 sentinel,
@@ -2307,10 +2317,14 @@ def phase_judge(args) -> Path:
                     "dvs": ["harm", "coherence"],
                     "n_judged_items": len(items),
                     "n_empty_turns": len(empty_ids),
+                    "dv_sha256": {
+                        harm_p.name: hashlib.sha256(harm_p.read_bytes()).hexdigest(),
+                        coh_p.name: hashlib.sha256(coh_p.read_bytes()).hexdigest(),
+                    },
                     "metadata": _cell_metadata(),
                 },
             )
-            _log(f"[phase=judge] wrote {sentinel} (both DVs complete)")
+            _log(f"[phase=judge] wrote {sentinel} (both DVs complete, content-bound)")
     return judged_dir
 
 

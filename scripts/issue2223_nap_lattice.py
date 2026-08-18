@@ -79,6 +79,7 @@ only; never prints response text.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -761,7 +762,18 @@ def run(args) -> Path:
         # clearer error than the generic missing-input assert. Legacy
         # (pre-sentinel) trees with BOTH files present keep the existing
         # behavior plus a WARN line.
-        if not sp.exists():
+        # r5 (reconciler required fix 2): a PRESENT sentinel is trusted only
+        # when its recorded dv_sha256 hashes match the CURRENT bytes of both
+        # DV files — a crashed re-judge leaves fresh harm + stale coherence
+        # under the run-1 sentinel, and bare existence would bless the mixed
+        # pair. A hash-less (pre-fix) sentinel is treated as ABSENT (falls to
+        # the legacy WARN branch below); sentinel-ABSENT branches unchanged.
+        sentinel: dict | None = None
+        if sp.exists():
+            sentinel = json.loads(sp.read_text())
+            if "dv_sha256" not in sentinel:
+                sentinel = None
+        if sentinel is None:
             if hp.exists() and not cp.exists():
                 raise RuntimeError(
                     f"{hp} present but {cp} absent and no judge-completion "
@@ -775,9 +787,23 @@ def run(args) -> Path:
                 "file-presence checks"
             )
         assert hp.exists(), f"{hp} absent — run the judge phase first"
-        harm_by_sc[sc] = json.loads(hp.read_text())["cells"]
         # coherence is a REQUIRED lattice input (r3): never a silent None skip.
         assert cp.exists(), f"{cp} absent — run the judge phase first (coherence DV required)"
+        if sentinel is not None:
+            stale = [
+                p.name
+                for p in (hp, cp)
+                if hashlib.sha256(p.read_bytes()).hexdigest() != sentinel["dv_sha256"].get(p.name)
+            ]
+            if stale:
+                raise RuntimeError(
+                    f"judge-completion sentinel {sp.name} does not match the current "
+                    f"bytes of {', '.join(stale)} — stale/mixed judge outputs for "
+                    f"{sc} (a re-judge likely crashed mid-phase, leaving DV files "
+                    "from different judge generations); re-run --phase judge for "
+                    "this scenario (cheap: rubric-keyed judge cache)"
+                )
+        harm_by_sc[sc] = json.loads(hp.read_text())["cells"]
         coh_by_sc[sc] = json.loads(cp.read_text())["cells"]
 
     verdict = reduce_lattice(
