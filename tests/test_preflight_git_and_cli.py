@@ -412,7 +412,7 @@ def test_main_bare_success_prints_summary(monkeypatch, capsys):
 
 def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
     """Criterion 6: --json stdout is exactly one pretty-printed JSON object
-    with the 13 documented keys and nothing else (gotchas.md contract)."""
+    with the 14 documented keys and nothing else (gotchas.md contract)."""
     monkeypatch.setattr(preflight, "preflight_check", lambda **kwargs: _fail_report())
     rc = main(["--json", "--no-gpu"])
     assert rc == 1
@@ -436,6 +436,10 @@ def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
         "data_disk_used_pct",
         "git_status",
         "env_synced",
+        # task #2360's venv import-health check added this one (diagnostic
+        # routing only — "" when the check never ran; report.ok / the CLI rc
+        # stay authoritative).
+        "venv_import_verdict",
     }
     assert payload["ok"] is False
     assert payload["errors"] == ["BOOM"]
