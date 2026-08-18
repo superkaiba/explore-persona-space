@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2363,
+  "highest_id": 2364,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10533,6 +10533,13 @@
       "path": "tasks/proposed/2363",
       "status": "proposed",
       "title": "workflow-fix: a plan can mark its ONLY source of acceptance evidence optional and still PASS verify_plan"
+    },
+    "2364": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2364",
+      "status": "proposed",
+      "title": "workflow-fix: no review surface catches a test suite that monkeypatches the production constant its acceptance criterion depends on"
     },
     "237": {
       "has_clean_result": true,
