@@ -82,12 +82,13 @@ def test_battery_s2_gate_uses_group_bootstrap() -> None:
     pred[8:12] = pool[20:24]
     groups = ["g0"] * 4 + ["g1"] * 4 + ["g2"] * 4
     n_boot, boot_seed = 2000, 123
+    # R3-4 signature: identity whitening over ONE part (all targets) keeps the
+    # A2 semantics this pin tests (group vs row-iid bootstrap) unchanged.
     res = fits._battery_metrics(
         pred,
         pool,
         true_idx,
-        mu_a=np.zeros(d),
-        chol_l=np.eye(d),
+        whiten_parts=[(np.arange(len(true_idx)), np.zeros(d), np.eye(d))],
         groups=groups,
         n_boot=n_boot,
         boot_seed=boot_seed,

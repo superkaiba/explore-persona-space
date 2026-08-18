@@ -458,7 +458,15 @@ def fig_transfer(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
         paper_palette_role("primary") if k.endswith("ridge") else paper_palette_role("control")
         for k in keys
     ]
-    ax.bar(range(len(vals)), vals, color=colors)
+    # group-bootstrap CI95 (R3-3) as NON-NEGATIVE offsets from the point
+    # (never bounds / signed deltas — gotchas.md xerr/yerr rule)
+    yerr = None
+    if all(dirs[k].get("auroc_ci95") for k in keys):
+        lo = np.array([dirs[k]["auroc_ci95"][0] for k in keys], dtype=float)
+        hi = np.array([dirs[k]["auroc_ci95"][1] for k in keys], dtype=float)
+        v = np.array(vals, dtype=float)
+        yerr = np.vstack([np.maximum(0.0, v - lo), np.maximum(0.0, hi - v)])
+    ax.bar(range(len(vals)), vals, color=colors, yerr=yerr, capsize=3)
     ax.axhline(0.5, ls="--", lw=1, color="grey")
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels)
@@ -917,6 +925,47 @@ def fig_battery_behavior(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
     return [("battery_behavior_split", fig, cap)]
 
 
+def fig_battery_curve(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
+    """Exploratory all-layer #3a whitened-cosine acc@1 curve per arm."""
+    curves = ctx["battery"].get("curve_3a", {})
+    sel = ctx["battery"].get("layer_selection", {})
+    results = ctx["battery"].get("results", {})
+    if not curves:
+        return []
+    fig, axes = _arm_fig(height=3.4)
+    rendered = False
+    for j, arm in enumerate(ARMS):
+        ax = axes[0][j]
+        cur = curves.get(arm)
+        if not cur:
+            continue
+        layers = cur["layers"]
+        ax.plot(
+            layers, cur["acc_at_1_whitened"], marker="o", ms=3, color=paper_palette_role("primary")
+        )
+        rendered = True
+        chance = results.get(arm, {}).get("3a_generic", {}).get("greedy", {}).get("chance")
+        if chance is not None:
+            ax.axhline(chance, ls="--", lw=1, color="grey")
+        modal = sel.get(arm, {}).get("3a_modal_layer")
+        if modal is not None:
+            ax.axvline(modal, ls=":", lw=1, color=paper_palette_role("accent"))
+        ax.set_title(ARM_LABEL[arm])
+        ax.set_xlabel("layer")
+        ax.set_yscale("log")
+    axes[0][0].set_ylabel("whitened-cosine acc@1 (log)")
+    if not rendered:
+        plt.close(fig)
+        return []
+    cap = (
+        "Exploratory all-layer #3a retrieval curve: whitened-cosine acc@1 of the "
+        "generic-trained map's predictions against the arm's greedy-answer pool, per "
+        "layer (per-fold train-answer whitening). Dotted vertical = the modal "
+        "probe-selected 3a layer the battery cell uses; dashed = chance (1/n_pool)."
+    )
+    return [("battery_3a_layer_curve", fig, cap)]
+
+
 def fig_nn_match(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
     battery = ctx["battery"]["results"]
     fig, axes = _arm_fig(height=3.6)
@@ -1136,6 +1185,7 @@ FIGURES: dict[str, tuple[tuple[str, ...], Callable[[dict[str, Any]], list]]] = {
     "permutation_band": (("stats",), fig_perm_band),
     "battery_acc1": (("battery",), fig_battery),
     "battery_behavior_split": (("battery",), fig_battery_behavior),
+    "battery_3a_layer_curve": (("battery",), fig_battery_curve),
     "nn_behavior_match": (("battery", "labels_armA", "labels_armB"), fig_nn_match),
     "battery_rank_summary": (("battery",), fig_rank_summary),
     "score_scatter_map_vs_ctx": (("scores_armA", "scores_armB"), fig_score_scatter),

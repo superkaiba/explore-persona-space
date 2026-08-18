@@ -6,25 +6,37 @@ Phases (subprocess-per-shard fan-out across the ALLOCATED GPUs):
 - ``gen``     P1: vLLM batched generation. Arm A + Arm B: N_SAMPLES samples/prompt
               (10 production / 2 under ``--smoke``) @ temp 0.9, top_p 0.95,
               max_new_tokens 2048, seed 42, PLUS 1 greedy. generic: 1 greedy.
-              Cap-hit (``finish_reason == "length"``) > 2% PER corpus ⇒ re-generate
-              that corpus's flagged rows (greedy AND samples, per kind) on a FRESH
-              engine at ``max_model_len=8192`` / ``max_new_tokens=4096`` (M2).
-              Rollout TEXT is uploaded to the HF data repo at the END of this
-              phase, BEFORE any capture (#779).
+              Raw completions land in the plan-parity split layout (R3-7):
+              ``raw_completions/{corpus}/{greedy,samples}/shard*.json`` chunk
+              files, records carrying the ENGINE's completion ``token_ids``
+              (capture consumes those, never a text re-encode). Cap-hit
+              (``finish_reason == "length"``) > 2% per corpus — computed
+              CORPUS-WIDE across shards via a gen_counts barrier (R3-5) ⇒
+              re-generate that corpus's flagged rows (greedy AND samples, per
+              kind) on a FRESH engine at ``max_model_len=8192`` /
+              ``max_new_tokens=4096`` (M2). Rollout TEXT is uploaded to the HF
+              data repo at the END of this phase, BEFORE any capture (#779).
 - ``capture`` P2: teacher-forced bf16 HF forwards, BATCHED (token-budget batching,
               ~16 rows/GPU cap), per-npz-shard intra-phase resume, and a
               ``capture_rejects.shard<N>.jsonl`` (digest-only) for empty
-              completions. Prompt segments reuse the PERSISTED
-              ``prompt_token_ids`` from the gen shards (bit-identical to what
-              generation consumed; #1092 recipe). Two P2-entry gates: a two-bar
-              batched-vs-serial cosine equivalence gate over the LIVE
-              ``_forward_batch`` + an exact render-identity gate against the
-              persisted gen-side token ids.
+              completions (keyed on empty persisted ``token_ids``). Prompt AND
+              completion segments reuse the PERSISTED token ids from the gen
+              chunks (bit-identical to what generation produced; #1092 recipe).
+              Sampled v_A rows persist their ORIGINAL draw index
+              (``v_A_sample_idx``) beside the compacted ``v_A_sample_k`` stack.
+              Two P2-entry gates: a two-bar batched-vs-serial cosine equivalence
+              gate over the LIVE ``_forward_batch`` + an exact render-identity
+              gate against the persisted gen-side prompt token ids.
 - ``means``   cross-shard merge into CONSOLIDATED ``.npz`` shards
               (≤ MEANS_SHARD_SIZE prompts each; the HF Hub rejects >10k files
-              per repo dir) + ``row_index.jsonl``.
+              per repo dir) + ``row_index.jsonl``. Entry guards (R3-6): every
+              shard's fingerprint-matching capture sentinel MUST exist, and the
+              gen-manifest sha set (minus greedy-kind rejects) MUST be ⊆ the
+              captured index — a partial capture never merges silently.
 - ``upload``  one bulk folder commit for the consolidated stores + exact-set
               verify; re-verifies the raw-completion uploads phase_gen performed.
+              Idempotent (R3-8a): a fingerprint-matching upload sentinel skips
+              the repeat network uploads on restart.
 
 Row-sharding: ``--shard {0..K-1} --n-shards K`` selects rows by
 ``index % n_shards == shard``; the dispatcher (no ``--shard``) parses the
@@ -131,6 +143,15 @@ CAPTURE_TOKEN_BUDGET = int(os.environ.get("EPM_CAPTURE_TOKEN_BUDGET", "16384"))
 NPZ_SHARD_SIZE = 500  # ≤500 prompts per capture .npz shard (intra-phase resume grain)
 MEANS_SHARD_SIZE = 500  # ≤500 prompts per CONSOLIDATED store shard (B1; Hub 10k/dir cap)
 GEN_CHUNK = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
+# raw_completions chunking (R3-7): plan requires ≥1 shard per 500 prompts per arm;
+# completion token ids inflate rows well past text-only size, so samples files
+# chunk smaller to stay under the ~9.5 MB non-LFS Hub file budget (upload-policy).
+RAW_GREEDY_CHUNK = 250  # prompts per {corpus}/greedy/shard*.json file
+RAW_SAMPLES_CHUNK = 100  # prompts per {corpus}/samples/shard*.json file
+RAW_KINDS = ("greedy", "samples")
+# R3-5: cross-shard cap-hit barrier wait (the >2% M2 re-gen decision is
+# corpus-WIDE, so each shard blocks until every shard's counters exist).
+GEN_COUNTS_WAIT_S = int(os.environ.get("EPM_GEN_COUNTS_WAIT_S", "7200"))
 
 # Two-bar equivalence gate (#779 bf16 single-position calibration).
 EQUIV_EARLY_LAYERS = (0, 1, 2, 3)
@@ -308,6 +329,85 @@ def _assert_generation_window(
         )
 
 
+def _raw_chunk_files(kind_dir: Path, shard: int) -> list[Path]:
+    """This GPU-shard's chunk files under a {corpus}/{greedy|samples}/ dir."""
+    return sorted(kind_dir.glob(f"shard{shard}_*.json")) if kind_dir.exists() else []
+
+
+def _write_raw_chunks(
+    kind_dir: Path, shard: int, rows: list[dict[str, Any]], chunk_size: int
+) -> None:
+    """Chunked raw-completions writer (R3-7 plan-glob parity:
+    ``{corpus}/{greedy,samples}/shard*.json``). Removes any stale chunk files a
+    prior differently-chunked run of THIS shard left (they would merge into the
+    read-side glob), then writes ``shard{N}_{chunk:03d}.json`` atomically."""
+    kind_dir.mkdir(parents=True, exist_ok=True)
+    for old in _raw_chunk_files(kind_dir, shard):
+        old.unlink()
+    for ci, start in enumerate(range(0, len(rows), chunk_size)):
+        chunk = rows[start : start + chunk_size]
+        out = kind_dir / f"shard{shard}_{ci:03d}.json"
+        tmp = Path(str(out) + ".tmp")
+        tmp.write_text(json.dumps(chunk, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, out)
+
+
+def _read_raw_shard(kind_dir: Path, shard: int) -> tuple[list[dict[str, Any]], list[Path]]:
+    """All entries of this GPU-shard's chunk files (ordered), plus the files."""
+    files = _raw_chunk_files(kind_dir, shard)
+    entries: list[dict[str, Any]] = []
+    for f in files:
+        entries.extend(json.loads(f.read_text(encoding="utf-8")))
+    return entries, files
+
+
+def _await_gen_counts(args: argparse.Namespace, fp: str) -> tuple[dict[str, int], dict[str, int]]:
+    """R3-5 cross-shard barrier: block until EVERY shard's ``gen_counts`` file
+    (fingerprint-matching) exists, then return corpus-WIDE (cap_hit, gen) sums.
+
+    The >2% M2 re-gen decision keys on the corpus-wide cap-hit fraction — a
+    shard-local fraction mis-estimates it whenever shards see different row
+    subsets. n_shards=1 passes trivially (own file just written). Bounded wait
+    (``EPM_GEN_COUNTS_WAIT_S``, default 7200 s) then fail-loud naming the
+    missing shards."""
+    counts_dir = _out_root(args) / ".sentinels"
+    deadline = time.time() + GEN_COUNTS_WAIT_S
+    last_log = 0.0
+    while True:
+        recs: list[dict[str, Any]] = []
+        missing: list[int] = []
+        for s in range(args.n_shards):
+            p = counts_dir / f"gen_counts.shard{s}.json"
+            rec: dict[str, Any] | None = None
+            if p.exists():
+                try:
+                    rec = json.loads(p.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    rec = None
+            if rec and rec.get("input_fingerprint") == fp:
+                recs.append(rec)
+            else:
+                missing.append(s)
+        if not missing:
+            cap: dict[str, int] = {}
+            gen: dict[str, int] = {}
+            for rec in recs:
+                for c, v in (rec.get("cap_hit_total") or {}).items():
+                    cap[c] = cap.get(c, 0) + int(v)
+                for c, v in (rec.get("gen_total") or {}).items():
+                    gen[c] = gen.get(c, 0) + int(v)
+            return cap, gen
+        if time.time() > deadline:
+            raise RuntimeError(
+                f"[gen] cross-shard cap-hit barrier timed out after {GEN_COUNTS_WAIT_S}s; "
+                f"missing gen_counts from shards {missing}"
+            )
+        if time.time() - last_log > 300:
+            logger.info("[gen] cap-hit barrier waiting on gen_counts from shards %s", missing)
+            last_log = time.time()
+        time.sleep(10)
+
+
 # ---------------------------------------------------------------------------
 # Phase gen (P1)
 # ---------------------------------------------------------------------------
@@ -384,7 +484,8 @@ def phase_gen(args: argparse.Namespace, shard: int) -> None:
 
         cap_hit = 0
         n_gen = 0
-        out_rows: list[dict[str, Any]] = []
+        greedy_rows: list[dict[str, Any]] = []
+        sample_rows: list[dict[str, Any]] = []
         for i, r in enumerate(rows):
             greedy_comp = greedy_out[i].outputs[0]
             n_gen += 1
@@ -401,11 +502,19 @@ def phase_gen(args: argparse.Namespace, shard: int) -> None:
                 "source": r["source"],
                 # the ENGINE's realized prompt token ids (render-identity gate input, B2)
                 "prompt_token_ids": list(greedy_out[i].prompt_token_ids),
-                "greedy": {"text": greedy_comp.text, "finish_reason": greedy_comp.finish_reason},
+                # completion token ids persisted so capture consumes the ENGINE's
+                # realized completion tokens, never a re-encode of decoded text
+                # (completion-token-identity; the #1092 recipe on the answer side).
+                "greedy": {
+                    "text": greedy_comp.text,
+                    "finish_reason": greedy_comp.finish_reason,
+                    "token_ids": list(greedy_comp.token_ids),
+                },
             }
             for opt_key in ("base_id", "axis", "category"):
                 if opt_key in r:
                     entry[opt_key] = r[opt_key]
+            greedy_rows.append(entry)
             if sampled_out is not None:
                 samples = []
                 for k, comp in enumerate(sampled_out[i].outputs):
@@ -415,23 +524,43 @@ def phase_gen(args: argparse.Namespace, shard: int) -> None:
                         regen_flagged.append(
                             {"corpus": corpus, "prompt_sha": r["prompt_sha"], "kind": f"sample{k}"}
                         )
-                    samples.append({"text": comp.text, "finish_reason": comp.finish_reason})
-                entry["samples"] = samples
-            out_rows.append(entry)
+                    samples.append(
+                        {
+                            "text": comp.text,
+                            "finish_reason": comp.finish_reason,
+                            "token_ids": list(comp.token_ids),
+                        }
+                    )
+                sample_rows.append(
+                    {
+                        "prompt_sha": r["prompt_sha"],
+                        "prompt": r["prompt"],
+                        "source": r["source"],
+                        "samples": samples,
+                    }
+                )
 
         # Forced-truncation smoke dial (B5): regenerate armA row 0 greedy at a tiny
         # cap so finish_reason == "length" genuinely occurs and the M2 8192 re-gen
         # branch below is exercised end-to-end by the pod smoke.
-        if args.smoke and corpus == "armA" and out_rows:
+        if args.smoke and corpus == "armA" and greedy_rows:
             trunc_sp = SamplingParams(
                 temperature=0.0, max_tokens=SMOKE_TRUNC_MAX_TOKENS, seed=GLOBAL_SEED
             )
             trunc_out = _generate_chunked(engine, rendered[:1], trunc_sp)
             tcomp = trunc_out[0].outputs[0]
-            out_rows[0]["greedy"] = {"text": tcomp.text, "finish_reason": tcomp.finish_reason}
+            greedy_rows[0]["greedy"] = {
+                "text": tcomp.text,
+                "finish_reason": tcomp.finish_reason,
+                "token_ids": list(tcomp.token_ids),
+            }
             if tcomp.finish_reason == "length":
                 cap_hit += 1
-                flag = {"corpus": corpus, "prompt_sha": out_rows[0]["prompt_sha"], "kind": "greedy"}
+                flag = {
+                    "corpus": corpus,
+                    "prompt_sha": greedy_rows[0]["prompt_sha"],
+                    "kind": "greedy",
+                }
                 if flag not in regen_flagged:
                     regen_flagged.append(flag)
                 logger.info(
@@ -451,20 +580,38 @@ def phase_gen(args: argparse.Namespace, shard: int) -> None:
             frac,
         )
 
-        out_dir = raw_root / corpus
-        out_dir.mkdir(parents=True, exist_ok=True)
-        tmp = out_dir / f"shard{shard}.json.tmp"
-        tmp.write_text(json.dumps(out_rows, ensure_ascii=False), encoding="utf-8")
-        os.replace(tmp, out_dir / f"shard{shard}.json")
+        _write_raw_chunks(raw_root / corpus / "greedy", shard, greedy_rows, RAW_GREEDY_CHUNK)
+        if sample_rows:
+            _write_raw_chunks(raw_root / corpus / "samples", shard, sample_rows, RAW_SAMPLES_CHUNK)
 
     cleanup_vllm(engine)
 
+    # R3-5: publish THIS shard's counters, then block on every shard's counters —
+    # the >2% M2 re-gen decision is CORPUS-WIDE across shards, never shard-local
+    # (two GPU workers each seeing half the corpus mis-estimate the true fraction).
+    counts_fp = _flag_fingerprint(args, "gen-counts", None)  # shard-INDEPENDENT
+    counts_dir = _out_root(args) / ".sentinels"
+    counts_dir.mkdir(parents=True, exist_ok=True)
+    _write_json_atomic(
+        counts_dir / f"gen_counts.shard{shard}.json",
+        {
+            "input_fingerprint": counts_fp,
+            "shard": shard,
+            "cap_hit_total": cap_hit_total,
+            "gen_total": gen_total,
+        },
+    )
+    global_cap, global_gen = _await_gen_counts(args, counts_fp)
+
     # Cap-hit re-gen on a FRESH 8192 engine at 4096 new tokens (M2). PER-CORPUS
-    # gating: only corpora whose own cap-hit fraction exceeds the threshold are
-    # re-generated (the round-1 `any(...)` gate re-generated EVERY flagged row).
-    per_corpus_frac = {
-        c: cap_hit_total.get(c, 0) / max(1, gen_total.get(c, 1)) for c in cap_hit_total
-    }
+    # gating on the GLOBAL fraction: only corpora whose corpus-wide cap-hit
+    # fraction exceeds the threshold are re-generated (the round-1 `any(...)`
+    # gate re-generated EVERY flagged row); each shard re-gens its OWN rows.
+    local_frac = {c: cap_hit_total.get(c, 0) / max(1, gen_total.get(c, 1)) for c in cap_hit_total}
+    per_corpus_frac = {c: global_cap.get(c, 0) / max(1, global_gen.get(c, 1)) for c in global_gen}
+    logger.info(
+        "[gen shard %d] cap-hit fractions local=%s global=%s", shard, local_frac, per_corpus_frac
+    )
     regen_targets = [
         f for f in regen_flagged if per_corpus_frac.get(f["corpus"], 0.0) > CAP_HIT_REGEN_THRESHOLD
     ]
@@ -489,7 +636,8 @@ def phase_gen(args: argparse.Namespace, shard: int) -> None:
             "n_samples": n_samples,
             "cap_hit_total": cap_hit_total,
             "gen_total": gen_total,
-            "per_corpus_frac": per_corpus_frac,
+            "per_corpus_frac_local": local_frac,
+            "per_corpus_frac_global": per_corpus_frac,
             "regen": regen_meta,
         },
     )
@@ -521,14 +669,28 @@ def _regen_flagged_rows(
         by_corpus.setdefault(f["corpus"], []).append(f)
 
     for corpus, flags in by_corpus.items():
-        shard_file = raw_root / corpus / f"shard{shard}.json"
-        entries = json.loads(shard_file.read_text(encoding="utf-8"))
-        by_sha = {e["prompt_sha"]: e for e in entries}
+        # split-layout RMW (R3-7): entries keep a ref to their chunk FILE so only
+        # touched chunk files are rewritten (atomically) after the re-gen.
+        g_by_file: dict[Path, list[dict[str, Any]]] = {}
+        g_by_sha: dict[str, tuple[Path, dict[str, Any]]] = {}
+        for f in _raw_chunk_files(raw_root / corpus / "greedy", shard):
+            ents = json.loads(f.read_text(encoding="utf-8"))
+            g_by_file[f] = ents
+            for e in ents:
+                g_by_sha[e["prompt_sha"]] = (f, e)
+        s_by_file: dict[Path, list[dict[str, Any]]] = {}
+        s_by_sha: dict[str, tuple[Path, dict[str, Any]]] = {}
+        for f in _raw_chunk_files(raw_root / corpus / "samples", shard):
+            ents = json.loads(f.read_text(encoding="utf-8"))
+            s_by_file[f] = ents
+            for e in ents:
+                s_by_sha[e["prompt_sha"]] = (f, e)
+        touched: set[Path] = set()
 
         # greedy re-gen (greedy params)
         greedy_shas = sorted({f["prompt_sha"] for f in flags if f["kind"] == "greedy"})
         if greedy_shas:
-            rendered = [_render_chat(tokenizer, by_sha[s]["prompt"]) for s in greedy_shas]
+            rendered = [_render_chat(tokenizer, g_by_sha[s][1]["prompt"]) for s in greedy_shas]
             mpt = _max_prompt_tokens(tokenizer, rendered)
             _assert_generation_window(mpt, REGEN_MAX_NEW_TOKENS, REGEN_MAX_MODEL_LEN)
             sp = SamplingParams(temperature=0.0, max_tokens=REGEN_MAX_NEW_TOKENS, seed=GLOBAL_SEED)
@@ -538,10 +700,13 @@ def _regen_flagged_rows(
                 total += 1
                 if comp.finish_reason == "length":
                     residual += 1
-                by_sha[sha]["greedy_regen8192"] = {
+                fpath, entry = g_by_sha[sha]
+                entry["greedy_regen8192"] = {
                     "text": comp.text,
                     "finish_reason": comp.finish_reason,
+                    "token_ids": list(comp.token_ids),
                 }
+                touched.add(fpath)
 
         # sample re-gen (sample params), grouped per sample index k
         by_k: dict[int, list[str]] = {}
@@ -550,7 +715,7 @@ def _regen_flagged_rows(
                 by_k.setdefault(int(f["kind"][len("sample") :]), []).append(f["prompt_sha"])
         for k, shas_k in sorted(by_k.items()):
             shas_k = sorted(set(shas_k))
-            rendered = [_render_chat(tokenizer, by_sha[s]["prompt"]) for s in shas_k]
+            rendered = [_render_chat(tokenizer, s_by_sha[s][1]["prompt"]) for s in shas_k]
             mpt = _max_prompt_tokens(tokenizer, rendered)
             _assert_generation_window(mpt, REGEN_MAX_NEW_TOKENS, REGEN_MAX_MODEL_LEN)
             sp = SamplingParams(
@@ -566,14 +731,19 @@ def _regen_flagged_rows(
                 total += 1
                 if comp.finish_reason == "length":
                     residual += 1
-                by_sha[sha]["samples"][k]["regen8192"] = {
+                fpath, entry = s_by_sha[sha]
+                entry["samples"][k]["regen8192"] = {
                     "text": comp.text,
                     "finish_reason": comp.finish_reason,
+                    "token_ids": list(comp.token_ids),
                 }
+                touched.add(fpath)
 
-        tmp = shard_file.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
-        os.replace(tmp, shard_file)
+        for fpath in sorted(touched):
+            ents = g_by_file.get(fpath, s_by_file.get(fpath))
+            tmp = Path(str(fpath) + ".tmp")
+            tmp.write_text(json.dumps(ents, ensure_ascii=False), encoding="utf-8")
+            os.replace(tmp, fpath)
 
     cleanup_vllm(engine)
     logger.info("[regen shard %d] residual_truncated=%d/%d at 8192/4096", shard, residual, total)
@@ -583,30 +753,32 @@ def _regen_flagged_rows(
 def _upload_raw_shard(args: argparse.Namespace, shard: int) -> None:
     """Upload THIS shard's rollout-text JSONs to the HF data repo (end of phase_gen).
 
-    Bounded per-file loop (≤3 files: one shard JSON per corpus); verified with the
-    retried exact-set helper. phase_upload later re-verifies the full set."""
+    Bounded per-file loop over this shard's {corpus}/{greedy,samples}/ chunk files
+    (a few dozen at production scale — far under the ~256 commits/hr Hub throttle,
+    #591); verified with the retried exact-set helper. phase_upload later
+    re-verifies the full set."""
     prefix = _hf_prefix(args)
     raw_root = _out_root(args) / "eval_results" / prefix / "raw_completions"
     uploaded: list[str] = []
     for corpus in CORPORA:
-        f = raw_root / corpus / f"shard{shard}.json"
-        if not f.exists():
-            continue
-        # UPLOAD_LOOP_EXEMPT: bounded ≤3-file loop (one shard JSON per corpus)
-        base_url = hub._upload(
-            local_path=f,
-            repo_id=DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=f"{prefix}/raw_completions/{corpus}/shard{shard}.json",
-            raise_on_error=True,
-            upload_as_file=True,
-        )
-        if not base_url:
-            raise RuntimeError(
-                f"[gen shard {shard}] _upload returned no path for {corpus}/shard{shard}.json "
-                "(silent durability loss — missing HF_TOKEN / absent local path / failed verify)"
-            )
-        uploaded.append(f"{corpus}/shard{shard}.json")
+        for kind in RAW_KINDS:
+            for f in _raw_chunk_files(raw_root / corpus / kind, shard):
+                # UPLOAD_LOOP_EXEMPT: bounded per-shard chunk-file loop (tens of files)
+                base_url = hub._upload(
+                    local_path=f,
+                    repo_id=DATA_REPO,
+                    repo_type="dataset",
+                    path_in_repo=f"{prefix}/raw_completions/{corpus}/{kind}/{f.name}",
+                    raise_on_error=True,
+                    upload_as_file=True,
+                )
+                if not base_url:
+                    raise RuntimeError(
+                        f"[gen shard {shard}] _upload returned no path for "
+                        f"{corpus}/{kind}/{f.name} (silent durability loss — missing "
+                        "HF_TOKEN / absent local path / failed verify)"
+                    )
+                uploaded.append(f"{corpus}/{kind}/{f.name}")
     if not uploaded:
         raise RuntimeError(f"[gen shard {shard}] no raw completion files to upload")
     missing = hub.verify_repo_paths_uploaded(
@@ -847,16 +1019,28 @@ def phase_capture(args: argparse.Namespace, shard: int) -> None:
     store_root = _out_root(args) / "stores" / f"shard{shard}"
     store_root.mkdir(parents=True, exist_ok=True)
 
-    # B9: validate ALL inputs (shard files parse, prompt_token_ids present,
-    # render-identity gate) BEFORE the expensive 7B model load.
+    # B9: validate ALL inputs (chunk files parse, prompt_token_ids present,
+    # render-identity gate) BEFORE the expensive 7B model load. The split
+    # greedy/samples records (R3-7) are joined by prompt_sha into one merged
+    # per-prompt view (the shape _capture_corpus consumes).
     corpora_entries: dict[str, list[dict[str, Any]]] = {}
     for corpus in CORPORA:
-        shard_file = raw_root / corpus / f"shard{shard}.json"
-        if not shard_file.exists():
+        g_entries, _ = _read_raw_shard(raw_root / corpus / "greedy", shard)
+        if not g_entries:
             continue
-        entries = json.loads(shard_file.read_text(encoding="utf-8"))
-        _render_identity_gate(tokenizer, entries)
-        corpora_entries[corpus] = entries
+        _render_identity_gate(tokenizer, g_entries)
+        s_entries, _ = _read_raw_shard(raw_root / corpus / "samples", shard)
+        s_by_sha = {e["prompt_sha"]: e for e in s_entries}
+        orphans = sorted(set(s_by_sha) - {e["prompt_sha"] for e in g_entries})
+        if orphans:
+            raise RuntimeError(
+                f"[capture shard {shard}] {corpus}: {len(orphans)} samples entries "
+                f"lack a greedy entry (first: {orphans[:3]})"
+            )
+        for e in g_entries:
+            if e["prompt_sha"] in s_by_sha:
+                e["samples"] = s_by_sha[e["prompt_sha"]]["samples"]
+        corpora_entries[corpus] = g_entries
     if not corpora_entries:
         raise RuntimeError(
             f"[capture shard {shard}] no gen shard files under {raw_root} — run gen first"
@@ -929,7 +1113,14 @@ def _capture_corpus(
             p_ids = e.get("prompt_token_ids")
             if p_ids is None:
                 raise ValueError(f"gen shard entry {sha} lacks prompt_token_ids (re-run gen)")
-            g_ids = tokenizer.encode(_greedy_record(e)["text"], add_special_tokens=False)
+            # completion-token-identity: consume the PERSISTED engine-side
+            # completion token ids, never a re-encode of the decoded text (a
+            # re-encode can diverge at BPE seams; empty-completion rejects key
+            # on empty token_ids).
+            g_rec = _greedy_record(e)
+            g_ids = g_rec.get("token_ids")
+            if g_ids is None:
+                raise ValueError(f"gen greedy record {sha} lacks token_ids (re-run gen)")
             if not g_ids:
                 rejects.append(
                     {
@@ -943,7 +1134,10 @@ def _capture_corpus(
             row_ids, pos = _capture_row_ids_and_positions(p_ids, g_ids, REGEN_MAX_MODEL_LEN)
             pending.append((f"{sha}__greedy", row_ids, pos))
             for k, s in enumerate(e.get("samples", [])):
-                s_ids = tokenizer.encode(_sample_record(s)["text"], add_special_tokens=False)
+                s_rec = _sample_record(s)
+                s_ids = s_rec.get("token_ids")
+                if s_ids is None:
+                    raise ValueError(f"gen sample record {sha}.s{k} lacks token_ids (re-run gen)")
                 if not s_ids:
                     rejects.append(
                         {
@@ -984,12 +1178,11 @@ def _capture_corpus(
             payload[f"{sha}__v_C"] = results[gkey]["v_C"]
             payload[f"{sha}__v_A_greedy"] = results[gkey]["v_A"]
             if "samples" in e:
-                per_k = [
-                    results[f"{sha}__sample{k}"]["v_A"]
-                    for k in range(len(e["samples"]))
-                    if f"{sha}__sample{k}" in results
-                ]
-                if not per_k:
+                # capture-sample-index-compaction fix: persist the ORIGINAL draw
+                # index k per stacked row (v_A_sample_idx) so downstream joins by
+                # draw index survive rejected-sample compaction.
+                idxs = [k for k in range(len(e["samples"])) if f"{sha}__sample{k}" in results]
+                if not idxs:
                     rejects.append(
                         {
                             "corpus": corpus,
@@ -999,8 +1192,11 @@ def _capture_corpus(
                         }
                     )
                 else:
-                    stacked = np.stack(per_k, axis=0)  # (K, L, H)
+                    stacked = np.stack(
+                        [results[f"{sha}__sample{k}"]["v_A"] for k in idxs], axis=0
+                    )  # (K_kept, L, H)
                     payload[f"{sha}__v_A_sample_k"] = stacked
+                    payload[f"{sha}__v_A_sample_idx"] = np.asarray(idxs, dtype=np.int64)
                     payload[f"{sha}__v_A_rollout_mean"] = (
                         stacked.astype(np.float32).mean(axis=0).astype(np.float16)
                     )
@@ -1042,6 +1238,17 @@ def phase_means(args: argparse.Namespace) -> None:
     merged = _out_root(args) / "stores_merged"
     merged.mkdir(parents=True, exist_ok=True)
 
+    # R3-6 guard 1: a standalone `--phase means` after a PARTIALLY-completed
+    # capture must not silently merge (and later upload) a partial store set —
+    # require a fingerprint-matching capture sentinel for EVERY shard.
+    for s in range(args.n_shards):
+        cap_fp = _flag_fingerprint(args, "capture", s)
+        if not _sentinel_ok(_sentinel_path(args, "capture", s), cap_fp, resume=True):
+            raise RuntimeError(
+                f"[means] capture shard {s}/{args.n_shards} incomplete (no fingerprint-"
+                "matching sentinel) — run capture to completion first"
+            )
+
     # index: corpus -> prompt_sha -> source capture npz
     index: dict[str, dict[str, Path]] = {}
     for shard_dir in sorted(stores_root.glob("shard*")):
@@ -1053,6 +1260,37 @@ def phase_means(args: argparse.Namespace) -> None:
                 index.setdefault(corpus, {})[sha] = npz
     if not index:
         raise RuntimeError(f"[means] no capture npz shards under {stores_root} — run capture first")
+
+    # R3-6 guard 2: expected-sha reconciliation — every gen-manifest prompt sha
+    # (minus greedy-kind capture rejects, which drop the whole prompt) must be
+    # present in the captured index.
+    raw_root = _out_root(args) / "eval_results" / _hf_prefix(args) / "raw_completions"
+    rejected: dict[str, set[str]] = {}
+    for rej_file in sorted(stores_root.glob("shard*/capture_rejects.shard*.jsonl")):
+        with open(rej_file, encoding="utf-8") as fh:
+            for line in fh:  # text-mode iteration, never .splitlines() (#950)
+                s_line = line.strip()
+                if not s_line:
+                    continue
+                r = json.loads(s_line)
+                if r.get("kind") == "greedy":
+                    rejected.setdefault(r["corpus"], set()).add(r["prompt_sha"])
+    for corpus in CORPORA:
+        gen_shas: set[str] = set()
+        greedy_dir = raw_root / corpus / "greedy"
+        for f in sorted(greedy_dir.glob("shard*_*.json")) if greedy_dir.exists() else []:
+            gen_shas.update(e["prompt_sha"] for e in json.loads(f.read_text(encoding="utf-8")))
+        if not gen_shas:
+            continue
+        want = gen_shas - rejected.get(corpus, set())
+        have = set(index.get(corpus, {}))
+        missing_shas = sorted(want - have)
+        if missing_shas:
+            raise RuntimeError(
+                f"[means] corpus {corpus}: {len(missing_shas)}/{len(want)} gen prompts "
+                f"missing from capture stores (first 5: {missing_shas[:5]}) — capture "
+                "is incomplete"
+            )
 
     row_index: list[dict[str, Any]] = []
     n_merged = 0
@@ -1105,6 +1343,14 @@ def phase_means(args: argparse.Namespace) -> None:
 
 
 def phase_upload(args: argparse.Namespace) -> None:
+    # R3-8a: idempotency — a restart after a completed upload must not repeat
+    # both network uploads (fingerprint-matching sentinel skips).
+    fp = _flag_fingerprint(args, "upload", None)
+    sent = _sentinel_path(args, "upload", None)
+    if _sentinel_ok(sent, fp, resume=not args.no_resume):
+        logger.info("[upload] resume-skip (fingerprint match)")
+        return
+
     # B9: completion guard — never upload from an incomplete means phase.
     means_fp = _flag_fingerprint(args, "means", None)
     if not _sentinel_ok(_sentinel_path(args, "means", None), means_fp, resume=True):
@@ -1114,6 +1360,7 @@ def phase_upload(args: argparse.Namespace) -> None:
 
     # Raw completions: phase_gen already uploaded per shard (#779). Re-upload is a
     # cheap idempotent backstop; the exact-set verify below is the binding check.
+    expected: list[str] = []
     raw_root = _out_root(args) / "eval_results" / prefix / "raw_completions"
     if raw_root.exists():
         base_url = hub._upload(
@@ -1126,13 +1373,13 @@ def phase_upload(args: argparse.Namespace) -> None:
         if not base_url:
             raise RuntimeError(f"raw_completions upload returned no path ({prefix})")
         expected = [
-            f"{c}/shard{s}.json"
+            f"{c}/{kind}/{f.name}"
             for c in CORPORA
-            for s in range(args.n_shards)
-            if (raw_root / c / f"shard{s}.json").exists()
+            for kind in RAW_KINDS
+            for f in sorted((raw_root / c / kind).glob("shard*_*.json"))
         ]
         if not expected:
-            raise RuntimeError(f"[upload] raw_completions dir {raw_root} holds no shard files")
+            raise RuntimeError(f"[upload] raw_completions dir {raw_root} holds no chunk files")
         missing = hub.verify_repo_paths_uploaded(
             HfApi(),
             DATA_REPO,
@@ -1173,6 +1420,11 @@ def phase_upload(args: argparse.Namespace) -> None:
     # provenance sidecar
     meta = {"issue": ISSUE, "prefix": prefix, **as_metadata_dict(git_provenance())}
     (_out_root(args) / "upload_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    _write_sentinel(
+        sent,
+        fp,
+        {"phase": "upload", "n_raw_files": len(expected), "n_store_files": len(expected_stores)},
+    )
     logger.info("[phase=upload complete]")
 
 
@@ -1190,12 +1442,20 @@ def _resolve_gpu_alloc(n_shards: int) -> list[str]:
         alloc = [t for t in (p.strip() for p in cvd.split(",")) if t]
     elif os.environ.get("SLURM_JOB_ID"):
         raw = os.environ.get("SLURM_JOB_GPUS") or os.environ.get("SLURM_STEP_GPUS")
-        if not raw:
-            raise RuntimeError(
-                "SLURM job with no CUDA_VISIBLE_DEVICES / SLURM_JOB_GPUS / SLURM_STEP_GPUS — "
-                "cannot derive the GPU allocation (never fall back to the physical count)"
-            )
-        alloc = [t for t in (p.strip() for p in raw.split(",")) if t]
+        if raw:
+            alloc = [t for t in (p.strip() for p in raw.split(",")) if t]
+        else:
+            # gpu-allocation-chain fix: SLURM_GPUS_ON_NODE is a COUNT-only var
+            # some SLURM configs export instead of the id lists; a whole-node
+            # count allocation exposes ordinals 0..N-1.
+            n_on_node = os.environ.get("SLURM_GPUS_ON_NODE")
+            if not n_on_node:
+                raise RuntimeError(
+                    "SLURM job with no CUDA_VISIBLE_DEVICES / SLURM_JOB_GPUS / "
+                    "SLURM_STEP_GPUS / SLURM_GPUS_ON_NODE — cannot derive the GPU "
+                    "allocation (never fall back to the physical count)"
+                )
+            alloc = [str(i) for i in range(int(n_on_node))]
     else:
         alloc = [str(i) for i in range(n_shards)]
     if len(alloc) < n_shards:
@@ -1387,13 +1647,23 @@ def main() -> int:
         os._exit(rc)
 
     phases = ["gen", "capture", "means", "upload"] if args.phase == "all" else [args.phase]
-    for phase in phases:
-        rc = _run_phase(args, phase)
-        if rc != 0:
-            logger.error("[phase=%s FAILED rc=%d]", phase, rc)
-            sys.stdout.flush()
-            sys.stderr.flush()
-            os._exit(rc)
+    try:
+        for phase in phases:
+            rc = _run_phase(args, phase)
+            if rc != 0:
+                logger.error("[phase=%s FAILED rc=%d]", phase, rc)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                os._exit(rc)
+    except BaseException:
+        # R3-8b: an exception propagating through interpreter finalization with
+        # live vLLM engine/worker children DEADLOCKS (#1739/#2149) — a crashed
+        # shard would then hang on a billing pod. Log the traceback, flush,
+        # hard-exit.
+        logger.exception("[phase-dispatch] unhandled exception; hard-exit rc=1")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
 
     if args.shard is None and args.phase == "all":
         # Reserved terminal emission: DISPATCHER full-pipeline runs only (#545) —

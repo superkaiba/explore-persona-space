@@ -471,11 +471,18 @@ def load_judge_labels(args: argparse.Namespace) -> dict[str, dict[str, Any]]:
     rejudge_p = base / "rejudge" / "rejudge.json"
     n_rescued = 0
     if rejudge_p.exists():
-        rescued = json.loads(rejudge_p.read_text(encoding="utf-8")).get("rescued_scores", {})
+        rej = json.loads(rejudge_p.read_text(encoding="utf-8"))
+        rescued = rej.get("rescued_scores", {})
+        rescued_labels = rej.get("rescued_labels", {})
         for item_id, score in rescued.items():
             cur = labels.get(item_id)
             if cur is None or cur.get("score") is None:
-                labels[item_id] = {"score": score, "label": _label_from_score(score)}
+                # R3-2: the rejudge's label-first CATEGORICAL label is
+                # authoritative; score-derived is the exact fallback (the
+                # mechanical 100/0 encoding) for records predating
+                # rescued_labels.
+                lab = rescued_labels.get(item_id) or _label_from_score(score)
+                labels[item_id] = {"score": score, "label": lab}
                 n_rescued += 1
     logger.info("[labels] %d judged items (%d rejudge-rescued)", len(labels), n_rescued)
     return labels
@@ -1998,15 +2005,22 @@ def _battery_metrics(
     pool: np.ndarray,
     true_idx: np.ndarray,
     *,
-    mu_a: np.ndarray,
-    chol_l: np.ndarray,
+    whiten_parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]],
     groups: list[str],
     n_boot: int,
     boot_seed: int,
 ) -> dict[str, Any]:
     """One battery read: 4 metric spaces + S2 GROUP-bootstrap gate on the
     primary (A2: resample eval GROUPS with replacement — Arm-A targets
-    cluster in base_id groups, so a row-iid CI is anti-conservative)."""
+    cluster in base_id groups, so a row-iid CI is anti-conservative).
+
+    ``whiten_parts`` partitions the TARGET rows by the fold whose TRAIN-split
+    greedy answers supply the whitening stats (the registered basis, plan §4
+    F2 / R3-4): each part is (target_row_indices_into_pred, mu, L). A part's
+    targets AND the full pool are whitened under that fold's stats and
+    ranked; per-target ranks/flags are stitched back together. A #3b cell
+    has one part (its own fold); the #3a cell partitions its labeled targets
+    by each group's eval fold."""
     _ensure_scripts_on_syspath()
     import issue2202_failchar as fc
     import issue2202_freshwhiten_avg as fw
@@ -2014,16 +2028,36 @@ def _battery_metrics(
     n_pool = pool.shape[0]
     chance = 1.0 / n_pool
     out: dict[str, Any] = {"n_targets": int(len(true_idx)), "n_pool": int(n_pool), "chance": chance}
+    cover = np.sort(np.concatenate([ix for ix, _, _ in whiten_parts]))
+    assert cover.shape == (len(true_idx),) and np.array_equal(cover, np.arange(len(true_idx))), (
+        "whiten_parts must partition the target rows",
+        cover.shape,
+        len(true_idx),
+    )
+    wc_ranks = np.empty(len(true_idx), dtype=np.float64)
+    wc_acc1 = np.zeros(len(true_idx), dtype=bool)
+    for ix, mu_p, l_p in whiten_parts:
+        ranks_p, _, n_closer_p = fc.ranks_of_targets(
+            _whiten(pred[ix], mu_p, l_p),
+            _whiten(pool, mu_p, l_p),
+            true_idx[ix],
+            "cosine",
+            phase="battery_whitened_cosine",
+        )
+        wc_ranks[ix] = np.asarray(ranks_p, dtype=np.float64)
+        wc_acc1[ix] = np.asarray(n_closer_p) == 0
+    out["whitened_cosine"] = {
+        "acc_at_1": float(wc_acc1.mean()),
+        "median_rank": float(np.median(wc_ranks)),
+        "mrr": float(np.mean(1.0 / wc_ranks)),
+    }
     spaces: dict[str, tuple[np.ndarray, np.ndarray, str]] = {
-        "whitened_cosine": (_whiten(pred, mu_a, chol_l), _whiten(pool, mu_a, chol_l), "cosine"),
         "raw_euclidean": (pred, pool, "euclidean"),
         "pearson": (fw._row_demean(pred), fw._row_demean(pool), "cosine"),
     }
-    acc1_flags: dict[str, np.ndarray] = {}
     for name, (p, q, metric) in spaces.items():
         ranks, _, n_closer = fc.ranks_of_targets(p, q, true_idx, metric, phase=f"battery_{name}")
         acc1 = np.asarray(n_closer) == 0
-        acc1_flags[name] = acc1
         out[name] = {
             "acc_at_1": float(acc1.mean()),
             "median_rank": float(np.median(ranks)),
@@ -2037,7 +2071,7 @@ def _battery_metrics(
         "mrr": float(np.mean(1.0 / r2ranks)),
     }
     # S2 gate: one-sided GROUP bootstrap over eval groups on the PRIMARY read
-    flags = acc1_flags["whitened_cosine"].astype(np.float64)
+    flags = wc_acc1.astype(np.float64)
     assert len(groups) == len(true_idx), (len(groups), len(true_idx))
     n_groups = len(set(groups))
     if n_boot > 0 and n_groups > 1:
@@ -2054,7 +2088,20 @@ def _battery_metrics(
         "n_groups": int(n_groups),
         "pass": bool(ci_lower > chance) if np.isfinite(ci_lower) else None,
     }
-    out["_acc1_flags_whitened"] = acc1_flags["whitened_cosine"].tolist()
+    out["_acc1_flags_whitened"] = wc_acc1.tolist()
+    return out
+
+
+def _top1_whitened(
+    pred: np.ndarray,
+    pool: np.ndarray,
+    whiten_parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]],
+) -> np.ndarray:
+    """Per-part whitened top-1 pool indices (NN-behavior-match under the same
+    fold-train whitening as the primary battery read)."""
+    out = np.empty(len(pred), dtype=np.int64)
+    for ix, mu_p, l_p in whiten_parts:
+        out[ix] = _top1_indices(_whiten(pred[ix], mu_p, l_p), _whiten(pool, mu_p, l_p))
     return out
 
 
@@ -2064,20 +2111,28 @@ def _draw_avg_targets(
     judge_labels: dict[str, dict[str, Any]],
     target_shas: list[str],
     layer: int,
-) -> tuple[dict[str, np.ndarray], int]:
-    """Mean of the first K SAME-LABEL sampled-draw v_A vectors per target
-    (deterministic by draw index; #2202 K_DRAWS convention). Returns
-    (sha -> (d,) f64, n_fallback_greedy)."""
+) -> tuple[dict[str, np.ndarray], dict[int, int], int]:
+    """Draw-averaged target per plan §4 F2 (#2202 convention): mean of
+    v_A_greedy PLUS the first K SAME-LABEL sampled-draw v_A vectors —
+    v_A_greedy is ALWAYS in the mean (R3-4). Sampled vectors join by the
+    PERSISTED original draw index (``v_A_sample_idx``) so capture-side
+    rejected-sample compaction cannot shift the k->row mapping. Returns
+    (sha -> (d,) f64, realized-K histogram {k_picked: n_targets}, n_zero
+    same-label picks — those targets reduce to v_A_greedy alone)."""
     dest = _stage_summary_stores(args, target_shas)
     out: dict[str, np.ndarray] = {}
-    n_fallback = 0
+    k_hist: dict[int, int] = {}
+    n_zero = 0
     for sha in target_shas:
         row_label = ad.labels[sha]["label"]
         with np.load(dest / f"{sha}.npz") as data:
             assert "v_A_sample_k" in data.files, (sha, sorted(data.files))
-            vk = data["v_A_sample_k"]  # (K, L, d)
-        picks = []
-        for k in range(vk.shape[0]):
+            assert "v_A_sample_idx" in data.files, (sha, sorted(data.files))
+            vk = data["v_A_sample_k"]  # (K_kept, L, d)
+            idxs = [int(x) for x in data["v_A_sample_idx"]]  # original draw index k
+        assert len(idxs) == vk.shape[0], (sha, len(idxs), vk.shape)
+        picks: list[int] = []  # row indices into vk
+        for row, k in sorted(enumerate(idxs), key=lambda t: t[1]):
             item = judge_labels.get(f"{sha}.s{k:02d}")
             lab = (
                 None
@@ -2085,15 +2140,18 @@ def _draw_avg_targets(
                 else (item.get("label") or _label_from_score(item.get("score")))
             )
             if lab == row_label:
-                picks.append(k)
+                picks.append(row)
             if len(picks) >= args.k_draw_avg:
                 break
+        greedy = np.asarray(ad.ans[ad.pos[sha], layer], dtype=np.float64)
         if picks:
-            out[sha] = vk[picks, layer].astype(np.float64).mean(axis=0)
+            sampled = vk[picks, layer].astype(np.float64)
+            out[sha] = np.concatenate([greedy[None, :], sampled], axis=0).mean(axis=0)
         else:
-            n_fallback += 1
-            out[sha] = np.asarray(ad.ans[ad.pos[sha], layer], dtype=np.float64)
-    return out, n_fallback
+            n_zero += 1
+            out[sha] = greedy
+        k_hist[len(picks)] = k_hist.get(len(picks), 0) + 1
+    return out, k_hist, n_zero
 
 
 def phase_battery(args: argparse.Namespace) -> None:
@@ -2147,6 +2205,17 @@ def phase_battery(args: argparse.Namespace) -> None:
         cov = (centered.T @ centered) / len(ytr)
         return mu, shrunk_cholesky_from_cov(cov, PRIMARY_LAMBDA)
 
+    # ROBUSTNESS-read whitening: generic-answer stats (~8k generic train
+    # answers), cached per layer. The REGISTERED basis is per (arm, fold)
+    # fold-train greedy answers (below); this cache serves only the labeled
+    # generic_whiten_robustness companion read (plan §4 F2 / R3-4).
+    gen_stats_cache: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+
+    def _gen_stats(layer: int) -> tuple[np.ndarray, np.ndarray]:
+        if layer not in gen_stats_cache:
+            gen_stats_cache[layer] = _whiten_stats(np.asarray(gy[fit_idx, layer], dtype=np.float64))
+        return gen_stats_cache[layer]
+
     results: dict[str, Any] = {}
     pooled_3b: dict[str, Any] = {}
     curve_3a: dict[str, Any] = {}
@@ -2180,6 +2249,64 @@ def phase_battery(args: argparse.Namespace) -> None:
         conds = ["3a_generic"] + [f"3b_{arm}_fold{k}" for k in range(n_folds)]
         n_units_total += len(conds) * 2 + 1  # +1: the all-layer 3a curve unit
 
+        # R3-4: the REGISTERED whitening basis — per (arm, fold), the fold's
+        # TRAIN-split greedy answers at the cell's layer (plan §4 F2). Arm-A
+        # caveat: fold train answers ~100-130 << d=3584, so the lam=0.1
+        # shrinkage dominates the covariance there (stated spec value).
+        fold_train_pos = {
+            k: [ad.pos[s] for s in ad.splits["folds"][str(k)]["train_row_ids"]]
+            for k in range(n_folds)
+        }
+        fold_of_group: dict[str, int] = {}
+        for k in range(n_folds):
+            for g in ad.splits["folds"][str(k)]["eval_groups"]:
+                assert g not in fold_of_group, (arm, g, k, fold_of_group[g])
+                fold_of_group[g] = k
+        stats_cache: dict[tuple[int, int], tuple[np.ndarray, np.ndarray]] = {}
+
+        def _fold_stats(k: int, layer: int, *, cache: bool = True) -> tuple[np.ndarray, np.ndarray]:
+            key = (k, layer)
+            if key in stats_cache:
+                return stats_cache[key]
+            st = _whiten_stats(np.asarray(ad.ans[fold_train_pos[k], layer], dtype=np.float64))
+            if cache:  # cache only CELL layers; curve layers stay uncached (RAM)
+                stats_cache[key] = st
+            return st
+
+        def _persist_whiten(k: int, layer: int, mu: np.ndarray, l_mat: np.ndarray) -> None:
+            wpath = whiten_dir / f"{arm}__fold{k}__l{layer:02d}.npz"
+            if wpath.exists():
+                return
+            mu_c = np.asarray(ad.vc[fold_train_pos[k], layer], np.float64).mean(axis=0)
+            tmp = wpath.with_name(wpath.stem + ".tmp.npz")
+            np.savez(
+                tmp,
+                mu_A=mu,
+                mu_C=mu_c,
+                L=l_mat,
+                lam=np.float64(PRIMARY_LAMBDA),
+                n_train=np.int64(len(fold_train_pos[k])),
+                layer=np.int64(layer),
+                fold=np.int64(k),
+            )
+            os.replace(tmp, wpath)
+            _upload_file(args, wpath, "analysis_tensors/whiten")
+
+        def _parts_for(
+            targets: list[str], layer: int
+        ) -> list[tuple[np.ndarray, np.ndarray, np.ndarray]]:
+            """(row-index array, mu, L) per fold whose eval groups own the
+            targets; cell-used (fold, layer) stats are persisted + uploaded."""
+            part_ix: dict[int, list[int]] = {}
+            for i, s in enumerate(targets):
+                part_ix.setdefault(fold_of_group[ad.group_of[s]], []).append(i)
+            parts: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+            for k in sorted(part_ix):
+                mu_p, l_p = _fold_stats(k, layer)
+                _persist_whiten(k, layer, mu_p, l_p)
+                parts.append((np.asarray(part_ix[k], dtype=np.int64), mu_p, l_p))
+            return parts
+
         for cond in conds:
             fold = None if cond == "3a_generic" else int(cond.rsplit("fold", 1)[1])
             if fold is None:
@@ -2201,8 +2328,8 @@ def phase_battery(args: argparse.Namespace) -> None:
             pool = np.asarray(ad.ans[:, cond_layer], dtype=np.float64)  # ALL greedy answers
             gen_xtr = np.asarray(gx[fit_idx, cond_layer], dtype=np.float64)
             gen_ytr = np.asarray(gy[fit_idx, cond_layer], dtype=np.float64)
-            # whiten stats: THIS run's map-fit train answers (generic fit +
-            # in-domain train-group answers for 3b), at the CELL's layer.
+            # identity+bias baseline train pairs: the MAP's own fit data
+            # (generic fit + in-domain train-group answers for 3b).
             extra_pos = [ad.pos[s] for s in extra_ids]
             ytr = (
                 np.concatenate([gen_ytr, np.asarray(ad.ans[extra_pos, cond_layer], np.float64)])
@@ -2214,21 +2341,9 @@ def phase_battery(args: argparse.Namespace) -> None:
                 if extra_pos
                 else gen_xtr
             )
-            mu_a, chol_l = _whiten_stats(ytr)
-            wpath = whiten_dir / f"{arm}__{cond}__l{cond_layer:02d}.npz"
-            if not wpath.exists():
-                tmp = wpath.with_name(wpath.stem + ".tmp.npz")
-                np.savez(
-                    tmp,
-                    mu_A=mu_a,
-                    mu_C=xtr.mean(axis=0),
-                    L=chol_l,
-                    lam=np.float64(PRIMARY_LAMBDA),
-                    n_train=np.int64(len(ytr)),
-                    layer=np.int64(cond_layer),
-                )
-                os.replace(tmp, wpath)
-                _upload_file(args, wpath, "analysis_tensors/whiten")
+            # R3-4: whiten from the fold's TRAIN-split greedy answers (the
+            # registered basis) — one part per fold owning the targets.
+            whiten_parts = _parts_for(targets, cond_layer)
 
             bundle = load_map_bundle(args, cond, cond_layer)
             x_t = np.asarray(ad.vc[[ad.pos[s] for s in targets], cond_layer], dtype=np.float32)
@@ -2248,9 +2363,12 @@ def phase_battery(args: argparse.Namespace) -> None:
                     _progress("battery", unit_i, n_units_total, f"{unit_key} (resume-skip)", t0)
                     continue
                 pool_v = pool
-                n_fb = 0
+                k_hist: dict[int, int] = {}
+                n_zero = 0
                 if variant == "draw_avg":
-                    da, n_fb = _draw_avg_targets(args, ad, judge_labels, targets, cond_layer)
+                    da, k_hist, n_zero = _draw_avg_targets(
+                        args, ad, judge_labels, targets, cond_layer
+                    )
                     pool_v = pool.copy()
                     for s in targets:
                         pool_v[ad.pos[s]] = da[s]
@@ -2258,8 +2376,7 @@ def phase_battery(args: argparse.Namespace) -> None:
                     preds,
                     pool_v,
                     true_idx,
-                    mu_a=mu_a,
-                    chol_l=chol_l,
+                    whiten_parts=whiten_parts,
                     groups=groups_t,
                     n_boot=args.n_boot,
                     boot_seed=args.boot_seed,
@@ -2280,22 +2397,41 @@ def phase_battery(args: argparse.Namespace) -> None:
                     for lab in ("refuse", "engage")
                     if any(x == lab for x in lab_t)
                 }
-                top1 = _top1_indices(_whiten(preds, mu_a, chol_l), _whiten(pool_v, mu_a, chol_l))
+                top1 = _top1_whitened(preds, pool_v, whiten_parts)
                 match_flags = [
                     pool_greedy_label[j] == lab
                     for j, lab in zip(top1, lab_t)
                     if pool_greedy_label[j] is not None
                 ]
                 res["nn_behavior_match_rate"] = float(np.mean(match_flags)) if match_flags else None
-                res["n_draw_avg_fallback_greedy"] = int(n_fb)
+                if variant == "draw_avg":
+                    res["draw_avg_realized_k"] = {
+                        "hist": {str(k): int(v) for k, v in sorted(k_hist.items())},
+                        "n_zero_same_label_picks": int(n_zero),
+                        "note": "targets with 0 same-label sampled picks reduce to "
+                        "v_A_greedy alone (v_A_greedy is always in the mean)",
+                    }
                 res["layer"] = int(cond_layer)
+                # ROBUSTNESS read: same whitened-cosine acc@1 under
+                # generic-answer whitening (plan F2 companion; R3-4)
+                g_mu, g_l = _gen_stats(cond_layer)
+                _, _, n_closer_g = fc.ranks_of_targets(
+                    _whiten(preds, g_mu, g_l),
+                    _whiten(pool_v, g_mu, g_l),
+                    true_idx,
+                    "cosine",
+                    phase="battery_generic_whiten",
+                )
+                res["generic_whiten_robustness"] = {
+                    "acc_at_1_whitened": float((np.asarray(n_closer_g) == 0).mean()),
+                    "n_whiten_train": int(len(fit_idx)),
+                }
                 # identity+bias baseline pushed through the SAME battery
                 ib_res = _battery_metrics(
                     ib_pred,
                     pool_v,
                     true_idx,
-                    mu_a=mu_a,
-                    chol_l=chol_l,
+                    whiten_parts=whiten_parts,
                     groups=groups_t,
                     n_boot=args.n_boot,
                     boot_seed=args.boot_seed,
@@ -2358,26 +2494,39 @@ def phase_battery(args: argparse.Namespace) -> None:
             targets_3a = list(labeled)
             true_idx_3a = np.array([ad.pos[s] for s in targets_3a], dtype=np.int64)
             x_idx = [ad.pos[s] for s in targets_3a]
+            # R3-4: per-fold train whitening for the curve too — partition
+            # once; per-layer fold stats computed UNCACHED (28 layers x
+            # n_folds L matrices would hold GBs otherwise).
+            curve_ix: dict[int, list[int]] = {}
+            for i, s in enumerate(targets_3a):
+                curve_ix.setdefault(fold_of_group[ad.group_of[s]], []).append(i)
+            part_curve = {k: np.asarray(v, dtype=np.int64) for k, v in curve_ix.items()}
             accs: list[float] = []
             for ell in ad.layers:
-                mu_l, chol_ell = _whiten_stats(np.asarray(gy[fit_idx, ell], dtype=np.float64))
                 bundle_l = load_map_bundle(args, "3a_generic", ell)
                 preds_l = map_predict(bundle_l, np.asarray(ad.vc[x_idx, ell], dtype=np.float32))
                 pool_l = np.asarray(ad.ans[:, ell], dtype=np.float64)
-                _, _, n_closer = fc.ranks_of_targets(
-                    _whiten(preds_l, mu_l, chol_ell),
-                    _whiten(pool_l, mu_l, chol_ell),
-                    true_idx_3a,
-                    "cosine",
-                    phase="battery_3a_curve",
-                )
-                accs.append(float((np.asarray(n_closer) == 0).mean()))
+                acc_fl = np.zeros(len(targets_3a), dtype=bool)
+                for k2, ix in sorted(part_curve.items()):
+                    st = stats_cache.get((k2, ell))
+                    if st is None:
+                        st = _fold_stats(k2, ell, cache=False)
+                    mu_l, chol_ell = st
+                    _, _, n_closer = fc.ranks_of_targets(
+                        _whiten(preds_l[ix], mu_l, chol_ell),
+                        _whiten(pool_l, mu_l, chol_ell),
+                        true_idx_3a[ix],
+                        "cosine",
+                        phase="battery_3a_curve",
+                    )
+                    acc_fl[ix] = np.asarray(n_closer) == 0
+                accs.append(float(acc_fl.mean()))
             curve_3a[arm] = {
                 "layers": [int(x) for x in ad.layers],
                 "acc_at_1_whitened": accs,
                 "n_targets": int(len(targets_3a)),
                 "note": "exploratory all-layer #3a whitened-cosine acc@1 "
-                "(greedy targets; no bootstrap)",
+                "(greedy targets; per-fold train whitening; no bootstrap)",
             }
             _append_jsonl(
                 units_path, {"unit": curve_key, "fingerprint": fp, "result": curve_3a[arm]}
@@ -2412,9 +2561,12 @@ def phase_battery(args: argparse.Namespace) -> None:
             "layers": "A3: #3a cells at the MODAL probe-selected 3a layer; #3b cells at each "
             "fold's probe-selected 3b layer (predictor_scores selection); the generic-R2 "
             "layer is reference only",
-            "whiten": "shrunk Cholesky lam=0.1 from THIS run's map-fit train answers at the "
-            "cell's layer",
-            "draw_avg": f"first {args.k_draw_avg} same-label sampled draws (deterministic)",
+            "whiten": "per (arm, fold): shrunk Cholesky lam=0.1 from the fold's TRAIN-split "
+            "greedy answers at the cell's layer (registered basis, plan F2); #3a targets "
+            "partitioned by their group's eval fold; generic_whiten_robustness = the same "
+            "read under generic-answer whitening (labeled robustness companion)",
+            "draw_avg": f"mean(v_A_greedy + first {args.k_draw_avg} same-label sampled draws), "
+            "joined by persisted v_A_sample_idx; realized K reported per cell",
             "pool": "ALL captured greedy answers of the arm",
             "flags": "per-target whitened acc@1 flags persisted to "
             "battery_acc1_flags_<arm>.json (pooled reads are re-reductions)",
@@ -2435,8 +2587,13 @@ def phase_battery(args: argparse.Namespace) -> None:
 
 def phase_transfer(args: argparse.Namespace) -> None:
     """Report-only cross-regime transfer: ctx ridge (+ DiM) trained on ALL
-    balanced rows of one arm, evaluated on the other arm's balanced rows."""
+    balanced rows of one arm, evaluated on the other arm's balanced rows.
+    Each direction x engine carries a GROUP-bootstrap AUROC CI over the
+    EVAL arm's groups (registered transfer statistic; R3-3), with the
+    per-draw bootstrap values persisted for downstream recompute."""
     inputs = {arm: _sha256_file(_eval_root(args) / arm / "splits.json") for arm in ARMS}
+    for arm in ARMS:
+        inputs[f"{arm}_labels"] = _sha256_file(_eval_root(args) / arm / "labels.json")
     fp = _phase_fingerprint(args, "transfer", inputs)
     sent = _sentinel_path(args, "transfer")
     if _sentinel_ok(sent, fp, resume=not args.no_resume):
@@ -2462,15 +2619,35 @@ def phase_transfer(args: argparse.Namespace) -> None:
                 sc = _dim_scores(x_tr, y_tr, x_ev)
             y_dst = np.array([a_dst.y[s] for s in a_dst.bal])
             key = f"{src}->{dst}|{engine}"
+            # R3-3: group-bootstrap AUROC CI over the EVAL arm's groups
+            groups_ev = [a_dst.group_of[s] for s in a_dst.bal]
+            w, _ = _group_bootstrap_weights(groups_ev, args.n_boot, args.boot_seed)
+            boot = _weighted_auroc_draws(sc[0], y_dst, w)
+            boot_f = boot[np.isfinite(boot)]
+            ci = (
+                [float(np.percentile(boot_f, 2.5)), float(np.percentile(boot_f, 97.5))]
+                if len(boot_f)
+                else [float("nan"), float("nan")]
+            )
             out["directions"][key] = {
                 "layer": layer,
                 "n_train": len(tr),
                 "n_eval": len(a_dst.bal),
                 "auroc": _auroc(sc[0], y_dst),
+                "auroc_ci95": ci,
+                "n_boot": int(args.n_boot),
+                "n_boot_finite": int(len(boot_f)),
+                "bootstrap": "group (eval arm's groups)",
+                "boot_aurocs": [round(float(b), 6) if np.isfinite(b) else None for b in boot],
                 "scores": {s: float(v) for s, v in zip(a_dst.bal, sc[0])},
             }
             logger.info(
-                "[transfer] %s auroc=%.3f layer=%d", key, out["directions"][key]["auroc"], layer
+                "[transfer] %s auroc=%.3f ci95=[%.3f, %.3f] layer=%d",
+                key,
+                out["directions"][key]["auroc"],
+                ci[0],
+                ci[1],
+                layer,
             )
 
     out["meta"] = _provenance()
@@ -2717,6 +2894,12 @@ def phase_stats(args: argparse.Namespace) -> None:
                     float(np.nanpercentile(boots, 2.5)),
                     float(np.nanpercentile(boots, 97.5)),
                 ]
+                # R3-3: persist the per-draw bootstrap values (draw index i is
+                # the SAME group resample across predictors of the arm, so
+                # any contrast/ratio is recomputable downstream).
+                entry["boot_aurocs"] = [
+                    round(float(b), 6) if np.isfinite(b) else None for b in boots
+                ]
             table[p] = entry
 
         contrasts: dict[str, Any] = {}
@@ -2734,6 +2917,60 @@ def phase_stats(args: argparse.Namespace) -> None:
                     delta_int_ci[arm] = ci
             elif name == "delta_int":
                 delta_int_ci[arm] = None
+
+        # R3-3: registered recovery fraction (plan Ceiling criterion):
+        # recovery = (AUROC_#3a − AUROC_#2) / (AUROC_#4 − AUROC_#2), reported
+        # with CI only when the point denominator > 0.02, else undefined.
+        # Per-draw ratio CI over draws with |denominator| > 0.02 (masked
+        # draw count reported — a near-zero denominator draw explodes the
+        # ratio without carrying signal).
+        recovery: dict[str, Any]
+        if all(p in boot_aurocs for p in (PRED_3A, PRED_CTX, PRED_ANS)):
+            num_pt = table[PRED_3A]["auroc"] - table[PRED_CTX]["auroc"]
+            den_pt = table[PRED_ANS]["auroc"] - table[PRED_CTX]["auroc"]
+            num_d = boot_aurocs[PRED_3A] - boot_aurocs[PRED_CTX]
+            den_d = boot_aurocs[PRED_ANS] - boot_aurocs[PRED_CTX]
+            ok = np.isfinite(num_d) & np.isfinite(den_d) & (np.abs(den_d) > 0.02)
+            ratios = num_d[ok] / den_d[ok]
+            recovery = {
+                "definition": f"(AUROC[{PRED_3A}] - AUROC[{PRED_CTX}]) / "
+                f"(AUROC[{PRED_ANS}] - AUROC[{PRED_CTX}])",
+                "point": float(num_pt / den_pt) if den_pt > 0.02 else None,
+                "point_status": ("ok" if den_pt > 0.02 else "undefined_denominator_le_0.02"),
+                "numerator_point": float(num_pt),
+                "denominator_point": float(den_pt),
+                "ci95": (
+                    [float(np.percentile(ratios, 2.5)), float(np.percentile(ratios, 97.5))]
+                    if len(ratios)
+                    else None
+                ),
+                "n_draws_used": int(ok.sum()),
+                "n_draws_masked_small_denominator": int(len(ok) - int(ok.sum())),
+            }
+        else:
+            recovery = {"skipped": "missing predictor draws for #2/#3a/#4"}
+
+        # R3-3: registered Spearman rho(arm score, continuous refuse-rate)
+        # per predictor over ALL judge-labeled rows (rate != None), incl.
+        # middle-band rows the binary label drops — the graded companion.
+        from scipy.stats import spearmanr
+
+        lab_rows = load_arm_labels(args, arm)["rows"]
+        spearman_rate: dict[str, Any] = {}
+        for p in preds_present:
+            pairs = [
+                (float(rec[p]), 1.0 - float(lab_rows[s]["rate"]))
+                for s, rec in rows.items()
+                if p in rec
+                and rec[p] is not None
+                and np.isfinite(rec[p])
+                and lab_rows.get(s, {}).get("rate") is not None
+            ]
+            if len(pairs) >= 3:
+                rho, pval = spearmanr([a for a, _ in pairs], [b for _, b in pairs])
+                spearman_rate[p] = {"rho": float(rho), "p": float(pval), "n": len(pairs)}
+            else:
+                spearman_rate[p] = {"rho": None, "p": None, "n": len(pairs)}
 
         # ladder summary: per (pred, n_lab) mean over folds per seed -> mean+-sd
         ladder_summary: dict[str, dict[str, Any]] = {}
@@ -2775,6 +3012,8 @@ def phase_stats(args: argparse.Namespace) -> None:
             "n_groups": len(uniq_groups),
             "predictors": table,
             "contrasts": contrasts,
+            "recovery_fraction": recovery,
+            "spearman_rate": spearman_rate,
             "ladder": ladder_out,
             "lodo": lodo,
             "permutation_advisory": perm,
@@ -2799,14 +3038,26 @@ def phase_stats(args: argparse.Namespace) -> None:
     transfer_p = _results_dir(args) / "transfer.json"
     if transfer_p.exists():
         tr = json.loads(transfer_p.read_text(encoding="utf-8"))
-        out["transfer_aurocs"] = {k: v["auroc"] for k, v in tr.get("directions", {}).items()}
+        out["transfer_aurocs"] = {
+            k: {
+                "auroc": v["auroc"],
+                "auroc_ci95": v.get("auroc_ci95"),
+                "n_boot_finite": v.get("n_boot_finite"),
+            }
+            for k, v in tr.get("directions", {}).items()
+        }
     out["notes"] = {
         "common_mask": "rows with ALL headline predictor scores present; rows with a "
         "missing judge score are EXCLUDED, never imputed to 50 (registered delta_int)",
         "balanced_acc_threshold": "pooled per-predictor score median (label-free; "
         "balanced eval sets put the prior at 0.5)",
         "bootstrap": f"paired group bootstrap, {args.n_boot} draws, seed {args.boot_seed}, "
-        "weighted Mann-Whitney AUROC over ONE common per-arm row mask",
+        "weighted Mann-Whitney AUROC over ONE common per-arm row mask; per-draw "
+        "boot_aurocs persisted per predictor (shared draw index across predictors)",
+        "spearman_rate": "rho(score, 1 - engage_rate) over ALL judge-labeled rows "
+        "(rate != None, middle band included); positive = score tracks refuse",
+        "recovery_fraction": "registered ceiling read; ratio CI masks draws with "
+        "|denominator| <= 0.02",
     }
     out["meta"] = _provenance()
     p = _results_dir(args) / "stats.json"
@@ -2978,8 +3229,12 @@ def _selftest(_: argparse.Namespace) -> int:
         payload = {"v_C": vc.astype(np.float16), "v_A_greedy": va.astype(np.float16)}
         if with_samples:
             vk = np.stack([va + rng.normal(scale=0.05, size=va.shape) for _ in range(k_samp)])
-            payload["v_A_sample_k"] = vk.astype(np.float16)
-            payload["v_A_rollout_mean"] = vk.mean(0).astype(np.float16)
+            # simulate capture-side rejected-sample compaction: draw 2 rejected,
+            # so kept rows join by the PERSISTED original draw index (R3-4)
+            keep = np.array([k for k in range(k_samp) if k != 2], dtype=np.int64)
+            payload["v_A_sample_k"] = vk[keep].astype(np.float16)
+            payload["v_A_sample_idx"] = keep
+            payload["v_A_rollout_mean"] = vk[keep].mean(0).astype(np.float16)
         np.savez(stores / f"{sha}.npz", **payload)
 
     label_items: dict[str, dict[str, Any]] = {}
@@ -3123,6 +3378,29 @@ def _selftest(_: argparse.Namespace) -> int:
     assert "map3a_minus_ctx" in stc and "ans_minus_map3a" in stc, sorted(stc)
     assert stc["ans_minus_ctx"]["registered"] is False, stc["ans_minus_ctx"]
     assert (eval_root / "results" / "transfer.json").exists()
+    # R3-4: fold-train whitening bundles + draw-avg realized-K + robustness read
+    for arm in ARMS:
+        assert list((out_root / "whiten").glob(f"{arm}__fold*__l*.npz")), arm
+        cell = bt["results"][arm]["3a_generic"]
+        rk = cell["draw_avg"]["draw_avg_realized_k"]
+        assert sum(rk["hist"].values()) == cell["draw_avg"]["n_targets"], rk
+        assert "draw_avg_realized_k" not in cell["greedy"], sorted(cell["greedy"])
+        gwr = cell["greedy"]["generic_whiten_robustness"]
+        assert np.isfinite(gwr["acc_at_1_whitened"]), gwr
+    # R3-3: transfer CIs + per-draw values; recovery fraction; spearman_rate
+    tr = json.loads((eval_root / "results" / "transfer.json").read_text())
+    for key, rec in tr["directions"].items():
+        assert len(rec["auroc_ci95"]) == 2 and len(rec["boot_aurocs"]) == 50, key
+    for arm in ARMS:
+        rec = st["arms"][arm]["recovery_fraction"]
+        assert "definition" in rec and rec["point_status"] in (
+            "ok",
+            "undefined_denominator_le_0.02",
+        ), rec
+        sr = st["arms"][arm]["spearman_rate"][PRED_CTX]
+        assert sr["n"] > 0 and (sr["rho"] is None or np.isfinite(sr["rho"])), sr
+        assert len(st["arms"][arm]["predictors"][PRED_CTX]["boot_aurocs"]) == 50, arm
+        assert st["transfer_aurocs"], st.get("transfer_aurocs")
     print(f"[selftest] PASS (all six phases; scratch={base})", flush=True)
     shutil.rmtree(base, ignore_errors=True)
     return 0
