@@ -2126,6 +2126,159 @@ def stage_dispatch_should_skip(
     )
 
 
+# --- Pre-split review gate (#2158; incidents #1336 r4 + #2061) --------------
+
+_PRE_SPLIT_LINE_RE = re.compile(r"^pre-split unit (?P<k>[A-Za-z0-9]+)/(?P<m>\d+)\b")
+_PRE_SPLIT_REMAINING_RE = re.compile(r"\bremaining(?:\s+units)?\s*:\s*(?P<rem>.*)$", re.IGNORECASE)
+_PRE_SPLIT_EMPTY_REMAINING = frozenset({"", "none", "-", "(none)"})
+_IMPLEMENTATION_MARKER_KINDS = frozenset({"epm:experiment-implementation", "epm:results"})
+
+
+def pre_split_review_gate(events: list[dict]) -> dict:
+    """Pre-split completeness gate for the Step 5 review dispatch (#2158).
+
+    Refuses a code-review dispatch while a #1810 pre-split multi-unit round is
+    mid-flight (incidents #1336 r4 + #2061). Pure function over an append-only
+    events list (index order == time order — never parses ``ts``). Returns
+    ``{"verdict", "reason", "remaining", "breadcrumb_index",
+    "unit_dispatch_index", "impl_index"}``. Verdicts:
+
+    - ``REVIEW-OK``: no pre-split state in flight, or an implementation marker
+      (``epm:experiment-implementation`` / ``epm:results``) POSTDATES (higher
+      index) both arms.
+    - ``PRE-SPLIT-INCOMPLETE``: the latest split signal has no later
+      implementation marker. Two arms, max index wins:
+
+      arm A — latest LINE-ANCHORED candidate ``pre-split unit <k>/<M> ...``
+      (k ALPHANUMERIC — #2061's lettered ``A/5``..``D/5`` are candidates; M
+      digits-only = the STRUCTURAL exclusion of the literal ``k/M`` template,
+      "M" not being a digit) in any ``epm:progress`` note, whose SAME line
+      carries a parseable NON-empty remaining field. The remaining recognizer
+      is deliberately LENIENT — case-insensitive ``remaining:`` /
+      ``remaining units:``, no leading semicolon — covering the measured
+      drift: ``; remaining:`` (#1336), ``. Remaining units: B (...)`` (#2061
+      row 52), ``Remaining: C (...)`` (row 65). An EMPTY parsed remaining
+      field (blank / ``none`` / ``-`` / ``(none)``, case-insensitive) is a
+      completed split — arm A does not fire (empty is parseable, never
+      unparseable). Notes are scanned via ``note.split("\\n")``, NEVER
+      ``splitlines()`` (gotchas.md JSONL trap). v155's "NEARLY COMPLETE"
+      matches — the arm keys on prefix + same-line remaining, not the word
+      "complete".
+
+      arm B — latest ``epm:progress`` note whose lstripped note STARTS with
+      ``"stage-dispatch "`` and whose ``_breadcrumb_fields()`` give
+      ``_normalize_stage(stage) == "implementing"`` AND ``"unit"`` in fields
+      (only pre-split rounds emit unit-scoped implementing dispatches — the
+      #1336 v131 shape; fires at the real v132 incident, 2 days before the
+      first breadcrumb). DELIBERATELY note-anchored: a stage-dispatch token
+      EMBEDDED mid-note (#2061 row 65, offset 617 — a QUOTE of the unit-C
+      dispatch) does NOT trip arm B; broadened arm A carries those rows.
+
+    - ``BREADCRUMB-UNPARSEABLE``: the latest live signal is a candidate line
+      whose SAME line carries no parseable remaining field — fail loud, never
+      fail open: a recognized candidate NEVER falls through to REVIEW-OK (the
+      #2061 fail-open shape). A live arm-B signal at a HIGHER index than the
+      unparseable candidate supersedes it (max index wins ->
+      PRE-SPLIT-INCOMPLETE, still nonzero at the CLI).
+
+    Incident-trace verdicts (plan v2 §12, measured 2026-08-17): #1336 — arm B
+    FIRES at the v132 premature Unit-A review dispatch (the latest
+    implementation-class marker, ``epm:results`` v7, predates the v131 unit=A
+    dispatch); arm A FIRES across the v147..v163 mid-split resume window;
+    CLEARS at ``epm:experiment-implementation`` v14. #2061 — the lettered
+    row-52 / row-65 prefixes FIRE arm A (where a digits-only parser fails
+    open); the full history CLEARS (the line-75 marker postdates the last
+    candidate).
+
+    Accepted residual: a POST-COMPLETION ``epm:progress`` note quoting a
+    breadcrumb line verbatim at column 0 (alphanumeric unit + non-empty
+    same-line remaining) re-arms arm A until the next implementation marker —
+    low likelihood, self-recovering, refusal is loud (exit 2 names the line),
+    never fail-open.
+    """
+    impl_index: int | None = None
+    breadcrumb_index: int | None = None
+    breadcrumb_line: str | None = None
+    breadcrumb_remaining: str | None = None
+    breadcrumb_parseable = False
+    unit_dispatch_index: int | None = None
+
+    for idx, event in enumerate(events):
+        kind = event.get("kind", "")
+        if kind in _IMPLEMENTATION_MARKER_KINDS:
+            impl_index = idx
+            continue
+        if kind != "epm:progress":
+            continue
+        note = (event.get("note", "") or "").lstrip()
+        for line in note.split("\n"):  # never splitlines() — gotchas.md JSONL trap
+            if _PRE_SPLIT_LINE_RE.match(line):
+                breadcrumb_index = idx
+                breadcrumb_line = line
+                match = _PRE_SPLIT_REMAINING_RE.search(line)
+                breadcrumb_parseable = match is not None
+                breadcrumb_remaining = match.group("rem").strip() if match else None
+        if note.startswith("stage-dispatch "):
+            fields = _breadcrumb_fields(note)
+            if _normalize_stage(fields.get("stage", "")) == "implementing" and "unit" in fields:
+                unit_dispatch_index = idx
+
+    def _live(idx: int | None) -> bool:
+        return idx is not None and (impl_index is None or idx > impl_index)
+
+    a_live = _live(breadcrumb_index)
+    b_live = _live(unit_dispatch_index)
+    a_empty = (
+        a_live
+        and breadcrumb_parseable
+        and breadcrumb_remaining is not None
+        and breadcrumb_remaining.lower() in _PRE_SPLIT_EMPTY_REMAINING
+    )
+    a_fires = a_live and breadcrumb_parseable and not a_empty
+    a_unparseable = a_live and not breadcrumb_parseable
+
+    result: dict[str, Any] = {
+        "verdict": "REVIEW-OK",
+        "reason": "",
+        "remaining": None,
+        "breadcrumb_index": breadcrumb_index,
+        "unit_dispatch_index": unit_dispatch_index,
+        "impl_index": impl_index,
+    }
+
+    b_supersedes = b_live and (breadcrumb_index is None or unit_dispatch_index > breadcrumb_index)
+    if a_unparseable and not b_supersedes:
+        result["verdict"] = "BREADCRUMB-UNPARSEABLE"
+        result["reason"] = (
+            f"breadcrumb candidate at events index {breadcrumb_index} has no parseable "
+            f"same-line remaining field: {(breadcrumb_line or '')[:160]!r}"
+        )
+        return result
+    if a_fires or b_live:
+        result["verdict"] = "PRE-SPLIT-INCOMPLETE"
+        if a_fires and (not b_live or breadcrumb_index >= unit_dispatch_index):
+            result["remaining"] = breadcrumb_remaining
+            result["reason"] = (
+                f"arm A: pre-split breadcrumb at events index {breadcrumb_index} "
+                f"({(breadcrumb_line or '')[:160]!r}) carries a non-empty remaining "
+                "field with no later implementation marker"
+            )
+        else:
+            result["remaining"] = breadcrumb_remaining if a_fires else None
+            result["reason"] = (
+                "arm B: unit-scoped implementing stage-dispatch at events index "
+                f"{unit_dispatch_index} has no later implementation marker"
+            )
+        return result
+    if breadcrumb_index is None and unit_dispatch_index is None:
+        result["reason"] = "no pre-split signals in events"
+    else:
+        result["reason"] = (
+            f"implementation marker at events index {impl_index} postdates every pre-split signal"
+        )
+    return result
+
+
 # --- Ensemble verdict presence (#1149; mechanizes SKILL.md Step 5b ---
 # --- durable-verdict-first rule items 1 + 3)                        ---
 
@@ -5470,6 +5623,124 @@ def has_event(task_id: int, kind: str) -> bool:
     return any(e["kind"] == kind for e in list_events(task_id))
 
 
+# ─── Async session mode + durable asks (mission-control rung 0) ─────────────
+# CONTRACTS.md §1.2/§1.3/§2.2 (mission-control repo). Flag-gated: nothing in
+# this section changes behavior unless an `epm:ask` / `epm:session-mode`
+# marker exists on a task or EPM_ASYNC_SESSION / --session-mode async is set.
+
+SESSION_MODE_KIND = "epm:session-mode"
+ASK_KIND = "epm:ask"
+ASK_ANSWERED_KIND = "epm:ask-answered"
+SESSION_MODES = ("auto", "async")
+
+
+class BodyShaMismatch(RuntimeError):
+    """``promote --if-body-sha`` CAS refusal: body.md changed since the
+    caller's view was composed (e.g. a follow-up round rewrote the body AT
+    awaiting_promotion). Raised INSIDE the promote flock BEFORE any
+    mutation — nothing is flipped, appended, or moved."""
+
+
+class PlanVersionMismatch(RuntimeError):
+    """``set-status <N> approved --if-plan-v K`` CAS refusal: the highest
+    persisted ``plans/v{K}.md`` no longer matches the caller's view (a
+    material-change re-park wrote v K+1 while the approval view was open).
+    Raised INSIDE the set_status flock BEFORE any mutation."""
+
+
+def ask_gate(row: dict | None) -> str | None:
+    """The ``gate`` field of an ``epm:ask`` row's JSON note, or ``None``
+    when the row/note is absent or not parseable JSON carrying a string
+    ``gate`` (fail-soft read: a malformed ask is still an ask — callers
+    that only need openness use :func:`open_async_ask` directly)."""
+    note = row.get("note") if isinstance(row, dict) else None
+    if not isinstance(note, str):
+        return None
+    try:
+        payload = json.loads(note)
+    except ValueError:
+        return None
+    gate = payload.get("gate") if isinstance(payload, dict) else None
+    return gate if isinstance(gate, str) else None
+
+
+def open_async_ask(events: list[dict], *, gate: str | None = None) -> dict | None:
+    """Newest OPEN ``epm:ask`` row, or ``None`` (CONTRACTS §1.3 T1/W1/W3).
+
+    An ask is OPEN iff no ``epm:ask-answered`` and no ``epm:status-changed``
+    row was appended AFTER it: at rung 0 no ``--answers-ask`` verb exists,
+    so the answering STATUS TRANSITION (approve/promote/set-status) is what
+    closes an ask. Ordering is by events.jsonl APPEND ORDER, not timestamp —
+    every writer appends under the task-workflow flock, and the same-second
+    park sequence (status-changed then ask) would tie on the second-
+    resolution ISO timestamps. ``gate`` restricts the scan to asks whose
+    note JSON carries that ``gate`` value."""
+    last_idx: int | None = None
+    last_row: dict | None = None
+    for idx, row in enumerate(events):
+        if not isinstance(row, dict) or row.get("kind") != ASK_KIND:
+            continue
+        if gate is not None and ask_gate(row) != gate:
+            continue
+        last_idx, last_row = idx, row
+    if last_idx is None:
+        return None
+    for row in events[last_idx + 1 :]:
+        if isinstance(row, dict) and row.get("kind") in (ASK_ANSWERED_KIND, "epm:status-changed"):
+            return None
+    return last_row
+
+
+def newest_session_mode(events: list[dict]) -> str | None:
+    """Mode of the newest ``epm:session-mode`` marker (``"async"`` /
+    ``"auto"``), or ``None`` when no valid marker exists. Newest-wins by
+    append order (CONTRACTS §2.2: an explicit downgrade posts a fresh
+    ``{mode: "auto"}`` marker rather than deleting history); rows whose
+    note is not JSON with a recognized ``mode`` are skipped."""
+    mode: str | None = None
+    for row in events:
+        if not isinstance(row, dict) or row.get("kind") != SESSION_MODE_KIND:
+            continue
+        note = row.get("note")
+        if not isinstance(note, str):
+            continue
+        try:
+            payload = json.loads(note)
+        except ValueError:
+            continue
+        cand = payload.get("mode") if isinstance(payload, dict) else None
+        if cand in SESSION_MODES:
+            mode = cand
+    return mode
+
+
+def _highest_plan_version_in(task_path: Path) -> int | None:
+    """Highest K among ``<task_path>/plans/v{K}.md``; ``None`` when the task
+    has no versioned plans (same filename grammar as new_plan_version)."""
+    plans_dir = task_path / "plans"
+    if not plans_dir.is_dir():
+        return None
+    versions = [
+        int(m.group(1))
+        for p in plans_dir.glob("v*.md")
+        if (m := re.fullmatch(r"v(\d+)\.md", p.name))
+    ]
+    return max(versions) if versions else None
+
+
+def highest_plan_version(task_id: int) -> int | None:
+    """Public wrapper of :func:`_highest_plan_version_in` (the CAS key for
+    ``set-status approved --if-plan-v``)."""
+    return _highest_plan_version_in(find_task_path(task_id))
+
+
+def body_sha12(task_path: Path) -> str:
+    """sha256 of the raw ``body.md`` BYTES, truncated to 12 hex chars — the
+    ``promote --if-body-sha`` CAS key (bytes, not parsed frontmatter: any
+    rewrite invalidates an open promotion view)."""
+    return hashlib.sha256((task_path / "body.md").read_bytes()).hexdigest()[:12]
+
+
 # ─── Status transitions ────────────────────────────────────────────────────
 
 
@@ -5534,6 +5805,7 @@ def set_status(
     *,
     note: str | None = None,
     force_followup_exit: bool = False,
+    if_plan_v: int | None = None,
 ) -> Path:
     """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ (whole-dir move), then post
     a status-changed event and commit. Returns the new absolute path.
@@ -5561,12 +5833,33 @@ def set_status(
 
     Refuses `followups_running` → any FOLLOWUP_HELD_BLOCKED_STATUSES member
     (same-issue follow-up status-hold rule) unless ``force_followup_exit``.
+
+    ``if_plan_v`` (mission-control rung 0, optional — absent = legacy): a
+    version-keyed CAS check for the async plan-approval answer path. When
+    given, the CURRENT highest ``plans/v{K}.md`` must equal it, checked
+    INSIDE the flock BEFORE any mutation; a mismatch raises
+    :class:`PlanVersionMismatch` with nothing mutated (a material-change
+    re-park wrote a newer plan while the approval view was open).
     """
     if new_status not in STATUSES:
         raise ValueError(f"unknown status: {new_status!r}; expected one of {STATUSES}")
     with _locked():
         old = find_task_path(task_id)
         old_status = _status_from_path(old)
+        if if_plan_v is not None:
+            actual_v = _highest_plan_version_in(old)
+            if actual_v != if_plan_v:
+                actual_desc = f"v{actual_v}" if actual_v is not None else "absent"
+                remedy = (
+                    f"re-read plans/v{actual_v}.md and re-run with --if-plan-v {actual_v}"
+                    if actual_v is not None
+                    else "the task has no versioned plans — drop --if-plan-v"
+                )
+                raise PlanVersionMismatch(
+                    f"task #{task_id}: stale view — --if-plan-v {if_plan_v} but the "
+                    f"highest persisted plan is {actual_desc} (a newer plan revision "
+                    f"landed since the view was composed); nothing mutated. {remedy}."
+                )
         if old_status == new_status:
             # Idempotent retry of the SAME transition. If find_task_path
             # resolved the task at a path that DISAGREES with the registry
@@ -6596,9 +6889,17 @@ def new_plan_version(task_id: int, plan_md: str, *, allow_amendment: bool = Fals
 # ─── Promotion ──────────────────────────────────────────────────────────────
 
 
-def promote(task_id: int, verdict: str) -> Path:
+def promote(task_id: int, verdict: str, *, if_body_sha: str | None = None) -> Path:
     """User-only: flip a task at awaiting_promotion → completed, record the
     classification in frontmatter, append epm:promoted.
+
+    ``if_body_sha`` (mission-control rung 0, optional — absent = legacy): a
+    version-keyed CAS check for the async promotion answer path. When given,
+    ``sha256(body.md bytes)[:12]`` must match it (a longer full sha is
+    accepted and prefix-compared), checked INSIDE the flock BEFORE any
+    mutation; a mismatch raises :class:`BodyShaMismatch` with nothing
+    mutated — follow-up rounds rewrite the body AT awaiting_promotion, which
+    invalidates an open promotion view.
     """
     if verdict not in ("useful", "not-useful"):
         raise ValueError(f"verdict must be useful|not-useful, got {verdict!r}")
@@ -6610,6 +6911,17 @@ def promote(task_id: int, verdict: str) -> Path:
                 f"task #{task_id} is in status {cur_status!r}, expected {PARK_STATUS!r}; "
                 f"refusing to promote"
             )
+        if if_body_sha is not None:
+            expected = if_body_sha.strip().lower()[:12]
+            actual = body_sha12(path)
+            if actual != expected:
+                raise BodyShaMismatch(
+                    f"task #{task_id}: stale view — --if-body-sha {expected} but the "
+                    f"current body.md hashes to {actual} (the body changed since the "
+                    f"promotion view was composed, e.g. a follow-up round rewrote it); "
+                    f"nothing mutated. Re-read the body and re-run with "
+                    f"--if-body-sha {actual}."
+                )
         fm, body = _read_body(path / "body.md")
         fm["classification"] = verdict
         fm["promoted_at"] = _utcnow_iso()
