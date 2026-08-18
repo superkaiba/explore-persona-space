@@ -47,6 +47,36 @@ SEPARATION_BAR = A62.SEPARATION_BAR
 
 ARM_ORDER = ["ce", "patch1", "patch2", "patch3", "prefill1", "prefill2", "prefill3"]
 
+# Reader-facing label maps (no bare slugs on any canvas — #2333 r2 revision).
+MODEL_LABEL = {"q25": "Qwen2.5-7B", "q35": "Qwen3.5-9B"}
+SET_LABEL = {"s1": "instruction-format pairs", "s2": "pirate matched-query pairs"}
+SCHEME_LABEL = {
+    "med": "patch-content donors (confirmatory)",
+    "bstart": "natural-opening donors (descriptive)",
+}
+KIND_LABEL = {"patch": "state patch", "prefill": "token prefill"}
+ARM_TICK = {
+    "ce": "context-end patch\n(control)",
+    "patch1": "state patch, 1 pos",
+    "patch2": "state patch, 2 pos",
+    "patch3": "state patch, 3 pos",
+    "prefill1": "prefill, 1 token",
+    "prefill2": "prefill, 2 tokens",
+    "prefill3": "prefill, 3 tokens",
+}
+FBEH_LABEL = "behavioral movement F"
+
+
+def _arm_slug_label(slug: str) -> str:
+    """Reader-facing form of an arm slug, e.g. 'patch2_bstart' ->
+    'state patch, 2 pos — natural-opening'."""
+    kind_k, scheme = slug.rsplit("_", 1)
+    kind = "patch" if kind_k.startswith("patch") else "prefill"
+    k = kind_k.removeprefix(kind)
+    unit = "pos" if kind == "patch" else ("token" if k == "1" else "tokens")
+    scheme_short = "patch-content" if scheme == "med" else "natural-opening"
+    return f"{KIND_LABEL[kind]}, {k} {unit} — {scheme_short}"
+
 
 def _load_tag(tag: str) -> dict:
     d = FMETRICS_DIR / tag
@@ -134,7 +164,13 @@ def fig_hero(data: dict, tag: str, field: str = "f_beh") -> None:
             if ce_mc is not None:
                 m, lo, hi = ce_mc
                 ax.axhspan(lo, hi, color=colors[2], alpha=0.15, zorder=0)
-                ax.axhline(m, color=colors[2], lw=0.8, ls="--", label="ce same-wave (95% CI band)")
+                ax.axhline(
+                    m,
+                    color=colors[2],
+                    lw=0.8,
+                    ls="--",
+                    label="full context-end patch, same wave (95% CI band)",
+                )
             for off, (variant, rows, color) in enumerate(
                 (("steered", data["steered"], colors[0]), ("null", data["null"], colors[1]))
             ):
@@ -164,21 +200,27 @@ def fig_hero(data: dict, tag: str, field: str = "f_beh") -> None:
                     fmt="o",
                     color=color,
                     capsize=3,
-                    label=f"{variant}" + (" (ce same-wave)" if variant == "steered" else ""),
+                    label=(
+                        "steered (true donor)" if variant == "steered" else "shuffled-donor null"
+                    ),
                 )
             ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
             ax.axhline(1.0, color="0.6", lw=0.8, ls=":")
             ax.set_xticks(xs)
-            ax.set_xticklabels(ARM_ORDER, rotation=30, ha="right")
-            ax.set_title(f"scheme = {scheme}" + ("" if scheme == "med" else " (natural-opening)"))
+            ax.set_xticklabels([ARM_TICK[a] for a in ARM_ORDER], rotation=30, ha="right")
+            ax.set_title(SCHEME_LABEL[scheme])
         if not any_points:  # e.g. f_act with no staged V_a store — skip, don't emit blank axes
             plt.close(fig)
             print(f"[figures] hero{suffix} {tag}/{set_name}: no {field} values — skipped")
             continue
-        ylabel = "F_beh (anchor-normalized)" if field == "f_beh" else "F_act (secondary DV)"
+        ylabel = FBEH_LABEL if field == "f_beh" else "activation movement F (secondary DV)"
         axes[0].set_ylabel(ylabel)
         axes[0].legend(frameon=False, fontsize=8)
-        fig.suptitle(f"{tag} / {set_name}: snowball recovery profile{suffix}", y=1.02)
+        dv_note = "" if field == "f_beh" else " — activation DV"
+        fig.suptitle(
+            f"{MODEL_LABEL[tag]} — {SET_LABEL[set_name]}: snowball recovery profile{dv_note}",
+            y=1.02,
+        )
         fig.tight_layout()
         savefig_paper(fig, f"hero_snowball{suffix}_{tag}_{set_name}", dir=str(FIG_DIR))
         plt.close(fig)
@@ -205,17 +247,22 @@ def fig_recovery(data: dict, tag: str) -> None:
                     los.append(max(0.0, rec["ratio"] - lo))
                     his.append(max(0.0, hi - rec["ratio"]))
                 if ks:
-                    ax.errorbar(ks, rs, yerr=[los, his], marker="o", color=color, label=kind)
+                    ax.errorbar(
+                        ks, rs, yerr=[los, his], marker="o", color=color, label=KIND_LABEL[kind]
+                    )
             ax.axhline(1.0, color="0.6", lw=0.8, ls=":")
             ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
-            ax.set_title(f"{set_name} / {scheme}")
+            ax.set_title(f"{SET_LABEL[set_name]}\n{SCHEME_LABEL[scheme]}", fontsize=9)
             ax.set_xticks(list(C.ARM_KS))
-    axes[1][0].set_xlabel("k (answer positions)")
-    axes[1][1].set_xlabel("k (answer positions)")
-    axes[0][0].set_ylabel("R_k = F_arm / F_ce")
-    axes[1][0].set_ylabel("R_k = F_arm / F_ce")
+    axes[1][0].set_xlabel("opening positions transplanted")
+    axes[1][1].set_xlabel("opening positions transplanted")
+    axes[0][0].set_ylabel("recovery ratio (arm F / control F)")
+    axes[1][0].set_ylabel("recovery ratio (arm F / control F)")
     axes[0][0].legend(frameon=False, fontsize=8)
-    fig.suptitle(f"{tag}: recovery ratio vs k (steered arms, same-wave ce)", y=1.01)
+    fig.suptitle(
+        f"{MODEL_LABEL[tag]}: recovery vs opening length (steered arms, same-wave control)",
+        y=1.01,
+    )
     fig.tight_layout()
     savefig_paper(fig, f"recovery_ratio_{tag}", dir=str(FIG_DIR))
     plt.close(fig)
@@ -240,13 +287,20 @@ def fig_perpair(data: dict, tag: str) -> None:
         pts = [(nu[k], st[k]) for k in st if k in nu and k[0] == set_name]
         if pts:
             xs, ys = zip(*pts, strict=True)
-            ax.scatter(xs, ys, s=18, color=color, alpha=0.75, label=f"{set_name} (n={len(pts)})")
+            ax.scatter(
+                xs,
+                ys,
+                s=18,
+                color=color,
+                alpha=0.75,
+                label=f"{SET_LABEL[set_name]} (n={len(pts)})",
+            )
     lim = ax.get_xlim() + ax.get_ylim()
     lo, hi = min(lim), max(lim)
     ax.plot([lo, hi], [lo, hi], color="0.6", lw=0.8, ls=":")
-    ax.set_xlabel("F_beh — shuffled-donor null")
-    ax.set_ylabel("F_beh — steered donor")
-    ax.set_title(f"{tag}: prefill-3 (med), per pair")
+    ax.set_xlabel("behavioral movement F — shuffled-donor null")
+    ax.set_ylabel("behavioral movement F — steered (true donor)")
+    ax.set_title(f"{MODEL_LABEL[tag]}: three-token prefill, patch-content donors — per pair")
     ax.legend(frameon=False, fontsize=8)
     fig.tight_layout()
     savefig_paper(fig, f"perpair_prefill3_{tag}", dir=str(FIG_DIR))
@@ -291,15 +345,21 @@ def fig_forest_cells(data: dict, tag: str) -> None:
         drew = drew or bool(ys)
         ax.axvline(0.0, color="0.6", lw=0.8, ls=":")
         ax.set_yticks(range(len(slugs)))
-        ax.set_yticklabels(slugs if ax is axes[0] else [""] * len(slugs), fontsize=7)
-        ax.set_title(cell, fontsize=8)
+        pretty = [_arm_slug_label(s) for s in slugs]
+        ax.set_yticklabels(pretty if ax is axes[0] else [""] * len(slugs), fontsize=6)
+        ax.set_title(cell.replace("_", " "), fontsize=8)
         ax.invert_yaxis()
     if not drew:
         plt.close(fig)
         print(f"[figures] forest_cells {tag}: no per-cell diffs — skipped")
         return
-    fig.supxlabel("F_beh: steered − null (95% CI)")
-    fig.suptitle(f"{tag}: per-S1-cell paired diffs (med vs bstart colors)", y=1.02)
+    handles = [
+        plt.Line2D([], [], marker="o", ls="", color=colors[0], label="patch-content donors"),
+        plt.Line2D([], [], marker="o", ls="", color=colors[1], label="natural-opening donors"),
+    ]
+    axes[-1].legend(handles=handles, frameon=False, fontsize=6, loc="lower right")
+    fig.supxlabel("behavioral movement F: steered − null (95% CI)")
+    fig.suptitle(f"{MODEL_LABEL[tag]}: per-cell paired differences per arm", y=1.02)
     fig.tight_layout()
     savefig_paper(fig, f"forest_cells_{tag}", dir=str(FIG_DIR))
     plt.close(fig)
@@ -344,21 +404,21 @@ def fig_k_traces(data: dict, tag: str) -> None:
                         color=colors[kind],
                         lw=2.0,
                         marker="o",
-                        label=kind,
+                        label=KIND_LABEL[kind],
                     )
             ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
-            ax.set_title(f"{set_name} / {scheme}", fontsize=9)
+            ax.set_title(f"{SET_LABEL[set_name]}\n{SCHEME_LABEL[scheme]}", fontsize=8)
             ax.set_xticks(list(C.ARM_KS))
     if not drew:
         plt.close(fig)
         print(f"[figures] k_traces {tag}: no per-pair traces — skipped")
         return
-    axes[1][0].set_xlabel("k (answer positions)")
-    axes[1][1].set_xlabel("k (answer positions)")
+    axes[1][0].set_xlabel("opening positions transplanted")
+    axes[1][1].set_xlabel("opening positions transplanted")
     axes[0][0].set_ylabel("F steered − F null")
     axes[1][0].set_ylabel("F steered − F null")
     axes[0][0].legend(frameon=False, fontsize=8)
-    fig.suptitle(f"{tag}: per-pair k traces (thin) + means (bold)", y=1.01)
+    fig.suptitle(f"{MODEL_LABEL[tag]}: per-pair traces (thin) + means (bold)", y=1.01)
     fig.tight_layout()
     savefig_paper(fig, f"k_traces_{tag}", dir=str(FIG_DIR))
     plt.close(fig)
@@ -390,7 +450,7 @@ def fig_scheme_contrast(data: dict, tag: str) -> None:
                     color=colors[kind],
                     marker=markers[k],
                     alpha=0.6,
-                    label=f"{kind} k={k}",
+                    label=f"{KIND_LABEL[kind]}, {k} pos",
                 )
                 drew = True
     if not drew:
@@ -400,9 +460,9 @@ def fig_scheme_contrast(data: dict, tag: str) -> None:
     lim = ax.get_xlim() + ax.get_ylim()
     lo, hi = min(lim), max(lim)
     ax.plot([lo, hi], [lo, hi], color="0.6", lw=0.8, ls=":")
-    ax.set_xlabel("F_beh — med donors (confirmatory scheme)")
-    ax.set_ylabel("F_beh — bstart donors (natural-opening)")
-    ax.set_title(f"{tag}: donor-scheme contrast (steered)")
+    ax.set_xlabel("behavioral movement F — patch-content donors")
+    ax.set_ylabel("behavioral movement F — natural-opening donors")
+    ax.set_title(f"{MODEL_LABEL[tag]}: donor-scheme contrast (steered)")
     ax.legend(frameon=False, fontsize=7, ncol=2)
     fig.tight_layout()
     savefig_paper(fig, f"scheme_contrast_{tag}", dir=str(FIG_DIR))
@@ -438,28 +498,31 @@ def fig_arm_vs_ce(data: dict, tag: str) -> None:
                 ]
                 if pts:
                     xs, ys = zip(*pts, strict=True)
+                    scheme_short = "patch-content" if scheme == "med" else "natural-opening"
                     ax.scatter(
                         xs,
                         ys,
                         s=12,
                         color=colors[k],
                         alpha=alpha,
-                        label=f"k={k} {scheme}" if kind == C.ARM_KINDS[0] else None,
+                        label=f"{k} pos, {scheme_short}" if kind == C.ARM_KINDS[0] else None,
                     )
                     drew = True
         lim = ax.get_xlim() + ax.get_ylim()
         lo, hi = min(lim), max(lim)
         ax.plot([lo, hi], [lo, hi], color="0.6", lw=0.8, ls=":", label=None)
         ax.plot([lo, hi], [0.5 * lo, 0.5 * hi], color="0.6", lw=0.8, ls="--", label=None)
-        ax.set_title(kind, fontsize=9)
-        ax.set_xlabel("F_ce (same-wave)")
+        ax.set_title(KIND_LABEL[kind], fontsize=9)
+        ax.set_xlabel("control F (full context-end patch, same wave)")
     if not drew:
         plt.close(fig)
         print(f"[figures] arm_vs_ce {tag}: no (arm, ce) pairs — skipped")
         return
-    axes[0].set_ylabel("F_arm (steered)")
+    axes[0].set_ylabel("arm F (steered)")
     axes[0].legend(frameon=False, fontsize=7, ncol=2)
-    fig.suptitle(f"{tag}: per-pair F_arm vs F_ce (identity ┊, half-share ╌)", y=1.01)
+    fig.suptitle(
+        f"{MODEL_LABEL[tag]}: per-pair arm F vs control F (identity ┊, half-share ╌)", y=1.01
+    )
     fig.tight_layout()
     savefig_paper(fig, f"arm_vs_ce_{tag}", dir=str(FIG_DIR))
     plt.close(fig)
@@ -480,13 +543,16 @@ def fig_whole_vs_continuation(data: dict, tag: str) -> None:
         ]
         if pts:
             xs, ys = zip(*pts, strict=True)
-            ax.scatter(xs, ys, s=14, color=color, alpha=0.6, label=f"k={k} (n={len(pts)})")
+            unit = "token" if k == 1 else "tokens"
+            ax.scatter(
+                xs, ys, s=14, color=color, alpha=0.6, label=f"{k}-{unit} prefill (n={len(pts)})"
+            )
     lim = ax.get_xlim() + ax.get_ylim()
     lo, hi = min(lim), max(lim)
     ax.plot([lo, hi], [lo, hi], color="0.6", lw=0.8, ls=":")
-    ax.set_xlabel("F_beh — whole response (donor opening included)")
-    ax.set_ylabel("F_beh — continuation only")
-    ax.set_title(f"{tag}: prefill steered arms")
+    ax.set_xlabel("whole-response F (donor opening included)")
+    ax.set_ylabel("continuation-only F")
+    ax.set_title(f"{MODEL_LABEL[tag]}: prefill steered rows")
     ax.legend(frameon=False, fontsize=8)
     fig.tight_layout()
     savefig_paper(fig, f"whole_vs_continuation_{tag}", dir=str(FIG_DIR))
@@ -504,29 +570,49 @@ def fig_coherence(data: dict, tag: str) -> None:
     fig, ax = plt.subplots(figsize=(7.2, 3.2))
     ax.bar(range(len(slugs)), vals, color=paper_palette(1)[0])
     ax.set_xticks(range(len(slugs)))
-    ax.set_xticklabels(slugs, rotation=40, ha="right", fontsize=7)
+    ax.set_xticklabels([_arm_slug_label(s) for s in slugs], rotation=40, ha="right", fontsize=6)
     ax.set_ylabel("coherent fraction (judge > 60)")
     ax.set_ylim(0, 1.02)
-    ax.set_title(f"{tag}: coherence survival per arm")
+    ax.set_title(f"{MODEL_LABEL[tag]}: coherence survival per arm")
     fig.tight_layout()
     savefig_paper(fig, f"coherence_{tag}", dir=str(FIG_DIR))
     plt.close(fig)
 
 
 def fig_model_compare(tags: list[str]) -> None:
-    """Cross-model: prefill-3 (med) paired diff (steered - null) per set."""
+    """Cross-model: prefill-3 (patch-content) paired diff (steered - null) per
+    set, annotated with the registered two-conjunct verdict per row (a
+    positive CI alone does not separate — Holm-corrected signed-rank must
+    agree; #2333 r2)."""
     rows = []
     for tag in tags:
         stats = A62.json.loads((FMETRICS_DIR / tag / "stats.json").read_text(encoding="utf-8"))
         for set_name, per in stats["per_set"].items():
             rec = per["arms"].get("prefill3_med", {})
             if "diff_ci" in rec:
-                rows.append((f"{tag}/{set_name}", rec["diff_mean"], *rec["diff_ci"]))
+                lo, hi = rec["diff_ci"]
+                if rec.get("separates"):
+                    verdict = "separates (both conjuncts)"
+                elif lo > 0.0:
+                    verdict = f"does not separate (corrected p = {rec['p_holm']:.2g})"
+                elif rec.get("holm_significant"):
+                    verdict = "does not separate (CI spans 0)"
+                else:
+                    verdict = "does not separate (CI spans 0; corrected p n.s.)"
+                rows.append(
+                    (
+                        f"{MODEL_LABEL[tag]}\n{SET_LABEL[set_name]}",
+                        rec["diff_mean"],
+                        lo,
+                        hi,
+                        verdict,
+                    )
+                )
     if not rows:
         return
-    fig, ax = plt.subplots(figsize=(4.8, 0.8 + 0.5 * len(rows)))
+    fig, ax = plt.subplots(figsize=(7.4, 0.8 + 0.62 * len(rows)))
     ys = np.arange(len(rows))
-    for y, (label, m, lo, hi) in zip(ys, rows, strict=True):
+    for y, (label, m, lo, hi, verdict) in zip(ys, rows, strict=True):
         ax.errorbar(
             [m],
             [y],
@@ -535,10 +621,12 @@ def fig_model_compare(tags: list[str]) -> None:
             color=paper_palette(1)[0],
             capsize=3,
         )
+        ax.text(max(hi for r in rows for hi in (r[3],)) + 0.03, y, verdict, va="center", fontsize=7)
     ax.axvline(0.0, color="0.6", lw=0.8, ls=":")
     ax.set_yticks(ys)
-    ax.set_yticklabels([r[0] for r in rows])
-    ax.set_xlabel("prefill-3 (med): F steered − F null (95% CI)")
+    ax.set_yticklabels([r[0] for r in rows], fontsize=8)
+    ax.set_xlim(right=max(r[3] for r in rows) + 0.45)
+    ax.set_xlabel("three-token prefill, patch-content donors: steered − null F (95% CI)")
     fig.tight_layout()
     savefig_paper(fig, "model_compare_prefill3", dir=str(FIG_DIR))
     plt.close(fig)

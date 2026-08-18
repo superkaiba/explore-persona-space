@@ -1,12 +1,62 @@
 {
-  "commit": "c087684a+dirty",
-  "render_id": "0ad2752063f1467e",
-  "git_commit": "c087684a",
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "406114d185554983",
+  "git_commit": "c9a0c9ec",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2333/inputs/s2_ce_derive_meta.json"
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
   ],
-  "created": "2026-08-18T04:21:44Z",
+  "created": "2026-08-18T05:57:24Z",
   "figsize": [
     9.6,
     3.6
@@ -14,353 +64,353 @@
   "points": [
     {
       "x": -0.11,
-      "F_beh (anchor-normalized)": 0.7414099478871634,
+      "behavioral movement F": 0.7414099478871634,
       "error": 0.0517352524575157,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 0.89,
-      "F_beh (anchor-normalized)": 0.36864018044104996,
+      "behavioral movement F": 0.36864018044104996,
       "error": 0.05778791477248252,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 1.89,
-      "F_beh (anchor-normalized)": 0.4006024081235382,
+      "behavioral movement F": 0.4006024081235382,
       "error": 0.05849627796691231,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 2.89,
-      "F_beh (anchor-normalized)": 0.40277846194241584,
+      "behavioral movement F": 0.40277846194241584,
       "error": 0.060062128023293054,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 3.89,
-      "F_beh (anchor-normalized)": 0.35535303905235593,
+      "behavioral movement F": 0.35535303905235593,
       "error": 0.06233475251189333,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 4.89,
-      "F_beh (anchor-normalized)": 0.481377091003842,
+      "behavioral movement F": 0.481377091003842,
       "error": 0.06720799695243454,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 5.89,
-      "F_beh (anchor-normalized)": 0.49670300101470977,
+      "behavioral movement F": 0.49670300101470977,
       "error": 0.06954447283186779,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 1.11,
-      "F_beh (anchor-normalized)": 0.12017170347228956,
+      "behavioral movement F": 0.12017170347228956,
       "error": 0.044232947683355374,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 2.11,
-      "F_beh (anchor-normalized)": 0.14287882960686782,
+      "behavioral movement F": 0.14287882960686782,
       "error": 0.044821740191217894,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 3.11,
-      "F_beh (anchor-normalized)": 0.15097936230326867,
+      "behavioral movement F": 0.15097936230326867,
       "error": 0.045086116978416295,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 4.11,
-      "F_beh (anchor-normalized)": 0.10035456184512155,
+      "behavioral movement F": 0.10035456184512155,
       "error": 0.03996991369566351,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 5.11,
-      "F_beh (anchor-normalized)": 0.11840076347072002,
+      "behavioral movement F": 0.11840076347072002,
       "error": 0.04338016543499352,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 6.11,
-      "F_beh (anchor-normalized)": 0.14599612574607845,
+      "behavioral movement F": 0.14599612574607845,
       "error": 0.04340580082783832,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 0.0,
-      "F_beh (anchor-normalized)": 0.7414099478871634,
-      "series": "ce same-wave (95% CI band)",
+      "behavioral movement F": 0.7414099478871634,
+      "series": "full context-end patch, same wave (95% CI band)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "F_beh (anchor-normalized)": 0.7414099478871634,
-      "series": "ce same-wave (95% CI band)",
+      "behavioral movement F": 0.7414099478871634,
+      "series": "full context-end patch, same wave (95% CI band)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": -0.11,
-      "F_beh (anchor-normalized)": 0.7414099478871634,
+      "behavioral movement F": 0.7414099478871634,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 0.89,
-      "F_beh (anchor-normalized)": 0.36864018044104996,
+      "behavioral movement F": 0.36864018044104996,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 1.89,
-      "F_beh (anchor-normalized)": 0.4006024081235382,
+      "behavioral movement F": 0.4006024081235382,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.89,
-      "F_beh (anchor-normalized)": 0.40277846194241584,
+      "behavioral movement F": 0.40277846194241584,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.89,
-      "F_beh (anchor-normalized)": 0.35535303905235593,
+      "behavioral movement F": 0.35535303905235593,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 4.89,
-      "F_beh (anchor-normalized)": 0.481377091003842,
+      "behavioral movement F": 0.481377091003842,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 5.89,
-      "F_beh (anchor-normalized)": 0.49670300101470977,
+      "behavioral movement F": 0.49670300101470977,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": -0.11,
-      "F_beh (anchor-normalized)": 0.6883479455181037,
+      "behavioral movement F": 0.6883479455181037,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 0.89,
-      "F_beh (anchor-normalized)": 0.3116957402183734,
+      "behavioral movement F": 0.3116957402183734,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.89,
-      "F_beh (anchor-normalized)": 0.34247113648526906,
+      "behavioral movement F": 0.34247113648526906,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.89,
-      "F_beh (anchor-normalized)": 0.3432151052153075,
+      "behavioral movement F": 0.3432151052153075,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 3.89,
-      "F_beh (anchor-normalized)": 0.2932284099865768,
+      "behavioral movement F": 0.2932284099865768,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 4.89,
-      "F_beh (anchor-normalized)": 0.414047757202983,
+      "behavioral movement F": 0.414047757202983,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 5.89,
-      "F_beh (anchor-normalized)": 0.42797371606706186,
+      "behavioral movement F": 0.42797371606706186,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": -0.11,
-      "F_beh (anchor-normalized)": 0.7918184504331351,
+      "behavioral movement F": 0.7918184504331351,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 0.89,
-      "F_beh (anchor-normalized)": 0.4272715697633384,
+      "behavioral movement F": 0.4272715697633384,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 1.89,
-      "F_beh (anchor-normalized)": 0.4594636924190937,
+      "behavioral movement F": 0.4594636924190937,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.89,
-      "F_beh (anchor-normalized)": 0.4633393612618936,
+      "behavioral movement F": 0.4633393612618936,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 3.89,
-      "F_beh (anchor-normalized)": 0.41789791501036344,
+      "behavioral movement F": 0.41789791501036344,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 4.89,
-      "F_beh (anchor-normalized)": 0.5484637511078521,
+      "behavioral movement F": 0.5484637511078521,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 5.89,
-      "F_beh (anchor-normalized)": 0.5670626617307974,
+      "behavioral movement F": 0.5670626617307974,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 1.11,
-      "F_beh (anchor-normalized)": 0.12017170347228956,
+      "behavioral movement F": 0.12017170347228956,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.11,
-      "F_beh (anchor-normalized)": 0.14287882960686782,
+      "behavioral movement F": 0.14287882960686782,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 3.11,
-      "F_beh (anchor-normalized)": 0.15097936230326867,
+      "behavioral movement F": 0.15097936230326867,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 4.11,
-      "F_beh (anchor-normalized)": 0.10035456184512155,
+      "behavioral movement F": 0.10035456184512155,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 5.11,
-      "F_beh (anchor-normalized)": 0.11840076347072002,
+      "behavioral movement F": 0.11840076347072002,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 6.11,
-      "F_beh (anchor-normalized)": 0.14599612574607845,
+      "behavioral movement F": 0.14599612574607845,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 1.11,
-      "F_beh (anchor-normalized)": 0.07716041405490921,
+      "behavioral movement F": 0.07716041405490921,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 2.11,
-      "F_beh (anchor-normalized)": 0.0996087765028378,
+      "behavioral movement F": 0.0996087765028378,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.11,
-      "F_beh (anchor-normalized)": 0.1063930415499122,
+      "behavioral movement F": 0.1063930415499122,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 4.11,
-      "F_beh (anchor-normalized)": 0.06136941131235851,
+      "behavioral movement F": 0.06136941131235851,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 5.11,
-      "F_beh (anchor-normalized)": 0.0752857218035158,
+      "behavioral movement F": 0.0752857218035158,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 6.11,
-      "F_beh (anchor-normalized)": 0.10363605145451876,
+      "behavioral movement F": 0.10363605145451876,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 1.11,
-      "F_beh (anchor-normalized)": 0.16562630942161996,
+      "behavioral movement F": 0.16562630942161996,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 2.11,
-      "F_beh (anchor-normalized)": 0.18925225688527358,
+      "behavioral movement F": 0.18925225688527358,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 3.11,
-      "F_beh (anchor-normalized)": 0.1965652755067448,
+      "behavioral movement F": 0.1965652755067448,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 4.11,
-      "F_beh (anchor-normalized)": 0.14130923870368553,
+      "behavioral movement F": 0.14130923870368553,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 5.11,
-      "F_beh (anchor-normalized)": 0.16204605267350283,
+      "behavioral movement F": 0.16204605267350283,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 6.11,
-      "F_beh (anchor-normalized)": 0.1904476531101954,
+      "behavioral movement F": 0.1904476531101954,
       "_kind": "line",
       "_group": 8
     },
@@ -368,7 +418,7 @@
       "x": -0.11,
       "y": 0.7414099478871634,
       "error": 0.0517352524575157,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 9
     },
@@ -376,7 +426,7 @@
       "x": 0.89,
       "y": 0.49484553010727866,
       "error": 0.06095457106496391,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 9
     },
@@ -384,7 +434,7 @@
       "x": 1.89,
       "y": 0.5063052713672967,
       "error": 0.06311553407213966,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 9
     },
@@ -392,7 +442,7 @@
       "x": 2.89,
       "y": 0.5184335695844556,
       "error": 0.061161140856675594,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 9
     },
@@ -400,7 +450,7 @@
       "x": 3.89,
       "y": 0.4026805210824122,
       "error": 0.06533245298983598,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 9
     },
@@ -408,7 +458,7 @@
       "x": 4.89,
       "y": 0.5664616905497315,
       "error": 0.06626157712969022,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 9
     },
@@ -416,7 +466,7 @@
       "x": 5.89,
       "y": 0.5826659542610572,
       "error": 0.0676231263213144,
-      "series": "steered (ce same-wave)",
+      "series": "steered (true donor)",
       "_kind": "errorbar",
       "_group": 9
     },
@@ -424,7 +474,7 @@
       "x": 1.11,
       "y": 0.09145244637265251,
       "error": 0.036287237625021465,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 10
     },
@@ -432,7 +482,7 @@
       "x": 2.11,
       "y": 0.10027654012742038,
       "error": 0.03787744344451541,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 10
     },
@@ -440,7 +490,7 @@
       "x": 3.11,
       "y": 0.11725182124582649,
       "error": 0.04248052808063008,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 10
     },
@@ -448,7 +498,7 @@
       "x": 4.11,
       "y": 0.07544386871748887,
       "error": 0.039579694085814826,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 10
     },
@@ -456,7 +506,7 @@
       "x": 5.11,
       "y": 0.09387087116293043,
       "error": 0.03767580737862063,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 10
     },
@@ -464,21 +514,21 @@
       "x": 6.11,
       "y": 0.09796681487834236,
       "error": 0.04030105112691019,
-      "series": "null",
+      "series": "shuffled-donor null",
       "_kind": "errorbar",
       "_group": 10
     },
     {
       "x": 0.0,
       "y": 0.7414099478871634,
-      "series": "ce same-wave (95% CI band)",
+      "series": "full context-end patch, same wave (95% CI band)",
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 1.0,
       "y": 0.7414099478871634,
-      "series": "ce same-wave (95% CI band)",
+      "series": "full context-end patch, same wave (95% CI band)",
       "_kind": "line",
       "_group": 11
     },
@@ -720,25 +770,25 @@
   "n_series": 18,
   "total_points": 108,
   "text": {
-    "suptitle": "q25 / s1: snowball recovery profile",
+    "suptitle": "Qwen2.5-7B \u2014 instruction-format pairs: snowball recovery profile",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "scheme = med",
-        "ylabel": "F_beh (anchor-normalized)",
+        "title_left": "patch-content donors (confirmatory)",
+        "ylabel": "behavioral movement F",
         "legend_labels": [
-          "ce same-wave (95% CI band)",
-          "steered (ce same-wave)",
-          "null"
+          "full context-end patch, same wave (95% CI band)",
+          "steered (true donor)",
+          "shuffled-donor null"
         ],
         "xticklabels": [
-          "ce",
-          "patch1",
-          "patch2",
-          "patch3",
-          "prefill1",
-          "prefill2",
-          "prefill3"
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -752,22 +802,22 @@
         ]
       },
       {
-        "title_left": "scheme = bstart (natural-opening)",
+        "title_left": "natural-opening donors (descriptive)",
         "xticklabels": [
-          "ce",
-          "patch1",
-          "patch2",
-          "patch3",
-          "prefill1",
-          "prefill2",
-          "prefill3"
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
         ]
       }
     ],
     "series": [
-      "ce same-wave (95% CI band)",
-      "steered (ce same-wave)",
-      "null"
+      "full context-end patch, same wave (95% CI band)",
+      "steered (true donor)",
+      "shuffled-donor null"
     ]
   },
   "formats_written": [

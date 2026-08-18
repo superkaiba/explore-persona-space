@@ -1,12 +1,62 @@
 {
-  "commit": "c087684a+dirty",
-  "render_id": "fb0c8dbdbd4046ad",
-  "git_commit": "c087684a",
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "2816e0da190b40ad",
+  "git_commit": "c9a0c9ec",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2333/inputs/s2_ce_derive_meta.json"
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
   ],
-  "created": "2026-08-18T04:22:34Z",
+  "created": "2026-08-18T05:58:13Z",
   "figsize": [
     8.4,
     6.0
@@ -2823,21 +2873,21 @@
     {
       "x": 1.0,
       "F steered \u2212 F null": 0.21269960439506647,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 156
     },
     {
       "x": 2.0,
       "F steered \u2212 F null": 0.06050547491853745,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 156
     },
     {
       "x": 3.0,
       "F steered \u2212 F null": 0.05730043606916667,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 156
     },
@@ -5652,21 +5702,21 @@
     {
       "x": 1.0,
       "F steered \u2212 F null": 0.18202752960551408,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 313
     },
     {
       "x": 2.0,
       "F steered \u2212 F null": 0.2988687226512062,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 313
     },
     {
       "x": 3.0,
       "F steered \u2212 F null": 0.25442761460959784,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 313
     },
@@ -8481,21 +8531,21 @@
     {
       "x": 1.0,
       "y": 0.3441933023800215,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 470
     },
     {
       "x": 2.0,
       "y": 0.3392401555124098,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 470
     },
     {
       "x": 3.0,
       "y": 0.35826924552201095,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 470
     },
@@ -11310,725 +11360,725 @@
     {
       "x": 1.0,
       "y": 0.19448303429664726,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 627
     },
     {
       "x": 2.0,
       "y": 0.35056564608952273,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 627
     },
     {
       "x": 3.0,
       "y": 0.3888225912500213,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 627
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.27347781217750267,
       "_kind": "line",
       "_group": 628
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.3199174406604747,
       "_kind": "line",
       "_group": 628
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.22497420020639836,
       "_kind": "line",
       "_group": 628
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.03177966101694915,
       "_kind": "line",
       "_group": 629
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": -0.1906779661016949,
       "_kind": "line",
       "_group": 629
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": -0.11652542372881351,
       "_kind": "line",
       "_group": 629
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.31827956989247314,
       "_kind": "line",
       "_group": 630
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.35125448028673834,
       "_kind": "line",
       "_group": 630
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.3698924731182796,
       "_kind": "line",
       "_group": 630
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.04810261892036344,
       "_kind": "line",
       "_group": 631
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.16889363976483157,
       "_kind": "line",
       "_group": 631
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.12426509887760556,
       "_kind": "line",
       "_group": 631
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.04727646454265161,
       "_kind": "line",
       "_group": 632
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.10277492291880796,
       "_kind": "line",
       "_group": 632
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.10405960945529291,
       "_kind": "line",
       "_group": 632
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.20711297071129717,
       "_kind": "line",
       "_group": 633
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.0203974895397488,
       "_kind": "line",
       "_group": 633
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": -0.02092050209205023,
       "_kind": "line",
       "_group": 633
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.06147091108671795,
       "_kind": "line",
       "_group": 634
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": -0.035675082327113035,
       "_kind": "line",
       "_group": 634
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.17563117453347948,
       "_kind": "line",
       "_group": 634
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.033934252386002034,
       "_kind": "line",
       "_group": 635
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": -0.04241781548250257,
       "_kind": "line",
       "_group": 635
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.12725344644750808,
       "_kind": "line",
       "_group": 635
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.016913319238900652,
       "_kind": "line",
       "_group": 636
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.012684989429175605,
       "_kind": "line",
       "_group": 636
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": -0.05496828752642711,
       "_kind": "line",
       "_group": 636
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.01849894291754741,
       "_kind": "line",
       "_group": 637
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.004228329809725163,
       "_kind": "line",
       "_group": 637
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": -0.006342494714587626,
       "_kind": "line",
       "_group": 637
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.03174785681949864,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 638
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.07113804284981914,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 638
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.09273192945766856,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 638
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.33539731682146545,
       "_kind": "line",
       "_group": 639
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.2894736842105264,
       "_kind": "line",
       "_group": 639
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.4447884416924664,
       "_kind": "line",
       "_group": 639
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.01059322033898305,
       "_kind": "line",
       "_group": 640
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": -0.04237288135593223,
       "_kind": "line",
       "_group": 640
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": -0.08050847457627118,
       "_kind": "line",
       "_group": 640
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.35985663082437275,
       "_kind": "line",
       "_group": 641
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.2724014336917563,
       "_kind": "line",
       "_group": 641
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.28530465949820794,
       "_kind": "line",
       "_group": 641
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.4596472474612507,
       "_kind": "line",
       "_group": 642
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.15606627471940132,
       "_kind": "line",
       "_group": 642
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.24692677712453232,
       "_kind": "line",
       "_group": 642
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.2774922918807811,
       "_kind": "line",
       "_group": 643
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": -0.06294964028776984,
       "_kind": "line",
       "_group": 643
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.027749229188078095,
       "_kind": "line",
       "_group": 643
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.004184100418409931,
       "_kind": "line",
       "_group": 644
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.014644351464435159,
       "_kind": "line",
       "_group": 644
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.035564853556485504,
       "_kind": "line",
       "_group": 644
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.03732162458836422,
       "_kind": "line",
       "_group": 645
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.10098792535675079,
       "_kind": "line",
       "_group": 645
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": -0.037321624588364466,
       "_kind": "line",
       "_group": 645
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.0,
       "_kind": "line",
       "_group": 646
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.021208907741251344,
       "_kind": "line",
       "_group": 646
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.07635206786850485,
       "_kind": "line",
       "_group": 646
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.010570824524312905,
       "_kind": "line",
       "_group": 647
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.05073995771670195,
       "_kind": "line",
       "_group": 647
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": -0.0465116279069769,
       "_kind": "line",
       "_group": 647
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": -0.05214940098661006,
       "_kind": "line",
       "_group": 648
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.03594080338266376,
       "_kind": "line",
       "_group": 648
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.048625792811839375,
       "_kind": "line",
       "_group": 648
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "F steered \u2212 F null": 0.07921443738844136,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 649
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "F steered \u2212 F null": 0.0836140816639785,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 649
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "F steered \u2212 F null": 0.10009700946685018,
-      "series": "prefill",
+      "series": "token prefill",
       "_kind": "line",
       "_group": 649
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.2187822497420021,
       "_kind": "line",
       "_group": 650
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.13106295149638797,
       "_kind": "line",
       "_group": 650
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.28586171310629516,
       "_kind": "line",
       "_group": 650
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.0,
       "_kind": "line",
       "_group": 651
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.01059322033898305,
       "_kind": "line",
       "_group": 651
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": -0.05296610169491525,
       "_kind": "line",
       "_group": 651
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.37419354838709673,
       "_kind": "line",
       "_group": 652
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.20788530465949828,
       "_kind": "line",
       "_group": 652
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.3415770609318997,
       "_kind": "line",
       "_group": 652
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.0053447354355959376,
       "_kind": "line",
       "_group": 653
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.024585783003741313,
       "_kind": "line",
       "_group": 653
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.04810261892036344,
       "_kind": "line",
       "_group": 653
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.4799588900308325,
       "_kind": "line",
       "_group": 654
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.09352517985611514,
       "_kind": "line",
       "_group": 654
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.09455292908530316,
       "_kind": "line",
       "_group": 654
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": -0.04393305439330537,
       "_kind": "line",
       "_group": 655
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": -0.01464435146443516,
       "_kind": "line",
       "_group": 655
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": -0.027196652719665298,
       "_kind": "line",
       "_group": 655
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": -0.01975850713501636,
       "_kind": "line",
       "_group": 656
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.06366630076838632,
       "_kind": "line",
       "_group": 656
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.08562019758507142,
       "_kind": "line",
       "_group": 656
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.009013785790031884,
       "_kind": "line",
       "_group": 657
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.11240721102863224,
       "_kind": "line",
       "_group": 657
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.020148462354188778,
       "_kind": "line",
       "_group": 657
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.02748414376321355,
       "_kind": "line",
       "_group": 658
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": -0.01268498942917584,
       "_kind": "line",
       "_group": 658
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.006342494714587858,
       "_kind": "line",
       "_group": 658
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.014799154334037834,
       "_kind": "line",
       "_group": 659
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": -0.1458773784355181,
       "_kind": "line",
       "_group": 659
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": -0.05496828752642699,
       "_kind": "line",
       "_group": 659
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.10658849459544888,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 660
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.04705192318226152,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 660
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.0747074434756702,
-      "series": "patch",
+      "series": "state patch",
       "_kind": "line",
       "_group": 660
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.25077399380804943,
       "_kind": "line",
       "_group": 661
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.5384416924664603,
       "_kind": "line",
       "_group": 661
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.2579979360165119,
       "_kind": "line",
       "_group": 661
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": -0.03177966101694915,
       "_kind": "line",
       "_group": 662
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": -0.05720338983050845,
       "_kind": "line",
       "_group": 662
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": -0.10169491525423727,
       "_kind": "line",
       "_group": 662
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.3182795698924731,
       "_kind": "line",
       "_group": 663
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.3268817204301075,
       "_kind": "line",
       "_group": 663
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.2007168458781362,
       "_kind": "line",
       "_group": 663
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": 0.467129877071085,
       "_kind": "line",
       "_group": 664
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.18278995189738106,
       "_kind": "line",
       "_group": 664
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.15285943345804381,
       "_kind": "line",
       "_group": 664
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": -0.2877697841726619,
       "_kind": "line",
       "_group": 665
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": 0.11716341212744086,
       "_kind": "line",
       "_group": 665
     },
     {
-      "k (answer positions)": 3.0,
+      "opening positions transplanted": 3.0,
       "y": 0.2024665981500514,
       "_kind": "line",
       "_group": 665
     },
     {
-      "k (answer positions)": 1.0,
+      "opening positions transplanted": 1.0,
       "y": -0.03347280334728037,
       "_kind": "line",
       "_group": 666
     },
     {
-      "k (answer positions)": 2.0,
+      "opening positions transplanted": 2.0,
       "y": -0.012552301255230021,
       "_kind": "line",
       "_group": 666
@@ -12038,15 +12088,15 @@
   "total_points": 2016,
   "data_truncated": true,
   "text": {
-    "suptitle": "q35: per-pair k traces (thin) + means (bold)",
+    "suptitle": "Qwen3.5-9B: per-pair traces (thin) + means (bold)",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "s1 / med",
+        "title_left": "instruction-format pairs\npatch-content donors (confirmatory)",
         "ylabel": "F steered \u2212 F null",
         "legend_labels": [
-          "patch",
-          "prefill"
+          "state patch",
+          "token prefill"
         ],
         "xticklabels": [
           "1",
@@ -12064,7 +12114,7 @@
         ]
       },
       {
-        "title_left": "s1 / bstart",
+        "title_left": "instruction-format pairs\nnatural-opening donors (descriptive)",
         "xticklabels": [
           "1",
           "2",
@@ -12072,8 +12122,8 @@
         ]
       },
       {
-        "title_left": "s2 / med",
-        "xlabel": "k (answer positions)",
+        "title_left": "pirate matched-query pairs\npatch-content donors (confirmatory)",
+        "xlabel": "opening positions transplanted",
         "ylabel": "F steered \u2212 F null",
         "xticklabels": [
           "1",
@@ -12091,8 +12141,8 @@
         ]
       },
       {
-        "title_left": "s2 / bstart",
-        "xlabel": "k (answer positions)",
+        "title_left": "pirate matched-query pairs\nnatural-opening donors (descriptive)",
+        "xlabel": "opening positions transplanted",
         "xticklabels": [
           "1",
           "2",
@@ -12101,8 +12151,8 @@
       }
     ],
     "series": [
-      "patch",
-      "prefill"
+      "state patch",
+      "token prefill"
     ]
   },
   "formats_written": [
