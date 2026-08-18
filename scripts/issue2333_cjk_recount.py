@@ -28,7 +28,11 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE numpy import
+
+import numpy as np  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
