@@ -13,30 +13,41 @@ waiver.
 
 Coverage map:
 
-1.  12 positive fixtures (parametrized, all flagged): canonical order;
+1.  13 positive fixtures (parametrized, all flagged): canonical order;
     reversed order; wider tuple; split-handler; ``from json import
     JSONDecodeError`` alias; ``json.load(open(...))`` body; two-arg
-    ``contextlib.suppress`` (attribute form); bare-name ``suppress``
+    ``contextlib.suppress`` (attribute form); ``import contextlib as ctx``
+    aliased attribute form (round 3, concern
+    ``json-guard-custom-suppress-union-fp``: the attribute-base tightening
+    must still resolve import aliases); bare-name ``suppress``
     (from-import form); ``except*`` group; split-suppress within ONE
     ``with`` statement (round 2, concern
     ``json-guard-split-suppress-undisclosed-miss``); nested-literal-tuple
     handler (round 2 Minor — TypeError-at-match-time on Python 3, flagged
     as the banned shape in intent); literal-tuple suppress arg (round 2 —
     semantically live, ``issubclass`` recurses).
-2.  6 negative fixtures (parametrized, none flagged): three-element fixed
+2.  8 negative fixtures (parametrized, none flagged): three-element fixed
     try form; three-arg fixed suppress; bare ``ValueError``;
-    ``except Exception``; safe-member tuple; adequate waiver (line above).
+    ``except Exception``; safe-member tuple; adequate waiver (line above);
+    mixed real/custom suppress in ONE ``with`` (round 3, concern
+    ``json-guard-custom-suppress-union-fp`` — an unrelated custom
+    ``.suppress`` context manager must not join the union); safe-name
+    sibling suppress item (round 3 — pins the round-2 FP-removal the r2
+    marker's "strictly wider" claim mis-described: a statement whose
+    sibling suppress item carries a safe name is correctly un-flagged).
 3.  Waiver with a too-short reason -> still flagged; same-line waiver on the
     handler line -> accepted; waiver separated by a blank line -> accepted
     (round 2, concern ``waiver-placement-parity``: pins the house
     backward-walk-over-blanks convention as DELIBERATE — the disposable
     sweep's exact-previous-line form is the one-off simplification).
 4.  Documented-miss fixtures: ``from contextlib import suppress as quiet``
-    is NOT flagged (#2168 plan v2 §4-D5b), and NESTED ``with`` statements
-    each suppressing one half are NOT flagged (round 2 disclosure) — each
-    pins a disclosed false negative as deliberate behavior, so a future
-    predicate change that starts covering it consciously updates the
-    disclosure.
+    is NOT flagged (#2168 plan v2 §4-D5b); NESTED ``with`` statements
+    each suppressing one half are NOT flagged (round 2 disclosure); and
+    ``suppress`` reached through a NON-contextlib attribute base (a
+    re-export ``helpers.suppress``) is NOT flagged (round 3 direction
+    tradeoff of the attribute-base tightening) — each pins a disclosed
+    false negative as deliberate behavior, so a future predicate change
+    that starts covering it consciously updates the disclosure.
 5.  FORM-SPECIFIC messages (#2168 plan v2 Must-Fix 1c): a try unit's message
     carries the TUPLE fix and never mentions suppress; a suppress unit's
     message carries the SUPPRESS-ARGS fix and never the tuple-form fix.
@@ -50,6 +61,11 @@ Coverage map:
     ``test_pipe_python_bundled_in_no_flags_source_pin`` shape): a later
     dispatch refactor cannot silently unbundle the check (#1385 v1 /
     #1648 v2 shipped exactly that regression).
+9.  Sweep CLI mixed-mode pin (round 3, concern
+    ``sweep-check-readonly-mixed-mode``): argparse REJECTS
+    ``--check --apply`` (mutually exclusive mode group, exit 2), and
+    ``--check`` reports read-only — the ``apply_edits`` mutation seam is
+    stubbed to raise and must never be invoked.
 """
 
 from __future__ import annotations
@@ -66,6 +82,7 @@ _SCRIPTS = _REPO_ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
+import issue2168_sweep  # noqa: E402
 from workflow_lint import (  # noqa: E402
     JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS,
     check_json_guard_unicode,
@@ -180,6 +197,21 @@ from pathlib import Path
 def load(p: Path):
     data = None
     with suppress(json.JSONDecodeError, OSError):
+        data = json.loads(p.read_text(encoding="utf-8"))
+    return data
+""",
+    # Round 3 (concern json-guard-custom-suppress-union-fp): the attribute
+    # form is tightened to contextlib import bindings — an
+    # `import contextlib as ctx` alias must STILL be resolved and flagged.
+    "suppress-import-alias": """\
+import contextlib as ctx
+import json
+from pathlib import Path
+
+
+def load(p: Path):
+    data = None
+    with ctx.suppress(json.JSONDecodeError, OSError):
         data = json.loads(p.read_text(encoding="utf-8"))
     return data
 """,
@@ -325,6 +357,40 @@ def load(p: Path):
     except (json.JSONDecodeError, OSError):
         return None
 """,
+    # Round 3 (concern json-guard-custom-suppress-union-fp): `custom.suppress`
+    # is an UNRELATED context manager (its base is not a contextlib import
+    # binding), so it must NOT join the per-statement union — probe-confirmed
+    # FLAGGED pre-fix (the old any-`.suppress` breadth), clean post-fix.
+    "mixed-real-and-custom-suppress": """\
+import contextlib
+import json
+from pathlib import Path
+
+
+def load(p: Path, custom):
+    data = None
+    with contextlib.suppress(json.JSONDecodeError), custom.suppress(OSError):
+        data = json.loads(p.read_text(encoding="utf-8"))
+    return data
+""",
+    # Round 3 (r2 marker correction): a SIBLING suppress item carrying a safe
+    # name un-flags the statement — ValueError covers UnicodeDecodeError at
+    # runtime, so the statement genuinely suppresses it and the round-2
+    # per-statement union correctly reads it as already-total. Old per-item
+    # behavior FLAGGED item 1 (a semantic false positive); this pins the
+    # FP-removal the r2 marker's "strictly wider" claim mis-described.
+    "safe-sibling-suppress-item": """\
+import contextlib
+import json
+from pathlib import Path
+
+
+def load(p: Path):
+    data = None
+    with contextlib.suppress(json.JSONDecodeError, OSError), contextlib.suppress(ValueError):
+        data = json.loads(p.read_text(encoding="utf-8"))
+    return data
+""",
 }
 
 
@@ -413,6 +479,35 @@ def load(p: Path):
     with contextlib.suppress(json.JSONDecodeError):
         with contextlib.suppress(OSError):
             data = json.loads(p.read_text(encoding="utf-8"))
+    return data
+"""
+    assert _scan(tmp_path, source) == []
+
+
+def test_documented_miss_nonimport_attribute_suppress_not_flagged(tmp_path: Path) -> None:
+    """PINS the round-3 disclosed false negative (concern
+    ``json-guard-custom-suppress-union-fp``, the tightening's direction
+    tradeoff): ``suppress`` reached through a NON-contextlib attribute
+    base — here a re-export ``helpers.suppress`` — is missed, because the
+    attribute form matches only when its base Name is a contextlib import
+    binding (the tightening that stops unrelated custom ``.suppress``
+    context managers joining the per-statement union as false positives;
+    the old any-``.suppress`` breadth DID catch this shape). Requires
+    deliberate binding indirection; 0 live instances at plan time. A future
+    predicate change that starts covering it must consciously update the
+    check docstring's disclosure list — this test turning red is that
+    signal, not a defect."""
+    source = """\
+import json
+from pathlib import Path
+
+from myproject import helpers
+
+
+def load(p: Path):
+    data = None
+    with helpers.suppress(json.JSONDecodeError, OSError):
+        data = json.loads(p.read_text(encoding="utf-8"))
     return data
 """
     assert _scan(tmp_path, source) == []
@@ -525,3 +620,71 @@ def test_check_json_guard_unicode_bundled_in_no_flags() -> None:
     assert "or args.check_json_guard_unicode" in src, (
         "--check-json-guard-unicode is missing from the no_flags detection tuple"
     )
+
+
+# ---------------------------------------------------------------------------
+# Sweep CLI mixed-mode pins (round 3, concern sweep-check-readonly-mixed-mode):
+# the disposable sweep instrument's --check mode is advertised read-only, so
+# (a) argparse must REJECT combining it with the mutating --apply, and
+# (b) --check must report without ever reaching the apply_edits mutation seam.
+# ---------------------------------------------------------------------------
+
+
+def test_sweep_check_apply_rejected_by_argparse(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``--check --apply`` is rejected at parse time (mutually exclusive mode
+    group, argparse usage-error exit 2) — a read-only flag that silently
+    combines with the mutating mode is the false label this pins against.
+    The scan/apply seams are stubbed to raise so a regression that drops the
+    exclusivity group fails HERE, legibly, instead of scanning (or mutating)
+    the live tree."""
+
+    def _forbidden_scan(repo_root: Path) -> list[issue2168_sweep.Finding]:
+        raise AssertionError("scan must not run when argparse rejects the argv")
+
+    def _forbidden_apply(findings: list[issue2168_sweep.Finding]) -> list[Path]:
+        raise AssertionError("apply_edits must not run when argparse rejects the argv")
+
+    monkeypatch.setattr(issue2168_sweep, "scan", _forbidden_scan)
+    monkeypatch.setattr(issue2168_sweep, "apply_edits", _forbidden_apply)
+    monkeypatch.setattr(sys, "argv", ["issue2168_sweep.py", "--check", "--apply"])
+    with pytest.raises(SystemExit) as excinfo:
+        issue2168_sweep.main()
+    assert excinfo.value.code == 2, "argparse usage errors exit 2"
+    assert "not allowed with argument" in capsys.readouterr().err
+
+
+def test_sweep_check_reports_without_mutation(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``--check`` alone dispatches the report path read-only: findings are
+    printed with the TOTAL trailer, the exit code is 1 iff findings exist,
+    and the ``apply_edits`` mutation seam (stubbed to raise) is never
+    invoked. The scan seam is stubbed at the filesystem boundary with a
+    signature-conformant fake returning one synthetic Finding, so the test
+    is deterministic on any tree state."""
+    synthetic = issue2168_sweep.Finding(
+        path=issue2168_sweep.REPO_ROOT / "scripts" / "synthetic_fixture.py",
+        lineno=7,
+        form="try",
+        names={"JSONDecodeError", "OSError"},
+        insert_line=7,
+        insert_col=40,
+    )
+
+    def _fake_scan(repo_root: Path) -> list[issue2168_sweep.Finding]:
+        assert repo_root == issue2168_sweep.REPO_ROOT
+        return [synthetic]
+
+    def _forbidden_apply(findings: list[issue2168_sweep.Finding]) -> list[Path]:
+        raise AssertionError("apply_edits must never be invoked under --check")
+
+    monkeypatch.setattr(issue2168_sweep, "scan", _fake_scan)
+    monkeypatch.setattr(issue2168_sweep, "apply_edits", _forbidden_apply)
+    monkeypatch.setattr(sys, "argv", ["issue2168_sweep.py", "--check"])
+    rc = issue2168_sweep.main()
+    out = capsys.readouterr().out
+    assert "scripts/synthetic_fixture.py:7: [try]" in out
+    assert "TOTAL: 1 units / 1 files" in out
+    assert rc == 1, "findings exist and no edit was applied -> exit 1"

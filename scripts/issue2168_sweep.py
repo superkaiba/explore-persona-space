@@ -16,7 +16,9 @@ and does NOT contain any safe name (UnicodeDecodeError / ValueError / Exception 
 BaseException), and no ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` waiver sits on the
 flagged line or the line above.
 
-Modes:
+Modes (MUTUALLY EXCLUSIVE — round 3, concern sweep-check-readonly-mixed-mode:
+argparse rejects ``--check --apply`` with exit 2, so the read-only modes can
+never be combined with the mutating one):
   --report          list findings (file:line, form, names, long-body tag)
   --check           read-only alias for --report (round 2, concern
                     sweep-check-cli-mismatch: the round-1 report advertised it)
@@ -270,14 +272,19 @@ def apply_edits(findings: list[Finding]) -> list[Path]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report", action="store_true", help="list findings")
-    parser.add_argument(
+    # Round 3 (concern sweep-check-readonly-mixed-mode): the three modes are
+    # MUTUALLY EXCLUSIVE — argparse rejects `--check --apply` (exit 2), so the
+    # read-only contract of --check/--report cannot be silently combined with
+    # the mutating mode.
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--report", action="store_true", help="list findings")
+    modes.add_argument(
         "--check",
         action="store_true",
         help="read-only alias for --report (the verification command the #2168 "
         "round-1 report advertised; exit 1 iff findings exist)",
     )
-    parser.add_argument("--apply", action="store_true", help="apply edits in place")
+    modes.add_argument("--apply", action="store_true", help="apply edits in place")
     parser.add_argument(
         "--long-body-threshold",
         type=int,

@@ -478,9 +478,11 @@ Behaviours:
   corrupt-file branch the author wrote is silently bypassed (#2164
   round 2; the #2168 sweep fixed all 186 live units and this check is
   the reintroduction guard). A "unit" is an ``ast.Try``, an
-  ``ast.TryStar`` (``except*``), or a ``with contextlib.suppress(...)``
-  item (bare-name or attribute form); handler unions cover the
-  split-handler form. Error messages are FORM-SPECIFIC (a suppress unit
+  ``ast.TryStar`` (``except*``), or a ``with`` statement unioning ALL its
+  ``contextlib.suppress(...)`` items (bare-name form, or attribute form
+  whose base is a contextlib import binding — round 3); handler unions
+  cover the split-handler form, the per-statement suppress union the
+  split-suppress form. Error messages are FORM-SPECIFIC (a suppress unit
   is told to extend the suppress args, never shown the tuple form).
   Waive with ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` (reason ≥ 10
   chars) on the flagged line or the line above; no legacy allowlist
@@ -7931,16 +7933,59 @@ def _json_guard_try_flag_line(node: ast.Try | ast.TryStar) -> int | None:
     return flag_line if _json_guard_names_flagged(names) else None
 
 
-def _json_guard_is_suppress_call(expr: ast.expr) -> bool:
+def _json_guard_contextlib_names(tree: ast.Module) -> frozenset[str]:
+    """Names statically bound to the ``contextlib`` module within one parsed
+    module: the literal ``contextlib`` (always recognized, import statement or
+    not — a same-named unrelated binding is vanishingly rare and over-flagging
+    is the safe direction for a guard) plus every ``import contextlib as
+    <alias>`` binding found anywhere in the module (#2168 round 3)."""
+    names = {"contextlib"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "contextlib" and alias.asname:
+                    names.add(alias.asname)
+    return frozenset(names)
+
+
+def _json_guard_is_suppress_call(expr: ast.expr, contextlib_names: frozenset[str]) -> bool:
     """True iff ``expr`` is a Call to ``suppress`` (bare from-import name) or
-    ``contextlib.suppress`` (attribute form). An import-aliased ``suppress``
-    (``from contextlib import suppress as quiet``) is a disclosed miss."""
+    ``<base>.suppress`` where ``<base>`` is a Name in ``contextlib_names``
+    (the literal ``contextlib`` or an ``import contextlib as ctx`` alias,
+    per :func:`_json_guard_contextlib_names`).
+
+    TIGHTENED in round 3 (concern ``json-guard-custom-suppress-union-fp``):
+    the prior form accepted ANY ``ast.Attribute`` whose terminal name is
+    ``suppress``, so the round-2 per-statement union combined a real
+    one-sided ``contextlib.suppress`` with an unrelated custom
+    ``x.suppress(...)`` context manager into one flagged name set — a
+    false-positive class on the no-flags default lint (the Step 9c gate +
+    inline payload lint gate both run it), and a guard that cries wolf gets
+    waived into uselessness. Direction tradeoff, stated: the tightening
+    converts that FP class into a disclosed FALSE-NEGATIVE class —
+    ``suppress`` reached through any OTHER attribute base (a re-export
+    ``helpers.suppress``, a module object bound by assignment
+    ``ctx = contextlib``, a nested base ``pkg.contextlib.suppress``) is now
+    missed where the old breadth caught it. False negatives are worse than
+    false positives for a reintroduction guard, but the new FN class
+    requires deliberate name/binding indirection — the same family as the
+    existing disclosed misses, all measured 0 live instances at plan time —
+    while the FP class fired on ordinary code; the FNs join the
+    disclosed-miss list in :func:`check_json_guard_unicode`, pinned by the
+    documented-miss fixture. An import-aliased bare name (``from contextlib
+    import suppress as quiet``) stays a disclosed miss; ``import contextlib
+    as ctx`` IS covered."""
     if not isinstance(expr, ast.Call):
         return False
     func = expr.func
     if isinstance(func, ast.Name) and func.id == "suppress":
         return True
-    return isinstance(func, ast.Attribute) and func.attr == "suppress"
+    return (
+        isinstance(func, ast.Attribute)
+        and func.attr == "suppress"
+        and isinstance(func.value, ast.Name)
+        and func.value.id in contextlib_names
+    )
 
 
 def _json_guard_try_message(py: Path, lineno: int, star: bool) -> str:
@@ -7986,6 +8031,7 @@ def _json_guard_scan_tree(py: Path, tree: ast.Module, lines: list[str]) -> list[
     """Apply the D2 unit predicate over one parsed module; returns the
     formatted error lines (waived units excluded)."""
     errors: list[str] = []
+    contextlib_names = _json_guard_contextlib_names(tree)
     for node in ast.walk(tree):
         if isinstance(node, ast.Try | ast.TryStar):
             flag_line = _json_guard_try_flag_line(node)
@@ -8002,7 +8048,7 @@ def _json_guard_scan_tree(py: Path, tree: ast.Module, lines: list[str]) -> list[
             saw_suppress = False
             for item in node.items:
                 call = item.context_expr
-                if not _json_guard_is_suppress_call(call):
+                if not _json_guard_is_suppress_call(call, contextlib_names):
                     continue
                 assert isinstance(call, ast.Call)  # narrowed by the helper
                 saw_suppress = True
@@ -8054,9 +8100,13 @@ def check_json_guard_unicode(*, roots: tuple[Path, ...] | None = None) -> list[s
     2. an ``ast.TryStar`` (``except*`` groups) — same handler union;
     3. an ``ast.With`` / ``ast.AsyncWith`` statement with ≥1 item whose
        ``context_expr`` is a Call to ``suppress`` (bare from-import name)
-       or ``contextlib.suppress`` (attribute form) — union over ALL the
-       statement's suppress items' args (#2168 round 2), so the
-       split-suppress form (``with suppress(JSONDecodeError),
+       or ``<contextlib>.suppress`` (attribute form whose base Name is the
+       literal ``contextlib`` or an ``import contextlib as <alias>``
+       binding — tightened round 3, concern
+       ``json-guard-custom-suppress-union-fp``, so an unrelated custom
+       ``x.suppress(...)`` context manager never joins the union) — union
+       over ALL the statement's suppress items' args (#2168 round 2), so
+       the split-suppress form (``with suppress(JSONDecodeError),
        suppress(OSError):``) is covered, mirroring the handler union.
 
     Error messages are FORM-SPECIFIC: a try/``except*`` unit is told to
@@ -8075,6 +8125,16 @@ def check_json_guard_unicode(*, roots: tuple[Path, ...] | None = None) -> list[s
       IS covered — the attribute match keys on the terminal name);
     * ``suppress`` aliased at import
       (``from contextlib import suppress as quiet``);
+    * ``suppress`` reached through a NON-contextlib attribute base — a
+      re-export (``helpers.suppress``), a module object bound by
+      ASSIGNMENT (``ctx = contextlib``), or a nested base
+      (``pkg.contextlib.suppress``) — the attribute form matches only when
+      its base Name is a contextlib import binding (tightened round 3,
+      concern ``json-guard-custom-suppress-union-fp``: the old
+      any-``.suppress`` breadth caught these but false-positived on
+      unrelated custom ``.suppress`` context managers joining the
+      per-statement union; ``import contextlib as ctx`` IS covered —
+      pinned by the non-import-attribute documented-miss fixture);
     * a custom context manager wrapping suppress semantics under another
       name;
     * NESTED ``with`` statements each suppressing one half
