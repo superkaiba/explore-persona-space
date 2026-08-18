@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2357,
+  "highest_id": 2358,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10491,6 +10491,13 @@
       "path": "tasks/proposed/2357",
       "status": "proposed",
       "title": "guard_root_code_commit.sh: pathspec-limited root commits blocked by foreign staged code files (scoping defect)"
+    },
+    "2358": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2358",
+      "status": "proposed",
+      "title": "Repack issue1739_ctxmap once #1739 quiesces (43,905 slots; deferred by G-1739/G-writer in #2332)"
     },
     "237": {
       "has_clean_result": true,
