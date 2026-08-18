@@ -92,9 +92,23 @@ SEP_CATASTROPHIC_FRAC = 0.25  # HALT floor (instrument-broken abort)
 # sync iff n_items <= threshold_base * otpm / 400k).
 FORCE_SYNC_THRESHOLD_BASE = 10**9
 
-# Plan §7 gate 6 (P6 bulk waves): ~440 draws spanning the rubric FAMILIES.
-PILOT_TARGET_COHERENCE = 200
-PILOT_TARGET_BEHAVIOR = 120
+# Plan §7 gate 6 (P6 bulk waves): draws spanning the rubric FAMILIES.
+# Sized to the rule-26 SATISFIABILITY floor (llm-judging.md rule 26, #2124), not
+# to a round "~200 draws" habit: the gate FAILs on rate >= parse_fail_threshold
+# (0.02), so resolving that threshold needs
+#   required = max(min_effective_draws_per_arm=10, floor(1/0.02) + 1) = 51
+# effective draws per unwaived arm, and judge_pilot_gate floor-divides the budget
+# across arms. With 4 realized arms (anchor / crosstype / shuffled / steered) and
+# JUDGE_N_DRAWS == 1 the exact budget form
+#   n_arms * n_draws * ceil(required / n_draws) = 4 * 1 * 51
+# gives 204. The former 200/120 pair realized 50/30 draws per arm — both
+# UNSATISFIABLE, so _config_satisfiability_guard refused before any API spend.
+# The item-limited query-rubric family (30 units) still cannot reach the floor at
+# ANY budget; it is checked at realized capacity via allow_subresolution_pilot
+# below (see the fam_reps comment), which is the auditable escape, not a
+# loosened threshold.
+PILOT_TARGET_COHERENCE = 204
+PILOT_TARGET_BEHAVIOR = 204
 PILOT_SEED = 2329
 
 # Plan §7 gate 3-pre (S2): ~110 draws per realized (arm x rubric-family) cell
