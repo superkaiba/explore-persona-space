@@ -2,7 +2,8 @@
 title: Prefilling the first three answer tokens reproduces most of the context-end
   patch's whole-answer behavioral effect (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-16T19:44:45Z'
 has_clean_result: true
 parent_id: 2162
