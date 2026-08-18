@@ -1080,6 +1080,18 @@ Worked example pair:
 
 Plan-time critics reviewing §12 check that every row matching the three-conjunct trigger carries the smoke-slice probe routing (prose-only enforcement, the #1287 precedent).
 
+### Exactness-claim grain (#2163)
+
+**Trigger:** a §12 row that asserts an EXACT identity — zero variance, `n_distinct == 1`, byte-identical, "every row", "no exceptions", `max|…| = 0` exactly — whose evidence is a SAMPLE (fewer rows / shards / units examined than the population the plan applies the claim to), when the plan converts the claim into a runtime assert, a hard-coded constant, or a stated deviation from a standing rule.
+
+**The duty:** state the claim's evidence GRAIN and the POPULATION grain explicitly, as a ratio. Then EITHER verify the claim at full grain BEFORE approval (often cheap — it is exactly the read the asserting phase already performs) OR restate the assumption as a BOUND ("no deviation observed in N of M rows") AND soften the assert to the invariant the bound supports. A sample only ever establishes "no counterexample observed in N of M", never "zero counterexamples exist" — widening 1 shard → 10 shards raises coverage, not the KIND of claim. Deferring verification to the production assert ("Phase 0 re-asserts it over the full store") is the failure mode, not a verification: the assert IS the crash.
+
+**Exemptions:** value claims (a λ, a byte count, a key set) with sampled sources, and exactness claims no assert / constant / stated deviation rests on — this sub-rule is not a confidence-downgrade tax on measured numbers.
+
+**Worked example (#2163):** A11 asserted `n_distinct_rows = 1` / byte-identity at `Confidence: High (measured)` from a 10-shard probe (706 of 142,000 rows — 0.5%), and the plan registered a Phase-0 full-store assert on it. Full-grain truth: 258 deviating rows (4 distinct vectors, all within cosine 0.99989) — the substantive conclusion survived; the literal premise and the assert built on it were both false. Cost: a pod launch cycle, a plan revision (v6), and a crash-fix round.
+
+Sibling boundary: § Real-corpus structural assumptions above routes STRUCTURAL premises to a smoke-time full-grain probe; this sub-rule is the assert-side sibling — it binds at PLAN time, before any smoke exists, whenever the exactness premise is already sampled-grounded and assert-bound. Mechanical companion: `verify_plan.py` c64 (WARN-only); behavioral gate: the Phase 1.5 fact-checker EXACTNESS-CLAIM GRAIN CHECK (adversarial-planner SKILL.md).
+
 ### General shape
 
 Every §12 row has these four fields at minimum:

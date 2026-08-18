@@ -443,7 +443,12 @@ Run the structural verifier against the plan version just persisted:
   genuinely dispatching N-wide through the fence instead adds `--gpus <N>`
   to it, or re-costs the §9 walls at the realized width — a
   `--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow
-  run; #2276, incident #2225 v9).
+  run; #2276, incident #2225 v9), and
+  `N/A — no sampled exactness claims` (check 64 — the exactness vocabulary
+  is incidental or quotes an incident/sibling, not this plan's own sampled
+  exactness premise; a plan with a genuine sampled exactness claim instead
+  verifies it at full grain, or restates it as a bound — "no deviation
+  observed in N of M" — and softens the assert; #2163).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -547,6 +552,22 @@ the reused `delta_tf/<mix>/pos.jsonl`; realized grain was exactly 20 rows/mix, a
 plan-derived 40-row hard floor killed the launch). State the verdict per counted
 file (GRAIN-CONFIRMED <n> rows / WRONG / UNVERIFIED).
 
+For EACH assumption asserting an EXACT identity — zero variance, `n_distinct == 1`,
+byte-identical, "every row", "no exceptions", `max|…| = 0` exactly, "all pairwise … =
+1.000000" — run the EXACTNESS-CLAIM GRAIN CHECK: (1) identify the claim's evidence GRAIN
+(rows / shards / units actually examined) and the POPULATION grain the plan applies it
+to; report both explicitly, as a ratio. (2) When grain < population AND the plan converts
+the claim into a runtime assert, a hard-coded constant, or a stated deviation from a
+standing rule, the verdict is GRAIN-MISMATCH (BLOCKING): a sample only ever establishes
+"no counterexample observed in N of M", never "zero counterexamples exist", so the assert
+crashes at the first full-population read if any deviation exists (#2163: byte-identity
+asserted from 706 of 142,000 rows — 0.5% — died rc=1 on 258 deviating rows, after
+provisioning). Name BOTH remedies: verify at full grain NOW (often cheap — it is exactly
+the read the asserting phase already performs), or restate the assumption as a bound
+("no deviation observed in N of M rows") AND soften the assert to the invariant the
+bound supports. (3) Value claims and non-assert-bearing exactness claims are EXEMPT —
+this lens is not a confidence-downgrade tax on measured numbers.
+
 DO NOT trust the plan's reasoning. DO NOT trust your own training data for version-specific
 claims (API signatures, library features, default values). SEARCH and READ to verify.
 
@@ -571,10 +592,13 @@ Common traps to watch for:
 - "The reused file has ~N rows" — for a count that feeds a floor / sizing / quota /
   draw, download at the pin and COUNT; an assumed grain range is the #1900 crash
   class (assumed 50-300/mix, realized 20)
+- "EVERY row is identical / n_distinct == 1" from a sample — that is a BOUND, not an
+  identity; check the grain ratio before the plan hard-asserts it at full grain (#2163)
 ```
 
 **After the Verifier returns:**
 - If ANY assumption is WRONG: fix it in the plan before proceeding to the Critic. A plan built on wrong facts will waste the Critic's time.
+- If any exactness claim is GRAIN-MISMATCH (BLOCKING): fix the plan before Phase 2 — verify at full grain, or restate as a bound + soften the assert.
 - If assumptions are UNVERIFIED: note them as risks. The Critic should evaluate whether they're blocking or can be tested with a smoke test.
 - If all CONFIRMED: proceed to the Critic.
 
