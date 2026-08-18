@@ -115,6 +115,17 @@ section wins on invocation form.
 ### During Implementation
 
 - **Follow existing patterns.** Don't impose a new style. The codebase uses ruff (line-length=100, py311, E/F/I/UP), Hydra for config, `uv` for env.
+- **Read-pinning under external churn (#2158; #1336 death #9).** A shared
+  worktree is the EXPECTED shape for pre-split multi-unit rounds — a
+  concurrent session may land commits mid-flight. Record BASE_SHA
+  (`git rev-parse HEAD`) at round start. When a target file changes
+  underneath you, do NOT re-read the live file repeatedly — pin reads to
+  `git show <BASE_SHA>:<path>`, finish your edit against that snapshot,
+  take ONE bounded provenance probe
+  (`git log --oneline <BASE_SHA>..HEAD -- <path>`), and reconcile at
+  commit time. An unbounded re-read loop on a churning 1,000+-line file
+  is the #1336 autocompact-thrash shape. Full protocol:
+  `.claude/rules/cross-session-writer-arbitration.md`.
 - **No silent failures.** No `except: pass`. No `--force`. No hardcoding secrets.
 - **Never skip steps.** If a test fails, investigate — don't disable it.
 - **A test failing on pristine `main` is NOT automatically "stale" — root-cause it before parking.** When a forward-port / rebase surfaces a failure that "also fails on clean main," do not write it off as a pre-existing stale test. If the test pins a documented invariant or gotcha (grep `.claude/rules/gotchas.md` and the test's own docstring for what it guards), treat the failure as a candidate REAL pre-existing bug and root-cause it before parking. (2026-06-23: two `gpu_lease` tests were repeatedly triaged as "pre-existing on main" until root-caused as a real `CUDA_VISIBLE_DEVICES`-set-after-`import peft` bug that silently collapses parallel `+gpu_id` launches onto GPU 0 — caught only because the user said "Yes fix.")
