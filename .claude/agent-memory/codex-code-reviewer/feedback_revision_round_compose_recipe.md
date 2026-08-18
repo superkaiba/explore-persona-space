@@ -692,3 +692,62 @@ prompt, and flag it in the return. Committed data artifacts in-range (the
 9a-ter round's JSON) get digest-only instructions; the free-analysis round's
 NUMBERS are adjudicated (two critics reproduced) — scope its commit to
 code-hazards-only or the twin relitigates settled outputs.
+
+**FAIL+FAIL-union fix round (#2332 r2, 2026-08-16):** when round 1 was
+Claude-FAIL + Codex-FAIL and the orchestrator UNIONED the blockers (no
+reconciler), BOTH prior verdicts are acceptance contracts — inline both, and
+STRIP their marker tag lines at compose time instead of the #2145
+never-echo instruction (cleaner tag arithmetic: v<n> head ==1, closing ==1,
+every prior-round tag ==0; also removes the echo hazard outright). No
+no-relitigate block is needed (nothing was discarded). When the impl marker
+carries its own numbered disposition table, key the closure ledger on THOSE
+row numbers (+ the Codex verdict's pre-minted concern ids per #2147) rather
+than minting pseudo-IDs. REFUTED rows: verify every cited plan anchor EXISTS
+at compose time (grep line numbers/headings), quote the disputed clause
+verbatim in the prompt, mark existence "settled" vs substance "yours", and
+SURFACE textual tensions (e.g. a plan assumption line reading the disputed
+clause the other way) for Codex to weigh — never resolve them yourself. Also
+map implementer round numbering vs review round numbering explicitly when
+they diverge (impl "round 3" = review round 2). Memory-write hygiene: do NOT
+commit an agent-memory edit to the branch under review mid-round — it would
+enter the very diff being reviewed; leave it uncommitted and flag for the
+orchestrator to sweep post-merge.
+
+**Mid-task output-contract change caught by the rubric-currency check (#2332
+r3, 2026-08-16):** the currency probe (`git log -1 -- code-reviewer.md` vs the
+reused /tmp template's mtime) fired for real — #2326 landed BETWEEN r2 and r3,
+adding the `CONCERN:: <SEV> <kebab-id> <summary>` machine-row grammar (+
+literal `CONCERN:: none` sentinel) to the Concerns-to-persist template and a
+REQUIRED `**Prior-concerns ledger:**` header line. When reusing a pre-#2326
+template: patch BOTH into the tail, tell Codex the token must never start a
+line outside that section (the forwarder position-parses `^CONCERN:: ` over
+the whole marker block), and attest that the WORKTREE's frozen rubric/spec
+files predate the change so Codex doesn't flag the divergence. Also: scope
+prior-round-heading zero-asserts to OUTSIDE the inlined envelopes (the r2
+Codex verdict legitimately carries its own `## Round-1 closure ledger`
+heading), and expect legitimate history-prose hits when sweeping round tokens
+("verified closed by review round 2") — grep-and-eyeball beats a bare
+count==0 assert for those.
+
+**Post-reconciler-binding-FAIL fix round (mixed rulings; #2332 r4,
+2026-08-16):** when the prior round ended Claude-PASS / own-twin-FAIL /
+reconciler BINDING FAIL with MIXED per-blocker rulings (upheld + downgraded +
+rejected), inline TWO adjudication documents in one `# Round-N adjudication
+record` section — the reconciler ruling FIRST (the acceptance contract +
+no-relitigate source; state "where they differ, the RECONCILER wins"), the
+twin's own prior verdict SECOND (closure-ledger context). The no-relitigate
+block covers ONLY the REJECTED ids, quoting the ruling's rejection grounds
+verbatim (plan-§ cites) — and extends into the output contract: the deferred
+ids must NOT reappear as `CONCERN::` rows (a re-emitted deferred id
+re-raises a bindingly-rejected finding), while still-open untouched concerns
+get explicit per-row STILL-OPEN/re-emit status lines. Ledger semantics: a
+reconciler `defer-concern` row means REJECTED-binding (closed this round),
+NOT open — the Step 0.8 walk becomes `N open + M reconciler-deferred + K
+addressed-this-round`. Frame NOT-FIXED = substantive FAIL for BOTH the
+upheld blocker AND a reconciler-DOWNGRADED binding CONCERN (the downgrade
+made it a must-address, not a may-address). When the ruling's must-fix
+DEMANDED a specific joint/real-body pin, make pin REALNESS (drives the real
+production function; fakes only at named seams) an explicit closure element
+— the hollow-composition class the ruling itself established. A
+minors-interaction the ruling flags ("fix together with the must-fix") gets
+its own closure row.
