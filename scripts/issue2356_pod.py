@@ -14,7 +14,14 @@ Phases (subprocess-per-shard fan-out across the ALLOCATED GPUs):
               CORPUS-WIDE across shards via a gen_counts barrier (R3-5) ⇒
               re-generate that corpus's flagged rows (greedy AND samples, per
               kind) on a FRESH engine at ``max_model_len=8192`` /
-              ``max_new_tokens=4096`` (M2). Rollout TEXT is uploaded to the HF
+              ``max_new_tokens=4096`` (M2). Completion text is same-length
+              secret-scrubbed at the WRITE boundary (#2356 crash fix:
+              ``token_ids`` re-encoded from the scrubbed text,
+              ``secret_scrub_redacted`` flag + a digest-only ``[secret-scrub]``
+              count line) so a model-emitted key-shaped string can never trip
+              ``assert_upload_clean`` inside ``hub._upload``; prompt fields are
+              NEVER scrubbed (corpus-scrubbed upstream; the render-identity
+              gate re-renders them). Rollout TEXT is uploaded to the HF
               data repo at the END of this phase, BEFORE any capture (#779).
 - ``capture`` P2: teacher-forced bf16 HF forwards, BATCHED (token-budget batching,
               ~16 rows/GPU cap), per-npz-shard intra-phase resume, and a
@@ -102,7 +109,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
 from explore_persona_space.analysis.extraction import (  # noqa: E402
     extract_layer_activations,
 )
-from explore_persona_space.orchestrate import hub  # noqa: E402
+from explore_persona_space.orchestrate import hub, secret_scrub  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
     git_provenance,
@@ -436,6 +443,56 @@ def _generate_chunked(engine, prompts: list[str], sampling_params) -> list[Any]:
     return outputs
 
 
+def _scrub_completion_record(rec: dict[str, Any], tokenizer) -> bool:
+    """Same-length-redact real-secret-grade strings in ONE completion record
+    (``{text, finish_reason, token_ids}``), in place, at the WRITE boundary —
+    so the on-disk chunk files, capture's teacher-forcing (which consumes the
+    persisted ``token_ids``), and every HF upload see the identical clean
+    bytes. Large generations over web-scraped generic prompts routinely emit
+    key-shaped strings; unscrubbed they trip ``secret_scrub.assert_upload_clean``
+    inside ``hub._upload`` and crash the shard upload (the #2356 phase_gen
+    crash). NEVER the ``EPM_SECRET_UPLOAD_GATE=0`` bypass.
+
+    Redaction is the sanctioned same-length ``X`` fill
+    (``secret_scrub.scrub_bytes`` — ``scripts/scrub_secrets.py fix`` semantics,
+    the 2026-08-16 precedent); ``token_ids`` are RE-ENCODED from the scrubbed
+    text with the SAME tokenizer (``add_special_tokens=False``, matching how
+    the engine's completion tokens were produced) so text and token_ids stay
+    mutually consistent. Prompt fields are deliberately NOT touched (constraint:
+    ``_render_identity_gate`` asserts ``prompt_token_ids`` against a re-render;
+    ``prompt_sha`` is over the prompt). Returns True — and flags the record
+    ``secret_scrub_redacted: true`` — when a redaction happened; clean records
+    are returned byte-untouched (idempotent: the X fill re-scans clean)."""
+    text = rec.get("text") or ""
+    if not text:
+        return False
+    raw = text.encode("utf-8")
+    scrubbed_bytes, findings = secret_scrub.scrub_bytes(raw)
+    if not findings:
+        return False
+    assert len(scrubbed_bytes) == len(raw), (len(scrubbed_bytes), len(raw))
+    # SECRET_PATTERNS match ASCII-only spans, replaced with ASCII 'X' bytes —
+    # the surrounding UTF-8 is untouched, so a strict decode stays valid.
+    rec["text"] = scrubbed_bytes.decode("utf-8")
+    rec["token_ids"] = list(tokenizer.encode(rec["text"], add_special_tokens=False))
+    rec["secret_scrub_redacted"] = True
+    return True
+
+
+def _scrub_and_count(
+    shard: int, corpus: str, kind: str, recs: list[dict[str, Any]], tokenizer
+) -> int:
+    """Scrub every completion record in ``recs`` in place; emit ONE per-shard /
+    per-corpus / per-kind disclosure line when anything was redacted (the #2356
+    fix-engaged signal — digest-only: counts, never text)."""
+    n = sum(1 for rec in recs if _scrub_completion_record(rec, tokenizer))
+    if n:
+        logger.info(
+            "[secret-scrub] shard %d corpus %s kind %s redacted %d row(s)", shard, corpus, kind, n
+        )
+    return n
+
+
 def phase_gen(args: argparse.Namespace, shard: int) -> None:
     from vllm import SamplingParams  # deferred (vllm imported once, spawn set above)
 
@@ -580,6 +637,18 @@ def phase_gen(args: argparse.Namespace, shard: int) -> None:
             frac,
         )
 
+        # Secret scrub at the WRITE boundary (#2356 crash fix) — AFTER the smoke
+        # forced-trunc replacement above, BEFORE any bytes land on disk, so
+        # on-disk chunks == capture inputs == HF-uploaded bytes.
+        _scrub_and_count(shard, corpus, "greedy", [e["greedy"] for e in greedy_rows], tokenizer)
+        if sample_rows:
+            _scrub_and_count(
+                shard,
+                corpus,
+                "samples",
+                [s for row in sample_rows for s in row["samples"]],
+                tokenizer,
+            )
         _write_raw_chunks(raw_root / corpus / "greedy", shard, greedy_rows, RAW_GREEDY_CHUNK)
         if sample_rows:
             _write_raw_chunks(raw_root / corpus / "samples", shard, sample_rows, RAW_SAMPLES_CHUNK)
@@ -686,6 +755,7 @@ def _regen_flagged_rows(
             for e in ents:
                 s_by_sha[e["prompt_sha"]] = (f, e)
         touched: set[Path] = set()
+        n_scrubbed = 0  # #2356: regen records are scrubbed before the RMW rewrite
 
         # greedy re-gen (greedy params)
         greedy_shas = sorted({f["prompt_sha"] for f in flags if f["kind"] == "greedy"})
@@ -706,6 +776,8 @@ def _regen_flagged_rows(
                     "finish_reason": comp.finish_reason,
                     "token_ids": list(comp.token_ids),
                 }
+                if _scrub_completion_record(entry["greedy_regen8192"], tokenizer):
+                    n_scrubbed += 1
                 touched.add(fpath)
 
         # sample re-gen (sample params), grouped per sample index k
@@ -737,7 +809,17 @@ def _regen_flagged_rows(
                     "finish_reason": comp.finish_reason,
                     "token_ids": list(comp.token_ids),
                 }
+                if _scrub_completion_record(entry["samples"][k]["regen8192"], tokenizer):
+                    n_scrubbed += 1
                 touched.add(fpath)
+
+        if n_scrubbed:
+            logger.info(
+                "[secret-scrub] shard %d corpus %s kind regen8192 redacted %d row(s)",
+                shard,
+                corpus,
+                n_scrubbed,
+            )
 
         for fpath in sorted(touched):
             ents = g_by_file.get(fpath, s_by_file.get(fpath))
