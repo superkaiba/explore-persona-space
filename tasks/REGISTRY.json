@@ -9065,8 +9065,8 @@
     "2173": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2173",
-      "status": "proposed",
+      "path": "tasks/planning/2173",
+      "status": "planning",
       "title": "workflow-fix: test_backend_poll module-mode test fails only in large collections, always classified NEW by the Step 9c oracle"
     },
     "2174": {
