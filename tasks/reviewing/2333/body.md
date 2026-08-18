@@ -258,9 +258,9 @@ Majority-share margin for the confirmatory three-token prefill — arm F minus h
 
 > **Figure.** *Qwen3.5's continuation-only margin straddles zero; Qwen2.5's stays positive.* Whole-response margins +0.13 (CI +0.07 to +0.19) and +0.11 (CI +0.04 to +0.17); continuation-only +0.06 (CI +0.006 to +0.120) and +0.06 (CI −0.012 to +0.127). Zero is the sufficiency boundary.
 
-![Continuation-only F versus whole-response F, Qwen3.5 steered prefill rows](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/whole_vs_continuation_q35.png)
+![Continuation-only F versus whole-response F, Qwen3.5 steered prefill pair-cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/whole_vs_continuation_q35.png)
 
-> **Figure.** *Per-unit companion of the rescore, Qwen3.5.* Each point is one steered prefill draw: continuation-only F against whole-response F, colored by prefill length. The Qwen2.5 counterpart is embedded in the robustness section below.
+> **Figure.** *Per-unit companion of the rescore, Qwen3.5.* Each point is one pair × donor-scheme prefill cell (K=5 draws averaged): continuation-only F against whole-response F, colored by prefill length. The Qwen2.5 counterpart is embedded in the robustness section below.
 
 A zero-GPU follow-up rescored the six prefill arms per model on the continuation-only companion (the judged span without the forced donor tokens), holding the plan's thresholds and correction family fixed. Nothing moves at the separation grain — all 12 prefill reads keep both conjuncts — and every Qwen2.5 label holds on both denominators. Qwen3.5's confirmatory snowball-sufficient verdict does not survive: its continuation majority-share interval straddles zero, dropping it to indeterminate through that conjunct; the natural-opening banked-denominator label drops the same way.
 
@@ -276,9 +276,9 @@ Continuation recovery ratios are 0.59 (Qwen2.5) and 0.62 (Qwen3.5) of the same-w
 
 ### Robustness: intrusion recounts leave every label standing; the activation companion is weaker
 
-Whole-response F versus continuation-only F for every steered prefill row on Qwen2.5, colored by opening length — the donor-token contamination check for judged text beginning with forced tokens.
+Whole-response F versus continuation-only F for every steered prefill pair-cell (draws averaged) on Qwen2.5, colored by opening length — the donor-token contamination check for judged text beginning with forced tokens.
 
-![Whole vs continuation-only F, Qwen2.5 prefill rows](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/whole_vs_continuation_q25.png)
+![Whole vs continuation-only F, Qwen2.5 prefill pair-cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/whole_vs_continuation_q25.png)
 
 > **Figure.** *The effect survives with the donor tokens excluded from judging.* Mass hugs the diagonal; two extreme points are anchor-normalization blowups on near-degenerate pairs. Instruction-format arm-level divergence +0.04 to +0.09, above the 0.05 reporting bar at two or more tokens.
 
@@ -295,7 +295,7 @@ Whole-response F versus continuation-only F for every steered prefill row on Qwe
 | Rows still at the 4096 cap after regeneration | 0 of 23,400 | 152 of 25,350 (0.60%; 491 rows regenerated) |
 | Activation-DV arm-level rank agreement with F_beh (Spearman ρ) | 0.85 | 0.86 |
 
-Continuation-only scores track whole-response ones; Qwen3.5's quoted 0.41 is an all-pairs mean while the 0.36 headline covers the 156 anchor survivors (table). Intrusion is balanced on the confirmatory arms and approximately in aggregate but not arm by arm; the two largest imbalances sit on arms carrying no verdict, and the recounts (`cjk_recount.json`) confirm no label is intrusion-sensitive.
+Continuation-only scores track whole-response ones; Qwen3.5's quoted 0.41 is an all-pairs mean while the 0.36 headline covers the 156 anchor survivors (table). Intrusion is balanced on the confirmatory arms and approximately in aggregate but not per-arm; the two largest imbalances sit on arms carrying no verdict, and the recounts (`cjk_recount.json`) confirm no label is intrusion-sensitive.
 
 The activation companion is weaker: Qwen2.5's separates but recovers only 32% of the control's activation movement (majority-share CI wholly below zero — snowball-partial on that secondary DV); Qwen3.5's confirmatory read does not separate (corrected p 0.85, CI spanning zero — indeterminate). Forced opening tokens reproduce most of the behavior without most of the activation shift; the behavioral verdicts stand on their own DV.
 
