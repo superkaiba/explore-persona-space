@@ -41,3 +41,12 @@ is noise.
    pairs) is NOT a confound — identical openings + a large banked ce effect
    is itself evidence against snowball-sufficiency; the token-divergence-rate
    manipulation check is the right diagnostic.
+6. **3-value cycle null is a MIXTURE on language cells** (#2333 v8): a
+   value-constrained derangement guarantees donor-B ≠ recipient-B but NOT
+   ≠ recipient-A, so with 3 values the null openings split into inert
+   (recipient's own A-language) and third-language (genuinely disruptive —
+   can raise Δ=(judge_B−judge_A) by depressing judge_A, a positive
+   steered−null channel with no movement toward B). Weighable, never
+   REVISE: the frozen donor_assignment lets the analyzer split null rows
+   by donor-value class for free; suggest that split + per-arm
+   steered/null means vs floor.
