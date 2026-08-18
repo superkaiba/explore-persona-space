@@ -1663,16 +1663,73 @@ def test_c30b_assignment_prefixed_mover_riding_armed_chain_blocked(
     )
 
 
-# The r5 assignment-prefix group, verbatim from CWD_MOVER_LEAD_ERE. Kept as a
-# module constant so the c30c revert-pin fails LOUD (count assert below) if
-# the fixed spelling ever drifts instead of silently pinning nothing.
+# --- c30d family (r6, #2371): two text-detectable prefixed mover forms rode
+# the armed canonical `&&` chain undisarmed past the r5 grammar — (1) an
+# APPEND-assignment prefix (the r5 atom's `NAME=` cannot match `+=`), and
+# (2) the `time` keyword wrapper (`time` is a shell keyword outside both the
+# prefix group and the mover family). Both source in the CURRENT shell
+# (execution-confirmed reachability probes 2026-08-18, GNU bash 5.1.16 —
+# plan #2371 §1/§6), so a cwd move rode the armed chain and the relative
+# pathspec resolved off-root (scoped permit where the whole-index read must
+# engage). The r6 fix widens ONLY the prefix group's atom set: assignment
+# atoms tolerate an optional `+` before `=`, a second atom recognizes the
+# `time` keyword wrapper (bare or `time -p`), atoms repeat zero-or-more in
+# any interleaving. Param notes: quoted-value-append pins the MASKED-lead
+# arm (the quoted value's interior hides the prefix on the raw text);
+# assign-time pins the DELIBERATE over-tightening — `FOO=bar time . x` runs
+# EXTERNAL time (cannot source) but matches the grammar and disarms, block
+# direction, kept; append-assign-source + time-pushd are screen-covered /
+# uniform-family controls (`source` / `pushd` vocabulary already disarms via
+# the whole-record screen); command-dot-source pins the pre-r6 family-word
+# wrapper path (already blocked — the family word matches at the lead).
+_C30D_PREFIXED_MOVERS = [
+    pytest.param("FOO+=bar . scripts/env.sh", id="append-assign-dot-source"),  # gap 1 crux
+    pytest.param("FOO+='a b' . scripts/env.sh", id="quoted-value-append-dot-source"),
+    pytest.param("A+=1 B=2 . scripts/env.sh", id="mixed-multi-assign-dot-source"),
+    pytest.param("time . scripts/env.sh", id="time-dot-source"),  # gap 2 crux
+    pytest.param("time -p . scripts/env.sh", id="time-p-dot-source"),
+    pytest.param("time FOO=bar . scripts/env.sh", id="time-assign-interleave-dot-source"),
+    pytest.param("FOO=bar time . scripts/env.sh", id="assign-time-dot-source"),
+    pytest.param("FOO+=bar source scripts/env.sh", id="append-assign-source"),
+    pytest.param("time pushd scripts", id="time-pushd"),
+    pytest.param("command . scripts/env.sh", id="command-dot-source"),
+]
+
+
+@pytest.mark.parametrize("mover", _C30D_PREFIXED_MOVERS)
+def test_c30d_extended_prefix_mover_riding_armed_chain_blocked(
+    mover: str, foreign_repo: Path, cert: Path
+) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_blocked(
+        _run(
+            f"cd {foreign_repo} && {mover} && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+# The r6 (#2371) prefix group, verbatim from CWD_MOVER_LEAD_ERE: alternated
+# atoms — plain/append assignment (NAME=v / NAME+=v) or the `time` keyword
+# wrapper (bare / `time -p`) — repeated zero-or-more in any interleaving.
+# Kept as a module constant so the c30c/c30e revert-pins fail LOUD (count
+# asserts below) if the fixed spelling ever drifts instead of silently
+# pinning nothing.
+_R6_PREFIX_GROUP = "(([A-Za-z_][A-Za-z0-9_]*[+]?=[^[:space:]]*|time([[:space:]]+-p)?)[[:space:]]+)*"
+# The HISTORICAL r5 spelling (plain NAME=value atoms only) — used by the c30e
+# revert-pin to reconstruct the r5 matcher textually (Step 10d rebase-merge
+# rewrites branch SHAs, so no `git show` blob pins; same textual convention
+# as c30c).
 _R5_PREFIX_GROUP = "([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*"
 
 
 def test_c30c_prefix_group_is_load_bearing_prefixed_dot_source_permitted_without_it(
     foreign_repo: Path, cert: Path, tmp_path: Path
 ) -> None:
-    """Regression proof the r4 hole was REAL: strip the r5 assignment-prefix
+    """Regression proof the r4 hole was REAL: strip the WHOLE (r6) prefix
     group out of a copy of the live guard — reconstructing the r3/r4
     CWD_MOVER_LEAD_ERE spelling byte-for-byte — and assert that copy PERMITS
     the assignment-prefixed dot-source crux (rc=0; the executed r4
@@ -1682,15 +1739,63 @@ def test_c30c_prefix_group_is_load_bearing_prefixed_dot_source_permitted_without
     rewrites branch commit SHAs, so the pre-fix matcher is reconstructed
     textually instead and the count assert fails loud on any drift."""
     text = SCRIPT.read_text(encoding="utf-8")
-    assert text.count(_R5_PREFIX_GROUP) == 1, "fixed CWD_MOVER_LEAD_ERE spelling drifted"
+    assert text.count(_R6_PREFIX_GROUP) == 1, "fixed CWD_MOVER_LEAD_ERE spelling drifted"
     r4_guard = tmp_path / "guard_r4_matcher.sh"
-    r4_guard.write_text(text.replace(_R5_PREFIX_GROUP, "", 1), encoding="utf-8")
+    r4_guard.write_text(text.replace(_R6_PREFIX_GROUP, "", 1), encoding="utf-8")
     r4_guard.chmod(0o755)
     _stage(foreign_repo, "scripts/own.py", "print(1)\n")
     _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
     crux = f"cd {foreign_repo} && FOO=bar . scripts/env.sh && git commit -m x -- own.py"
     _assert_allowed(_run(crux, foreign_repo, cert, script=r4_guard, cwd=foreign_repo / "scripts"))
     _assert_blocked(_run(crux, foreign_repo, cert, cwd=foreign_repo / "scripts"))
+
+
+def test_c30e_r6_prefix_atoms_load_bearing_r5_matcher_permits_both_cruxes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    """Revert-pin proof BOTH r6 gaps were real: textually reconstruct the r5
+    matcher (swap the r6 prefix group for the historical r5 spelling in a
+    copy of the live guard) and assert that copy PERMITS the
+    append-assignment crux AND the `time` wrapper crux (rc=0 — the executed
+    r5 false-allows, plan #2371 §1) while the fixed guard BLOCKS both (rc=2,
+    whole-index). Same textual-reconstruction convention as c30c (no
+    `git show` blob pins — rebase-merge rewrites branch SHAs); the count
+    asserts fail loud on any spelling drift."""
+    text = SCRIPT.read_text(encoding="utf-8")
+    assert text.count(_R6_PREFIX_GROUP) == 1, "fixed CWD_MOVER_LEAD_ERE spelling drifted"
+    assert _R5_PREFIX_GROUP not in text, "historical r5 spelling resurfaced in the guard"
+    r5_guard = tmp_path / "guard_r5_matcher.sh"
+    r5_guard.write_text(text.replace(_R6_PREFIX_GROUP, _R5_PREFIX_GROUP, 1), encoding="utf-8")
+    r5_guard.chmod(0o755)
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    for mover in ("FOO+=bar . scripts/env.sh", "time . scripts/env.sh"):
+        crux = f"cd {foreign_repo} && {mover} && git commit -m x -- own.py"
+        _assert_allowed(
+            _run(crux, foreign_repo, cert, script=r5_guard, cwd=foreign_repo / "scripts")
+        )
+        _assert_blocked(_run(crux, foreign_repo, cert, cwd=foreign_repo / "scripts"))
+
+
+def test_c30f_env_dot_source_not_reachable_stays_scoped(foreign_repo: Path, cert: Path) -> None:
+    # Not-reachable pin (r6, #2371): external `env` cannot run the `.` shell
+    # builtin, so `env . x` CANNOT source in the current shell (reachability
+    # probe execution-confirmed 2026-08-18, GNU bash 5.1.16) — the accepted
+    # non-recognition: the record matches neither the r6 lead grammar nor
+    # the whole-record screen, the armed base survives, and the pathspec
+    # still scopes past the staged uncertified gated file (rc=0). If the
+    # grammar ever recognizes `env` as a wrapper atom this pin flips —
+    # revisit the reachability probe first.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_allowed(
+        _run(
+            f"cd {foreign_repo} && env . scripts/env.sh && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
 
 
 def test_c32b_assignment_prefixed_mover_before_arming_cd_still_scopes(
@@ -1704,6 +1809,25 @@ def test_c32b_assignment_prefixed_mover_before_arming_cd_still_scopes(
     _assert_allowed(
         _run(
             f"FOO=bar . scripts/env.sh; cd {foreign_repo} && git commit -m x -- tasks/t.md",
+            foreign_repo,
+            cert,
+            cwd=tmp_path,
+        )
+    )
+
+
+def test_c32c_time_wrapped_mover_before_arming_cd_still_scopes(
+    foreign_repo: Path, cert: Path, tmp_path: Path
+) -> None:
+    # Allow pin (over-tightening protection, c32/c32b sibling — r6 #2371):
+    # the r6-widened disarm stays ARMED-ONLY — a time-wrapped dot-source
+    # BEFORE the arming canonical cd never disarms (and never poisons
+    # arming), and the pathspec still scopes past the foreign uncertified
+    # staged file.
+    _write(foreign_repo, "scripts/env.sh", "cd scripts\n")
+    _assert_allowed(
+        _run(
+            f"time . scripts/env.sh; cd {foreign_repo} && git commit -m x -- tasks/t.md",
             foreign_repo,
             cert,
             cwd=tmp_path,

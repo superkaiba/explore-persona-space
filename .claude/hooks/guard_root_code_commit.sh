@@ -115,10 +115,12 @@
 #   canonical cd DISARMS the widening — a non-canonical cd (r3), and (r4)
 #   every record matching the cwd-mover family (pushd/popd, source/`.`,
 #   eval, builtin/command wrappers, quoted/escaped cd spellings — each
-#   also recognized (r5) behind ZERO-OR-MORE leading legal assignment
-#   prefixes (NAME=value pairs before the mover word), matched on the
-#   raw AND the masked record lead so a QUOTED assignment value cannot
-#   hide the prefix) or the
+#   also recognized (r5, widened r6 #2371) behind ZERO-OR-MORE leading
+#   legal prefixes in ANY interleaving: plain NAME=value AND append
+#   NAME+=value assignment pairs plus the `time` keyword wrapper (bare
+#   or `time -p`) before the mover word, matched on the raw AND the
+#   masked record lead so a QUOTED assignment value cannot hide the
+#   prefix) or the
 #   retarget vocabulary (WT_CWD_ALLOW_SCREEN_ERE: `git -C`/`env -C`
 #   short dir wrappers, --chdir/--work-tree/--git-dir, GIT_DIR=-family
 #   assignments — even as a mention inside message text: conservative by
@@ -133,7 +135,14 @@
 #   internal whitespace, an array-form value) ride an armed chain
 #   undetected (fail-open for
 #   the widening ONLY — never wider than the pre-#2357 root-cwd behavior);
-#   compound/subshell contexts stay refused by D4 regardless. The symbolic
+#   compound/subshell contexts stay refused by D4 regardless.
+#   NOT-REACHABLE sourcing paths (r6 #2371, execution-confirmed
+#   2026-08-18, GNU bash 5.1.16; pinned in tests, distinct from the
+#   residual set above): `env . x` cannot source (external env cannot
+#   run the `.` builtin) and stays SCOPED — unrecognized AND unreachable,
+#   not a gap; non-keyword-position `time` (`NAME=v time . x`) runs
+#   EXTERNAL time and cannot source, but MATCHES the r6 grammar and
+#   disarms (deliberate block-direction over-tightening). The symbolic
 #   ALIAS root spellings (~/explore-persona-space[/],
 #   $HOME/explore-persona-space[/]) NEVER arm the widening AND, riding an
 #   armed chain, DISARM it (r3): they keep their legacy non-poisoning
@@ -310,7 +319,24 @@ WT_CWD_ALLOW_SCREEN_ERE='--chdir|--work-tree|--git-dir|core\.worktree|GIT_(DIR|W
 # spaceless filler — see the disarm-site note. The `builtin`/`command`
 # family members double as the wrapper path for dot-source: a
 # builtin-wrapped source record matches at the wrapper word itself.
-CWD_MOVER_LEAD_ERE='^([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*["'\''\\]*(cd|pushd|popd|source|\.|eval|builtin|command)["'\''\\]*([[:space:]]|$)'
+# #2371 r6: the r5 prefix group widens to an alternated ATOM set, repeated
+# zero-or-more in ANY interleaving before the mover family: (a) the
+# assignment atom tolerates an optional literal `+` before `=` (append
+# assignment, NAME+=value — bash executes the suffixed mover exactly as
+# for NAME=value; the masked-lead arm covers quoted append values the
+# same way as r5); (b) a second atom recognizes the `time` keyword
+# wrapper (bare or `time -p`) — `time . x` sources in the CURRENT shell
+# (keyword position), and the group's mandatory trailing whitespace gives
+# `time` word-boundary safety (`timeout ...` cannot match). Execution-
+# confirmed NOT-REACHABLE sourcing paths (2026-08-18, GNU bash 5.1.16;
+# pinned in tests, not grammar gaps): `env . x` cannot source (external
+# env cannot run the `.` builtin — unrecognized AND unreachable, stays
+# scoped), and non-keyword-position `time` (`NAME=v time . x`) runs
+# EXTERNAL time which cannot source — it nonetheless MATCHES the extended
+# grammar (assignment atom then wrapper atom) and disarms: deliberate
+# block-direction over-tightening, consistent with the standing "a record
+# that merely mentions mover vocabulary also disarms" contract.
+CWD_MOVER_LEAD_ERE='^(([A-Za-z_][A-Za-z0-9_]*[+]?=[^[:space:]]*|time([[:space:]]+-p)?)[[:space:]]+)*["'\''\\]*(cd|pushd|popd|source|\.|eval|builtin|command)["'\''\\]*([[:space:]]|$)'
 FILL=$'\001' # masker filler byte for string-literal interiors (never IFS, never a separator)
 # cd VARIABLE-target shape (issue #1676): exactly $NAME / ${NAME}, optionally
 # followed by a literal /suffix — the only unproven-target family eligible for
@@ -1104,7 +1130,9 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
     # assignment VALUES in the r5 prefix group — a quoted value's
     # interior (spaces included) is spaceless filler on the masked copy,
     # so the NAME=value prefix completes there while the raw text hides
-    # it. The union only ADDS disarm triggers (block direction). NAMED
+    # it; (r6 #2371) the masked-lead arm covers quoted APPEND-assignment
+    # values (NAME+='a b' . x) identically. The union only ADDS disarm
+    # triggers (block direction). NAMED
     # RESIDUAL (fail-open for the widening, at-or-below origin/main
     # behavior everywhere else): mover spellings the text cannot
     # recognize — mid-word-quoted forms (`pu'sh'd`), a mover held in a
