@@ -305,21 +305,24 @@ def _upload_dir(args: argparse.Namespace, local_dir: Path, rel: str, expected: l
     from huggingface_hub import HfApi
 
     hub = _hub()
+    path_in_repo = f"{_hf_prefix(args)}/{rel}"
     # HUB_DIR_FILECOUNT_EXEMPT: map bundles are <=29 files per condition dir.
     base_url = hub._upload(
         local_path=local_dir,
         repo_id=hub.DEFAULT_DATASET_REPO,
         repo_type="dataset",
-        path_in_repo=f"{_hf_prefix(args)}/{rel}",
+        path_in_repo=path_in_repo,
         raise_on_error=True,
     )
     if not base_url:
         raise RuntimeError(f"upload returned no path ({rel}/)")
+    # verify_repo_paths_uploaded requires prefix-INCLUSIVE expected paths —
+    # prepend here (DRY: the sole call site passes dir-relative names).
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         hub.DEFAULT_DATASET_REPO,
-        expected,
-        path_in_repo=f"{_hf_prefix(args)}/{rel}",
+        [f"{path_in_repo}/{name}" for name in expected],
+        path_in_repo=path_in_repo,
         repo_type="dataset",
     )
     if missing:

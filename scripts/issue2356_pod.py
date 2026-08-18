@@ -778,7 +778,9 @@ def _upload_raw_shard(args: argparse.Namespace, shard: int) -> None:
                         f"{corpus}/{kind}/{f.name} (silent durability loss — missing "
                         "HF_TOKEN / absent local path / failed verify)"
                     )
-                uploaded.append(f"{corpus}/{kind}/{f.name}")
+                # verify_repo_paths_uploaded requires prefix-INCLUSIVE expected
+                # paths — full repo-relative, matching the _upload path_in_repo.
+                uploaded.append(f"{prefix}/raw_completions/{corpus}/{kind}/{f.name}")
     if not uploaded:
         raise RuntimeError(f"[gen shard {shard}] no raw completion files to upload")
     missing = hub.verify_repo_paths_uploaded(
@@ -1437,8 +1439,9 @@ def phase_upload(args: argparse.Namespace) -> None:
         )
         if not base_url:
             raise RuntimeError(f"raw_completions upload returned no path ({prefix})")
+        # verify_repo_paths_uploaded requires prefix-INCLUSIVE expected paths.
         expected = [
-            f"{c}/{kind}/{f.name}"
+            f"{prefix}/raw_completions/{c}/{kind}/{f.name}"
             for c in CORPORA
             for kind in RAW_KINDS
             for f in sorted((raw_root / c / kind).glob("shard*_*.json"))
@@ -1470,7 +1473,11 @@ def phase_upload(args: argparse.Namespace) -> None:
     )
     if not base_url:
         raise RuntimeError(f"summary_stores upload returned no path ({prefix})")
-    expected_stores = sorted(p.name for p in merged.glob("*.npz")) + ["row_index.jsonl"]
+    # verify_repo_paths_uploaded requires prefix-INCLUSIVE expected paths.
+    expected_stores = [
+        f"{prefix}/summary_stores/{name}"
+        for name in sorted(p.name for p in merged.glob("*.npz")) + ["row_index.jsonl"]
+    ]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         DATA_REPO,

@@ -771,7 +771,9 @@ def upload_corpus_text(args: argparse.Namespace) -> None:
     )
     if not base_url:
         raise RuntimeError(f"corpus text upload returned no path ({path_in_repo})")
-    expected = [f"{c}.jsonl" for c in ("armA", "armB", "generic")]
+    # verify_repo_paths_uploaded requires prefix-INCLUSIVE expected paths (full
+    # repo-relative paths under path_in_repo), not prefix-relative names.
+    expected = [f"{path_in_repo}/{c}.jsonl" for c in ("armA", "armB", "generic")]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(), DATA_REPO, expected, path_in_repo=path_in_repo, repo_type="dataset"
     )
