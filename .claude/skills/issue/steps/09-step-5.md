@@ -168,7 +168,10 @@ else
 # .claude/agents, .claude/agent-memory (#1972 — always-appended memory
 # indexes the lint budget checks scan; no coupling, so its protections are
 # the uncommitted-dirt arm below + the branch-side-edit guard),
-# .claude/rules, CLAUDE.md.
+# .claude/rules, CLAUDE.md, tests/issue_skill_source.py (#2352 — the shared
+# composed-spec reader imported by every test_issue_skill_* pin test AND by
+# lint-family + unsynced tests; cross-family importers mean no single
+# family covers it — a singleton syncs whenever it is itself clean).
 declare -A FAMILY_OF
 FAMILY_OF[".claude/workflow.yaml"]="workflow"
 FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
@@ -185,11 +188,14 @@ FAMILY_OF[".claude/hooks"]="guard"
 FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
 FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
 FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-# Singletons: .claude/agents, .claude/agent-memory, .claude/rules, CLAUDE.md
+# Singletons: .claude/agents, .claude/agent-memory, .claude/rules, CLAUDE.md,
+# tests/issue_skill_source.py (#2352 — cross-family importers: workflow glob
+# x64, lint-family test_workflow_lint_no_repo_root_worktree_revert.py, plus
+# ~30 unsynced tests; never one family's member)
 # — each is its own family key (set below in the pass-1 loop by defaulting
 # to its own path).
 
-SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -452,7 +458,20 @@ indexes the lint budget checks scan, protected by the uncommitted-dirt
 arm + the branch-side-edit guard, never a clobber;
 #2303 adds `.claude/config/agent_spec_size_caps.txt` — the linter's
 import-time data file (a main-NEW file post-fork syncs in
-pair-atomically with `scripts/workflow_lint.py`; #2293))
+pair-atomically with `scripts/workflow_lint.py`; #2293);
+#2352 adds `tests/issue_skill_source.py` as a singleton — the shared
+composed-spec reader every `test_issue_skill_*` pin test imports, and
+lint-family (`test_workflow_lint_no_repo_root_worktree_revert.py`) +
+unsynced tests import too: families dirty-skip INDEPENDENTLY, so any
+single-family assignment leaves the other family's importer reachable
+(the #2352 half-sync: pin tests synced without the helper, 66
+collection errors), whereas a singleton syncs whenever it is ITSELF
+clean. Named residual, BOTH skew directions: a dirty importer family
+can hold branch-era pin tests against a freshly-synced NEWER helper,
+and a branch-edited/dirty (skipped) helper can sit under freshly-synced
+pin tests — the helper is a small append-stable read API, either skew
+fails LOUD at collection, same remedy as below: rebase onto
+origin/main, or cross-check at the repo root)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
