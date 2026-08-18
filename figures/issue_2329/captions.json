@@ -44,9 +44,12 @@
     "per_unit_views": ["figures/issue_2329/route_contrasts_perpair.png"],
     "caption_bullets": [
       "Bars show steered mean F_beh for each base type (blue) beside its matched-content route variant or conflict cell (orange), per slot (ce, pe): demo_format, demo_persona, language_implied, persona_role_header, and the four conflict cells (format fwd/rev, persona fwd/rev); error bars are 95% pair-clustered CIs.",
-      "Conflict cells are plotted on the same steered-F_beh axis as the route variants; no separate conflict-balance-shift axis is drawn.",
+      "Conflict cells are plotted on the same steered-F_beh axis as the route variants; the manifest's planned floor/ceiling-normalized conflict balance shift ((judge_demo - judge_instr)/100, -1..1) was never computed (no balance-shift code exists in scripts/issue2329_figures.py; grep for balance|judge_demo|judge_instr returns no matches), so that quantity is declared not produced rather than rendered.",
       "Per-unit view (route_contrasts_perpair): 1,956 per-pair steered F_beh points, base type (blue) vs route variant / conflict (orange), pair-id labeled, shown at full range and in a zoom panel restricted to |F_beh| <= 2."
-    ]
+    ],
+    "partial": true,
+    "planned_not_produced": ["conflict balance shift (judge_demo - judge_instr)/100, -1..1"],
+    "planned_not_produced_reason": "quantity never computed; no balance-shift code in scripts/issue2329_figures.py (grep for balance|judge_demo|judge_instr returns no matches); conflict cells are rendered as steered F_beh bars on the shared axis"
   },
   "recency_load_curves": {
     "status": "rendered",
@@ -102,10 +105,12 @@
       "figures/issue_2329/anchor_separation_diag.png",
       "figures/issue_2329/act_beh_agreement.png",
       "figures/issue_2329/margin_validation.png",
-      "figures/issue_2329/crosstype_null_by_donor.png"
+      "figures/issue_2329/crosstype_null_by_donor.png",
+      "figures/issue_2329/length_matched_diag.png"
     ],
     "caption_bullets": [
-      "Aggregate view (diagnostics): three per-(type-cell x slot) panels — excess incoherence relative to the anchor baseline (judge score <= 60) per arm (steered / shuffled / crosstype), generation cap-hit fraction per arm with the 2% re-generation trigger line, and post-exclusion n in pairs with the separation-survival floor of 12 drawn.",
+      "Aggregate view (diagnostics): three per-(type-cell x slot) panels — excess incoherence relative to the anchor baseline (judge score <= 60) per arm (steered / shuffled / crosstype), generation cap-hit fraction per arm with the 2% re-generation trigger line, and post-exclusion n in pairs with the separation-survival floor of 12 drawn. Token-identity (divergence-9) drops/repairs: the check ran with zero dropped cells and zero repaired cells (eval_results/issue_2329/f_metrics/transfer.json, div9_flags), so no panel is drawn for it.",
+      "length_matched_diag: top panel — steered F_beh per (type-cell x slot) computed over all post-exclusion pairs (filled circles) vs over the length-matched subset only (|context-length delta| <= 2 tokens; open circles), for the 42 of 75 units with at least one length-matched pair (per-unit n printed as matched/all in the tick labels; matched n = 3-36); the 33 units with no length-matched pairs are omitted, never drawn as zero bars. Bottom panel — per-pair context-length delta (tokens; value-B context minus value-A context) distribution per unit (boxplots; 2,676 steered pairs over 75 units) with the +/-2-token matching threshold drawn as black dashed lines.",
       "anchor_separation_diag: per-pair anchor separation (ceiling - floor, judge-contrast units; K = 10 draws) per type (1,364 points), with the |separation| >= 0.5 keep threshold and kept/total pair counts printed per type. act_beh_agreement: mean F_act (read at layer 30 of 32) vs mean F_beh per (cell x slot x arm), with per-arm Spearman rho printed (steered 0.747, shuffled 0.529, crosstype 0.599; n = 74-75 screened cells per arm).",
       "margin_validation: teacher-forced fixed-pool margin shift (patched - floor anchor) vs steered F_beh, per-(cell x slot) means (blue, registered grain, n_cells = 72, rho = 0.451, p = 7e-05) over per-pair companions (grey, n_pairs = 2,508, rho = 0.35); the main panel's y-range is stretched by a few extreme per-pair values and the inset zoom (|margin shift| < 1, |F_beh| < 3) carries the readable view. crosstype_null_by_donor: cross-type-null F_beh split by donor type for the 23 recipient cells whose pooled cross-type 95% CI excludes 0, plus shuffled-null F_beh split by donor value for the ordinal value sets (constraint_knowledge, refusal_boundary)."
     ]
