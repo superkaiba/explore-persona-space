@@ -10459,8 +10459,8 @@
     "2353": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2353",
-      "status": "running",
+      "path": "tasks/completed/2353",
+      "status": "completed",
       "title": "verify_task_body: WARN-level per-unit-or-exemption check for every v4 result section (multi-point aggregate figures escape the current single-aggregate-stat trigger)"
     },
     "2354": {
