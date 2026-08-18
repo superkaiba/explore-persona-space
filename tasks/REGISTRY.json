@@ -9072,8 +9072,8 @@
     "2174": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2174",
-      "status": "proposed",
+      "path": "tasks/planning/2174",
+      "status": "planning",
       "title": "Fact-checker: exact-identity premise from a sample must be verified at the assert's grain"
     },
     "2175": {
