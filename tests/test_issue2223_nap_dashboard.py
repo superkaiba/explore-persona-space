@@ -29,6 +29,26 @@ def test_tbl_escapes_plain_strings_safe_optout_and_fmt():
     assert "<td>1.5000</td>" in out and "<td>—</td>" in out and "<td>yes</td>" in out
 
 
+def test_facet_options_built_via_textcontent_not_innerhtml():
+    """r3 CONCERN dashboard-facet-innerhtml-sink (fixed r4): facet <option>
+    construction goes through createElement + textContent — the
+    string-concatenated ``sel.innerHTML = vals.map(...)`` sink is gone. The
+    bar-DV selector's literals-only innerHTML is the ONE permitted remaining
+    use (reconciler r3: observed-safe, pure literals)."""
+    import re
+
+    js = D._JS
+    assert "'<option selected>'" not in js  # the removed concat sink
+    assert "sel.innerHTML" not in js
+    assert 'document.createElement("option")' in js
+    assert "opt.textContent = v" in js and "opt.selected = true" in js
+    # remaining innerHTML uses are EXACTLY the permitted set: the literals-only
+    # bar-DV selector (dv), empty-string svg clears, and the esc()-mediated
+    # renderTable join (div) — no data-bearing concat sink.
+    assert sorted(set(re.findall(r"(\w+)\.innerHTML", js))) == ["div", "dv", "svg"]
+    assert "dv.innerHTML = '<option>harm</option>" in js
+
+
 def test_render_diagnostics_escapes_injection_shaped_values():
     """An injection-shaped diagnostic string (h1 classification) renders
     escaped in BOTH the table cell and the raw-JSON details block."""

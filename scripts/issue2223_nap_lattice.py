@@ -28,7 +28,11 @@ JSONs (``scores_{sc}.json`` / ``coherence_{sc}.json``) + the capture pipeline's
   ``pending-confirmation`` state + a manifest capped at the 6 largest-drop
   UNIQUE ARMS (every crossing cell of a selected arm retained; each row
   carries two complete runnable commands, ``generate_cmd`` + ``judge_cmd``)
-  — NO verdict is posted before triggered confirmations complete.
+  — NO verdict is posted before triggered confirmations complete. The arm
+  coherence mean requires a non-None per-seed mean at EVERY anchor seed
+  (r4 blocker): a missing/degenerate coherence seed routes to
+  ``pending-confirmation`` with ``coherence:``-prefixed missing keys, never
+  a partial survivor mean through the conjuncts.
 - **Input completeness (r3 blocker)**: per (scenario, layer_config) cell the
   COMPLETE expected seed-42 cell set for the registered arm grid — derived
   from the replay's own :func:`enumerate_cells` registry enumeration, never
@@ -46,7 +50,10 @@ JSONs (``scores_{sc}.json`` / ``coherence_{sc}.json``) + the capture pipeline's
 - **Decode-regime attribution guard**: when >= 50% of the EXISTING-family
   context-end arms (answer/ctx_native) with seed-42 data also cross the
   screen, a new-axis crossing is attributed to the decode regime
-  (Inconclusive-coded), not axis fidelity.
+  (Inconclusive-coded), not axis fidelity. The guard's comparator set is the
+  REGISTERED existing-family grid (r4): absent comparator seed-42 cells make
+  a would-be Fidelity-changes-it non-postable (``pending-arm-cells``), never
+  a fraction read off the present-arms-only subset.
 - **Verdict lattice** (disjoint + exhaustive; r3 priority order):
   Pipeline-fidelity-fail (H1 kill — outranks EVERY pending/availability
   state) > pending-anchor-seeds > failed-gap Inconclusive (short-circuits
@@ -60,7 +67,9 @@ JSONs (``scores_{sc}.json`` / ``coherence_{sc}.json``) + the capture pipeline's
   candidates). Tie-break note: the plan lists "seed-specific
   non-replicating crossings" etc. under Inconclusive, so a cell with any
   Inconclusive-coded candidate is Inconclusive, never Reproduced.
-  (Alive-n is reported per arm but is not a lattice input.)
+  (Alive-n is reported per arm but is not a lattice input.) A layer config
+  at which NO registered arm has an expected seed-42 cell is
+  ``skipped-no-registered-arms`` (r4) — a skip, never a vacuous Reproduced.
 
 Judge-dropped rows (``score: null``) are excluded from every mean
 (drop-never-coerce) and counted. Content hygiene: reads judged score JSONs
@@ -325,14 +334,33 @@ def evaluate_arm(
     conf_drop = sum(drops) / len(drops)
     conf_mean = sum(means) / len(means)
     outside_band = conf_mean < min(anch["u_seed_means"])
-    coh_vals = [
-        v
-        for v in (
-            _coh_mean(coh_cells, cell_name(lc, arm, s), anch["common_turns"]) for s in ANCHOR_SEEDS
-        )
-        if v is not None
+    # r4 BLOCKER (lattice-confirmation-coherence-completeness): the arm
+    # coherence mean is a CONFIRMATION input — a non-None per-seed mean is
+    # required for EVERY anchor seed BEFORE the conjunct ladder below. A
+    # partial (survivor-only) mean can pass coherence conjuncts a complete
+    # one would fail, posting Fidelity-changes-it in the forbidden direction
+    # (plan §3: confirmed ⇔ ... coherence ≥ reference − 10 on the full
+    # 3-seed estimator). Missing/degenerate seeds route to the SAME
+    # non-postable pending-confirmation state as missing harm confirmation
+    # cells, with ``coherence:``-prefixed keys (symmetric with anchor_stats).
+    coh_by_seed = {
+        s: _coh_mean(coh_cells, cell_name(lc, arm, s), anch["common_turns"]) for s in ANCHOR_SEEDS
+    }
+    coh_missing = [
+        f"coherence:{cell_name(lc, arm, s)}" for s in ANCHOR_SEEDS if coh_by_seed[s] is None
     ]
-    arm_coh = sum(coh_vals) / len(coh_vals) if coh_vals else None
+    if coh_missing:
+        rec.update(
+            {
+                "confirmation_mean_drop": conf_drop,
+                "confirmation_mean_harm": conf_mean,
+                "outside_anchor_band": bool(outside_band),
+                "disposition": "pending-confirmation",
+                "missing_confirmation_cells": coh_missing,
+            }
+        )
+        return rec
+    arm_coh = sum(v for v in coh_by_seed.values() if v is not None) / len(ANCHOR_SEEDS)
     coh_ref = anch.get("coherence_reference")
     rec.update(
         {
@@ -480,6 +508,10 @@ def reduce_lattice(
     (registered-arm seed-42 completeness) > pending-confirmation >
     mixed-floors Inconclusive > Fidelity-changes-it > Inconclusive-coded >
     Reproduced-and-unchanged. Missing map band layers raise (missing input).
+    r4: an empty expected grid at an (sc, lc) is ``skipped-no-registered-arms``
+    (never vacuous Reproduced); a would-be Fidelity-changes-it with absent
+    registered EXISTING-family comparator cells routes to ``pending-arm-cells``
+    (the decode guard's fraction is invalid on a present-arms-only subset).
     """
     arms = list(arms) if arms else list(NEWAXIS_ARM_LIST)
     h1_cls = h1_gate["classification"]
@@ -532,6 +564,20 @@ def reduce_lattice(
             # state, so Reproduced-and-unchanged is reachable ONLY on full
             # registered-arm coverage.
             expected = expected_seed42_cells(arms, sc, lc)
+            if not expected:
+                # r4 (Claude r3 minor a): an explicitly-passed layer config at
+                # which NO registered arm has an expected seed-42 cell must
+                # never vacuously read Reproduced-and-unchanged — nothing was
+                # evaluated. Skip state (not a verdict, not pending: no cell
+                # can ever arrive for an unregistered grid point).
+                entry["verdict"] = "skipped-no-registered-arms"
+                entry["arms"] = {}
+                entry["note"] = (
+                    "no registered arm has an expected seed-42 cell at this "
+                    "(scenario, layer_config); nothing to evaluate"
+                )
+                per_cell[cell_id] = entry
+                continue
             missing_arm_cells = sorted(set(expected.values()) - set(harm_cells))
             if missing_arm_cells:
                 entry["verdict"] = "pending-arm-cells"
@@ -540,6 +586,15 @@ def reduce_lattice(
                 per_cell[cell_id] = entry
                 continue
             guard = decode_regime_guard(harm_cells, lc, anch)
+            # r4 (concern lattice-decode-guard-input-completeness): the
+            # guard's comparator set is the REGISTERED existing-family grid,
+            # never the glob of present files — absent comparator seed-42
+            # cells make the present-arms-only crossing fraction an invalid
+            # attribution read, so a would-be Fidelity-changes-it below
+            # routes to the non-postable pending path instead.
+            expected_existing = expected_seed42_cells(EXISTING_FAMILY_ARMS, sc, lc)
+            missing_existing = sorted(set(expected_existing.values()) - set(harm_cells))
+            guard["missing_existing_family_cells"] = missing_existing
             entry["decode_regime_guard"] = guard
             entry["map_validity"] = mv
             arm_recs: dict[str, dict] = {}
@@ -553,7 +608,14 @@ def reduce_lattice(
                     map_valid=mv["valid"],
                     decode_regime_attributed=guard["attributed"],
                 )
-                assert rec is not None, (arm, lc, "expected cell vanished mid-reduction")
+                if rec is None:
+                    # r4 (Claude r3 minor b): a hard invariant on the VERDICT
+                    # path must survive `python -O` — never a bare assert.
+                    raise RuntimeError(
+                        f"expected seed-42 cell for arm {arm!r} at {lc!r} vanished "
+                        "mid-reduction (completeness check passed but evaluate_arm "
+                        "found no cell) — inconsistent harm_cells input"
+                    )
                 arm_recs[arm] = rec
             entry["arms"] = arm_recs
             pending = sorted(
@@ -597,7 +659,22 @@ def reduce_lattice(
                 entry["verdict"] = "Inconclusive"
                 entry["inconclusive_reason"] = "mixed-cosine-floors"
             elif confirmed:
-                entry["verdict"] = "Fidelity-changes-it"
+                if missing_existing:
+                    # r4 (concern lattice-decode-guard-input-completeness): a
+                    # would-be Fidelity-changes-it is withheld while the
+                    # decode-regime guard's registered comparator cells are
+                    # incomplete — reuse the non-postable pending-arm-cells
+                    # state (any_pending / verdict_posted unchanged).
+                    entry["verdict"] = "pending-arm-cells"
+                    entry["missing_arm_cells"] = missing_existing
+                    entry["note"] = (
+                        "would-be Fidelity-changes-it withheld: registered "
+                        "existing-family comparator cells for the decode-regime "
+                        "guard are absent (present-arms-only crossing fraction "
+                        "is not a valid attribution read)"
+                    )
+                else:
+                    entry["verdict"] = "Fidelity-changes-it"
             elif inconclusive_coded:
                 entry["verdict"] = "Inconclusive"
                 entry["inconclusive_reason"] = (
@@ -675,9 +752,30 @@ def run(args) -> Path:
     coh_by_sc: dict[str, dict | None] = {}
     for sc in scenarios:
         hp = model_root / "judged" / f"scores_{sc}.json"
+        cp = model_root / "judged" / f"coherence_{sc}.json"
+        sp = model_root / "judged" / f"judge_complete_{sc}.json"
+        # r4 (reconciler recommendation): prefer the judge phase-completion
+        # sentinel (written AFTER both DV files land). Its absence with harm
+        # present but coherence absent is the half-written crash window
+        # between the judge phase's two _judge_dv writes — a distinct,
+        # clearer error than the generic missing-input assert. Legacy
+        # (pre-sentinel) trees with BOTH files present keep the existing
+        # behavior plus a WARN line.
+        if not sp.exists():
+            if hp.exists() and not cp.exists():
+                raise RuntimeError(
+                    f"{hp} present but {cp} absent and no judge-completion "
+                    f"sentinel ({sp.name}) — the judge phase likely crashed "
+                    "between the harm and coherence DV writes (half-written "
+                    "judge output); re-run --phase judge for this scenario"
+                )
+            _log(
+                f"[nap-lattice] WARN: no judge-completion sentinel {sp.name} for "
+                f"{sc} — legacy (pre-sentinel) tree; falling back to "
+                "file-presence checks"
+            )
         assert hp.exists(), f"{hp} absent — run the judge phase first"
         harm_by_sc[sc] = json.loads(hp.read_text())["cells"]
-        cp = model_root / "judged" / f"coherence_{sc}.json"
         # coherence is a REQUIRED lattice input (r3): never a silent None skip.
         assert cp.exists(), f"{cp} absent — run the judge phase first (coherence DV required)"
         coh_by_sc[sc] = json.loads(cp.read_text())["cells"]

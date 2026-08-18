@@ -2294,6 +2294,23 @@ def phase_judge(args) -> Path:
             judged_dir,
             args,
         )
+        if not args.dry_run:
+            # r4 (reconciler recommendation): phase-completion sentinel AFTER
+            # both DV writes land — the lattice reducer uses it to distinguish
+            # a crashed half-written judge phase (harm written, coherence not)
+            # from complete inputs. Never written on dry-run (no scores land).
+            sentinel = judged_dir / f"judge_complete_{sc}.json"
+            _atomic_write_json(
+                sentinel,
+                {
+                    "scenario": sc,
+                    "dvs": ["harm", "coherence"],
+                    "n_judged_items": len(items),
+                    "n_empty_turns": len(empty_ids),
+                    "metadata": _cell_metadata(),
+                },
+            )
+            _log(f"[phase=judge] wrote {sentinel} (both DVs complete)")
     return judged_dir
 
 

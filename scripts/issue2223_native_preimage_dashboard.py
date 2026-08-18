@@ -343,7 +343,15 @@ function initControls(){
     sel.multiple = true;
     const vals = uniq(DATA.records.map(r => String(r[f])));
     sel.size = Math.min(5, Math.max(2, vals.length));
-    sel.innerHTML = vals.map(v => '<option selected>' + v + '</option>').join('');
+    // Facet values are registry/enum-derived today, but they are DATA — build
+    // options via createElement + textContent, never string-concatenated
+    // innerHTML (r3 concern dashboard-facet-innerhtml-sink).
+    for(const v of vals){
+      const opt = document.createElement("option");
+      opt.selected = true;
+      opt.textContent = v;
+      sel.appendChild(opt);
+    }
     sel.onchange = render;
     wrap.appendChild(lab); wrap.appendChild(sel);
     bar.appendChild(wrap);
