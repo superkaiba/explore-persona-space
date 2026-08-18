@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Eight disclosed read-only
+``epm:plan-verify`` marker — never this script). Ten disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -37,7 +37,15 @@ trigger gates fire, reads the live workflow-surface prose files
 (``.claude/{skills,agents,rules,hooks}``, ``CLAUDE.md``,
 ``.claude/workflow.yaml``) and ``tests/**/*.py`` under the repo root to
 locate existing pins on plan-edited literals — read-only, no import, no
-network; missing dirs degrade to a loud SKIP (#2029). Check 47 adds NO
+network; missing dirs degrade to a loud SKIP (#2029); and checks 65/66,
+when their shared smoke-fixture size-claim trigger fires, glob fixture
+files under the repo root and ``.claude/worktrees/issue-<N>*``, count
+newlines with an 8 MB per-file cap, scan ``scripts/*.py`` SOURCE TEXT
+(bounded: <= 2,500 files, <= 1 MB each) for the claimed sample-size
+constant / the fixture-dir token, and — when a pinned tip is cited and no
+earlier rung resolves — run ``git ls-tree`` plus up to 32 ``git cat-file``
+blob reads per glob token under check 42's retry/fail-open contract —
+read-only, no network, no import (#2178). Check 47 adds NO
 read exception:
 its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
 stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
@@ -183,14 +191,20 @@ Check catalog (id — classification — kind scope)
                                 calibration rule, #2276)
   c63 §9 declared GPU width vs  WARN-only, conditional    all kinds
       launch-fence width
+  c65 smoke-fixture size claim  FAIL, conditional         all kinds
+      vs realized fixtures      (constant-route
+                                contradictions WARN
+                                by design)
+  c66 smoke-fixture producing   WARN-only, conditional    all kinds
+      script named in plan
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63) also SKIP when their content trigger does
-not fire.
+55, 56, 57, 58, 59, 61, 62, 63, 65, 66) also SKIP when their content
+trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -344,6 +358,15 @@ labeled-line forms):
     e.g. a narrow smoke launch beside a wide production provision; a plan
     genuinely dispatching N-wide through the fence instead adds
     `--gpus <N>` to it, or re-costs the §9 walls at the realized width)
+  - ``N/A — no smoke fixture size claim`` (check 65 — the smoke-size
+    vocabulary is incidental / quotes an incident, not this plan's own
+    fixture-size claim; a plan genuinely claiming a smoke-fixture row
+    floor instead states a floor at or below the realized fixture
+    minimum, or budgets the producing-script change)
+  - ``N/A — no fixture-producing script change needed`` (check 66 — the
+    contradicted floor is deliberate / already remediated elsewhere; a
+    plan genuinely needing regenerated fixtures instead names the
+    producing script in its modified-file list)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -392,7 +415,7 @@ import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
 import yaml
@@ -12036,6 +12059,562 @@ def check_declared_width_vs_launch(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Checks 65/66 — smoke-fixture size claim vs realized fixtures (#2178) ─
+
+_C65_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41/c42 pattern)
+
+# Row-count read cap (bytes). A file larger than this yields a LOWER BOUND:
+# a truncated count can SATISFY a floor (bound >= F) but never FAIL one.
+_C65_READ_CAP = 8 * 1024 * 1024
+
+# Hard bound on counted fixture files per resolution rung (cost + detail size).
+_C65_MAX_FILES = 32
+
+# Bounded scripts/*.py scan (constant lookup + producer-candidate scan):
+# non-recursive, at most this many files, at most this many bytes per file.
+_C65_MAX_SCRIPTS = 2500
+_C65_SCRIPT_READ_CAP = 1024 * 1024
+
+# Claim grammar — three conjuncts on ONE fence-masked line (conjunct 3
+# captures the claimed floor F, capped at 6 digits).
+_C65_SMOKE_RE = re.compile(r"(?i)\bsmoke\b")
+_C65_FIXTURE_NOUN_RE = re.compile(r"(?i)\b(?:fixture|slice|corpus|corpora|sample)s?\b")
+_C65_FLOOR_RE = re.compile(
+    r"(?:≥|>=|\bat least\b)\s*(\d{1,6})\s+rows?\b"  # the unicode >= sign is real plan text
+    r"|\b(?:fixture|slice|sample)s?\s+of\s+(\d{1,6})\s+rows?\b"
+)
+
+# Constant-form claim (RAW scan, fences included — constants are usually
+# quoted in fenced code): a SMOKE_SAMPLE_N-shaped ``<NAME> = <int>`` paste.
+_C65_CONST_RE = re.compile(r"\b(SMOKE_[A-Z0-9_]*(?:_N|_ROWS|_SIZE))\s*=\s*(\d{1,6})\b")
+
+# Smoke-fixture path token: a repo-relative path with a data extension whose
+# dir or file component contains "smoke". The leading LOOKBEHIND (not \b)
+# keeps a dotted repo-relative token (".claude/worktrees/...") matching
+# WHOLE or not at all — a \b would silently truncate it to "claude/..."
+# (round-1 Methodology concern 2: never a silently-truncated token).
+_C65_GLOB_RE = re.compile(
+    r"(?<![\w./*-])"
+    r"((?:[\w.*-]+/)*[\w.*-]*smoke[\w.*-]*/[\w./*-]+\.(?:jsonl|json|csv|tsv|txt|parquet)"
+    r"|(?:[\w.*-]+/)+[\w.*-]*smoke[\w.*-]*\.(?:jsonl|json|csv|tsv|txt|parquet))\b"
+)
+
+# Pinned-tip citation: "pinned tip `8c7b7b2406`" / "tip 8c7b7b2406...".
+_C65_TIP_RE = re.compile(r"(?i)\btip\s+`?([0-9a-f]{8,40})\b")
+
+
+def _c65_git(cmd: list[str]) -> bytes | None:
+    """Run a read-only git command under the check-42 subprocess contract:
+    ``timeout=10``, ``check=False``, ``cwd=_C65_REPO_ROOT``, retry ONCE on a
+    transient ``OSError`` after 0.1 s. Returns stdout bytes on rc == 0, else
+    ``None`` — any git unavailability (or a non-resolving sha/prefix) leaves
+    THIS RUNG unresolved (the ladder continues / the check SKIPs; never a
+    FAIL)."""
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                capture_output=True,
+                timeout=10,
+                cwd=str(_C65_REPO_ROOT),
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return None  # a hung git command is not retriable
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+        return r.stdout if r.returncode == 0 else None
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def _c65_tip_sha(plan: str) -> str | None:
+    """First pinned-tip SHA the plan cites (RAW scan), or None."""
+    m = _C65_TIP_RE.search(plan)
+    return m.group(1).lower() if m else None
+
+
+def _c65_count_bytes(blob: bytes, truncated: bool) -> tuple[int, bool]:
+    """(rows, exact): newline count over ``blob`` with ``wc -l`` parity plus
+    a final unterminated line counted; ``truncated`` blobs are LOWER BOUNDS
+    (exact=False)."""
+    n = blob.count(b"\n")
+    if truncated:
+        return n, False
+    if blob and not blob.endswith(b"\n"):
+        n += 1
+    return n, True
+
+
+def _c65_count_rows(path: Path) -> tuple[int, bool] | None:
+    """(rows, exact) for a working-tree file, reading at most
+    ``_C65_READ_CAP`` bytes; None when unreadable (fail-open)."""
+    try:
+        with path.open("rb") as fh:
+            head = fh.read(_C65_READ_CAP)
+            truncated = bool(fh.read(1))
+    except OSError:
+        return None
+    return _c65_count_bytes(head, truncated)
+
+
+def _c65_glob_counts(base: Path, glob_tokens: list[str]) -> list[tuple[str, int, bool]]:
+    """Row counts for ``glob_tokens`` globbed under ``base`` (files only,
+    at most ``_C65_MAX_FILES``; unreadable files and malformed globs are
+    skipped — fail-open, the rung just resolves less)."""
+    counts: list[tuple[str, int, bool]] = []
+    for tok in glob_tokens:
+        try:
+            hits = sorted(base.glob(tok))
+        except (OSError, ValueError):
+            continue
+        for p in hits:
+            if len(counts) >= _C65_MAX_FILES:
+                return counts
+            if not p.is_file():
+                continue
+            counted = _c65_count_rows(p)
+            if counted is None:
+                continue
+            try:
+                rel = str(p.relative_to(_C65_REPO_ROOT))
+            except ValueError:
+                rel = str(p)
+            counts.append((rel, *counted))
+    return counts
+
+
+def _c65_git_tree_counts(sha: str, glob_token: str) -> list[tuple[str, int, bool]] | None:
+    """Row counts for ``glob_token`` inside the COMMITTED tree at ``sha``
+    (resolution rung 2). Cost: ONE ``git ls-tree -r --name-only`` scoped to
+    the token's literal dir prefix PLUS up to ``_C65_MAX_FILES`` (32)
+    ``git cat-file blob`` reads — 1 + N subprocess calls per glob token,
+    NOT a flat 2 (round-1 Methodology concern 4). Returns None when git is
+    unavailable / the sha does not resolve (rung unresolved, fail-open via
+    ``_c65_git``). Tests monkeypatch this helper to exercise the rung
+    without a git repo; the real subprocess path is pinned by the
+    throwaway-git-repo test."""
+    parts = glob_token.split("/")
+    prefix_parts: list[str] = []
+    for part in parts[:-1]:
+        if any(ch in part for ch in "*?["):
+            break
+        prefix_parts.append(part)
+    prefix = "/".join(prefix_parts)
+    out = _c65_git(["git", "ls-tree", "-r", "--name-only", sha, "--", prefix or "."])
+    if out is None:
+        return None
+    names = [ln for ln in out.decode("utf-8", errors="replace").splitlines() if ln.strip()]
+    matches = sorted(n for n in names if PurePosixPath(n).match(glob_token))[:_C65_MAX_FILES]
+    counts: list[tuple[str, int, bool]] = []
+    for fname in matches:
+        blob = _c65_git(["git", "cat-file", "blob", f"{sha}:{fname}"])
+        if blob is None:
+            return None
+        counts.append((fname, *_c65_count_bytes(blob[:_C65_READ_CAP], len(blob) > _C65_READ_CAP)))
+    return counts
+
+
+def _c65_worktree_counts(
+    plan: str, glob_tokens: list[str]
+) -> tuple[str | None, list[tuple[str, int, bool]]]:
+    """Resolution rung 3: join each ``.claude/worktrees/issue-<N>*`` dir
+    (N = the plan's own H1 task number; at most 8 dirs) with the glob
+    tokens — the rung that reaches gitignored worktree-local fixtures (the
+    #1336 v16 class). Plan-text-derived, so it works identically in
+    ``--plan-file`` mode."""
+    m = re.search(r"(?im)^#.*?task\s+#(\d+)", plan)
+    if not m:
+        return None, []
+    try:
+        wt_dirs = sorted(_C65_REPO_ROOT.glob(f".claude/worktrees/issue-{m.group(1)}*"))[:8]
+    except OSError:
+        return None, []
+    for wt in wt_dirs:
+        if not wt.is_dir():
+            continue
+        counts = _c65_glob_counts(wt, glob_tokens)
+        if counts:
+            return f"issue worktree {wt.name}", counts
+    return None, []
+
+
+def _c65_distinctive_token(glob_token: str) -> str | None:
+    """The glob's most distinctive literal component containing "smoke":
+    the last such directory component, else the filename stem; None when
+    the component is glob-bearing or shorter than 6 chars (too generic for
+    a literal-substring producer scan)."""
+    parts = glob_token.split("/")
+    for part in reversed(parts[:-1]):
+        if "smoke" in part:
+            usable = len(part) >= 6 and not any(ch in part for ch in "*?[")
+            return part if usable else None
+    stem = parts[-1].rsplit(".", 1)[0]
+    if "smoke" in stem:
+        usable = len(stem) >= 6 and not any(ch in stem for ch in "*?[")
+        return stem if usable else None
+    return None
+
+
+def _c65_scripts_scan(
+    const_names: list[str], literal_tokens: list[str]
+) -> tuple[list[tuple[str, str, int]], list[str]]:
+    """ONE bounded pass over ``_C65_REPO_ROOT/scripts/*.py`` (non-recursive,
+    <= ``_C65_MAX_SCRIPTS`` files, <= ``_C65_SCRIPT_READ_CAP`` bytes each;
+    read-only, no import): line-anchored ``<NAME> = <int>`` definitions for
+    ``const_names``, plus files carrying any ``literal_tokens`` substring
+    (producer candidates). Runs only when a claim armed the checks."""
+    consts: list[tuple[str, str, int]] = []
+    candidates: list[str] = []
+    if not const_names and not literal_tokens:
+        return consts, candidates
+    const_res = {
+        cname: re.compile(rf"(?m)^\s*{re.escape(cname)}\s*=\s*(\d{{1,6}})\b")
+        for cname in const_names
+    }
+    try:
+        files = sorted((_C65_REPO_ROOT / "scripts").glob("*.py"))[:_C65_MAX_SCRIPTS]
+    except OSError:
+        return consts, candidates
+    for f in files:
+        try:
+            with f.open("r", errors="replace") as fh:
+                text = fh.read(_C65_SCRIPT_READ_CAP)
+        except OSError:
+            continue
+        rel = f"scripts/{f.name}"
+        for cname, pat in const_res.items():
+            m = pat.search(text)
+            if m:
+                consts.append((cname, rel, int(m.group(1))))
+        if any(tok in text for tok in literal_tokens):
+            candidates.append(rel)
+    return consts, candidates
+
+
+class _C65Eval(NamedTuple):
+    """Shared evaluation for checks 65/66. No cross-call memoization BY
+    DESIGN: the ladder only runs when a claim fired, the cost is bounded
+    (~ms non-firing), and a memo keyed on plan text would poison across
+    tests that monkeypatch ``_C65_REPO_ROOT`` between calls with identical
+    plan strings."""
+
+    prose_claims: list[tuple[str, int]]  # (claim-line excerpt, claimed floor F)
+    const_claims: list[tuple[str, int]]  # (constant name, claimed value)
+    glob_tokens: list[str]
+    winning_rung: str | None  # first-resolve-wins: working tree > pinned tip > worktrees
+    file_counts: list[tuple[str, int, bool]]  # (path, rows, exact)
+    const_evidence: list[tuple[str, str, int]]  # (name, scripts/ relpath, actual value)
+    producer_candidates: list[str]  # scripts/ relpaths that plausibly produce the fixtures
+
+
+def _c65_glob_tokens(plan: str) -> list[str]:
+    """Deduplicated smoke-fixture glob tokens (RAW scan, fences included —
+    the c41/c11 raw-scan doctrine); repo-relative, side-effect-free tokens
+    only (absolute paths and ``..`` components refused)."""
+    glob_tokens: list[str] = []
+    for m in _C65_GLOB_RE.finditer(plan):
+        tok = m.group(1)
+        if tok.startswith("/") or ".." in tok.split("/") or tok in glob_tokens:
+            continue
+        glob_tokens.append(tok)
+    return glob_tokens
+
+
+def _c65_resolve_files(
+    plan: str, glob_tokens: list[str]
+) -> tuple[str | None, list[tuple[str, int, bool]]]:
+    """Resolve the fixture evidence through the three-rung ladder,
+    FIRST-RESOLVE-WINS: (1) repo-root working tree — it deliberately
+    SHADOWS — (2) the plan's cited pinned tip, then (3) the issue
+    worktrees."""
+    if not glob_tokens:
+        return None, []
+    file_counts = _c65_glob_counts(_C65_REPO_ROOT, glob_tokens)
+    if file_counts:
+        return "working tree", file_counts
+    sha = _c65_tip_sha(plan)
+    if sha:
+        for tok in glob_tokens:
+            counts = _c65_git_tree_counts(sha, tok)
+            if counts:
+                file_counts.extend(counts[: _C65_MAX_FILES - len(file_counts)])
+        if file_counts:
+            return f"pinned tip {sha[:12]}", file_counts
+    return _c65_worktree_counts(plan, glob_tokens)
+
+
+def _c65_evaluate(plan: str) -> _C65Eval:
+    """Extract the smoke-fixture size claims, resolve the fixture evidence
+    through the three-rung ladder (``_c65_resolve_files``), and run the
+    bounded ``scripts/*.py`` scan for constant evidence + producer
+    candidates."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    prose_claims: list[tuple[str, int]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or not _C65_SMOKE_RE.search(line) or not _C65_FIXTURE_NOUN_RE.search(line):
+            continue
+        for m in _C65_FLOOR_RE.finditer(line):
+            prose_claims.append((line.strip()[:160], int(m.group(1) or m.group(2))))
+    const_claims = [(m.group(1), int(m.group(2))) for m in _C65_CONST_RE.finditer(plan)]
+    if not prose_claims and not const_claims:
+        return _C65Eval([], [], [], None, [], [], [])
+    glob_tokens = _c65_glob_tokens(plan)
+    winning_rung, file_counts = _c65_resolve_files(plan, glob_tokens)
+    const_names = sorted({cname for cname, _v in const_claims})
+    tokens = sorted({t for t in (_c65_distinctive_token(g) for g in glob_tokens) if t})
+    const_evidence, producer_candidates = _c65_scripts_scan(const_names, tokens)
+    for _cname, rel, _v in const_evidence:
+        if rel not in producer_candidates:
+            producer_candidates.append(rel)
+    producer_candidates.sort()
+    return _C65Eval(
+        prose_claims,
+        const_claims,
+        glob_tokens,
+        winning_rung,
+        file_counts,
+        const_evidence,
+        producer_candidates,
+    )
+
+
+class _C65Cmp(NamedTuple):
+    fails: list[str]
+    warns: list[str]
+    passes: list[str]
+    unresolved: list[str]
+
+
+def _c65_file_counts_str(ev: _C65Eval) -> str:
+    counts_str = ", ".join(
+        f"{p}={n}" + ("" if exact else " (lower bound)") for p, n, exact in ev.file_counts[:8]
+    )
+    if len(ev.file_counts) > 8:
+        counts_str += f", … ({len(ev.file_counts)} files total)"
+    return counts_str
+
+
+def _c65_compare_prose(ev: _C65Eval, cmp_: _C65Cmp) -> None:
+    """Prose floors vs realized evidence. FAIL-grade only on a
+    FILE-CONFIRMED contradiction from EXACT counts (a capped lower-bound
+    count can satisfy a floor but never fail one); with no files resolved,
+    a repo constant is best-effort WARN-grade evidence."""
+    exact_counts = [(p, n) for p, n, exact in ev.file_counts if exact]
+    const_max = max((v for _n, _r, v in ev.const_evidence), default=None)
+    counts_str = _c65_file_counts_str(ev)
+    for excerpt, floor in ev.prose_claims:
+        usable = bool(exact_counts) or any(
+            n >= floor for _p, n, exact in ev.file_counts if not exact
+        )
+        if usable:
+            exact_min = min((n for _p, n in exact_counts), default=None)
+            if exact_min is not None and floor > exact_min:
+                cmp_.fails.append(
+                    f"claimed floor {floor} rows > realized min {exact_min} "
+                    f"(rung: {ev.winning_rung}; files: {counts_str}) — claim line: {excerpt!r}"
+                )
+            else:
+                cmp_.passes.append(
+                    f"claimed floor {floor} rows satisfied at rung {ev.winning_rung!r} "
+                    f"({len(ev.file_counts)} file(s): {counts_str})"
+                )
+        elif const_max is not None:
+            src = ", ".join(f"{n2} = {v} ({r})" for n2, r, v in ev.const_evidence[:4])
+            if floor > const_max:
+                cmp_.warns.append(
+                    f"claimed floor {floor} rows > repo constant {src} — constant-only "
+                    "evidence (no fixture files resolved); WARN-grade by design"
+                )
+            else:
+                cmp_.passes.append(
+                    f"claimed floor {floor} rows consistent with repo constant {src} "
+                    "(constant-only evidence — no fixture files resolved)"
+                )
+        else:
+            cmp_.unresolved.append(f"prose floor {floor} rows ({excerpt!r})")
+
+
+def _c65_compare_consts(ev: _C65Eval, cmp_: _C65Cmp) -> None:
+    """Constant-form claims vs the repo definition of the SAME constant.
+    WARN-grade BY DESIGN, never FAIL, and never compared against fixture
+    files: a constant is one indirection removed from the fixtures (the
+    producing script may clamp / branch on it) — deliberate, not drift
+    (round-1 Methodology concern 6)."""
+    by_name: dict[str, int] = {}
+    where_by_name: dict[str, str] = {}
+    for n2, rel, v in ev.const_evidence:
+        if n2 not in by_name or v > by_name[n2]:
+            by_name[n2] = v
+            where_by_name[n2] = rel
+    for cname, claimed in ev.const_claims:
+        if cname in by_name:
+            actual, where = by_name[cname], where_by_name[cname]
+            if claimed > actual:
+                cmp_.warns.append(
+                    f"constant-form claim {cname} = {claimed} > repo definition "
+                    f"{cname} = {actual} ({where}) — constant-route contradiction, "
+                    "WARN-grade by design (never compared against fixture files)"
+                )
+            else:
+                cmp_.passes.append(
+                    f"constant-form claim {cname} = {claimed} consistent with the repo "
+                    f"definition {cname} = {actual} ({where}) — constant-only evidence"
+                )
+        else:
+            cmp_.unresolved.append(
+                f"constant-form claim {cname} = {claimed} (constant not defined in scripts/*.py)"
+            )
+
+
+def _c65_compare(ev: _C65Eval) -> _C65Cmp:
+    """Compare every claimed floor against the realized evidence; multiple
+    claims are each evaluated and the caller takes the worst grade."""
+    cmp_ = _C65Cmp([], [], [], [])
+    _c65_compare_prose(ev, cmp_)
+    _c65_compare_consts(ev, cmp_)
+    return cmp_
+
+
+def check_smoke_fixture_size(plan: str, kind: str) -> CheckResult:
+    """A plan-claimed SMOKE-FIXTURE ROW FLOOR must not overstate the
+    realized fixtures (task #2178; incident #1336 v16: the plan claimed a
+    40-row-per-corpus smoke floor while the realized fixtures held 8 rows
+    in six of seven files — the newly binding smoke gate was unsatisfiable
+    at the realized size and no gate could tell).
+
+    Trigger (conservative): a fence-masked line carrying all THREE
+    conjuncts — "smoke", a fixture noun (fixture/slice/corpus/corpora/
+    sample), and a floor-shaped row count ("sized >= 40 rows", "at least
+    40 rows", "slice of 40 rows") — OR a RAW-scanned constant-form claim
+    (a ``SMOKE_SAMPLE_N``-shaped assignment paste, fences included).
+    Multiple claim lines are each evaluated; the worst grade wins.
+
+    Resolution ladder, FIRST-RESOLVE-WINS (the working tree deliberately
+    SHADOWS the pinned tip — a stale working tree is diagnosable from the
+    FAIL detail, which names the winning rung + per-file counts): (1)
+    repo-root working-tree glob; (2) the committed tree at the plan's
+    cited pinned tip — ONE ``git ls-tree`` plus up to 32 ``git cat-file``
+    reads per glob token (1 + N subprocess calls, not a flat 2), only when
+    a tip is cited and rung 1 resolved nothing; (3)
+    ``.claude/worktrees/issue-<N>*`` joined with the glob (N = the plan's
+    own H1 task number) for gitignored worktree-local fixtures. Glob
+    tokens are repo-relative only (absolute / ``..`` tokens refused);
+    every rung is read-only and fail-open (git unavailability leaves a
+    rung unresolved, never a FAIL).
+
+    Verdicts: FAIL only on a FILE-CONFIRMED contradiction (a prose floor
+    above the realized exact minimum); constant-route contradictions — a
+    prose floor vs a repo constant, or a constant-form claim vs the repo
+    definition of the same constant — are WARN-grade BY DESIGN (a constant
+    is one indirection removed from the fixtures; deliberate, not drift);
+    SKIP everywhere unresolvable (no claim, no path token, nothing
+    resolves at any rung — the fail-safe). Escape:
+    ``N/A — no smoke fixture size claim`` standalone, unwrapped."""
+    cid, name = "c65_smoke_fixture_size", "smoke-fixture size claim vs realized fixtures"
+    del kind  # all kinds — smoke fixtures appear in experiment and infra plans alike
+    ev = _c65_evaluate(plan)
+    if not ev.prose_claims and not ev.const_claims:
+        return _skip(cid, name, "no smoke fixture size claim detected")
+    if _standalone_na_declared(plan, r"no smoke fixture size claim\b"):
+        return _pass(cid, name, "explicit N/A declared (no smoke fixture size claim)")
+    cmp_ = _c65_compare(ev)
+    tail = f" [unresolved: {'; '.join(cmp_.unresolved)}]" if cmp_.unresolved else ""
+    if cmp_.fails:
+        return _fail(
+            cid,
+            name,
+            "; ".join(cmp_.fails)
+            + " — remedies: fix the claim to the realized fixture size, budget the "
+            "fixture-producing script change (and regenerate the fixtures), or declare "
+            "'N/A — no smoke fixture size claim' on its own line, unwrapped (no "
+            "backticks/quotes)" + tail,
+        )
+    if cmp_.warns:
+        return _warn(cid, name, "; ".join(cmp_.warns) + tail)
+    if cmp_.passes:
+        return _pass(cid, name, "; ".join(cmp_.passes) + tail)
+    # Nothing comparable resolved anywhere — the criterion-5 fail-safe.
+    bits: list[str] = []
+    if ev.prose_claims and not ev.glob_tokens:
+        bits.append("fixture path not named — claim not mechanically checkable")
+    elif ev.glob_tokens and not ev.file_counts:
+        bits.append("fixture path unresolvable from working tree / pinned tip / issue worktrees")
+    elif ev.file_counts and not ev.prose_claims:
+        bits.append(
+            f"fixture files resolve (rung: {ev.winning_rung}) but every claim is "
+            "constant-form — the constant route reads the repo constant, never the "
+            "files (WARN-grade-by-design route)"
+        )
+    if cmp_.unresolved:
+        bits.append("; ".join(cmp_.unresolved))
+    return _skip(cid, name, "; ".join(bits) or "claim detected but no realized evidence resolves")
+
+
+def check_smoke_producer_coverage(plan: str, kind: str) -> CheckResult:
+    """When a smoke-fixture size claim is CONTRADICTED by the realized
+    evidence (check 65's comparison), the plan must NAME the fixture-
+    producing script somewhere in its text — otherwise it asserts a state
+    it has not budgeted to create (task #2178 Arm B; #1336 v16 named
+    ``issue1336_stage_corpora`` zero times while its §4 said "Nothing else
+    changes"). WARN-only: modified-file lists are prose and producer
+    identification is heuristic.
+
+    Producer candidates (both routes bounded to ``scripts/*.py``,
+    read-only): (1) files defining a constant that a constant-form claim
+    names; (2) files carrying the glob's most distinctive smoke component
+    (last dir component, else filename stem; >= 6 chars) as a literal
+    substring. Coverage predicate: the candidate's basename or
+    repo-relative path appears ANYWHERE in the plan text (RAW scan) — the
+    maximally conservative WARN-minimizing reading; a candidate in the
+    plan's modified-file list is a strict subset. SKIPs when check 65's
+    claim trigger is absent, when the realized evidence is unresolved,
+    when the claim is satisfied, or when no candidate is identifiable.
+    Escape: ``N/A — no fixture-producing script change needed``
+    standalone, unwrapped."""
+    cid, name = "c66_smoke_producer_coverage", "smoke-fixture producing script named in plan"
+    del kind  # all kinds (same scope as check 65)
+    ev = _c65_evaluate(plan)
+    if not ev.prose_claims and not ev.const_claims:
+        return _skip(cid, name, "no smoke fixture size claim detected (check-65 trigger absent)")
+    if _standalone_na_declared(plan, r"no fixture-producing script change needed\b"):
+        return _pass(cid, name, "explicit N/A declared (no fixture-producing script change needed)")
+    cmp_ = _c65_compare(ev)
+    if not (cmp_.fails or cmp_.warns or cmp_.passes):
+        return _skip(
+            cid,
+            name,
+            "realized evidence unresolved — cannot adjudicate whether a "
+            "producing-script change is needed",
+        )
+    if not (cmp_.fails or cmp_.warns):
+        return _skip(
+            cid, name, "claim satisfied by realized fixtures — no producing-script change required"
+        )
+    if not ev.producer_candidates:
+        return _skip(cid, name, "producing script not identifiable in scripts/")
+    named = [c for c in ev.producer_candidates if c in plan or c.rsplit("/", 1)[-1] in plan]
+    if named:
+        return _pass(
+            cid,
+            name,
+            "claim contradicted by the realized evidence but the producing script is "
+            f"named in the plan: {', '.join(named[:4])}",
+        )
+    return _warn(
+        cid,
+        name,
+        "the claimed floor exceeds the realized fixtures and the script(s) that "
+        f"produce them — {', '.join(ev.producer_candidates[:4])} — appear nowhere in "
+        "the plan; add the change to the plan's modified-file list, or declare "
+        "'N/A — no fixture-producing script change needed' on its own line, unwrapped "
+        "(no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -12098,6 +12677,8 @@ CHECKS = [
     check_gpu_hours_token_conflict,
     check_slurm_mem_coverage,
     check_declared_width_vs_launch,
+    check_smoke_fixture_size,
+    check_smoke_producer_coverage,
 ]
 
 

@@ -443,7 +443,16 @@ Run the structural verifier against the plan version just persisted:
   genuinely dispatching N-wide through the fence instead adds `--gpus <N>`
   to it, or re-costs the §9 walls at the realized width — a
   `--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow
-  run; #2276, incident #2225 v9).
+  run; #2276, incident #2225 v9), and
+  `N/A — no smoke fixture size claim` (check 65 — the smoke-size
+  vocabulary is incidental / quotes an incident, not this plan's own
+  fixture-size claim; a plan genuinely claiming a smoke-fixture row floor
+  instead states a floor at or below the realized fixture minimum, or
+  budgets the producing-script change; #2178, incident #1336 v16), and
+  `N/A — no fixture-producing script change needed` (check 66 — the
+  contradicted floor is deliberate / already remediated elsewhere; a plan
+  genuinely needing regenerated fixtures instead names the producing
+  script in its modified-file list; #2178).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

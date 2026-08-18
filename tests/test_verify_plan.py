@@ -23,8 +23,10 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -209,10 +211,15 @@ def test_good_plan_passes_all():
         # SKIP: GOOD_PLAN's §9 declares no multi-GPU width token —
         # trigger-conditional (#2276). (c62 is main()-wired, not in CHECKS.)
         "c63_declared_width_vs_launch": "SKIP",
+        # SKIP: GOOD_PLAN carries no smoke-fixture size claim — its only
+        # smoke mentions ("smoke run", "smoke-test") carry no fixture noun
+        # + row floor on one line — trigger-conditional (#2178).
+        "c65_smoke_fixture_size": "SKIP",
+        "c66_smoke_producer_coverage": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 60
+    assert len(results) == 62
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6342,12 +6349,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   #2276)
     # + c63 (SKIP: GOOD_PLAN's §9 declares no multi-GPU width token;
     #   trigger-conditional, #2276)
-    assert payload["n_skip"] == 54
+    # + c65/c66 (SKIP: GOOD_PLAN carries no smoke-fixture size claim;
+    #   trigger-conditional, #2178)
+    assert payload["n_skip"] == 56
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 63
-    assert len({c["id"] for c in payload["checks"]}) == 63
+    assert len(payload["checks"]) == 65
+    assert len({c["id"] for c in payload["checks"]}) == 65
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11003,8 +11012,9 @@ def test_c51_docstring_declares_eighth_read_exception():
     # read-exception preamble before.
     # Whitespace-normalized: the preamble is hard-wrapped, so the phrase
     # spans a line break in the source.
+    # (#2178: c65/c66 raise the disclosed-exception count to ten.)
     doc = " ".join((verify_plan.__doc__ or "").split())
-    assert "Eight disclosed read-only exceptions" in doc
+    assert "Ten disclosed read-only exceptions" in doc
     assert "check 51" in doc
 
 
@@ -12963,3 +12973,307 @@ def test_c62_c63_registered_in_checks_and_docstring_catalog():
     # propagates them to the consumer surface).
     assert "N/A — backend pin-claim reconciled" in verify_plan.__doc__
     assert "N/A — declared width vs launch width reconciled" in verify_plan.__doc__
+
+
+# ─── Checks 65/66 — smoke-fixture size claim vs realized fixtures (#2178) ──
+
+# The #1336 v16 incident grain: 8 rows in six of seven smoke corpora, 32 in
+# the seventh, SMOKE_SAMPLE_N = 8 in the producing script, plan claim >= 40.
+_C65_FIXTURE_ROWS = {
+    "gsm8k_test1319.jsonl": 8,
+    "gsm8k_train_full.jsonl": 8,
+    "if11k.jsonl": 8,
+    "lmsys23k.jsonl": 32,
+    "math7500.jsonl": 8,
+    "sft11k.jsonl": 8,
+    "uf11k.jsonl": 8,
+}
+
+# The v16.md:127 incident sentence, verbatim shape (three conjuncts on one line).
+_C65_CLAIM_LINE = "The smoke fixture slice is sized ≥ 40 rows per smoke corpus so the whole-group packer has resolution."
+
+_C65_GLOB_LINE = (
+    "Fixtures live at data/issue_1336/corpora_v2_smoke/*.jsonl (gitignored worktree data)."
+)
+
+
+def _c65_plan(
+    *extra_lines,
+    claim=_C65_CLAIM_LINE,
+    glob_line=_C65_GLOB_LINE,
+    h1="# Plan v16 — Task #1336: pooled split (fixture)",
+):
+    parts = [h1, "", "## 4. Design", ""]
+    if claim:
+        parts += [claim, ""]
+    if glob_line:
+        parts += [glob_line, ""]
+    parts += list(extra_lines)
+    return "\n".join(parts) + "\n"
+
+
+def _c65_root(tmp_path, *, fixtures=True, script=True, under_worktree=None):
+    """Fixture repo root for monkeypatching verify_plan._C65_REPO_ROOT (the
+    _c31_fixture_root convention). ``under_worktree`` relocates the fixture
+    files beneath ``.claude/worktrees/<name>/`` (the rung-3 shape)."""
+    root = tmp_path / "fixroot"
+    base = root if under_worktree is None else root / ".claude" / "worktrees" / under_worktree
+    if fixtures:
+        fdir = base / "data" / "issue_1336" / "corpora_v2_smoke"
+        fdir.mkdir(parents=True)
+        for fname, n in _C65_FIXTURE_ROWS.items():
+            (fdir / fname).write_text("".join(f'{{"row": {i}}}\n' for i in range(n)))
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    if script:
+        (root / "scripts" / "issue1336_stage_corpora.py").write_text(
+            'OUT_DIR = "data/issue_1336/corpora_v2_smoke"\nSMOKE_SAMPLE_N = 8\n'
+        )
+    return root
+
+
+def test_c65_c66_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_smoke_fixture_size in verify_plan.CHECKS
+    assert verify_plan.check_smoke_producer_coverage in verify_plan.CHECKS
+    assert "c65 smoke-fixture size claim" in verify_plan.__doc__
+    assert "c66 smoke-fixture producing" in verify_plan.__doc__
+    # conditional-checks enumeration (comma-separated membership form, the
+    # c56/c57 reflow-tolerant pin).
+    assert "65, 66" in verify_plan.__doc__
+    # Escape phrases registered in the docstring.
+    assert "N/A — no smoke fixture size claim" in verify_plan.__doc__
+    assert "N/A — no fixture-producing script change needed" in verify_plan.__doc__
+
+
+def test_c65_v16_shape_fails(tmp_path, monkeypatch):
+    # Acceptance criterion 2 (Arm A): claim 40 vs realized 8/32 -> FAIL,
+    # detail naming the winning rung + per-file counts (concern 5).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "FAIL"
+    assert "working tree" in r.detail
+    assert "lmsys23k.jsonl=32" in r.detail
+    assert "claimed floor 40" in r.detail
+    assert "realized min 8" in r.detail
+
+
+def test_c66_v16_shape_warns(tmp_path, monkeypatch):
+    # Acceptance criterion 2 (Arm B): producing script on disk, unnamed in
+    # the plan -> WARN naming the candidate.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r.status == "WARN"
+    assert "scripts/issue1336_stage_corpora.py" in r.detail
+    assert "appear nowhere in" in r.detail
+
+
+def test_c65_floor_at_or_below_realized_passes(tmp_path, monkeypatch):
+    # Acceptance criterion 3: floor <= realized minimum -> PASS.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    claim = "The smoke fixture slice is sized ≥ 8 rows per smoke corpus."
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(claim=claim), "experiment")
+    assert r.status == "PASS"
+    assert "working tree" in r.detail
+    # Arm B: claim satisfied -> no producing-script adjudication needed.
+    r66 = verify_plan.check_smoke_producer_coverage(_c65_plan(claim=claim), "experiment")
+    assert r66.status == "SKIP"
+    assert "claim satisfied" in r66.detail
+
+
+def test_c66_producing_script_listed_passes(tmp_path, monkeypatch):
+    # Acceptance criterion 4: the plan budgets the producing-script change,
+    # so Arm B passes even while Arm A trips.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("Modified files: scripts/issue1336_stage_corpora.py (raise the sample floor).")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+    r = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r.status == "PASS"
+    assert "issue1336_stage_corpora.py" in r.detail
+
+
+def test_c65_unresolvable_glob_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: a named glob that resolves at NO rung -> SKIP
+    # (never FAIL); Arm B cannot adjudicate either.
+    monkeypatch.setattr(
+        verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False, script=False)
+    )
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "SKIP"
+    assert "unresolvable" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r66.status == "SKIP"
+    assert "realized evidence unresolved" in r66.detail
+
+
+def test_c65_no_path_token_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: a claim with no fixture path token -> SKIP.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(glob_line=None), "experiment")
+    assert r.status == "SKIP"
+    assert "fixture path not named" in r.detail
+
+
+def test_c65_no_claim_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: no smoke-fixture size language -> both SKIP
+    # (a bare glob token never arms the checks).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan(claim=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no smoke fixture size claim detected" in r.detail
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_constant_only_evidence_warns(tmp_path, monkeypatch):
+    # Constant-route contradiction: no fixture files resolve, the repo
+    # defines the claimed constant at a lower value -> WARN by design,
+    # never FAIL (concern 6).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    plan = _c65_plan(
+        "The staging script pins the smoke sample floor as `SMOKE_SAMPLE_N = 40`.",
+        claim=None,
+        glob_line=None,
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "WARN"
+    assert "SMOKE_SAMPLE_N = 40" in r.detail
+    assert "SMOKE_SAMPLE_N = 8" in r.detail
+    # Arm B: constant-route contradiction + the defining script unnamed -> WARN.
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "WARN"
+    assert "issue1336_stage_corpora.py" in r66.detail
+
+
+def test_c65_constant_claim_consistent_passes(tmp_path, monkeypatch):
+    # Verdict-table row 6: constant-form claim consistent with the repo
+    # definition -> PASS on constant-only evidence; Arm B has no
+    # contradiction to adjudicate.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    plan = _c65_plan(
+        "The staging script keeps the smoke sample floor at `SMOKE_SAMPLE_N = 8`.",
+        claim=None,
+        glob_line=None,
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "PASS"
+    assert "constant-only evidence" in r.detail
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_fenced_claim_does_not_trigger(tmp_path, monkeypatch):
+    # The incident sentence inside a fence never triggers (fence-masked
+    # claim grammar).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("```", _C65_CLAIM_LINE, "```", claim=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no smoke fixture size claim detected" in r.detail
+
+
+def test_c65_standalone_na_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no smoke fixture size claim")
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c65_wrapped_na_does_not_escape(tmp_path, monkeypatch):
+    # A backtick-wrapped paste of the escape phrase is DELIBERATELY
+    # unrecognized (#1238 — the _standalone_na_declared convention).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("`N/A — no smoke fixture size claim`")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+
+
+def test_c66_standalone_na_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no fixture-producing script change needed")
+    r = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c65_worktree_rung_resolves(tmp_path, monkeypatch):
+    # Rung 3: fixtures only under .claude/worktrees/issue-<N>*/ (N from the
+    # plan's own H1) — the gitignored worktree-local class v16 embodied.
+    root = _c65_root(tmp_path, under_worktree="issue-1336-fullcorpora")
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "FAIL"
+    assert "issue worktree issue-1336-fullcorpora" in r.detail
+
+
+def test_c65_pinned_tip_rung_via_monkeypatched_git_helpers(tmp_path, monkeypatch):
+    # Rung 2 without a git repo: monkeypatch the tree-counts helper (the
+    # c42 fixture strategy) and pin the sha + glob threading.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    calls: list[tuple[str, str]] = []
+
+    def fake_tree_counts(sha, glob_token):
+        calls.append((sha, glob_token))
+        return [
+            (f"data/issue_1336/corpora_v2_smoke/{fname}", rows, True)
+            for fname, rows in _C65_FIXTURE_ROWS.items()
+        ]
+
+    monkeypatch.setattr(verify_plan, "_c65_git_tree_counts", fake_tree_counts)
+    plan = _c65_plan("Pinned tip `8c7b7b2406aa`.")
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "pinned tip 8c7b7b2406aa" in r.detail
+    assert calls and calls[0][0] == "8c7b7b2406aa"
+    assert calls[0][1] == "data/issue_1336/corpora_v2_smoke/*.jsonl"
+
+
+def _c65_git_cmd(cwd, *args):
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=fixture@example.com",
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "commit.gpgsign=false",
+            *args,
+        ],
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+    )
+
+
+def test_c65_pinned_tip_rung_real_git_subprocess(monkeypatch):
+    # Round-1 Methodology concern 3 (smoke blind-spot honesty): exercise the
+    # REAL `git ls-tree` / `git cat-file` subprocess path end-to-end on a
+    # throwaway git repo, so the monkeypatched-helper test above is not the
+    # only rung-2 coverage. mkdtemp rather than tmp_path: concurrent pytest
+    # sessions prune stale /tmp/pytest-of-* roots, and a subprocess-heavy
+    # scratch repo is the shape that race hits.
+    scratch = Path(tempfile.mkdtemp(prefix="eps-c65-git-"))
+    try:
+        root = _c65_root(scratch)
+        _c65_git_cmd(root, "init", "-q")
+        _c65_git_cmd(root, "add", "-A")
+        _c65_git_cmd(root, "commit", "-qm", "fixture commit")
+        sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True
+        ).stdout.strip()
+        shutil.rmtree(root / "data")  # rung 1 must not shadow rung 2
+        monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+        plan = _c65_plan(f"Pinned tip `{sha}`.")
+        r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+        assert r.status == "FAIL"
+        assert f"pinned tip {sha[:12]}" in r.detail
+        assert "lmsys23k.jsonl=32" in r.detail
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_c66_no_candidates_skips(tmp_path, monkeypatch):
+    # Contradiction resolved but nothing in scripts/ plausibly produces the
+    # fixtures (the real-v16-from-main case) -> SKIP.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, script=False))
+    r = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r.status == "SKIP"
+    assert "producing script not identifiable" in r.detail
