@@ -274,7 +274,9 @@ def test_resolve_arms_original_group_excludes_strength():
     original = R.resolve_arms(_Args(arms="original"))
     assert set(original).isdisjoint(R.STRENGTH_ARMS)
     assert "unsteered" in original and "cap_ctx" in original
-    assert len(original) == len(R.ARM_ORDER) - 18
+    # derived, not a literal: the NAP round grew STRENGTH_ARMS (18 -> 36 with
+    # the ctx_faithful/ctx_preimage families); "original" is everything else
+    assert len(original) == len(R.ARM_ORDER) - len(R.STRENGTH_ARMS)
 
 
 def test_resolve_arms_comma_list_and_unknown_raises():
@@ -377,6 +379,7 @@ def test_phase_judge_empty_assistant_scored_zero_not_dropped(tmp_path, monkeypat
         scenario="jailbreak",
         judge_draws=3,
         dry_run=False,
+        round_subdir=None,  # NAP round CLI addition — phase_judge reads it
     )
     R.phase_judge(args)
 
@@ -393,7 +396,8 @@ def test_phase_judge_empty_assistant_scored_zero_not_dropped(tmp_path, monkeypat
     # the judge API never saw the empty turn (both DV batches)
     assert len(judged_batches) == 2
     for batch in judged_batches:
-        assert [iid for iid, _q, _a in batch] == ["jailbreak--band--steer_ctx_k8--t01"]
+        # NAP round: judge item ids carry the seed token (per-seed accounting)
+        assert [iid for iid, _q, _a in batch] == ["jailbreak--band--steer_ctx_k8--s42--t01"]
         assert all(a for _iid, _q, a in batch)
 
 
