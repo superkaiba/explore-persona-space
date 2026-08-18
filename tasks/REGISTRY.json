@@ -9121,8 +9121,8 @@
     "2180": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2180",
-      "status": "approved",
+      "path": "tasks/running/2180",
+      "status": "running",
       "title": "Headline matched-partial needs a support-restricted companion when the matching covariate is degenerate on most of the sample"
     },
     "2181": {
