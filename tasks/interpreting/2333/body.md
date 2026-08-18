@@ -4,7 +4,7 @@ title: Prefilling the first three answer tokens reproduces most of the context-e
 kind: experiment
 tags: []
 created_at: '2026-08-16T19:44:45Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2162
 origin_prompt: 'Can you also run this on both models: patching at context vector at
   all layers vs patching at first 1/2/3 answer tokens at all layers (excluding context
