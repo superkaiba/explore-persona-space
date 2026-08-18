@@ -44,12 +44,17 @@ SEPARATION_BAR = 0.5
 def load_donor_tokens(tag: str, scheme: str) -> dict[str, list[int]]:
     from huggingface_hub import hf_hub_download
 
-    p = hf_hub_download(
-        REPO,
-        f"issue2333_snowball/{tag}/donors/donors_{scheme}.pt",
-        repo_type="dataset",
-        revision=REVISION,
-        local_dir=f"/tmp/i2333_donors_{tag}",
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    p = retry_transient(
+        lambda: hf_hub_download(
+            REPO,
+            f"issue2333_snowball/{tag}/donors/donors_{scheme}.pt",
+            repo_type="dataset",
+            revision=REVISION,
+            local_dir=f"/tmp/i2333_donors_{tag}",
+        ),
+        what=f"stage donors_{scheme} ({tag})",
     )
     recs = torch.load(p, map_location="cpu", weights_only=False)
     return {pid: list(rec["token_ids"]) for pid, rec in recs.items()}
