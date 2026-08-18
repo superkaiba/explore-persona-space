@@ -321,7 +321,17 @@ def build_arm_a(args: argparse.Namespace, tokenizer) -> None:
         if sha in seen_sha:
             return
         seen_sha.add(sha)
-        rows.append({"prompt_sha": sha, "prompt": prompt, "base_id": base_id, "axis": axis})
+        rows.append(
+            {
+                "prompt_sha": sha,
+                "prompt": prompt,
+                "base_id": base_id,
+                "axis": axis,
+                # judge pilots + gen shards stratify arms on `source` (pod phase_gen
+                # reads r["source"] unconditionally); armB/generic already carry it.
+                "source": ARM_A_SOURCE,
+            }
+        )
         manifest_rows.append(
             {"prompt_sha": sha, "base_id": base_id, "axis": axis, "source": ARM_A_SOURCE}
         )
