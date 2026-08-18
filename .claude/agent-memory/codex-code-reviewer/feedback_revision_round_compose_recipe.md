@@ -767,6 +767,33 @@ production function; fakes only at named seams) an explicit closure element
 minors-interaction the ruling flags ("fix together with the must-fix") gets
 its own closure row.
 
+**Overruled-own-PASS calibration round (#2357 r3, 2026-08-17):** when the
+twin's PRIOR PASS was reconciler-overruled BY EXECUTION (static-trace PASS vs
+a runtime differential the reconciler measured), compose the inverse of the
+post-overturn shape: (a) inline the OVERRULING reconciler ruling verbatim
+(tags stripped) as the acceptance contract — do NOT inline the twin's own
+overruled PASS verdict (anchoring risk); quote only the reconciler's one-line
+diagnosis of it ("answered the wrong question"); (b) add a dedicated
+"Static-trace calibration" section BEFORE the closure duty: trace the STATE
+MACHINE across the whole record sequence (name per-record flag values in
+closure evidence), reason about the RUNTIME final state where the gated
+action executes (here: final cwd at the commit) for EVERY allow-direction
+shape, ban the overruled round's exact hedge sentence verbatim, and state
+author-neutrality in BOTH directions (upheld r1 FAIL + overruled r2 PASS);
+(c) when the fix implements a VARIANT of the reconciler's sketch (re-arm vs
+permanent disarm), instruct adjudication on the variant's semantic criterion
+(final-state soundness), not sketch-verbatim; (d) same-class residual probes
+get their own closure element with an enumerated shape list (interleavings,
+orderings, compound/subshell interaction with the new bit, pattern anchoring,
+a full case-arm sweep for keep arms that neither poison nor disarm). Also:
+verify the brief's round-history summary against events.jsonl — briefs
+misattribute WHOSE PASS was overruled per round (the #2357 brief said both
+overruled PASSes were Codex's; r1's was Claude's); compose from the verified
+history and flag the discrepancy in the return. Tail-patch trap: the
+Concerns-to-persist bracket ALSO references the closure-ledger heading —
+sweep-assert heading staleness over the whole tail, not just the schema
+block.
+
 **FAIL+FAIL union scoped to OWN-twin ids only (#2223 napp r2, 2026-08-17):**
 the #2332 union entry ("inline BOTH prior verdicts as acceptance contracts")
 yields to a brief that scopes closure to the twin's OWN persisted ledger ids —
