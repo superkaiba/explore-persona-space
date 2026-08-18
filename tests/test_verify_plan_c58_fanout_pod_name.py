@@ -110,9 +110,9 @@ def test_c58_registered_in_checks_and_docstring_catalog():
     assert "c58 fan-out RunPod pod-name" in verify_plan.__doc__
     # conditional-checks enumeration carries 58 (closing-paren tail form;
     # the tail extends whenever a new conditional check lands — 59 since
-    # #2123, 62/63 since #2276 — and this pin is what makes a forgotten
-    # enum update loud)
-    assert "57, 58, 59, 61, 62, 63)" in verify_plan.__doc__
+    # #2123, 62/63 since #2276, 64 since #2174 — and this pin is what makes
+    # a forgotten enum update loud)
+    assert "57, 58, 59, 61, 62, 63, 64)" in verify_plan.__doc__
 
 
 # ─── Test 1 — fires on the #2054 v16 shape ─────────────────────────────────
