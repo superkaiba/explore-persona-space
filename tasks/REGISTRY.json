@@ -8951,8 +8951,8 @@
     "2158": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2158",
-      "status": "proposed",
+      "path": "tasks/planning/2158",
+      "status": "planning",
       "title": "Pre-split intermediate-unit review guard + cross-session shared-worktree writer arbitration"
     },
     "2159": {
