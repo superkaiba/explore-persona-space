@@ -867,6 +867,49 @@ rewritten (task context, calibration, concerns, adjudication, attestations,
 review focus) — sweep leftover round tokens with grep-and-eyeball scoped
 outside the inlined envelopes.
 
+**Execution-mode-FLIP cap round on an upheld-own-FAIL fix (#2357 r5,
+2026-08-18):** the cap round (5 of 5) where the reconciler UPHELD the Codex
+twin's OWN r4 FAIL by execution and re-opened two BLOCKERs. The dominant shape
+shift: the orchestrator's instruction MANDATES decision-by-EXECUTION, which
+INVERTS the r4 template's read-only execution BAN. Compose deltas: (a) write a
+dedicated "Execution carve-out" section (SANCTIONED: read-only worktree git +
+blob extraction via `git show <sha>:<path>` into /tmp, the guard `--self-test`,
+`uv run pytest`, building fresh hermetic `git init` scratch repos UNDER /tmp and
+invoking guard blobs against them — the guard is a DECISION hook, never commits,
+so no real repo is mutated; BANNED: any commit/push/tracked-mutation, `checkout`/
+`reset`, invoking a blob against the LIVE worktree; NEVER-FABRICATE STATIC
+fallback labeled `STATIC (env unavailable) — traced, not measured`; an
+unrunnable env is NOT `data-access-blocked`, only an unreadable FILE is) and set
+the return's `Codex write mode: true (scratch execution sanctioned)`. (b) Reuse
+the r4 rubric-protocol span (Steps 0..6, extracted between anchors
+`# Review protocol (the same rubric...` and `### Step 7: Issue Verdict`) but
+PATCH its execution-BAN lines to the scratch carve-out — five count-asserted
+patches (Step 4 header + intro, the two `you have no uv env` clauses in Steps
+3.8/4.6, the `Step 4 is static here, so ALWAYS take the READ path` clause; that
+last one's OLD string MUST absorb the trailing `: read the pinned assertions
+against the diff's new state.` or the replacement leaves a doubled clause —
+caught by eyeball, not an assert). (c) MARKER-KIND CHANGE: round 5 posted
+`epm:implementation` (bare head sentinel, no version digit) not `epm:results`,
+with `### Summary/Files changed/Testing/Concerns addressed/Considered/Needs human
+eyeball` headings — NOT the four `### (a)..(d)`. Attest at compose time that Step
+0.5 scores on SUBSTANCE (map Summary+Files=(a), Considered=(b), Testing=(c),
+Needs eyeball=(d), Concerns addressed=(e)) and that `marker-shape` is INVALID
+this round; flag the bare head sentinel in the return only. Re-fetch is
+unnecessary when the round report is pre-materialized. (d) Acceptance contract =
+the binding r4 reconcile inlined VERBATIM tag-stripped (its executed rc-diff
+table IS the acceptance criterion); do NOT inline the twin's own upheld r4 FAIL
+verdict (anchoring risk) — the reconcile summarizes the mechanism. Author-
+neutrality both directions (twin authored the upheld FAIL). (e) FENCE the twin's
+own r4 CONCERN that the reconcile routed to a SEPARATE wf-fix (different file
+`scripts/guard_repo_root_branch.sh`, untouched) — never a round-5 blocker, never
+re-emitted as a `CONCERN:: ` row. (f) Cap-round framing: severity machine-parsed,
+both directions, honest PASS; narrow the verdict Blocker-tags bracket to VALID
+(`substantive`|`git-provenance`|`data-access-blocked`) vs INVALID
+(`marker-shape`|`smoke-run-missing`). (g) Diff size: re-derive from
+`git show --numstat HEAD` (+71/-9 guard, +91 test = +162/-9) — the brief's
+"+80 guard / 222 lines" are patch-line/digest figures; flag in the return.
+Rerunnable: `/tmp/codex-2357-r5-compose.py`; template `/tmp/codex-code-reviewer-2357-r5-template.md`.
+
 **Second consecutive reconciler-fix round + kind-spelling trap (#2223 napp
 r4, 2026-08-17):** two deltas on the r3 by-path shape. (a) The
 `epm:review-reconciliation` row's BODY head tag spells a DIFFERENT kind
@@ -887,3 +930,30 @@ one item (e.g. sentinel: both-DVs-then-write / dry-run exclusion / legacy
 WARN tolerance / no healthy-tree deadlock) gets those axes spelled out as
 per-property duties with an added INVERTED-state probe (sentinel present,
 DV file absent).
+
+**Cap round after a THIRD consecutive reconciler-FAIL (#2223 napp r5,
+2026-08-18):** three deltas on the r3/r4 by-path shape. (a) The
+do-not-relitigate fence now stacks THREE rulings; two fence items need
+explicit spelling or the twin predictably re-FAILs: (i) when the new
+ruling CORRECTED the twin's own aggravator inside an UPHELD finding (the
+r4 honesty note: "pre-sentinel behavior would have surfaced it" does NOT
+hold — the pre-round tree consumed the same state silently), restate the
+correction in the twin's own-verdict context input so it does not repeat
+the disproven aggravator while verifying its upheld item; (ii) when the
+prescribed fix DELIBERATELY preserves a permissive path (hash-less
+sentinel → treated-as-absent → legacy WARN + consume), add a
+"the-prescription-is-not-a-defect" fence bullet quoting the ruling's own
+routing — otherwise the residual hunt re-raises the prescribed
+backward-tolerance as the blocker's leftover. (b) A closure duty whose
+blocker spans Required items 1+2+3 under ONE concern id composes as one
+ledger status line with per-item sub-structure (writer binding / reader
+validation with an enumerated mixed-pair state machine (a)-(f) /
+three-part test integrity incl. an explicit fails-pre-fix control-flow
+duty), plus a dedicated attention point rendering the reader's realized
+state→outcome mapping as a short table. (c) Assert-side trap: an
+instruction literal that LINE-WRAPS in the composed prose ("Record
+`**Diff acquisition:** sha-range <range>`" split across lines) defeats an
+exact-count assert — assert the one-line verdict-header form exactly, and
+the instruction form on a whitespace-normalized copy
+(`re.sub(r'\s+', ' ', p)`). Also: a 9-char range SHA is a PREFIX of the
+10-char prior-tip SHA — count the long form first and subtract.

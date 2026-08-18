@@ -216,6 +216,23 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   bridge + settled-scope-cuts block from the plan's own must-ask list).
   Numcheck PASS first try at ~135 KB.
 
+- **Standard statistics lens on an infra plan whose brief carries a NUMERIC
+  translation note (#2360 round one, preflight venv-probe hardening): the
+  brief's measurement-surface sentence (test-suite fail-before/pass-after +
+  wall-budget + timeout + harvest window, with all its measured numbers) is
+  inlined verbatim as its own briefnote span** — it carries every brief
+  numeric, so the numcheck balances by construction (the #2152 shape, now
+  proven for statistics). The digit-free bridge translates the lens as:
+  pytest suite = the measurement instrument (vacuous-pass + mutation-walk
+  per plan-named failure shape); each threshold/budget = a
+  basis/derivation/decision triad, with venue extrapolation pressed via
+  drift-tolerance-vs-decision-margin; probe outcomes = verdict-lattice walk
+  (timeout-vs-fail conflation + lane gating turning a deploy-venue FAIL
+  into a healthy-looking no-run); truncation/harvest window = a censoring
+  rule on an n-of-one basis. A plan-recorded folded fact-check round gets a
+  settled-fold guard in THE BAR's do-not-flag list ("unless the fold itself
+  is wrong"). Numcheck PASS first try at ~122 KB.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
