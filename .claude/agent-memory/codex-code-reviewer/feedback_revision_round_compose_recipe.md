@@ -809,3 +809,29 @@ close==1 / prior-head==0. Status-line vocabulary can follow the brief's
 tokens (RESOLVED/UNRESOLVED) with ACCEPTED-NON-CHANGE/OVERTURNED added for
 recorded non-changes; UNRESOLVED on a BLOCKER id = substantive FAIL, an
 honestly-open CONCERN id re-raises at its own severity.
+
+**Post-reconciler mixed-ruling round on a BY-PATH task (#2223 napp r3,
+2026-08-17):** composing the fix round after Claude-PASS / own-twin-FAIL /
+reconciler BINDING FAIL with mixed rulings, on a task whose established
+discipline is by-path (no inlined envelopes): (a) the acceptance contract is
+the `epm:review-reconciliation` row read by extraction command (exact kind +
+top-level version + ts) — its body HEAD carries the ROUND sentinel
+(`<!-- epm:review-reconciliation v2 -->` on a version-1 row); disambiguate
+for Codex or it mis-keys the row. (b) The ledger walk becomes `N open + 1
+deferred`: a `deferred` event is reconciler-rejected-BINDING (closed) — fence
+it from BOTH blocker re-raise AND `CONCERN:: ` re-emission, quoting the
+ruling's discard rationales verbatim in the do-not-relitigate list
+(discarded-severity items like a settled de-minimis timing get an explicit
+"do not re-time it"). (c) The twin authored BOTH the upheld blocker and the
+discarded findings — state author-neutrality in both directions and that the
+reconciler wins wherever it and the twin's own r2 verdict differ. (d) An
+implementer (d)-flagged ordering/scope choice the ruling did not explicitly
+pin (failed-gap-before-completeness; 32b-only layer pin) becomes an explicit
+adjudication duty with the SEMANTIC criterion stated (no path may post a
+positive verdict on incomplete inputs; residual must be named) — never
+sketch-verbatim, and a mere preference without an unsound path is a note.
+(e) Ledger evidence rows cite PRIOR-round line numbers — tell Codex to
+re-locate every cited site in the round-N state. (f) By-path Step-3
+verification: envelope greps adapt to extraction-command + ts + id-token
+asserts over the final prompt (own-head==1 / close==1 / prior-heads==0 /
+exactly one line-start grammar row).
