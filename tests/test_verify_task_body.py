@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 74 results total (2 prepended + CHECKS[1:]=57 + 15 appended, counting
+    # 75 results total (2 prepended + CHECKS[1:]=57 + 16 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -228,10 +228,16 @@ def test_good_body_passes_all():
     # Check 55 `check_v4_aggregate_stat_needs_per_unit` rides CHECKS and
     # check 56 `check_v4_ack_result_count` is dispatched in verify_text
     # (needs the issue number); both PASS-skip here (legacy body) (#2264).
-    assert len(results) == 74
+    # Check 59 `check_v4_result_section_per_unit_coverage` is dispatched in
+    # verify_text too (its forward-only gate needs the issue number,
+    # calibration lever (ii)); PASS-skips here (issue unknown) (#2353).
+    assert len(results) == 75
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
+        r.name for r in results
+    }
+    assert "Every result section has per-unit evidence or exemption (v4)" in {
         r.name for r in results
     }
     assert "Acknowledgment result-count matches folded body (v4)" in {r.name for r in results}
@@ -7253,8 +7259,8 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 74 results (2 prepended + CHECKS[1:]=57 +
-    15 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    So `verify_text` returns 75 results (2 prepended + CHECKS[1:]=57 +
+    16 appended — see `test_good_body_passes_all`), but `CHECKS` stays
     at 58 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
@@ -7285,7 +7291,10 @@ def test_checks_list_size():
     `check_v4_positional_result_crossrefs` — the positional
     result-cross-ref resolver (WARN: out-of-range or clause-vs-target
     round-set disjointness), #2279 — ride CHECKS; check
-    56 `check_v4_ack_result_count` (#2264) is dispatched OUTSIDE CHECKS
+    56 `check_v4_ack_result_count` (#2264) and check 59
+    `check_v4_result_section_per_unit_coverage` — the unconditional
+    per-section per-unit coverage floor (WARN, forward-only issue >=
+    2353; #2353) — are dispatched OUTSIDE CHECKS
     with the issue number).
     """
     assert len(verify_task_body.CHECKS) == 58
@@ -13449,7 +13458,8 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
     position 7 and the CHECKS count matches the current registry (58 as of
-    check 58, #2279; belt-and-suspenders beside the migration-history
+    check 58, #2279; check 59 is dispatched OUTSIDE CHECKS, #2353;
+    belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
     assert len(verify_task_body.CHECKS) == 58
@@ -20973,6 +20983,311 @@ def test_check55_registered_and_warn_never_flips():
     res = verify_task_body.check_v4_aggregate_stat_needs_per_unit(body)
     assert res.passed is True
     assert res.is_warn is True
+
+
+# ─── Check 59: per-section per-unit coverage floor (v4 WARN, #2353) ──────────
+#
+# Checks 48/49/55 each fire on a NARROWER trigger (figure-less quantitative /
+# unpaired multi-figure / single-figure caption statistic); #2330's cap2048
+# section (one multi-point aggregate figure, "per cell" prose, no exemption
+# token, no valued caption statistic) slipped all three and shipped through
+# OVERALL PASS, caught only by the LM critic Lens 11 in round 3. Check 59 is
+# the UNCONDITIONAL per-section floor: every `### <result>` block needs (a)
+# the literal `per-unit exemption` token, (b) an embedded per-unit-stem
+# figure, or (c) a `_PER_UNIT_CLAIM_RE` view claim anywhere in the block's
+# prose layer (link text + targets included). WARN never FAIL; vacuous PASS
+# on non-v4 bodies (forward-only). FORWARD-ONLY ISSUE GATE (calibration
+# lever (ii)): fires only for issue >= 2353 — the 2026-08-17 corpus sweep
+# measured 84/91 v4 bodies (92.3%) WARNing (69/91 = 75.8% under maximal
+# lever-(i) widening; residual dominated by the aggregate grains the
+# must-fire rail forbids counting), so existing bodies are exempt BY
+# CONSTRUCTION and the check is dispatched OUTSIDE CHECKS with the issue
+# number (the check-20/#921 precedent). Committed tests never read live
+# tasks/ state: check 59 consumes only the body string + the issue int.
+
+_CHECK59_NAME = "Every result section has per-unit evidence or exemption (v4)"
+
+
+def _check59_cap2048_incident_block() -> str:
+    """The #2330 cap2048 section's PRE-fix text (fu1 fold round 3 shape,
+    lightly trimmed): one multi-point aggregate figure
+    (`cap2048_comparison.png`), "per cell" prose, "the 7B pairs coincide"
+    in the caption, no exemption token, no valued caption statistic —
+    the must-fire calibration rail (plan § Calibration rail 1)."""
+    return (
+        "### The gap survives a doubled generation cap\n\n"
+        "Primary-layer test R² per cell on completions regenerated at a "
+        "2,048-token cap, next to the original 1,024-token cells (left), and "
+        "the fraction of generations ending at the cap per model and split at "
+        "both caps (right).\n\n"
+        "![Map R2 at both generation caps and cap-hit fractions per model and split]"
+        "(https://x/figures/issue_2330/cap2048_comparison.png)\n\n"
+        "> **Figure.** *Doubling the cap barely moves either model's map "
+        "quality.* Left: open markers are the 1,024-token cells, filled the "
+        "2,048-token regenerations (N = 1,000; the 7B pairs coincide). Right: "
+        "cap-hit percentage per model and split at both caps.\n"
+    )
+
+
+def test_check59_incident_cap2048_fixture_warns():
+    """MUST-FIRE rail (plan § Calibration rail 1, binding): the #2330
+    cap2048-derived fixture WARNs, naming the H3. Bare "per cell" prose
+    MUST NOT exempt — "cell" names the design-cell REGIME in this
+    project, not a per-unit view (check-31 `indiv` exclusion precedent);
+    "the 7B pairs coincide" must not exempt either (`pair` removed from
+    the claim family)."""
+    body = _v4_minimal_results_body(_check59_cap2048_incident_block())
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'The gap survives a doubled generation cap'" in res.detail
+    assert "per-unit exemption" in res.detail  # missing-evidence classes named
+    assert "Lens 11" in res.detail  # check-55 remediation tail
+
+
+def test_check59_exemption_token_passes():
+    """Clean rail (i): the literal `Per-unit exemption:` token anywhere in
+    the block's prose silences the WARN — case-insensitive and
+    hyphen / space / en-dash tolerant (shared `_PER_UNIT_EXEMPTION_TOKEN_RE`,
+    the checks-31/55 convention)."""
+    for token in ("Per-unit exemption:", "per unit exemption —", "PER–UNIT EXEMPTION:"):
+        block = _check59_cap2048_incident_block() + (
+            f"\n{token} per-cell dots for every regenerated completion are "
+            "committed at the pinned SHA.\n"
+        )
+        res = verify_task_body.check_v4_result_section_per_unit_coverage(
+            _v4_minimal_results_body(block), issue=2353
+        )
+        assert res.passed is True
+        assert res.is_warn is False, token
+
+
+def test_check59_per_unit_claim_prose_passes():
+    """Clean rail (ii): per-unit view-claim vocabulary in the block prose
+    silences the WARN — each ADDED idiom alone suffices (point-by-point;
+    labeled points), as does the per-<unit> family (the plan's worked
+    example phrase)."""
+    for claim in (
+        "The same read is shown point-by-point in the strip above.",
+        "Every dot is drawn, points labeled by id.",
+        "Shown point-by-point in the per-context strip above.",
+    ):
+        body = _v4_minimal_results_body(
+            "### Aggregate read\n\n"
+            f"Mean alignment as bars. {claim}\n\n"
+            "![Bars](https://x/figures/issue_9/bars.png)\n\n"
+            "> **Figure.** *Lead.* Plain caption.\n"
+        )
+        res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+        assert res.passed is True
+        assert res.is_warn is False, claim
+
+
+def test_check59_per_unit_stem_figure_passes():
+    """Clean rail (iii): >=1 embedded inline figure whose basename matches
+    `_PER_UNIT_FIG_RE` silences the WARN even when the prose and caption
+    carry no claim vocabulary (the figure IS the per-unit view)."""
+    body = _v4_minimal_results_body(
+        "### Scatter\n\nMean alignment as bars plus the full scatter.\n\n"
+        "![Scatter](https://x/figures/issue_9/corr_percontext_scatter.png)\n\n"
+        "> **Figure.** *Lead.* Plain caption.\n"
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check59_linked_per_unit_path_passes_via_claim():
+    """Critic round-1 addendum 2 (intended behavior, pinned): per-unit
+    vocabulary living ONLY inside a LINKED (not embedded) artifact path
+    passes via evidence (c) — the prose layer retains markdown link
+    targets, so a linked per-unit artifact is a real per-unit story
+    pointer."""
+    body = _v4_minimal_results_body(
+        "### Aggregate read\n\n"
+        "Mean alignment as bars; the full strip is committed at the pin "
+        "([strip](https://x/figures/issue_9/per-context-strip.png)).\n\n"
+        "![Bars](https://x/figures/issue_9/bars.png)\n\n"
+        "> **Figure.** *Lead.* Plain caption.\n"
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check59_zero_and_multi_figure_blocks_covered():
+    """The trigger is UNCONDITIONAL on figure count (unlike check 55's
+    exactly-one and check 49's >1): a 0-figure block and a 2-figure block
+    with no evidence both join the one WARN."""
+    body = _v4_minimal_results_body(
+        "### Zero figures\n\nMean alignment shifts +17 pts as a table.\n\n"
+        "### Two figures\n\nProse.\n\n"
+        "![First](https://x/figures/issue_9/one.png)\n\n"
+        "> **Figure.** *Lead.* First caption.\n\n"
+        "![Second](https://x/figures/issue_9/two.png)\n\n"
+        "> **Figure.** *Lead.* Second caption.\n"
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "2 `### <result>` section(s)" in res.detail
+    assert "'Zero figures'" in res.detail
+    assert "'Two figures'" in res.detail
+
+
+def test_check59_fenced_and_details_evidence_not_counted():
+    """Acceptance criterion 4: fenced-code / `<details>` embeddings never
+    count — evidence living only inside a fence (the exemption token, a
+    claim phrase, or a per-unit-stem image embed) is stripped by
+    `_prose_layer` and does NOT silence the WARN."""
+    fenced = _v4_minimal_results_body(
+        "### Skeleton example\n\nMean alignment as bars.\n\n"
+        "![Bars](https://x/figures/issue_9/bars.png)\n\n"
+        "> **Figure.** *Lead.* Plain caption.\n\n"
+        "```markdown\n"
+        "Per-unit exemption: quoted skeleton line, point-by-point.\n"
+        "![Strip](https://x/figures/issue_9/per_context_strip.png)\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(fenced, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    collapsed = _v4_minimal_results_body(
+        "### Collapsed views\n\nMean alignment as bars.\n\n"
+        "![Bars](https://x/figures/issue_9/bars.png)\n\n"
+        "> **Figure.** *Lead.* Plain caption.\n\n"
+        "<details>\n<summary>extra</summary>\n\n"
+        "Per-unit exemption: collapsed extra line.\n\n"
+        "</details>\n"
+    )
+    res2 = verify_task_body.check_v4_result_section_per_unit_coverage(collapsed, issue=2353)
+    assert res2.passed is True
+    assert res2.is_warn is True
+
+
+def test_check59_skips_non_v4_and_missing_results():
+    """Forward-only: v3-sentinel and legacy bodies PASS vacuously, as does
+    a v4 body with no `## Results` H2 (check 2 owns the report)."""
+    v3 = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\nNo per-unit anything.\n"
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(v3, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_result_section_per_unit_coverage(GOOD_BODY, issue=2353)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+    no_results = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- x\n"
+    res_nores = verify_task_body.check_v4_result_section_per_unit_coverage(no_results, issue=2353)
+    assert res_nores.passed is True
+    assert res_nores.is_warn is False
+    assert "## Results missing" in res_nores.detail
+
+
+def test_check59_forward_only_issue_gate():
+    """Calibration lever (ii) (#2353): the check fires ONLY for issue >=
+    `_PER_UNIT_COVERAGE_MIN_ISSUE` (2353) — an unknown issue and an older
+    issue both PASS-skip on the SAME evidence-less incident fixture that
+    WARNs at issue 2353 (the check-31 class-C `_PROSE_BAR_MIN_ISSUE`
+    fail-safe shape)."""
+    assert verify_task_body._PER_UNIT_COVERAGE_MIN_ISSUE == 2353
+    body = _v4_minimal_results_body(_check59_cap2048_incident_block())
+    res_none = verify_task_body.check_v4_result_section_per_unit_coverage(body)
+    assert res_none.passed is True
+    assert res_none.is_warn is False
+    assert "forward-only" in res_none.detail
+    res_old = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2352)
+    assert res_old.passed is True
+    assert res_old.is_warn is False
+    assert "forward-only" in res_old.detail
+    res_new = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res_new.is_warn is True
+
+
+def test_check59_outside_checks_and_dispatched_in_verify_text():
+    """Registration (acceptance criterion 5, adapted per calibration
+    lever (ii)): check 59 needs the issue number (the forward-only gate),
+    so it lives OUTSIDE the body-only CHECKS list and is dispatched
+    separately in `verify_text` (the check-20/#921 precedent, the
+    check-56 house shape) — `verify_text` emits it by name, PASS-skipping
+    when the issue is unknown. Its WARN keeps `passed=True` so the
+    aggregate verdict can never flip on it."""
+    assert verify_task_body.check_v4_result_section_per_unit_coverage not in verify_task_body.CHECKS
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    r59 = next(r for r in results if r.name == _CHECK59_NAME)
+    assert r59.passed is True
+    assert r59.is_warn is False
+    assert "forward-only" in r59.detail
+    body = _v4_minimal_results_body(_check59_cap2048_incident_block())
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert res.name == _CHECK59_NAME
+
+
+def test_check59_warn_detail_names_all_flagged_sections():
+    """Reconciler round-1 `check59-truncated-section-names`: the WARN
+    detail enumerates EVERY flagged H3 — the docs bullet promises "ONE
+    WARN naming each flagged H3", so there is no `[:3]` capped preview
+    and no trailing ellipsis (the join is bounded by the body's section
+    count; remediation favors full enumeration over the sibling
+    capped-preview idiom). Four evidence-less sections, all four named
+    in the single WARN detail."""
+    names = [
+        "First aggregate read",
+        "Second aggregate read",
+        "Third aggregate read",
+        "Fourth aggregate read",
+    ]
+    body = _v4_minimal_results_body(
+        "".join(
+            f"### {n}\n\nMean alignment shifts +17 pts across arms as a table.\n\n" for n in names
+        )
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "4 `### <result>` section(s)" in res.detail
+    for n in names:
+        assert f"'{n}'" in res.detail
+    assert "…" not in res.detail
+
+
+def test_check59_incident_body_warns_through_verify_text_dispatch():
+    """Reconciler round-1 `check59-dispatch-negative-test-gaps` (a): the
+    LIVE dispatch path — `verify_text(body, issue=2353)` — surfaces
+    check 59's WARN (`passed=True`, `is_warn=True`) on the incident
+    fixture, proving the issue number threads through to the OUTSIDE-
+    CHECKS dispatch. Assertions are scoped to the check-59 row only
+    (pulled by name), so sibling issue-parameterized checks can never
+    flake this test."""
+    body = _v4_minimal_results_body(_check59_cap2048_incident_block())
+    _ok, results = verify_task_body.verify_text(body, issue=2353)
+    r59 = next(r for r in results if r.name == _CHECK59_NAME)
+    assert r59.passed is True
+    assert r59.is_warn is True
+    assert "'The gap survives a doubled generation cap'" in r59.detail
+
+
+def test_check59_per_arm_prose_does_not_exempt():
+    """Reconciler round-1 `check59-dispatch-negative-test-gaps` (b): the
+    non-exemption rail generalized off the incident text — literal
+    `per-arm` prose in an otherwise evidence-less section is an
+    AGGREGATE grain (`arm` is deliberately absent from
+    `_PER_UNIT_CLAIM_RE`, like `cell` and `pair`) and MUST NOT silence
+    the WARN."""
+    body = _v4_minimal_results_body(
+        "### Arm-level read\n\n"
+        "Mean alignment per-arm as bars; the per arm spread is a table.\n\n"
+        "![Bars](https://x/figures/issue_9/arm_bars.png)\n\n"
+        "> **Figure.** *Lead.* Per-arm means with bootstrap CIs.\n"
+    )
+    res = verify_task_body.check_v4_result_section_per_unit_coverage(body, issue=2353)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Arm-level read'" in res.detail
 
 
 # ─── Check 56: fold-staled acknowledgment claims (v4 WARN, #2264) ────────────
