@@ -131,11 +131,11 @@
 
 **View:** `hero_ftype.png`
 
-![Per-type fraction-of-swap at each slot — hero_ftype](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/hero_ftype.png)
+![Per-type fraction-of-swap at each slot — hero_ftype](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/hero_ftype.png)
 
 **View:** `hero_ftype_perpair.png`
 
-![Per-type fraction-of-swap at each slot — hero_ftype_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/hero_ftype_perpair.png)
+![Per-type fraction-of-swap at each slot — hero_ftype_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/hero_ftype_perpair.png)
 
 ### Read x write 2x2 (probe AUC vs causal F_beh)
 
@@ -151,7 +151,7 @@
 
 **View:** `two_by_two.png`
 
-![Read x write 2x2 (probe AUC vs causal F_beh) — two_by_two](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/two_by_two.png)
+![Read x write 2x2 (probe AUC vs causal F_beh) — two_by_two](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/two_by_two.png)
 
 ### Per-layer probe AUC curves with permutation bands
 
@@ -162,20 +162,20 @@
 - The max-selected permutation band's upper bound (97.5% quantile of the per-draw re-maxed B = 1,000 carrier-level label-permutation null) is annotated; per-layer curves are the diagnostic display, the max-over-layers read is the headline statistic.
 - n per curve = 24 contexts per value-pair × 3 value-pairs (pre-exclusion; pe curves omit no-prefix contexts).
 
-- Aggregate view (layer_profile): heatmaps of leave-one-carrier-out (LOCO, 12 carrier groups) linear probe AUC per layer; rows = type-cells (39 for slot ce, 37 for slot pe), x = depth as fraction of the 32-layer stack, color = LOCO AUC (0.3-1.0), dashed verticals = full-attention layers.
+- Aggregate view (layer_profile): two heatmap panels of leave-one-carrier-out (LOCO, 12 carrier groups) linear probe AUC per layer, each with its own independent y-axis of type-cell rows — 39 rows in the ce panel, 37 in the pe panel (persona_prompted and persona_role_header appear only in the ce panel); x = depth as fraction of the 32-layer stack, color = LOCO AUC (0.3-1.0), dashed verticals = full-attention layers.
 - Per-unit views (probe_layer_curves_ce / _pe): one small-multiple panel per type-cell with the macro AUC-vs-depth curve over value-pairs (blue), thin per-value-pair curves/points, and the within-carrier permutation 95% band per layer (grey; B=1000).
 
 **View:** `layer_profile.png`
 
-![Per-layer probe AUC curves with permutation bands — layer_profile](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/layer_profile.png)
+![Per-layer probe AUC curves with permutation bands — layer_profile](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/layer_profile.png)
 
 **View:** `probe_layer_curves_ce.png`
 
-![Per-layer probe AUC curves with permutation bands — probe_layer_curves_ce](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/probe_layer_curves_ce.png)
+![Per-layer probe AUC curves with permutation bands — probe_layer_curves_ce](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/probe_layer_curves_ce.png)
 
 **View:** `probe_layer_curves_pe.png`
 
-![Per-layer probe AUC curves with permutation bands — probe_layer_curves_pe](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/probe_layer_curves_pe.png)
+![Per-layer probe AUC curves with permutation bands — probe_layer_curves_pe](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/probe_layer_curves_pe.png)
 
 ### Stage-2 layer-by-dose injectability profile
 
@@ -191,11 +191,11 @@
 
 **View:** `layer_profile_stage2.png`
 
-![Stage-2 layer-by-dose injectability profile — layer_profile_stage2](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/layer_profile_stage2.png)
+![Stage-2 layer-by-dose injectability profile — layer_profile_stage2](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/layer_profile_stage2.png)
 
 **View:** `layer_profile_stage2_perpair.png`
 
-![Stage-2 layer-by-dose injectability profile — layer_profile_stage2_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/layer_profile_stage2_perpair.png)
+![Stage-2 layer-by-dose injectability profile — layer_profile_stage2_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/layer_profile_stage2_perpair.png)
 
 ### Route contrasts and conflict balance
 
@@ -212,11 +212,11 @@
 
 **View:** `route_contrasts.png`
 
-![Route contrasts and conflict balance — route_contrasts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/route_contrasts.png)
+![Route contrasts and conflict balance — route_contrasts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/route_contrasts.png)
 
 **View:** `route_contrasts_perpair.png`
 
-![Route contrasts and conflict balance — route_contrasts_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/route_contrasts_perpair.png)
+![Route contrasts and conflict balance — route_contrasts_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/route_contrasts_perpair.png)
 
 ### Recency and load curves
 
@@ -232,11 +232,11 @@
 
 **View:** `dose_position.png`
 
-![Recency and load curves — dose_position](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/dose_position.png)
+![Recency and load curves — dose_position](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/dose_position.png)
 
 **View:** `recency_load_perpair.png`
 
-![Recency and load curves — recency_load_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/recency_load_perpair.png)
+![Recency and load curves — recency_load_perpair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/recency_load_perpair.png)
 
 ### Per-layer context-to-answer map skill with baselines
 
@@ -246,12 +246,12 @@
 - Plotted beside two mandatory baselines: the identity+learned-bias predictor (v̂ = v_C + b, b = train-fold mean of (v_A − v_C); applicable since input/output share d = 4096) and kNN retrieval P(true target within top-k) at k ∈ {1, 5, 10}, euclidean + cosine, chance = k/n_pool stated.
 - x-axis = fraction-of-stack, full-attention layers marked; n_train vs d printed on the figure. Banked parent maps are NOT plotted (dimension-inapplicable, divergence 8).
 
-- Left panel: held-out R-squared (context grain, leave-one-carrier-out) of the dof-capped GCV ridge map v_C -> v_A per layer, x = depth as fraction of the 32-layer stack, alongside the identity and identity + learned-bias baselines; y-axis spans roughly -35 to 5; the title states n_train ~ 12,870 > d = 4,096 (well-posed).
+- Left panel: held-out R-squared (context grain, leave-one-carrier-out) of the dof-capped GCV ridge map v_C -> v_A per layer, x = depth as fraction of the 32-layer stack, alongside the identity and identity + learned-bias baselines; the title states n_train ~ 12,870 > d = 4,096 (well-posed).
 - Right panel: kNN retrieval read of the fitted map, P(true target in top-5) among the held-out pool, cosine and euclidean, with the chance level 0.004 drawn; dashed verticals mark full-attention layers in both panels.
 
 **View:** `mapshift_r2.png`
 
-![Per-layer context-to-answer map skill with baselines — mapshift_r2](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/mapshift/mapshift_r2.png)
+![Per-layer context-to-answer map skill with baselines — mapshift_r2](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/mapshift/mapshift_r2.png)
 
 ### Predicted vs realized patched shift
 
@@ -262,11 +262,11 @@
 - Per-cell points behind the per-type × layer summary; n = cells/pairs entering each correlation (printed per panel).
 
 - y = cosine similarity between the map-predicted answer-state shift and the realized patched shift, per layer (x = depth as fraction of the 32-layer stack); left panel restricted to the 8 stored-and-used cells, right panel all 39 cells.
-- Series: the bank-fit map summary curve, thin per-type-cell curves, the raw context shift with no map applied, and the null patch arms (shuffled / cross-type donors); dashed verticals mark full-attention layers; per-cell curves are the per-unit data behind the summary.
+- Series: the bank-fit map summary curve, per-type-cell point markers, the raw context shift with no map applied, and the null patch arms (shuffled / cross-type donors); dashed verticals mark full-attention layers; the per-cell points are the per-unit data behind the summary.
 
 **View:** `mapshift_shift_prediction.png`
 
-![Predicted vs realized patched shift — mapshift_shift_prediction](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/mapshift/mapshift_shift_prediction.png)
+![Predicted vs realized patched shift — mapshift_shift_prediction](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/mapshift/mapshift_shift_prediction.png)
 
 ### 2AFC minimal-pair answer discrimination
 
@@ -281,7 +281,7 @@
 
 **View:** `dv3_2afc.png`
 
-![2AFC minimal-pair answer discrimination — dv3_2afc](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/mapshift/dv3_2afc.png)
+![2AFC minimal-pair answer discrimination — dv3_2afc](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/mapshift/dv3_2afc.png)
 
 ### Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B
 
@@ -297,11 +297,11 @@
 
 **View:** `transfer_scatter.png`
 
-![Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B — transfer_scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/transfer_scatter.png)
+![Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B — transfer_scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/transfer_scatter.png)
 
 **View:** `transfer_verdicts.png`
 
-![Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B — transfer_verdicts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/transfer_verdicts.png)
+![Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B — transfer_verdicts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/transfer_verdicts.png)
 
 ### Diagnostics dump
 
@@ -317,27 +317,27 @@
 
 **View:** `diagnostics.png`
 
-![Diagnostics dump — diagnostics](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/diagnostics.png)
+![Diagnostics dump — diagnostics](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/diagnostics.png)
 
 **View:** `anchor_separation_diag.png`
 
-![Diagnostics dump — anchor_separation_diag](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/anchor_separation_diag.png)
+![Diagnostics dump — anchor_separation_diag](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/anchor_separation_diag.png)
 
 **View:** `act_beh_agreement.png`
 
-![Diagnostics dump — act_beh_agreement](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/act_beh_agreement.png)
+![Diagnostics dump — act_beh_agreement](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/act_beh_agreement.png)
 
 **View:** `margin_validation.png`
 
-![Diagnostics dump — margin_validation](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/margin_validation.png)
+![Diagnostics dump — margin_validation](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/margin_validation.png)
 
 **View:** `crosstype_null_by_donor.png`
 
-![Diagnostics dump — crosstype_null_by_donor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/crosstype_null_by_donor.png)
+![Diagnostics dump — crosstype_null_by_donor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/crosstype_null_by_donor.png)
 
 **View:** `length_matched_diag.png`
 
-![Diagnostics dump — length_matched_diag](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f56349a511210ec3011b12e93f6704b8201b0ded/figures/issue_2329/length_matched_diag.png)
+![Diagnostics dump — length_matched_diag](https://raw.githubusercontent.com/superkaiba/explore-persona-space/91b22ffd0e564665001a423c9ad5ee680e2b03c0/figures/issue_2329/length_matched_diag.png)
 
 ### Bank dashboard + Result-0 qualitative gallery
 
