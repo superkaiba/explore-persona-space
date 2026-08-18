@@ -236,7 +236,23 @@ name-set diff; a FAIL row flips the verifier verdict), upload-verifier
 Step 2.10, and the terminate guard's
 `outroot=<swept-clean|residue-committed|none>` attestation token —
 `pod.py terminate` refuses a `kind: experiment` teardown whose latest
-PASS note lacks it.
+PASS note lacks it. **Cross-leg content disambiguation (#2359):** the
+git arm is issue-scoped but not LEG-scoped, so on a multi-leg issue a
+sibling leg's committed same-named file could silently cover this leg's
+unpersisted file (#2333: leg-B's `upload_done.json`, sha256 `0a052e8b…`,
+read `outroot_residue: OK` off leg-A's committed `6f43c93d…` copy). A
+basename resolving ONLY via the git arm is therefore content-checked —
+git blob sha1 vs the committed candidate(s) when the disk bytes are
+locally readable (size equality as the cheap first pass; a mismatch is
+residue → FAIL naming both paths), and a pod-side listing row with no
+local bytes degrades to WARN carrying the literal token
+`outroot-residue-basename-git-only` (a byte-check duty for the
+verifier's exploratory pass, never a silent OK; residue FAIL dominates).
+Honestly-named residual: HF prefixes are leg-scoped by CALLER CONVENTION
+(`issue<N>_<slug>/…`), not by construction, and carry no content check —
+a caller passing an issue-wide multi-leg HF prefix re-opens the same
+cross-leg basename hole through the HF arm; scope each `--hf-prefix` to
+the leg under verification.
 
 **Realized row counts — the WITHIN-FILE sibling of the residue check
 above (#2148).** The residue check binds DISK to the upload filters and
