@@ -9142,8 +9142,8 @@
     "2183": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2183",
-      "status": "planning",
+      "path": "tasks/approved/2183",
+      "status": "approved",
       "title": "Remediate 19 scripts/ drivers with repo_root()-derived sys.path inserts, then widen the #2181 check to scripts/"
     },
     "2184": {
