@@ -767,6 +767,33 @@ production function; fakes only at named seams) an explicit closure element
 minors-interaction the ruling flags ("fix together with the must-fix") gets
 its own closure row.
 
+**Overruled-own-PASS calibration round (#2357 r3, 2026-08-17):** when the
+twin's PRIOR PASS was reconciler-overruled BY EXECUTION (static-trace PASS vs
+a runtime differential the reconciler measured), compose the inverse of the
+post-overturn shape: (a) inline the OVERRULING reconciler ruling verbatim
+(tags stripped) as the acceptance contract — do NOT inline the twin's own
+overruled PASS verdict (anchoring risk); quote only the reconciler's one-line
+diagnosis of it ("answered the wrong question"); (b) add a dedicated
+"Static-trace calibration" section BEFORE the closure duty: trace the STATE
+MACHINE across the whole record sequence (name per-record flag values in
+closure evidence), reason about the RUNTIME final state where the gated
+action executes (here: final cwd at the commit) for EVERY allow-direction
+shape, ban the overruled round's exact hedge sentence verbatim, and state
+author-neutrality in BOTH directions (upheld r1 FAIL + overruled r2 PASS);
+(c) when the fix implements a VARIANT of the reconciler's sketch (re-arm vs
+permanent disarm), instruct adjudication on the variant's semantic criterion
+(final-state soundness), not sketch-verbatim; (d) same-class residual probes
+get their own closure element with an enumerated shape list (interleavings,
+orderings, compound/subshell interaction with the new bit, pattern anchoring,
+a full case-arm sweep for keep arms that neither poison nor disarm). Also:
+verify the brief's round-history summary against events.jsonl — briefs
+misattribute WHOSE PASS was overruled per round (the #2357 brief said both
+overruled PASSes were Codex's; r1's was Claude's); compose from the verified
+history and flag the discrepancy in the return. Tail-patch trap: the
+Concerns-to-persist bracket ALSO references the closure-ledger heading —
+sweep-assert heading staleness over the whole tail, not just the schema
+block.
+
 **FAIL+FAIL union scoped to OWN-twin ids only (#2223 napp r2, 2026-08-17):**
 the #2332 union entry ("inline BOTH prior verdicts as acceptance contracts")
 yields to a brief that scopes closure to the twin's OWN persisted ledger ids —
@@ -782,3 +809,81 @@ close==1 / prior-head==0. Status-line vocabulary can follow the brief's
 tokens (RESOLVED/UNRESOLVED) with ACCEPTED-NON-CHANGE/OVERTURNED added for
 recorded non-changes; UNRESOLVED on a BLOCKER id = substantive FAIL, an
 honestly-open CONCERN id re-raises at its own severity.
+
+**Post-reconciler mixed-ruling round on a BY-PATH task (#2223 napp r3,
+2026-08-17):** composing the fix round after Claude-PASS / own-twin-FAIL /
+reconciler BINDING FAIL with mixed rulings, on a task whose established
+discipline is by-path (no inlined envelopes): (a) the acceptance contract is
+the `epm:review-reconciliation` row read by extraction command (exact kind +
+top-level version + ts) — its body HEAD carries the ROUND sentinel
+(`<!-- epm:review-reconciliation v2 -->` on a version-1 row); disambiguate
+for Codex or it mis-keys the row. (b) The ledger walk becomes `N open + 1
+deferred`: a `deferred` event is reconciler-rejected-BINDING (closed) — fence
+it from BOTH blocker re-raise AND `CONCERN:: ` re-emission, quoting the
+ruling's discard rationales verbatim in the do-not-relitigate list
+(discarded-severity items like a settled de-minimis timing get an explicit
+"do not re-time it"). (c) The twin authored BOTH the upheld blocker and the
+discarded findings — state author-neutrality in both directions and that the
+reconciler wins wherever it and the twin's own r2 verdict differ. (d) An
+implementer (d)-flagged ordering/scope choice the ruling did not explicitly
+pin (failed-gap-before-completeness; 32b-only layer pin) becomes an explicit
+adjudication duty with the SEMANTIC criterion stated (no path may post a
+positive verdict on incomplete inputs; residual must be named) — never
+sketch-verbatim, and a mere preference without an unsound path is a note.
+(e) Ledger evidence rows cite PRIOR-round line numbers — tell Codex to
+re-locate every cited site in the round-N state. (f) By-path Step-3
+verification: envelope greps adapt to extraction-command + ts + id-token
+asserts over the final prompt (own-head==1 / close==1 / prior-heads==0 /
+exactly one line-start grammar row).
+
+**FAIL+FAIL AGREEMENT fix round on a TEXT-MATCH-mechanism fix (#2357 r4,
+2026-08-18):** when round N-1 was Claude-FAIL + Codex-FAIL in AGREEMENT (no
+reconciler; both reviewers' concern ids persisted), inline BOTH verdicts as
+acceptance contracts (#2332 form: tags stripped; blockquote their
+`CONCERN:: ` rows per #2329-rclose — asserts: line-start rows==1,
+blockquoted==3) and state "they name the SAME defect class; where their
+emphases differ, BOTH bind". Three composable deltas: (a) when the fix is a
+TEXT-MATCH mechanism (an ERE union grepped over raw record text), extend the
+static-trace calibration with a dedicated rule — adjudicate what the union
+MATCHES on RAW text (anchoring, tab/multi-space whitespace, quote-adjacent
+vs MID-WORD quoting, raw-vs-masked copy, embedded-newline record-splitting),
+never merely case-arm entry; the residual hunt becomes a text-shape
+enumeration and the over-tightening check is its inverse (which INNOCENT
+texts match — e.g. commit messages mentioning the vocabulary). (b)
+Marker-waived pre-existing residuals ("measured main=0") on a no-execute
+twin compose as W-rows (PRE-EXISTING-VERIFIED | CONTRADICTED) with three
+STATIC duties: blob-diff the deciding-machinery symbols across
+origin/main-vs-HEAD (attest at compose time that the round delta touches
+neither symbol — a cheap grep of the round diff), trace WHY main allows each
+shape, confirm the round adds a belt not a widening; genuine pre-existing
+routes via Step 0.9, CONTRADICTED = Critical substantive. (c) The brief
+misattributed round history AGAIN (claimed both overruled PASSes were
+Codex's; r1's was Claude's — same error as the r3 brief): verify every
+round's history against events.jsonl and compose from that, flagging the
+discrepancy in the return. Also: a fresh-sections rebuild can safely reuse
+the prior round's trigger-dense span + plan/marker envelopes + hard-bounds +
+rubric via count-asserted anchors even when EVERY middle section is
+rewritten (task context, calibration, concerns, adjudication, attestations,
+review focus) — sweep leftover round tokens with grep-and-eyeball scoped
+outside the inlined envelopes.
+
+**Second consecutive reconciler-fix round + kind-spelling trap (#2223 napp
+r4, 2026-08-17):** two deltas on the r3 by-path shape. (a) The
+`epm:review-reconciliation` row's BODY head tag spells a DIFFERENT kind
+(`<!-- epm:review-reconcile v3 -->`) than the JSON `kind` — on top of the
+round-sentinel-vs-JSON-version mismatch, tell Codex explicitly not to key
+the row by its body tag (key by exact JSON kind + top-level version + ts).
+(b) When round N-1's reconciliation is the SECOND on the task, the
+do-not-relitigate fence STACKS: carry the round-(N-2) fence items forward
+verbatim (labeled by source ruling) plus the new ruling's discarded items
+(here: turn-level siblings = plan-conformant estimator design;
+facet-sink severity capped at the implemented fix, incl. the ruling's
+"Observed but not raised" permitted-innerHTML set — restate that set so the
+twin doesn't demand escaping past it). Recommended-but-implemented items
+with no ledger row compose as pseudo-IDs (#1092-r4 pattern) whose
+acceptance text = the ruling's "Recommended …" paragraph + the impl
+marker's per-item disposition table; a brief that names semantic axes for
+one item (e.g. sentinel: both-DVs-then-write / dry-run exclusion / legacy
+WARN tolerance / no healthy-tree deadlock) gets those axes spelled out as
+per-property duties with an added INVERTED-state probe (sentinel present,
+DV file absent).

@@ -199,6 +199,23 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   its own span carried all brief numerics. Numcheck PASS first try at
   ~124 KB (cat-assembly; version-suffixed tmp paths).
 
+- **Guard-predicate infra plan with an incident-replay claim (#2158 round
+  one, methodology): when the plan's own falsification test is a trace
+  against a REAL prior task's events.jsonl, make the replay a review target
+  that names the artifact via a status-robust locator** (`uv run python
+  scripts/task.py find <M>` — never a hardcoded `tasks/<status>/<M>` path,
+  which goes stale on status moves) **and instructs Codex to walk the
+  predicate spec against the claimed row indices AND probe the
+  false-positive direction** (would healthy rounds trip it). Brief-numbered
+  review targets elaborated with plan-sourced row/line/byte claims live in
+  the targets SPAN (digits balance against the span file itself); each
+  target answer ends HOLDS/FAILS/PARTIAL/UNVERIFIED, with UNVERIFIED
+  would-be blockers filed as Should Fix. Byte-ratchet claims get an
+  explicit "RE-MEASURE, never trust the plan's arithmetic" instruction.
+  Standard #2357 shape otherwise (full lens span + digit-free verify-N/A
+  bridge + settled-scope-cuts block from the plan's own must-ask list).
+  Numcheck PASS first try at ~135 KB.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
