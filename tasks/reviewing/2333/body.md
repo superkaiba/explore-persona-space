@@ -28,6 +28,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2333.md @ 8440da7124](https://github.com/superkaiba/explore-persona-space/blob/8440da712425234beaa913c29b9551feabdbde8d/docs/methodology/issue_2333.md) · [gist mirror](https://gist.github.com/superkaiba/966a75dec30a8bded3d30dab9aaea4f7)
+
 ## Takeaways
 
 - Prefilling the context-end patch's own three-token opening recovers **67% of the full patch effect** on Qwen2.5-7B instruction-format pairs (n=172; paired diff +0.35, corrected p 2e-13) — snowball-sufficient.
