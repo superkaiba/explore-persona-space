@@ -655,6 +655,13 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # any of the three targets can be edited independently, so this pin
     # lives in WORKFLOW_INVARIANT to gate all three prose surfaces.
     "tests/test_consistency_checker_parentless_infra_skip.py",
+    # NEW (#2168) — JSON-guard UnicodeDecodeError reintroduction guard:
+    # fixture/live-tree tests for check_json_guard_unicode plus the no-flags
+    # bundling source pin (test_check_json_guard_unicode_bundled_in_no_flags),
+    # which must gate every later workflow_lint.py dispatch refactor
+    # (#1385 v1 / #1648 v2 shipped exactly the silent-unbundling regression
+    # that pin blocks).
+    "tests/test_workflow_lint_json_guard_unicode.py",
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------

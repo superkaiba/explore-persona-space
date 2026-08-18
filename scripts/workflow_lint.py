@@ -465,6 +465,27 @@ Behaviours:
   workflow-surface file is never allowlisted, it is fixed). Unparseable
   files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
   never silently.
+* ``--check-json-guard-unicode`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` AND ``src/`` and FAIL
+  any exception-guard unit whose caught-name union pairs a
+  ``JSONDecodeError``-named exception with an OSError-family name
+  (OSError / IOError / EnvironmentError / FileNotFoundError /
+  PermissionError / IsADirectoryError / NotADirectoryError) while
+  containing NO safe name (UnicodeDecodeError / ValueError / Exception /
+  BaseException). ``Path.read_text()`` / ``json.loads`` raise
+  ``UnicodeDecodeError`` on encoding-corrupt input, and it subclasses
+  ``ValueError`` — OUTSIDE ``(json.JSONDecodeError, OSError)`` — so the
+  corrupt-file branch the author wrote is silently bypassed (#2164
+  round 2; the #2168 sweep fixed all 186 live units and this check is
+  the reintroduction guard). A "unit" is an ``ast.Try``, an
+  ``ast.TryStar`` (``except*``), or a ``with contextlib.suppress(...)``
+  item (bare-name or attribute form); handler unions cover the
+  split-handler form. Error messages are FORM-SPECIFIC (a suppress unit
+  is told to extend the suppress args, never shown the tuple form).
+  Waive with ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` (reason ≥ 10
+  chars) on the flagged line or the line above; no legacy allowlist
+  (the swept tree is clean). Disclosed false negatives + the
+  bare-``except:`` benign-FP note live in the check docstring.
 * ``--check-scripts-import-guard`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under
   ``src/explore_persona_space/experiments/`` and ``scripts/`` (#1229)
@@ -7800,6 +7821,284 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
                     f"with '# JSONL_SPLITLINES_EXEMPT: <reason>' (reason ≥ "
                     f"{JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS} chars)."
                 )
+    return errors
+
+
+# `--check-json-guard-unicode` (#2168; parent incident #2164 round 2): a guard
+# catching `(json.JSONDecodeError, OSError)` around a read-and-parse of JSON
+# misses `UnicodeDecodeError` — `Path.read_text()` / `json.loads` raise it on
+# encoding-corrupt bytes, and it subclasses `ValueError`, OUTSIDE both caught
+# names — so the corrupt-file branch the author wrote is silently bypassed and
+# the caller crashes instead. Inline waiver for a genuinely-safe flagged unit.
+# Reason ≥ 10 chars, same convention as JSONL_SPLITLINES_EXEMPT.
+JSON_GUARD_UNICODE_WAIVER_RE = re.compile(r"#\s*JSON_GUARD_UNICODE_EXEMPT\s*:\s*(.+?)\s*$")
+JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS = 10
+# Name sets for the unit-level predicate (terminal identifiers of the caught /
+# suppressed exception expressions — `json.JSONDecodeError` and a from-import
+# `JSONDecodeError` both terminate in the same name).
+JSON_GUARD_JSON_NAMES = frozenset({"JSONDecodeError"})
+JSON_GUARD_OSERROR_NAMES = frozenset(
+    {
+        "OSError",
+        "IOError",
+        "EnvironmentError",
+        "FileNotFoundError",
+        "PermissionError",
+        "IsADirectoryError",
+        "NotADirectoryError",
+    }
+)
+JSON_GUARD_SAFE_NAMES = frozenset(
+    {"UnicodeDecodeError", "ValueError", "Exception", "BaseException"}
+)
+
+
+def _json_guard_waiver_present(lines: list[str], flag_lineno: int) -> bool:
+    """Return True iff a ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS` chars) is on
+    the flagged line (handler line / ``with`` line, ``flag_lineno`` 1-based)
+    or the immediately preceding non-blank line. Same convention as
+    :func:`_jsonl_splitlines_waiver_present`."""
+    idx = flag_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = JSON_GUARD_UNICODE_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = JSON_GUARD_UNICODE_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _json_guard_terminal_name(node: ast.expr) -> str | None:
+    """Terminal identifier of a Name/Attribute exception expression
+    (``json.JSONDecodeError`` -> ``JSONDecodeError``); None for other shapes
+    (a dynamically-constructed tuple element stays invisible — disclosed)."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    return None
+
+
+def _json_guard_names_of_expr(expr: ast.expr | None) -> set[str]:
+    """Name set of a handler ``type`` expression / suppress-arg expression:
+    a bare Name/Attribute or a Tuple of them; other shapes contribute
+    nothing (bare ``except:`` handlers have ``type is None``)."""
+    if expr is None:
+        return set()
+    if isinstance(expr, ast.Tuple):
+        return {n for n in (_json_guard_terminal_name(e) for e in expr.elts) if n is not None}
+    name = _json_guard_terminal_name(expr)
+    return {name} if name is not None else set()
+
+
+def _json_guard_names_flagged(names: set[str]) -> bool:
+    """The D2 unit predicate over a caught/suppressed name union: BOTH a
+    JSON-decode name AND an OSError-family name present, NO safe name."""
+    return bool(
+        names & JSON_GUARD_JSON_NAMES
+        and names & JSON_GUARD_OSERROR_NAMES
+        and not names & JSON_GUARD_SAFE_NAMES
+    )
+
+
+def _json_guard_try_flag_line(node: ast.Try | ast.TryStar) -> int | None:
+    """Return the 1-based flag line iff the try/``except*`` unit trips the
+    predicate (union over ALL handlers — covers the split-handler form), else
+    None. The flag line is the handler carrying the JSON-decode name (the
+    line the waiver belongs on), falling back to the ``try`` line."""
+    names: set[str] = set()
+    flag_line = node.lineno
+    for handler in node.handlers:
+        h_names = _json_guard_names_of_expr(handler.type)
+        if h_names & JSON_GUARD_JSON_NAMES:
+            flag_line = handler.lineno
+        names |= h_names
+    return flag_line if _json_guard_names_flagged(names) else None
+
+
+def _json_guard_is_suppress_call(expr: ast.expr) -> bool:
+    """True iff ``expr`` is a Call to ``suppress`` (bare from-import name) or
+    ``contextlib.suppress`` (attribute form). An import-aliased ``suppress``
+    (``from contextlib import suppress as quiet``) is a disclosed miss."""
+    if not isinstance(expr, ast.Call):
+        return False
+    func = expr.func
+    if isinstance(func, ast.Name) and func.id == "suppress":
+        return True
+    return isinstance(func, ast.Attribute) and func.attr == "suppress"
+
+
+def _json_guard_try_message(py: Path, lineno: int, star: bool) -> str:
+    """FORM-SPECIFIC message for a flagged try/``except*`` unit: the fix
+    shown is the TUPLE extension (never the suppress form)."""
+    kw = "except*" if star else "except"
+    return (
+        f"{py}:{lineno}: json-guard-unicode: `{kw}` guard catches a "
+        f"JSONDecodeError-named exception + an OSError-family exception "
+        f"without UnicodeDecodeError — Path.read_text()/json.loads raise "
+        f"UnicodeDecodeError on encoding-corrupt input, and it is a "
+        f"ValueError subclass OUTSIDE both caught names, so the corrupt-file "
+        f"branch is silently bypassed (#2164/#2168). Add UnicodeDecodeError "
+        f"to the tuple — `{kw} (json.JSONDecodeError, OSError, "
+        f"UnicodeDecodeError)` — or waive a genuinely-safe unit with "
+        f"'# JSON_GUARD_UNICODE_EXEMPT: <reason>' (reason ≥ "
+        f"{JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS} chars) on the flagged "
+        f"line or the line above."
+    )
+
+
+def _json_guard_suppress_message(py: Path, lineno: int) -> str:
+    """FORM-SPECIFIC message for a flagged ``contextlib.suppress(...)`` unit:
+    the fix shown is the SUPPRESS-ARGS extension — never the tuple form,
+    which would teach the blocked author a rewrite this check also flags
+    (#2168 plan v2 Must-Fix 1c)."""
+    return (
+        f"{py}:{lineno}: json-guard-unicode: contextlib.suppress(...) "
+        f"suppresses a JSONDecodeError-named exception + an OSError-family "
+        f"exception without UnicodeDecodeError — Path.read_text()/json.loads "
+        f"raise UnicodeDecodeError on encoding-corrupt input, and it is a "
+        f"ValueError subclass OUTSIDE both suppressed names, so the "
+        f"corrupt-file skip is silently bypassed (#2164/#2168). Add "
+        f"UnicodeDecodeError to the suppress args — `with contextlib.suppress("
+        f"json.JSONDecodeError, OSError, UnicodeDecodeError):` — or waive a "
+        f"genuinely-safe unit with '# JSON_GUARD_UNICODE_EXEMPT: <reason>' "
+        f"(reason ≥ {JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS} chars) on "
+        f"the `with` line or the line above."
+    )
+
+
+def _json_guard_scan_tree(py: Path, tree: ast.Module, lines: list[str]) -> list[str]:
+    """Apply the D2 unit predicate over one parsed module; returns the
+    formatted error lines (waived units excluded)."""
+    errors: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Try | ast.TryStar):
+            flag_line = _json_guard_try_flag_line(node)
+            if flag_line is None or _json_guard_waiver_present(lines, flag_line):
+                continue
+            errors.append(_json_guard_try_message(py, flag_line, isinstance(node, ast.TryStar)))
+        elif isinstance(node, ast.With | ast.AsyncWith):
+            for item in node.items:
+                call = item.context_expr
+                if not _json_guard_is_suppress_call(call):
+                    continue
+                assert isinstance(call, ast.Call)  # narrowed by the helper
+                names = {
+                    n for n in (_json_guard_terminal_name(a) for a in call.args) if n is not None
+                }
+                if not _json_guard_names_flagged(names):
+                    continue
+                if _json_guard_waiver_present(lines, node.lineno):
+                    continue
+                errors.append(_json_guard_suppress_message(py, node.lineno))
+    return errors
+
+
+def check_json_guard_unicode(*, roots: tuple[Path, ...] | None = None) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` + ``src/`` and FAIL any
+    exception-guard UNIT whose caught-name union pairs a
+    ``JSONDecodeError``-named exception with an OSError-family name
+    (:data:`JSON_GUARD_OSERROR_NAMES`) while containing NO safe name
+    (:data:`JSON_GUARD_SAFE_NAMES`) and carrying no waiver (#2168).
+
+    Rationale (parent incident #2164 round 2): ``Path.read_text()`` /
+    ``json.loads`` raise ``UnicodeDecodeError`` on encoding-corrupt input,
+    and ``UnicodeDecodeError`` subclasses ``ValueError`` — OUTSIDE
+    ``(json.JSONDecodeError, OSError)`` — so the corrupt-file branch the
+    author wrote for a `read JSON, fall back on corrupt content` site is
+    silently bypassed and the caller crashes (#2164: a corrupt watcher
+    registry entry killed the tick on every action path). The #2168 sweep
+    fixed all 186 live units (181 try-level + 5 ``contextlib.suppress``);
+    this check is the durable reintroduction guard and embodies the same
+    predicate as the sweep instrument (``scripts/issue2168_sweep.py``).
+
+    A "unit" is any of (union over the unit's caught/suppressed names):
+
+    1. an ``ast.Try`` — union over ALL handlers' type expressions, so the
+       split-handler form (``except json.JSONDecodeError:`` +
+       ``except OSError:`` on one try) is covered;
+    2. an ``ast.TryStar`` (``except*`` groups) — same handler union;
+    3. an ``ast.With`` / ``ast.AsyncWith`` item whose ``context_expr`` is a
+       Call to ``suppress`` (bare from-import name) or
+       ``contextlib.suppress`` (attribute form) — union over the call's
+       args, per suppress call.
+
+    Error messages are FORM-SPECIFIC: a try/``except*`` unit is told to
+    extend the TUPLE; a suppress unit is told to extend the SUPPRESS ARGS —
+    never shown the tuple form, which would teach the exact rewrite this
+    check also flags (#2168 plan v2 Must-Fix 1c).
+
+    Known FALSE NEGATIVES, disclosed by design (each requires a deliberate
+    name/binding indirection; all measured 0 live instances at #2168 plan
+    time — the guard's job is stopping the habitual forms):
+
+    * dynamically-constructed exception tuples (``except tuple(excs):``)
+      and dynamically-bound suppress (``sup = contextlib.suppress``);
+    * exception names aliased at import
+      (``from json import JSONDecodeError as JDE``; ``import json as j``
+      IS covered — the attribute match keys on the terminal name);
+    * ``suppress`` aliased at import
+      (``from contextlib import suppress as quiet``);
+    * a custom context manager wrapping suppress semantics under another
+      name.
+
+    Known benign FALSE POSITIVE (accepted, no predicate change): a try
+    pairing the two-element tuple with an ADDITIONAL bare ``except:``
+    handler — the bare handler contributes no names to the union but
+    catches everything, so the try is already total. Zero live instances;
+    the waiver covers a future one (a bare ``except:`` beside a narrow
+    tuple is itself worth a human look).
+
+    Unparseable / non-UTF-8 files are SKIPPED with a one-line stderr notice
+    (the :func:`check_jsonl_splitlines` posture — syntax validity is
+    ruff/pytest's job, and the skip is never silent).
+
+    Waiver: ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` (reason ≥
+    :data:`JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS` chars) on the flagged
+    line (handler line / ``with`` line) or the immediately preceding
+    non-blank line. No legacy allowlist — the #2168 sweep cleared the tree.
+
+    ``roots`` is a unit-test override hook; production callers pass None and
+    the function walks ``<repo_root>/scripts`` + ``<repo_root>/src`` (NOT
+    ``tests/`` — fixtures there must be able to carry the banned shapes).
+    Bundled into the no-flags default run.
+    """
+    scan_roots = roots if roots is not None else (_REPO_ROOT / "scripts", _REPO_ROOT / "src")
+    errors: list[str] = []
+    for root in scan_roots:
+        if not root.exists():
+            continue
+        for py in _files_scope_filter(sorted(root.rglob("*.py"))):
+            if not py.is_file():
+                continue
+            try:
+                text = py.read_text(encoding="utf-8")
+            except UnicodeDecodeError as exc:
+                print(
+                    f"workflow_lint: note: --check-json-guard-unicode skipped "
+                    f"{py} (non-UTF-8: {exc})",
+                    file=sys.stderr,
+                )
+                continue
+            # Cheap textual gate: a flaggable unit must reference the
+            # JSON-decode name verbatim (Name or Attribute terminal), so a
+            # module without the token can never match — skip the parse.
+            if "JSONDecodeError" not in text:
+                continue
+            tree = _cached_parse(py, text)
+            if tree is None:
+                print(
+                    f"workflow_lint: note: --check-json-guard-unicode skipped {py} (unparseable)",
+                    file=sys.stderr,
+                )
+                continue
+            errors.extend(_json_guard_scan_tree(py, tree, text.splitlines()))
     return errors
 
 
@@ -17263,6 +17562,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_section_reference_pointers": lambda wf: check_section_reference_pointer_coverage(),
     "check_phase_done_reserved": lambda wf: check_phase_done_reserved(),
     "check_jsonl_splitlines": lambda wf: check_jsonl_splitlines(),
+    "check_json_guard_unicode": lambda wf: check_json_guard_unicode(),
     "check_scripts_import_guard": lambda wf: check_scripts_import_guard(),
     "check_upload_or_true": lambda wf: check_upload_or_true(),
     "check_git_recipes_root_guard": lambda wf: check_git_recipes_root_guard(),
@@ -17313,6 +17613,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_snapshot_download_allow_patterns": CheckScope("path-local", ("scripts/", "src/")),
     "check_api_dispatch_routing": CheckScope("path-local", ("scripts/", "src/")),
     "check_jsonl_splitlines": CheckScope("path-local", ("scripts/", "src/")),
+    "check_json_guard_unicode": CheckScope("path-local", ("scripts/", "src/")),
     "check_scripts_import_guard": CheckScope("path-local", ("scripts/", "src/")),
     "check_upload_or_true": CheckScope("path-local", ("scripts/",)),
     "check_phase_done_reserved": CheckScope("path-local", ("scripts/",)),
@@ -18477,6 +18778,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-json-guard-unicode",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/**/*.py and FAIL any "
+        "exception-guard unit (try / except* / contextlib.suppress) whose "
+        "caught-name union pairs a JSONDecodeError-named exception with an "
+        "OSError-family name while containing no safe name "
+        "(UnicodeDecodeError / ValueError / Exception / BaseException). "
+        "read_text()/json.loads raise UnicodeDecodeError on encoding-corrupt "
+        "input and it is a ValueError subclass OUTSIDE "
+        "(json.JSONDecodeError, OSError), so the corrupt-file branch is "
+        "silently bypassed (#2164/#2168). Form-specific fix messages; waive "
+        "with '# JSON_GUARD_UNICODE_EXEMPT: <reason>'; no legacy allowlist "
+        "(the #2168 sweep cleared the tree). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-scripts-import-guard",
         action="store_true",
         help="AST-walk src/explore_persona_space/experiments/**/*.py + "
@@ -18768,6 +19085,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_section_reference_pointers
         or args.check_phase_done_reserved
         or args.check_jsonl_splitlines
+        or args.check_json_guard_unicode
         or args.check_scripts_import_guard
         or args.check_upload_or_true
         or args.check_git_recipes_root_guard
@@ -18955,6 +19273,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_phase_done_reserved())
     if args.check_jsonl_splitlines or no_flags:
         errors.extend(check_jsonl_splitlines())
+    if args.check_json_guard_unicode or no_flags:
+        errors.extend(check_json_guard_unicode())
     if args.check_scripts_import_guard or no_flags:
         errors.extend(check_scripts_import_guard())
     if args.check_upload_or_true or no_flags:
