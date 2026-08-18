@@ -136,6 +136,23 @@ class JudgeConfig(J94.JudgeConfig):
 
     bank_json: Path = _DEFAULT_IN_ROOT / _BANK_JSON_REL
     breach_basis: Path = _DEFAULT_BREACH_BASIS
+    # rule-28 remediation seam (#2151/#1739): route production waves over the
+    # SYNC transport instead of Batch. Default False => every existing caller
+    # routes byte-identically. Set only for an api-refusal RE-ISSUE pass: the
+    # Batch classifier censored 764 draws (stop_reason == 'refusal', empty
+    # content) whose in-band retry cannot help, because the retry envelope
+    # re-issues on the SAME censoring transport. The instrument is UNCHANGED
+    # (judge_model / rubric / max_tokens / n_draws) -- only the HTTP transport
+    # differs, which is what makes the merge licensable. Genuinely-scored draws
+    # come back as JudgeCache HITS and are never re-spent; api-refusal dicts are
+    # PUT-skipped and read as cache MISSES by design (batch_judge.py:681/910),
+    # so a sync re-run re-issues exactly the censored set.
+    force_sync_routing: bool = False
+
+    @property
+    def wave_threshold_base(self) -> int | None:
+        """``threshold_base`` for J94.run_wave: the force-sync sentinel or None."""
+        return FORCE_SYNC_THRESHOLD_BASE if self.force_sync_routing else None
 
     @property
     def pilot_gate3pre_cache_root(self) -> Path:
@@ -1191,6 +1208,7 @@ def phase_anchors(cfg: JudgeConfig) -> int:
         registry[J94.COHERENCE_RUBRIC_ID],
         coh_units,
         cfg,
+        threshold_base=cfg.wave_threshold_base,
     )
     scores = list(J94._iter_jsonl(cfg.scores_dir / "coherence.anchors.scores.jsonl"))
     gate = J94.coherence_baseline_gate(scores)
@@ -1205,7 +1223,14 @@ def phase_anchors(cfg: JudgeConfig) -> int:
     if not gate["passed"]:
         return RC_COHERENCE_GATE
     for rid, units in sorted(build_anchor_behavior_items(anchor_rows, pairs).items()):
-        J94.run_wave(f"{rid}.anchors", rid, registry[rid], units, cfg)
+        J94.run_wave(
+            f"{rid}.anchors",
+            rid,
+            registry[rid],
+            units,
+            cfg,
+            threshold_base=cfg.wave_threshold_base,
+        )
     J94._refresh_summary(cfg)
     return RC_OK
 
@@ -1231,10 +1256,17 @@ def phase_waves(cfg: JudgeConfig) -> int:
     J94.run_audits("grid", grid_rows, cfg.audits_dir)
     coh_units = build_coherence_items(grid_rows, None)
     J94.run_wave(
-        "coherence.grid", J94.COHERENCE_RUBRIC_ID, registry[J94.COHERENCE_RUBRIC_ID], coh_units, cfg
+        "coherence.grid",
+        J94.COHERENCE_RUBRIC_ID,
+        registry[J94.COHERENCE_RUBRIC_ID],
+        coh_units,
+        cfg,
+        threshold_base=cfg.wave_threshold_base,
     )
     for rid, units in sorted(build_grid_behavior_items(grid_rows, pairs_by_id).items()):
-        J94.run_wave(f"{rid}.grid", rid, registry[rid], units, cfg)
+        J94.run_wave(
+            f"{rid}.grid", rid, registry[rid], units, cfg, threshold_base=cfg.wave_threshold_base
+        )
     J94._refresh_summary(cfg)
     return RC_OK
 
@@ -1266,11 +1298,14 @@ def phase_stage2(cfg: JudgeConfig) -> int:
         registry[J94.COHERENCE_RUBRIC_ID],
         coh_units,
         cfg,
+        threshold_base=cfg.wave_threshold_base,
     )
     for rid, units in sorted(
         build_grid_behavior_items(rows, pairs_by_id, tag="s", kind="stage2").items()
     ):
-        J94.run_wave(f"{rid}.stage2", rid, registry[rid], units, cfg)
+        J94.run_wave(
+            f"{rid}.stage2", rid, registry[rid], units, cfg, threshold_base=cfg.wave_threshold_base
+        )
     J94._refresh_summary(cfg)
     return RC_OK
 
@@ -1541,6 +1576,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "row caps skips with a WARNING (pre-capregen fresh-run ordering only)",
     )
     ap.add_argument("--stage-from-hf", action="store_true")
+    ap.add_argument(
+        "--force-sync-routing",
+        action="store_true",
+        help="route production waves over the SYNC transport instead of Batch "
+        "(threshold_base=FORCE_SYNC_THRESHOLD_BASE). For the rule-28 api-refusal "
+        "RE-ISSUE pass only: the Batch classifier censored draws whose in-band retry "
+        "cannot help. Instrument is UNCHANGED (model/rubric/max_tokens/n_draws) — only "
+        "the transport differs. Scored draws are cache HITS and are not re-spent; "
+        "api-refusal dicts are cache MISSES by design, so only the censored set is "
+        "re-issued. NOTE: run_wave's regime key does NOT include routing, so a "
+        "completed wave still SKIPs — quarantine its .meta.json to force the re-run.",
+    )
     ap.add_argument("--hf-revision", type=str, default=None)
     ap.add_argument("--work-root", type=Path, default=Path("eval_results/issue_2329/judge"))
     ap.add_argument("--cache-root", type=Path, default=Path("data/issue_2329/judge_cache"))
@@ -1690,6 +1737,7 @@ def build_config(args: argparse.Namespace) -> JudgeConfig:
         dry_run=args.dry_run,
         bank_json=bank_json,
         breach_basis=args.breach_basis,
+        force_sync_routing=args.force_sync_routing,
     )
 
 
