@@ -1,6 +1,6 @@
 ---
 name: smoke-arch-marker-2176-grammar-pitfalls
-description: "Step 0.55: run check-smoke-arch-registry FIRST — prose-decorated per-arm heading parses to EMPTY sub-block; row keys must equal members= tokens; tuple registries abstain to marker-only"
+description: "Step 0.55: run check-smoke-arch-registry FIRST — prose-decorated per-arm heading parses to EMPTY sub-block; row keys must equal members= tokens; tuple registries abstain to marker-only; only the FIRST arm-registry line parses (multi-driver = one union line, comma-listed file=)"
 metadata:
   type: feedback
 ---
@@ -28,6 +28,18 @@ Rule: at Step 0.55, run `uv run python scripts/task.py check-smoke-arch-registry
    driver (main() calls every arm unconditionally, no phase arg) uses the
    `arm-registry: N/A — <reason>` form, or a single-line `source=... file=...
    n=... members=...` naming the derived set.
+5. MULTI-DRIVER rounds: `parse_arm_registry_line` consumes only the FIRST
+   `arm-registry:` line — posting one line per driver leaves the rest invisible,
+   and namespacing row keys (`run.envcheck`, `judge.pilot`) fails clause-5
+   byte-wise matching for EVERY member (#2333 R1 g2: n_registry=7 vs
+   n_enumerated=20, all 7 "missing" while 20 REAL rows sat right there). The
+   conforming shapes: ONE union line — `file=` takes a COMMA-LIST and clause-5b
+   unions per-file extractions (`source=sorted(PHASES)
+   file=run.py,judge.py,analysis.py n=<union> members=<sorted union>`) with
+   bare-token rows for every union member — or ONE primary-driver line with its
+   rows bare-keyed; other drivers' dotted rows survive as allowed EXTRAS.
+   `members=` must be SORTED (a definition-order tuple listing fails eyeballs
+   even when n matches).
 
 **Why:** the #2225 R1 marker had all substance right (10 arms, verdict-consistent
 rows) but failed the checker on form alone; without the checker + regex read the
