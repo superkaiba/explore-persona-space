@@ -35,3 +35,4 @@
 - [vLLM-port terminal + self-ref parity](vllm_port_terminal_and_selfref_parity.md) — exception paths must reach os._exit; a self-emitted parity reference only certifies venv drift (#2330 R1 g1)
 - [Categorical rubric over numeric parse layer](categorical_rubric_numeric_parse_bridge.md) — mechanical 100/0/REFUSAL encoding + label-first reduce + audit counters; UNCLEAR dropped from n_valid (#2356 R3-2)
 - [Mechanical sweep commit review recipe](mechanical_sweep_commit_review_recipe.md) — 5 probes (ins/del arithmetic, rider awk, length awk, attr grep, residual-predicate grep) certify a many-file one-token sweep (#2168 R1 g2)
+- [Encoding-corruption probe placement](encoding_corruption_probe_placement.md) — json.loads(bytes) BOM-sniffs leading \xff\xfe → JSONDecodeError; mid-payload binds; sed-mutate + git -C restore loop (#2168 R1 g3)
