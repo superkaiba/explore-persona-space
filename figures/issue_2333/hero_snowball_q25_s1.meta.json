@@ -1,0 +1,827 @@
+{
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "406114d185554983",
+  "git_commit": "c9a0c9ec",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
+  ],
+  "created": "2026-08-18T05:57:24Z",
+  "figsize": [
+    9.6,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.7414099478871634,
+      "error": 0.0517352524575157,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": 0.36864018044104996,
+      "error": 0.05778791477248252,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": 0.4006024081235382,
+      "error": 0.05849627796691231,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.40277846194241584,
+      "error": 0.060062128023293054,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": 0.35535303905235593,
+      "error": 0.06233475251189333,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.481377091003842,
+      "error": 0.06720799695243454,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.49670300101470977,
+      "error": 0.06954447283186779,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": 0.12017170347228956,
+      "error": 0.044232947683355374,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": 0.14287882960686782,
+      "error": 0.044821740191217894,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.15097936230326867,
+      "error": 0.045086116978416295,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": 0.10035456184512155,
+      "error": 0.03996991369566351,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": 0.11840076347072002,
+      "error": 0.04338016543499352,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": 0.14599612574607845,
+      "error": 0.04340580082783832,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "behavioral movement F": 0.7414099478871634,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "behavioral movement F": 0.7414099478871634,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.7414099478871634,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": 0.36864018044104996,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": 0.4006024081235382,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.40277846194241584,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": 0.35535303905235593,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.481377091003842,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.49670300101470977,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.6883479455181037,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": 0.3116957402183734,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": 0.34247113648526906,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.3432151052153075,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": 0.2932284099865768,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.414047757202983,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.42797371606706186,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.11,
+      "behavioral movement F": 0.7918184504331351,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.89,
+      "behavioral movement F": 0.4272715697633384,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.89,
+      "behavioral movement F": 0.4594636924190937,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.89,
+      "behavioral movement F": 0.4633393612618936,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.89,
+      "behavioral movement F": 0.41789791501036344,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.89,
+      "behavioral movement F": 0.5484637511078521,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.89,
+      "behavioral movement F": 0.5670626617307974,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": 0.12017170347228956,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": 0.14287882960686782,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.15097936230326867,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": 0.10035456184512155,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": 0.11840076347072002,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": 0.14599612574607845,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": 0.07716041405490921,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": 0.0996087765028378,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.1063930415499122,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": 0.06136941131235851,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": 0.0752857218035158,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": 0.10363605145451876,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.11,
+      "behavioral movement F": 0.16562630942161996,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.11,
+      "behavioral movement F": 0.18925225688527358,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.11,
+      "behavioral movement F": 0.1965652755067448,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.11,
+      "behavioral movement F": 0.14130923870368553,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.11,
+      "behavioral movement F": 0.16204605267350283,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.11,
+      "behavioral movement F": 0.1904476531101954,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.11,
+      "y": 0.7414099478871634,
+      "error": 0.0517352524575157,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.89,
+      "y": 0.49484553010727866,
+      "error": 0.06095457106496391,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.89,
+      "y": 0.5063052713672967,
+      "error": 0.06311553407213966,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.89,
+      "y": 0.5184335695844556,
+      "error": 0.061161140856675594,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.89,
+      "y": 0.4026805210824122,
+      "error": 0.06533245298983598,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 4.89,
+      "y": 0.5664616905497315,
+      "error": 0.06626157712969022,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 5.89,
+      "y": 0.5826659542610572,
+      "error": 0.0676231263213144,
+      "series": "steered (true donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.11,
+      "y": 0.09145244637265251,
+      "error": 0.036287237625021465,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 2.11,
+      "y": 0.10027654012742038,
+      "error": 0.03787744344451541,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.11,
+      "y": 0.11725182124582649,
+      "error": 0.04248052808063008,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 4.11,
+      "y": 0.07544386871748887,
+      "error": 0.039579694085814826,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 5.11,
+      "y": 0.09387087116293043,
+      "error": 0.03767580737862063,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 6.11,
+      "y": 0.09796681487834236,
+      "error": 0.04030105112691019,
+      "series": "shuffled-donor null",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.7414099478871634,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.7414099478871634,
+      "series": "full context-end patch, same wave (95% CI band)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.11,
+      "y": 0.7414099478871634,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.89,
+      "y": 0.49484553010727866,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.89,
+      "y": 0.5063052713672967,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.89,
+      "y": 0.5184335695844556,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.89,
+      "y": 0.4026805210824122,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.89,
+      "y": 0.5664616905497315,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.89,
+      "y": 0.5826659542610572,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": -0.11,
+      "y": 0.6883479455181037,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.89,
+      "y": 0.4350792253067877,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.89,
+      "y": 0.44389219514605016,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.89,
+      "y": 0.45800818858002296,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.89,
+      "y": 0.33914042609789447,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.89,
+      "y": 0.5008489343933009,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.89,
+      "y": 0.5149688090963038,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": -0.11,
+      "y": 0.7918184504331351,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.89,
+      "y": 0.5569883674367155,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.89,
+      "y": 0.5701232632903295,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.89,
+      "y": 0.5803304702933741,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.89,
+      "y": 0.4698053320775664,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.89,
+      "y": 0.6333720886526814,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.89,
+      "y": 0.6502150617389326,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.11,
+      "y": 0.09145244637265251,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.11,
+      "y": 0.10027654012742038,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.11,
+      "y": 0.11725182124582649,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.11,
+      "y": 0.07544386871748887,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.11,
+      "y": 0.09387087116293043,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.11,
+      "y": 0.09796681487834236,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.11,
+      "y": 0.05559829240935529,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.11,
+      "y": 0.06316015726713348,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.11,
+      "y": 0.07497937683560406,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.11,
+      "y": 0.03674248756875251,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.11,
+      "y": 0.05693355748175971,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.11,
+      "y": 0.05878129842822798,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.11,
+      "y": 0.12817276765939822,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.11,
+      "y": 0.1389150441561643,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.11,
+      "y": 0.15994043299686422,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.11,
+      "y": 0.11590187574038216,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.11,
+      "y": 0.13228517223900096,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.11,
+      "y": 0.13938340068204835,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 108,
+  "text": {
+    "suptitle": "Qwen2.5-7B \u2014 instruction-format pairs: snowball recovery profile",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "patch-content donors (confirmatory)",
+        "ylabel": "behavioral movement F",
+        "legend_labels": [
+          "full context-end patch, same wave (95% CI band)",
+          "steered (true donor)",
+          "shuffled-donor null"
+        ],
+        "xticklabels": [
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "natural-opening donors (descriptive)",
+        "xticklabels": [
+          "context-end patch\n(control)",
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "prefill, 1 token",
+          "prefill, 2 tokens",
+          "prefill, 3 tokens"
+        ]
+      }
+    ],
+    "series": [
+      "full context-end patch, same wave (95% CI band)",
+      "steered (true donor)",
+      "shuffled-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

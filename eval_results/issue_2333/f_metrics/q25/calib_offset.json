@@ -1,0 +1,14 @@
+{
+  "model_tag": "q25",
+  "offset_semantics": "same-wave re-judge of q25-generated banked ce text minus the banked q25 F values; instrument offset only",
+  "s1": {
+    "mean_offset": 0.00175181268853431,
+    "sd": 0.10959992804301155,
+    "n_pairs": 180
+  },
+  "s2": {
+    "mean_offset": -0.17829572915751069,
+    "sd": 1.0900401463100777,
+    "n_pairs": 15
+  }
+}

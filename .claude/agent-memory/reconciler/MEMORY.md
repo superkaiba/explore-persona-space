@@ -58,6 +58,7 @@
 - [Codex conflates marker format/existence with code](feedback_codex_conflates_marker_format_with_code.md) — marker-shape nits / stale-file marker reads / smoke-presentation nits with "diff not reviewed" → discard
 - [Codex misreads git/worktree state (git-provenance family)](feedback_codex_litigates_pre_existing_in_round_n.md) — pre-existing-on-trunk, scope drift, stale-worktree "deletions", cumulative diffs (#922); [gitignored artifacts as production state](feedback_codex_gitignored_artifacts_as_production_state.md) — reachability walk: git propagation, canonical-flow creation, pre-existence (#543, #570); [raw-branch-diff misses the Step 10d surgical merge](feedback_codex_raw_branch_diff_misses_surgical_merge.md) — outside-scope "reverts" bounded by Guard 3's additive checkout → PASS (#511 r1)
 - [Codex over-reads plan prose](feedback_codex_overreads_plan_prose.md) — synthesized quotes, 1-D companions inflated to grids, misparsed parentheticals, contextual sentences read unconditional
+- [Codex flags descriptive-read literal as registered-threshold drift](feedback_codex_descriptive_read_literal_as_threshold_drift.md) — check which deliverable the reuse-unchanged clause binds + self-describing field name + no decision-path consumer (#2333 r7)
 - [Codex under-scopes the evidence base on doc/rule-file diffs](feedback_codex_evidence_base_underscoping_doc_rules.md) — checks only the designated events row, ignoring plan §Evidence-of-record code-grounding + mechanism-register framing; run the impact arrow yourself (#2338 r1)
 - [Codex methodology-choice as code bug](feedback_codex_methodology_choice_as_bug.md) — implementer picked plan-listed option (b), Codex assumed (a); or Codex flags the plan's own pre-registered rule (#480, #543)
 - [Codex flags the registered noise-floor/reliability statistic as a unit-mismatch bug](feedback_codex_flags_registered_noise_floor_statistic.md) — "wrong kind of quantity / wrong units" FAIL on a verdict-logic scalar (#661)
@@ -71,7 +72,9 @@
 
 ## Clean-result-critic + interp-critic calibration
 
-- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 25 BLOCKING spec-text rules (#923, #833)
+- [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — one conceded mismatch in a fresh block ⇒ sweep ALL rows against BOTH candidate sources; only source-divergent rows verify anything (#2333 r2)
+
+- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 26 BLOCKING spec-text rules incl. Lens-11 skipped-result enumeration + unverified exemption tokens; DISCARD X (DV-scoped title vs secondary-DV flip) / Y (plan-registered power narration) (#923, #833, #2333 crc r1)
 - [Clean-result bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md) — v4 split: bare #N in Methodology table Source col / Results caption (L2) + reuse bullet missing the permanent path (b) (L5) are grounded (#722)
 - [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — always re-scan for named tests (Wilson/Fisher/Mann-Whitney), ± (#378)
 - [Cross-loop CI conflict (interp vs clean-result)](feedback_cross_loop_ci_conflict.md) — interp-critic-required CIs / prior-gate house style / caption CIs survive Codex's Lens-7 FAIL; add "Do NOT remove" lines. #478, #509, #464.
