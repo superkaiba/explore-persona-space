@@ -9100,8 +9100,8 @@
     "2178": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2178",
-      "status": "proposed",
+      "path": "tasks/planning/2178",
+      "status": "planning",
       "title": "verify_plan.py: validate a plan's stated smoke-fixture size against realized fixtures, and flag a smoke claim whose producing script is absent from the modified-file list"
     },
     "2179": {
