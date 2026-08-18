@@ -9,6 +9,11 @@ kill switch), the tier-scoped ``venv_import_verdict``, the
 pins (the #2360 B5 fix: the shipped constants are test-pinned, so emptied
 constants or a dropped demonstrated casualty fail the committed suite).
 
+Round-2 additions (#2360 r2): the future ``KeyError("Version")`` tier-1 form
+(interpreter-version-independent), the multiline LEAF-message flatten, the
+invalid probe-timeout named config error, and the explicit RunPod force-off
+pin.
+
 Design: the direct-call idiom of ``test_preflight_disk.py`` /
 ``test_preflight_vllm_compat.py`` — ``preflight.py`` import is side-effect-free
 at module level (dotenv/HF_HOME mutation happens only inside
@@ -126,6 +131,41 @@ class TestTier1Metadata:
         (msg,) = report.errors
         assert "brokenpkg2" in msg
         assert "metadata file missing from present dist-info" in msg
+        assert report.ok is False
+        assert report.venv_import_verdict == "tier1-fail"
+
+    def test_metadata_keyerror_future_form_errors(self, tmp_path, monkeypatch):
+        """Forward-compat regression (#2360 r2, Codex blocker
+        metadata-keyerror-forward-compat): CPython deprecated the
+        implicit-None return ("Implicit None on return values is deprecated
+        and will raise KeyErrors"), so a supported future interpreter raises
+        KeyError('Version') for the exact shape (ii) fixture above.
+        Interpreter-version-INDEPENDENT: version() is monkeypatched to raise
+        for exactly the curated dist. One named error + verdict tier1-fail —
+        never an uncaught traceback that replaces the structured JSON/verdict
+        routing."""
+        _clear_env(monkeypatch)
+        _lanes(monkeypatch)
+        monkeypatch.setenv(PROBE_ENV, "0")
+        root = _write_lock(tmp_path, "brokenpkg3")
+        monkeypatch.setattr(preflight, "LOAD_BEARING_DISTS", ("brokenpkg3",))
+
+        real_version = importlib.metadata.version
+
+        def _future_version(dist: str) -> str | None:
+            if dist == "brokenpkg3":
+                raise KeyError("Version")
+            return real_version(dist)
+
+        monkeypatch.setattr(importlib.metadata, "version", _future_version)
+
+        report = PreflightReport()
+        check_venv_import_health(report, root)
+        assert len(report.errors) == 1
+        (msg,) = report.errors
+        assert "brokenpkg3" in msg
+        assert "metadata file missing from present dist-info" in msg
+        assert "--force-reinstall" in msg
         assert report.ok is False
         assert report.venv_import_verdict == "tier1-fail"
 
@@ -249,6 +289,49 @@ class TestTier2Probe:
         assert leaf_line.startswith("LEAF ")
         assert len(leaf_line) <= 600  # the %.500s bound holds
 
+    def test_leaf_sentinel_multiline_message_stays_one_line(self, tmp_path, monkeypatch):
+        """FIX 3 regression (#2360 r2): a MULTILINE leaf exception message is
+        flattened (CR/LF -> spaces) BEFORE the %.500s bound, so the sentinel
+        stays ONE machine-readable stdout line and the report lead carries
+        text from BEYOND the first physical line — the pre-fix emitter split
+        the sentinel across lines and only its first line led the report,
+        defeating the B6 one-line guarantee."""
+        _clear_env(monkeypatch)
+        _lanes(monkeypatch, runpod=True)
+        fixture = tmp_path / "mods"
+        fixture.mkdir()
+        (fixture / "multiline_leaf.py").write_text(
+            "raise ModuleNotFoundError(\n"
+            f"    'first-line-part\\nsecond-line-{LEAF_TOKEN}\\r\\nthird-line-part'\n"
+            ")\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("PYTHONPATH", str(fixture))
+
+        # RAW subprocess precondition: exactly ONE LEAF stdout line, carrying
+        # tokens from the second AND third physical message lines.
+        rc, out, err = preflight._run(
+            [sys.executable, "-c", preflight._IMPORT_PROBE_SNIPPET, "multiline_leaf"],
+            timeout=60,
+        )
+        assert rc == 3, (rc, err[:500])
+        leaf_lines = [ln for ln in out.split("\n") if ln.startswith("LEAF ")]
+        assert len(leaf_lines) == 1, out
+        assert f"second-line-{LEAF_TOKEN}" in leaf_lines[0]
+        assert "third-line-part" in leaf_lines[0]
+
+        root = _write_lock(tmp_path, "placeholder")
+        monkeypatch.setattr(preflight, "LOAD_BEARING_DISTS", ())
+        monkeypatch.setattr(preflight, "DEEP_IMPORT_MODULES", ("multiline_leaf",))
+        report = PreflightReport()
+        check_venv_import_health(report, root)
+        assert report.venv_import_verdict == "fail"
+        (msg,) = report.errors
+        assert msg.startswith("LEAF ModuleNotFoundError: first-line-part second-line-")
+        # The full flattened message rides the LEAD (pre-" — " segment), not
+        # just its first physical line.
+        assert "third-line-part" in msg.split(" — ", 1)[0]
+
     def test_production_list_import_broken_metadata_intact(self, tmp_path, monkeypatch):
         """The B1/B5 negative on the PRODUCTION DEEP_IMPORT_MODULES (no
         constant monkeypatch), reproducing the #2329 anthropic casualty:
@@ -314,6 +397,32 @@ class TestTier2Probe:
         assert banner_idx != -1
         assert diag_idx != -1
         assert banner_idx < diag_idx  # banner printed BEFORE the probe/diagnostic
+
+    @pytest.mark.parametrize("bad", ["banana", "nan", "inf", "-5", "0"])
+    def test_invalid_timeout_env_named_config_error(self, tmp_path, monkeypatch, bad):
+        """FIX 4 (#2360 r2): a malformed / NaN / infinite / non-positive
+        EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S yields ONE named configuration
+        error + verdict config-error and the probe subprocess is never
+        launched — never an uncaught ValueError/OverflowError firing before
+        any verdict is set."""
+        _clear_env(monkeypatch)
+        _lanes(monkeypatch, runpod=True)
+        monkeypatch.setenv(TIMEOUT_ENV, bad)
+        root = _write_lock(tmp_path, "placeholder")
+        monkeypatch.setattr(preflight, "LOAD_BEARING_DISTS", ())
+
+        def _no_probe(cmd, timeout=60):
+            raise AssertionError("probe launched despite invalid timeout env")
+
+        monkeypatch.setattr(preflight, "_run", _no_probe)
+        report = PreflightReport()
+        check_venv_import_health(report, root)
+        assert report.venv_import_verdict == "config-error"
+        assert report.ok is False
+        (msg,) = report.errors
+        assert "EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S" in msg
+        assert bad in msg
+        assert "NOT run" in msg
 
     def test_compat_check_skips_on_probe_timeout(self, monkeypatch):
         """On a timeout verdict the compat check SKIPs before its unbounded
@@ -395,6 +504,27 @@ class TestLaneGating:
         check_venv_import_health(report, root)
         assert report.venv_import_verdict == "ok"
         assert report.errors == []
+
+    def test_lane_gate_force_off_on_pod(self, tmp_path, monkeypatch):
+        """FIX 5 (#2360 r2): EPM_PREFLIGHT_IMPORT_PROBE=0 forces the probe
+        OFF even on RunPod, where the default is ON — verdict skipped-lane,
+        probe never launched. The code was already correct; this pin makes
+        the explicit force-off-on-pod behavior durable."""
+        _clear_env(monkeypatch)
+        _lanes(monkeypatch, runpod=True)
+        monkeypatch.setenv(PROBE_ENV, "0")
+        root = _write_lock(tmp_path, "placeholder")
+        monkeypatch.setattr(preflight, "LOAD_BEARING_DISTS", ())
+
+        def _no_probe(cmd, timeout=60):
+            raise AssertionError("probe launched despite explicit force-off on RunPod")
+
+        monkeypatch.setattr(preflight, "_run", _no_probe)
+        report = PreflightReport()
+        check_venv_import_health(report, root)
+        assert report.venv_import_verdict == "skipped-lane"
+        assert report.errors == []
+        assert report.warnings == []
 
     def test_kill_switch(self, tmp_path, monkeypatch):
         """EPM_PREFLIGHT_VENV_IMPORT_CHECK=0 disables everything: one warning,

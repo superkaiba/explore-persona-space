@@ -35,6 +35,7 @@ import errno
 import importlib.metadata
 import json
 import logging
+import math
 import os
 import shutil
 import subprocess
@@ -737,10 +738,12 @@ DEEP_IMPORT_MODULES: tuple[str, ...] = tuple(  # tier 2
 # and emitted as ONE bounded machine-readable line, so "leaf import error
 # surfaced" never depends on where a stderr byte window lands. The chain walk
 # follows CPython's own display rule — `__cause__` first, else `__context__`
-# unless suppressed; the `seen` set guards pathological cycles; `%.500s`
-# bounds the sentinel at ~520 chars; a chainless exception is its own leaf.
-# Stdout stays tiny (`OK`/`FAIL`/`LEAF` lines only) so the sentinel is never
-# truncated.
+# unless suppressed; the `seen` set guards pathological cycles; the message is
+# newline-FLATTENED (CR/LF -> spaces) BEFORE the `%.500s` bound so a multiline
+# exception message cannot break the one-line sentinel contract (#2360 r2);
+# `%.500s` bounds the sentinel at ~520 chars; a chainless exception is its own
+# leaf. Stdout stays tiny (`OK`/`FAIL`/`LEAF` lines only) so the sentinel is
+# never truncated.
 _IMPORT_PROBE_SNIPPET = (
     "import importlib, sys, traceback\n"
     "for m in sys.argv[1:]:\n"
@@ -757,7 +760,8 @@ _IMPORT_PROBE_SNIPPET = (
     "            if nxt is None:\n"
     "                break\n"
     "            root = nxt\n"
-    "        print('LEAF %s: %.500s' % (type(root).__name__, root), flush=True)\n"
+    "        m = str(root).replace('\\r', ' ').replace('\\n', ' ')\n"
+    "        print('LEAF %s: %.500s' % (type(root).__name__, m), flush=True)\n"
     "        traceback.print_exc()\n"
     "        sys.exit(3)\n"
 )
@@ -770,7 +774,8 @@ def check_venv_import_health(report: PreflightReport, project_root: Path):
     every dist in ``LOAD_BEARING_DISTS``, cross-checked against ``uv.lock``
     names, failing on BOTH broken-metadata shapes — ``PackageNotFoundError``
     (dist-info entirely absent: the #2329 ``sympy`` casualty) AND a ``None``
-    return (dist-info dir present, its ``METADATA`` file missing). Tier 1
+    return (dist-info dir present, its ``METADATA`` file missing; equally its
+    announced future ``KeyError("Version")`` form — #2360 r2). Tier 1
     executes NO module code — it reads dist-info off site-packages, so it
     adds no new wedge-exposure class.
 
@@ -824,6 +829,16 @@ def check_venv_import_health(report: PreflightReport, project_root: Path):
             broken = "metadata file missing from present dist-info" if ver is None else None
         except importlib.metadata.PackageNotFoundError:
             broken = "dist metadata entirely absent"
+        except KeyError:
+            # The FUTURE form of the same gutted-metadata shape: CPython
+            # deprecated the implicit-None return (importlib/metadata
+            # DeprecationWarning "Implicit None on return values is
+            # deprecated and will raise KeyErrors"), so a supported future
+            # interpreter raises KeyError("Version") where today's returns
+            # None. Both forms normalize onto ONE named tier-1 failure — an
+            # uncaught traceback here would replace the structured
+            # JSON/verdict routing this check exists to provide (#2360 r2).
+            broken = "metadata file missing from present dist-info"
         if broken is None:
             continue
         if locked is None or dist in locked:
@@ -872,9 +887,26 @@ def _deep_import_probe(report: PreflightReport) -> None:
     production ``_run`` with a wall-clock bound, and sets the verdict:
     ``ok`` | ``timeout`` (distinct, with the two-reading wedge-discriminator
     error text) | ``fail`` (LEAF-sentinel-led error + head+tail stderr
-    harvest). Reached only when tier 1 passed and the lane gate resolved ON.
+    harvest) | ``config-error`` (invalid timeout env — named error, probe
+    NOT run; #2360 r2). Reached only when tier 1 passed and the lane gate
+    resolved ON.
     """
-    timeout_s = float(os.environ.get("EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S", "180"))
+    raw_timeout = os.environ.get("EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S", "180")
+    try:
+        timeout_s = float(raw_timeout)
+    except ValueError:
+        timeout_s = float("nan")
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        # Named configuration error instead of an uncaught ValueError /
+        # OverflowError (float("nan")/float("inf") parse fine but int() below
+        # would raise) firing before any verdict is set (#2360 r2).
+        report.venv_import_verdict = "config-error"
+        report.add_error(
+            "venv import-health: invalid EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S="
+            f"{raw_timeout!r} — must be a finite positive number of seconds "
+            "(default 180); the deep-import probe was NOT run"
+        )
+        return
     # Pre-probe banner (load-bearing — #2360 D3): printed BEFORE the probe so
     # on a HARD-wedged FUSE mount (a child in uninterruptible I/O can survive
     # SIGKILL and block the post-timeout wait, so no post-hoc diagnostic ever

@@ -4,10 +4,16 @@ Sibling of ``test_bootstrap_pod_path.py`` (whose scope is the default-PATH
 tool exposure / python shim): these tests pin the uv cache + link-mode
 determinism edits and the greppable step-10 preflight-failure line.
 
-Static (no live pod, no network). KNOWN LIMIT, by design: pattern PRESENCE
-only — the single-vs-double-quoting hazard of the step-10 edit (``$?`` must
-expand REMOTELY, i.e. inside the SINGLE-quoted ssh block) is NOT testable by
-substring and is an explicit code-review eyeball item (#2360 plan D4 step 4).
+Static (no live pod, no network). KNOWN LIMIT, by design: tests (a)-(e) are
+pattern PRESENCE only — the single-vs-double-quoting hazard of the step-10
+edit (``$?`` must expand REMOTELY, i.e. inside the SINGLE-quoted ssh block) is
+NOT testable by substring and is an explicit code-review eyeball item (#2360
+plan D4 step 4). Test (f) (#2360 r2) is the exception: it EXECUTES the
+extracted step-10 remote payload in a sandboxed bash (fake ``uv`` on PATH,
+``cd`` shimmed to a tmp workspace) and asserts the ``.env`` assignments reach
+the ``uv run`` CHILD process environment — binding the EXPORT semantics a
+presence pin structurally cannot (the round-1 bare ``source`` left
+UV_LINK_MODE/UV_CACHE_DIR shell-local and every presence test stayed green).
 """
 
 from __future__ import annotations
@@ -34,6 +40,19 @@ def _step5_block(text: str) -> str:
     start = text.index('step 5 "Syncing Python environment')
     end = text.index("\nuv sync --locked", start)
     return text[start:end]
+
+
+def _step10_payload(text: str) -> str:
+    """Extract the step-10 ``ssh_cmd '...'`` single-quoted remote payload.
+
+    The payload is deliberately single-quote-free (a comment above it in
+    ``bootstrap_pod.sh`` pins that property), so the first ``'`` after the
+    opener closes it.
+    """
+    start = text.index('step 10 "Running preflight check"')
+    open_q = text.index("ssh_cmd '", start) + len("ssh_cmd '")
+    close_q = text.index("'", open_q)
+    return text[open_q:close_q]
 
 
 def test_bash_syntax_still_valid() -> None:
@@ -100,3 +119,58 @@ def test_step10_preflight_failure_is_greppable_not_swallowed() -> None:
     assert any('|| echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$?"' in ln for ln in preflight_lines), (
         "missing the PREFLIGHT-FAILED-AT-BOOTSTRAP rc line on the preflight invocation"
     )
+
+
+def test_step10_env_assignments_exported_to_uv_run_child(tmp_path) -> None:
+    """(f) EXPORT-SEMANTICS binder (#2360 r2, Codex blocker
+    step10-uv-env-not-exported): EXECUTE the step-10 remote payload in a
+    sandbox and assert the plain ``.env`` assignments reach the ``uv run``
+    CHILD process — presence of a `source` line is not enough (a bare
+    `source` without `set -a` leaves them shell-local, so an implicit sync
+    in the preflight invocation would re-emit the hardlink-fallback warning
+    into the very log Acceptance 3 greps)."""
+    payload = _step10_payload(_text())
+
+    sandbox = tmp_path / "workspace"
+    sandbox.mkdir()
+    (sandbox / ".env").write_text(
+        "UV_CACHE_DIR=/workspace/.cache/uv\nUV_LINK_MODE=copy\n", encoding="utf-8"
+    )
+    # The payload prepends $HOME/.local/bin to PATH; an empty fake HOME keeps
+    # the fake `uv` below first on PATH (the real VM ~/.local/bin has real uv).
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake_uv = bin_dir / "uv"
+    fake_uv.write_text(
+        "#!/usr/bin/env bash\n"
+        'echo "CHILD_UV_LINK_MODE=${UV_LINK_MODE:-UNSET}"\n'
+        'echo "CHILD_UV_CACHE_DIR=${UV_CACHE_DIR:-UNSET}"\n',
+        encoding="utf-8",
+    )
+    fake_uv.chmod(0o755)
+
+    # A `cd` shim retargets the payload's hardcoded /workspace path to the
+    # sandbox; the payload itself runs VERBATIM after it.
+    script = f'cd() {{ builtin cd "{sandbox}"; }}\n' + payload
+    proc = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={"PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(fake_home)},
+    )
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    assert "CHILD_UV_LINK_MODE=copy" in proc.stdout, (proc.stdout, proc.stderr)
+    assert "CHILD_UV_CACHE_DIR=/workspace/.cache/uv" in proc.stdout, (proc.stdout, proc.stderr)
+
+
+def test_step10_payload_is_single_quote_free() -> None:
+    """(f-guard) the extractor above closes on the FIRST single quote — a
+    future apostrophe inside the payload would silently truncate the
+    extraction, so pin the property the extractor depends on: the extracted
+    payload must contain the full preflight invocation."""
+    payload = _step10_payload(_text())
+    assert "explore_persona_space.orchestrate.preflight" in payload, payload
+    assert "PREFLIGHT-FAILED-AT-BOOTSTRAP" in payload, payload

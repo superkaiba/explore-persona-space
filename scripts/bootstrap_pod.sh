@@ -762,9 +762,18 @@ if [ "$NO_PREFLIGHT" = true ]; then
     log_warn "Skipped by --no-preflight flag"
 else
     step 10 "Running preflight check"
+    # #2360 r2: auto-export the .env assignments (UV_LINK_MODE / UV_CACHE_DIR
+    # are PLAIN assignments there) so the step-10 `uv run` CHILD process
+    # inherits them — a bare `source` leaves them shell-local, and an implicit
+    # sync under the default link mode would re-emit the hardlink-fallback
+    # warning into the very log Acceptance 3 greps. Same idiom as the
+    # backends/runpod.py launcher; the rc-file exports cannot cover this shell
+    # (non-interactive ssh bails at the PS1 guard before the appended lines).
+    # NOTE: the payload stays single-quote-free — the export-semantics test
+    # (tests/test_bootstrap_pod_uv_link_mode.py) extracts it verbatim.
     ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
     cd /workspace/explore-persona-space
-    source .env 2>/dev/null || true
+    set -a; [ -f .env ] && source .env; set +a
     export HF_HOME=/workspace/.cache/huggingface
     uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1 || echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$?"
     '
