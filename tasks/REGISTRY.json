@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2372,
+  "highest_id": 2373,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10603,6 +10603,13 @@
       "path": "tasks/proposed/2372",
       "status": "proposed",
       "title": "workflow-fix: guard_repo_root_branch.sh \u2014 sticky-scope invalidator anchors before legal assignment prefixes (#2357 cwd-mover-lead sibling)"
+    },
+    "2373": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2373",
+      "status": "proposed",
+      "title": "Mechanize the shared-y heatmap tick-clobber check: sidecar image row counts + a verify_report gate"
     },
     "238": {
       "has_clean_result": false,
