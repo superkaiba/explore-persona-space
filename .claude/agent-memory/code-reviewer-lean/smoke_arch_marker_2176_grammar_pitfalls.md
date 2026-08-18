@@ -24,10 +24,16 @@ Rule: at Step 0.55, run `uv run python scripts/task.py check-smoke-arch-registry
 4. `arm-registry:` itself is LINE-ANCHORED single-line: a bare `arm-registry:`
    heading with the derivation in a FOLLOWING bullet (however correct the prose)
    is REFUSE "no line-anchored arm-registry: line found" (#2330 R1 g7 — a
-   mechanically-AST-derived 10-arm set in a bullet still failed). A NO-registry
+   mechanically-AST-derived 10-arm set in a bullet still failed; #2356 R2 hit the
+   same shape with 5 per-driver bullets under a bare heading — implementers keep
+   reinventing it for MULTI-DRIVER rounds). A NO-registry
    driver (main() calls every arm unconditionally, no phase arg) uses the
    `arm-registry: N/A — <reason>` form, or a single-line `source=... file=...
-   n=... members=...` naming the derived set.
+   n=... members=...` naming the derived set. `parse_arm_registry_line` reads the
+   FIRST `arm-registry:` line ONLY — a multi-driver round puts its primary
+   phase-dispatch registry on the one structured line and leaves the other
+   drivers' enumerations in notes/per-arm rows (the reviewer set-equality-checks
+   those by hand).
 
 **Why:** the #2225 R1 marker had all substance right (10 arms, verdict-consistent
 rows) but failed the checker on form alone; without the checker + regex read the
