@@ -10502,8 +10502,8 @@
     "2359": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2359",
-      "status": "running",
+      "path": "tasks/reviewing/2359",
+      "status": "reviewing",
       "title": "verify_uploads.py outroot-residue: basename match vs issue-scoped git trees lets a sibling leg's committed file cover this leg's unpersisted file"
     },
     "237": {
