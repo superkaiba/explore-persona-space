@@ -128,6 +128,7 @@ tests/test_workflow_lint_cvd_scoped_gpu_verdict.py
 tests/test_workflow_lint_dotenv_check.py
 tests/test_workflow_lint_failover_pivot_pin.py
 tests/test_workflow_lint_inline_round_duty_mirror.py
+tests/test_workflow_lint_no_repo_root_syspath.py
 tests/test_workflow_lint_pre_split_guard.py
 tests/test_workflow_lint_smoke_blind_spots.py
 tests/test_workflow_lint_two_tier_yield_floor.py
