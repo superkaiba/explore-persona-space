@@ -10438,8 +10438,8 @@
     "2350": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2350",
-      "status": "reviewing",
+      "path": "tasks/completed/2350",
+      "status": "completed",
       "title": "Experimenter launcher composition: mandatory per-leg out/scratch dir isolation for concurrent same-driver legs (#2330 fu1 dense-store poisoning)"
     },
     "2351": {
