@@ -729,6 +729,21 @@ heading), and expect legitimate history-prose hits when sweeping round tokens
 ("verified closed by review round 2") — grep-and-eyeball beats a bare
 count==0 assert for those.
 
+**Tag-stripped inlined verdicts still collide on TITLE + schema headings
+(#2357 r2, 2026-08-17):** stripping the inlined prior verdict's marker tags
+(the #2332 form) removes the TAG collisions but not the TEXT ones — the r1
+verdict's own `# Codex Code Review: … (r1)` title line and its `## Issues
+Found` heading both still live in the prompt, so (a) the template-tail
+sentinel+title update must anchor on the TWO-LINE pair
+`<!-- …codex v<n-1> -->\n# Codex Code Review: … (r<n-1>)` (unique — the
+stripped inlined copy lost its tag line), and (b) a schema-section insert
+before `## Issues Found` must anchor on a template-only neighbor (the
+`- [...]` placeholder line), never the bare heading. Upheld-blocker fix
+rounds also want a `## Round-1 closure ledger` SCHEMA section in the verdict
+template (per-element C-row status lines + a non-gating standing-rec row) —
+mentions of it in prose line-wrap, so count-assert the heading only where
+verbatim.
+
 **Post-reconciler-binding-FAIL fix round (mixed rulings; #2332 r4,
 2026-08-16):** when the prior round ended Claude-PASS / own-twin-FAIL /
 reconciler BINDING FAIL with MIXED per-blocker rulings (upheld + downgraded +
@@ -751,3 +766,19 @@ production function; fakes only at named seams) an explicit closure element
 — the hollow-composition class the ruling itself established. A
 minors-interaction the ruling flags ("fix together with the must-fix") gets
 its own closure row.
+
+**FAIL+FAIL union scoped to OWN-twin ids only (#2223 napp r2, 2026-08-17):**
+the #2332 union entry ("inline BOTH prior verdicts as acceptance contracts")
+yields to a brief that scopes closure to the twin's OWN persisted ledger ids —
+when the orchestrator persisted ONLY the Codex `CONCERN::` rows (13 ids) and
+the brief says "verify its own N ids", reference ONLY the Codex r1 verdict
+(by-path extraction on exact kind+version) and add an explicit
+independence line: do NOT fetch/quote the parallel Claude verdict — the
+Claude round-2 reviewer carries its own items. Also composable with the
+by-path discipline: on a by-path round the acceptance contract is an
+events.jsonl extraction command (exact kind + version + ts), not an inlined
+envelope, so the #2145/#2332 tag-arithmetic collapses to own-head==1 /
+close==1 / prior-head==0. Status-line vocabulary can follow the brief's
+tokens (RESOLVED/UNRESOLVED) with ACCEPTED-NON-CHANGE/OVERTURNED added for
+recorded non-changes; UNRESOLVED on a BLOCKER id = substantive FAIL, an
+honestly-open CONCERN id re-raises at its own severity.
