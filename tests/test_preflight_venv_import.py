@@ -424,6 +424,35 @@ class TestTier2Probe:
         assert bad in msg
         assert "NOT run" in msg
 
+    def test_subsecond_timeout_reaches_run_untruncated(self, tmp_path, monkeypatch, capsys):
+        """FIX A (#2360 r3, found by BOTH r2 reviewers): a sub-second timeout
+        in (0, 1) is documented-valid ("a finite positive number of seconds")
+        and must reach ``_run`` as the FLOAT 0.5 — the r2 form passed
+        validation, then ``int(0.5) == 0`` truncated it at the ``_run`` call
+        (immediate false timeout on a healthy probe) and the banner/diagnostic
+        rendered a misleading "0s". The banner must render "0.5s"."""
+        _clear_env(monkeypatch)
+        _lanes(monkeypatch, runpod=True)
+        monkeypatch.setenv(TIMEOUT_ENV, "0.5")
+        root = _write_lock(tmp_path, "placeholder")
+        monkeypatch.setattr(preflight, "LOAD_BEARING_DISTS", ())
+
+        seen: list[object] = []
+
+        def _capture(cmd, timeout=60):
+            seen.append(timeout)
+            return 0, "OK placeholder\n", ""
+
+        monkeypatch.setattr(preflight, "_run", _capture)
+        report = PreflightReport()
+        check_venv_import_health(report, root)
+        assert seen == [0.5], seen  # pre-fix: int(0.5) == 0 reached _run
+        assert report.venv_import_verdict == "ok"
+        assert report.ok is True
+        assert report.errors == []
+        banner = capsys.readouterr().err
+        assert "(timeout 0.5s)" in banner, banner
+
     def test_compat_check_skips_on_probe_timeout(self, monkeypatch):
         """On a timeout verdict the compat check SKIPs before its unbounded
         in-process imports. The sys.modules tripwire + wording asserts

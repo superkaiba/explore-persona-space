@@ -89,9 +89,10 @@ class PreflightReport:
     # MUST treat top-level ``report.ok`` / the CLI rc as authoritative. Values:
     # "" (not run) | "ok" | "tier1-fail" (metadata broken; tier 2 skipped) |
     # "fail" (deep-import probe failed) | "timeout" (probe wall exceeded) |
-    # "skipped-cluster" | "skipped-lane" | "disabled". Tier-scoped by
-    # construction: it can never read "ok"/"skipped-lane" after a tier-1
-    # error. Set by ``check_venv_import_health``.
+    # "config-error" (invalid timeout env; probe NOT run) | "skipped-cluster" |
+    # "skipped-lane" | "disabled". Tier-scoped by construction: it can never
+    # read "ok"/"skipped-lane" after a tier-1 error. Set by
+    # ``check_venv_import_health``.
     venv_import_verdict: str = ""
     # Account-level HF public-storage headroom (#564). None = unknown /
     # not checked; basis names the signal ("live-api" / "cache (...)" /
@@ -181,8 +182,11 @@ class PreflightReport:
         return "\n".join(lines)
 
 
-def _run(cmd: list[str], timeout: int = 10) -> tuple[int, str, str]:
-    """Run a command with timeout. Returns (returncode, stdout, stderr)."""
+def _run(cmd: list[str], timeout: float = 10) -> tuple[int, str, str]:
+    """Run a command with timeout (seconds; fractional values honored).
+
+    Returns (returncode, stdout, stderr).
+    """
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return r.returncode, r.stdout.strip(), r.stderr.strip()
@@ -897,9 +901,12 @@ def _deep_import_probe(report: PreflightReport) -> None:
     except ValueError:
         timeout_s = float("nan")
     if not math.isfinite(timeout_s) or timeout_s <= 0:
-        # Named configuration error instead of an uncaught ValueError /
-        # OverflowError (float("nan")/float("inf") parse fine but int() below
-        # would raise) firing before any verdict is set (#2360 r2).
+        # Named configuration error instead of an uncaught ValueError firing
+        # before any verdict is set (#2360 r2). Non-finite / non-positive
+        # values are meaningless wall bounds (inf never fires; <= 0 is an
+        # instant false expiry). Anything that PASSES here flows to ``_run``
+        # as the untruncated float (#2360 r3) — the r2 form int-truncated a
+        # documented-valid 0.5 to timeout=0, false-timing-out a healthy probe.
         report.venv_import_verdict = "config-error"
         report.add_error(
             "venv import-health: invalid EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S="
@@ -913,7 +920,7 @@ def _deep_import_probe(report: PreflightReport) -> None:
     # runs) the operator's last preflight output still names the probe + the
     # wedge runbook.
     print(
-        f"[preflight] deep-import probe launching (timeout {int(timeout_s)}s) — if "
+        f"[preflight] deep-import probe launching (timeout {timeout_s:g}s) — if "
         "this is the last preflight output for far longer than the timeout, the "
         "/workspace mount is likely hard-wedged (gotchas.md § MooseFS FUSE read-wedge)",
         file=sys.stderr,
@@ -921,7 +928,7 @@ def _deep_import_probe(report: PreflightReport) -> None:
     )
     rc, out, err = _run(
         [sys.executable, "-c", _IMPORT_PROBE_SNIPPET, *DEEP_IMPORT_MODULES],
-        timeout=int(timeout_s),
+        timeout=timeout_s,
     )
     if rc == 0:
         report.venv_import_verdict = "ok"
@@ -929,7 +936,7 @@ def _deep_import_probe(report: PreflightReport) -> None:
     if rc == -1 and err == "timeout":
         report.venv_import_verdict = "timeout"
         msg = (
-            f"venv import-health: deep-import probe timed out after {int(timeout_s)}s "
+            f"venv import-health: deep-import probe timed out after {timeout_s:g}s "
             "— either a slow cold MooseFS venv read (raise "
             "EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S) or the MooseFS FUSE read-wedge "
             "(gotchas.md: spot reads on /workspace also hang under the wedge — run "
