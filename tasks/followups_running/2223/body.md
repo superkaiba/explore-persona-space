@@ -4,7 +4,6 @@ title: Every-token capping cuts the reproduced Assistant-Axis persona drift on Q
 kind: experiment
 tags:
 - followup-manual
-- keep-running
 created_at: '2026-08-10T21:18:35Z'
 has_clean_result: true
 parent_id: 2203
