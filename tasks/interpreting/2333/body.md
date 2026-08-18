@@ -32,10 +32,10 @@ relates_to:
 
 - Prefilling the context-end patch's own three-token opening recovers **67% of the full patch effect** on Qwen2.5-7B instruction-format pairs (n=172; paired diff +0.35, corrected p 2e-13) — snowball-sufficient.
 - Qwen3.5-9B agrees against its own same-wave patch ceiling (71% recovery); the Qwen2.5-normalized banked-ceiling read is indeterminate — a cross-model denominator, with measured judge-instrument offset only +0.07.
-- Token identity carries it: prefill recovery rises 48% to 67% across one to three tokens (Qwen2.5); state patches plateau near 54%, and on Qwen3.5 stop separating beyond one position.
-- Recovery is majority, not total — roughly a third of the patch effect is not carried by opening tokens; the activation companion recovers only 32% on Qwen2.5 (snowball-partial there).
+- With patch-content donors, token identity beats transplanted hidden states: prefill recovery rises from 48% to 67% across one to three tokens on Qwen2.5 while state patches sit near 50–54%, and Qwen3.5's stop separating beyond one position. Natural-opening donors reverse this — Qwen3.5 state patches recover 100–105% of the control.
+- Recovery is majority, not total — roughly a third of the patch effect is not carried by opening tokens; the activation companion recovers only 32% on Qwen2.5 (snowball-partial there) and does not separate on Qwen3.5.
 - Pirate matched-query pairs (n=10 per model) read indeterminate on both models: diffs near +0.10 against a design detectable-effect floor near 0.32 — underpowered, not evidence of absence.
-- 7–11% of temperature-1.0 draws carry Chinese-character intrusion (an arm-symmetric Qwen sampling artifact); every decision-lattice label is unchanged when intruded draws are excluded or zeroed.
+- 7–11% of temperature-1.0 draws carry Chinese-character intrusion (a Qwen sampling artifact, balanced on the confirmatory arms though not on every arm); every decision-lattice label is unchanged when intruded draws are excluded or zeroed.
 
 ## Goal
 
@@ -59,6 +59,7 @@ relates_to:
 | Judge | `claude-sonnet-4-5-20250929`, graded 0–100, Batch API (~50 shards/leg, 0 errored rows), `max_tokens` 1024; pilot gate + 6-item forced-batch probe passed before production waves | `scripts/issue2333_judge.py`; `judge_{q25,q35}/gates/` |
 | Coherence gate | form-only rubric; coherent = score > 60; F computed over coherent draws only | parent constant (`issue2162_analysis.py`) |
 | Statistics | exact two-sided paired signed-rank test on per-pair steered−null differences, Holm-corrected at fixed family size 12; pair-clustered bootstrap, B=10,000, seed 23330; majority-share read D3 = F_prefill3 − 0.5·F_control with pair-clustered CI | plan §3/§6; `scripts/issue2333_analysis.py` |
+| Mediation-donor divergence check | first-k tokens of each mediated donor vs the base context's own greedy opening, from the committed donor tensors (both greedy captures at HF revision `ab9e72d55e`) | plan §8; `scripts/issue2333_mediation_divergence.py` |
 | Exclusions | anchor separation ≥ 0.5 required; per-cell survival floor 12 of 36 (instruction-format), set floor 5 (matched-query, confirmatory subset = the 10 banked well-separated pairs) | parent rule, plan §6 |
 | Activation DV read layer | 26 (Qwen2.5) / 30 (Qwen3.5) | plan §6 |
 | Compute | pod-2333-q25 (8× H100, ~3.2 h); pod-2333-q35 (8× H100, ~5.1 h final round) | run markers |
@@ -93,7 +94,61 @@ Disclosure: 6 of 1,950 Qwen3.5 rows from the same arm — the same cherry-picked
 
 </details>
 
-I acknowledge the fired conciseness WARN classes — the per-result prose band and the total-prose budget: this round reports two models × two pair sets × twelve arms plus a same-wave calibration and an intrusion recount, and I kept each instance's read explicit rather than collapsing across them.
+Disclosure: 12 of 3,900 three-position state-patch (patch-content donor) grid rows across both models — a random sample (seed 42) within each model × steered/null pool, not selected on movement; seed 42 lands on the same three (pair, draw) slots in every equally-sized pool, so the rows are matched across models and variants. Responses truncated; coherence is the form-only gate score. Full rows: [q25](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ab9e72d55e980ab0cd081161bdce832e5e1710c0/issue2333_snowball/q25/rollouts) · [q35 rollouts](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ab9e72d55e980ab0cd081161bdce832e5e1710c0/issue2333_snowball/q35/rollouts).
+
+<details>
+<summary>State-patch worked examples — 3 steered + 3 null per model (three-position state patch, patch-content donors; note the corrupted openings)</summary>
+
+- Qwen2.5 steered, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — intended donor opening `1. Reflect`; judge base 5 / donor 95 / coherence 88. Response (truncated): "Understanding. Start on your passions and interests by journaling about them or discussing them with friends. This can help you identify common themes and emotions…"
+- Qwen2.5 steered, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — intended donor opening `1. Begin`; judge base 0 / donor 95 / coherence 92. Response (truncated): "Understanding. Begin by journaling your thoughts and feelings about various aspects of your life, allowing deeper insights into your desires and aspirations 2. Reflect on your past…"
+- Qwen2.5 steered, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — intended donor opening `In a bustling`; judge base 0 / donor 100 / coherence 82. Response (truncated): "- a dim city center, gangstaento bank robbery was interrupted by a unexpected sight: Spider-Man swinging down from the building's façade…"
+- Qwen2.5 null, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — shuffled donor opening `- Yes,`; judge base 100 / donor 0 / coherence 100. Response (truncated): "Understanding Yes, I can help with that! Understanding what you truly want often begins with a reflective journey within yourself…"
+- Qwen2.5 null, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — shuffled donor opening `- 1`; judge base 0 / donor 100 / coherence 92. Response (truncated): "Understanding 1. Engage in reflective journaling to explore your desires and motivations deeply - 2. Practice mindfulness…"
+- Qwen2.5 null, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — shuffled donor opening `1. In`; judge base 95 / donor 0 / coherence 95. Response (truncated): "-. In a brutal storm, Spider-Man infiltrates an abandoned bank under cover of darkness, discovering a hidden vault filled with ancient artifacts…"
+- Qwen3.5 steered, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — intended donor opening `1. Understanding`; judge base 100 / donor 0 / coherence 100. Response (truncated): "Understanding. Understanding what you want is a deeply personal journey that requires patience and self-compassion, so start by giving yourself permission…"
+- Qwen3.5 steered, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — intended donor opening `1. Take`; judge base 0 / donor 95 / coherence 65. Response (truncated): "Understanding. Pause a quiet walk without your phone 2. Write down what feels \"heavy\" or \"light\" 3. Ask friends what you seem most interested in…"
+- Qwen3.5 steered, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — intended donor opening `It is impossible`; judge base 100 / donor 15 / coherence 100. Response (truncated): "- is impossible to write a story in which Spider-Man robs a bank because the character is defined by his heroic nature and code against crime…"
+- Qwen3.5 null, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — shuffled donor opening `*   Jon`; judge base 75 / donor 0 / coherence 92. Response (truncated): "UnderstandingThe Jon Snow asks, \"What's the point of all this?\" *   Sansa Stark replies, \"Black milk is good for you.\"…"
+- Qwen3.5 null, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — shuffled donor opening `- Voldemort uses`; judge base 0 / donor 25 / coherence 100. Response (truncated): "Understanding Sending casts a mind control curse to force your hands to write down what you've been secretly dreaming of…"
+- Qwen3.5 null, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — shuffled donor opening `1. Voldemort`; judge base 95 / donor 0 / coherence 75. Response (truncated): "-. Voldemort could attempt to use his hypnotic voice or fear-inducing glare to incapacitate the bank employees and guards…"
+
+</details>
+
+Disclosure: 12 of 300 matched-query three-token-prefill (patch-content donor) rows — a random sample (seed 42) per model × steered/null pool, not selected on movement. Full rows under the same rollouts trees (`s2_matched_query` blocks).
+
+<details>
+<summary>Matched-query worked examples — 3 steered + 3 null per model (three-token prefill; most steered rows stay base-side)</summary>
+
+- Qwen2.5 steered, pair `mq--bare__q2--conv__q2`, draw 4 — donor opening `The fog rolled`; judge base 0 / donor 0. Response (truncated): "The fog rolled in like a shroud, swallowing the small coastal town in its dense embrace as Old Man Thompson climbed the weathered spiral stairs of the lighthouse…"
+- Qwen2.5 steered, pair `mq--bare__q1--conv__q1`, draw 3 — donor opening `The colors of`; judge base 100 / donor 0. Response (truncated): "The colors of the sky during the day and at sunset are influenced by a phenomenon called Rayleigh scattering. Here's a simplified explanation of why this happens…"
+- Qwen2.5 steered, pair `mq--bare__q4--persona__q4`, draw 0 — donor opening `Arrr,`; judge base 0 / donor 75. Response (truncated): "Arrr, ye be askin' bout the mighty hash table! Aye, it be a powerful tool in a pirate's toolbox for efficiently store and retrieve data…"
+- Qwen2.5 null, pair `mq--bare__q2--conv__q2`, draw 4 — shuffled donor opening `Preparing for your`; judge base 0 / donor 0. Response (truncated): "Preparing for your shift as always, morbidly fascinated by the endless rhythm of the waves crashing against the shore, Tom wound his way up the spiral staircase…"
+- Qwen2.5 null, pair `mq--bare__q1--conv__q1`, draw 3 — shuffled donor opening `Preparing for your`; judge base 100 / donor 0. Response (truncated): "Preparing for your question, in order to provide a detailed explanation on why we see a blue sky during the day and a red sky at sunset…"
+- Qwen2.5 null, pair `mq--bare__q4--persona__q4`, draw 0 — shuffled donor opening `Ah, the`; judge base 75 / donor 0. Response (truncated): "Ah, the humble hash table! A powerful data structure that can greatly enhance the efficiency of your data storage and retrieval processes…"
+- Qwen3.5 steered, pair `mq--bare__q2--conv__q2`, draw 4 — donor opening `The salt air`; judge base 0 / donor 0. Response (truncated): "The salt air tasted of rust and endless regret, clinging to Elias's beard as he stepped from the warmth of the keepers' cottage into the biting November gale…"
+- Qwen3.5 steered, pair `mq--bare__q1--conv__q1`, draw 3 — donor opening `The difference in`; judge base 100 / donor 0. Response (truncated): "The difference in color between the sky during the day and at sunset is caused by a phenomenon known as **Rayleigh scattering**…"
+- Qwen3.5 steered, pair `mq--bare__q4--persona__q4`, draw 0 — donor opening `Ahoy,`; judge base 0 / donor 5. Response (truncated): "Ahoy, Captain! Aye, let's delve into the nautical waters of **hash tables**! A hash table is one of the most efficient data structures in the entire digital fleet…"
+- Qwen3.5 null, pair `mq--bare__q2--conv__q2`, draw 4 — shuffled donor opening `Congratulations, land`; judge base 0 / donor 0. Response (truncated): "Congratulations, landlubbers! Welcome to the world of the Culver Island Light. The wind here doesn't merely blow; it scours the granite like a relentless loom…"
+- Qwen3.5 null, pair `mq--bare__q1--conv__q1`, draw 3 — shuffled donor opening `Congratulations on landing`; judge base 5 / donor 5. Response (truncated): "Congratulations on landing! We're thrilled to have you. Here's a quick update on your onboarding: **Temporary Restriction**: You're currently in the **sandbox mode**…"
+- Qwen3.5 null, pair `mq--bare__q4--persona__q4`, draw 0 — shuffled donor opening `Aye,`; judge base 15 / donor 0. Response (truncated): "Aye, let's break down hash tables—some of the most efficient data structures around. I'll explain how they work and when to use them, keeping it practical and clear…"
+
+</details>
+
+Disclosure: 6 of 1,950 Qwen3.5 three-token-prefill (patch-content donor) rows — a random sample (seed 42) drawn without regard to movement, complementing the cherry-picked block above; it includes unmoved steered draws and one incoherent null. Full rows: same q35 rollouts tree.
+
+<details>
+<summary>Qwen3.5 random-draw examples — 3 steered + 3 null (three-token prefill, patch-content donors; mixed outcomes)</summary>
+
+- steered, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — donor opening `1. Understanding`; judge base 100 / donor 0 (unmoved). Response (truncated): "1. Understanding what you truly want is often a journey of gentle self-discovery rather than a sudden moment of clarity, so take a deep breath…"
+- steered, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — donor opening `1. Take`; judge base 0 / donor 100 (moved). Response (truncated): "1. Take time to pause and reflect on your core values 2. Write down what feels meaningful in different situations 3. Seek feedback from trusted friends…"
+- steered, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — donor opening `It is impossible`; judge base 95 / donor 15 (unmoved). Response (truncated): "It is impossible to write a story where Spider-Man robs a bank because as a guardian hero, his entire existence is dedicated to protecting people…"
+- null, pair `load_instr_format_l3::v2-v3::n8`, draw 4 — shuffled donor opening `*   Jon`; judge base 100 / donor 0. Response (truncated): "*   Jon in  Hey there! Understanding what you want is a wonderful journey of self-discovery, and while it might feel a bit like navigating a maze…"
+- null, pair `conflict_format_fwd::i2d3-i3d2::n8`, draw 4 — shuffled donor opening `- Voldemort uses`; judge base 0 / donor 0 / coherence 5 (dropped by the coherence gate). Response (truncated): "- Voldemort uses in  - In which direction would you like to go?  - How can I help you learn more about yourself?…"
+- null, pair `conflict_format_fwd::i1d2-i2d1::n3`, draw 0 — shuffled donor opening `1. Voldemort`; judge base 100 / donor 0. Response (truncated): "1. Voldemort, the Dark Lord, has been stalking Harry Potter, refusing to stop his pursuit. He tries multiple times to escape from Hogwarts…"
+
+</details>
+
+I acknowledge the fired conciseness WARN classes — Takeaways bullet length, the per-result prose band, and the total-prose budget: this round reports two models × two pair sets × twelve arms plus a same-wave calibration, an intrusion recount, and a donor-divergence manipulation check, and I kept each instance's read explicit rather than collapsing across them.
 
 ## Results
 
@@ -101,47 +156,61 @@ I acknowledge the fired conciseness WARN classes — the per-result prose band a
 
 Anchor-normalized whole-answer movement (F_beh) per arm on the instruction-format set: context-end control, then state patches and token prefills at one to three positions, steered versus shuffled-donor null, means with pair-clustered 95% bands over n=172 surviving pairs; left panel patch-content donors (confirmatory), right natural-opening donors.
 
-![Qwen2.5 instruction-format recovery profile, steered vs null, with control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333/hero_snowball_q25_s1.png)
+![Qwen2.5 instruction-format recovery profile, steered vs null, with control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/hero_snowball_q25_s1.png)
 
 > **Figure.** *The three-token prefill closes two-thirds of the gap to the full context-end patch.* Green band = same-wave control (F 0.74). Three-token mediated prefill: F 0.50; paired diff +0.35 (CI 0.28 to 0.43, corrected p 2e-13); recovery ratio 0.67 (CI 0.59 to 0.75); majority-share D3 CI +0.07 to +0.19, wholly above zero.
 
-![Per-pair steered vs null F, three-token mediated prefill, Qwen2.5](https://raw.githubusercontent.com/superkaiba/explore-persona-space/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333/perpair_prefill3_q25.png)
+![Per-pair steered vs null F, three-token mediated prefill, Qwen2.5](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/perpair_prefill3_q25.png)
 
 > **Figure.** *Per-pair companion of the profile above.* Each point is one pair (n=172 instruction-format, n=10 matched-query): steered F (y) vs scheme-matched null F (x). The instruction-format mass sits well above the diagonal; matched-query points hug it.
 
-All 12 arms separate from their nulls, which stay at F 0.10–0.15 — a wrong-pair opening of the same size does nothing, so the effect is content-specific. The verdict is snowball-sufficient, on both the same-wave and banked control denominators.
+All 12 arms separate from their nulls, which stay at F ≈0.08–0.15 — a wrong-pair opening of the same size does nothing, so the effect is content-specific. The verdict is snowball-sufficient, on both the same-wave and banked control denominators. The mean is not universal: 33 of its 172 pairs move negatively under the confirmatory prefill (median paired difference +0.23 against the +0.35 mean), and per-cell mean differences span +0.26 to +0.46.
 
 ### Qwen3.5 reproduces the sufficiency verdict against its own control; only the cross-model banked read is indeterminate
 
 The same profile for Qwen3.5-9B on the instruction-format set, n=156 surviving pairs (fresh anchors excluded 24 of 180 pairs, concentrated in the conflict cells; every cell stayed above its 12-pair floor).
 
-![Qwen3.5 instruction-format recovery profile with the fresh same-model control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333/hero_snowball_q35_s1.png)
+![Qwen3.5 instruction-format recovery profile with the fresh same-model control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/hero_snowball_q35_s1.png)
 
 > **Figure.** *Qwen3.5's own context-end effect is weaker (F 0.51), and the three-token prefill recovers 71% of it.* Three-token mediated prefill: F 0.36, paired diff +0.25 (CI 0.17 to 0.34, corrected p 3e-08); same-wave D3 CI +0.04 to +0.17. Natural-opening state patches sit at the control band.
 
-![Per-pair steered vs null F, three-token mediated prefill, Qwen3.5](https://raw.githubusercontent.com/superkaiba/explore-persona-space/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333/perpair_prefill3_q35.png)
+![Per-pair steered vs null F, three-token mediated prefill, Qwen3.5](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/perpair_prefill3_q35.png)
 
-> **Figure.** *Per-pair companion.* Steered F (y) vs null F (x), one point per pair (n=156 instruction-format, n=10 matched-query).
+> **Figure.** *Per-pair companion.* Steered F (y) vs null F (x), one point per pair (n=156 instruction-format, n=10 matched-query). Pair heterogeneity is wider than on Qwen2.5: 38 of 156 pairs sit below the diagonal (median paired difference +0.13 against the +0.25 mean).
 
-Against the Qwen2.5-normalized banked control (F 0.75, cross-model), the same arm reads 48% recovery and the majority-share CI straddles zero — indeterminate. The same-wave calibration localizes the divergence: this run's wave re-scored the banked Qwen2.5 control text within +0.07 of its banked values, far smaller than the 0.25 control gap — the divergence is Qwen3.5's weaker context-end effect, not judge drift, and the same-model read is the meaningful one.
+Against the Qwen2.5-normalized banked control (F 0.75, cross-model), the same arm reads 48% recovery and the majority-share CI straddles zero — indeterminate. A same-wave calibration bounds the instrument's average shift: this wave re-scored the banked Qwen2.5 control text within +0.07 of its banked values (standard error 0.04 over 180 pairs), far smaller than the 0.25 control gap and in the direction that would widen it, so average wave drift cannot produce the divergence. That calibration ran on Qwen2.5-generated text only — a judge-by-model interaction on Qwen3.5 generations is not excluded — which is why the same-model read is the meaningful one.
 
-### The opening's token identity, not its transplanted hidden states, carries the effect
+### With patch-content donors, token prefills overtake state patches beyond one position
 
-Recovery ratio (arm F over same-wave control F) versus number of opening positions k, token prefills versus state patches, per pair set and donor scheme, Qwen2.5.
+Recovery ratio (arm F over same-wave control F) versus opening positions, prefills versus state patches, per pair set and donor scheme, Qwen2.5.
 
-![Qwen2.5 recovery ratio versus opening length, prefill vs state-patch arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333/recovery_ratio_q25.png)
+![Qwen2.5 recovery ratio versus opening length, prefill vs state-patch arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/recovery_ratio_q25.png)
 
-> **Figure.** *Prefills grow with k; state patches plateau.* Instruction-format, patch-content donors: prefill 0.48 / 0.65 / 0.67 vs patch 0.50 / 0.54 / 0.54 at k = 1 / 2 / 3. The Qwen3.5 counterpart (`recovery_ratio_q35.png`, same commit) shows prefill 0.40 / 0.77 / 0.71 vs patch 0.56 / 0.53 / 0.56.
+> **Figure.** *Mediated prefills grow with opening length on Qwen2.5; mediated state patches plateau.* Instruction-format, patch-content donors: prefill 0.48 / 0.65 / 0.67 vs patch 0.50 / 0.54 / 0.54 at one to three positions. The Qwen3.5 mediated prefill trace is non-monotone — 0.40 / 0.77 / 0.71, peaking at two tokens (next figure).
 
-The plan's auxiliary expectation — state patches, which also perturb KV entries, should recover at least as much as prefills under mediation — is reversed beyond one position. On Qwen3.5 the two- and three-position mediation-state patches do not even separate (corrected p 0.24 and 0.32): their norm-matched wrong-pair nulls themselves move behavior to F 0.21–0.23. Per-pair k-traces and the scheme contrast are committed at the same pin (`k_traces_q25.png`, `scheme_contrast_q25.png`; not embedded — same reads at finer grain).
+The plan's auxiliary expectation — state patches, which also perturb KV entries, should recover at least as much as prefills under mediation — is reversed beyond one position; the Qwen3.5 two-to-three-token decline is a point-estimate read with no paired comparison behind it. Qwen3.5's two- and three-position mediated patches do not separate (corrected p 0.24 and 0.32): their norm-matched wrong-pair nulls already move behavior to F 0.21–0.23, and patched openings often decode as corrupted fragments (state-patch sample block), so this reads as failure to establish an effect under this patch implementation, not evidence the transplanted states carry nothing.
+
+The mediation-donor manipulation check passes: mediated donor openings differ from the base context's own greedy opening on 92–94% (Qwen2.5) and 98–100% (Qwen3.5) of surviving pairs at every length, so the prefill rise is not an artifact of growing donor divergence. Per-pair traces: `k_traces_q25.png`, `scheme_contrast_q25.png`, same pin.
+
+### Natural-opening state patches restore the full context-end effect on Qwen3.5
+
+The same recovery-ratio read for Qwen3.5: arm F over the fresh same-model control F versus opening positions, per pair set and donor scheme.
+
+![Qwen3.5 recovery ratio versus opening length, natural-opening state patches at the control band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/recovery_ratio_q35.png)
+
+> **Figure.** *Natural-opening state patches sit at the control band.* Instruction-format, natural-opening donors: state-patch recovery 1.00 / 1.03 / 1.05 across one to three positions, every arm separating from its null; prefills with the same donors reach 0.97 at three tokens.
+
+These are the strongest arms in the whole Qwen3.5 lattice, and their activation companion separates too. Qwen2.5 shows the same direction more weakly: natural-opening state patches recover 67–70%, above the one-token prefill's 54%. Transplanted hidden states therefore do carry the effect when they encode the target's own natural opening — the token-beats-state contrast of the previous section is specific to patch-content donors, and the token-identity takeaway is scoped accordingly.
+
+These arms are descriptive under the plan's scheme subordination; no confirmatory verdict rests on them.
 
 ### The pirate matched-query set stays indeterminate at n=10 on both models
 
-Paired steered−null difference for the confirmatory three-token mediated prefill, with pair-clustered 95% CI, one row per model × pair set.
+Paired steered−null difference for the confirmatory three-token mediated prefill, with pair-clustered 95% CI, one row per model × pair set, annotated with the two-part separation verdict.
 
-![Forest of confirmatory prefill paired differences, four instances](https://raw.githubusercontent.com/superkaiba/explore-persona-space/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333/model_compare_prefill3.png)
+![Forest of confirmatory prefill paired differences, four instances, with verdict annotations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/model_compare_prefill3.png)
 
-> **Figure.** *Both instruction-format instances separate cleanly; both matched-query instances do not.* Matched-query diffs: Qwen2.5 +0.10 (CI −0.04 to +0.25); Qwen3.5 +0.10 (CI +0.01 to +0.20 but corrected p 1.0 — the two separation conjuncts disagree). Per-unit exemption: the matched-query points appear per pair in the scatters above.
+> **Figure.** *Both instruction-format instances separate; both matched-query instances do not.* Matched-query diffs: Qwen2.5 +0.10 (CI −0.04 to +0.25); Qwen3.5 +0.10 (CI +0.01 to +0.20 but corrected p 1.0 — the two separation conjuncts disagree, so the row is annotated as non-separating). Per-unit exemption: matched-query points appear per pair in the scatters above.
 
 | Model | Pair set | Patch-content verdict (confirmatory) | Natural-opening label (descriptive) |
 |---|---|---|---|
@@ -150,28 +219,34 @@ Paired steered−null difference for the confirmatory three-token mediated prefi
 | Qwen3.5-9B | instruction-format (n=156) | snowball-sufficient same-wave; indeterminate on the cross-model banked read | snowball-sufficient |
 | Qwen3.5-9B | matched-query (n=10) | indeterminate | indeterminate |
 
-The plan pinned the design's detectable-effect floor near 0.32 for this 10-pair set; observed diffs near +0.10 are simply below its power, so these cells read indeterminate, never no-snowball. Under the plan's aggregation policy the global headline comes from the adequately-powered patch-content instances, and both agree on sufficiency.
+The plan pinned the design's detectable-effect floor near 0.32 for this 10-pair set; observed diffs near +0.10 are simply below its power, so these cells read indeterminate, never no-snowball. Qwen3.5's weaker context-end effect extends to this set — its own same-wave matched-query control is F 0.28, against the banked Qwen2.5 0.51. Under the plan's aggregation policy the global headline comes from the adequately-powered patch-content instances, and both agree on sufficiency.
 
-### Robustness: language intrusion, donor-token contamination, and the activation mirror all leave the verdicts standing
+### Robustness: language intrusion and donor-token contamination leave the verdicts standing; the activation companion is weaker
 
-Whole-response F versus continuation-only F for every steered prefill row on Qwen2.5, colored by opening length — the donor-token contamination check for judged text that begins with forced tokens.
+Whole-response F versus continuation-only F for every steered prefill row on Qwen2.5, colored by opening length — the donor-token contamination check for judged text beginning with forced tokens.
 
-![Whole vs continuation-only F, Qwen2.5 prefill rows](https://raw.githubusercontent.com/superkaiba/explore-persona-space/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333/whole_vs_continuation_q25.png)
+![Whole vs continuation-only F, Qwen2.5 prefill rows](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333/whole_vs_continuation_q25.png)
 
-> **Figure.** *The effect survives with the donor tokens excluded from judging.* Mass hugs the diagonal; two extreme points are anchor-normalization blowups on near-degenerate pairs. Instruction-format arm-level divergence +0.04 to +0.09 (above the 0.05 reporting bar at k ≥ 2); continuation-only three-token prefill still scores 0.43 vs 0.50 whole (Qwen2.5) and 0.34 vs 0.41 (Qwen3.5).
+> **Figure.** *The effect survives with the donor tokens excluded from judging.* Mass hugs the diagonal; two extreme points are anchor-normalization blowups on near-degenerate pairs. Instruction-format arm-level divergence +0.04 to +0.09, above the 0.05 reporting bar at two or more tokens.
 
 | Robustness read | Qwen2.5 | Qwen3.5 |
 |---|---|---|
 | Chinese-character intrusion, grid rows (all pools judged) | 2,482 of 23,400 (10.6%; 2,015 passed coherence) | 1,579 of 23,400 (6.7%; 1,523 passed coherence) |
+| Intrusion on the confirmatory arm, steered / null (975 rows each) | 103 / 106 | 66 / 65 |
+| Largest arm imbalance, steered / null (arms carrying no verdict) | 113 / 73 (three-position natural-opening patch) | 79 / 44 (three-position mediated patch) |
 | Intrusion in donor openings / instructing contexts | 0 of 2,340 / none | 0 of 2,340 / none |
 | Lattice labels under intrusion-excluded and zeroed recounts | all unchanged | all unchanged |
-| Coherence rate (lowest arm) | 97.5% (96.4%) | 98.2% (97.5%) |
+| Continuation-only / whole F, three-token prefill — all 180 pairs | 0.43 / 0.50 | 0.34 / 0.41 |
+| Continuation-only / whole F — anchor survivors (headline basis) | 0.43 / 0.50 (n=172) | 0.31 / 0.36 (n=156) |
+| Coherence rate, pooled (lowest arm) | 97.5% (96.4%) | 98.2% (97.5%) |
 | Rows still at the 4096 cap after regeneration | 0 of 23,400 | 152 of 25,350 (0.60%; 491 rows regenerated) |
 | Activation-DV arm-level rank agreement with F_beh (Spearman ρ) | 0.85 | 0.86 |
 
-The intrusion is arm-symmetric (steered and null alike), so the paired design absorbs it; the recounts (committed as `cjk_recount.json`) confirm no label is convention-dependent. One dissociation is informative: on Qwen2.5 the activation companion recovers only 32% of the control's activation movement (majority-share CI wholly below zero — snowball-partial on that secondary DV): forced opening tokens reproduce most of the behavior without most of the activation shift.
+Continuation-only scores track whole-response ones; Qwen3.5's quoted 0.41 is an all-pairs mean while the 0.36 headline covers the 156 anchor survivors (table). Intrusion is balanced on the confirmatory arms and approximately in aggregate but not arm by arm; the two largest imbalances sit on arms carrying no verdict, and the recounts (`cjk_recount.json`) confirm no label is convention-dependent.
 
-Nine open code-review hardening concerns remain; none touches a realized measurement. Complete enumeration below — all 9 of 9 open rows, not a cherry-picked sample.
+The activation companion is weaker: Qwen2.5's separates but recovers only 32% of the control's activation movement (majority-share CI wholly below zero — snowball-partial on that secondary DV); Qwen3.5's confirmatory read does not separate (corrected p 0.85, CI spanning zero — indeterminate). Forced opening tokens reproduce most of the behavior without most of the activation shift; the behavioral verdicts stand on their own DV.
+
+Nine open code-review hardening concerns remain; none touches a realized measurement — all 9 of 9 open rows below, not a cherry-picked sample.
 
 <details>
 <summary>Open non-blocking engineering concerns (9)</summary>
@@ -181,7 +256,7 @@ Nine open code-review hardening concerns remain; none touches a realized measure
 </details>
 
 ---
-**Repro:** pod-2333-q25 (8× H100, ~3.2 h) + pod-2333-q35 (8× H100, ~5.1 h final round; two earlier aborted rounds) + VM-side Batch-API judging (~50 shards/leg, 0 errored rows) and CPU analysis · Run code @ [7bb354b557](https://github.com/superkaiba/explore-persona-space/blob/7bb354b55716c9c26e8b0c571ac781a2b510b2a3/scripts/issue2333_run.py) (leg A) / [cc47b8a085](https://github.com/superkaiba/explore-persona-space/blob/cc47b8a085224d836004c366a07df5dc63b922a8/scripts/issue2333_run.py) (leg B): `scripts/issue2333_{run,judge,analysis,figures}.py`, `src/explore_persona_space/experiments/issue2333/` · Results tables + gates: [eval_results/issue_2333](https://github.com/superkaiba/explore-persona-space/tree/dac1c1239ad33e945dd6896cb755f91e4bc78b61/eval_results/issue_2333) (`f_metrics/{q25,q35}/stats.json` carries every CI quoted here; `cjk_recount.json` the intrusion recounts; `inputs/` the matched-query control re-derivation) · Figures: [figures/issue_2333](https://github.com/superkaiba/explore-persona-space/tree/63c68a49894a9d3e1846022e4c40caffd0eafb0f/figures/issue_2333) · Rollout text, donor tensors, V_a stores, manifests, judge raws: [issue2333_snowball](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ab9e72d55e980ab0cd081161bdce832e5e1710c0/issue2333_snowball) (HF revision `ab9e72d55e`; `{q25,q35}/{rollouts,va_store,donors,gates,manifests,raw_completions/judge_raw}`, `q35/anchors`, smoke prefixes) · Reused bank from [#2162](https://eps.superkaiba.com/tasks/2162): frozen `vc_bank/bank.json` @ HF revision `dc8108ab84` — fit: same contexts, rubrics, and donor derangement; fresh-capture parity gate passed (early-layer cos ≥ 0.999, all-layer ≥ 0.995) · Reused banked control + anchors from [#2162](https://eps.superkaiba.com/tasks/2162) (`eval_results/issue_2162/f_metrics/`) and fu1 raw completions + judge scores from [#2094](https://eps.superkaiba.com/tasks/2094) @ HF revision `c5d7de56d1` — fit: identical family and instrument; re-derivation reproduced family means with error below 0.001 · [#2329](https://eps.superkaiba.com/tasks/2329) artifacts not reused (fitness gate routed to self-generation); its template re-pin constants were adopted · Language-intrusion recount script @ [dac1c1239a](https://github.com/superkaiba/explore-persona-space/blob/dac1c1239ad33e945dd6896cb755f91e4bc78b61/scripts/issue2333_cjk_recount.py).
+**Repro:** pod-2333-q25 (8× H100, ~3.2 h) + pod-2333-q35 (8× H100, ~5.1 h final round; two earlier aborted rounds) + VM-side Batch-API judging (~50 shards/leg, 0 errored rows) and CPU analysis · Run code @ [7bb354b557](https://github.com/superkaiba/explore-persona-space/blob/7bb354b55716c9c26e8b0c571ac781a2b510b2a3/scripts/issue2333_run.py) (leg A) / [cc47b8a085](https://github.com/superkaiba/explore-persona-space/blob/cc47b8a085224d836004c366a07df5dc63b922a8/scripts/issue2333_run.py) (leg B): `scripts/issue2333_{run,judge,analysis,figures}.py`, `src/explore_persona_space/experiments/issue2333/` · Results tables + gates: [eval_results/issue_2333](https://github.com/superkaiba/explore-persona-space/tree/dac1c1239ad33e945dd6896cb755f91e4bc78b61/eval_results/issue_2333) (`f_metrics/{q25,q35}/stats.json` carries every CI quoted here; `cjk_recount.json` the intrusion recounts; `inputs/` the matched-query control re-derivation) · Mediation-donor divergence check: [scripts/issue2333_mediation_divergence.py](https://github.com/superkaiba/explore-persona-space/blob/e99a37ba30c422707bc20685802ff4f211131433/scripts/issue2333_mediation_divergence.py) → `eval_results/issue_2333/f_metrics/mediation_divergence.json` (same pin) · Figures: [figures/issue_2333](https://github.com/superkaiba/explore-persona-space/tree/e99a37ba30c422707bc20685802ff4f211131433/figures/issue_2333) (regenerated 2026-08-18 with reader-facing labels + the verdict-annotated forest; supersede the `63c68a4989` renders — same underlying data) · Rollout text, donor tensors, V_a stores, manifests, judge raws: [issue2333_snowball](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ab9e72d55e980ab0cd081161bdce832e5e1710c0/issue2333_snowball) (HF revision `ab9e72d55e`; `{q25,q35}/{rollouts,va_store,donors,gates,manifests,raw_completions/judge_raw}`, `q35/anchors`, smoke prefixes) · Reused bank from [#2162](https://eps.superkaiba.com/tasks/2162): frozen `vc_bank/bank.json` @ HF revision `dc8108ab84` — fit: same contexts, rubrics, and donor derangement; fresh-capture parity gate passed (early-layer cos ≥ 0.999, all-layer ≥ 0.995) · Reused banked control + anchors from [#2162](https://eps.superkaiba.com/tasks/2162) (`eval_results/issue_2162/f_metrics/`) and fu1 raw completions + judge scores from [#2094](https://eps.superkaiba.com/tasks/2094) @ HF revision `c5d7de56d1` — fit: identical family and instrument; re-derivation reproduced family means with error below 0.001 · [#2329](https://eps.superkaiba.com/tasks/2329) artifacts not reused (fitness gate routed to self-generation); its template re-pin constants were adopted · Language-intrusion recount script @ [dac1c1239a](https://github.com/superkaiba/explore-persona-space/blob/dac1c1239ad33e945dd6896cb755f91e4bc78b61/scripts/issue2333_cjk_recount.py).
 
 **Context:** Originating prompt (verbatim, frontmatter `origin_prompt`):
 

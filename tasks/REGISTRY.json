@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2359,
+  "highest_id": 2360,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9030,8 +9030,8 @@
     "2168": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2168",
-      "status": "proposed",
+      "path": "tasks/planning/2168",
+      "status": "planning",
       "title": "workflow-fix: UnicodeDecodeError escapes 112 json-guard except tuples (53 in the watcher, all on read_text paths)"
     },
     "2169": {
@@ -10505,6 +10505,13 @@
       "path": "tasks/reviewing/2359",
       "status": "reviewing",
       "title": "verify_uploads.py outroot-residue: basename match vs issue-scoped git trees lets a sibling leg's committed file cover this leg's unpersisted file"
+    },
+    "2360": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2360",
+      "status": "planning",
+      "title": "Preflight passes a pod venv whose lock-pinned package has no metadata and cannot import (sympy half-install breaks the whole transformers stack)"
     },
     "237": {
       "has_clean_result": true,
