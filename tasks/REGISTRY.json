@@ -9044,8 +9044,8 @@
     "2170": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2170",
-      "status": "running",
+      "path": "tasks/completed/2170",
+      "status": "completed",
       "title": "code-style resume-key clause: forbid hashing raw bytes of a RECOMPUTED float array (platform-dependent key discards valid checkpoints)"
     },
     "2171": {
