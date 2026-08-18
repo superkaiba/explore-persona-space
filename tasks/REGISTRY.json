@@ -10367,8 +10367,8 @@
     "2341": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2341",
-      "status": "proposed",
+      "path": "tasks/archived/2341",
+      "status": "archived",
       "title": "workflow-fix: guard_root_code_commit.sh pathspec scoping does not engage (non-code commits wedged by foreign staged code files)"
     },
     "2342": {
