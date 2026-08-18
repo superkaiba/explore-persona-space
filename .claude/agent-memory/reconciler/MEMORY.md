@@ -53,6 +53,8 @@
 
 ## Codex code-review overreach (PASS-leaning calibration)
 
+- [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — code-real batched-retry coupling whose trigger can't fire (dof/trace bound); check reachability arithmetic + grid-superset before upholding (#2356 r4)
+
 - [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the proposed fix; persist residue via raise+defer-concern (#556, #958)
 - [Codex Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — decisive variable = gate topology: PASS when a demonstrated pre-launch gate runs the changed code for real (#551, #560)
 - [Codex conflates marker format/existence with code](feedback_codex_conflates_marker_format_with_code.md) — marker-shape nits / stale-file marker reads / smoke-presentation nits with "diff not reviewed" → discard
