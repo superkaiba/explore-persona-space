@@ -340,6 +340,10 @@ from typing import NamedTuple
 # pair of same-window registering PRs merge-conflict (#1584).
 WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 1 — task-workflow API
+    # NEW (#2158) — pre-split review guard predicate + lint surface pins:
+    # the task_workflow.pre_split_review_gate two-arm predicate + CLI
+    # exit-code mapping (#1336 r4 / #2061 incident replays).
+    "tests/test_pre_split_review_guard.py",
     "tests/test_task_workflow.py",
     "tests/test_task_workflow_list_children.py",
     "tests/test_task_workflow_post_marker_echo.py",
@@ -362,6 +366,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2158) — pre-split review guard predicate + lint surface pins:
+    # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
+    # files) + no-flags bundling.
+    "tests/test_workflow_lint_pre_split_guard.py",
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",

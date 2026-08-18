@@ -846,6 +846,10 @@ proceed.
 2. **Resume predicate:** at entry the script loads existing partial results and SKIPS
    completed units, keyed on every output-affecting regime key (a resume that ignores an
    output-affecting flag silently reuses wrong cached rows and mislabels output — #722 r3).
+   The key must ALSO be machine-stable: FLAG a resume key that hashes the raw bytes of a
+   RECOMPUTED float array (`.tobytes()` of a logspace/linspace/fit-derived grid) — libm
+   last-bit drift silently discards valid checkpoints across machines (#1336); key on the
+   generating parameters instead (`.claude/rules/code-style.md` float-last-bit entry).
 3. **Per-unit progress line:** the loop emits one stdout line per completed
    unit carrying at minimum the unit index/total, a stable unit key, and
    elapsed seconds (canonical shape `[<phase>] unit k/N <key> elapsed=<s>s`,

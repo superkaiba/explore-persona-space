@@ -73,7 +73,8 @@ _MIGRATION_SNAPSHOT: dict[str, int] = {
     "codex-clean-result-critic.md": 50_200,
     "codex-code-reviewer.md": 52_200,
     "experiment-implementer.md": 69_600,
-    "experimenter.md": 70_300,
+    # #2350 corridor-max re-cap (2026-08-17): experimenter.md step-1c landing.
+    "experimenter.md": 72_500,
 }
 
 

@@ -12461,6 +12461,198 @@ def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token 
     return errors
 
 
+def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces spanning eight files, #2158), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the pre-split review guard (#2158) is absent from ANY of its
+    seven surfaces (spanning eight files).
+
+    Task #1336 (round 4) dispatched the Step 5 code-review ensemble against a
+    Unit-A-only intermediate commit of a pre-split multi-unit round: two
+    subagents died and the task parked ~2 days on a review scoped to an
+    incomplete round. The fix (#2158) is a two-arm pure predicate
+    (``pre_split_review_gate``) + a thin CLI
+    (``scripts/pre_split_review_guard.py``) the Step 5 orchestrator runs
+    BEFORE any reviewer dispatch, plus the cross-session writer-arbitration
+    rule + read-pinning bullets the incident's sibling deaths motivated. This
+    check pins the guard across its surfaces, region-anchored, so a future
+    refactor cannot silently strip one (the #606 copy-list-omission class):
+
+    (1) ``scripts/pre_split_review_guard.py`` exists and names the library
+        entry ``pre_split_review_gate``;
+    (2) ``src/explore_persona_space/task_workflow.py`` defines
+        ``def pre_split_review_gate`` and the verdict token
+        ``PRE-SPLIT-INCOMPLETE``;
+    (3) 09-step-5.md — the ``**Pre-split completeness guard`` region (up to
+        the next paragraph opening ``**``) names
+        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``, and
+        ``remaining:``;
+    (4) 08-step-4.md — the breadcrumb grammar tokens
+        ``pre-split unit k/M complete:`` + ``; remaining:`` (grammar-parity
+        pin: an editor changing the grammar trips the check that guards the
+        parser keyed to it) AND the arm-B emitter-convention token
+        ``unit=<k>`` (dropping it un-mandates arm B's key in exactly the
+        pre-breadcrumb window where the #1336 v132 incident lived);
+    (5) 08-step-4.md — the shared-worktree note tokens ``EXPECTED shape`` +
+        ``cross-session-writer-arbitration.md``;
+    (6) ``.claude/rules/cross-session-writer-arbitration.md`` exists and
+        names ``never dispatch a concurrent writer`` + ``git show`` (the
+        read-pinning recipe);
+    (7) experiment-implementer.md AND implementer.md each carry the bullet
+        heading ``Read-pinning under external churn`` with ``git show``
+        inside the bullet region (up to the next line-start ``- **``) —
+        each FILE reported independently, so a per-file strip FAILs on its
+        own error string.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    verdict = "PRE-SPLIT-INCOMPLETE"
+    errors: list[str] = []
+
+    # (1) the thin CLI exists and names the library entry.
+    cli = root / "scripts" / "pre_split_review_guard.py"
+    if not cli.is_file():
+        errors.append(
+            f"{cli}: missing — the #2158 pre-split review-guard CLI must "
+            f"exist (#1336 r4: a review dispatched against a Unit-A-only "
+            f"intermediate commit cost 2 subagent deaths + a 2-day park)."
+        )
+    elif "pre_split_review_gate" not in cli.read_text(encoding="utf-8"):
+        errors.append(
+            f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
+            f"CLI must call the library predicate, not a private "
+            f"re-implementation."
+        )
+
+    # (2) the library predicate + verdict token.
+    tw = root / "src" / "explore_persona_space" / "task_workflow.py"
+    if not tw.is_file():
+        errors.append(
+            f"{tw}: missing — the #2158 pre_split_review_gate predicate "
+            f"must live in task_workflow.py."
+        )
+    else:
+        text = tw.read_text(encoding="utf-8")
+        if "def pre_split_review_gate" not in text:
+            errors.append(
+                f"{tw}: missing 'def pre_split_review_gate' (#2158) — the "
+                f"two-arm pre-split predicate must stay in the library so "
+                f"the CLI and tests share one implementation."
+            )
+        if verdict not in text:
+            errors.append(
+                f"{tw}: the verdict token {verdict!r} is gone (#2158) — the "
+                f"Step 5 guard block keys on that exact lead token."
+            )
+
+    # (3) 09-step-5.md: the guard block region.
+    step5 = root / ".claude" / "skills" / "issue" / "steps" / "09-step-5.md"
+    if not step5.is_file():
+        errors.append(
+            f"{step5}: missing — the #2158 pre-split completeness guard "
+            f"block must live in the Step 5 skill step."
+        )
+    else:
+        text = step5.read_text(encoding="utf-8")
+        idx = text.find("**Pre-split completeness guard")
+        if idx == -1:
+            errors.append(
+                f"{step5}: missing the '**Pre-split completeness guard' "
+                f"block (#2158) — Step 5 would dispatch reviewers with no "
+                f"pre-split gate (incident #1336 r4)."
+            )
+        else:
+            nxt = text.find("\n\n**", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            for token in ("pre_split_review_guard.py", verdict, "remaining:"):
+                if token not in region:
+                    errors.append(
+                        f"{step5}: the '**Pre-split completeness guard' "
+                        f"region no longer names {token!r} (#2158) — the "
+                        f"guard block must key on that exact token."
+                    )
+
+    # (4)+(5) 08-step-4.md: grammar-parity + emitter tokens, and the
+    # shared-worktree arbitration note.
+    step4 = root / ".claude" / "skills" / "issue" / "steps" / "08-step-4.md"
+    if not step4.is_file():
+        errors.append(
+            f"{step4}: missing — the #2158 pre-split breadcrumb grammar + "
+            f"shared-worktree note must live in the Step 4 skill step."
+        )
+    else:
+        text = step4.read_text(encoding="utf-8")
+        for token in ("pre-split unit k/M complete:", "; remaining:", "unit=<k>"):
+            if token not in text:
+                errors.append(
+                    f"{step4}: no longer carries the breadcrumb-grammar / "
+                    f"emitter-convention token {token!r} (#2158) — the "
+                    f"pre_split_review_gate parser (and its arm-B 'unit=' "
+                    f"key) is calibrated to that exact grammar."
+                )
+        for token in ("EXPECTED shape", "cross-session-writer-arbitration.md"):
+            if token not in text:
+                errors.append(
+                    f"{step4}: the shared-worktree note no longer names "
+                    f"{token!r} (#2158) — pre-split multi-unit rounds would "
+                    f"lose the cross-session writer-arbitration pointer."
+                )
+
+    # (6) the arbitration rule file.
+    rule = root / ".claude" / "rules" / "cross-session-writer-arbitration.md"
+    if not rule.is_file():
+        errors.append(
+            f"{rule}: missing — the #2158 cross-session writer-arbitration "
+            f"rule file must exist (probe + claim markers + "
+            f"sequence-or-split; #1336/#1586)."
+        )
+    else:
+        text = rule.read_text(encoding="utf-8")
+        for token in ("never dispatch a concurrent writer", "git show"):
+            if token not in text:
+                errors.append(
+                    f"{rule}: no longer names {token!r} (#2158) — the "
+                    f"arbitration verdict / read-pinning recipe would be "
+                    f"silently stripped."
+                )
+
+    # (7) both implementer specs: the read-pinning bullet, per FILE.
+    for agent_name in ("experiment-implementer.md", "implementer.md"):
+        agent = root / ".claude" / "agents" / agent_name
+        if not agent.is_file():
+            errors.append(
+                f"{agent}: missing — the #2158 read-pinning bullet must live in {agent_name}."
+            )
+            continue
+        text = agent.read_text(encoding="utf-8")
+        idx = text.find("Read-pinning under external churn")
+        if idx == -1:
+            errors.append(
+                f"{agent}: missing the 'Read-pinning under external churn' "
+                f"bullet (#2158) — an implementer editing a churning shared "
+                f"worktree would lose the pin-reads-to-BASE_SHA protocol "
+                f"(#1336 death #9)."
+            )
+            continue
+        nxt = text.find("\n- **", idx + 1)
+        bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+        if "git show" not in bullet:
+            errors.append(
+                f"{agent}: the 'Read-pinning under external churn' bullet "
+                f"no longer names 'git show' (#2158) — the snapshot-read "
+                f"recipe would be silently stripped from {agent_name}."
+            )
+    return errors
+
+
 def check_null_gate_calibration_lens(  # noqa: C901 -- flat per-surface token ladder (six pinned surfaces, #2144), mirroring check_smoke_blind_spot_review_lens
     *, repo_root: Path | None = None
 ) -> list[str]:
@@ -14472,7 +14664,13 @@ _LESSONS_ROW_RE = re.compile(
 # raise buys EXACTLY this row plus 2 B headroom (10203 + 2 = 10205, the
 # plan-§C.3 measured+~2 form) — not general slack (the #992 argued-raise
 # form; the per-row and non-row caps still bind).
-_LESSONS_MAX_BYTES = 10205
+# 10205->10492 (#2158): the index sat at 10203/10205 (2 B headroom), so the
+# new cross-session-writer-arbitration.md index row (+249 B incl. newline;
+# measured post-edit file 10452 B) could not land under the old cap. The
+# raise buys EXACTLY this row plus <=40 B headroom (10452 + 40 = 10492) —
+# not general slack (the #992 argued-raise form; the per-row and non-row
+# caps still bind).
+_LESSONS_MAX_BYTES = 10492
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -15389,8 +15587,14 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    "issue/steps/09-step-5.md": 97_900,  # measured 95,138 B
-    "issue/steps/10-step-6.md": 144_200,  # measured 141,432 B
+    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
+    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 99_300 (#2352, 96,505 B).
+    "issue/steps/09-step-5.md": 100_300,
+    # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
+    # per-leg out/scratch isolation, +1,211 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
     # measured 279,937 B @ #2348 (TG merge-base + classify port).
     "issue/steps/18-step-10d.md": 282_700,
@@ -17239,6 +17443,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_pre_split_review_guard": lambda wf: check_pre_split_review_guard(),
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
@@ -17351,6 +17556,9 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
     "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_pre_split_review_guard": CheckScope(
+        "global", (".claude/", "scripts/", "src/explore_persona_space/")
+    ),
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
@@ -18076,6 +18284,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "structurally bypassed). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-pre-split-review-guard",
+        action="store_true",
+        help="FAIL if the #2158 pre-split review guard is absent from any "
+        "of its seven surfaces (eight files): the "
+        "scripts/pre_split_review_guard.py CLI naming the "
+        "pre_split_review_gate library entry, the task_workflow.py "
+        "predicate + PRE-SPLIT-INCOMPLETE verdict token, the 09-step-5.md "
+        "'**Pre-split completeness guard' block, the 08-step-4.md "
+        "breadcrumb-grammar + unit=<k> emitter tokens, the 08-step-4.md "
+        "shared-worktree arbitration note, the "
+        "cross-session-writer-arbitration.md rule file, and the "
+        "read-pinning bullet in BOTH implementer specs (incident #1336 r4: "
+        "a review dispatched against a Unit-A-only intermediate commit "
+        "cost 2 subagent deaths + a 2-day park). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-null-gate-calibration-lens",
         action="store_true",
         help="FAIL if the #1491/#2144 null-statistic gate-calibration lens "
@@ -18738,6 +18963,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
+        or args.check_pre_split_review_guard
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
@@ -18901,6 +19127,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_pre_split_review_guard or no_flags:
+        errors.extend(check_pre_split_review_guard())
     if args.check_null_gate_calibration_lens or no_flags:
         errors.extend(check_null_gate_calibration_lens())
     if args.check_two_tier_yield_floor or no_flags:
