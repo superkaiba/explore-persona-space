@@ -98,7 +98,15 @@ EXPECT_AXES = frozenset(
         "technical_register",
     }
 )
-EXPECT_ARM_A_CORPUS = EXPECT_BASES + EXPECT_VARIANTS  # 2,758
+EXPECT_ARM_A_CORPUS = EXPECT_BASES + EXPECT_VARIANTS  # 2,758 bank RECORDS (pre-dedup)
+# MEASURED distinct-prompt universe of the pinned bank (2026-08-17 smoke): the
+# declarative_curiosity axis collapsed 8 sets of DIFFERENT bases into
+# byte-identical rewritten text (7 pairs + one 4-way = 10 duplicate records),
+# so the sha-keyed corpus is 2,748 distinct prompts, not the plan's 2,758.
+# Each duplicate text is kept ONCE under the first base_id (one prompt sha ->
+# one generation/capture row); the drop accounting is asserted + persisted.
+EXPECT_ARM_A_CORPUS_DISTINCT = 2748
+EXPECT_ARM_A_DEDUP_DROPPED = EXPECT_ARM_A_CORPUS - EXPECT_ARM_A_CORPUS_DISTINCT  # 10
 
 # Arm B (plan §10; counts asserted at the pinned revision).
 ORBENCH_REPO = "bench-llm/or-bench"
@@ -327,8 +335,13 @@ def build_arm_a(args: argparse.Namespace, tokenizer) -> None:
         n_meta_bases,
         max(0, n_meta_bases - len(base_ids)),
     )
-    if len(rows) != EXPECT_ARM_A_CORPUS:
-        raise ValueError(f"Arm-A corpus {len(rows)} != {EXPECT_ARM_A_CORPUS}")
+    n_dropped = EXPECT_ARM_A_CORPUS - len(rows)
+    if len(rows) != EXPECT_ARM_A_CORPUS_DISTINCT or n_dropped != EXPECT_ARM_A_DEDUP_DROPPED:
+        raise ValueError(
+            f"Arm-A corpus {len(rows)} distinct / {n_dropped} dedup-dropped != expected "
+            f"{EXPECT_ARM_A_CORPUS_DISTINCT} / {EXPECT_ARM_A_DEDUP_DROPPED} "
+            f"(pre-dedup records {EXPECT_ARM_A_CORPUS})"
+        )
 
     _write_outputs(
         p,
@@ -339,6 +352,10 @@ def build_arm_a(args: argparse.Namespace, tokenizer) -> None:
             "source": ARM_A_SOURCE,
             "bank_sha256": bank_sha,
             "bank_meta": {k: meta.get(k) for k in ("model", "judge", "n_bases", "N_resample")},
+            "n_records_pre_dedup": EXPECT_ARM_A_CORPUS,
+            "n_dedup_dropped": n_dropped,
+            "dedup_note": "8 cross-base declarative_curiosity duplicate texts (10 records); "
+            "each kept once under the first base_id (one prompt sha = one row)",
             "note": "s1_judge/comply_rate are screening-vintage and NOT reused as labels",
         },
         fingerprint,
@@ -390,8 +407,10 @@ def build_arm_b(args: argparse.Namespace, tokenizer) -> None:
             {"prompt": r["prompt"], "source": "or-bench-hard-1k", "category": r.get("category")}
         )
     for r in phtest[:limit]:
+        # Observed PHTest schema (probed 2026-08-17): columns are
+        # ['ID', 'Request', 'Harmfulness'] — the prompt text lives in 'Request'.
         candidates.append(
-            {"prompt": r["prompt"], "source": "phtest-controversial", "category": "controversial"}
+            {"prompt": r["Request"], "source": "phtest-controversial", "category": "controversial"}
         )
 
     rows: list[dict[str, Any]] = []
