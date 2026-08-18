@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2371,
+  "highest_id": 2372,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10596,6 +10596,13 @@
       "path": "tasks/proposed/2371",
       "status": "proposed",
       "title": "guard_root_code_commit.sh: disarm text-detectable prefixed cwd-movers outside the NAME=value set (+= append-assignment, time/wrapper prefixes) + complete residual-note"
+    },
+    "2372": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2372",
+      "status": "proposed",
+      "title": "guard_repo_root_branch.sh: sticky-scope invalidator anchors before legal assignment prefixes (sibling of #2357 cwd-mover-lead gap)"
     },
     "238": {
       "has_clean_result": false,
