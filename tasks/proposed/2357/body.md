@@ -2,7 +2,8 @@
 title: 'guard_root_code_commit.sh: pathspec-limited root commits blocked by foreign
   staged code files (scoping defect)'
 kind: infra
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-18T00:17:55Z'
 has_clean_result: false
 workflow: v1
