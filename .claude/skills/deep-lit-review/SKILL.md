@@ -50,7 +50,8 @@ MULTIPLE channels (each channel is blind to what the others surface):
 - arXiv MCP: `search_papers` (keyword) AND `semantic_search` (embedding).
 - Semantic Scholar Graph API (free):
   `curl "https://api.semanticscholar.org/graph/v1/paper/search?query=...&fields=title,abstract,year,citationCount,externalIds"`.
-- OpenAlex (free): `curl "https://api.openalex.org/works?search=..."`.
+- OpenAlex (free API key required as of 2026; free tier ~10k
+  requests/day — ample): `curl "https://api.openalex.org/works?search=..."`.
 - Web: Google Scholar via `WebSearch`, plus plain web for non-arXiv venues
   and very recent work.
 
