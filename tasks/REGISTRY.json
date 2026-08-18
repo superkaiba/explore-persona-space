@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2362,
+  "highest_id": 2363,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10526,6 +10526,13 @@
       "path": "tasks/proposed/2362",
       "status": "proposed",
       "title": "set-body: fail-loud on byte-identical no-op + gate body-edit markers on an actual body commit (phantom v4 edits, #2333)"
+    },
+    "2363": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2363",
+      "status": "proposed",
+      "title": "workflow-fix: a plan can mark its ONLY source of acceptance evidence optional and still PASS verify_plan"
     },
     "237": {
       "has_clean_result": true,
