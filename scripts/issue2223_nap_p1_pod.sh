@@ -83,8 +83,10 @@ echo "[nap-p1] get_config probe rc=$rc"
 
 # (b) tiny REAL step-1 slice (2 roles x 2 questions, 1 GPU) — proves the
 # vLLM engine + chat template + row schema BEFORE the production fan-out.
-SMOKE_ROLES=$(ls "$REPO/external/assistant-axis/data/roles/instructions"/*.json \
-  | head -2 | xargs -n1 basename | sed 's/\.json$//' | paste -sd, -)
+# glob-array slice, NOT `ls | head -N`: under `set -euo pipefail` an
+# early-closing consumer SIGPIPEs ls (rc=141) with zero error output.
+smoke_role_files=("$REPO/external/assistant-axis/data/roles/instructions"/*.json)
+SMOKE_ROLES=$(for f in "${smoke_role_files[@]:0:2}"; do basename "$f" .json; done | paste -sd, -)
 echo "[nap-p1] smoke roles: $SMOKE_ROLES"
 rm -rf "$SMOKE_OUT"
 mkdir -p "$SMOKE_OUT"
