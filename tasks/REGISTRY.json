@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2370,
+  "highest_id": 2371,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10589,6 +10589,13 @@
       "path": "tasks/proposed/2370",
       "status": "proposed",
       "title": "guard_root_code_commit.sh: pathspec scoping fails to exempt foreign staged files (blocks its own remediation form)"
+    },
+    "2371": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2371",
+      "status": "proposed",
+      "title": "guard_root_code_commit.sh: disarm text-detectable prefixed cwd-movers outside the NAME=value set (+= append-assignment, time/wrapper prefixes) + complete residual-note"
     },
     "238": {
       "has_clean_result": false,
