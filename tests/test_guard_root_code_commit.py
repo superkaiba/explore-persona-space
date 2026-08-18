@@ -1372,6 +1372,76 @@ def test_c26b_next_sep_pipe_root_cd_blocked(foreign_repo: Path, cert: Path) -> N
     )
 
 
+# --- c27 family: symbolic ALIAS root spellings never arm (r2 fix, concern
+# ``mutable-symbolic-root-proof``). The tilde / HOME-variable alias spellings
+# keep their legacy NON-poisoning classification (cd_nonroot stays 0) but the
+# arming set is the canonical ABSOLUTE spelling only: an alias's runtime
+# destination depends on $HOME (mutable) + symlink resolution, neither
+# provable from command text, while the armed cert check resolves pathspecs
+# root-pinned. Each case runs from a root-SUBDIR cwd with a staged
+# uncertified gated file and a cwd-relative pathspec — the c11-class bypass
+# shape (B49/B50 sibling): pre-fix each ARMED and exited 0; post-fix the
+# whole-index read blocks (exit 2).
+
+
+def test_c27_tilde_alias_root_cd_stays_whole_index(foreign_repo: Path, cert: Path) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            "cd ~/explore-persona-space && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c27b_homevar_alias_root_cd_stays_whole_index(foreign_repo: Path, cert: Path) -> None:
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            "cd $HOME/explore-persona-space && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c27c_homevar_reassigned_alias_root_cd_stays_whole_index(
+    foreign_repo: Path, cert: Path
+) -> None:
+    # A same-command $HOME reassignment makes the alias's runtime destination
+    # arbitrary — the arm must stay cold on the SPELLING alone (it never
+    # inspects the assignment).
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            "HOME=/tmp/elsewhere; cd $HOME/explore-persona-space && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
+def test_c27d_quoted_homevar_alias_root_cd_stays_whole_index(
+    foreign_repo: Path, cert: Path
+) -> None:
+    # Quote-suppressed form: single quotes make the runtime cd fail outright
+    # (a literal '$HOME/...' directory) while the guard's one-quote-pair
+    # strip still sees the alias spelling — must stay non-arming.
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _assert_blocked(
+        _run(
+            "cd '$HOME/explore-persona-space' && git commit -m x -- own.py",
+            foreign_repo,
+            cert,
+            cwd=foreign_repo / "scripts",
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # D — cd-latch variable resolution + unproven-cd diagnostics (issue #1676)
 # ---------------------------------------------------------------------------

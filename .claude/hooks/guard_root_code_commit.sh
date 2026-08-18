@@ -108,9 +108,14 @@
 #   stays whole-index; (ii) the ADD-clause second pass keeps opener tokens
 #   opaque (out of incident scope — the exemption stays narrow).
 # - Provably-root cd prefix (#2357): pathspec SCOPING also engages when the
-#   command carries an exact-root `cd` — the same spelling set that keeps
-#   cd_nonroot=0 ($GUARD_REPO absolute [+ trailing /], ~/explore-persona-space[/],
-#   $HOME/explore-persona-space[/]) — whose own separator is START/SEQ/NL
+#   command carries a CANONICAL ABSOLUTE root `cd` ($GUARD_REPO absolute
+#   [+ trailing /] ONLY — the r2 arming set). The symbolic ALIAS root
+#   spellings (~/explore-persona-space[/], $HOME/explore-persona-space[/])
+#   NEVER arm the widening: they keep their legacy non-poisoning
+#   classification (cd_nonroot stays 0 — root-cwd behavior unchanged) but
+#   are fail-closed for the widening, because their runtime destination
+#   depends on $HOME and symlink resolution, neither provable from the
+#   command text. The arming cd's own separator is START/SEQ/NL
 #   (g3-matching; AND excluded), with NO token after the target, next
 #   separator neither & nor |, no commit clause scanned BEFORE it, EVERY
 #   separator strictly between the cd and EVERY commit clause equal to &&
@@ -118,6 +123,8 @@
 #   succeeded, so the pathspec-resolution base at the commit is the root),
 #   and NO compound/subshell-context record anywhere in the command.
 #   Fail-closed residuals (each stays conservatively whole-index):
+#   symbolic-alias root spellings (the ~/ and $HOME/ forms above —
+#   legacy-kept non-poisoning, never arming);
 #   variable / $(..) / relative / subdir / quote-broken cd targets;
 #   AND/OR/BG/PIPE-separated cds (own separator); trailing-token cds
 #   (`cd <root> junk`); any non-AND separator between the cd and a commit —
@@ -908,11 +915,12 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
       # bit-identical (GUARD_REPO defaults to $REPO); hermetic test repos
       # keep scoping on for a cd to their own root.
       case "$tgt" in
-        "$GUARD_REPO" | "$GUARD_REPO"/ | '~/explore-persona-space' | '~/explore-persona-space/' \
-          | '$HOME/explore-persona-space' | '$HOME/explore-persona-space/')
-          # #2357: exact-root cd — candidate scope-base mover (pattern union
-          # of the three former keep-arms; semantics-preserving — the same
-          # six spellings keep cd_nonroot=0, everything else falls to `*)`).
+        "$GUARD_REPO" | "$GUARD_REPO"/)
+          # #2357: CANONICAL ABSOLUTE root cd — the ONLY arming spellings
+          # (r2 fix, concern mutable-symbolic-root-proof): an absolute
+          # literal equal to $GUARD_REPO is the one target the COMMAND TEXT
+          # proves lands at the root that the armed Layer-2 cert check
+          # resolves pathspecs against (root-pinned `git -C "$GUARD_REPO"`).
           # Arm only when ALL of:
           #  (1) own separator in {START, SEQ, NL} — g3-matching
           #      (resolve_cd_var g3). AND is EXCLUDED: an AND-separated cd
@@ -944,6 +952,18 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
               ;;
           esac
           ;;
+        '~/explore-persona-space' | '~/explore-persona-space/' \
+          | '$HOME/explore-persona-space' | '$HOME/explore-persona-space/')
+          # #2357 r2 (concern mutable-symbolic-root-proof): symbolic ALIAS
+          # root spellings keep their legacy NON-poisoning classification
+          # (cd_nonroot stays 0 — today's behavior at root cwd unchanged)
+          # but NEVER arm the scope base: the tilde form resolves through
+          # $HOME (mutable, reassignable in the same command) and both forms
+          # through symlinks at RUNTIME, so the command text cannot prove
+          # the cd lands at the root the armed cert check's root-pinned
+          # pathspec resolution assumes. Fail-closed for the widening only —
+          # exactly the pre-#2357 keep-arm behavior (a no-op keep).
+          : ;;
         *) cd_nonroot=1 ;;
       esac
       continue
@@ -1426,7 +1446,8 @@ run_self_test() {
   echo note > "$RFOR/tasks/t.md"
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
   # #2357 F-walk payload: a second staged uncertified gated file whose
-  # BASENAME resolves cwd-relatively from the scripts/ subdir (B49/B50).
+  # BASENAME resolves cwd-relatively from the scripts/ subdir (B49/B50,
+  # B53/B54).
   # No-flip: scoped allow rows ignore foreign staged files by construction,
   # and every whole-index block row already had a gated foreign file staged.
   printf 'print(1)\n' > "$RFOR/scripts/own.py"
@@ -1582,9 +1603,12 @@ MSG" "$RFOR"
   # --- provably-root cd prefix scope base (issue #2357) ---
   # New-arm ALLOW rows run from a NON-root case_cwd ($TMP): at the default
   # root cwd the pre-#2357 cwd_ok gate already scopes these commands, so the
-  # non-root cwd is the load-bearing distinction (r1 MF-5). B49/B50 run from
-  # a root SUBDIR with a staged gated relative pathspec — the c11-class
-  # bypass shape the arming refusals must keep blocked.
+  # non-root cwd is the load-bearing distinction (r1 MF-5). B49/B50/B53/B54
+  # run from a root SUBDIR with a staged gated relative pathspec — the
+  # c11-class bypass shape the arming refusals must keep blocked. B53/B54
+  # (r2, concern mutable-symbolic-root-proof): the symbolic alias root
+  # spellings are matched LITERALLY against the fixed strings (independent
+  # of GUARD_REPO), stay legacy non-poisoning, and must never arm.
   run_case "A27 cd-to-root + pathspec + redirect scopes from non-root cwd (#2357)" 0 \
     "cd $RFOR && git commit -m x -- tasks/t.md > /tmp/i2357_selftest.log 2>&1" "$RFOR" '' "$TMP"
   run_case "B44 cd-to-root prefix scopes past foreign staged (#2357)" 0 \
@@ -1610,6 +1634,10 @@ done" "$RFOR" '' "$TMP"
   run_case "B52 NL-separated root cd scopes (allow direction, #2357)" 0 \
     "true
 cd $RFOR && git commit -m x -- tasks/t.md" "$RFOR" '' "$TMP"
+  run_case "B53 tilde-alias root cd never arms from root-subdir cwd (#2357 r2)" 2 \
+    'cd ~/explore-persona-space && git commit -m x -- own.py' "$RFOR" '' "$RFOR/scripts"
+  run_case "B54 home-var-alias root cd never arms from root-subdir cwd (#2357 r2)" 2 \
+    'cd $HOME/explore-persona-space && git commit -m x -- own.py' "$RFOR" '' "$RFOR/scripts"
 
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
   run_case "A20 path-limited add --all with artifact pathspec" 0 \
