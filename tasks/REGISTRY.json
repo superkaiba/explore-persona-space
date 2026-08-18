@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2356,
+  "highest_id": 2357,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10484,6 +10484,13 @@
       "path": "tasks/planning/2356",
       "status": "planning",
       "title": "Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer / actual-answer probes)"
+    },
+    "2357": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2357",
+      "status": "proposed",
+      "title": "guard_root_code_commit.sh: pathspec-limited root commits blocked by foreign staged code files (scoping defect)"
     },
     "237": {
       "has_clean_result": true,
