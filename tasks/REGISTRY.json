@@ -10509,8 +10509,8 @@
     "2360": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2360",
-      "status": "proposed",
+      "path": "tasks/planning/2360",
+      "status": "planning",
       "title": "Preflight passes a pod venv whose lock-pinned package has no metadata and cannot import (sympy half-install breaks the whole transformers stack)"
     },
     "237": {
