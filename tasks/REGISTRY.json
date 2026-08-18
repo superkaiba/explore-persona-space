@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2365,
+  "highest_id": 2366,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10547,6 +10547,13 @@
       "path": "tasks/proposed/2365",
       "status": "proposed",
       "title": "Cloudflare email obfuscation silently rewrites model-generation text in every eps.superkaiba.com dashboard (served bytes != committed bytes)"
+    },
+    "2366": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2366",
+      "status": "proposed",
+      "title": "eval/capability.py: same narrow PackageNotFoundError catch breaks on the announced importlib.metadata KeyError"
     },
     "237": {
       "has_clean_result": true,
