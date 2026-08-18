@@ -42,9 +42,9 @@ against that parser by
 | `n=800 rows` | disabled |
 
 - **Bare float = hours.** A cosmetic NON-ALPHANUMERIC prefix (`(`, `~`,
-  `**`, `+`, comparison signs) is ignored; any LETTER before the first
+  `**`, `+`, the `≤`/`<` signs) is ignored; any LETTER before the first
   digit makes the cell unparseable (a row count / issue id / RAM bound is
-  never a phantom wall hour).
+  never a phantom wall hour), and `≥`/`>` reject (below).
 - **`≤X` / `<X` parse as X** — the calendar-latency convention: a phase
   that genuinely elapses up to a bound inside the run's wall (a Batch-API
   judge wave's SLA) writes `≤24 calendar`; the `calendar` token is human
