@@ -1066,12 +1066,21 @@ def phase_pilot(cfg: JudgeConfig) -> int:
             report_path=cfg.gates_dir / "pilot" / f"{family}.json",
             seed=PILOT_SEED,
         )
-        # Item-capacity bound on what the parse-fail check can RESOLVE for this
-        # family: the smallest arm's realized draw count sets the smallest
-        # observable nonzero rate (1/n). Equals the rule-26(b) 2% target only
-        # when every arm holds >= 51 draws; recorded (not silently dropped) so
-        # the report can carry the sub-resolution caveat per family.
-        min_arm_draws = min(len(items) for items in arms.values()) * JUDGE_N_DRAWS
+        # What the parse-fail check can actually RESOLVE for this family: the
+        # smallest arm's REALIZED draw count sets the smallest observable nonzero
+        # rate (1/n). Realized draws are bounded by the BUDGET SPLIT and by the
+        # arm's ITEM COUNT, whichever binds — judge_pilot_gate computes
+        # per_arm_items = target // (n_arms * n_draws) and then caps each arm at
+        # its own item count. Item capacity ALONE overstates resolution wildly
+        # for a budget-limited family: coherence holds 13,500 items but realizes
+        # 51 draws/arm at target 204, so its true resolution is 1.96%, not the
+        # 0.0074% a capacity-only read reports. Both are recorded — capacity
+        # answers "would a bigger budget help?" (for query-rubric: no).
+        per_arm_cap = target // (len(arms) * JUDGE_N_DRAWS)
+        min_arm_capacity = min(len(items) for items in arms.values()) * JUDGE_N_DRAWS
+        min_arm_realized = (
+            min(min(per_arm_cap, len(items)) for items in arms.values()) * JUDGE_N_DRAWS
+        )
         per_family[family] = {
             "rubric_id": rid,
             "verdict": report.verdict,
@@ -1079,9 +1088,10 @@ def phase_pilot(cfg: JudgeConfig) -> int:
             "warnings": report.warnings,
             "n_total_draws": report.n_total_draws,
             "subresolution_allowed": allow_sub,
-            "min_arm_capacity_draws": min_arm_draws,
-            "parse_fail_resolution_pct": round(100.0 / min_arm_draws, 4)
-            if min_arm_draws > 0
+            "min_arm_capacity_draws": min_arm_capacity,
+            "min_arm_realized_draws": min_arm_realized,
+            "parse_fail_resolution_pct": round(100.0 / min_arm_realized, 4)
+            if min_arm_realized > 0
             else None,
         }
         all_pass &= report.passed
