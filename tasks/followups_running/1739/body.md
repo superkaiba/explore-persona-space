@@ -1,6 +1,7 @@
 ---
-title: Map-then-project persona-vector prediction trails matched-budget context-side
-  baselines across three behaviors (HIGH confidence)
+title: Mapped-answer readouts match real-answer persona projections off-synthetic
+  and edge direct context probes in most held-out settings, pending a shuffled-map
+  control (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
