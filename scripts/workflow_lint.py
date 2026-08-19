@@ -16308,17 +16308,19 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
-    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
-    # Prior: 99_300 (#2352, 96,505 B).
-    "issue/steps/09-step-5.md": 100_300,
+    # measured 100,517 B @ #2201 2026-08-19 (Step 5a deliverable-divergence
+    # probe + reviewer-brief bullet, +2,927 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 103_300,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 279,937 B @ #2348 (TG merge-base + classify port).
-    "issue/steps/18-step-10d.md": 282_700,
+    # measured 286,282 B @ #2201 2026-08-19 (Pre-merge divergence delta gate
+    # H4, +6,317 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 282_700 (#2348, 279,937 B).
+    "issue/steps/18-step-10d.md": 289_000,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
