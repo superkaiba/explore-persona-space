@@ -2,7 +2,8 @@
 title: 'Experiment: Do the #2162 minimal-pair context-vector findings transfer to
   Qwen3.5-9B with thinking disabled?'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-16T17:48:46Z'
 has_clean_result: true
 parent_id: 2162
