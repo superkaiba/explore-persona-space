@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2378,
+  "highest_id": 2379,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10646,6 +10646,14 @@
       "path": "tasks/planning/2378",
       "status": "planning",
       "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
+    },
+    "2379": {
+      "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2379",
+      "status": "proposed",
+      "title": "Predicted answer-vector similarity as a predictor of post-inoculation re-elicitation (Kwon et al. rig, answer-side predictor)"
     },
     "238": {
       "has_clean_result": false,
