@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T16:29:39Z", "event": "raised", "concern_id": "companion-non-utf8-crash", "severity": "BLOCKER", "summary": "The new git-show companion read can raise UnicodeDecodeError and crash both verifier modes instead of returning a failed CheckResult.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
