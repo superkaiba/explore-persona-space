@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T05:12:07Z", "event": "raised", "concern_id": "terminate-result-confirmation", "severity": "BLOCKER", "summary": "A false terminate_pod result is labeled terminated and can authorize a second billing pod; require True or raise and add a false-result regression test.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
