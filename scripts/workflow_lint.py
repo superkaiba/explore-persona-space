@@ -277,6 +277,23 @@ Behaviours:
   ``/usr/bin/grep`` are exempt; a path-pinned ``ugrep`` still flags (its
   exit status is divergent by construction, no pin sanctions it).
   ``#``-comment lines and ``.md`` prose outside fences are skipped.
+* ``--check-conflict-markers`` (also bundled into the no-flags default
+  run): enumerate TRACKED ``.claude/**/*.md`` (depth-1 ``.claude/*.md``
+  included), ``*.py`` repo-wide, and ``CLAUDE.md`` via ``git ls-files``
+  (filtered to on-disk files — sparse-worktree index entries absent from
+  disk are skipped) and FAIL on any merge-conflict-marker residue line:
+  column 0 starting seven ``<``, ``|``, ``=`` or ``>`` followed by a
+  space or end-of-line. Anchoring is exact — 8-char runs, 7-char runs
+  followed by another character, and mid-line occurrences never match.
+  Fenced ``.md`` regions are exempt (the sanctioned escape for
+  marker-documenting prose); a deliberate ``.py`` occurrence is waived
+  with ``# CONFLICT_MARKER_EXEMPT: <reason>`` (non-empty reason) on the
+  same or previous non-blank line. On a git failure the enumeration
+  fail-opens to ``[]`` with a loud stderr notice. Origin incident
+  #2189: merge commit ``14cd4e4211`` left the diff3 base marker as the
+  last line of ``.claude/rules/code-style.md`` — it passed the no-flags
+  lint, the size gate, the union-conservation check, ruff, and 27
+  unrelated tests, caught only by a reviewer reading the diff by eye.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -4968,6 +4985,200 @@ def check_grep_qv(*, roots: list[Path] | None = None) -> list[str]:
                 _grep_qv_scan(path, block, block_start, errors)
         else:
             _grep_qv_scan(path, lines, 0, errors)
+    return errors
+
+
+# `--check-conflict-markers` (#2192; origin incident #2189): merge commit
+# 14cd4e4211 left the diff3 base marker (seven pipes + a space + the base
+# SHA) as the last line of .claude/rules/code-style.md; it passed the
+# no-flags lint, the size gate, the union-conservation check, ruff, and 27
+# unrelated tests — caught only by a reviewer reading the diff by eye. The
+# regex is the task body's, applied per line: column 0 starting seven "<",
+# "|", "=" or ">" followed by a space or end-of-line. (Self-flag hazard:
+# this module and its tests are themselves tracked *.py in the scan set —
+# never place a raw 7-char marker run at column 0 of either source file;
+# tests construct fixture content programmatically.)
+_CONFLICT_MARKER_RE = re.compile(r"^(<{7}|\|{7}|={7}|>{7})( |$)")
+
+# Tracked-file enumeration pathspecs. Under git's default (non-`:(glob)`)
+# pathspec matching, `.claude/**/*.md` does NOT match a depth-1
+# `.claude/foo.md` — the extra `.claude/*.md` pathspec closes that gap
+# (zero such files exist today; future-proofing).
+_CONFLICT_MARKER_PATHSPECS = (".claude/**/*.md", ".claude/*.md", "*.py", "CLAUDE.md")
+
+# `.py` waiver: a deliberate marker-documenting occurrence carries this
+# comment (with a non-empty reason) on the same or previous non-blank line.
+CONFLICT_MARKER_WAIVER = "# CONFLICT_MARKER_EXEMPT:"
+
+_CONFLICT_MARKER_GIT_TIMEOUT_S = 60
+
+
+def _conflict_marker_target_files(roots: list[Path] | None) -> list[Path]:
+    """Resolve the scan set for :func:`check_conflict_markers`.
+
+    Production (``roots=None``): ``git ls-files -z`` over
+    :data:`_CONFLICT_MARKER_PATHSPECS` (tracked-only — an rglob would
+    descend into ``.claude/worktrees/`` sibling checkouts, possibly
+    legitimately mid-merge, and untracked scratch), FILTERED to on-disk
+    files: in a sparse worktree the index still lists skip-worktree
+    entries absent from disk, and the Step 9c gate runs in sparse
+    worktrees by design (#671). On ANY git failure: one loud stderr
+    notice + fail-open ``[]`` (the ``check_plan_version_immutability``
+    precedent — never a silent skip; a broken git env must not block
+    every commit fleet-wide). A test override lists files, or
+    directories walked for ``*.md`` / ``*.py``; a ``roots`` entry absent
+    from disk is skipped, not raised on."""
+    if roots is None:
+        cmd = ["git", "-C", str(_REPO_ROOT), "ls-files", "-z", "--"]
+        cmd.extend(_CONFLICT_MARKER_PATHSPECS)
+        try:
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=_CONFLICT_MARKER_GIT_TIMEOUT_S,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            sys.stderr.write(
+                f"workflow_lint: --check-conflict-markers skipped: git enumeration failed: {exc}\n"
+            )
+            return []
+        if proc.returncode != 0:
+            sys.stderr.write(
+                f"workflow_lint: --check-conflict-markers skipped: git exited "
+                f"{proc.returncode}: {proc.stderr.strip()[:200]}\n"
+            )
+            return []
+        tracked = [_REPO_ROOT / rel for rel in proc.stdout.split("\0") if rel]
+        return _files_scope_filter([p for p in tracked if p.is_file()])
+    files: list[Path] = []
+    for root in roots:
+        if root.is_file():
+            files.append(root)
+        elif root.is_dir():
+            files.extend(
+                sorted(p for p in root.rglob("*") if p.is_file() and p.suffix in (".md", ".py"))
+            )
+    return _files_scope_filter(files)
+
+
+def _conflict_marker_error(path: Path, idx: int, token: str) -> str:
+    """Compose the (incident-citing, module-convention) violation string for
+    one conflict-marker residue line at 0-based line index ``idx``."""
+    return (
+        f"{path}:{idx + 1}: merge-conflict marker residue ('{token}') — a "
+        f"mis-resolved merge left this in a tracked workflow-surface file "
+        f"(#2189: diff3 base marker '|||||||' committed to "
+        f".claude/rules/code-style.md survived every gate). Resolve the "
+        f"merge; if this line deliberately DOCUMENTS a marker, fence it "
+        f"(md) or add '# CONFLICT_MARKER_EXEMPT: <reason>' (py)."
+    )
+
+
+def _conflict_marker_waived(line: str) -> bool:
+    """True when *line* carries :data:`CONFLICT_MARKER_WAIVER` with a
+    non-empty reason after the colon."""
+    pos = line.find(CONFLICT_MARKER_WAIVER)
+    if pos == -1:
+        return False
+    return bool(line[pos + len(CONFLICT_MARKER_WAIVER) :].strip())
+
+
+def _conflict_marker_scan_md(path: Path, lines: list[str], errors: list[str]) -> None:
+    """Scan ``.md`` lines OUTSIDE fenced regions (:data:`_FENCE_RE`
+    simple-toggle) — the fence IS the sanctioned escape for
+    marker-documenting prose. Fence semantics are INVERTED vs
+    ``check_grep_qv`` (which scans ONLY fenced blocks): an unterminated
+    trailing fence therefore leaves trailing lines SKIPPED — residual (a)
+    of :func:`check_conflict_markers`, pinned by tests so a future
+    behavior change is deliberate."""
+    in_fence = False
+    for idx, line in enumerate(lines):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = _CONFLICT_MARKER_RE.match(line)
+        if m:
+            errors.append(_conflict_marker_error(path, idx, m.group(1)))
+
+
+def _conflict_marker_scan_py(path: Path, lines: list[str], errors: list[str]) -> None:
+    """Scan every ``.py`` line; suppress a hit waived by
+    :data:`CONFLICT_MARKER_WAIVER` on the same or previous non-blank
+    line."""
+    prev_nonblank = ""
+    for idx, line in enumerate(lines):
+        m = _CONFLICT_MARKER_RE.match(line)
+        if m and not (_conflict_marker_waived(line) or _conflict_marker_waived(prev_nonblank)):
+            errors.append(_conflict_marker_error(path, idx, m.group(1)))
+        if line.strip():
+            prev_nonblank = line
+
+
+def check_conflict_markers(*, roots: list[Path] | None = None) -> list[str]:
+    """FAIL on merge-conflict-marker residue lines in tracked
+    workflow-surface files: ``.claude/**/*.md`` (depth-1 ``.claude/*.md``
+    included), tracked ``*.py`` repo-wide, and ``CLAUDE.md``.
+
+    A residue line starts at column 0 with one of the four conflict-marker
+    forms — seven ``<``, ``|``, ``=`` or ``>`` followed by a space or
+    end-of-line (:data:`_CONFLICT_MARKER_RE`). Anchoring is exact: an
+    8-char run, a 7-char run followed by any other character, and mid-line
+    occurrences never match. Origin incident #2189: merge commit
+    ``14cd4e4211`` left the diff3 base marker (seven pipes + the base SHA)
+    as the last line of ``.claude/rules/code-style.md``; it passed the
+    no-flags lint, the size gate, the union-conservation check, ruff, and
+    27 unrelated tests — caught only by a reviewer reading the diff by
+    eye.
+
+    Escape hatches (never a weakened pattern):
+
+    * ``.md``: lines inside fenced regions are exempt — the fence IS the
+      sanctioned escape for marker-documenting prose.
+    * ``.py``: a ``# CONFLICT_MARKER_EXEMPT: <reason>`` comment (non-empty
+      reason) on the same or previous non-blank line waives a deliberate
+      occurrence.
+
+    Known residuals (documented, deliberate):
+
+    (a) Fence-toggle blindness: an unterminated/imbalanced fence skips all
+        trailing md content (INVERTED from ``check_grep_qv``'s
+        scan-the-tail choice — here the fence marks EXEMPT regions, so
+        skipping the tail is the consistent direction); a conflict hunk
+        that itself breaks fence parity can hide the inner separator line,
+        though the outer marker lines are still caught when outside
+        fences. The #2189 incident line (last line of the file, outside
+        any fence) is caught.
+    (b) A setext-H1 underline of EXACTLY seven ``=`` would flag — the repo
+        uses ATX headings throughout (baseline sweep: zero hits); the
+        remedy is ATX conversion, never a pattern weaken.
+    (c) An exactly-7-char RST underline in a py docstring would flag —
+        baseline clean; the waiver comment is the escape.
+    (d) A REAL conflict landing wholly inside a BALANCED fence (both merge
+        sides editing one fenced snippet) hides all four marker lines by
+        design — scanning inside fences would flag every legitimate
+        marker-documenting snippet.
+
+    Files are read with ``errors="replace"`` (markers are ASCII; odd bytes
+    in a vendored file must not crash the lint), and a file that vanishes
+    between enumeration and read (the #2015 transient unstaged-delete
+    window at the shared root) is skipped. ``roots`` is a unit-test
+    override hook (see :func:`_conflict_marker_target_files`); production
+    callers pass None. Bundled into the no-flags default run (same policy
+    as ``check_grep_qv``).
+    """
+    errors: list[str] = []
+    for path in _conflict_marker_target_files(roots):
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except FileNotFoundError:
+            continue  # #2015 transient unstaged-delete window at the shared root
+        if path.suffix == ".md":
+            _conflict_marker_scan_md(path, lines, errors)
+        else:
+            _conflict_marker_scan_py(path, lines, errors)
     return errors
 
 
@@ -17805,6 +18016,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_push_failure_swallow": lambda wf: check_push_failure_swallow(),
     "check_sh_function_rc_capture": lambda wf: check_sh_function_rc_capture(),
     "check_grep_qv": lambda wf: check_grep_qv(),
+    "check_conflict_markers": lambda wf: check_conflict_markers(),
     "check_marker_registry": lambda wf: check_marker_registry(wf),
     "check_marker_scalar_integrity": lambda wf: check_marker_scalar_integrity(wf),
     "check_poller_marker_consumers": lambda wf: check_poller_marker_consumers(wf),
@@ -17899,6 +18111,28 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_push_failure_swallow": CheckScope("path-local", ("scripts/",)),
     "check_sh_function_rc_capture": CheckScope("path-local", ("scripts/",)),
     "check_grep_qv": CheckScope("path-local", ("scripts/", ".claude/")),
+    "check_conflict_markers": CheckScope(
+        "path-local",
+        (
+            # The honest read set: .claude md + CLAUDE.md + every top-level
+            # dir carrying tracked *.py (measured 2026-08-19; surfaces are
+            # informational for path-local checks — _run_files_mode consults
+            # them only for kind="global" skip decisions).
+            ".claude/",
+            "CLAUDE.md",
+            "scripts/",
+            "tests/",
+            "src/",
+            "external/",
+            "eval_results/",
+            "eps/",
+            "tasks/",
+            "figures/",
+            "eval/",
+            "experiments/",
+            "docs/",
+        ),
+    ),
     "check_upload_as_file": CheckScope("path-local", ("scripts/",)),
     "check_hub_dir_filecount": CheckScope("path-local", ("scripts/",)),
     "check_upload_prefix_clobber": CheckScope("path-local", ("scripts/",)),
@@ -18360,6 +18594,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "grep (#928; fixed in #1125). git grep and a path-pinned "
         "/usr/bin/grep are exempt; a path-pinned ugrep still flags. "
         "Comment lines and prose outside fences are skipped. Bundled into "
+        "the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-conflict-markers",
+        action="store_true",
+        help="Verify no tracked workflow-surface file (.claude/**/*.md incl. "
+        "depth-1 .claude/*.md, tracked *.py repo-wide, CLAUDE.md; git "
+        "ls-files enumeration filtered to on-disk files) carries a "
+        "merge-conflict-marker residue line: column 0 starting seven '<', "
+        "'|', '=' or '>' followed by a space or end-of-line. Fenced .md "
+        "regions are exempt; a deliberate .py occurrence is waived with "
+        "'# CONFLICT_MARKER_EXEMPT: <reason>' on the same or previous "
+        "non-blank line. On a git failure the enumeration fail-opens with "
+        "a loud stderr notice. #2189: a diff3 base marker committed to "
+        ".claude/rules/code-style.md survived every gate. Bundled into "
         "the no-flags default run.",
     )
     parser.add_argument(
@@ -19353,6 +19602,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_push_failure_swallow
         or args.check_sh_function_rc_capture
         or args.check_grep_qv
+        or args.check_conflict_markers
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_agent_tools
@@ -19481,6 +19731,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_sh_function_rc_capture())
     if args.check_grep_qv or no_flags:
         errors.extend(check_grep_qv())
+    if args.check_conflict_markers or no_flags:
+        errors.extend(check_conflict_markers())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if (args.check_marker_scalar_integrity or no_flags) and not args.check_references:
