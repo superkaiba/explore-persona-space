@@ -276,7 +276,7 @@ def read_snapshot(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -348,7 +348,7 @@ def read_no_progress_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -454,7 +454,7 @@ def load_campaign_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 

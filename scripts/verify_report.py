@@ -903,7 +903,7 @@ def check_manifest(
     results: list[CheckResult] = []
     try:
         manifest = _load_manifest(manifest_path)
-    except (OSError, json.JSONDecodeError) as e:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
         return [CheckResult("manifest-schema", False, f"cannot read/parse manifest: {e}")]
 
     schema = json.loads(_SCHEMA_PATH.read_text())

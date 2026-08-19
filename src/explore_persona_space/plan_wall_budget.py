@@ -22,6 +22,26 @@ share this parser. The LAZY prefix quantifier plus the decimal-first
 (``.5`` -> 0.5, ``(.5)`` -> 0.5 — a greedy prefix would eat the dot and
 yield 5.0).
 
+Range + bound signs (#2179): a leading ``A-B`` range (ASCII hyphen, en
+dash, or em dash; optional spaces; decimal endpoints incl. ``.5`` forms)
+parses as ``max(A, B)`` — the UPPER bound, because the budget is a FENCE
+(``poll_pipeline`` fires at ``ETA_DEVIATION_MULT x`` the total §9 wall):
+a lower-bound read understates the fence and false-fires on healthy runs
+that legitimately elapse toward the upper end — the #2162 incident cell
+``2-24 calendar`` (a Batch-API SLA phase) parsed as 2.0. Trailing prose
+after the range is ignored, never scanned for more numbers, and a slash
+arm-listing (``5.9 / 6.8 / 3.6``) is NOT a range — it keeps the
+first-number read (the #1481 idiom). ``<=X`` / ``<X`` keep parsing as X
+(the deliberate, test-pinned #2172 cosmetic-prefix behavior — the
+calendar-latency convention: ``<=24 calendar`` contributes 24.0 because
+the run genuinely elapses that wall). ``>=X`` / ``>X`` state a LOWER
+bound with NO derivable fence contribution, so a ``>`` / U+2265 in the
+cosmetic prefix run before the first digit REJECTS the cell into the
+loud whole-budget disable — never a phantom lower-bound hour. Authoring
+grammar (drift-pinned by the doc<->parser test):
+``.claude/rules/plan-compute-sizing.md`` § "§9 planned_wall_h cell
+grammar".
+
 Fail-safe reduce (#2172 AC #2): ANY located data cell with no parseable
 number disables the WHOLE budget (``total_h is None``,
 ``reason == "unparseable_cell"``) — never a partial sum, because an
@@ -49,6 +69,23 @@ WALL_HEADER_TOKEN = "planned_wall_h"
 # decimal-bearing alternative is listed FIRST so ``.5`` reads 0.5 (and
 # ``10.5`` reads 10.5 — integer-first would truncate it to 10.0).
 _WALL_CELL_RE = re.compile(r"[^0-9A-Za-z]*?([0-9]*\.[0-9]+|[0-9]+)")
+
+# THE range rule (#2179): a leading ``A-B`` range after the same lazy
+# cosmetic prefix — dash class covers ASCII hyphen, en dash (U+2013), and
+# em dash (U+2014), with optional spaces around the dash; NUM reuses the
+# decimal-first grammar so ``.5-2`` and ``2-24.5`` read correctly.
+# Anchored (.match()) like _WALL_CELL_RE: trailing prose is never scanned
+# for more numbers, and the lazy prefix cannot skip past a digit, so a
+# slash arm-listing (``5.9 / 6.8 / 3.6``) never matches as a range.
+_RANGE_NUM = r"(?:[0-9]*\.[0-9]+|[0-9]+)"
+_RANGE_CELL_RE = re.compile(rf"[^0-9A-Za-z]*?({_RANGE_NUM})\s*[-\u2013\u2014]\s*({_RANGE_NUM})")
+
+# The lower-bound-sign reject (#2179 AC2): a ``>`` or U+2265 anywhere in
+# the cosmetic prefix run BEFORE the first digit states a lower bound
+# with no derivable fence contribution -> the cell is unparseable (the
+# loud whole-budget disable). Anchored + lazy, so a ``>`` AFTER the first
+# digit (prose like ``2 > baseline``) does not reject.
+_GTE_PREFIX_RE = re.compile(r"[^0-9A-Za-z]*?[>≥]")
 
 # A markdown |---|:---:|---| separator row: every pipe-split cell is only
 # whitespace / dashes / colons.
@@ -93,16 +130,47 @@ class PlanWallBudget:
     reason: str  # "" | "no_table" | "unparseable_cell"; "" iff total_h is not None
 
 
+def is_range_cell(cell: str) -> bool:
+    """True when ``parse_wall_cell`` reads ``cell`` under the #2179 range
+    rule — a leading ``A-B`` range after a cosmetic prefix, with no
+    ``>``/``>=`` sign in that prefix — i.e. the value is ``max(A, B)``, a
+    DELIBERATE deviation from the pre-#2179 first-number (lower-bound)
+    read. Exported for the behavior-preservation tests' range exemption
+    (AC7): a range cell's value change is by design, never a regression.
+    """
+    return _GTE_PREFIX_RE.match(cell) is None and _RANGE_CELL_RE.match(cell) is not None
+
+
 def parse_wall_cell(cell: str) -> float | None:
     """Parse one ``planned_wall_h`` cell under the bounded float rule.
 
     Accepts a number after an optional cosmetic (non-alphanumeric) prefix:
     ``1.5``, ``(1.5)``, ``~1.5``, ``**~7.1**``, ``+0.05``, ``.5`` -> 0.5,
-    ``2.`` -> 2.0, ``3 (async, off-GPU)`` -> 3.0. Returns ``None`` for a
-    cell with no number the rule will trust — ``TBD``, ``N/A``, an empty
-    cell, and ANY letter before the first digit (``n=800 rows``,
-    ``issue #464`` — the loud fail-safe path, never a phantom wall hour).
+    ``2.`` -> 2.0, ``3 (async, off-GPU)`` -> 3.0. Two #2179 extensions,
+    checked in order (sign reject, then range, then the single-number
+    rule):
+
+    * a ``>`` / ``>=`` (U+2265) in the cosmetic prefix before the first
+      digit -> ``None`` — a lower bound has no fence contribution, so the
+      loud whole-budget disable is the correct read;
+    * a leading range ``A-B`` (ASCII hyphen / en dash / em dash, optional
+      spaces, decimal endpoints) -> ``max(A, B)`` — the UPPER bound
+      (fence semantics; trailing prose is ignored, never scanned for more
+      numbers).
+
+    Otherwise the #2172 single-number rule, unchanged: ``<=X`` / ``<X``
+    -> X, and ``None`` for a cell with no number the rule will trust —
+    ``TBD``, ``N/A``, an empty cell, and ANY letter before the first
+    digit (``n=800 rows``, ``issue #464`` — the loud fail-safe path,
+    never a phantom wall hour). Authoring grammar:
+    ``.claude/rules/plan-compute-sizing.md`` § "§9 planned_wall_h cell
+    grammar" (drift-pinned row-by-row by the doc<->parser test).
     """
+    if _GTE_PREFIX_RE.match(cell):  # ANCHORED — .match(), never .search()
+        return None
+    rm = _RANGE_CELL_RE.match(cell)  # ANCHORED — .match(), never .search()
+    if rm:
+        return max(float(rm.group(1)), float(rm.group(2)))
     m = _WALL_CELL_RE.match(cell)  # ANCHORED — .match(), never .search()
     return float(m.group(1)) if m else None
 

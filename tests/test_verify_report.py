@@ -622,6 +622,25 @@ def test_manifest_schema_invalid_fails(figs_root, tmp_path):
     assert not _by_name(results, "manifest-schema").passed
 
 
+def test_manifest_encoding_corrupt_fails_as_check_result(tmp_path):
+    """#2168 shape-4 regression (verdict-object failure): an encoding-corrupt
+    manifest raises ``UnicodeDecodeError`` from ``read_text()`` — a
+    ``ValueError`` OUTSIDE the pre-#2168 ``(OSError, JSONDecodeError)``
+    guard — and must surface as a FAILED manifest-schema ``CheckResult``,
+    never a propagating raise (one corrupt manifest must not crash the
+    whole verifier run)."""
+    mpath = tmp_path / "planned_manifest.json"
+    # 0xff is invalid UTF-8 in any position → read_text() raises
+    # UnicodeDecodeError before json.loads is ever reached.
+    mpath.write_bytes(b'\xff\xfe{"issue": 999}')
+    results = verify_report.check_manifest("", [], mpath)
+    assert len(results) == 1
+    res = results[0]
+    assert res.name == "manifest-schema"
+    assert not res.passed
+    assert "cannot read/parse manifest" in res.detail
+
+
 # ─── htmlpreview SHA well-formedness ─────────────────────────────────────
 
 

@@ -5347,7 +5347,7 @@ def _load_subfloor_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -5400,7 +5400,7 @@ def _load_subfloor_reclaim_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -5867,7 +5867,7 @@ def _load_data_disk_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6118,7 +6118,7 @@ def _load_happy_patch_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6623,7 +6623,7 @@ def _load_cpu_guard_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6934,7 +6934,7 @@ def _load_triage_observer_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7185,7 +7185,7 @@ def triage_observer_pass(dry_run: bool) -> bool:
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  triage-observer: registry read failed: {exc}", file=sys.stderr)
         return False
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -7346,7 +7346,7 @@ def _load_verdict_disagree_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7421,7 +7421,7 @@ def verdict_disagree_pass(dry_run: bool) -> bool:
 
         try:
             reg = json.loads(registry_path().read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
             print(f"  verdict-disagree: registry read failed: {exc}", file=sys.stderr)
             return False
         tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -7579,7 +7579,7 @@ def _load_root_draft_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7954,7 +7954,7 @@ def _load_daemon_liveness_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -8018,7 +8018,7 @@ def _daemon_liveness_suppressed_work() -> dict:
         data = json.loads(_infra_drain_queue_path().read_text())
         ripe = data.get("ripe_oldest_first") if isinstance(data, dict) else None
         ripe_infra = len(ripe) if isinstance(ripe, list) else None
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         ripe_infra = None
     return {"registrations": registrations, "ripe_infra": ripe_infra}
 
@@ -8325,7 +8325,7 @@ def _load_unfolded_round_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -8720,7 +8720,7 @@ def unfolded_round_pass(dry_run: bool) -> bool:  # noqa: C901 — flat sweep/pro
 
         try:
             reg = json.loads(registry_path().read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
             print(f"  unfolded-round: registry read failed: {exc}", file=sys.stderr)
             return False
         tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -8924,7 +8924,7 @@ def _load_registry_drift_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -9189,7 +9189,7 @@ def _load_predispatch_staleness_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -9580,7 +9580,7 @@ def _load_stash_rescue_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10034,7 +10034,7 @@ def _load_root_unstaged_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10395,7 +10395,7 @@ def _load_pending_call_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10768,7 +10768,7 @@ def _load_completed_unmerged_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10851,7 +10851,7 @@ def _completed_unmerged_candidates(now: float, lookback_s: float) -> list[tuple[
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  completed-unmerged: registry read failed: {exc}", file=sys.stderr)
         return []
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -11567,7 +11567,7 @@ def _load_partial_bundle_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -11728,7 +11728,7 @@ def _partial_bundle_candidate_issues(now: float, lookback_s: float) -> list[int]
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  partial-bundle: registry read failed: {exc}", file=sys.stderr)
         return []
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -12114,7 +12114,7 @@ def _load_codex_outage_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -12171,7 +12171,7 @@ def _codex_outage_read_sentinel(now: float) -> dict | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if not isinstance(data, dict):
         return None
@@ -12664,7 +12664,7 @@ def _load_settings_guard_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -12957,7 +12957,7 @@ def _load_urgent_wf_park_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -13896,7 +13896,7 @@ def _load_auth_outage_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         print(f"  auth-outage: state unreadable (fail-open, fresh state): {exc}", file=sys.stderr)
         return {}
     return data if isinstance(data, dict) else {}
@@ -13980,7 +13980,7 @@ def _registry_entry_field(issue: int, field: str) -> object:
     """One field from ``issue-<N>.json`` (fail-soft -> ``None``)."""
     try:
         entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json").read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     return entry.get(field) if isinstance(entry, dict) else None
 
@@ -15156,7 +15156,7 @@ def _manual_session_alive(issue: int | None, live_ids: set[str]) -> bool:
     path = AUTONOMOUS_REGISTRY_DIR / f"manual-issue-{issue}.json"
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     sid = entry.get("happy_session_id")
     return isinstance(sid, str) and sid in live_ids
@@ -15341,7 +15341,7 @@ def _load_pod_safety_state(issue: int) -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -15680,7 +15680,7 @@ def _load_stalled_state(issue: int) -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -15947,7 +15947,7 @@ def _clear_fence_state_on_disk(issue: int) -> None:
     path = _stalled_state_path(issue)
     try:
         payload = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return
     if not isinstance(payload, dict):
         return
@@ -16015,7 +16015,7 @@ def _gc_orphan_pod_safety_state(
             first_seen = payload.get("first_seen", now)
             if not isinstance(first_seen, int | float):
                 first_seen = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_seen = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_seen
         reason = (
@@ -16552,7 +16552,7 @@ def _load_vm_disk_state() -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -16614,7 +16614,7 @@ def _vm_disk_marker_issues() -> list[int]:
     for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json")):
         try:
             entry = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         issue = entry.get("issue")
         if isinstance(issue, int) and _task_status(issue) in ACTIVE:
@@ -18428,7 +18428,7 @@ def _keep_running_owner_candidates(issue: int, children: list) -> dict[int, str 
     for name in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
         try:
             entry = json.loads((AUTONOMOUS_REGISTRY_DIR / name).read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         if not isinstance(entry, dict):
             continue
@@ -21846,7 +21846,7 @@ def _stalled_session_overrides(issue: int) -> list[str]:
     entry_path = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     try:
         entry = json.loads(entry_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     if not isinstance(entry, dict):
         return []
@@ -23597,7 +23597,7 @@ def _process_stalled_session(
     """
     try:
         entry = json.loads(entry_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         # Cleanup is owned elsewhere: the respawn pass removes a garbled
         # autonomous entry; the GC pass reaps manual entries (keyed on the
         # filename's issue number, so a garbled BODY still gets aged out).
@@ -24292,7 +24292,7 @@ def _load_orphan_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -24461,7 +24461,7 @@ def _issue_registrations() -> dict[int, dict]:
                 continue
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 entry = {}
             if not isinstance(entry, dict):
                 entry = {}
@@ -26020,7 +26020,7 @@ def _load_attempt_state(path: Path, max_attempts: int, *, log_prefix: str) -> di
         return {"attempts": {}}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {"attempts": {}}
     if not isinstance(data, dict) or not isinstance(data.get("attempts"), dict):
         return {"attempts": {}}
@@ -27778,7 +27778,7 @@ def _load_capacity_retry_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -28065,7 +28065,7 @@ def _load_stale_blocked_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -28629,7 +28629,7 @@ def _newest_registration_spawned_at(issue: int) -> float | None:
     for prefix in ("issue-", "manual-issue-"):
         try:
             entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"{prefix}{issue}.json").read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         ts = entry.get("spawned_at") if isinstance(entry, dict) else None
         if isinstance(ts, int | float) and not isinstance(ts, bool) and ts:
@@ -28848,7 +28848,7 @@ def _load_session_reconcile_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -28932,7 +28932,7 @@ def _gc_orphan_session_reconcile_state(
             first_seen = payload.get("first_seen", now)
             if not isinstance(first_seen, int | float):
                 first_seen = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_seen = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_seen
         reason = (
@@ -29789,7 +29789,7 @@ def _load_zombie_state(sid: str) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -29854,7 +29854,7 @@ def _gc_orphan_zombie_state(live_sids: set[str], dry_run: bool, now: float | Non
             first_miss = payload.get("first_miss_ts", now)
             if not isinstance(first_miss, int | float):
                 first_miss = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_miss = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_miss
         reason = (
@@ -30612,7 +30612,7 @@ def _happy_daemon_pid() -> int | None:
     daemon-shaped cmdline on its own; plan #1215 assumption 3)."""
     try:
         data = json.loads((Path.home() / ".happy" / "daemon.state.json").read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
     pid = data.get("pid") if isinstance(data, dict) else None
     return pid if isinstance(pid, int) and not isinstance(pid, bool) else None
@@ -30830,7 +30830,7 @@ def _load_orphan_wrapper_state(pid: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -30901,7 +30901,7 @@ def _gc_orphan_wrapper_state(current_keys: set[tuple[int, float]], dry_run: bool
         try:
             payload = json.loads(path.read_text())
             state_se = payload.get("start_epoch") if isinstance(payload, dict) else None
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             state_se = None
         live = isinstance(state_se, int | float) and any(
             abs(se - state_se) <= 1.0 for se in by_pid.get(pid, [])
@@ -32396,7 +32396,7 @@ def _load_idle_unmapped_state(sid: str) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -32525,7 +32525,7 @@ def _load_tty_unmapped_report_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -32768,7 +32768,7 @@ def _last_mapped_terminal(sid: str) -> tuple[str, int] | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if not isinstance(data, dict):
         return None
@@ -32854,7 +32854,7 @@ def _gc_orphan_idle_unmapped_state(
             first_over = payload.get("first_over_ts", now)
             if not isinstance(first_over, int | float):
                 first_over = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_over = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_over
         reason = (
@@ -33681,7 +33681,7 @@ def _load_boot_death_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -33827,7 +33827,7 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     here may raise (the ``_process_stale_registration`` containment style)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -34196,7 +34196,7 @@ def _process_no_progress_respawn(
     raise (the ``_process_boot_death`` containment style)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -34488,7 +34488,7 @@ def _process_stale_registration(
     dead session's crash-recovery coverage or double-drive a live one)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -34900,7 +34900,7 @@ def _campaign_registry_entries() -> list[tuple[Path, dict]]:
             continue  # campaign-watch-<N>.json or a hand-debug artifact
         try:
             entry = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             entry = {}
         out.append((path, entry if isinstance(entry, dict) else {}))
     return out
@@ -34918,7 +34918,7 @@ def _load_campaign_watch_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -35094,7 +35094,7 @@ def _campaign_state_budget(issue: int) -> tuple[float, float] | None:
     state_file = Path(out.stdout.strip()) / "artifacts" / "campaign-state.json"
     try:
         state = json.loads(state_file.read_text())
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
+    except (FileNotFoundError, json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     budget = state.get("budget") if isinstance(state, dict) else None
     if not isinstance(budget, dict):
@@ -35505,7 +35505,7 @@ def _load_gate_notify_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -35619,7 +35619,7 @@ def _task_title(issue: int) -> str:
             timeout=30,
         )
         data = json.loads(out.stdout) if out.returncode == 0 else {}
-    except (subprocess.SubprocessError, OSError, json.JSONDecodeError):
+    except (subprocess.SubprocessError, OSError, json.JSONDecodeError, UnicodeDecodeError):
         return ""
     title = data.get("title") or (data.get("frontmatter") or {}).get("title")
     return title.strip()[:45] if isinstance(title, str) else ""
@@ -37132,7 +37132,7 @@ def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int
     (logs but never mutates / spawns)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         print(f"  {path.name}: unreadable; removing")
         if not dry_run:
             path.unlink(missing_ok=True)

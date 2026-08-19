@@ -102,6 +102,10 @@
 #                             sparse-worktree FileNotFoundError, hit twice in #2329
 #                             (the #671 class). Narrow cone: full issue_1739 is 4.9G,
 #                             dv_dataset is 22M; == issue2220_readwrite._PARENT_INPUTS_CONE.
+#   eval_results/issue_2163 — tests/test_matched_support.py regression fixtures:
+#                             predictor_partials.json + population_partials.json +
+#                             census.npz (the #2180 matched-covariate-support
+#                             known-positive / negative-control artifacts; ~11M)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -127,3 +131,4 @@ external/jacobian-lens
 eval_results/issue_1739/dv_dataset
 eval_results/issue_2094/f_metrics
 eval_results/issue_2333/inputs
+eval_results/issue_2163
