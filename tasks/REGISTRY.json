@@ -10687,8 +10687,8 @@
       "goal": "Test whether the framing-transfer results (#2054 chat-plain, #1345/#1639 assistant-story) are causal: patch the context vector v_C across framings and measure persona/behavior transport into the target framing's generated answer vs matched within-framing patches and null controls.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2383",
-      "status": "proposed",
+      "path": "tasks/on_hold/2383",
+      "status": "on_hold",
       "title": "Causal patching of context vectors across framings (chat-to-plain, assistant-to-story)"
     },
     "2384": {
