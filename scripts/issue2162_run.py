@@ -756,21 +756,23 @@ def build_config(args: argparse.Namespace) -> RunConfig:
 
 def _write_json_atomic(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
+    # Per-process tmp suffix: concurrent workers writing the same sentinel path
+    # must not share a tmp name, or the losing worker's os.replace hits ENOENT.
+    tmp = path.parent / (path.name + f".tmp.{os.getpid()}")
     tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
     os.replace(tmp, path)
 
 
 def _write_jsonl_atomic(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
+    tmp = path.parent / (path.name + f".tmp.{os.getpid()}")
     tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
     os.replace(tmp, path)
 
 
 def _save_pt_atomic(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
+    tmp = path.parent / (path.name + f".tmp.{os.getpid()}")
     torch.save(obj, tmp)
     os.replace(tmp, path)
 
