@@ -2229,3 +2229,549 @@ def test_b3_multi_hex_segment_without_phase_keeps_first_run_pin(tmp_path):
     assert "pins deadbeef" in r.detail
     assert "resolves to card commit" in r.detail
     assert "resolved via exact phase match" not in r.detail
+
+
+# ─── #2195: stale-evidence-pins ──────────────────────────────────────────────
+#
+# WARN-only supersession check: a report citing an in-repo evidence FILE at a
+# pin the same issue branch has since modified. Integration fixtures reuse the
+# #2162 incident (the corrected line-127 citation grammar, frozen verbatim
+# below); hermetic twins carry the full shape battery on sparse/unfetched
+# clones.
+
+_2162_STALE_PIN = "db5d1680a257202d9458d6c32a6073db2bd3a24e"
+_2162_FRESH_PIN = "434c84f5aec9453ab85845445a812913a8c6434d"
+
+# The corrected #2162 citation grammar, excerpted VERBATIM from the task's
+# body.md line 127 (frozen 2026-08-19 at origin/issue-2162 tip b5c8ff27d4 ==
+# _2162_FROZEN_TIP; the sentence's tail after "counts are per dispatch
+# DECISION" is truncated with a closing paren — the citation grammar
+# `` `<path>`, committed at `<40-hex>` `` is the anchor, not the prose tail).
+_2162_L127_CITATION = (
+    "The sync-routed dispatches split into two populations (evidence: "
+    "`eval_results/issue_2162/judge/routing_evidence.json`, committed at "
+    f"`{_2162_FRESH_PIN}`, which records per source log the batch/sync dispatch N "
+    "values split by the base threshold, the observed base/otpm/effective values, "
+    "the assumed-vs-probed `otpm_source_correspondence` block, the `causal_floor` "
+    "block, and each log's sha256; counts are per dispatch DECISION)"
+)
+
+requires_2195_stale_pin = pytest.mark.skipif(
+    not _repo_resolves(f"{_2162_STALE_PIN}^{{commit}}"),
+    reason="#2162 stale pin db5d1680a2 not in the local object DB (sparse/unfetched clone)",
+)
+requires_2195_fresh_pin = pytest.mark.skipif(
+    not _repo_resolves(f"{_2162_FRESH_PIN}^{{commit}}"),
+    reason="#2162 corrected pin 434c84f5ae not in the local object DB (sparse/unfetched clone)",
+)
+
+
+def _skip_on_2162_tip_drift() -> None:
+    """Skip when origin/issue-2162 moved past _2162_FROZEN_TIP: a later commit
+    touching the cited file would change the newer-commit set (and could push
+    the two asserted SHAs past the enumeration cap) for a reason unrelated to
+    this checker. Remedy on drift: RE-FREEZE the #2195 expectations against
+    the new tip — never a checker change."""
+    live_tip = subprocess.run(
+        ["git", "-C", str(_REPO_ROOT), "rev-parse", "origin/issue-2162"],
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if live_tip != _2162_FROZEN_TIP:
+        pytest.skip(
+            f"origin/issue-2162 tip {live_tip[:12]} != frozen tip {_2162_FROZEN_TIP[:12]} — "
+            "re-freeze the #2195 stale-pin expectations, do NOT change the checker"
+        )
+
+
+# ── Integration tests (skipif-gated on the real object DB; hermetic twins
+#    below carry the logic coverage on sparse/unfetched clones).
+
+
+@requires_2195_stale_pin
+@requires_2162_branch
+def test_stale_pin_fires_on_2162_round3_reconstruction():
+    """Criterion 4a / H1 — FIRES on the RECONSTRUCTED #2162 round-3 defect,
+    naming BOTH measured newer commits in log order (newest first).
+
+    Fixture provenance: the defective db5d1680a2 citation lived only in a
+    never-committed draft (every committed body.md revision of #2162 already
+    carries the corrected pin), so this is a RECONSTRUCTION — the committed
+    line-127 grammar with the measured stale pin substituted; the grammar
+    anchor is committed verbatim and the staleness ground truth is measured
+    (plan §2: exactly 2 newer commits on origin/issue-2162 touch the cited
+    file after db5d1680a2 — 434c84f5ae then 28d35cffc6)."""
+    _skip_on_2162_tip_drift()
+    line = _2162_L127_CITATION.replace(_2162_FRESH_PIN, _2162_STALE_PIN)
+    r = verify_report.check_stale_evidence_pins([line], _REPO_ROOT, 2162)
+    assert r.passed is True and r.is_warn is True, r.detail
+    assert "eval_results/issue_2162/judge/routing_evidence.json" in r.detail
+    assert _2162_STALE_PIN[:12] in r.detail  # names the pin
+    assert "2 newer commit(s) on origin/issue-2162" in r.detail
+    assert "434c84f5ae" in r.detail and "28d35cffc6" in r.detail
+    assert r.detail.index("434c84f5ae") < r.detail.index("28d35cffc6")  # newest first
+    assert "as-of pin" in r.detail  # the remediation guidance
+
+
+@requires_2195_fresh_pin
+@requires_2162_branch
+def test_stale_pin_silent_on_2162_corrected():
+    """Criterion 4a / H2 (line scope) — clean PASS on the frozen corrected
+    line-127 citation (0 newer commits at 434c84f5ae, measured plan §2)."""
+    _skip_on_2162_tip_drift()
+    r = verify_report.check_stale_evidence_pins([_2162_L127_CITATION], _REPO_ROOT, 2162)
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+@requires_2195_fresh_pin
+@requires_2162_branch
+def test_stale_pin_whole_report_2162():
+    """Criterion 4b / H2 (whole-report scope) — the check over the CURRENT
+    corrected #2162 body is warn-free: the file citations are fresh and every
+    directory-level home claim is skipped with a note, never WARNed. The body
+    is resolved via the task-workflow library (never a hand-built path) and
+    the test skips on tip drift or when the resolver is unavailable."""
+    _skip_on_2162_tip_drift()
+    from explore_persona_space.task_workflow import find_task_path
+
+    try:
+        body_path = find_task_path(2162) / "body.md"
+    except Exception as e:  # env-dependent resolver (branch-guarded) — skip, never fail
+        pytest.skip(f"task-workflow resolver unavailable here: {e}")
+    if not body_path.is_file():
+        pytest.skip(f"body.md for #2162 not found at {body_path}")
+    _, body = verify_report.split_frontmatter(body_path.read_text())
+    lines = verify_report.blank_verbatim(body.splitlines())
+    r = verify_report.check_stale_evidence_pins(lines, _REPO_ROOT, 2162)
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+
+
+# ── Hermetic twins: fixture ──────────────────────────────────────────────────
+
+
+@pytest.fixture
+def stale_repo(tmp_path: Path) -> tuple[Path, str, str, str]:
+    """A real git repo with evolving evidence files on local branch ``issue-5``
+    (no origin ref — the origin-absent local-fallback arm by default).
+
+    sha_a: eval_results/issue_5/{x,y}.json v1 + solo/only.json +
+           scripts/tool.py + a tasks note at running/5 + figures/issue_5/f.png.
+    sha_b: x/y/solo/tool modified; the tasks note git-mv'd running/5 ->
+           completed/5 (the status-rename shape).
+    sha_c (HEAD, == issue-5 tip): x/y modified again.
+    Returns (root, sha_a, sha_b, sha_c).
+    """
+    root = tmp_path
+    subprocess.run(["git", "init", "-q", str(root)], check=True, capture_output=True)
+    _git_run(root, "config", "user.email", "test@test.test")
+    _git_run(root, "config", "user.name", "Test")
+    _git_run(root, "config", "commit.gpgsign", "false")
+    ev = root / "eval_results" / "issue_5"
+    (ev / "solo").mkdir(parents=True)
+    (ev / "x.json").write_text('{"v": 1}')
+    (ev / "y.json").write_text('{"v": 1}')
+    (ev / "solo" / "only.json").write_text('{"v": 1}')
+    (root / "scripts").mkdir()
+    (root / "scripts" / "tool.py").write_text("V = 1\n")
+    note_dir = root / "tasks" / "running" / "5"
+    note_dir.mkdir(parents=True)
+    (note_dir / "note.md").write_text("v1\n")
+    figs = root / "figures" / "issue_5"
+    figs.mkdir(parents=True)
+    (figs / "f.png").write_bytes(b"\x89PNG\r\n\x1a\nstale-repo-figure")
+    _git_run(root, "add", "eval_results", "scripts", "tasks", "figures")
+    _git_run(root, "commit", "-q", "-m", "v1")
+    sha_a = _git_run(root, "rev-parse", "HEAD")
+    (ev / "x.json").write_text('{"v": 2}')
+    (ev / "y.json").write_text('{"v": 2}')
+    (ev / "solo" / "only.json").write_text('{"v": 2}')
+    (root / "scripts" / "tool.py").write_text("V = 2\n")
+    (root / "tasks" / "completed" / "5").mkdir(parents=True)
+    _git_run(root, "mv", "tasks/running/5/note.md", "tasks/completed/5/note.md")
+    _git_run(root, "add", "eval_results", "scripts")
+    _git_run(root, "commit", "-q", "-m", "v2 + status rename")
+    sha_b = _git_run(root, "rev-parse", "HEAD")
+    (ev / "x.json").write_text('{"v": 3}')
+    (ev / "y.json").write_text('{"v": 3}')
+    _git_run(root, "add", "eval_results")
+    _git_run(root, "commit", "-q", "-m", "v3")
+    sha_c = _git_run(root, "rev-parse", "HEAD")
+    _git_run(root, "branch", "issue-5")
+    return root, sha_a, sha_b, sha_c
+
+
+def _stale(lines: list[str], root: Path, issue: int | None = 5):
+    return verify_report.check_stale_evidence_pins(lines, root, issue)
+
+
+# ── Hermetic twins: FIRE / SILENT (criteria 1-2) ─────────────────────────────
+
+
+def test_stale_pin_fires_hermetic(stale_repo):
+    """Criterion 1 — a file citation at pin A with two later modifying commits
+    WARNs, enumerating BOTH newer SHAs in log order (newest first). Also the
+    divergent-ref matrix arm (ii): origin absent -> the local ``issue-5``
+    fallback is used ("on issue-5" in the detail)."""
+    root, sha_a, sha_b, sha_c = stale_repo
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is True, r.detail
+    assert "2 newer commit(s) on issue-5" in r.detail
+    assert sha_c[:12] in r.detail and sha_b[:12] in r.detail
+    assert r.detail.index(sha_c[:12]) < r.detail.index(sha_b[:12])  # newest first
+    assert "as-of pin" in r.detail
+
+
+def test_stale_pin_silent_at_tip_pin(stale_repo):
+    """Criterion 2 — the same citation at the tip pin is a clean PASS
+    (``passed=True, is_warn=False``)."""
+    root, _sha_a, _sha_b, sha_c = stale_repo
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_c}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+# ── Hermetic twins: divergent-ref matrix + association (criterion 3) ─────────
+
+
+def test_stale_pin_origin_tip_beats_lagging_local(stale_repo):
+    """Divergent-ref matrix (i): local issue-5 parked at pin A while
+    origin/issue-5 advanced -> WARN against origin (the authoritative tip;
+    the v1 all-resolvable-tips-must-be-stale rule would have let the lagging
+    local ref veto origin staleness — the silent-failure channel)."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "on origin/issue-5" in r.detail
+
+
+def test_stale_pin_divergent_pin_skipped(stale_repo):
+    """Divergent-ref matrix (iii): a pin that is NOT an ancestor of the tip
+    (rebased/divergent history) is skipped with a note — staleness
+    undecidable, never guessed stale. The divergent commit shares pin A's
+    TREE (the file test passes) but has disjoint history."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    tree = _git_run(root, "rev-parse", f"{sha_a}^{{tree}}")
+    sha_d = _git_run(root, "commit-tree", tree, "-m", "divergent root")
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_d}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "divergent history" in r.detail
+    assert sha_d[:12] in r.detail
+
+
+def test_stale_pin_unrelated_fresh_pin_does_not_silence(stale_repo):
+    """Two-pin association (v1's false-silence channel): a STALE associated
+    evidence pin WARNs even when an unrelated FRESH SHA shares the line."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    line = f"data `eval_results/issue_5/x.json` at `{sha_a}` (analysis code at `{sha_c}`)"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert f"cited at {sha_a[:12]}" in r.detail  # the ASSOCIATED pin, not the bystander
+
+
+def test_stale_pin_two_paths_each_read_against_own_pin(stale_repo):
+    """Mirrored two-path/two-pin line: each member is read ONLY against its
+    associated pin — x at the tip pin stays silent while y at pin A WARNs."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    line = (
+        f"`eval_results/issue_5/x.json` at `{sha_c}` and `eval_results/issue_5/y.json` at `{sha_a}`"
+    )
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "y.json` cited at" in r.detail
+    assert "x.json` cited at" not in r.detail
+
+
+def test_stale_pin_brace_group_members_share_association(stale_repo):
+    """Brace-group members share their group's association: both expanded
+    members are read against the group's single associated pin."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = "grids `eval_results/issue_5/{x, y}.json` at `" + sha_a + "`"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "x.json` cited at" in r.detail and "y.json` cited at" in r.detail
+
+
+# ── Hermetic twins: conservative skip set (criterion 3) ──────────────────────
+
+
+def test_stale_pin_directory_citation_skipped(stale_repo):
+    """A multi-name listing (directory citation) is skipped with a note —
+    later additions under a directory do not supersede a home claim."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"tables under `eval_results/issue_5` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "directory citation" in r.detail
+
+
+def test_stale_pin_single_file_directory_skipped(stale_repo):
+    """A single-name listing NOT equal to the cited member (a directory
+    containing exactly one file) is ALSO skipped — EQUALITY, not count, is
+    the file test. solo/only.json was modified after pin A, so a count-based
+    test would false-WARN here."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"audit under `eval_results/issue_5/solo` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "directory citation" in r.detail
+
+
+def test_stale_pin_absent_path_skipped(stale_repo):
+    """A path absent at the associated pin is skipped with a note — a broken
+    citation is not a stale one."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"`eval_results/issue_5/never.json` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "absent at" in r.detail
+    assert "broken" in r.detail
+
+
+def test_stale_pin_no_pin_line_skipped(stale_repo):
+    """A line with no resolvable same-line pin is skipped silently (a no-pin
+    committed-under claim already gets committed-under-claims' WARN)."""
+    root, *_ = stale_repo
+    r = _stale(["`eval_results/issue_5/x.json` holds the metrics"], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_code_path_outside_prefix_set(stale_repo):
+    """`scripts/` code citations are outside _EVIDENCE_PATH_PREFIXES ("ran at
+    <sha>" is provenance a later commit does not invalidate; code-sha-cards
+    owns that surface): tool.py WAS modified after pin A, yet no candidate."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    r = _stale([f"ran `scripts/tool.py` at `{sha_a}`"], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_tasks_path_excluded(stale_repo):
+    """The status-rename shape (Codex-Meth Must-Fix 2): the tasks note was
+    git-mv'd running/5 -> completed/5 at sha_b, so the rename's delete side
+    makes ``git log <pin A>..tip -- <old path>`` NON-empty and the file test
+    at pin A passes — only the tasks/ prefix exclusion keeps this citation
+    from reading permanently stale. No WARN."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"tracked in `tasks/running/5/note.md` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_code_sha_row_skipped(stale_repo):
+    """A `| Code SHAs |` table row is skipped entirely — run-provenance pins,
+    not evidence citations — even when it carries a would-fire citation."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"| Code SHAs | grid `{sha_a}` — inputs `eval_results/issue_5/x.json` |"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_dedup_same_citation(stale_repo):
+    """The same (path, pin) citation on two lines produces ONE detail entry."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"see `eval_results/issue_5/x.json` at `{sha_a}`"
+    r = _stale([line, line], root)
+    assert r.is_warn is True, r.detail
+    assert r.detail.count("x.json` cited at") == 1
+
+
+def test_stale_pin_branch_token_pin_is_fresh_by_construction(stale_repo):
+    """Named residue 3, origin-ABSENT fallback arm: with no origin ref, a
+    plain branch token falls back to the local ref — here the authoritative
+    tip itself — so the log range is empty and the citation stays silent."""
+    root, *_ = stale_repo
+    line = "tables in `eval_results/issue_5/x.json` on branch `issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_branch_token_prefers_origin_over_lagging_local(stale_repo):
+    """Round-2 blocker fix (branch-token-origin-precedence): local issue-5
+    forced to pin A while origin/issue-5 sits at the tip — the NORMAL
+    worktree shape. A citation whose ONLY pin is the plain ``issue-5`` token
+    associates to the ORIGIN tip (mirroring _authoritative_tip) -> clean
+    PASS. Local-first resolution pinned it at lagging A and false-WARNed a
+    healthy report (the round-1 reconciler's empirical replay)."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = "tables in `eval_results/issue_5/x.json` on branch `issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_explicit_origin_token_resolves_remote_only(stale_repo):
+    """Round-2 blocker fix, explicit-token form: an ``origin/issue-5`` token
+    resolves ONLY refs/remotes/origin/issue-5 — never the lagging local ref
+    it does not name -> clean PASS under the same lagging-local shape."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = "tables in `eval_results/issue_5/x.json` on branch `origin/issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_nearest_pin_before_path_association(stale_repo):
+    """Association arm the round-1 Codex review named unfocused: with NO pin
+    positioned after the member's span, the member associates to the nearest
+    pin BEFORE it — the pin-A citation WARNs."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"at `{sha_a}` we updated `eval_results/issue_5/x.json`"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "x.json` cited at" in r.detail
+
+
+def test_stale_pin_shalike_filename_does_not_self_pin(stale_repo):
+    """Span hygiene: a cited filename carrying a resolvable hex run must not
+    contribute its own hex as a pin. Without the blanking, y.json (span
+    before the hex-named sibling) would associate to the filename's embedded
+    pin A and false-WARN; with it the line has NO pins and is skipped."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = (
+        f"updated `eval_results/issue_5/y.json` and `eval_results/issue_5/{sha_a}.json` this round"
+    )
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+# ── Hermetic twins: degrades + caps (criterion 3) ────────────────────────────
+
+
+def test_stale_pin_non_git_root_warns(tmp_path):
+    line = "metrics from `eval_results/issue_5/x.json` at `" + "f" * 40 + "`"
+    r = verify_report.check_stale_evidence_pins([line], tmp_path, 5)
+    assert r.passed is True and r.is_warn is True
+    assert "not a git checkout" in r.detail
+
+
+def test_stale_pin_no_candidates_is_na(tmp_path):
+    """No evidence citations -> PASS-note N/A, even on a non-git root (the
+    candidate scan precedes the git-checkout degrade)."""
+    r = verify_report.check_stale_evidence_pins(["prose without citations"], tmp_path, 5)
+    assert r.passed is True and r.is_warn is False
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_no_branch_ref_skips(claims_repo):
+    """Unknown issue OR no issue branch ref (the post-merge branch-deleted
+    shape) -> PASS-note, never a WARN on every promote of an old report."""
+    root, sha1, _sha2 = claims_repo
+    line = f"`eval_results/issue_5/x.json` at `{sha1}`"
+    r = verify_report.check_stale_evidence_pins([line], root, 5)
+    assert r.passed is True and r.is_warn is False
+    assert "no issue branch ref resolvable" in r.detail
+    r = verify_report.check_stale_evidence_pins([line], root, None)
+    assert r.passed is True and r.is_warn is False
+    assert "no issue branch ref resolvable" in r.detail
+
+
+def test_stale_pin_read_cap_counted_note(stale_repo, monkeypatch):
+    """Reads beyond _STALE_READ_CAP are skipped with a COUNTED note —
+    disclosed, never silent; the uncapped reads still fire."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    monkeypatch.setattr(verify_report, "_STALE_READ_CAP", 1)
+    lines = [
+        f"`eval_results/issue_5/x.json` at `{sha_a}`",
+        f"`eval_results/issue_5/y.json` at `{sha_a}`",
+    ]
+    r = verify_report.check_stale_evidence_pins(lines, root, 5)
+    assert r.is_warn is True, r.detail
+    assert "x.json` cited at" in r.detail
+    assert "read cap (1) reached — 1 candidate(s) not checked" in r.detail
+
+
+def test_stale_pin_detail_enumeration_cap(stale_repo, monkeypatch):
+    """The WARN detail enumerates newest-first up to _STALE_DETAIL_COMMITS_CAP,
+    then '+K more' — never an unbounded commit dump."""
+    root, sha_a, sha_b, sha_c = stale_repo
+    monkeypatch.setattr(verify_report, "_STALE_DETAIL_COMMITS_CAP", 1)
+    line = f"`eval_results/issue_5/x.json` at `{sha_a}`"
+    r = verify_report.check_stale_evidence_pins([line], root, 5)
+    assert r.is_warn is True, r.detail
+    assert sha_c[:12] in r.detail  # the newest, enumerated
+    assert sha_b[:12] not in r.detail  # capped out of the enumeration
+    assert "+1 more" in r.detail
+
+
+def test_stale_pin_constants_pinned_verbatim():
+    """Regression gate in the under-fire direction: the prefix set + caps are
+    plan-pinned design decisions (broadening the prefix set is a MUST-ASK
+    change; tasks/ is deliberately absent — status-transition renames)."""
+    assert verify_report._EVIDENCE_PATH_PREFIXES == (
+        "eval_results/",
+        "ood_eval_results/",
+        "figures/",
+        "docs/",
+    )
+    assert verify_report._STALE_READ_CAP == 200
+    assert verify_report._STALE_DETAIL_COMMITS_CAP == 5
+
+
+# ── Warn-free regression corpus (criterion 5) + CLI (criterion 6) ────────────
+
+
+@pytest.mark.parametrize(
+    ("mode", "builder"),
+    [("generation", _default_sections), ("promote", _promote_sections)],
+    ids=["generation-default", "promote-default"],
+)
+def test_stale_pin_warn_free_on_existing_fixtures(figs_root, mode, builder):
+    """Criterion 5 / H3 — EXPLICIT warn-free assert on the suite's frozen
+    full-body fixtures through the REAL dispatch: WARN renders as a passing
+    result, so suite greenness alone can never observe a new WARN."""
+    ok, results = _run(_assemble(builder()), mode=mode, figs_root=figs_root)
+    r = _by_name(results, "stale-evidence-pins")
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+    assert ok, [x.render() for x in results if not x.passed]
+
+
+def test_cli_stale_evidence_pins_both_modes(stale_repo, tmp_path):
+    """Criterion 6 — through main() with --figures-root EXPLICIT (the #2191
+    lesson): a stale citation WARNs in BOTH modes with rc 0 both (the
+    no-mode-split design — the staleness window spans generation->promote,
+    and WARN counts as PASS overall)."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    image = _pin(sha_c)  # a REAL repo sha; the committed f.png blob matches disk
+    stale_line = f"Inputs frozen from `eval_results/issue_5/x.json`, committed at `{sha_a}`."
+    base = [sys.executable, str(_SCRIPT), "--figures-root", str(root)]
+
+    gen_sections = _default_sections(image=image)
+    gen_sections[2] = ("## Methodology (shared)", gen_sections[2][1] + "\n" + stale_line)
+    gen = tmp_path / "gen.md"
+    gen.write_text(_assemble(gen_sections))
+    r_gen = subprocess.run(
+        [*base, "--file", str(gen), "--mode", "generation"], capture_output=True, text=True
+    )
+    assert r_gen.returncode == 0, r_gen.stdout + r_gen.stderr
+    assert "[WARN] stale-evidence-pins" in r_gen.stdout
+    assert "OVERALL: PASS" in r_gen.stdout
+
+    prom_sections = _promote_sections(image=image)
+    prom_sections[2] = ("## Methodology (shared)", prom_sections[2][1] + "\n" + stale_line)
+    prom = tmp_path / "prom.md"
+    prom.write_text(_assemble(prom_sections))
+    r_prom = subprocess.run(
+        [*base, "--file", str(prom), "--mode", "promote"], capture_output=True, text=True
+    )
+    assert r_prom.returncode == 0, r_prom.stdout + r_prom.stderr
+    assert "[WARN] stale-evidence-pins" in r_prom.stdout
+    assert "OVERALL: PASS" in r_prom.stdout

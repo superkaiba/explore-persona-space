@@ -92,6 +92,45 @@ Required structure (both modes):
     inferred from the ``**Detailed writeup:**`` line; unknown → WARN-skip; no
     cards anywhere → PASS-note N/A. Abbreviated / non-hex / dirty card values
     are EXCLUDED from every FAIL/WARN set and listed in the detail.
+  - ``stale-evidence-pins`` (#2195): every line citing an in-repo EVIDENCE
+    FILE — a backticked repo-relative path under ``_EVIDENCE_PATH_PREFIXES``
+    (``eval_results/`` / ``ood_eval_results/`` / ``figures/`` / ``docs/``;
+    ``tasks/`` deliberately excluded — status-transition renames make any
+    ``tasks/<status>/…`` citation read permanently stale) — at a same-line
+    pin is checked for SUPERSESSION. Each candidate member associates with
+    ONE pin (the first resolvable pin positioned AFTER the member's backtick
+    span, else the nearest one BEFORE it; brace-group members share their
+    group's association; span hygiene blanks the cited-path spans before
+    hex-run scanning so a sha-like cited filename never self-pins), must
+    resolve at that pin as exactly ONE blob EQUAL to the cited path
+    (directory / single-file-directory / absent-at-pin citations skipped
+    with a note — a home claim is not superseded by later additions and a
+    broken citation is not a stale one), and is then read against the issue
+    branch's AUTHORITATIVE tip (``origin/issue-<N>`` preferred; local
+    ``issue-<N>`` ONLY when origin is absent) — behind a
+    ``merge-base --is-ancestor`` guard (a non-ancestor pin is divergent
+    history: staleness undecidable, skipped with a note) — via
+    ``git log <pin>..<tip> -- <path>``. Non-empty ⇒ WARN in BOTH modes,
+    never FAIL (an as-of pin is legitimate; the check cannot read
+    contradiction), the detail enumerating up to
+    ``_STALE_DETAIL_COMMITS_CAP`` newer commits (log order, newest first),
+    deduped by (path, pin) and capped at ``_STALE_READ_CAP`` reads per
+    report (counted note beyond — disclosed, never silent). ``| Code SHAs |``
+    rows and no-pin lines are skipped (code provenance is
+    ``code-sha-cards``' surface; a no-pin committed-under claim already gets
+    ``committed-under-claims``' WARN). Degrades: non-git root → WARN; issue
+    unresolvable / no branch ref → PASS-note; no candidates → PASS-note N/A.
+    Named residues: a stale citation phrased WITHOUT a same-line pin is
+    invisible by construction; artifacts modified on a DIFFERENT branch
+    (main after a sibling merge) are out of scope; branch-token pins resolve
+    ORIGIN-FIRST (an explicit `` `origin/<b>` `` token only at
+    ``refs/remotes/origin/<b>``; a plain `` `<b>` `` token falls back to
+    ``refs/heads/<b>`` only when origin is absent — mirroring the
+    authoritative-tip policy, so a worktree-local ``issue-<N>`` lagging
+    origin cannot false-WARN a token-pinned citation), which makes a token
+    naming the AUTHORITATIVE branch fresh at verify time (same-ref log range
+    is empty); a token naming a DIFFERENT ref (`` `main` ``, a foreign
+    `` `issue-<M>` ``) resolves at THAT ref's tip and may legitimately WARN.
 
 Mode-specific:
   - ``generation``: TLDR AND Conclusion-and-next-steps content MUST be exactly
@@ -1605,6 +1644,257 @@ def check_code_sha_cards(
     return CheckResult(name, True, detail)
 
 
+# ─── Stale evidence pins (#2195; both modes, WARN-only) ─────────────────────
+
+# Repo-relative path prefixes treated as EVIDENCE citations. Code provenance
+# (`scripts/` / `src/` / `configs/`) is deliberately OUTSIDE the set — "ran at
+# `<sha>`" is provenance a later commit does not invalidate; `code-sha-cards`
+# owns that surface. `tasks/` is deliberately EXCLUDED too: task-folder status
+# transitions rename `tasks/<status>/…` on every lifecycle move, and the
+# rename's delete side satisfies a non-empty `git log <pin>..<tip> -- <old
+# path>`, so every parked-task citation would read permanently stale
+# (predictable healthy-report noise). Pinned verbatim by
+# tests/test_verify_report.py — NOT tunable at implementation.
+_EVIDENCE_PATH_PREFIXES = ("eval_results/", "ood_eval_results/", "figures/", "docs/")
+# Per-report cap on (member, pin) staleness reads (each costs <=3 local git
+# calls); beyond the cap, remaining candidates are skipped with a COUNTED
+# note — a capped read is disclosed, never silent (WARN-only check).
+_STALE_READ_CAP = 200
+# Newer commits enumerated per stale citation before "+K more".
+_STALE_DETAIL_COMMITS_CAP = 5
+
+
+def _evidence_path_candidates(line: str) -> list[tuple[tuple[int, int], list[str]]]:
+    """Backticked evidence-path citation candidates on ``line``.
+
+    One ``((span_start, span_end), members)`` entry per backticked token
+    (span covers the backticks) that contains a ``/``, is not a URL /
+    absolute / ellipsis-abbreviated path, expanded through ONE brace group
+    (``_expand_brace_group``), members filtered to the
+    ``_EVIDENCE_PATH_PREFIXES`` set; a token with zero surviving members is
+    not a candidate.
+    """
+    out: list[tuple[tuple[int, int], list[str]]] = []
+    for m in re.finditer(r"`([^`]+)`", line):
+        tok = m.group(1).strip()
+        if "/" not in tok or "://" in tok or tok.startswith("/"):
+            continue
+        if "…" in tok or "..." in tok:
+            continue
+        members = [p for p in _expand_brace_group(tok) if p.startswith(_EVIDENCE_PATH_PREFIXES)]
+        if members:
+            out.append(((m.start(), m.end()), members))
+    return out
+
+
+def _same_line_pins_positional(
+    line: str, figures_root: Path, blank_spans: tuple[tuple[int, int], ...] = ()
+) -> list[tuple[int, str]]:
+    """Thin POSITIONAL variant of ``_same_line_pins`` (#2195) — the hex-run
+    resolution is reused verbatim (URL + committed-under spans blanked, hex
+    runs via ``rev-parse --verify <tok>^{commit}``), with TWO deliberate
+    divergences. (1) Branch tokens resolve ORIGIN-FIRST, mirroring
+    ``_authoritative_tip``: an explicit ``origin/<b>`` token resolves ONLY
+    ``refs/remotes/origin/<b>``; a plain ``<b>`` token tries
+    ``refs/remotes/origin/<b>`` first and falls back to ``refs/heads/<b>``
+    only when the remote ref is absent (local-first would associate a token
+    pin to a lagging worktree-local ``issue-<N>`` and false-WARN a report
+    pinned at the origin tip — the round-1 blocker). (2) It additionally
+    blanks the caller-supplied ``blank_spans`` (the candidate evidence-path
+    backtick spans — span hygiene: a sha-like cited filename must never
+    contribute its own hex run as a pin) and returns ``(span_start, sha)``
+    pairs sorted by line position for per-member association. Duplicate SHAs
+    at distinct positions are kept (positions drive association); existing
+    ``_same_line_pins`` callers are untouched.
+    """
+    scrubbed = _URL_RE.sub(lambda m: " " * len(m.group(0)), line)
+    scrubbed = _COMMITTED_UNDER_RE.sub(lambda m: " " * len(m.group(0)), scrubbed)
+    if blank_spans:
+        chars = list(scrubbed)
+        for start, end in blank_spans:
+            for i in range(start, min(end, len(chars))):
+                chars[i] = " "
+        scrubbed = "".join(chars)
+    pins: list[tuple[int, str]] = []
+    for m in _HEX_RUN_RE.finditer(scrubbed):
+        rc, sha = _git(figures_root, "rev-parse", "--verify", f"{m.group(0)}^{{commit}}")
+        if rc == 0 and sha:
+            pins.append((m.start(), sha))
+    for m in re.finditer(r"`([^`]+)`", scrubbed):
+        btok = m.group(1).strip()
+        if not _BRANCH_TOKEN_RE.match(btok):
+            continue
+        # Origin-authoritative token resolution (#2195 round 2): an explicit
+        # ``origin/<b>`` token names ONLY the remote ref; a plain ``<b>``
+        # token prefers ``refs/remotes/origin/<b>`` and falls back to the
+        # local ref only when origin is absent — mirroring
+        # ``_authoritative_tip``, so a lagging worktree-local ``issue-<N>``
+        # can never associate a token pin to a stale tip and false-WARN.
+        if btok.startswith("origin/"):
+            refs = (f"refs/remotes/{btok}",)
+        else:
+            refs = (f"refs/remotes/origin/{btok}", f"refs/heads/{btok}")
+        for ref in refs:
+            rc, sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+            if rc == 0 and sha:
+                pins.append((m.start(), sha))
+                break
+    pins.sort(key=lambda t: t[0])
+    return pins
+
+
+def _authoritative_tip(issue: int, figures_root: Path) -> str | None:
+    """The issue branch's AUTHORITATIVE tip ref name, or None.
+
+    ``origin/issue-<N>`` when it resolves; local ``issue-<N>`` ONLY as
+    fallback when origin is absent (the task body's literal ask is
+    ``git log <pin>..origin/<branch>``; a lagging local ref must never veto
+    origin staleness).
+    """
+    for ref, display in (
+        (f"refs/remotes/origin/issue-{issue}", f"origin/issue-{issue}"),
+        (f"refs/heads/issue-{issue}", f"issue-{issue}"),
+    ):
+        rc, sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        if rc == 0 and sha:
+            return display
+    return None
+
+
+def check_stale_evidence_pins(
+    blanked_lines: list[str], figures_root: Path, expect_issue: int | None
+) -> CheckResult:
+    """``stale-evidence-pins`` (#2195): WARN when a report cites an in-repo
+    evidence FILE at a pin the same issue branch has since modified.
+
+    For every (backticked evidence path, associated same-line pin) where the
+    path resolves at the pin as exactly one blob equal to the cited path, run
+    ``git log <pin>..<tip> -- <path>`` against the issue branch's
+    authoritative tip (origin-preferred). Non-empty means the branch rewrote
+    the artifact AFTER the pin — the report cites a superseded version of its
+    own evidence — so emit ONE aggregated WARN enumerating the newer commits.
+    NEVER a FAIL: an as-of pin is legitimate, and the check cannot know
+    whether the newer version contradicts the citing sentence; the WARN hands
+    the reviewer the discriminating fact. Conservative-matcher skip set +
+    named residues: module docstring (``stale-evidence-pins`` entry).
+    """
+    name = "stale-evidence-pins"
+    candidate_rows: list[tuple[int, str, list[tuple[tuple[int, int], list[str]]]]] = []
+    for i, ln in enumerate(blanked_lines, start=1):
+        if _CODE_SHA_ROW_RE.match(ln):
+            continue  # run-provenance pins, not evidence citations
+        cands = _evidence_path_candidates(ln)
+        if cands:
+            candidate_rows.append((i, ln, cands))
+    if not candidate_rows:
+        return CheckResult(name, True, "no evidence citations at a pin (N/A)")
+    rc, _ = _git(figures_root, "rev-parse", "--git-dir")
+    if rc != 0:
+        return CheckResult(
+            name,
+            True,
+            f"{figures_root} is not a git checkout; stale-evidence pins unverifiable",
+            is_warn=True,
+        )
+    issue = expect_issue if expect_issue is not None else _infer_issue_from_lines(blanked_lines)
+    tip = _authoritative_tip(issue, figures_root) if issue is not None else None
+    if tip is None:
+        # Post-merge branch-deleted / unknown-issue shape: must not WARN on
+        # every promote of an old report.
+        return CheckResult(
+            name, True, "stale-evidence check skipped — no issue branch ref resolvable"
+        )
+    warns: list[str] = []
+    notes: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    n_reads = 0
+    n_capped = 0
+    n_fresh = 0
+    for line_no, ln, cands in candidate_rows:
+        spans = tuple(span for span, _members in cands)
+        pins = _same_line_pins_positional(ln, figures_root, spans)
+        if not pins:
+            continue  # not a citation-at-a-pin (no-pin claims are committed-under-claims' surface)
+        for (span_start, span_end), members in cands:
+            after = [sha for pos, sha in pins if pos >= span_end]
+            if after:
+                assoc = after[0]
+            else:
+                before = [sha for pos, sha in pins if pos < span_start]
+                assoc = before[-1] if before else None
+            if assoc is None:
+                continue
+            for member in members:
+                key = (member, assoc)
+                if key in seen:
+                    continue  # deduped by (path, pin)
+                seen.add(key)
+                if n_reads >= _STALE_READ_CAP:
+                    n_capped += 1
+                    continue
+                n_reads += 1
+                rc, out = _git(figures_root, "ls-tree", "-r", "--name-only", assoc, "--", member)
+                names = out.splitlines() if rc == 0 and out else []
+                if not names:
+                    notes.append(
+                        f"line {line_no}: `{member}` absent at {assoc[:12]} — a broken "
+                        "citation is not a stale one; skipped"
+                    )
+                    continue
+                if len(names) != 1 or names[0] != member:
+                    notes.append(
+                        f"line {line_no}: `{member}` is a directory citation at "
+                        f"{assoc[:12]} — skipped (later additions under a directory do "
+                        "not supersede a home claim)"
+                    )
+                    continue
+                rc, _out = _git(figures_root, "merge-base", "--is-ancestor", assoc, tip)
+                if rc != 0:
+                    notes.append(
+                        f"line {line_no}: pin {assoc[:12]} is not an ancestor of {tip} — "
+                        "divergent history, staleness undecidable; skipped"
+                    )
+                    continue
+                rc, out = _git(
+                    figures_root, "log", "--format=%H%x09%s", f"{assoc}..{tip}", "--", member
+                )
+                if rc != 0:
+                    notes.append(
+                        f"line {line_no}: git log failed for `{member}` at {assoc[:12]}; skipped"
+                    )
+                    continue
+                commits = [c for c in out.splitlines() if c.strip()]
+                if not commits:
+                    n_fresh += 1
+                    continue
+                shown = []
+                for c in commits[:_STALE_DETAIL_COMMITS_CAP]:
+                    sha, _, subject = c.partition("\t")
+                    shown.append(f'{sha[:12]} "{subject[:60]}"')
+                extra = len(commits) - _STALE_DETAIL_COMMITS_CAP
+                enumerated = ", ".join(shown) + (f", +{extra} more" if extra > 0 else "")
+                warns.append(
+                    f"line {line_no}: `{member}` cited at {assoc[:12]} has {len(commits)} "
+                    f"newer commit(s) on {tip} — {enumerated} — if the citation is a "
+                    "deliberate as-of pin, confirm the newer version still supports the "
+                    "citing sentence; else re-pin to the current commit"
+                )
+    if n_capped:
+        notes.append(f"read cap ({_STALE_READ_CAP}) reached — {n_capped} candidate(s) not checked")
+    if warns:
+        detail = "; ".join(warns)
+        if notes:
+            detail += "; " + "; ".join(notes)
+        return CheckResult(name, True, detail, is_warn=True)
+    if n_reads == 0 and not notes:
+        return CheckResult(name, True, "no evidence citations at a pin (N/A)")
+    parts: list[str] = []
+    if n_fresh:
+        parts.append(f"{n_fresh} pinned evidence citation(s) fresh on {tip}")
+    parts.extend(notes)
+    return CheckResult(name, True, "; ".join(parts))
+
+
 # ─── Driver ─────────────────────────────────────────────────────────────────
 
 
@@ -1649,6 +1939,7 @@ def verify_report_text(
             body, blanked_lines, mode=mode, figures_root=figures_root, expect_issue=expect_issue
         )
     )
+    results.append(check_stale_evidence_pins(blanked_lines, figures_root, expect_issue))
 
     if mode == "generation":
         results.extend(check_placeholders(sections))

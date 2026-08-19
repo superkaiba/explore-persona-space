@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2384,
+  "highest_id": 2389,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -531,8 +531,8 @@
     "1067": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1067",
-      "status": "blocked",
+      "path": "tasks/archived/1067",
+      "status": "archived",
       "title": "daily-held: Happy mobile push down all day (Remote Control o"
     },
     "1068": {
@@ -1104,8 +1104,8 @@
     "1141": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1141",
-      "status": "blocked",
+      "path": "tasks/archived/1141",
+      "status": "archived",
       "title": "daily-held: canonical HF model repo at 100k-file limit"
     },
     "1142": {
@@ -8867,8 +8867,8 @@
     "2147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/2147",
-      "status": "blocked",
+      "path": "tasks/running/2147",
+      "status": "running",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
     },
     "2148": {
@@ -9205,50 +9205,50 @@
     "2192": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2192",
-      "status": "running",
+      "path": "tasks/completed/2192",
+      "status": "completed",
       "title": "workflow_lint: no gate detects merge-conflict-marker residue in tracked workflow-surface files"
     },
     "2193": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2193",
-      "status": "reviewing",
+      "path": "tasks/completed/2193",
+      "status": "completed",
       "title": "workflow_lint: flag stale gotchas.md pointers after an entry relocates (live instance in research-project-structure.md)"
     },
     "2194": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2194",
-      "status": "running",
+      "path": "tasks/reviewing/2194",
+      "status": "reviewing",
       "title": "Emit a uniform phase field in reproducibility cards so gate checks can resolve phase-to-card mechanically"
     },
     "2195": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2195",
-      "status": "planning",
+      "path": "tasks/completed/2195",
+      "status": "completed",
       "title": "verify_report.py: WARN when a report cites a repo artifact at a SHA the same branch has since modified"
     },
     "2196": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2196",
-      "status": "proposed",
+      "path": "tasks/reviewing/2196",
+      "status": "reviewing",
       "title": "cron_lesson_consolidate: an uncreatable log dir silently skips the whole nightly pass"
     },
     "2197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2197",
-      "status": "proposed",
+      "path": "tasks/reviewing/2197",
+      "status": "reviewing",
       "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
     },
     "2198": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2198",
-      "status": "proposed",
+      "path": "tasks/reviewing/2198",
+      "status": "reviewing",
       "title": "verify_report.py: scan the detailed companion writeup, not just the report body"
     },
     "2199": {
@@ -9275,8 +9275,8 @@
     "2201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2201",
-      "status": "proposed",
+      "path": "tasks/planning/2201",
+      "status": "planning",
       "title": "workflow-fix: pre-review deliverable-divergence probe (Step 5a/10d)"
     },
     "2202": {
@@ -10210,8 +10210,8 @@
     "2321": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/2321",
-      "status": "blocked",
+      "path": "tasks/running/2321",
+      "status": "running",
       "title": "Repack the 10 largest prefixes in the HF data repo to recover ~610k of the 1,000,000-file cap"
     },
     "2322": {
@@ -10635,8 +10635,8 @@
     "2377": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2377",
-      "status": "reviewing",
+      "path": "tasks/completed/2377",
+      "status": "completed",
       "title": "workflow-fix: tmp-scratch sweep blind spot \u2014 stray top-level /tmp/{pyproject.toml,uv.lock} poisons every /tmp-cwd uv run fleet-wide"
     },
     "2378": {
@@ -10697,6 +10697,43 @@
       "path": "tasks/proposed/2384",
       "status": "proposed",
       "title": "workflow-fix: adversarial-planner plan-finalize cited-body currency gate (cited parent corrected mid-draft goes unseen)"
+    },
+    "2385": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2385",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a spec-sync add/modify-only leaves stale main-deleted family twins \u2014 TG scan leg collects them and crashes the Step 10d gate"
+    },
+    "2386": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2386",
+      "status": "proposed",
+      "title": "cron wrappers: unchecked mkdir -p LOG_DIR silently skips the pass (sibling sweep of #2196)"
+    },
+    "2387": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2387",
+      "status": "proposed",
+      "title": "cron wrappers: bound the synchronous Telegram push calls (timeout) \u2014 class sweep from #2196"
+    },
+    "2388": {
+      "goal": "On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (gold- or execution-verified, K=5 rollouts) is predictable from the frozen context vector before generation, and whether routing the context vector through the learned context-to-answer map improves that prediction at matched data budgets, across four correctness surfaces (short-answer QA, math, multiple-choice, code) and a distribution-shift ladder.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2388",
+      "status": "proposed",
+      "title": "Is answer correctness predictable from the context vector, and does the context-to-answer map help?"
+    },
+    "2389": {
+      "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2389",
+      "status": "proposed",
+      "title": "Do the #2162 context-vector findings hold on Qwen3.8-27B? (third model, 26-cell subset)"
     },
     "239": {
       "has_clean_result": true,
