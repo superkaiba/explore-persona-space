@@ -725,7 +725,25 @@ def phase_build_pools(args) -> None:
                 fh.write(json.dumps(r, ensure_ascii=False) + "\n")
         os.replace(tmp, path)
         print(f"[build_pools] wrote {path.name}: {len(rows)} rows", flush=True)
+    # Real LMSYS/WildChat rows can embed leaked third-party credentials; the
+    # upload gate (orchestrate/secret_scrub.py) refuses them. Same-length X
+    # placeholders keep char offsets/spans valid. Re-runs re-draw the same
+    # rows (seeded permutation), so the scrub must live here, not be a
+    # one-time file fix.
+    from explore_persona_space.orchestrate.secret_scrub import scrub_file
+
+    scrub_counts: dict[str, int] = {}
+    for fname in ("chat_draw", "plain_draw", "user_draw"):
+        fixed = scrub_file(pools_dir / f"{fname}.jsonl")
+        if fixed:
+            scrub_counts[f"{fname}.jsonl"] = len(fixed)
+            print(
+                f"[build_pools] scrubbed {len(fixed)} leaked third-party secret(s) "
+                f"from {fname}.jsonl (same-length placeholders)",
+                flush=True,
+            )
     digest = {
+        "secret_scrub_fixed": scrub_counts,
         "n_scanned": len(index),
         "n_chat_eligible": n_chat_eligible,
         "n_user_eligible": n_user_eligible,
