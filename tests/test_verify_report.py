@@ -1923,6 +1923,314 @@ def test_cli_code_sha_cards_mode_split_through_dispatch(figs_root, tmp_path):
     assert "[WARN] code-sha-cards" in r_prom.stdout
 
 
+# ── b3 exact phase-match channel + collision guard (task #2194) ──────────────
+
+
+def test_b3_phase_exact_match_resolves_without_token_overlap(tmp_path):
+    """#2194 DEP-2: the contrastive fixture — the row label `gridanchors` has
+    an EMPTY token intersection with the card-side token set ({pilot} path
+    tokens plus {grid, anchors} folded phase tokens), while
+    _phase_norm("gridanchors") == _phase_norm("grid-anchors") — so ONLY the
+    exact channel can resolve it. A correct pin is clean with the exact-match
+    detail counter; a mispaired pin WARNs via the exact channel."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/gates/pilot_gate_report.json",
+        {"reproducibility_card": {"git_commit": _SHA_A, "phase": "grid-anchors"}},
+    )
+    # Fixture sanity: the token path CANNOT see this pairing.
+    label_toks = verify_report._label_tokens("gridanchors")
+    card_toks = verify_report._card_side_tokens(
+        "eval_results/issue_7/gates/pilot_gate_report.json", "grid-anchors", 7
+    )
+    assert not (label_toks & card_toks)
+    # Correct pin: clean, resolved via the exact channel.
+    body = f"| Code SHAs | gridanchors `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+    # Mispaired pin: the exact channel fires and WARNs, naming the card phase.
+    body2 = f"| Code SHAs | gridanchors `{_SHA_B}` · pilot `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r2 = _cards(body2, tmp_path)
+    assert r2.passed is True and r2.is_warn is True, r2.detail
+    assert "exact-matches card phase `grid-anchors`" in r2.detail
+    assert "per-phase split" in r2.detail
+
+
+def test_b3_phase_norm_collision_asymmetric_excluded(tmp_path):
+    """#2194 MF-A: _phase_norm is LOSSY — one USABLE card (`stage1-0-upload`)
+    and one EXCLUDED (abbreviated) card (`stage-10-upload`, different commit)
+    collide on the normalized key `stage10upload`. The exact channel must NOT
+    fire (an exact fire would mis-pair the usable SHA); the segment takes
+    exactly the token-overlap path (unresolvable → silently skipped). Also
+    pins the excluded-only negative: a key present ONLY on excluded records
+    never registers an exact key."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "stage1-0-upload"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": "abcd1234", "phase": "stage-10-upload"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/c.json",
+        {"repro": {"git_commit": "beefbeef", "phase": "only-excluded"}},
+    )
+    body = (
+        f"| Code SHAs | stage 10 upload `{_SHA_B}` · only excluded `{_SHA_C}` "
+        f"· other `{_SHA_A}` | src |\ncites {_SHA_A}"
+    )
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "exact-matches" not in r.detail
+    assert "unresolvable row segment(s) skipped" in r.detail
+    assert "2 abbreviated (<40-hex) record(s) excluded" in r.detail
+
+
+def test_b3_phase_ambiguous_falls_back_to_token_overlap(tmp_path):
+    """Two usable cards share one phase string at DIFFERENT SHAs (a same-phase
+    re-run): the exact channel is ambiguous and skipped; the token path is
+    preserved byte-identically (path-token segments still resolve; the bare
+    phase label stays unresolvable, exactly as today)."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "fits"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": _SHA_B, "phase": "fits"}},
+    )
+    body = (
+        f"| Code SHAs | fits `{_SHA_A}` · a `{_SHA_A}` · b `{_SHA_B}` | src |"
+        f"\ncites {_SHA_A} {_SHA_B}"
+    )
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "1 unresolvable row segment(s) skipped" in r.detail
+
+
+def test_b3_top_level_phase_not_sibling_is_ignored(tmp_path):
+    """The #2162 stage2 shape: a TOP-LEVEL phase beside a NESTED commit block
+    is invisible to the gate (the walk reads phase only as a sibling of the
+    commit key) — the exact channel never fires; the old token path carries
+    the segment."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/stage2.json",
+        {"phase": "stage2-upload", "repro": {"git_commit": _SHA_A}},
+    )
+    body = f"| Code SHAs | stage2 upload `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+
+
+def test_b1_detail_names_phase_when_present(tmp_path):
+    """An uncited usable card carrying a sibling phase: the b1 FAIL detail
+    names the phase (diagnostic only — severity and the existing asserted
+    fragments unchanged)."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/card.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "grid-anchors"}},
+    )
+    r = _cards("no citation of that commit", tmp_path, mode="generation")
+    assert r.passed is False
+    assert "phase `grid-anchors`" in r.detail
+    assert "per-phase" in r.detail and "split" in r.detail
+    assert _SHA_A[:12] in r.detail
+    assert "card.json" in r.detail
+
+
+def test_b3_phase_exact_legacy_card_shape(tmp_path):
+    """Legacy sibling-phase cards (the realized issue_543 shape: top-level
+    full-40-hex git_commit + sibling `phase`) CAN activate the exact channel
+    when a row label normalize-matches a UNIQUE raw identity with no
+    conflicting sibling commit; a non-matching label falls through to token
+    overlap; an int-valued legacy phase is skipped (isinstance guard)."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/legacy/res.json",
+        {"git_commit": _SHA_A, "phase": "phase2", "n": 3},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/legacy/intphase.json",
+        {"git_commit": _SHA_B, "phase": 2},
+    )
+    body = f"| Code SHAs | phase 2 `{_SHA_A}` · misc `{_SHA_B}` | src |\ncites {_SHA_A} {_SHA_B}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+    body2 = f"| Code SHAs | phase 3 `{_SHA_A}` · misc `{_SHA_B}` | src |\ncites {_SHA_A} {_SHA_B}"
+    r2 = _cards(body2, tmp_path)
+    assert "resolved via exact phase match" not in r2.detail
+    assert "unresolvable row segment(s) skipped" in r2.detail
+
+
+def test_code_sha_cards_production_writer_integration(tmp_path, monkeypatch):
+    """#2194 DEP-1 integration: the REAL production writer path end-to-end —
+    convexity_meta.reproducibility_metadata(phase=...) executed in a tmp clean
+    git repo (no stubs: git_provenance() + as_metadata_dict), its payload
+    written as a card JSON, then resolved by check_code_sha_cards via the
+    exact channel. The emitted git_commit is the tmp repo's full 40-hex, so
+    the card is gate-USABLE end-to-end — red if the wiring, the full-sha
+    emission, or the exact channel regresses."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True, capture_output=True)
+    _git_run(tmp_path, "config", "user.email", "test@test.test")
+    _git_run(tmp_path, "config", "user.name", "Test")
+    _git_run(tmp_path, "config", "commit.gpgsign", "false")
+    (tmp_path / "seed.txt").write_text("s\n")
+    _git_run(tmp_path, "add", "seed.txt")
+    _git_run(tmp_path, "commit", "-q", "-m", "init")
+    monkeypatch.chdir(tmp_path)
+    from explore_persona_space.analysis.convexity_meta import reproducibility_metadata
+
+    meta = reproducibility_metadata(phase="fits")
+    sha = meta["git_commit"]
+    assert isinstance(sha, str) and len(sha) == 40
+    assert meta["phase"] == "fits"
+    _write_card(tmp_path, "eval_results/issue_7/fits/metrics.json", {"metadata": meta})
+    body = f"| Code SHAs | fits `{sha}` | src |\ncites {sha}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+
+
+# ── #2194 round-2 cleanup: lifecycle casefold, guard-conjunct mutants, ────────
+# ── hex-bearing phase slugs, vocab drift pin ──────────────────────────────────
+
+
+def test_lifecycle_vocab_pinned_across_modules():
+    """#2194 round 2 (drift pin): the read-side _LIFECYCLE_PHASE_VOCAB copy in
+    verify_report.py must stay set-equal to the write-side original in
+    orchestrate/provenance.py — the local copy is plan-sanctioned; this pin is
+    what makes the duplication safe."""
+    from explore_persona_space.orchestrate import provenance
+
+    assert verify_report._LIFECYCLE_PHASE_VOCAB == provenance._LIFECYCLE_PHASE_VOCAB
+
+
+@pytest.mark.parametrize("lifecycle", ["done", "Done", "DONE"])
+def test_b3_lifecycle_phase_never_registers_exact_key(tmp_path, lifecycle):
+    """#2194 round 2 (concern lifecycle-phase-casefold): a legacy/injected
+    lifecycle-valued sibling phase — lowercase OR a case variant — never
+    registers a b3 exact-match key: the read-side skip compares the
+    NORMALIZED key against the denylist, matching _phase_norm's own
+    case-insensitivity. The segment falls through to the token path, where
+    `done` is a card-side stopword ⇒ unresolvable, silently skipped."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/card.json",
+        {"repro": {"git_commit": _SHA_A, "phase": lifecycle}},
+    )
+    body = f"| Code SHAs | {lifecycle} `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "1 unresolvable row segment(s) skipped" in r.detail
+
+
+def test_b3_guard_excluded_commit_conflict_conjunct_deciding(tmp_path):
+    """#2194 round 2 (review Minor 1, fixture (a)): ONLY the excluded-SHA
+    subset conjunct vetoes — one usable `fits` card plus a DIRTY sibling
+    `fits` card at a DIFFERENT commit (one usable SHA ✓, one raw identity ✓,
+    conflicting excluded commit ✗). The exact channel must not fire; the
+    token path resolves the segment (phase token `fits`), so a correct pin
+    stays clean WITHOUT the exact-match counter. A mutant deleting the subset
+    conjunct alone turns this red."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "fits"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": _SHA_B, "git_dirty": True, "phase": "fits"}},
+    )
+    body = f"| Code SHAs | fits `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "1 dirty record(s) excluded" in r.detail
+
+
+def test_b3_guard_raw_identity_conjunct_deciding(tmp_path):
+    """#2194 round 2 (review Minor 1, fixture (b)): ONLY the single-raw-
+    identity conjunct vetoes — the usable `stage1-0-upload` card and a DIRTY
+    `stage-10-upload` sibling share the SAME commit (one usable SHA ✓,
+    excluded-SHA subset ✓, TWO raw identities colliding on `stage10upload`
+    ✗). The exact channel must not fire — _phase_norm is lossy and firing
+    would guess between two distinct raw slugs. A mutant deleting the
+    raw-identity conjunct alone turns this red."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "stage1-0-upload"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": _SHA_A, "git_dirty": True, "phase": "stage-10-upload"}},
+    )
+    body = f"| Code SHAs | stage 10 upload `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+
+
+def test_b3_hex_bearing_phase_slug_exact_channel(tmp_path):
+    """#2194 round 2 (deferred concern sha-like-phase-label-unresolvable): a
+    valid phase slug containing an 8-40 hex run (`run-deadbeef`) previously
+    had its hex consumed as the pin before label derivation, so the exact
+    channel could never fire (and a CORRECT pin drew a spurious token-variant
+    WARN via the `run` phase token). The disambiguation picks the UNIQUE
+    hex-run candidate whose removal yields a guarded exact match: a correct
+    pin is clean via the exact channel; a mispaired pin draws the
+    exact-channel WARN naming the card phase."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "run-deadbeef"}},
+    )
+    body = f"| Code SHAs | run-deadbeef `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+    body2 = f"| Code SHAs | run-deadbeef `{_SHA_B}` | src |\ncites {_SHA_A} {_SHA_B}"
+    r2 = _cards(body2, tmp_path)
+    assert r2.passed is True and r2.is_warn is True, r2.detail
+    assert "exact-matches card phase `run-deadbeef`" in r2.detail
+
+
+def test_b3_multi_hex_segment_without_phase_keeps_first_run_pin(tmp_path):
+    """#2194 round 2: the disambiguation is STRICTLY additive — a multi-hex-run
+    segment where NO candidate's removal yields a guarded exact match keeps
+    today's first-run pin behavior byte-identically: the first run
+    (`deadbeef`) is the pin, the label resolves via token overlap to the
+    card, and the mispair draws the pre-existing token-variant WARN."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/margin/x.json",
+        {"repro": {"git_commit": _SHA_A}},
+    )
+    body = f"| Code SHAs | margin deadbeef `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is True, r.detail
+    assert "pins deadbeef" in r.detail
+    assert "resolves to card commit" in r.detail
+    assert "resolved via exact phase match" not in r.detail
+
+
 # ─── #2195: stale-evidence-pins ──────────────────────────────────────────────
 #
 # WARN-only supersession check: a report citing an in-repo evidence FILE at a

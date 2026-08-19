@@ -1051,6 +1051,18 @@ _CARD_WALK_MAX_DEPTH = 100
 _CARD_TOKEN_STOPWORDS = frozenset(
     {"report", "json", "upload", "done", "card", "sentinel", "results", "gate", "gates"}
 )
+# Read-side copy of the write-side lifecycle denylist
+# (orchestrate/provenance.py::_LIFECYCLE_PHASE_VOCAB, #2194): a card phase
+# equal to a lifecycle-state word never registers a b3 exact-match key
+# (behavior-neutral for compliant writers — validate_phase_identity refuses
+# these at write time; this guards legacy/injected values). The skip compares
+# the NORMALIZED key (`_phase_norm`), matching the exact channel's own
+# case-insensitivity, so legacy `Done`/`DONE` variants are covered too
+# (#2194 round 2, concern lifecycle-phase-casefold). Set equality with the
+# write-side original is test-pinned (tests/test_verify_report.py).
+_LIFECYCLE_PHASE_VOCAB = frozenset(
+    {"done", "failed", "running", "pending", "queued", "started", "workload"}
+)
 _SHA40_FULL_RE = re.compile(r"[0-9a-fA-F]{40}$")
 _HEX_ABBREV_RE = re.compile(r"[0-9a-fA-F]{8,39}$")
 
@@ -1265,6 +1277,15 @@ def _label_tokens(label: str) -> set[str]:
     return {t for t in re.split(r"[^0-9a-z]+", label.lower().replace("-", "")) if t}
 
 
+def _phase_norm(text: str) -> str:
+    """Exact-match normalization for card phase identity (#2194): lowercase,
+    every non-alphanumeric run deleted (``stage2-upload`` == ``Stage 2
+    Upload``). LOSSY: distinct raw slugs can collide (``stage1-0-upload`` vs
+    ``stage-10-upload`` → ``stage10upload``) — the b3 collision guard refuses
+    to pair on any collided or conflicted key."""
+    return re.sub(r"[^0-9a-z]+", "", text.lower())
+
+
 def check_code_sha_cards(
     raw_body: str,
     blanked_lines: list[str],
@@ -1293,10 +1314,24 @@ def check_code_sha_cards(
     WARNs at ``promote`` — the card set is EXTERNAL MUTABLE STATE that keeps
     growing after authoring, so a promote-time miss must not block promotion
     of an unchanged good report (the mode-split degrade mirrors
-    ``_check_pin_blob_identity``). (b2) WARN, both modes: a usable SHA cited
+    ``_check_pin_blob_identity``); the message names the card's sibling
+    ``phase`` when present. (b2) WARN, both modes: a usable SHA cited
     in the report but absent from a ``| Code SHAs |`` row. (b3) WARN, both
-    modes: best-effort label→card pairing over the row's ``·``/``;`` segments
-    on the token-resolvable subset; unresolvable segments silently skipped.
+    modes: label→card pairing over the row's ``·``/``;`` segments —
+    PREFERRED channel (#2194): exact match of the normalized segment label
+    (``_phase_norm``) against a usable card's sibling ``phase`` identity,
+    firing ONLY when the normalized key maps to exactly ONE raw phase
+    identity across ALL sibling-phase records (usable AND excluded) and no
+    excluded record supplies a conflicting commit value — collided,
+    conflicted, or ambiguous (≥2 usable SHAs) keys fall through to the
+    best-effort token-overlap pairing (the pre-#2194 path, byte-identical);
+    unresolvable segments silently skipped. A lifecycle-valued phase
+    (``_LIFECYCLE_PHASE_VOCAB``, compared on the NORMALIZED key so legacy
+    ``Done``/``DONE`` case variants are covered — round 2) never registers
+    an exact key. A segment with SEVERAL hex runs (a hex-bearing phase slug
+    like ``run-deadbeef``) pins the UNIQUE candidate whose removal yields a
+    guarded exact match, else the first run (the pre-round-2 behavior,
+    byte-identical — round 2).
     Degrades: unknown issue → WARN-skip; no card source anywhere → PASS-note.
     """
     name = "code-sha-cards"
@@ -1411,6 +1446,19 @@ def check_code_sha_cards(
             detail += "; " + "; ".join(skips)
         return CheckResult(name, True, detail)
 
+    # b3 exact phase-match pre-pass over ALL records — usable AND excluded —
+    # the collision guard's input (#2194 MF-A): dirty / abbreviated / non-hex
+    # records participate, so a normalization collision or an excluded
+    # record's conflicting commit value can veto the exact channel.
+    phase_raw_by_key: dict[str, set[str]] = {}  # norm key -> distinct RAW phase strings
+    phase_shas_by_key: dict[str, set[str]] = {}  # norm key -> EVERY sibling commit value (lower)
+    for _source, _ptr, value, _dirty, phase in records:
+        if isinstance(phase, str):
+            key = _phase_norm(phase)
+            if key:
+                phase_raw_by_key.setdefault(key, set()).add(phase)
+                phase_shas_by_key.setdefault(key, set()).add(value.lower())
+
     # Usable-card classification (dirty first, then hex shape); dedupe by SHA.
     usable: dict[str, tuple[str, str, object]] = {}  # sha -> (source, ptr, phase) first-seen
     n_usable_records = 0
@@ -1418,6 +1466,7 @@ def check_code_sha_cards(
     n_abbrev = 0
     n_nonhex = 0
     usable_tokens: dict[str, set[str]] = {}  # sha -> union of its records' card-side tokens
+    phase_exact: dict[str, set[str]] = {}  # norm phase key -> USABLE SHAs carrying it (#2194)
     for source, ptr, value, dirty, phase in records:
         if dirty is True:
             n_dirty += 1
@@ -1427,6 +1476,10 @@ def check_code_sha_cards(
             n_usable_records += 1
             usable.setdefault(sha, (source, ptr, phase))
             usable_tokens.setdefault(sha, set()).update(_card_side_tokens(source, phase, issue))
+            if isinstance(phase, str):
+                key = _phase_norm(phase)
+                if key and key not in _LIFECYCLE_PHASE_VOCAB:
+                    phase_exact.setdefault(key, set()).add(sha)
         elif _HEX_ABBREV_RE.fullmatch(value):
             n_abbrev += 1
         else:
@@ -1437,6 +1490,25 @@ def check_code_sha_cards(
     def _is_cited(sha: str, tokens: set[str]) -> bool:
         return any(sha.startswith(t) for t in tokens)
 
+    def _guarded_exact_hit(label: str) -> set[str] | None:
+        """b3 exact-channel hit for a segment label, or None unless the MF-A
+        collision guard passes (#2194): exactly ONE usable SHA under the
+        normalized key, exactly ONE RAW phase identity across ALL
+        sibling-phase records (usable AND excluded), and no excluded-record
+        commit value outside the usable hit (an excluded ABBREVIATED sibling
+        whose 8-hex value prefixes the usable SHA still defeats the subset
+        check by design)."""
+        key = _phase_norm(label)
+        hit = phase_exact.get(key) if key else None
+        if (
+            hit is not None
+            and len(hit) == 1
+            and len(phase_raw_by_key.get(key, ())) == 1
+            and phase_shas_by_key.get(key, set()) <= hit
+        ):
+            return hit
+        return None
+
     fails: list[str] = []
     warns: list[str] = []
 
@@ -1444,9 +1516,11 @@ def check_code_sha_cards(
     for sha in sorted(usable):
         if _is_cited(sha, cited_tokens):
             continue
-        source, ptr, _phase = usable[sha]
+        source, ptr, phase = usable[sha]
+        phase_note = f" (phase `{phase}`)" if isinstance(phase, str) and phase else ""
         msg = (
-            f"reproducibility card `{source}` (`{ptr}`) records commit {sha[:12]}… which the "
+            f"reproducibility card `{source}` (`{ptr}`){phase_note} records commit "
+            f"{sha[:12]}… which the "
             "report never cites — a run that legitimately spans commits should carry a "
             "per-phase Code-SHAs split (each phase @ its own card's commit), not a single "
             "SHA; if this phase is covered elsewhere under a different commit, the pairing "
@@ -1460,6 +1534,7 @@ def check_code_sha_cards(
     # (b2) row-scope coverage + (b3) best-effort pairing — WARN in both modes.
     rows = [ln for ln in blanked_lines if _CODE_SHA_ROW_RE.match(ln)]
     n_unresolved_segments = 0
+    n_phase_exact = 0
     if rows:
         row_tokens = {t.lower() for row in rows for t in _HEX_RUN_RE.findall(row)}
         for sha in sorted(usable):
@@ -1475,20 +1550,57 @@ def check_code_sha_cards(
                 hexm = _HEX_RUN_RE.search(segment)
                 if hexm is None:
                     continue
+                # Hex-bearing phase-slug disambiguation (#2194 round 2): a
+                # VALID phase slug can itself contain an 8-40 hex run
+                # (`run-deadbeef`), and consuming the FIRST hex run as the
+                # pin would strand such slugs off the exact channel forever.
+                # With >1 candidates, pick the UNIQUE one whose removal
+                # yields a guarded exact phase match; zero or several ⇒ keep
+                # the first-run behavior byte-identically (single-candidate
+                # segments are untouched by construction).
+                candidates = list(_HEX_RUN_RE.finditer(segment))
+                if len(candidates) > 1:
+                    guarded = [
+                        m
+                        for m in candidates
+                        if _guarded_exact_hit(segment[: m.start()] + segment[m.end() :]) is not None
+                    ]
+                    if len(guarded) == 1:
+                        hexm = guarded[0]
                 label = segment[: hexm.start()] + segment[hexm.end() :]
-                seg_tokens = _label_tokens(label)
-                hit_shas = {sha for sha, toks in usable_tokens.items() if toks & seg_tokens}
-                if len(hit_shas) != 1:
-                    n_unresolved_segments += 1
-                    continue
-                (sha,) = hit_shas
+                # PREFERRED exact phase-match channel (#2194), behind the
+                # MF-A collision guard (_guarded_exact_hit above) — every
+                # collided/conflicted/ambiguous key falls through to the
+                # token-overlap path (a degrade, never a mis-pair).
+                exact_key = _phase_norm(label)
+                exact_hit = _guarded_exact_hit(label)
+                via_exact = exact_hit is not None
+                if exact_hit is not None:
+                    (sha,) = exact_hit
+                    n_phase_exact += 1
+                else:
+                    seg_tokens = _label_tokens(label)
+                    hit_shas = {sha for sha, toks in usable_tokens.items() if toks & seg_tokens}
+                    if len(hit_shas) != 1:
+                        n_unresolved_segments += 1
+                        continue
+                    (sha,) = hit_shas
                 pin_tok = hexm.group(0).lower()
                 if not sha.startswith(pin_tok):
-                    warns.append(
-                        f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
-                        f"{pin_tok[:12]}… but its label resolves to card commit {sha[:12]}… "
-                        "— carry the per-phase split (each phase @ its own card's commit)"
-                    )
+                    if via_exact:
+                        (card_phase,) = phase_raw_by_key[exact_key]
+                        warns.append(
+                            f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
+                            f"{pin_tok[:12]}… but its label exact-matches card phase "
+                            f"`{card_phase}` recorded at commit {sha[:12]}… — carry the "
+                            "per-phase split (each phase @ its own card's commit)"
+                        )
+                    else:
+                        warns.append(
+                            f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
+                            f"{pin_tok[:12]}… but its label resolves to card commit {sha[:12]}… "
+                            "— carry the per-phase split (each phase @ its own card's commit)"
+                        )
 
     excl: list[str] = []
     if n_dirty:
@@ -1508,6 +1620,8 @@ def check_code_sha_cards(
         excl.append(
             f"{len(too_deep_sources)} card JSON(s) past the walk depth cap skipped (partial walk)"
         )
+    if n_phase_exact:
+        excl.append(f"{n_phase_exact} row segment(s) resolved via exact phase match")
     if n_unresolved_segments:
         excl.append(f"{n_unresolved_segments} unresolvable row segment(s) skipped")
     excl_detail = "; ".join(excl)
