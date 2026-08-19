@@ -1,5 +1,6 @@
 - [No-flags workflow_lint before push](feedback_no_flags_workflow_lint_before_push.md) — ruff+pin-sweep+tests miss it; upload-prefix argparse-default = #1005 clobber shape (#2054 r1)
 - [No-flags workflow_lint before push](feedback_no_flags_workflow_lint_before_push.md) — ruff+pin-sweep+tests miss it; upload-prefix argparse-default = #1005 clobber shape (#2054 r1)
+- [inline_lint_gate INCONCLUSIVE under load](feedback_inline_lint_gate_inconclusive_under_load.md) — load1>20 red pytest = INCONCLUSIVE not a verdict, re-run when load drops; load_dotenv() before module-top matplotlib even in credential-free plotters (#1739 jbmine)
 - [Public corpus release is toxicity-stripped](feedback_public_corpus_release_is_toxicity_stripped.md) — non-gated release has the moderation FIELD but 0 flagged rows; filter-API COUNT the subset before an invert-filter mine (#2221)
 - [argsort tie order is CPU-SIMD-dependent](feedback_argsort_tie_order_machine_dependent_gates.md) — set-validity invariants, never recompute-equality gates; dup row in entry (#1946)
 - [Unexecuted-branch rc claims in markers](feedback_unexecuted_branch_rc_claims_in_markers.md) — run the misuse path or hedge; asserted rc=2 was really rc=1, inverting the guarded misreading (#1739)

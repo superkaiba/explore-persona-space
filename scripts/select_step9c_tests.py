@@ -366,6 +366,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2183) — workflow_lint --check-no-repo-root-syspath + no-flags
+    # bundling (tests/ + scripts/ scope; renamed/widened from the #2181
+    # tests/-only --check-no-repo-root-syspath-in-tests after the 19-driver
+    # scripts/ remediation).
+    "tests/test_workflow_lint_no_repo_root_syspath.py",
     # NEW (#2158) — pre-split review guard predicate + lint surface pins:
     # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
     # files) + no-flags bundling.
@@ -446,6 +451,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # backstop pin (arm /issue-tick IFF parent in tick_triage.ISSUE_ACTIVE;
     # partition pinned against the live tick_triage module; incident #1491)
     "tests/test_issue2146_inline_tick_backstop_pin.py",
+    # NEW (#2184) — CPU no-port-wedge typed detection + teardown-interlocked DC
+    # rotation + CPU-LANE-DRY residual refusal, incl. the rule-docs anchor pins
+    # (.claude/rules/compute-backends.md, .claude/rules/pods.md,
+    # .claude/rules/gotchas.md)
+    "tests/test_issue2184_noport_wedge.py",
     # NEW (#2101) — agent-memory MEMORY.md no-lost-row discipline pin (SKILL.md
     # Step 5a clause + echo, gotchas.md entry, LESSONS.md trigger)
     "tests/test_issue_skill_agent_memory_no_lost_row.py",

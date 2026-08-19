@@ -45,3 +45,15 @@ first attempt rc=124). A mutation spot-check / no-flags baseline needs a
 background Bash with `timeout --kill-after=60s 1500s` + an until-loop poll on
 an rc sentinel file — never the ~510 s foreground convention. A 45-file
 C3-scoped union measured 1290 tests / ~26 min under the same contention.
+
+**Deselect-and-cover for embedded full-lint tests (2026-08-18, #2192 r2):**
+`test_workflow_lint_upload_or_true.py::test_no_flags_default_run_bundles_check`
+runs `workflow_lint.main([])` IN-PROCESS and alone blew two 540-560 s bounds
+under a sibling gate (load 12-37); the file is NOT in `slow_tests_selected`.
+When the standalone no-flags run has ALREADY passed this round (rc=0 recorded),
+run the file with `--deselect <file>::test_no_flags_default_run_bundles_check`
+(38/39 in ~4 s) and report the deselected count + the covering standalone run
+explicitly in the marker — the same pattern applies to any sibling
+`*_bundles_check`/bundling test that wraps a full `main([])`. Subagent wait
+trick when bg re-invocation is unreliable: `timeout 560s tail --pid=<bg shell
+pid> -f /dev/null` waits on the bg compound without a banned sleep chain.

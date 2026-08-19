@@ -15,6 +15,13 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    pin `git diff <parent>..HEAD` in the prompt and BAN main/origin-main
    body diffs (main-side drift pollutes them — the brief usually says so).
    Tell Codex to record `sha-range <parent>..HEAD` in Diff acquisition.
+   **HEAD-side variant (#2184 r1):** when out-of-scope commits sit ON TOP of
+   the feature commits (spec-freshness syncs from origin/main after the
+   round's last feature commit), HEAD itself is out of scope — pin
+   `git diff <parent>..<last-feature-sha>` and ban `..HEAD` / `...HEAD`
+   BODY forms entirely; verify `merge-base(origin/main, HEAD) == <parent>`
+   still holds and name the excluded sync SHAs in the compose-time facts so
+   Codex never flags their spec churn.
 2. **Strip the copied Step 0 "Split-review sub-scope briefs (#2074)"
    paragraph.** Copying it verbatim puts the literal trigger token
    `SPLIT-REVIEW SUB-...` INTO the prompt, arming split-mode behavior
@@ -32,6 +39,12 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    structurally cannot see (constant defined in one commit / consumed at a
    different grain in another; waivers detached by later refactors;
    committed-artifact grain vs consumer assumptions).
+6b. **Pre-split single-marker variant (#2379 r1):** a head reading
+   "round 1 (pre-split build, units 1-4 of 4)" with a body stating "covers
+   the WHOLE round" is NOT the item-6 thin-final-unit shape — probe
+   events.jsonl for `note.startswith('[unit ')` rows (0 hits ⇒ skip the
+   progress-notes envelope) and tell Codex the marker IS the full-round
+   report so "units 1-4 of 4" is never misread as partial coverage.
 6. **Multi-unit rounds: only the FINAL unit posts `epm:results`** (#2168 r1:
    note head "unit 3 of 3 (FINAL)"; units 1-2 posted `[unit k/N]`
    `epm:progress` notes). Two duties, applicable to ANY round whose fetched
