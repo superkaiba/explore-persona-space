@@ -11,6 +11,7 @@ origin_prompt: 'can we rerun with: a stronger model (qwen3.6), queries that make
   — we are just checking if the mapping transfers (chat-trained -> all other framings
   including different characters)'
 workflow: v1
+backend: runpod
 goal: 'Test whether the context→answer linear map trained in the chat-template framing
   (assistant turn) transfers — directly or up to a linear reparameterization — to
   every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like
