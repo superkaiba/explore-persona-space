@@ -211,6 +211,7 @@ def test_good_plan_passes_all():
         # SKIP: GOOD_PLAN's §9 declares no multi-GPU width token —
         # trigger-conditional (#2276). (c62 is main()-wired, not in CHECKS.)
         "c63_declared_width_vs_launch": "SKIP",
+        "c64_exactness_grain": "SKIP",
         # SKIP: GOOD_PLAN carries no smoke-fixture size claim — its only
         # smoke mentions ("smoke run", "smoke-test") carry no fixture noun
         # + row floor on one line — trigger-conditional (#2178).
@@ -219,7 +220,7 @@ def test_good_plan_passes_all():
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 62
+    assert len(results) == 63
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6349,14 +6350,16 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   #2276)
     # + c63 (SKIP: GOOD_PLAN's §9 declares no multi-GPU width token;
     #   trigger-conditional, #2276)
+    # + c64 (SKIP: GOOD_PLAN carries no sampled exactness claim; trigger-
+    #   conditional, #2174)
     # + c65/c66 (SKIP: GOOD_PLAN carries no smoke-fixture size claim;
     #   trigger-conditional, #2178)
-    assert payload["n_skip"] == 56
+    assert payload["n_skip"] == 57
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 65
-    assert len({c["id"] for c in payload["checks"]}) == 65
+    assert len(payload["checks"]) == 66
+    assert len({c["id"] for c in payload["checks"]}) == 66
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -13362,3 +13365,172 @@ def test_c66_no_candidates_skips(tmp_path, monkeypatch):
     r = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
     assert r.status == "SKIP"
     assert "producing script not identifiable" in r.detail
+
+
+# ─── c64: sampled exactness claim vs runtime-assert grain (#2174/#2163) ─────
+
+C64 = "c64_exactness_grain"
+
+# The §12 shape the check reads: an exactness claim + a sample-size marker in
+# the ±3-line window (the #2163 A11 shape, condensed).
+C64_CLAIM_BLOCK = """\
+## 12. Assumptions
+
+- **A11** `h_prefix` rows are byte-identical — `n_distinct_rows = 1`.
+  Confidence: High (measured). Source: probed a 10-shard / 706-row sample.
+  How to verify: re-run the probe.
+"""
+
+
+def test_c64_sampled_exactness_warns():
+    # AC1's mechanical analog: exactness claim + sample marker, no satisfier
+    # -> WARN whose detail names BOTH remedies (AC2) + the grain mechanism.
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+    assert "full grain" in r.detail
+    assert "bound" in r.detail
+    assert "soften" in r.detail
+    assert "#2163" in r.detail
+
+
+def test_c64_value_claim_with_sample_passes():
+    # AC3: a sampled VALUE claim is not an exactness claim -> no WARN (SKIP:
+    # the lens is not a confidence-downgrade tax on measured numbers).
+    plan = GOOD_PLAN + (
+        "\n## 12. Assumptions\n\n"
+        "- **A3** lambda = 3.2e-2, measured on 10 sampled shards.\n"
+        "  Confidence: High (measured). How to verify: re-run the fit.\n"
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c64_full_grain_verified_passes():
+    # AC4: the same exactness claim already VERIFIED at full grain (completed
+    # vocabulary on the full-grain line) -> PASS, not WARN.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Verified over the full staged store (142,000 rows counted).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS", r.detail
+    assert "satisfier" in r.detail
+
+
+def test_c64_negated_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): NEGATED
+    # completion vocabulary beside a full-grain phrase is NOT a satisfier —
+    # "not verified at full grain" keeps the WARN (the veto arm, not the
+    # completed-verification satisfier, wins).
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Not verified at full grain (142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
+def test_c64_prospective_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): PROSPECTIVE
+    # completion ("will be verified ...") is a deferral, not a completed
+    # verification — keeps the WARN.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "How to verify: will be verified at full grain (all 142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
+def test_c64_bound_restatement_passes():
+    # The second remedy: the claim restated as a sampled BOUND in the same
+    # window -> PASS.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Restated as a bound: no deviation observed in 706 of 142,000 rows.",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS", r.detail
+
+
+def test_c64_trigger_case_insensitive():
+    # Round-2 (reconciler-deferred concern c64-trigger-case, APPLIED after
+    # the corpus re-sweep measured 8 < 10 defensible file-WARNs with
+    # re.IGNORECASE on): sentence-initial / ordinary-casing exactness
+    # phrases fire the trigger.
+    for claim in (
+        "- **A2** Exactly zero deviating rows expected.",
+        "- **A2** No exceptions across the store.",
+        "- **A2** every row is byte-identical to the first row.",
+    ):
+        plan = GOOD_PLAN + (
+            f"\n## 12. Assumptions\n\n{claim}\n  Source: probed a 10-shard / 706-row sample.\n"
+        )
+        r = _run(plan)[1][C64]
+        assert r.status == "WARN", (claim, r.detail)
+
+
+def test_c64_escape_literal_passes():
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK + "\nN/A — no sampled exactness claims\n"
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c64_warn_never_flips_overall():
+    # WARN-only posture: a plan tripping c64 alone keeps overall PASS.
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK
+    ok, by_id = _run(plan)
+    assert by_id[C64].status == "WARN"
+    assert ok
+
+
+def test_c64_registered_in_checks_and_docstring_catalog():
+    # Membership pins (the c62/c63 registration-pin convention).
+    assert verify_plan.check_exactness_grain in verify_plan.CHECKS
+    assert "c64 sampled exactness claim" in verify_plan.__doc__
+    # conditional-checks enumeration carries it (reflow-tolerant membership).
+    assert "63, 64" in verify_plan.__doc__
+    # Escape phrase registered in the docstring (the SKILL.md sync test
+    # propagates it to the consumer surface).
+    assert "N/A — no sampled exactness claims" in verify_plan.__doc__
+
+
+def test_c64_verbatim_2163_incident_warns():
+    # Founding-incident regression anchor (plan v3 Edit E8): the verbatim
+    # #2163 A11 assumption — exactness claim at Confidence: High (measured),
+    # a 10-shard/706-row sample marker, AND the deferred "Phase 0 re-asserts
+    # ... over the FULL staged store" How-to-verify line — MUST WARN:
+    # deferral phrasing is not completed verification, and the window's
+    # "(measured)" token (on the Confidence line, not the full-grain line)
+    # must not rescue it.
+    a11 = """\
+## 12. Assumptions
+
+- **A11** `h_prefix` is (62, 3584) fp16 with EVERY row byte-identical — max|row − row0| = 0
+  exactly, all pairwise cosines = 1.000000, `n_distinct_rows = 1`; v_P carries exactly zero
+  cross-context variance. Confidence: High (measured). Source: probed 10 sampled shards
+  (706 rows of 142,000). How to verify: Phase 0 re-asserts byte-identity over the FULL
+  staged store.
+"""
+    plan = GOOD_PLAN + "\n" + a11
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+    assert "#2163" in r.detail

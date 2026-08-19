@@ -85,12 +85,21 @@ def test_as_metadata_dict_omits_dirty_paths_when_not_dirty() -> None:
     clean = GitProvenance(commit_sha="abcd1234", dirty=False)
     unknown = GitProvenance(commit_sha="unknown", dirty=None)
     dirty = GitProvenance(commit_sha="abcd1234", dirty=True, dirty_paths=["a.py"])
-    assert as_metadata_dict(clean) == {"git_commit": "abcd1234", "git_dirty": False}
-    assert as_metadata_dict(unknown) == {"git_commit": "unknown", "git_dirty": None}
+    assert as_metadata_dict(clean) == {
+        "git_commit": "abcd1234",
+        "git_dirty": False,
+        "git_argv0_state": None,
+    }
+    assert as_metadata_dict(unknown) == {
+        "git_commit": "unknown",
+        "git_dirty": None,
+        "git_argv0_state": None,
+    }
     assert as_metadata_dict(dirty) == {
         "git_commit": "abcd1234",
         "git_dirty": True,
         "git_dirty_paths": ["a.py"],
+        "git_argv0_state": None,
     }
 
 
@@ -106,3 +115,150 @@ def test_backward_compat_git_commit_key_preserved() -> None:
     md = as_metadata_dict(prov)
     assert "git_commit" in md
     assert md["git_commit"] == "deadbeef"
+
+
+# ---------------------------------------------------------------------------
+# argv[0] tracked-state probe (task #2175 — untracked producing scripts)
+# ---------------------------------------------------------------------------
+
+
+def test_untracked_argv0_flags_dirty_and_records_state(tmp_path: Path) -> None:
+    """The #2175 required test: an UNTRACKED producing script (argv[0]) must
+    carry the explicit untracked signal AND fold into the dirty flag, so a
+    committed result JSON can never claim clean provenance from a commit that
+    does not contain the code that produced it (the #2094 incident shape)."""
+    _init_repo(tmp_path)
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    script = scripts / "foo.py"
+    script.write_text("print('produced')\n")
+    prov = git_provenance(cwd=tmp_path, argv0=str(script))
+    assert prov.argv0_state == "untracked"
+    assert prov.argv0_path == "scripts/foo.py"
+    assert prov.dirty is True
+    assert "scripts/foo.py" in prov.dirty_paths
+    assert commit_string(prov).endswith("+dirty")
+    md = as_metadata_dict(prov)
+    assert md["git_dirty"] is True
+    assert md["git_argv0_state"] == "untracked"
+    assert md["git_argv0_path"] == "scripts/foo.py"
+
+
+def test_untracked_argv0_with_glob_metachars_not_misread_as_tracked_sibling(
+    tmp_path: Path,
+) -> None:
+    """#2175 r2 BLOCKER regression (argv0-pathspec-not-literal): without
+    `--literal-pathspecs`, the bracketed untracked argv0 `scripts/foo[1].py`
+    is a git PATTERN matching the tracked sibling `scripts/foo1.py`, so the
+    ls-files probe reads rc=0 and the untracked producing script stamps a
+    falsely clean "tracked" provenance. The fix must classify it untracked,
+    fold it into dirty, and report the LITERAL bracketed path (porcelain does
+    not quote ASCII bracket names; verified live against git 2.34)."""
+    _init_repo(tmp_path)
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    tracked_sibling = scripts / "foo1.py"
+    tracked_sibling.write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "scripts/foo1.py"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-q", "-m", "sibling"], check=True)
+    bracketed = scripts / "foo[1].py"
+    bracketed.write_text("y = 2\n")
+    prov = git_provenance(cwd=tmp_path, argv0=str(bracketed))
+    assert prov.argv0_state == "untracked"
+    assert prov.argv0_path == "scripts/foo[1].py"
+    assert prov.dirty is True
+    assert "scripts/foo[1].py" in prov.dirty_paths
+    # The tracked sibling is clean and must NOT be dragged into the record.
+    assert "scripts/foo1.py" not in prov.dirty_paths
+
+
+def test_symlink_loop_argv0_degrades_to_none_without_crash(tmp_path: Path) -> None:
+    """#2175 r2 CONCERN regression (argv0-resolve-symlink-loop-runtimeerror):
+    `Path.resolve()` on a symlink loop raises RuntimeError on py3.11 (OSError
+    on newer Pythons) — the never-crash contract must degrade to (None, None)
+    instead of letting it escape `git_provenance`."""
+    _init_repo(tmp_path)
+    loop_a = tmp_path / "loop_a.py"
+    loop_b = tmp_path / "loop_b.py"
+    loop_a.symlink_to(loop_b)
+    loop_b.symlink_to(loop_a)
+    prov = git_provenance(cwd=tmp_path, argv0=str(loop_a))
+    assert prov.argv0_state is None
+    assert prov.argv0_path is None
+    assert prov.dirty is False  # the tracked scan is untouched by the degrade
+
+
+def test_tracked_clean_argv0_reads_tracked_and_clean(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    script = tmp_path / "runner.py"
+    script.write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "runner.py"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-q", "-m", "runner"], check=True)
+    prov = git_provenance(cwd=tmp_path, argv0=str(script))
+    assert prov.argv0_state == "tracked"
+    assert prov.argv0_path == "runner.py"
+    assert prov.dirty is False
+    assert prov.dirty_paths == []
+    md = as_metadata_dict(prov)
+    assert md["git_argv0_state"] == "tracked"
+    assert md["git_argv0_path"] == "runner.py"
+
+
+def test_tracked_modified_argv0_reads_modified_without_double_count(tmp_path: Path) -> None:
+    """A modified tracked argv0 is already in the tracked scan's dirty_paths —
+    the argv0 fold must not add a second entry."""
+    _init_repo(tmp_path)
+    script = tmp_path / "runner.py"
+    script.write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "runner.py"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-q", "-m", "runner"], check=True)
+    script.write_text("x = 2\n")
+    prov = git_provenance(cwd=tmp_path, argv0=str(script))
+    assert prov.argv0_state == "modified"
+    assert prov.dirty is True
+    assert prov.dirty_paths.count("runner.py") == 1
+
+
+def test_gitignored_argv0_reads_none_not_untracked(tmp_path: Path) -> None:
+    """The pytest/.venv false-positive guard: a gitignored argv0 yields EMPTY
+    porcelain output under --untracked-files=all and must read as None (could
+    not determine), never as untracked — or every pytest-invoked call would
+    false-flag dirty."""
+    _init_repo(tmp_path)
+    (tmp_path / ".gitignore").write_text("ignored.py\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", ".gitignore"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-q", "-m", "gitignore"], check=True)
+    ignored = tmp_path / "ignored.py"
+    ignored.write_text("y = 2\n")
+    prov = git_provenance(cwd=tmp_path, argv0=str(ignored))
+    assert prov.argv0_state is None
+    assert prov.argv0_path is None
+    assert prov.dirty is False
+    md = as_metadata_dict(prov)
+    assert md["git_argv0_state"] is None
+    assert "git_argv0_path" not in md
+
+
+def test_argv0_outside_repo_or_nonexistent_degrades_to_none(tmp_path: Path) -> None:
+    """Pins the pytest-binary default: an argv0 outside the repo (rc=128) or a
+    nonexistent argv0 (`python -c` → argv[0] == "-c") degrades to (None, None)
+    and leaves the dirty verdict unchanged — every pre-#2175 caller keeps its
+    semantics."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _init_repo(repo)
+    outside = tmp_path / "elsewhere.py"
+    outside.write_text("z = 3\n")
+    prov = git_provenance(cwd=repo, argv0=str(outside))
+    assert prov.argv0_state is None
+    assert prov.argv0_path is None
+    assert prov.dirty is False
+
+    prov_c = git_provenance(cwd=repo, argv0="-c")
+    assert prov_c.argv0_state is None
+    assert prov_c.argv0_path is None
+    assert prov_c.dirty is False
+
+    prov_empty = git_provenance(cwd=repo, argv0="")
+    assert prov_empty.argv0_state is None
+    assert prov_empty.argv0_path is None

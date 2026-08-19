@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T00:22:10Z", "event": "raised", "concern_id": "nested-scripts-remedy", "severity": "NIT", "summary": "The widened recursive check gives a top-level-only `.parent.parent` remedy for nested scripts, which would derive the wrong repository root.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
