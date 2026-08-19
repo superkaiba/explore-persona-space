@@ -171,6 +171,19 @@ def visible_gpus() -> list[str]:
         return []
 
 
+def _first_gpu_env(runner: Runner, gpus: list[str], what: str) -> dict[str, str]:
+    """Single-GPU CVD pin for `runner.run` steps — fail-loud on a zero-GPU
+    real pod (r1 review g5 minor: the old `gpus[0] if gpus else "0"` silently
+    pinned CVD=0 and deferred the failure to engine init); dry runs keep the
+    composition-logging placeholder."""
+    if not gpus:
+        if runner.dry:
+            _log(f"[dry] {what}: no visible GPUs — placeholder CVD=0 for composition")
+            return {"CUDA_VISIBLE_DEVICES": "0"}
+        raise RuntimeError(f"{what}: no visible GPUs")
+    return {"CUDA_VISIBLE_DEVICES": gpus[0]}
+
+
 class Runner:
     """Sequential/fan-out subprocess runner with per-step logs + OK-flag resume.
 
@@ -689,9 +702,17 @@ def compose_pilot_digest(
     #   "gate_g1c": {"threshold": float, "max_r2": float, "passes": bool}, ...}
     gate_g1c = sweep.get("gate_g1c", {})
     best_r2 = float(gate_g1c.get("max_r2", float("nan")))
-    user_sim: dict = {}
+    # G1e: SUM user_sim counts across shard summaries (r1 review g5 minor —
+    # last-shard-wins read) + carry the per-shard cap-hit fractions.
+    user_sim: dict[str, int] = {}
+    user_sim_cap_hit: dict[str, float] = {}
     for path in sorted((raw_pilot / "user_sim").glob("summary_*.json")):
-        user_sim = json.loads(path.read_text(encoding="utf-8")).get("counts", {})
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        for k, v in payload.get("counts", {}).items():
+            if isinstance(v, int | float):
+                user_sim[k] = user_sim.get(k, 0) + int(v)
+        if "cap_hit_fraction_after" in payload:
+            user_sim_cap_hit[path.stem] = float(payload["cap_hit_fraction_after"])
     reasons: list[str] = []
     for fam, f in families.items():
         if not f["pass"]:
@@ -719,7 +740,11 @@ def compose_pilot_digest(
             "gate_g1c_passes": gate_g1c.get("passes"),
             "floor": G1_SWEEP_R2_MIN,
         },
-        "sim_user_smoke": {"counts": user_sim, "disposition": "advisory (G1e)"},
+        "sim_user_smoke": {
+            "counts": user_sim,
+            "cap_hit_fraction_after_per_shard": user_sim_cap_hit,
+            "disposition": "advisory (G1e)",
+        },
         "measured_walls_s": {k: round(v, 1) for k, v in walls.items()},
         "fences_s_2x": {k: round(2 * v, 1) for k, v in walls.items()},
         "metadata": cm.run_metadata(),
@@ -763,6 +788,13 @@ def compose_g2a(ledger_root: Path) -> dict:
         "cells": cells,
         "sega_topup_cells": topups,
         "note": "wave sizing only; kept.json predates SegB/cap-hit/retries (plan §7)",
+        "gate_quantity_deviation": (
+            "projection uses min(n_admitted, STORY_TARGET_KEPT) x survival, not the plan §7 "
+            "literal n_admitted x survival: only STORY_TARGET_KEPT rows enter SegB wave 1, so "
+            "the surplus is retry-wave budget, not wave-1 yield. Conservative-in-coverage — "
+            "may schedule a top-up the plan formula would skip (r1 review g5 concern, recorded "
+            "deviation)."
+        ),
         "metadata": cm.run_metadata(),
     }
     cm.atomic_write_json(ledger_root / "g2a_report.json", out)
@@ -791,7 +823,9 @@ def write_retry_kept(kept_dir: Path, out_dir: Path, cell: str, extras: list[str]
     cm.atomic_write_json(out_dir / f"{cell}.json", payload)
 
 
-def evaluate_g2b(ledger_root: Path, *, waves_used: int, escalated: list[str]) -> dict:
+def evaluate_g2b(
+    ledger_root: Path, *, waves_used: int, escalated: list[str], escalation_wave_used: bool = False
+) -> dict:
     """BINDING floor gate on capture_ready ledgers (plan §7 G2b). User cells
     are OUTSIDE the binding predicate (reported loudly, never a stop)."""
     ready_dir = ledger_root / "capture_ready"
@@ -824,7 +858,10 @@ def evaluate_g2b(ledger_root: Path, *, waves_used: int, escalated: list[str]) ->
         "survivor_predicate": "chat + plain + >=3 storyQ + >=2 dialogue (user cells excluded)",
         "story_q_survivors": n_q,
         "dialog_survivors": n_d,
+        # retry waves (2/3) only — the close-miss escalation wave is reported
+        # separately (r1 review g5 minor: waves_used labeling)
         "retry_waves_used": waves_used,
+        "escalation_wave_used": escalation_wave_used,
         "escalated_cells": escalated,
         "floor": cm.FLOOR_KEPT,
         "metadata": cm.run_metadata(),
@@ -914,12 +951,31 @@ def _pilot_roots(args) -> tuple[Path, Path]:
     return Path(args.raw_pilot_root), Path(args.ledger_root)
 
 
+def _pilot_round_scope(raw_pilot: Path, runner: Runner, rnd: int) -> tuple[Path, Runner, str]:
+    """Round-scope the pilot resume key (logs dir), raw root, and HF prefix
+    (r1 review g5 blocker 2, G1 recalibration resume-skip): a `--pilot-round 2`
+    re-pilot must RE-RUN every generation/judge/capture step instead of
+    skipping onto round-1 OK-flags and reproducing the trip. Round 1 stays
+    byte-identical. Ledger pilot outputs (kept/, judge reports, digest, sweep)
+    keep their STABLE paths — round 2 re-runs + overwrites them (the final
+    pilot verdict), so the P2 gate + harvest paths are unchanged."""
+    hf_pilot_prefix = f"{cm.HF_PREFIX}/raw_completions/pilot"
+    if rnd > 1:
+        raw_pilot = raw_pilot / f"r{rnd}"
+        runner = Runner(runner.logs_dir / f"p1_pilot_r{rnd}", resume=runner.resume, dry=runner.dry)
+        hf_pilot_prefix = f"{cm.HF_PREFIX}/raw_completions/pilot/r{rnd}"
+    return raw_pilot, runner, hf_pilot_prefix
+
+
 def phase_p1(args, runner: Runner) -> int:
     """P1 pilot on pod A (plan §7 G1 + §9 row 1). Pilot generations run under a
     SEPARATE raw root (regime isolation vs P2 production ledgers) and upload
     under raw_completions/pilot/<stage>."""
     _phase_line("p1_pilot")
     raw_pilot, ledger_root = _pilot_roots(args)
+    raw_pilot, runner, hf_pilot_prefix = _pilot_round_scope(
+        raw_pilot, runner, int(args.pilot_round)
+    )
     assert_headroom("p1_pilot", raw_pilot)
     gpus = visible_gpus()
     pilot_kept = ledger_root / "pilot" / "kept"
@@ -937,6 +993,9 @@ def phase_p1(args, runner: Runner) -> int:
         ),
         gpus=gpus,
     )
+    # r1 review codex blocker cross-pod-pools-not-staged: every pool-consuming
+    # gen phase stages the P0 pools from HF (idempotent; a fresh pod A' after
+    # a relaunch has no local pools — P0 committed banks to git, pools to HF).
     runner.fanout(
         "p1.chat_plain",
         _py(
@@ -947,6 +1006,7 @@ def phase_p1(args, runner: Runner) -> int:
             str(args.chat_pilot_rows),
             "--plain-rows",
             str(PILOT_PLAIN_ROWS),
+            "--stage-pools-from-hf",
             *common,
         ),
         gpus=gpus,
@@ -959,9 +1019,10 @@ def phase_p1(args, runner: Runner) -> int:
             "user_sim",
             "--user-sim-rows",
             str(args.user_sim_smoke_rows),
+            "--stage-pools-from-hf",
             *common,
         ),
-        env_extra={"CUDA_VISIBLE_DEVICES": gpus[0] if gpus else "0"},
+        env_extra=_first_gpu_env(runner, gpus, "p1.user_sim_smoke"),
     )
     runner.run(
         "p1.judge_sync_pilot",
@@ -1039,7 +1100,7 @@ def phase_p1(args, runner: Runner) -> int:
             str(ledger_root / "pilot" / "layer_sweep.json"),
             "--skip-upload",
         ),
-        env_extra={"CUDA_VISIBLE_DEVICES": gpus[0] if gpus else "0"},
+        env_extra=_first_gpu_env(runner, gpus, "p1.capture_pilot"),
     )
     if runner.dry:
         _log(
@@ -1050,7 +1111,7 @@ def phase_p1(args, runner: Runner) -> int:
     for stage in ("sega", "sega_mined", "chat", "plain", "user_sim", "segb", "judge_admission"):
         d = raw_pilot / stage
         if d.exists():
-            cm.upload_stage_dir(d, f"{cm.HF_PREFIX}/raw_completions/pilot/{stage}")
+            cm.upload_stage_dir(d, f"{hf_pilot_prefix}/{stage}")
     digest = compose_pilot_digest(
         raw_pilot,
         ledger_root,
@@ -1060,15 +1121,10 @@ def phase_p1(args, runner: Runner) -> int:
     )
     blocks = digest["verdict"] != "PASS"
     write_sentinel(args, "epm:progress", digest, gate="g1", blocks_pipeline=blocks)
-    if digest["verdict"] != "PASS":
-        only_rate_trips = all(r.startswith("G1(a)") for r in digest["fail_reasons"])
-        if only_rate_trips and args.pilot_round == 1:
-            _log(
-                "[g1] TRIP — ONE recalibration round available (primes/seeds/miner), "
-                "re-run p1_pilot --pilot-round 2 after recalibrating"
-            )
-            return RC_G1_RECALIBRATE
-        return RC_G1_FAIL
+    # Persist-by-default (r1 review g5 minor): harvest the digest + layer
+    # sweep + judge report on EVERY verdict branch — a TRIP/FAIL previously
+    # persisted them only inside the sentinel note, and pod A can be lost
+    # post-trip.
     upload_json_files(
         [ledger_root / "pilot" / "pilot_digest.json", ledger_root / "pilot" / "layer_sweep.json"],
         f"{cm.HF_PREFIX}/pilot",
@@ -1079,8 +1135,17 @@ def phase_p1(args, runner: Runner) -> int:
             "eval_results/issue_2378/pilot/layer_sweep.json",
             "eval_results/issue_2378/judge/pilot_admission_sync.json",
         ],
-        f"task #{ISSUE}: P1 pilot artifacts (G1 PASS harvest, pre-P2 — plan §9)",
+        f"task #{ISSUE}: P1 pilot artifacts (G1 {digest['verdict']} harvest, pre-P2 — plan §9)",
     )
+    if digest["verdict"] != "PASS":
+        only_rate_trips = all(r.startswith("G1(a)") for r in digest["fail_reasons"])
+        if only_rate_trips and args.pilot_round == 1:
+            _log(
+                "[g1] TRIP — ONE recalibration round available (primes/seeds/miner), "
+                "re-run p1_pilot --pilot-round 2 after recalibrating"
+            )
+            return RC_G1_RECALIBRATE
+        return RC_G1_FAIL
     write_sentinel(
         args,
         "epm:progress",
@@ -1152,6 +1217,7 @@ def phase_p2(args, runner: Runner) -> int:
             str(args.chat_rows),
             "--plain-rows",
             str(args.plain_rows),
+            "--stage-pools-from-hf",  # codex blocker cross-pod-pools-not-staged
             "--skip-upload",
         ),
         gpus=gpus,
@@ -1168,6 +1234,7 @@ def phase_p2(args, runner: Runner) -> int:
             "user_sim",
             "--user-sim-rows",
             str(args.user_rows),
+            "--stage-pools-from-hf",  # codex blocker cross-pod-pools-not-staged
             "--skip-upload",
         ),
         gpus=gpus,
@@ -1186,6 +1253,7 @@ def phase_p2(args, runner: Runner) -> int:
             str(args.user_fresh_rows),
             "--user-fresh-draws",
             str(args.user_fresh_draws),
+            "--stage-pools-from-hf",  # codex blocker cross-pod-pools-not-staged
             "--skip-upload",
         ),
         gpus=gpus,
@@ -1208,13 +1276,38 @@ def phase_p2(args, runner: Runner) -> int:
     return 0
 
 
+def _sega_mined_manifest_digest(dry: bool) -> str:
+    """sha16 over the sorted (path, size) HF listing of raw_completions/
+    sega_mined — appended to the P3 judge step names so a P4 top-up that GROWS
+    the admission input re-runs the judge steps instead of resume-skipping on
+    an unchanged argv sha (r1 review codex blocker
+    topup-readmission-resume-collision; the judge cache serves already-judged
+    rows, so the re-run only judges the new rows). Dry mode composes with a
+    fixed placeholder — no network."""
+    if dry:
+        return "dryrun"
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    entries = hub.list_hf_entries_under_path(
+        HfApi(),
+        cm.HF_DATA_REPO,
+        f"{cm.HF_PREFIX}/raw_completions/sega_mined",
+        repo_type="dataset",
+    )
+    blob = json.dumps(sorted([p, int(s or 0)] for p, s in entries)).encode("utf-8")
+    return hashlib.sha256(blob).hexdigest()[:16]
+
+
 def phase_p3(args, runner: Runner) -> int:
     """VM phase (between pods): batch pilot -> admission wave -> G2a -> harvest."""
     _phase_line("p3_admission")
     assert_headroom("p3_admission", cm.REPO_ROOT / "data" / "issue_2378")
     ledger_root = Path(args.ledger_root)
+    mdig = _sega_mined_manifest_digest(runner.dry)
     rc = runner.run(
-        "p3.judge_batch_pilot",
+        f"p3.judge_batch_pilot.{mdig}",
         _py(
             "issue2378_judge.py",
             "--wave",
@@ -1231,7 +1324,7 @@ def phase_p3(args, runner: Runner) -> int:
         _log("[p3] batch pilot gate FAIL — designed halt (report persisted by judge.py)")
         return RC_JUDGE_PILOT_FAIL
     runner.run(
-        "p3.admission_wave",
+        f"p3.admission_wave.{mdig}",
         _py(
             "issue2378_judge.py",
             "--wave",
@@ -1346,6 +1439,7 @@ def phase_p4(args, runner: Runner) -> int:
     consumed = {c: args.target_kept_per_cell for c in cm.STORY_CELLS}
     escalated: list[str] = []
     waves_used = 0
+    escalation_wave_used = False
     if not runner.dry:
         digest_path = ledger_root / "pilot" / "pilot_digest.json"
         surv_by_fam = {}
@@ -1382,13 +1476,21 @@ def phase_p4(args, runner: Runner) -> int:
                 cells_run.append(cell)
             if not cells_run:
                 break
-            waves_used += 1
+            if wave == 4:
+                escalation_wave_used = True
+            else:
+                waves_used += 1
             run_segb(wave, retry_dir, 10**6, cells=",".join(cells_run))
             runner.run(
                 f"p4.capture_ready.w{wave}",
                 _py("issue2378_gen.py", "--phase", "capture_ready", "--stage-raw-from-hf"),
             )
-        g2b = evaluate_g2b(ledger_root, waves_used=waves_used, escalated=escalated)
+        g2b = evaluate_g2b(
+            ledger_root,
+            waves_used=waves_used,
+            escalated=escalated,
+            escalation_wave_used=escalation_wave_used,
+        )
         write_sentinel(
             args, "epm:progress", g2b, gate="g2b", blocks_pipeline=g2b["verdict"] != "PASS"
         )
@@ -1432,6 +1534,33 @@ def phase_p4(args, runner: Runner) -> int:
         for shard_cells in _capture_cell_shards(survivors, max(1, len(cvd_pins)))
     ]
     runner.parallel("p4.capture", capture_argvs, gpus=cvd_pins)
+    # r1 review codex blocker fresh-draw-producer-undispatched: generate the
+    # fresh SegB/answer draws (seeds 138-141) BEFORE capture_fresh consumes
+    # them (capture.py reads gen._rows_dir(args, "fresh_draws")); the user arm
+    # gets its fresh draws from P2 user_fresh.
+    fresh_cells = [c for c in survivors if c not in ("chat_user_real", "chat_user_sim")]
+    if fresh_cells:
+        runner.fanout(
+            "p4.fresh_draws",
+            _py(
+                "issue2378_gen.py",
+                "--phase",
+                "fresh_draws",
+                "--cells",
+                ",".join(fresh_cells),
+                "--fresh-rows",
+                str(args.fresh_rows),
+                "--fresh-draws",
+                str(args.fresh_draws),
+                "--skip-upload",
+                "--stage-raw-from-hf",
+            ),
+            gpus=gpus,
+        )
+        runner.run(
+            "p4.upload_fresh_draws",
+            _py("issue2378_gen.py", "--phase", "upload_stage", "--stage", "fresh_draws"),
+        )
     fresh_argvs = [
         _py(
             "issue2378_capture.py",
@@ -1527,18 +1656,6 @@ def phase_p5(args, runner: Runner) -> int:
 # ---------------------------------------------------------------------------
 
 
-def _hub_retry(fn, what: str, attempts: int = 3):
-    for i in range(attempts):
-        try:
-            return fn()
-        except Exception as e:  # noqa: BLE001 — bounded retry then re-raise (#658)
-            if i == attempts - 1:
-                raise
-            wait = 20 * (2**i)
-            _log(f"[stage] {what} attempt {i + 1} failed ({e}); retrying in {wait}s")
-            time.sleep(wait)
-
-
 def stage_p6(args, role: str, lstar: int) -> Path:
     """Jittered, scoped, shard-only staging of the activation store (plan §9).
 
@@ -1549,6 +1666,8 @@ def stage_p6(args, role: str, lstar: int) -> Path:
     """
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     stage_root = Path(args.stage_root)
     store_root = stage_root / ACTIVATIONS_PREFIX
     jitter = 0 if args.no_jitter else POD_ROLE_JITTER_S[role]
@@ -1556,22 +1675,16 @@ def stage_p6(args, role: str, lstar: int) -> Path:
         _log(f"[stage] jitter sleep {jitter}s (staggered same-prefix pulls, plan §9)")
         time.sleep(jitter)
     api = HfApi()
-    entries = _hub_retry(
-        lambda: [
-            e.path
-            for e in api.list_repo_tree(
-                cm.HF_DATA_REPO,
-                path_in_repo=ACTIVATIONS_PREFIX,
-                repo_type="dataset",
-                recursive=True,
-            )
-        ],
-        "list_repo_tree(activations)",
+    # canonical retried scoped listing (r1 review codex hub-waiver blocker:
+    # bare list_repo_tree in scripts/ fails workflow_lint --check-hub-verify-retry)
+    entries = hub.list_hf_entries_under_path(
+        api, cm.HF_DATA_REPO, ACTIVATIONS_PREFIX, repo_type="dataset"
     )
+    sizes: dict[str, int | None] = dict(entries)
     my_cells = set(POD_ROLE_CELLS[role])
     want_all_npz = role == "fits-d"
     wanted: list[str] = []
-    for path in entries:
+    for path, _size in entries:
         name = path.rsplit("/", 1)[-1]
         if name.endswith("__rows.json") or name == "store_index.json":
             wanted.append(path)
@@ -1583,13 +1696,16 @@ def stage_p6(args, role: str, lstar: int) -> Path:
             wanted.append(path)
     for path in wanted:
         target = stage_root / path
-        if target.exists():
+        want_size = sizes.get(path)
+        # size-checked resume skip (r1 review g5 minor: a bare exists() skip
+        # adopts a truncated partial download from a killed prior stage)
+        if target.exists() and (want_size is None or target.stat().st_size == int(want_size)):
             continue
-        _hub_retry(
+        hub.retry_transient(
             lambda p=path: hf_hub_download(
                 cm.HF_DATA_REPO, p, repo_type="dataset", local_dir=str(stage_root)
             ),
-            f"download {path}",
+            what=f"download {path}",
         )
     idx = json.loads((store_root / "store_index.json").read_text(encoding="utf-8"))
     expected = 0
@@ -1608,8 +1724,28 @@ def stage_p6(args, role: str, lstar: int) -> Path:
     return store_root
 
 
-def _p6_units_for(role: str) -> str:
-    cells = POD_ROLE_CELLS[role]
+def _p6_sibling_expect(role: str, survivors: list[str]) -> list[str]:
+    """Join-wait path set for the fits-d merge: sibling p6_digest_<r>.json
+    files + G2b-survivor fits/<c>__context.json — ALWAYS-written artifacts
+    only. Each sibling digest is harvested AFTER that pod's fits + ladder +
+    retrieval complete, so waiting on it subsumes ladder completion (r1 review
+    g5 blocker 3: an Unmappable target never writes chat_to_<c>__rung9.json —
+    a rung9 wait would deadlock the merge)."""
+    expect: list[str] = []
+    for r, cells in POD_ROLE_CELLS.items():
+        if r == role:
+            continue
+        expect.append(f"eval_results/issue_2378/p6_digest_{r}.json")
+        for c in cells:
+            if c in survivors:
+                expect.append(f"eval_results/issue_2378/fits/{c}__context.json")
+    return expect
+
+
+def _p6_units_for(role: str, survivors: list[str]) -> str:
+    """Fit units for this pod role, intersected with the G2b survivor set
+    (r1 review codex blocker g2b-survivors-not-threaded-to-p6)."""
+    cells = [c for c in POD_ROLE_CELLS[role] if c in survivors]
     if role == "fits-a":
         # chat/context is produced by --phase g3 (the 1-cell pilot); avoid redoing it
         units = ["own:chat:prefix"] + [c for c in cells if c != "chat"]
@@ -1617,8 +1753,8 @@ def _p6_units_for(role: str) -> str:
     return ",".join(cells)
 
 
-def _p6_targets_for(role: str) -> list[str]:
-    return [c for c in POD_ROLE_CELLS[role] if c != "chat"]
+def _p6_targets_for(role: str, survivors: list[str]) -> list[str]:
+    return [c for c in POD_ROLE_CELLS[role] if c != "chat" and c in survivors]
 
 
 def _upload_sidecars(ledger_root: Path, sub: str) -> None:
@@ -1631,18 +1767,12 @@ def _stage_sidecars(ledger_root: Path) -> None:
     """fits-d: stage the sibling pods' small rowstats sidecars from HF."""
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     api = HfApi()
-    entries = _hub_retry(
-        lambda: [
-            e.path
-            for e in api.list_repo_tree(
-                cm.HF_DATA_REPO,
-                path_in_repo=P6_SIDECAR_PREFIX,
-                repo_type="dataset",
-                recursive=True,
-            )
-        ],
-        "list_repo_tree(p6_sidecars)",
+    # canonical retried scoped listing (r1 review codex hub-waiver blocker)
+    entries = hub.list_hf_files_under_path(
+        api, cm.HF_DATA_REPO, P6_SIDECAR_PREFIX, repo_type="dataset"
     )
     import shutil
     import tempfile
@@ -1653,11 +1783,11 @@ def _stage_sidecars(ledger_root: Path) -> None:
             target = ledger_root / rel
             if target.exists():
                 continue
-            got = _hub_retry(
+            got = hub.retry_transient(
                 lambda p=path: hf_hub_download(
                     cm.HF_DATA_REPO, p, repo_type="dataset", local_dir=td
                 ),
-                f"download {path}",
+                what=f"download {path}",
             )
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(got, target)
@@ -1678,10 +1808,19 @@ def phase_p6(args, runner: Runner) -> int:
         )
         lstar = 32
         store_root = Path(args.stage_root) / ACTIVATIONS_PREFIX
+        # Dry composition placeholder (plan §4.6 blind-spot enumeration): the
+        # real branch intersects with g2b_report.json survivors.
+        survivors = list(cm.ALL_CELLS)
     else:
         _git_pull_rebase()  # layer_sweep + kept + capture_ready + g2b arrive via git
+        g2b = json.loads((ledger_root / "g2b_report.json").read_text(encoding="utf-8"))
+        # Order-stable intersection with the G2b survivor set (r1 review codex
+        # blocker g2b-survivors-not-threaded-to-p6).
+        survivors = [c for c in cm.ALL_CELLS if c in g2b["survivors"]]
         lstar = resolve_lstar(ledger_root)
         store_root = stage_p6(args, role, lstar)
+    role_survivors = [c for c in POD_ROLE_CELLS[role] if c in survivors]
+    role_dropped = [c for c in POD_ROLE_CELLS[role] if c not in survivors]
     store = ["--store-root", str(store_root)]
     gate_path = "eval_results/issue_2378/g3_gate.json"
 
@@ -1714,17 +1853,40 @@ def phase_p6(args, runner: Runner) -> int:
 
         p6.require_g3_pass(ledger_root / "g3_gate.json")  # exits loud on REFUSED
 
-    runner.run(
-        "p6.fits",
-        _py("issue2378_fits.py", "--phase", "fit", "--units", _p6_units_for(role), *store),
-    )
+    if role_dropped and not runner.dry:
+        # N/A markers for G2b-dropped non-binding cells: downstream readers see
+        # a counted drop, never a silent absence (plan §7 skip-and-count).
+        for c in role_dropped:
+            cm.atomic_write_json(
+                ledger_root / "fits" / f"{c}__g2b_dropped.json",
+                {
+                    "cell": c,
+                    "status": "N/A",
+                    "reason": "G2b dropped this non-binding cell (below floor) — plan §7",
+                    "metadata": cm.run_metadata(),
+                },
+            )
+    if role_survivors:
+        runner.run(
+            "p6.fits",
+            _py(
+                "issue2378_fits.py",
+                "--phase",
+                "fit",
+                "--units",
+                _p6_units_for(role, survivors),
+                *store,
+            ),
+        )
+    else:
+        _log(f"[p6] role={role}: every cell G2b-dropped — fits/ladder/retrieval skipped")
     if not runner.dry:
         _upload_sidecars(ledger_root, "fits/percell")
         git_harvest(
             ["eval_results/issue_2378/fits/*.json"],
             f"task #{ISSUE}: P6 fits JSONs ({role})",
         )
-    targets = _p6_targets_for(role)
+    targets = _p6_targets_for(role, survivors)
     if targets:
         runner.run(
             "p6.ladder",
@@ -1736,25 +1898,29 @@ def phase_p6(args, runner: Runner) -> int:
                 ["eval_results/issue_2378/ladder/*.json"],
                 f"task #{ISSUE}: P6 ladder JSONs ({role})",
             )
-    runner.run(
-        "p6.retrieval",
-        _py(
-            "issue2378_retrieval.py",
-            "--phase",
-            "all",
-            "--cells",
-            ",".join(POD_ROLE_CELLS[role]),
-            *store,
-        ),
-    )
-    if not runner.dry:
-        git_harvest(
-            ["eval_results/issue_2378/retrieval/*.json"],
-            f"task #{ISSUE}: P6 retrieval JSONs ({role})",
+    if role_survivors:
+        runner.run(
+            "p6.retrieval",
+            _py(
+                "issue2378_retrieval.py",
+                "--phase",
+                "all",
+                "--cells",
+                ",".join(role_survivors),
+                *store,
+            ),
         )
+        if not runner.dry:
+            git_harvest(
+                ["eval_results/issue_2378/retrieval/*.json"],
+                f"task #{ISSUE}: P6 retrieval JSONs ({role})",
+            )
+    if not runner.dry:
         digest = {
             "role": role,
             "cells": POD_ROLE_CELLS[role],
+            "g2b_survivors": role_survivors,
+            "g2b_dropped": role_dropped,
             "walls_s": {k: round(v, 1) for k, v in runner.walls.items()},
             "metadata": cm.run_metadata(),
         }
@@ -1771,30 +1937,39 @@ def phase_p6(args, runner: Runner) -> int:
                 "-> p6_merge_digest.json"
             )
         else:
-            g2b = json.loads((ledger_root / "g2b_report.json").read_text(encoding="utf-8"))
-            survivors = [c for c in cm.ALL_CELLS if c in g2b["survivors"]]
-            expect = []
-            for r, cells in POD_ROLE_CELLS.items():
-                if r == role:
-                    continue
-                expect.append(f"eval_results/issue_2378/p6_digest_{r}.json")
-                for c in cells:
-                    if c in survivors:
-                        expect.append(f"eval_results/issue_2378/fits/{c}__context.json")
-                        if c != "chat":
-                            expect.append(f"eval_results/issue_2378/ladder/chat_to_{c}__rung9.json")
             _git_wait_for(
-                expect,
+                _p6_sibling_expect(role, survivors),
                 poll_s=args.g3_poll_s,
                 timeout_s=args.siblings_timeout_s,
                 what="sibling P6 shards",
             )
             _git_pull_rebase()
             _stage_sidecars(ledger_root)
-        runner.run("p6.pool", _py("issue2378_pool.py", "--phase", "pool", *store))
-        runner.run("p6.h5", _py("issue2378_pool.py", "--phase", "h5", *store))
+        surv_arg = ",".join(survivors)
+        runner.run(
+            "p6.pool", _py("issue2378_pool.py", "--phase", "pool", "--cells", surv_arg, *store)
+        )
+        runner.run("p6.h5", _py("issue2378_pool.py", "--phase", "h5", "--cells", surv_arg, *store))
         runner.run("p6.h3", _py("issue2378_ladder.py", "--phase", "h3", *store))
-        runner.run("p6.h4b", _py("issue2378_ladder.py", "--phase", "h4b", *store))
+        user_cells = ("chat_user_real", "chat_user_sim")
+        if all(c in survivors for c in user_cells):
+            runner.run("p6.h4b", _py("issue2378_ladder.py", "--phase", "h4b", *store))
+        elif not runner.dry:
+            # H4b is a paired real-vs-sim contrast: with either user arm
+            # G2b-dropped the pairing is unformable — write the N/A verdict the
+            # explicit-path harvest below expects (plan §7 skip-and-count).
+            cm.atomic_write_json(
+                ledger_root / "ladder" / "h4b_real_vs_sim.json",
+                {
+                    "status": "N/A",
+                    "reason": (
+                        "user arm(s) G2b-dropped: "
+                        f"{[c for c in user_cells if c not in survivors]} — "
+                        "H4b needs both arms (plan §3)"
+                    ),
+                    "metadata": cm.run_metadata(),
+                },
+            )
         runner.run("p6.ratio", _py("issue2378_fits.py", "--phase", "ratio", *store))
         if not runner.dry:
             merged = {"roles": {}, "metadata": cm.run_metadata()}
@@ -2105,12 +2280,89 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
                         )
             n = balanced_mined_slice(src, tmp / "slice", 40)
             rows = [
-                json.loads(ln) for ln in (tmp / "slice" / "slice.jsonl").read_text().splitlines()
+                json.loads(ln)
+                for ln in (tmp / "slice" / "slice.jsonl").read_text().split("\n")
+                if ln.strip()
             ]
             fams = {r["family"] for r in rows}
             assert n == 40 and fams == {"question", "dialogue"}
 
         check("balanced admission slice (both families covered)", t_slice)
+
+        def t_pilot_round_scope():
+            base_raw = tmp / "praw"
+            r1 = Runner(tmp / "plogs" / "p1_pilot", resume=True, dry=True)
+            raw1, run1, pref1 = _pilot_round_scope(base_raw, r1, 1)
+            assert raw1 == base_raw and run1 is r1
+            assert pref1 == f"{cm.HF_PREFIX}/raw_completions/pilot"
+            raw2, run2, pref2 = _pilot_round_scope(base_raw, r1, 2)
+            assert raw2 == base_raw / "r2"
+            assert run2.logs_dir == r1.logs_dir / "p1_pilot_r2"
+            assert pref2 == f"{cm.HF_PREFIX}/raw_completions/pilot/r2"
+            # round-2 resume keys are DISJOINT from round 1's: a round-1
+            # ok-flag must be invisible to the round-2 Runner (g5 blocker 2)
+            run1._ok_path("p1.sega").write_text("sha")
+            assert not run2._ok_path("p1.sega").exists()
+
+        check("pilot round-2 scope (fresh resume key + raw root + HF prefix)", t_pilot_round_scope)
+
+        def t_p6_survivor_threading():
+            # g5 blocker 3 + codex g2b-survivors blocker: the fits-d join-wait
+            # expects ONLY always-written artifacts (sibling digests + survivor
+            # fits context JSONs — never per-rung ladder files an Unmappable
+            # verdict suppresses), and units/targets/retrieval drop
+            # non-survivors.
+            surv = [c for c in cm.ALL_CELLS if c != "storyq_vex"]
+            expect = _p6_sibling_expect("fits-d", surv)
+            assert not any("rung9" in p or "/ladder/" in p for p in expect), expect
+            for r in POD_ROLE_CELLS:
+                if r != "fits-d":
+                    assert f"eval_results/issue_2378/p6_digest_{r}.json" in expect
+            assert "eval_results/issue_2378/fits/storyq_vex__context.json" not in expect
+            assert "eval_results/issue_2378/fits/chat__context.json" in expect
+            assert not any("chat_user" in p for p in expect)  # own-role never waited on
+            assert "storyq_vex" not in _p6_units_for("fits-b", surv)
+            assert "storyq_vex" not in _p6_targets_for("fits-b", surv)
+            assert _p6_targets_for("fits-a", surv) == ["plain_text", "storyq_astra"]
+            assert _p6_units_for("fits-a", surv).startswith("own:chat:prefix,")
+
+        check("P6 survivor threading + fits-d join-wait satisfiability", t_p6_survivor_threading)
+
+        def t_subprobes():
+            for script, phase in (
+                ("issue2378_gen.py", "probe_miner"),
+                ("issue2378_capture.py", "probe_gating"),
+            ):
+                p = subprocess.run(
+                    _py(script, "--phase", phase),
+                    cwd=str(cm.REPO_ROOT),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                assert p.returncode == 0, (
+                    f"{script} --phase {phase} rc={p.returncode}\n{p.stdout[-800:]}"
+                )
+
+        check("gen probe_miner + capture probe_gating subprobes", t_subprobes)
+
+        def t_bank_parse():
+            # regression pin for the r2 real-API bank smoke: parse_judge_json's
+            # first-'{' recovery returned ONE register object from an
+            # array-of-objects response; _parse_bank_array recovers the ARRAY.
+            import issue2378_gen as gen
+
+            arr = [{"name": f"n{i}", "opening": "o"} for i in range(8)]
+            for txt in (
+                json.dumps(arr),
+                "Here are the registers:\n" + json.dumps(arr),
+                "```json\n" + json.dumps(arr) + "\n```",
+            ):
+                got = gen._parse_bank_array(txt)
+                assert isinstance(got, list) and len(got) == 8, txt[:40]
+            assert gen._parse_bank_array("no json here") is None
+
+        check("bank-builder array parser (r2 real-API smoke regression)", t_bank_parse)
 
     if failures:
         raise RuntimeError(f"probe FAILURES ({len(failures)}): " + " | ".join(failures))

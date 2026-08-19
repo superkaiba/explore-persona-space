@@ -130,12 +130,15 @@ LEDGER_ROOT = REPO_ROOT / "eval_results" / "issue_2378"
 RAW_ROOT_DEFAULT = REPO_ROOT / "data" / "issue_2378" / "raw_completions"
 
 # Raw-completion stage names (plan §10 prefixes + judge_congruence,
-# persist-by-default addition for the congruence wave's raw judge rows).
+# persist-by-default addition for the congruence wave's raw judge rows;
+# judge_*_pilot added r2 — pilot rows persist like production waves).
 RAW_STAGES: tuple[str, ...] = (
     "sega",
     "sega_mined",
     "judge_admission",
     "judge_congruence",
+    "judge_admission_pilot",
+    "judge_congruence_pilot",
     "segb",
     "chat",
     "plain",

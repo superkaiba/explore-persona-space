@@ -449,10 +449,10 @@ def run_cell_unit(
         for name in names:
             ss_res[name][te] = ((y_te - preds[name]) ** 2).sum(axis=1)
         metrics = {name: float(pf._r2_matrix(y_te, preds[name])) for name in names}
-        knn = {
-            name: _knn_block(preds[name], y_te)
-            for name in ("m0", "m1", f"m2_k{k_max}", "identity_cell")
-        }
+        # kNN companion for EVERY fitted tier incl. intermediate pooled rungs
+        # (r1 review g4 concern 1: plan §6 mapping-baselines row requires the
+        # retrieval read per fitted map, and no preds sidecars persist here).
+        knn = {name: _knn_block(preds[name], y_te) for name in names}
         per_fold.append(
             {
                 "fold": f,
@@ -504,16 +504,20 @@ def run_cell_unit(
             n_draws=args.bootstrap_draws,
             seed=p6.unit_seed(cell, arm, "poolrecovery", name),
         )
-        rec["point_pooled"] = pooled[name] / ceiling["pooled_r2"]
-        rec["point_fold_mean"] = fold_mean[name] / ceiling["fold_mean_r2"]
         rec["suppressed_by_tier"] = False
-        exceeds = bool(rec["point_pooled"] > 1.0) or bool(rec.get("median", 0.0) > 1.0)
-        rec["exceeds_one"] = exceeds
-        if exceeds:
-            rec["exceeds_one_note"] = (
-                "recovery > 1 is the estimation-limited-ceiling tell (plan §6 analyzer "
-                "note) — never super-recovery"
-            )
+        # r1 review g4 concern 2 (mirrors the ladder fix): a draws-suppressed
+        # ratio verdict (skip-and-count guard) exposes NO quotable point ratio
+        # either — point ratios + exceeds_one only on unsuppressed verdicts.
+        if not rec.get("suppressed"):
+            rec["point_pooled"] = pooled[name] / ceiling["pooled_r2"]
+            rec["point_fold_mean"] = fold_mean[name] / ceiling["fold_mean_r2"]
+            exceeds = bool(rec["point_pooled"] > 1.0) or bool(rec.get("median", 0.0) > 1.0)
+            rec["exceeds_one"] = exceeds
+            if exceeds:
+                rec["exceeds_one_note"] = (
+                    "recovery > 1 is the estimation-limited-ceiling tell (plan §6 analyzer "
+                    "note) — never super-recovery"
+                )
         recovery[name] = rec
     h5_rec = recovery.get(H5_TIER, {})
     h5_eligible = (not suppress_by_tier) and not h5_rec.get("suppressed", False)
@@ -594,6 +598,13 @@ def compose_h5_summary(ledger_root: Path, arm: str, cells: list[str], regime: di
         if not path.exists():
             raise RuntimeError(f"h5 summary: missing {path} — run --phase pool first")
         d = json.loads(path.read_text(encoding="utf-8"))
+        # r1 review g4 concern 3: a stale per-cell JSON from a prior regime
+        # (different layer/arm/fold map) must fail loud, not silently mix.
+        if d["regime"] != regime:
+            raise RuntimeError(
+                f"h5 summary: regime mismatch for {path} — cell JSON regime differs from the "
+                "current run's regime; re-run --phase pool for this cell"
+            )
         h5 = d["h5"]
         rec = d["recovery"].get(H5_TIER, {})
         rows.append(
@@ -643,9 +654,28 @@ def compose_h5_summary(ledger_root: Path, arm: str, cells: list[str], regime: di
 
 
 def _fold_map(args) -> dict:
-    return p6.load_or_build_fold_map(
+    fm = p6.load_or_build_fold_map(
         Path(args.store_root), Path(args.ledger_root), **getattr(args, "fold_floors_override", {})
     )
+    return _apply_cells_filter(fm, getattr(args, "cells", None))
+
+
+def _apply_cells_filter(fm: dict, cells_arg: str | None) -> dict:
+    """Restrict the fold map to a G2b-survivor subset (r1 review codex blocker
+    g2b-survivors-not-threaded-to-p6): the pooled moments, per-cell units, and
+    the H5 summary must all see the SAME survivor set, so the filter lands on
+    the fold map itself. Unknown cell names fail loud. The filtered cell list
+    enters the regime dict, so mixing filtered/unfiltered outputs in one ledger
+    raises the existing regime-mismatch guard rather than silently pooling."""
+    if not cells_arg:
+        return fm
+    wanted = [c.strip() for c in cells_arg.split(",") if c.strip()]
+    unknown = sorted(set(wanted) - set(fm["cells"]))
+    if unknown:
+        raise SystemExit(f"--cells names not in the fold map: {unknown}")
+    fm = dict(fm)
+    fm["cells"] = {c: fm["cells"][c] for c in wanted}
+    return fm
 
 
 def _regime(args, fold_map: dict, arm: str, layer: int) -> dict:
@@ -914,6 +944,12 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--skip-parity", action="store_true")
     ap.add_argument("--g3-gate-file", default=None)
+    ap.add_argument(
+        "--cells",
+        default=None,
+        help="comma list restricting the pooled fit + per-cell units + H5 summary to a G2b "
+        "survivor subset (default: every fold-map cell); unknown names fail loud",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 

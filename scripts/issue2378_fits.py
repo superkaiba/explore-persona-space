@@ -548,6 +548,10 @@ def phase_ratio(args) -> int:
     disclosed), skip-and-count + tier suppression per the reporting tiers."""
     ledger_root = Path(args.ledger_root)
     fits_dir = ledger_root / "fits"
+    # G3-gate H4a like phase_fit/phase_pairs (r1 review g3 concern 4): a
+    # REFUSED G3 leaves chat__context.json on disk, and ceiling ratios against
+    # a null-indistinguishable chat ceiling are uninterpretable.
+    p6.require_g3_pass(Path(args.g3_gate_file or (ledger_root / p6.G3_GATE_NAME)))
     chat_path = fits_dir / "chat__context.json"
     if not chat_path.exists():
         raise RuntimeError(f"missing {chat_path} — run the chat fit (phase g3) first")

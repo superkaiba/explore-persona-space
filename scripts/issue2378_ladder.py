@@ -338,27 +338,36 @@ def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: i
     ledger_root = Path(args.ledger_root)
     out_dir = ledger_root / "ladder"
     regime = _pair_regime(args, fold_map, target, layer)
-    rung1_path = out_dir / f"chat_to_{target}__rung1.json"
-    if rung1_path.exists():
-        prior = json.loads(rung1_path.read_text(encoding="utf-8"))
-        if prior.get("regime") == regime:
-            _log(f"[ladder] SKIP chat->{target}: outputs exist with matching regime")
-            return
-        raise RuntimeError(f"regime mismatch at {rung1_path} — use a fresh ledger root")
+    # Resume keys on the LAST-written artifact (r1 review g3 concern 1: rung1
+    # is written FIRST of 9, so a crash mid-loop left a partial unit every
+    # re-run then skipped as complete). The unmappable marker is the other
+    # terminal artifact of this unit.
+    done_path = out_dir / f"chat_to_{target}__rung{len(RUNGS)}.json"
+    unmappable_path = out_dir / f"chat_to_{target}__unmappable.json"
+    for prior_path in (done_path, unmappable_path):
+        if prior_path.exists():
+            prior = json.loads(prior_path.read_text(encoding="utf-8"))
+            if prior.get("regime") == regime:
+                _log(f"[ladder] SKIP chat->{target}: outputs exist with matching regime")
+                return
+            raise RuntimeError(f"regime mismatch at {prior_path} — use a fresh ledger root")
     store_root = Path(args.store_root)
     if target in cm.USER_CELLS:
         p6.assert_user_pair(store_root, fold_map, layer)  # §4.2b, before any paired read
     fits, fits_rs = _fits_inputs(ledger_root, target)
     floor = float(fits["floor"])
     tier = fits["tier"]
-    point_u = float(fits["margin"]["point_fold_mean"])
+    # POOLED point (r1 review g3 concern 2): the tier is assigned from the
+    # POOLED-convention margin CI, so the U <= 0 branch uses the same
+    # statistic family — never fold-mean while the tier reads pooled.
+    point_u = float(fits["margin"]["point_pooled"])
     entry = fold_map["cells"][target]
     if point_u <= 0.0:
         marker = {
             "regime": regime,
             "verdict": "unmappable-target",
             "reason": (
-                f"point U = fold-mean own-ceiling R2 - floor = {point_u:+.4f} <= 0: the "
+                f"point U = pooled own-ceiling R2 - floor = {point_u:+.4f} <= 0: the "
                 "registered Unmappable-target lattice branch — transfer rungs are skipped "
                 "for this target by the lattice rule (plan §3/§8)"
             ),
@@ -471,6 +480,10 @@ def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: i
             "rung": r,
             "fold_structure": entry["fold_structure"],
             "headline_fold_label": fold_label,
+            # Plan §4.4 literal: the family-fold audit verdict persists in
+            # every story ladder JSON too (r1 review g3 concern 5; None for
+            # non-story cells, which carry no audit).
+            "story_fold_audit": entry.get("story_fold_audit"),
             "per_fold": per_fold[r],
             "fold_mean_r2": fold_mean,
             "pooled_r2": pooled,
@@ -528,8 +541,12 @@ def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: i
                 n_draws=args.bootstrap_draws,
                 seed=p6.unit_seed(target, r, "recovery"),
             )
-            rec["point_pooled"] = pooled / ceiling_pooled
-            rec["point_fold_mean"] = fold_mean / ceiling_fold_mean
+            # A draws-suppressed ratio verdict exposes NO quotable point ratio
+            # either (r1 review g4 concern 2, mirrored here for cross-unit
+            # consistency): ceiling + transfer stay reported separately.
+            if not rec.get("suppressed"):
+                rec["point_pooled"] = pooled / ceiling_pooled
+                rec["point_fold_mean"] = fold_mean / ceiling_fold_mean
             rec["suppressed_by_tier"] = False
             rec["label"] = fold_label
             rung_out["recovery"] = rec
@@ -623,14 +640,29 @@ def phase_h3(args) -> int:
             if missing:
                 dropped[ch] = f"cells missing from fits outputs: {missing}"
                 continue
+            # Tier + Unmappable-skip checks run BEFORE any ladder rowstats
+            # load (r1 review g3 concern 3): an Unmappable-skipped target has
+            # NO rung rowstats, and must route to the registered dropped-pair
+            # path instead of crashing H3.
+            bad_tier, unmappable = [], []
+            for c in (q_cell, d_cell):
+                fits_json = json.loads(
+                    (ledger_root / "fits" / f"{c}__context.json").read_text(encoding="utf-8")
+                )
+                if fits_json["tier"] != "clearly-mappable":
+                    bad_tier.append(c)
+                if (ledger_root / "ladder" / f"chat_to_{c}__unmappable.json").exists():
+                    unmappable.append(c)
+            if bad_tier or unmappable:
+                parts = []
+                if bad_tier:
+                    parts.append(f"not clearly-mappable: {bad_tier}")
+                if unmappable:
+                    parts.append(f"unmappable-skipped (no ladder rungs): {unmappable}")
+                dropped[ch] = "; ".join(parts)
+                continue
             qi = _cell_recovery_inputs(ledger_root, q_cell, ri)
             di = _cell_recovery_inputs(ledger_root, d_cell, ri)
-            bad_tier = [
-                c for c, i in ((q_cell, qi), (d_cell, di)) if i["tier"] != "clearly-mappable"
-            ]
-            if bad_tier:
-                dropped[ch] = f"not clearly-mappable: {bad_tier}"
-                continue
             cells[ch] = {"q": qi, "d": di}
             surviving.append(ch)
         n_draws = int(args.bootstrap_draws)

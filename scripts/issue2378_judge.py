@@ -51,6 +51,9 @@ import issue2378_common as cm
 
 RC_PILOT_GATE_FAIL = 7
 PILOT_MIN_DRAWS_PER_FAMILY = 100
+# Oversample above the per-family floor so ONE transport loss cannot FAIL the
+# answered>=floor gate as a granularity artifact (r1 review g1 concern 3).
+PILOT_FAMILY_OVERSAMPLE = 10
 PILOT_PARSE_FAIL_MAX = 0.02
 SMOKE_MAX_ITEMS_WITHOUT_PILOT = 500
 
@@ -342,7 +345,7 @@ def _pilot_items(args, mined: dict[str, dict], n: int):
     by_family: dict[str, dict[str, list[str]]] = {"question": {}, "dialogue": {}}
     for rid, m in mined.items():
         by_family[m["family"]].setdefault(m["cell"], []).append(rid)
-    per_family = (n + 1) // 2
+    per_family = (n + 1) // 2 + PILOT_FAMILY_OVERSAMPLE
     chosen: list[str] = []
     for family, cells in by_family.items():
         if not cells:
@@ -385,6 +388,12 @@ def _tally(classified: dict, items_by_id: dict) -> dict:
 
 def _gate_verdict(tally: dict) -> tuple[bool, list[str]]:
     reasons = []
+    # Plan §4.5 literal gate: ZERO stop_reason=='max_tokens' — checked on the
+    # raw stop-reason tally too, so a VALID-parsed-but-truncated row cannot
+    # escape the truncation-CLASS count (r1 review g1 concern 2).
+    n_max_tokens = tally["stop_reasons"].get("max_tokens", 0)
+    if n_max_tokens:
+        reasons.append(f"{n_max_tokens} draws with stop_reason=max_tokens (gate: zero)")
     for fam, bucket in sorted(tally["per_family"].items()):
         answered = sum(v for k, v in bucket.items() if k != "transport_loss")
         truncated = bucket.get("truncation", 0)
@@ -478,8 +487,10 @@ def _run_pilot(args, mined: dict[str, dict]) -> int:
         by_fam: dict[str, list] = {"question": [], "dialogue": []}
         for it in all_items:
             by_fam[it.payload["family"]].append(it)
+        # Same oversample margin as the admission pilot (g1 concern 3).
+        target = args.pilot + 2 * PILOT_FAMILY_OVERSAMPLE
         items, i = [], 0
-        while len(items) < args.pilot and (by_fam["question"] or by_fam["dialogue"]):
+        while len(items) < target and (by_fam["question"] or by_fam["dialogue"]):
             fam = ("question", "dialogue")[i % 2]
             if by_fam[fam]:
                 items.append(by_fam[fam].pop(0))
@@ -492,6 +503,9 @@ def _run_pilot(args, mined: dict[str, dict]) -> int:
         force_path=args.transport,
         cache_tag=f"{args.wave}_pilot_{args.transport}",
     )
+    # Persist-by-default: pilot judge rows upload like production waves
+    # (r1 review g1 concern 8 — previously only the tally survived).
+    _persist_raw(args, classified, items_by_id, f"judge_{args.wave}_pilot")
     tally = _tally(classified, items_by_id)
     ok, reasons = _gate_verdict(tally)
     out_root = Path(args.out_root)

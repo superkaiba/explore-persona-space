@@ -265,6 +265,9 @@ def _assemble_user_real(tok, row: dict, pool_row: dict):
 
 
 def _assemble_user_sim(tok, row: dict, pool_row: dict):
+    """DEVIATION (declared, r1 review g2 concern 5): the producer-STRIPPED
+    ``sim_turn`` is joined DIRECTLY onto the rendered prefix — same class as
+    the chat/plain direct-join deviations in the module docstring."""
     prefix = gen._render_user_prefix(tok, pool_row["u1"], pool_row["a1"])
     if len(prefix) != row["prefix_chars"] or cm.text_digest(prefix) != row["prefix_digest"]:
         return None, "prefix_digest_mismatch"
@@ -361,7 +364,7 @@ def _collect_cell_rows(args, tok, template_sha: str, cell: str, rows_cap: int):
     if cell in ("chat", "plain_text"):
         stage = "chat" if cell == "chat" else "plain"
         base = gen._stage_kept_rows(gen._rows_dir(args, stage), cell)
-        pool_ids = [r for r in base if kept is None or r in kept]
+        pool_ids = [r for r in base if _admit(r)]
         for rid in _fill_to_cap(pool_ids, rows_cap):
             r = base[rid]
             if cell == "chat":
@@ -377,7 +380,7 @@ def _collect_cell_rows(args, tok, template_sha: str, cell: str, rows_cap: int):
     elif cell in cm.STORY_CELLS:
         base = gen._stage_kept_rows(gen._rows_dir(args, "segb"), cell)
         mined = _story_aux(args)
-        pool_ids = [r for r in base if kept is None or r in kept]
+        pool_ids = [r for r in base if _admit(r)]
         for rid in _fill_to_cap(pool_ids, rows_cap):
             r = base[rid]
             m = mined.get(rid)
@@ -396,7 +399,7 @@ def _collect_cell_rows(args, tok, template_sha: str, cell: str, rows_cap: int):
     elif cell == "chat_user_real":
         base = gen._stage_kept_rows(gen._rows_dir(args, "user_real_render"), cell)
         pool = _user_pool(args)
-        pool_ids = [r for r in base if kept is None or r in kept]
+        pool_ids = [r for r in base if _admit(r)]
         for rid in _fill_to_cap(pool_ids, rows_cap):
             pr = pool.get(rid)
             if pr is None:
@@ -410,7 +413,7 @@ def _collect_cell_rows(args, tok, template_sha: str, cell: str, rows_cap: int):
     elif cell == "chat_user_sim":
         base = gen._stage_kept_rows(gen._rows_dir(args, "user_sim"), cell)
         pool = _user_pool(args)
-        pool_ids = [r for r in base if kept is None or r in kept]
+        pool_ids = [r for r in base if _admit(r)]
         for rid in _fill_to_cap(pool_ids, rows_cap):
             pr = pool.get(rid)
             if pr is None:
@@ -438,6 +441,12 @@ def _collect_fresh_rows(args, tok, template_sha: str, cell: str, draw_seed: int,
     out: list[dict] = []
     kept = None if args.skip_capture_ready else _capture_ready_ids(args, cell)
 
+    def _admit(rid) -> bool:
+        if kept is not None and rid not in kept:
+            drops["not_capture_ready"] += 1
+            return False
+        return True
+
     if cell == "chat_user_sim":
         rows_dir = gen._rows_dir(args, "user_sim_fresh")
         pool = _user_pool(args)
@@ -454,7 +463,7 @@ def _collect_fresh_rows(args, tok, template_sha: str, cell: str, draw_seed: int,
             raise RuntimeError(
                 f"no kept user_sim_fresh rows for d{draw_seed} under {rows_dir} (fail loud)"
             )
-        for rid in _fill_to_cap([r for r in cand if kept is None or r in kept], rows_cap):
+        for rid in _fill_to_cap([r for r in cand if _admit(r)], rows_cap):
             pr = pool.get(rid)
             if pr is None:
                 drops["pool_row_missing"] += 1
@@ -481,7 +490,7 @@ def _collect_fresh_rows(args, tok, template_sha: str, cell: str, draw_seed: int,
         else:
             base = gen._stage_kept_rows(gen._rows_dir(args, "segb"), cell)
             mined = _story_aux(args)
-        for rid in _fill_to_cap([r for r in fresh if kept is None or r in kept], rows_cap):
+        for rid in _fill_to_cap([r for r in fresh if _admit(r)], rows_cap):
             fr = fresh[rid]
             br = base.get(rid)
             if br is None:
@@ -740,6 +749,12 @@ def _capture_cell(
         "model": cm.MODEL_ID,
         "rows_cap": int(args.rows),
         "n_rows": len(rows),
+        # Input CONTENT fingerprint (r1 review g2 concern 1): a post-regen
+        # recapture into the same out_root must NOT resume onto the pre-regen
+        # store — string digests, machine-stable (never float hashes).
+        "rows_fingerprint": cm.text_digest(
+            "\n".join(cm.text_digest(r["final_text"]) for r in rows)
+        ),
         "max_capture_tokens": int(args.max_capture_tokens),
         "chunk_rows": int(args.chunk_rows),
         "draw_seed": draw_seed,
@@ -1085,6 +1100,10 @@ def _run_sweep(args) -> dict:
             "threshold": G1C_R2_FLOOR,
             "max_r2": float(max_r2),
             "passes": bool(max_r2 >= G1C_R2_FLOOR),
+            # Stated narrowing vs plan §7 wording (r1 review g2 concern 4):
+            # the max is over the SELECTION domain [1,63]; embedding-adjacent
+            # layers 0/64 are excluded from both selection and the gate.
+            "domain_note": "max over selection domain [1,63]; layers 0/64 excluded",
         },
         "metadata": cm.run_metadata(),
     }
@@ -1183,8 +1202,11 @@ def phase_capture(args) -> None:
         summary[cell] = {
             k: meta[k] for k in ("n_rows_in", "n_captured", "assembly_drops", "position_drops")
         }
+    # Shard-keyed filename (r1 review g2 concern 3): parallel --cells shards
+    # share one out_root; a fixed name would be last-writer-wins. Per-tag
+    # __meta.json stays authoritative.
     cm.atomic_write_json(
-        out_root / "capture_summary.json",
+        out_root / f"capture_summary__{cells[0]}.json",
         {"cells": summary, "layers": layers, "metadata": cm.run_metadata()},
     )
     if not args.skip_upload:
@@ -1232,8 +1254,10 @@ def phase_capture_fresh(args) -> None:
             summary[tag] = {
                 k: meta[k] for k in ("n_rows_in", "n_captured", "assembly_drops", "position_drops")
             }
+    # Shard-keyed filename (r1 review g2 concern 3; per-tag __meta.json is
+    # the authoritative record).
     cm.atomic_write_json(
-        out_root / "capture_fresh_summary.json",
+        out_root / f"capture_fresh_summary__{cells[0]}.json",
         {"tags": summary, "layers": layers, "metadata": cm.run_metadata()},
     )
     if not args.skip_upload:
@@ -1337,6 +1361,79 @@ def phase_probe_sweep(args) -> None:
     print("[probe_sweep] PASS", flush=True)
 
 
+def phase_probe_gating(args) -> None:
+    """Capture-ready admission-gate probe (r1 codex blocker smoke-capture-
+    ready-bypass): synthetic plain-text fixtures drive BOTH collectors through
+    the REAL ``_collect_cell_rows``/``_collect_fresh_rows`` bodies, once WITH
+    the capture_ready gate (exclusions counted ``not_capture_ready``) and once
+    under ``--skip-capture-ready`` (the pre-admission P1 pilot escape). No
+    model, no network; plain_text needs no tokenizer."""
+    _ = args
+    import argparse as _ap
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="i2378_gating_") as td:
+        root = Path(td)
+        raw_root = root / "raw"
+        ledger_root = root / "ledger"
+        rows = [
+            {
+                "cell": "plain_text",
+                "conv_id": f"mt_{i:03d}",
+                "question": f"What is {i} plus {i}?",
+                "answer": f"The answer is {2 * i}.",
+                "finish_reason": "stop",
+                "seed": i,
+                "regen": False,
+                "keep": True,
+                "drop_reason": None,
+                "template_sha": None,
+            }
+            for i in range(3)
+        ]
+        gen._write_chunk_jsonl(raw_root / "plain" / "plain_text_w1_s0_c0000.jsonl", rows)
+        fresh = [
+            {
+                "cell": "plain_text",
+                "row_id": f"mt_{i:03d}",
+                "draw_seed": 138,
+                "gen_text": f"Still {2 * i}.",
+                "finish_reason": "stop",
+                "seed": i,
+                "regen": False,
+                "answer": f"Still {2 * i}.",
+                "template_sha": None,
+            }
+            for i in range(3)
+        ]
+        gen._write_chunk_jsonl(raw_root / "fresh_draws" / "plain_text_d138_s0.jsonl", fresh)
+        cm.atomic_write_json(
+            ledger_root / "capture_ready" / "plain_text.json",
+            {"cell": "plain_text", "kept_ids": ["mt_000", "mt_001"]},
+        )
+
+        def _ns(skip: bool) -> _ap.Namespace:
+            return _ap.Namespace(
+                raw_root=str(raw_root),
+                ledger_root=str(ledger_root),
+                skip_capture_ready=skip,
+                stage_raw_from_hf=False,
+                mined_dir=str(raw_root / "sega_mined"),
+            )
+
+        out, drops = _collect_cell_rows(_ns(False), None, "", "plain_text", 0)
+        assert {r["row_id"] for r in out} == {"mt_000", "mt_001"}, sorted(r["row_id"] for r in out)
+        assert drops["not_capture_ready"] == 1, dict(drops)
+        out, drops = _collect_cell_rows(_ns(True), None, "", "plain_text", 0)
+        assert len(out) == 3 and drops["not_capture_ready"] == 0, (len(out), dict(drops))
+        out, drops = _collect_fresh_rows(_ns(False), None, "", "plain_text", 138, 0)
+        assert {r["row_id"] for r in out} == {"mt_000", "mt_001"}, sorted(r["row_id"] for r in out)
+        assert drops["not_capture_ready"] == 1, dict(drops)
+        out, drops = _collect_fresh_rows(_ns(True), None, "", "plain_text", 138, 0)
+        assert len(out) == 3 and drops["not_capture_ready"] == 0, (len(out), dict(drops))
+    print("[probe_gating] PASS (gated + skip-capture-ready, both collectors)", flush=True)
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -1349,6 +1446,7 @@ PHASES = {
     "probe_span": phase_probe_span,
     "probe_npz": phase_probe_npz,
     "probe_sweep": phase_probe_sweep,
+    "probe_gating": phase_probe_gating,
 }
 
 

@@ -196,17 +196,47 @@ def _find_quote_spans(window: str) -> tuple[list[tuple[int, int, int, int]], boo
     return spans, unclosed
 
 
+_QUOTE_CHARS = "\"“”'‘’«»"
+
+
 def _is_directed(window: str, span: tuple[int, int, int, int], character: str) -> bool:
     """Attribution heuristics: the utterance is addressed TO ``character``
-    (never spoken BY them). Pilot-precision-gated at G1 (plan §4.2)."""
+    (never spoken BY them). Pilot-precision-gated at G1 (plan §4.2).
+
+    r1 review fix (g1 blocker): before/after windows are split. A ``{Name}
+    <verb>`` attribution AFTER the close that INTRODUCES A NEW QUOTE is the
+    canonical prime/opener-taught reply shape (``"Q?" {Name} replied: "A."``)
+    — the character ANSWERS this utterance, so it IS directed at them; the
+    same attribution with no follow-on quote (``"Q?" {Name} said.``) marks
+    the character as this quote's SPEAKER and rejects."""
     open_idx, cs, ce, close_end = span
     utter = window[cs:ce]
-    near = window[max(0, open_idx - 120) : open_idx] + " " + window[close_end : close_end + 120]
+    before = window[max(0, open_idx - 120) : open_idx]
+    after = window[close_end : close_end + 120]
     name = re.escape(character)
-    # Character as SPEAKER adjacent to the quote => not directed at them.
-    if re.search(rf"\b{name}\s+(?:{_ATTRIB_VERBS})\b", near):
+    v = _ATTRIB_VERBS
+    q = _QUOTE_CHARS
+    # (1a) SPEAKER before the quote: `{Name} said:` / `said {Name}:` adjacent
+    # to the opening quote (sentence-initial for the inverted form, so
+    # `Dana asked {Name}: "Q?"` stays a directed-TO shape, not a reject).
+    if re.search(rf"\b{name}\s+(?:\w+\s+)?(?:{v})\b[^{q}]{{0,12}}$", before):
         return False
-    if re.search(rf"\b(?:{_ATTRIB_VERBS})(?:\s+\w+){{0,2}}?\s+(?:to\s+)?{name}\b", near):
+    if re.search(rf"(?:^|[.!?”\"]\s*)(?:{v})\s+{name}\b[^{q}]{{0,12}}$", before):
+        return False
+    # (1b) inverted post-quote attribution `"Q?" asked {Name}` (verb FIRST
+    # after the close — no subject can intervene) => {Name} spoke THIS quote.
+    if re.match(rf"\s*[,—–-]*\s*(?:{v})\s+{name}\b", after):
+        return False
+    # (1c) post-quote `{Name} <verb>`: with a follow-on quote it is the
+    # canonical reply shape (KEEP); without one, {Name} spoke THIS quote.
+    m = re.match(
+        rf"\s*[,—–-]*\s*{name}\s+(?:[\w,';]+\s+){{0,3}}?(?:{v})\b",
+        after,
+    )
+    if m:
+        return bool(re.match(rf"[^{q}]{{0,40}}[\"“«‘']", after[m.end() :]))
+    near = before + " " + after
+    if re.search(rf"\b(?:{v})(?:\s+\w+){{0,2}}?\s+(?:to\s+)?{name}\b", near):
         return True
     if re.search(rf"\b(?:to|toward|towards|at)\s+{name}\b", near):
         return True
@@ -315,9 +345,21 @@ def _n_tokens(tok, text: str) -> int:
 
 def _build_engine(args):
     global _ENGINE_USED
+    import dataclasses
+
     from explore_persona_space.eval.generation import create_vllm_engine
 
-    kwargs: dict = {"language_model_only": True}
+    # `language_model_only` (skip the omni model's non-text towers) exists
+    # only on newer vLLM EngineArgs — introspection-guarded so an engine
+    # without it skips the optimization instead of dying TypeError at init
+    # (r1 review g1 concern 7; the VM venv's vLLM 0.11.0 lacks it).
+    from vllm.engine.arg_utils import EngineArgs
+
+    kwargs: dict = {}
+    if "language_model_only" in {f.name for f in dataclasses.fields(EngineArgs)}:
+        kwargs["language_model_only"] = True
+    else:
+        print("[engine] vLLM EngineArgs lacks language_model_only — skipped", flush=True)
     if args.tp > 1:
         kwargs["tensor_parallel_size"] = args.tp
     if args.gpu_memory_utilization is not None:
@@ -405,8 +447,50 @@ def _maybe_upload(args, stage: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _parse_bank_array(text: str) -> list | None:
+    """Parse a bank-builder response into the JSON ARRAY the _BANK_SYSTEM
+    contract demands. eval.utils.parse_judge_json anchors its recovery at the
+    first ``{``, which for an array-of-OBJECTS response returns the FIRST
+    OBJECT alone — the r2 real-API bank smoke caught exactly that (registers
+    bank: expected 8 items, got dict). Ladder: verbatim JSON, then the largest
+    recoverable ARRAY from fenced blocks / ``raw_decode`` at ``[`` offsets
+    (bounded). Returns None when no array parses — the caller's expected-n
+    check raises loud."""
+    t = text.strip()
+    try:
+        v = json.loads(t)
+        if isinstance(v, list):
+            return v
+    except json.JSONDecodeError:
+        pass
+    best: list | None = None
+
+    def consider(v: object) -> None:
+        nonlocal best
+        if isinstance(v, list) and (best is None or len(v) > len(best)):
+            best = v
+
+    for m in re.finditer(r"```(?:json)?\s*(.*?)```", t, flags=re.DOTALL):
+        try:
+            consider(json.loads(m.group(1).strip()))
+        except json.JSONDecodeError:
+            continue
+    dec = json.JSONDecoder()
+    for i in [i for i, ch in enumerate(t) if ch == "["][:50]:
+        try:
+            v, _end = dec.raw_decode(t, i)
+        except json.JSONDecodeError:
+            continue
+        consider(v)
+    return best
+
+
 def phase_build_banks(args) -> None:
-    """LLM-author the sampled scene axes; write committed bank + rubric files."""
+    """LLM-author the sampled scene axes; write committed bank + rubric files.
+
+    ``--bank-only <name>`` restricts to ONE LLM-authored bank and returns
+    before the static/rubric writes — the tiny bounded REAL-API smoke of the
+    bank-builder path (r1 review blocker: real-api-smokes-missing)."""
     import issue1310_common as c1310
 
     for name, text in c1310.PERSONAS.items():
@@ -424,25 +508,28 @@ def phase_build_banks(args) -> None:
             "messages": [{"role": "user", "content": item.payload["prompt"]}],
         }
 
-    from explore_persona_space.eval.utils import parse_judge_json
-
+    specs = dict(bnk.BANK_BUILDER_SPECS)
+    if args.bank_only:
+        if args.bank_only not in specs:
+            raise SystemExit(f"unknown bank {args.bank_only}; choices: {sorted(specs)}")
+        specs = {args.bank_only: specs[args.bank_only]}
     items = [
         DispatchItem(item_id=f"bank|{name}", payload={"name": name, "prompt": spec["prompt"]})
-        for name, spec in bnk.BANK_BUILDER_SPECS.items()
+        for name, spec in specs.items()
     ]
     results = asyncio.run(
         dispatch_calls(
             items,
             model=cm.JUDGE_MODEL,
             build_request=build_request,
-            parse_response=parse_judge_json,
+            parse_response=_parse_bank_array,
             force_path="sync",
             cache_dir=Path(args.cache_dir) / "banks",
         )
     )
     banks_dir = Path(args.banks_dir)
     banks_dir.mkdir(parents=True, exist_ok=True)
-    for name, spec in bnk.BANK_BUILDER_SPECS.items():
+    for name, spec in specs.items():
         res = results[f"bank|{name}"]
         if res.error:
             raise RuntimeError(f"bank builder call failed for {name}: {res.reason}")
@@ -463,6 +550,10 @@ def phase_build_banks(args) -> None:
             banks_dir / f"{name}.json", {"items": items_list, "metadata": cm.run_metadata()}
         )
         print(f"[build_banks] wrote {name}: {len(items_list)} items", flush=True)
+
+    if args.bank_only:
+        print(f"[build_banks] --bank-only {args.bank_only}: skipping static/rubric writes")
+        return
 
     static = {
         "prime_bank_question": list(bnk.PRIME_BANK_QUESTION),
@@ -699,8 +790,6 @@ def phase_sega(args) -> None:
         ledger = cm.StageLedger(
             raw_root / "sega" / f"ledger_{cell}_w{wave}_s{args.shard_index}.json", regime
         )
-        counts = {"attempts": 0, "kept": 0, "cap_hit": 0}
-        mine_rejects: dict[str, int] = {}
         n_chunks = (len(attempt_ids) + args.chunk_rows - 1) // args.chunk_rows
         for ci in range(n_chunks):
             key = f"{cell}|w{wave}|s{args.shard_index}|c{ci:04d}"
@@ -726,9 +815,6 @@ def phase_sega(args) -> None:
                     else len(text)
                 )
                 verdict = _mine_sega(text, b["character"], b["family"], window_char)
-                counts["attempts"] += 1
-                if finish == "length":
-                    counts["cap_hit"] += 1
                 row_id = f"{cell}_w{wave}_a{a:06d}"
                 raw_rows.append(
                     {
@@ -744,7 +830,6 @@ def phase_sega(args) -> None:
                     }
                 )
                 if verdict["kept"]:
-                    counts["kept"] += 1
                     close = verdict["quote_close_end"]
                     mined_rows.append(
                         {
@@ -762,14 +847,29 @@ def phase_sega(args) -> None:
                             "quote_close_end": close,
                         }
                     )
-                else:
-                    mine_rejects[verdict["reason"]] = mine_rejects.get(verdict["reason"], 0) + 1
             stem = f"{cell}_w{wave}_s{args.shard_index}_c{ci:04d}"
             _write_chunk_jsonl(raw_root / "sega" / f"{stem}.jsonl", raw_rows)
             if mined_rows:
                 _write_chunk_jsonl(raw_root / "sega_mined" / f"{stem}.jsonl", mined_rows)
             ledger.mark_done(key)
             cm.progress("sega", ci + 1, n_chunks, key, t0)
+        # Durable-file summary (r1 review major 13): counts recomputed from ALL
+        # persisted chunk files so a resumed shard reports full totals — the G1
+        # sizing recalibration consumes these.
+        counts = {"attempts": 0, "kept": 0, "cap_hit": 0}
+        mine_rejects: dict[str, int] = {}
+        for path in sorted(
+            (raw_root / "sega").glob(f"{cell}_w{wave}_s{args.shard_index}_c*.jsonl")
+        ):
+            for row in cm.iter_jsonl(path):
+                counts["attempts"] += 1
+                if row.get("finish_reason") == "length":
+                    counts["cap_hit"] += 1
+                if row["mined"].get("kept"):
+                    counts["kept"] += 1
+                else:
+                    reason = row["mined"].get("reason") or "unknown"
+                    mine_rejects[reason] = mine_rejects.get(reason, 0) + 1
         summary = {
             "regime": regime,
             "counts": counts,
@@ -787,36 +887,99 @@ def phase_sega(args) -> None:
     _maybe_upload(args, "sega_mined")
 
 
-def _regen_cap_hit(
-    llm,
-    prompts: list[str],
-    texts: list[str],
-    finishes: list[str],
-    seeds: list[int],
-    cap: int,
-    stop: list[str] | None,
-    tag: str,
-) -> tuple[list[str], list[str], list[bool], float, float]:
-    """Apply the > 2%/cell cap-hit rule: regen cap-hit rows at 2x cap.
+def _cap_hit_fraction(files: list[Path], is_hit) -> tuple[int, int]:
+    """Count (generated_rows, hit_rows) over durable chunk files. Rows dropped
+    before generation (e.g. over_length) carry no finish_reason and are
+    excluded from the denominator."""
+    gen_rows = hits = 0
+    for path in files:
+        for row in cm.iter_jsonl(path):
+            if "finish_reason" not in row:
+                continue
+            gen_rows += 1
+            if is_hit(row):
+                hits += 1
+    return gen_rows, hits
 
-    Returns (texts, finishes, regen_flags, frac_before, frac_after).
+
+def _cell_grain_regen(
+    llm, files: list[Path], decision_path: Path, *, is_hit, rebuild, update_row, tag: str
+) -> dict:
+    """Cell-grain > 2% cap-hit regen (r1 review majors 13+15): the trigger is
+    evaluated over the CELL's full durable row set for this shard (round-robin
+    sharding keeps the shard fraction an unbiased estimate of the cell
+    fraction), never per chunk. The decision JSON + per-row ``regen`` flags
+    are durable, so a crashed/resumed invocation continues the regen instead
+    of re-deciding on a partial (or already-regenerated) view.
+
+    ``is_hit(row)`` defines a cap-hit on a generated row; ``rebuild(row)``
+    returns ``(prompt, cap2, stop)`` for the 2x pass; ``update_row(row, text,
+    finish)`` re-classifies the row in place (keep/drop/answer fields).
     """
-    hit = [i for i, f in enumerate(finishes) if f == "length"]
-    frac_before = len(hit) / max(1, len(texts))
-    regen = [False] * len(texts)
-    if frac_before <= cm.CAP_HIT_REGEN_THRESHOLD or not hit:
-        return texts, finishes, regen, frac_before, frac_before
-    sps = [_sampling_params(2 * cap, stop, cm.derived_seed(seeds[i], "regen")) for i in hit]
-    outs = _chunked_generate(llm, [prompts[i] for i in hit], sps, f"{tag}/regen2x")
-    for k, i in enumerate(hit):
-        text, finish = _gen_text(outs[k])
-        texts[i], finishes[i], regen[i] = text, finish, True
-    frac_after = sum(1 for f in finishes if f == "length") / max(1, len(texts))
+    files = [f for f in files if f.exists()]
+    if decision_path.exists():
+        decision = json.loads(decision_path.read_text(encoding="utf-8"))
+    else:
+        gen_rows, hits = _cap_hit_fraction(files, is_hit)
+        frac_before = hits / max(1, gen_rows)
+        decision = {
+            "regen": bool(hits and frac_before > cm.CAP_HIT_REGEN_THRESHOLD),
+            "frac_before": frac_before,
+            "n_generated": gen_rows,
+            "n_hit": hits,
+            "done": False,
+        }
+        cm.atomic_write_json(decision_path, decision)
+    if decision.get("done"):
+        return decision
+    if decision["regen"]:
+        for path in files:
+            rows = list(cm.iter_jsonl(path))
+            todo = [
+                i
+                for i, r in enumerate(rows)
+                if "finish_reason" in r and not r.get("regen") and is_hit(r)
+            ]
+            if not todo:
+                continue
+            prompts, sps = [], []
+            for i in todo:
+                prompt, cap2, stop = rebuild(rows[i])
+                prompts.append(prompt)
+                sps.append(_sampling_params(cap2, stop, cm.derived_seed(rows[i]["seed"], "regen")))
+            outs = _chunked_generate(llm, prompts, sps, f"{tag}/regen2x")
+            for k, i in enumerate(todo):
+                text, finish = _gen_text(outs[k])
+                update_row(rows[i], text, finish)
+                rows[i]["regen"] = True
+            _write_chunk_jsonl(path, rows)
+            print(f"[{tag}] cell-grain 2x regen: {len(todo)} rows in {path.name}", flush=True)
+    gen_rows, hits = _cap_hit_fraction(files, is_hit)
+    decision.update({"done": True, "frac_after": hits / max(1, gen_rows)})
+    cm.atomic_write_json(decision_path, decision)
     print(
-        f"[{tag}] cap-hit regen at 2x: {len(hit)} rows; frac {frac_before:.4f} -> {frac_after:.4f}",
+        f"[{tag}] cap-hit cell fraction {decision['frac_before']:.4f} -> "
+        f"{decision['frac_after']:.4f} (regen={decision['regen']})",
         flush=True,
     )
-    return texts, finishes, regen, frac_before, frac_after
+    return decision
+
+
+def _classify_answer_row(row: dict, text: str) -> None:
+    """Set answer/keep/drop_reason on a chat/plain answer row (shared by the
+    1x pass and the 2x cell-grain regen; cap-hit rows stay kept — the
+    fraction is reported in the stage summary). The ``<think>`` check is the
+    plan §4.2 chat-cell literal (r1 review g1 concern 1); a plain-text answer
+    carrying it is equally anomalous, so both cells drop on it."""
+    answer = text.strip()
+    keep, drop_reason = True, None
+    if not answer:
+        keep, drop_reason = False, "empty_answer"
+    elif "<think>" in answer:
+        keep, drop_reason = False, "think_leak"
+    elif not cm.english_majority(answer):
+        keep, drop_reason = False, "non_english_answer"
+    row.update({"answer": answer, "keep": keep, "drop_reason": drop_reason})
 
 
 def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: str) -> None:
@@ -840,8 +1003,6 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
     ledger = cm.StageLedger(
         raw_root / stage / f"ledger_{cell}_w{wave}_s{args.shard_index}.json", regime
     )
-    counts = {"rows": 0, "kept": 0, "over_length": 0, "non_english_answer": 0, "empty_answer": 0}
-    frac_b_all, frac_a_all = [], []
     my_rows = _shard_rows(rows, args)
     n_chunks = (len(my_rows) + args.chunk_rows - 1) // args.chunk_rows
     t0 = time.time()
@@ -857,7 +1018,6 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
             else:
                 prompt = f"User: {r['question']}\n\nAssistant:"
             if _n_tokens(tok, prompt) > budget:
-                counts["over_length"] += 1
                 dropped_rows.append(
                     {
                         "cell": cell,
@@ -872,54 +1032,69 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
             kept_rows.append(r)
         sps = [_sampling_params(cap, stop, s) for s in seeds]
         outs = _chunked_generate(llm, prompts, sps, f"{stage}")
-        texts, finishes = [], []
-        for out in outs:
-            text, finish = _gen_text(out)
-            texts.append(text)
-            finishes.append(finish)
-        texts, finishes, regen, fb, fa = _regen_cap_hit(
-            llm, prompts, texts, finishes, seeds, cap, stop, stage
-        )
-        frac_b_all.append(fb)
-        frac_a_all.append(fa)
         out_rows = list(dropped_rows)
-        for r, text, finish, rg, s in zip(kept_rows, texts, finishes, regen, seeds):
-            answer = text.strip()
-            counts["rows"] += 1
-            keep, drop_reason = True, None
-            if not answer:
-                keep, drop_reason = False, "empty_answer"
-                counts["empty_answer"] += 1
-            elif finish == "length":
-                keep, drop_reason = True, None  # cap-hit rows stay; fraction reported
-            if keep and not cm.english_majority(answer):
-                keep, drop_reason = False, "non_english_answer"
-                counts["non_english_answer"] += 1
-            if keep:
-                counts["kept"] += 1
-            out_rows.append(
-                {
-                    "cell": cell,
-                    "conv_id": r["conv_id"],
-                    "question": r["question"],
-                    "answer": answer,
-                    "finish_reason": finish,
-                    "seed": s,
-                    "regen": rg,
-                    "keep": keep,
-                    "drop_reason": drop_reason,
-                    "template_sha": template_sha if cell == "chat" else None,
-                }
-            )
+        for r, out, s in zip(kept_rows, outs, seeds):
+            text, finish = _gen_text(out)
+            row = {
+                "cell": cell,
+                "conv_id": r["conv_id"],
+                "question": r["question"],
+                "finish_reason": finish,
+                "seed": s,
+                "regen": False,
+                "template_sha": template_sha if cell == "chat" else None,
+            }
+            _classify_answer_row(row, text)
+            out_rows.append(row)
         stem = f"{cell}_w{wave}_s{args.shard_index}_c{ci:04d}"
         _write_chunk_jsonl(raw_root / stage / f"{stem}.jsonl", out_rows)
         ledger.mark_done(key)
         cm.progress(stage, ci + 1, n_chunks, key, t0)
+    # Cell-grain cap-hit regen + durable-file summary (r1 review majors 13+15).
+    files = sorted((raw_root / stage).glob(f"{cell}_w{wave}_s{args.shard_index}_c*.jsonl"))
+
+    def _rebuild(row: dict) -> tuple[str, int, list[str] | None]:
+        if cell == "chat":
+            return _render_chat(tok, row["question"]), 2 * cap, stop
+        return f"User: {row['question']}\n\nAssistant:", 2 * cap, stop
+
+    def _update(row: dict, text: str, finish: str) -> None:
+        row["finish_reason"] = finish
+        _classify_answer_row(row, text)
+
+    decision = _cell_grain_regen(
+        llm,
+        files,
+        raw_root / stage / f"regen_decision_{cell}_w{wave}_s{args.shard_index}.json",
+        is_hit=lambda r: r.get("finish_reason") == "length",
+        rebuild=_rebuild,
+        update_row=_update,
+        tag=stage,
+    )
+    counts = {
+        "rows": 0,
+        "kept": 0,
+        "over_length": 0,
+        "non_english_answer": 0,
+        "empty_answer": 0,
+        "think_leak": 0,
+    }
+    for path in files:
+        for row in cm.iter_jsonl(path):
+            if row.get("drop_reason") == "over_length":
+                counts["over_length"] += 1
+                continue
+            counts["rows"] += 1
+            if row.get("keep"):
+                counts["kept"] += 1
+            elif row.get("drop_reason") in counts:
+                counts[row["drop_reason"]] += 1
     summary = {
         "regime": regime,
         "counts": counts,
-        "cap_hit_fraction_before": max(frac_b_all) if frac_b_all else 0.0,
-        "cap_hit_fraction_after": max(frac_a_all) if frac_a_all else 0.0,
+        "cap_hit_fraction_before": decision["frac_before"],
+        "cap_hit_fraction_after": decision["frac_after"],
+        "cap_hit_regen": decision["regen"],
         "metadata": cm.run_metadata(),
     }
     cm.atomic_write_json(
@@ -942,7 +1117,10 @@ def phase_chat_plain(args) -> None:
     _maybe_upload(args, "plain")
 
 
-def _classify_sim_turn(text: str, finish: str) -> tuple[bool, str | None]:
+def _classify_sim_turn(text: str) -> tuple[bool, str | None]:
+    """Sim-turn eligibility (plan §4.2b), mirroring the REAL u2 pool filters:
+    length band AND English-majority script (r1 review major: the sim arm
+    previously omitted the English predicate the real arm applies)."""
     turn = text.strip()
     if not turn:
         return False, "empty_turn"
@@ -950,7 +1128,15 @@ def _classify_sim_turn(text: str, finish: str) -> tuple[bool, str | None]:
         return False, "think_leak"
     if not (cm.USER_TURN_MIN_CHARS <= len(turn) <= cm.USER_TURN_MAX_CHARS):
         return False, "len_band"
+    if not cm.english_majority(turn):
+        return False, "non_english"
     return True, None
+
+
+def _classify_sim_row(row: dict, text: str) -> None:
+    """Set sim_turn/keep/drop_reason on a sim-user row (1x pass + 2x regen)."""
+    keep, drop_reason = _classify_sim_turn(text)
+    row.update({"sim_turn": text.strip(), "keep": keep, "drop_reason": drop_reason})
 
 
 def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list[int]) -> None:
@@ -970,15 +1156,7 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
         "model": cm.MODEL_ID,
     }
     ledger = cm.StageLedger(raw_root / stage / f"ledger_w{wave}_s{args.shard_index}.json", regime)
-    counts: dict[str, int] = {
-        "rows": 0,
-        "kept": 0,
-        "over_length": 0,
-        "empty_turn": 0,
-        "think_leak": 0,
-        "len_band": 0,
-    }
-    frac_b_all, frac_a_all = [], []
+    pool_by_id = {r["conv_id"]: r for r in rows}
     my_rows = _shard_rows(rows, args)
     n_chunks = (len(my_rows) + args.chunk_rows - 1) // args.chunk_rows
     t0 = time.time()
@@ -992,7 +1170,6 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
             for r in chunk:
                 prefix = _render_user_prefix(tok, r["u1"], r["a1"])
                 if _n_tokens(tok, prefix) > budget:
-                    counts["over_length"] += 1
                     dropped_rows.append(
                         {
                             "cell": "chat_user_sim",
@@ -1008,50 +1185,74 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
                 kept_rows.append(r)
             sps = [_sampling_params(cap, cm.USER_SIM_STOP, s) for s in seeds]
             outs = _chunked_generate(llm, prompts, sps, stage)
-            texts, finishes = [], []
-            for out in outs:
-                text, finish = _gen_text(out)
-                texts.append(text)
-                finishes.append(finish)
-            texts, finishes, regen, fb, fa = _regen_cap_hit(
-                llm, prompts, texts, finishes, seeds, cap, cm.USER_SIM_STOP, stage
-            )
-            frac_b_all.append(fb)
-            frac_a_all.append(fa)
             out_rows = list(dropped_rows)
-            for r, prefix, text, finish, rg, s in zip(
-                kept_rows, prompts, texts, finishes, regen, seeds
-            ):
-                keep, drop_reason = _classify_sim_turn(text, finish)
-                counts["rows"] += 1
-                if keep:
-                    counts["kept"] += 1
-                elif drop_reason in counts:
-                    counts[drop_reason] += 1
-                out_rows.append(
-                    {
-                        "cell": "chat_user_sim",
-                        "conv_id": r["conv_id"],
-                        "draw_seed": draw_seed,
-                        "sim_turn": text.strip(),
-                        "finish_reason": finish,
-                        "seed": s,
-                        "regen": rg,
-                        "keep": keep,
-                        "drop_reason": drop_reason,
-                        "prefix_chars": len(prefix),
-                        "prefix_digest": cm.text_digest(prefix),
-                    }
-                )
+            for r, prefix, out, s in zip(kept_rows, prompts, outs, seeds):
+                text, finish = _gen_text(out)
+                row = {
+                    "cell": "chat_user_sim",
+                    "conv_id": r["conv_id"],
+                    "draw_seed": draw_seed,
+                    "finish_reason": finish,
+                    "seed": s,
+                    "regen": False,
+                    "prefix_chars": len(prefix),
+                    "prefix_digest": cm.text_digest(prefix),
+                }
+                _classify_sim_row(row, text)
+                out_rows.append(row)
             stem = f"w{wave}_d{draw_seed}_s{args.shard_index}_c{ci:04d}"
             _write_chunk_jsonl(raw_root / stage / f"{stem}.jsonl", out_rows)
             ledger.mark_done(key)
             cm.progress(stage, ci + 1, n_chunks, key, t0)
+    # Cell-grain cap-hit regen + durable-file summary (r1 review majors 13+15);
+    # fresh draws (user_sim_fresh) share this path, so the > 2% rule covers
+    # them too (r1 review: cap-hit rule skipped fresh draws).
+    files = sorted((raw_root / stage).glob(f"w{wave}_d*_s{args.shard_index}_c*.jsonl"))
+
+    def _rebuild(row: dict) -> tuple[str, int, list[str] | None]:
+        pool_row = pool_by_id.get(row["conv_id"])
+        if pool_row is None:
+            raise RuntimeError(f"{stage} regen: conv_id {row['conv_id']} not in the user pool")
+        return _render_user_prefix(tok, pool_row["u1"], pool_row["a1"]), 2 * cap, cm.USER_SIM_STOP
+
+    def _update(row: dict, text: str, finish: str) -> None:
+        row["finish_reason"] = finish
+        _classify_sim_row(row, text)
+
+    decision = _cell_grain_regen(
+        llm,
+        files,
+        raw_root / stage / f"regen_decision_w{wave}_s{args.shard_index}.json",
+        is_hit=lambda r: r.get("finish_reason") == "length",
+        rebuild=_rebuild,
+        update_row=_update,
+        tag=stage,
+    )
+    counts: dict[str, int] = {
+        "rows": 0,
+        "kept": 0,
+        "over_length": 0,
+        "empty_turn": 0,
+        "think_leak": 0,
+        "len_band": 0,
+        "non_english": 0,
+    }
+    for path in files:
+        for row in cm.iter_jsonl(path):
+            if row.get("drop_reason") == "over_length":
+                counts["over_length"] += 1
+                continue
+            counts["rows"] += 1
+            if row.get("keep"):
+                counts["kept"] += 1
+            elif row.get("drop_reason") in counts:
+                counts[row["drop_reason"]] += 1
     summary = {
         "regime": regime,
         "counts": counts,
-        "cap_hit_fraction_before": max(frac_b_all) if frac_b_all else 0.0,
-        "cap_hit_fraction_after": max(frac_a_all) if frac_a_all else 0.0,
+        "cap_hit_fraction_before": decision["frac_before"],
+        "cap_hit_fraction_after": decision["frac_after"],
+        "cap_hit_regen": decision["regen"],
         "metadata": cm.run_metadata(),
     }
     cm.atomic_write_json(raw_root / stage / f"summary_w{wave}_s{args.shard_index}.json", summary)
@@ -1070,12 +1271,20 @@ def phase_user_sim(args) -> None:
 
 
 def phase_user_fresh(args) -> None:
-    """Fresh sim-user draws (seeds 138-141) for the selected held-out rows."""
+    """Fresh sim-user draws (seeds 138-141) for the selected held-out rows.
+
+    Selection draws from KEPT user_sim conversations (r1 review g1 concern 6:
+    a raw-pool draw shrinks the realized 5-draw-covered subset by the sim
+    keep rate) — user_sim must have run first (locally or HF-staged)."""
     pools_dir = _resolve_pools_dir(args)
     tok = _get_tokenizer()
     _assert_chat_template(tok)
-    llm = _build_engine(args)
     rows = _load_pool(pools_dir, "user_draw")
+    sim_kept = set(_stage_kept_rows(_rows_dir(args, "user_sim")))
+    rows = [r for r in rows if r["conv_id"] in sim_kept]
+    if not rows:
+        raise RuntimeError("user_fresh: no kept user_sim conversations (run user_sim first)")
+    llm = _build_engine(args)
     order = random.Random(cm.derived_seed(cm.SEED, "user_fresh_select")).sample(
         range(len(rows)), len(rows)
     )
@@ -1206,6 +1415,28 @@ def _mine_closing_quote(text: str) -> int | None:
     return min(idxs) if idxs else None
 
 
+def _classify_segb_row(row: dict, text: str) -> None:
+    """Set gen_text/answer/keep/drop_reason on a SegB reply row (shared by
+    the 1x pass and the 2x cell-grain no-close regen)."""
+    close = _mine_closing_quote(text)
+    keep, drop_reason, answer = True, None, None
+    if close is None:
+        keep, drop_reason = False, "cap_hit_no_close"
+    else:
+        answer = text[:close].strip()
+        if not answer:
+            keep, drop_reason = False, "empty_answer"
+    row.update(
+        {
+            "gen_text": text,
+            "answer": answer,
+            "answer_close_idx": close,
+            "keep": keep,
+            "drop_reason": drop_reason,
+        }
+    )
+
+
 def phase_segb(args) -> None:
     """SegB attributed replies for admission-kept story rows (plan §4.2)."""
     banksd = _load_banks(Path(args.banks_dir))
@@ -1234,13 +1465,6 @@ def phase_segb(args) -> None:
         ledger = cm.StageLedger(
             raw_root / "segb" / f"ledger_{cell}_w{wave}_s{args.shard_index}.json", regime
         )
-        counts = {
-            "rows": 0,
-            "kept": 0,
-            "cap_hit_no_close": 0,
-            "empty_answer": 0,
-            "non_english_answer_flag": 0,
-        }
         n_chunks = (len(sel) + args.chunk_rows - 1) // args.chunk_rows
         for ci in range(n_chunks):
             key = f"{cell}|w{wave}|s{args.shard_index}|c{ci:04d}"
@@ -1255,74 +1479,69 @@ def phase_segb(args) -> None:
                 seeds.append(cm.derived_seed(cm.SEED, "segb", cell, wave, rid))
             sps = [_sampling_params(cm.SEGB_MAX_TOKENS, None, s) for s in seeds]
             outs = _chunked_generate(llm, prompts, sps, f"segb/{cell}")
-            texts = []
-            finishes = []
-            for out in outs:
-                text, finish = _gen_text(out)
-                texts.append(text)
-                finishes.append(finish)
-            # Cap-hit for SegB = no closing quote within the cap (plan §4.2).
-            no_close = [i for i, t in enumerate(texts) if _mine_closing_quote(t) is None]
-            frac = len(no_close) / max(1, len(texts))
-            regen = [False] * len(texts)
-            if frac > cm.CAP_HIT_REGEN_THRESHOLD and no_close:
-                sps2 = [
-                    _sampling_params(
-                        2 * cm.SEGB_MAX_TOKENS, None, cm.derived_seed(seeds[i], "regen")
-                    )
-                    for i in no_close
-                ]
-                outs2 = _chunked_generate(
-                    llm, [prompts[i] for i in no_close], sps2, f"segb/{cell}/regen2x"
-                )
-                for k2, i in enumerate(no_close):
-                    text, finish = _gen_text(outs2[k2])
-                    texts[i], finishes[i], regen[i] = text, finish, True
-                print(
-                    f"[segb/{cell}] no-close regen at 2x: {len(no_close)} rows (frac {frac:.4f})",
-                    flush=True,
-                )
             out_rows = []
-            for rid, opener, text, finish, rg, s in zip(
-                chunk_ids, openers, texts, finishes, regen, seeds
-            ):
-                counts["rows"] += 1
-                close = _mine_closing_quote(text)
-                keep, drop_reason, answer = True, None, None
-                if close is None:
-                    keep, drop_reason = False, "cap_hit_no_close"
-                    counts["cap_hit_no_close"] += 1
-                else:
-                    answer = text[:close].strip()
-                    if not answer:
-                        keep, drop_reason = False, "empty_answer"
-                        counts["empty_answer"] += 1
-                if keep and answer is not None and not cm.english_majority(answer):
-                    counts["non_english_answer_flag"] += 1  # report-only for story cells
-                if keep:
-                    counts["kept"] += 1
-                out_rows.append(
-                    {
-                        "cell": cell,
-                        "row_id": rid,
-                        "wave": wave,
-                        "opener_id": mined[rid]["opener_id"],
-                        "opener_text": opener,
-                        "gen_text": text,
-                        "answer": answer,
-                        "answer_close_idx": close,
-                        "finish_reason": finish,
-                        "seed": s,
-                        "regen": rg,
-                        "keep": keep,
-                        "drop_reason": drop_reason,
-                    }
-                )
+            for rid, opener, out, s in zip(chunk_ids, openers, outs, seeds):
+                text, finish = _gen_text(out)
+                row = {
+                    "cell": cell,
+                    "row_id": rid,
+                    "wave": wave,
+                    "opener_id": mined[rid]["opener_id"],
+                    "opener_text": opener,
+                    "finish_reason": finish,
+                    "seed": s,
+                    "regen": False,
+                }
+                _classify_segb_row(row, text)
+                out_rows.append(row)
             stem = f"{cell}_w{wave}_s{args.shard_index}_c{ci:04d}"
             _write_chunk_jsonl(raw_root / "segb" / f"{stem}.jsonl", out_rows)
             ledger.mark_done(key)
             cm.progress("segb", ci + 1, n_chunks, key, t0)
-        summary = {"regime": regime, "counts": counts, "metadata": cm.run_metadata()}
+        # Cell-grain no-close regen + durable-file summary (r1 majors 13+15).
+        # Cap-hit for SegB = no closing quote within the cap (plan §4.2).
+        files = sorted((raw_root / "segb").glob(f"{cell}_w{wave}_s{args.shard_index}_c*.jsonl"))
+
+        def _rebuild(row: dict) -> tuple[str, int, list[str] | None]:
+            return _segb_prompt(mined[row["row_id"]], banksd)[0], 2 * cm.SEGB_MAX_TOKENS, None
+
+        def _update(row: dict, text: str, finish: str) -> None:
+            row["finish_reason"] = finish
+            _classify_segb_row(row, text)
+
+        decision = _cell_grain_regen(
+            llm,
+            files,
+            raw_root / "segb" / f"regen_decision_{cell}_w{wave}_s{args.shard_index}.json",
+            is_hit=lambda r: r.get("answer_close_idx") is None,
+            rebuild=_rebuild,
+            update_row=_update,
+            tag=f"segb/{cell}",
+        )
+        counts = {
+            "rows": 0,
+            "kept": 0,
+            "cap_hit_no_close": 0,
+            "empty_answer": 0,
+            "non_english_answer_flag": 0,
+        }
+        for path in files:
+            for row in cm.iter_jsonl(path):
+                counts["rows"] += 1
+                if row.get("keep"):
+                    counts["kept"] += 1
+                    if row.get("answer") and not cm.english_majority(row["answer"]):
+                        counts["non_english_answer_flag"] += 1  # report-only, story cells
+                elif row.get("drop_reason") in counts:
+                    counts[row["drop_reason"]] += 1
+        summary = {
+            "regime": regime,
+            "counts": counts,
+            "cap_hit_fraction_before": decision["frac_before"],
+            "cap_hit_fraction_after": decision["frac_after"],
+            "cap_hit_regen": decision["regen"],
+            "metadata": cm.run_metadata(),
+        }
         cm.atomic_write_json(
             raw_root / "segb" / f"summary_{cell}_w{wave}_s{args.shard_index}.json", summary
         )
@@ -1413,6 +1632,7 @@ def phase_fresh_draws(args) -> None:
                     "gen_text": text,
                     "finish_reason": finish,
                     "seed": s,
+                    "regen": False,
                     "template_sha": template_sha if cell == "chat" else None,
                 }
                 if cell in cm.STORY_CELLS:
@@ -1428,6 +1648,67 @@ def phase_fresh_draws(args) -> None:
             )
             ledger.mark_done(key)
             cm.progress("fresh_draws", draw_seeds.index(draw_seed) + 1, len(draw_seeds), key, t0)
+        # Cell-grain cap-hit regen + durable summary (r1 review majors 13+15:
+        # fresh draws previously skipped the > 2% rule and wrote no summary).
+        files = [
+            raw_root / "fresh_draws" / f"{cell}_d{d}_s{args.shard_index}.jsonl" for d in draw_seeds
+        ]
+        story = cell in cm.STORY_CELLS
+
+        def _rebuild(row: dict) -> tuple[str, int, list[str] | None]:
+            if story:
+                assert mined is not None
+                return _segb_prompt(mined[row["row_id"]], banksd)[0], 2 * cm.SEGB_MAX_TOKENS, None
+            if cell == "chat":
+                q = base_rows[row["row_id"]]["question"]
+                return _render_chat(tok, q), 2 * cm.CHAT_MAX_TOKENS, cm.CHAT_STOP
+            q = base_rows[row["row_id"]]["question"]
+            return f"User: {q}\n\nAssistant:", 2 * cm.PLAIN_MAX_TOKENS, cm.PLAIN_STOP
+
+        def _update(row: dict, text: str, finish: str) -> None:
+            row["gen_text"] = text
+            row["finish_reason"] = finish
+            if story:
+                close = _mine_closing_quote(text)
+                row["answer"] = text[:close].strip() if close is not None else None
+                row["answer_close_idx"] = close
+            else:
+                row["answer"] = text.strip()
+
+        def _is_hit(row: dict) -> bool:
+            if story:
+                return row.get("answer_close_idx") is None
+            return row.get("finish_reason") == "length"
+
+        decision = _cell_grain_regen(
+            llm,
+            files,
+            raw_root / "fresh_draws" / f"regen_decision_{cell}_s{args.shard_index}.json",
+            is_hit=_is_hit,
+            rebuild=_rebuild,
+            update_row=_update,
+            tag=f"fresh/{cell}",
+        )
+        counts = {"rows": 0, "cap_hit": 0}
+        for path in files:
+            if not path.exists():
+                continue
+            for row in cm.iter_jsonl(path):
+                counts["rows"] += 1
+                if _is_hit(row):
+                    counts["cap_hit"] += 1
+        summary = {
+            "regime": regime,
+            "counts": counts,
+            "cap_hit_fraction_before": decision["frac_before"],
+            "cap_hit_fraction_after": decision["frac_after"],
+            "cap_hit_regen": decision["regen"],
+            "metadata": cm.run_metadata(),
+        }
+        cm.atomic_write_json(
+            raw_root / "fresh_draws" / f"summary_{cell}_s{args.shard_index}.json", summary
+        )
+        print(f"[fresh_draws] {cell}: {json.dumps(counts)}", flush=True)
     _reap_engine(llm)
     _maybe_upload(args, "fresh_draws")
 
@@ -1493,6 +1774,81 @@ def phase_upload_stage(args) -> None:
     )
 
 
+def phase_probe_miner(args) -> None:
+    """CPU-only miner probe (r1 review blocker: the `_is_directed`
+    speaker-exclusion rejected the canonical taught reply shape). Synthetic
+    fixtures only — no corpus text, no model. Exits non-zero on any mismatch:
+    the canonical/opener-taught KEEP shapes must mine, speaker/inverted
+    attributions must reject."""
+    _ = args
+    name = "Astra"
+    fixtures = [
+        (
+            "question",
+            'The lanterns flickered. "Where does the river bend?" '
+            'Astra replied: "Past the mill, where the willows lean."',
+            True,
+            "canonical prime/opener-taught reply shape",
+        ),
+        (
+            "question",
+            'Dana leaned across the table and asked Astra: "Did the harvest survive the frost?"',
+            True,
+            "directed-TO variant (asked {Name}:)",
+        ),
+        (
+            "question",
+            'Dana turned to Astra. "Will the bridge hold?"',
+            True,
+            "to-Name proximity variant",
+        ),
+        (
+            "dialogue",
+            '"The bridge held through the storm." Astra nodded, then said: "It always does."',
+            True,
+            "dialogue-family reply shape",
+        ),
+        (
+            "question",
+            'Astra said: "Where does the river bend?"',
+            False,
+            "speaker-before-quote ({name} said:)",
+        ),
+        (
+            "question",
+            '"Where does the river bend?" asked Astra.',
+            False,
+            "inverted post-quote speaker",
+        ),
+        (
+            "question",
+            '"Where does the river bend?" Astra said.',
+            False,
+            "post-quote speaker with no follow-on quote",
+        ),
+        (
+            "dialogue",
+            'Dana turned to Astra. "Will the bridge hold?"',
+            False,
+            "wrong kind: question under dialogue family",
+        ),
+    ]
+    failures = []
+    for family, text, expect, note in fixtures:
+        verdict = _mine_sega(text, name, family, len(text))
+        if bool(verdict["kept"]) != expect:
+            failures.append(f"{note}: expected kept={expect}, got {json.dumps(verdict)}")
+        elif verdict["kept"]:
+            utter = text[verdict["utter_start"] : verdict["utter_end"]]
+            if not utter.strip():
+                failures.append(f"{note}: empty mined utterance")
+    if failures:
+        for f in failures:
+            print(f"[probe_miner] FAIL {f}", flush=True)
+        raise SystemExit(1)
+    print(f"[probe_miner] PASS ({len(fixtures)} fixtures)", flush=True)
+
+
 PHASES = {
     "build_banks": phase_build_banks,
     "build_pools": phase_build_pools,
@@ -1505,6 +1861,7 @@ PHASES = {
     "fresh_draws": phase_fresh_draws,
     "capture_ready": phase_capture_ready,
     "upload_stage": phase_upload_stage,
+    "probe_miner": phase_probe_miner,
 }
 
 
@@ -1555,6 +1912,11 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--fresh-rows", type=int, default=1000)
     ap.add_argument("--fresh-draws", type=int, default=4)
     ap.add_argument("--stage", default="", help="stage name for --phase upload_stage")
+    ap.add_argument(
+        "--bank-only",
+        default="",
+        help="build ONE LLM-authored bank only (bounded real-API smoke of build_banks)",
+    )
     return ap
 
 

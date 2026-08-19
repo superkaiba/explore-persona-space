@@ -16,12 +16,15 @@ Candidate pool per cell = ALL of the cell's equalized held-out answers pooled
 across folds (each row's prediction comes from its own fold's map, so the pool
 is the full cohort; chance stated 1/pool). Conventions (plan §4.4; ports named
 per function): ``raw_euclidean``, ``raw_cosine``, ``whiten_cos`` (z =
-L^-1 (x - mu_A); L = Cholesky of the shrunk answer covariance, lambda = 0.1 —
-``analysis.null_battery.shrunk_cholesky_from_cov``; covariance from the cell's
-FULL equalized cohort answers: under 5-fold CV every row is a train row in 4/5
-folds, one decomposition per cell), ``csls_cos`` + ``csls_whiten_cos`` (CSLS
-K=10 via the canonical ``issue1901_metric_battery.csls_scores`` — both
-neighborhoods from the query x pool matrix; retrieval distance = -score).
+L_f^-1 (x - mu_f); L_f = Cholesky of the shrunk answer covariance, lambda =
+0.1 — ``analysis.null_battery.shrunk_cholesky_from_cov``; covariance PER FOLD
+from fold f's TRAIN rows only (folds != f), each query whitened by its target
+row's fold decomposition — r1 review major retrieval-whitening-eval-leakage:
+no evaluation row influences its own preprocessing), ``csls_cos`` +
+``csls_whiten_cos`` (CSLS K=10 via the canonical
+``issue1901_metric_battery.csls_scores`` — both neighborhoods from the query x
+pool matrix; whitened-CSLS neighborhoods live within each fold's query group,
+a disclosed convention field; retrieval distance = -score).
 Mid-rank tie convention == ``analysis.mapping_baselines.knn_retrieval`` (the
 formula is byte-identical), so every fits/ladder unit is RECONCILED against
 its producer's persisted knn block (fail-loud on mismatch — a row-order or
@@ -40,9 +43,10 @@ is deterministic, no redraws):
                     (#2202 freshwhiten Leg D), beside the matched
                     single-target read on the same covered rows.
 
-Everything vectorized (batched GEMMs / one Cholesky per cell — never per-row
-loops); per-unit atomic JSON checkpoints + regime-keyed resume; empty
-selections raise. G3's rank-1-vs-10x-chance read is exposed battery-grade in
+Everything vectorized (batched GEMMs / K train-only Cholesky decompositions
+per cell, computed once and reused across every unit — never per-row loops);
+per-unit atomic JSON checkpoints + regime-keyed resume; empty selections
+raise. G3's rank-1-vs-10x-chance read is exposed battery-grade in
 the chat/context output (``g3_battery_read``).
 
 Phases: ``--phase all`` (default: battery + fresh), ``battery``, ``fresh``,
@@ -129,32 +133,70 @@ def ranks_summary(ranks: np.ndarray, n_pool: int) -> dict:
     }
 
 
-def pool_ctx_from(y64: np.ndarray, mu: np.ndarray, chol: np.ndarray, whiten: dict) -> dict:
-    """Pool context from an EXISTING whitening decomposition (used for the
-    avg-target modified pool — same L/mu as the cell, the freshwhiten Leg D
-    convention)."""
-    yw = solve_triangular(chol, (y64 - mu).T, lower=True).T
-    return {"Y": y64, "Yw": yw, "mu": mu, "L": chol, "whiten": whiten}
+def pool_ctx_with_modified_y(ctx: dict, y_mod: np.ndarray) -> dict:
+    """Pool context with a MODIFIED pool under the cell's EXISTING per-fold
+    whitening decompositions (the avg-target pool — same per-fold L/mu as the
+    cell, the freshwhiten Leg D convention; only Yw is recomputed)."""
+    per_fold = {
+        f: {
+            "mu": fc["mu"],
+            "L": fc["L"],
+            "Yw": solve_triangular(fc["L"], (y_mod - fc["mu"]).T, lower=True).T,
+        }
+        for f, fc in ctx["per_fold"].items()
+    }
+    return {
+        "Y": y_mod,
+        "row_fold": ctx["row_fold"],
+        "per_fold": per_fold,
+        "whiten": ctx["whiten"],
+    }
 
 
-def build_pool_ctx(y32: np.ndarray) -> dict:
-    """Per-cell pool context: float64 answers + ONE shrunk-covariance Cholesky
-    whitening decomposition (lambda = 0.1, full equalized cohort answers)."""
+def build_pool_ctx(y32: np.ndarray, entry: dict) -> dict:
+    """Per-cell pool context: float64 answers + K per-fold shrunk-covariance
+    Cholesky whitening decompositions (lambda = 0.1), each fit ONLY on fold
+    f's TRAIN rows (folds != f) — r1 review major
+    retrieval-whitening-eval-leakage: a query is whitened by its own target
+    row's fold decomposition, which never saw that row, so no evaluation row
+    influences its own preprocessing. Each fold's Yw whitens the FULL pool
+    (candidates are not train data — only the fitted transform is)."""
     y = np.ascontiguousarray(y32, dtype=np.float64)
-    mu = y.mean(axis=0)
-    cov = np.cov(y, rowvar=False)
-    chol = shrunk_cholesky_from_cov(cov, WHITEN_LAM)
-    del cov
+    folds = np.asarray(entry["folds"], dtype=np.int64)
+    assert folds.shape[0] == y.shape[0], (folds.shape, y.shape)
+    per_fold: dict[int, dict] = {}
+    n_train: dict[int, int] = {}
+    for f, (tr, _te) in enumerate(p6.fold_splits(entry)):
+        y_tr = y[tr]
+        mu = y_tr.mean(axis=0)
+        cov = np.cov(y_tr, rowvar=False)
+        chol = shrunk_cholesky_from_cov(cov, WHITEN_LAM)
+        del cov
+        per_fold[f] = {
+            "mu": mu,
+            "L": chol,
+            "Yw": solve_triangular(chol, (y - mu).T, lower=True).T,
+        }
+        n_train[f] = int(tr.shape[0])
     whiten = {
         "lam": WHITEN_LAM,
         "builder": "analysis.null_battery.shrunk_cholesky_from_cov",
         "cov_source": (
-            "full equalized cohort answers (all rows; under 5-fold CV every row is a "
-            "train row in 4/5 folds — one decomposition per cell)"
+            "per-fold TRAIN-ONLY answers (folds != f): each query is whitened by its "
+            "target row's fold decomposition, which never saw that row (no evaluation "
+            "leakage into the whitening transform)"
         ),
         "n_rows": int(y.shape[0]),
+        "n_train_per_fold": {int(f): n for f, n in sorted(n_train.items())},
+        "csls_note": (
+            "whitened-CSLS neighborhood statistics are computed within each fold's "
+            "query group (queries sharing a target fold see one whitened space; the "
+            "target-side r_T averages over that group's queries only — disclosed; "
+            "k clamped to the group size, which binds only at probe/tiny-n scale); "
+            "raw (unwhitened) CSLS is unchanged, computed over the full query set"
+        ),
     }
-    return pool_ctx_from(y, mu, chol, whiten)
+    return {"Y": y, "row_fold": folds, "per_fold": per_fold, "whiten": whiten}
 
 
 def battery(
@@ -199,18 +241,38 @@ def battery(
             del sc
         del dmat
     if "whiten_cos" in conventions or "csls_whiten_cos" in conventions:
-        qw = solve_triangular(ctx["L"], (q - ctx["mu"]).T, lower=True).T
-        dmat = _pairwise_dist(qw, ctx["Yw"], "cosine")
-        del qw
-        if "whiten_cos" in conventions:
-            _take("whiten_cos", dmat)
-        if "csls_whiten_cos" in conventions:
-            np.subtract(1.0, dmat, out=dmat)
-            sc = mb.csls_scores(dmat, CSLS_K)
-            np.negative(sc, out=sc)
-            _take("csls_whiten_cos", sc)
-            del sc
-        del dmat
+        # Per-fold whitening (r1 review major retrieval-whitening-eval-leakage):
+        # queries are grouped by their TARGET row's fold and whitened by that
+        # fold's train-only decomposition; whitened-CSLS neighborhoods live
+        # within each fold group (ctx["whiten"]["csls_note"]).
+        r_w = np.empty(q.shape[0]) if "whiten_cos" in conventions else None
+        r_cw = np.empty(q.shape[0]) if "csls_whiten_cos" in conventions else None
+        q_folds = ctx["row_fold"][ti]
+        for f, fctx in sorted(ctx["per_fold"].items()):
+            sel = np.flatnonzero(q_folds == f)
+            if sel.size == 0:
+                continue
+            qw = solve_triangular(fctx["L"], (q[sel] - fctx["mu"]).T, lower=True).T
+            dmat = _pairwise_dist(qw, fctx["Yw"], "cosine")
+            del qw
+            if r_w is not None:
+                r_w[sel] = midranks_of_true(dmat, ti[sel])
+            if r_cw is not None:
+                np.subtract(1.0, dmat, out=dmat)
+                # k clamped to the fold group's query count — binds only at
+                # probe/tiny-n scale (production fold groups are >= ~1000
+                # queries, so k_eff == CSLS_K there); disclosed in csls_note.
+                sc = mb.csls_scores(dmat, min(CSLS_K, dmat.shape[0]))
+                np.negative(sc, out=sc)
+                r_cw[sel] = midranks_of_true(sc, ti[sel])
+                del sc
+            del dmat
+        if r_w is not None:
+            ranks["whiten_cos"] = r_w
+            summaries["whiten_cos"] = ranks_summary(r_w, n_pool)
+        if r_cw is not None:
+            ranks["csls_whiten_cos"] = r_cw
+            summaries["csls_whiten_cos"] = ranks_summary(r_cw, n_pool)
     return summaries, ranks
 
 
@@ -462,7 +524,7 @@ def run_fresh_unit(
     single_summ, _ = battery(preds, ctx, true_idx=pos, conventions=conventions)
     y_mod = ctx["Y"].copy()
     y_mod[pos] = (ctx["Y"][pos] + draws.sum(axis=1)) / (1.0 + n_draws)
-    ctx_mod = pool_ctx_from(y_mod, ctx["mu"], ctx["L"], ctx["whiten"])
+    ctx_mod = pool_ctx_with_modified_y(ctx, y_mod)
     avg_summ, _ = battery(preds, ctx_mod, true_idx=pos, conventions=conventions)
     del ctx_mod, y_mod
     payload = {
@@ -506,7 +568,7 @@ def run_cell(
     pack = p6.load_cell_arrays(
         store_root, cell, layer, (p6.ANSWER_SLOT,), row_order=entry["row_ids"]
     )
-    ctx = build_pool_ctx(pack["arrays"][p6.ANSWER_SLOT])
+    ctx = build_pool_ctx(pack["arrays"][p6.ANSWER_SLOT], entry)
     del pack
     if battery_on:
         for arm in p6.ARMS:
@@ -586,6 +648,10 @@ def _regime(args, fm: dict, layer: int, conventions: tuple[str, ...]) -> dict:
         "pool": (
             "the cell's full equalized cohort answers, pooled across folds (each row's "
             "prediction from its own fold's map); chance = 1/pool"
+        ),
+        "whiten_cov": (
+            "per-fold TRAIN-ONLY (folds != f) shrunk covariance; queries whitened by "
+            "their target row's fold decomposition (no eval leakage)"
         ),
     }
 
@@ -684,10 +750,10 @@ def _oracle_ranks(q32: np.ndarray, ctx: dict, ti: np.ndarray) -> dict[str, np.nd
     y = ctx["Y"]
     n_q, n_pool = q.shape[0], y.shape[0]
 
-    def _ranks(dist: np.ndarray) -> np.ndarray:
-        out = np.empty(n_q)
-        for i in range(n_q):
-            dt = dist[i, ti[i]]
+    def _ranks_rows(dist: np.ndarray, ti_rows: np.ndarray) -> np.ndarray:
+        out = np.empty(dist.shape[0])
+        for i in range(dist.shape[0]):
+            dt = dist[i, ti_rows[i]]
             tol = 1e-9 * max(abs(dt), 1e-12)
             closer = int((dist[i] < dt - tol).sum())
             tied = int((np.abs(dist[i] - dt) <= tol).sum()) - 1
@@ -702,26 +768,40 @@ def _oracle_ranks(q32: np.ndarray, ctx: dict, ti: np.ndarray) -> dict[str, np.nd
         d_c[i] = 1.0 - (y @ q[i]) / (
             np.maximum(np.linalg.norm(y, axis=1) * np.linalg.norm(q[i]), 1e-12)
         )
-    qw = np.stack([np.linalg.solve(ctx["L"], q[i] - ctx["mu"]) for i in range(n_q)])
-    yw = np.stack([np.linalg.solve(ctx["L"], y[j] - ctx["mu"]) for j in range(n_pool)])
-    d_wc = np.empty((n_q, n_pool))
-    for i in range(n_q):
-        d_wc[i] = 1.0 - (yw @ qw[i]) / (
-            np.maximum(np.linalg.norm(yw, axis=1) * np.linalg.norm(qw[i]), 1e-12)
-        )
 
     def _csls_dist(d_cos: np.ndarray) -> np.ndarray:
         s = 1.0 - d_cos
-        r_q = np.array([np.sort(s[i])[-CSLS_K:].mean() for i in range(n_q)])
-        r_p = np.array([np.sort(s[:, j])[-CSLS_K:].mean() for j in range(n_pool)])
+        k_eff = min(CSLS_K, s.shape[0])  # battery's per-fold group-size clamp
+        r_q = np.array([np.sort(s[i])[-k_eff:].mean() for i in range(s.shape[0])])
+        r_p = np.array([np.sort(s[:, j])[-k_eff:].mean() for j in range(n_pool)])
         return -(2.0 * s - r_q[:, None] - r_p[None, :])
 
+    # Whitened conventions, per-fold independently re-derived: query i whitened
+    # by its TARGET row's fold decomposition (np.linalg.solve per row, never the
+    # battery's solve_triangular path); whitened-CSLS neighborhoods within each
+    # fold's query group — mirroring the battery's registered convention.
+    q_folds = np.asarray([int(ctx["row_fold"][ti[i]]) for i in range(n_q)])
+    r_w = np.empty(n_q)
+    r_cw = np.empty(n_q)
+    for f in sorted(set(q_folds.tolist())):
+        sel = np.flatnonzero(q_folds == f)
+        mu_f, l_f = ctx["per_fold"][f]["mu"], ctx["per_fold"][f]["L"]
+        qw = np.stack([np.linalg.solve(l_f, q[i] - mu_f) for i in sel])
+        yw = np.stack([np.linalg.solve(l_f, y[j] - mu_f) for j in range(n_pool)])
+        d_wc = np.empty((sel.size, n_pool))
+        for i in range(sel.size):
+            d_wc[i] = 1.0 - (yw @ qw[i]) / (
+                np.maximum(np.linalg.norm(yw, axis=1) * np.linalg.norm(qw[i]), 1e-12)
+            )
+        r_w[sel] = _ranks_rows(d_wc, ti[sel])
+        r_cw[sel] = _ranks_rows(_csls_dist(d_wc), ti[sel])
+
     return {
-        "raw_euclidean": _ranks(d_e),
-        "raw_cosine": _ranks(d_c),
-        "whiten_cos": _ranks(d_wc),
-        "csls_cos": _ranks(_csls_dist(d_c)),
-        "csls_whiten_cos": _ranks(_csls_dist(d_wc)),
+        "raw_euclidean": _ranks_rows(d_e, ti),
+        "raw_cosine": _ranks_rows(d_c, ti),
+        "whiten_cos": r_w,
+        "csls_cos": _ranks_rows(_csls_dist(d_c), ti),
+        "csls_whiten_cos": r_cw,
     }
 
 
@@ -771,7 +851,8 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         # conventions (whitened-cosine + CSLS re-derived independently).
         entry = fm["cells"]["chat"]
         pack = p6.load_cell_arrays(store, "chat", 1, (p6.ANSWER_SLOT,), row_order=entry["row_ids"])
-        ctx = build_pool_ctx(pack["arrays"][p6.ANSWER_SLOT])
+        y_chat = pack["arrays"][p6.ANSWER_SLOT]
+        ctx = build_pool_ctx(y_chat, entry)
         preds = _load_preds(ledger / "fits" / "preds" / "chat__context__preds.npz", entry, "probe")
         _summ, ranks = battery(preds, ctx)
         ti = np.arange(preds.shape[0])
@@ -781,6 +862,27 @@ def phase_probe(args) -> int:  # noqa: PLR0915
                 bad = int((ranks[conv] != oracle[conv]).sum())
                 raise AssertionError(f"oracle mismatch for {conv}: {bad} rows differ")
         _log("[probe] brute-force oracle parity: all 5 conventions exact OK")
+
+        # (a2) train-only whitening invariance (r1 review major
+        # retrieval-whitening-eval-leakage, codex-named mechanizable check):
+        # perturbing a HELD-OUT (fold-f eval) answer leaves fold f's whitening
+        # decomposition bit-unchanged, while every OTHER fold's (which trains
+        # on that row) changes.
+        folds_arr = np.asarray(entry["folds"], dtype=np.int64)
+        f0 = int(folds_arr[0])
+        y_pert = np.array(y_chat, copy=True)
+        y_pert[0] += np.float32(7.0)
+        ctx_pert = build_pool_ctx(y_pert, entry)
+        assert np.array_equal(ctx["per_fold"][f0]["mu"], ctx_pert["per_fold"][f0]["mu"])
+        assert np.array_equal(ctx["per_fold"][f0]["L"], ctx_pert["per_fold"][f0]["L"])
+        others_changed = [
+            g
+            for g in ctx["per_fold"]
+            if g != f0 and not np.array_equal(ctx["per_fold"][g]["L"], ctx_pert["per_fold"][g]["L"])
+        ]
+        assert len(others_changed) == len(ctx["per_fold"]) - 1, others_changed
+        del ctx_pert, y_pert
+        _log("[probe] per-fold whitening: held-out perturbation invariance OK")
 
         # (b) chat/context JSON: G3 battery read + reconciliation.
         chat_ctx = json.loads((ledger / "retrieval" / "chat__context.json").read_text())
