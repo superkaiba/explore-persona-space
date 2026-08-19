@@ -45,7 +45,12 @@ Rule: at Step 0.55, run `uv run python scripts/task.py check-smoke-arch-registry
 rows) but failed the checker on form alone; without the checker + regex read the
 fix recipe would have thrashed twice (arm-registry line fixed, then clause-4, then
 clause-5). Step 6d.0 runs this checker POST-provision, so catching it at review is
-the whole point of gate 0.55.
+the whole point of gate 0.55. Re-hit #2379 R1 g6 (2026-08-19): a COMMAND-PIPELINE
+derivation (`arm-registry: bash pod.sh | grep -oE ... -> p0 p1 ...`) is also
+REFUSE-malformed (neither accepted form), parenthetical-decorated row keys
+(`p0 (pod smoke): REAL`) re-appeared, and the hand-enumeration omitted two sibling
+drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
+omission shape). The one-post fix recipe held unchanged.
 
 **How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
