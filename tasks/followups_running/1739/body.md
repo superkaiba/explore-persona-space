@@ -19,7 +19,7 @@ goal: Determine whether applying the learned context->answer map before projecti
 relates_to:
 - spec-context-as-vector
 ---
-# Map-then-project persona-vector prediction trails matched-budget context-side baselines across three behaviors (HIGH confidence)
+# Mapped-answer readouts match real-answer persona projections off-synthetic and edge direct context probes in most held-out settings, pending a shuffled-map control (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
