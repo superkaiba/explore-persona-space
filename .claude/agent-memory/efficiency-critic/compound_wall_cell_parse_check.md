@@ -16,7 +16,9 @@ was added for.
 **Why:** a low-parsed wall cell makes the tripwire false-fire on a healthy
 in-SLA Batch wait (wasted escalation attention; on a pod-holding phase it
 could provoke a wrong kill/diagnosis). Found live in #2329 `q35_ladder_decay`
-plan v5 L7 row (2026-08-19): `0.5 VM + ≤24 calendar` → 0.5.
+plan v5 L7 row (2026-08-19): `0.5 VM + ≤24 calendar` → 0.5. Fixed in v7
+(`≤24 calendar` → 24.0, VM figure moved to basis; c47 read 9 rows/31.10 h) —
+the fix shape works, parser-verified.
 
 **How to apply:** in PLAN MODE, when any §9 row mixes a VM wall with a
 calendar/SLA bound in ONE cell, test-parse it (one `uv run python -c` line).

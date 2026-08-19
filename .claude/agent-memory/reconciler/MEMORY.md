@@ -3,6 +3,7 @@
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — data-recoverability never rescues a defective gate/kill/lattice; barred-amendment tell; 35+ incidents (#547…#614)
+- [Gate object-identity unchecked: read the NAMED function](feedback_claude_gate_object_identity_unchecked.md) — threshold adequacy never verifies a gate whose named path returns a different object / whose inputs miss its phase (#2329 r2)
 - [Gate-design flaw (REVISE) vs recoverable robustness read (APPROVE)](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on affirmative misfire / barred amendment / run-time-only capture loss
 - [Efficiency lens: pilot placement + CPU-GD + terminal uploads](feedback_efficiency_lens_pilot_placement_and_cpu_gd_calibration.md) — pilot firing AFTER the phase it gates; Codex categorically GPU-routes batched GD (#2329 r1)
 - [Advisory-band gaps: check the DIRECTION](feedback_claude_advisory_band_wrong_direction_vs_probe_region.md) — silent-PASS region ⊄ band = affirmative misfire (#2152 r1)

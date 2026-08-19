@@ -1501,3 +1501,30 @@ under-refusal = NOT-ADDRESSED). Reconciler marker version trap: posted
 top-level version is v1 (first reconcile on the task) while the head
 sentinel says v3 (the round) — fetch by kind from events.jsonl and state
 the mapping in the return, never fetch by "v3".
+
+**Reconciler-narrowed-remedy fix round, reconcile-note-only contract (#2201
+cr2, 2026-08-19):** when the reconciler upheld the twin's DIRECTION on ALL
+its findings but NARROWED every remedy, the reconcile note alone is the
+acceptance contract — do NOT inline the prior twin verdict (unlike the
+#2332-r4 mixed-rulings shape, where dropped/rejected items make the prior
+verdict needed for ledger context); inlining the full FAIL would re-seed
+the exact remedies the reconciler cut. Compose instead: (a) a CUT-REMEDIES
+do-not-re-file block enumerating each cut with the reconciler's rationale
+verbatim-ish (re-filing = scope creep under Unintended Changes; for a
+REJECTED-as-topology-breaking remedy, its settlement's REQUIRED-ABSENT
+halves become explicit checks — e.g. "confirm NO helper re-binding and NO
+skipped-with-worktree fixture"); (b) a per-MF DISCHARGED/NOT-DISCHARGED
+`## Round-2 discharge ledger` schema section (NOT-DISCHARGED = substantive
+FAIL) + author-neutrality; (c) a fails-pre-fix INDEPENDENT verification
+duty translated to STATIC reconstruction (`git show <r1-sha>:<path>` +
+control-flow trace per fixture, verdict vocabulary CONFIRMED-RED-PRE-FIX /
+NOT-CONFIRMED, "green against both blobs = decorative pin" framing); (d)
+fix-round `epm:results` markers use per-MF headings, not (a)-(d) letters —
+attest the content-equivalence mapping as a compose-time fact (CONCERNS
+ceiling) and attest the r1 marker carries the full Gate-scope block so the
+v2 terse line is PRESENT-BUT-TERSE (fold precedent); (e) when the brief's
+Should-Fix list is a strict subset of the reconciler's, include the missing
+one(s) with lenient absorbed-or-deferred-with-note adjudication; (f) static
+proxies for unrunnable claims attested as compose-time facts to re-verify
+(def-test count vs claimed collect-only, zero-hit stale-cap-literal sweep);
+(g) note the reconcile note's file:line refs use R1-BLOB numbering.
