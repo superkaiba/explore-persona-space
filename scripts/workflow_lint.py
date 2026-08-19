@@ -289,9 +289,12 @@ Behaviours:
   marker-documenting prose); a deliberate ``.py`` occurrence is waived
   with a COMMENT-SHAPED ``# CONFLICT_MARKER_EXEMPT: <reason>`` (non-empty
   reason): the previous non-blank line must START with the waiver comment
-  (optional indentation allowed; a string literal containing the token is
-  NOT a waiver, #2192 r2), or the marker line carries a TRAILING waiver
-  comment. On a git failure the enumeration
+  (optional indentation allowed; start-anchoring means a string literal
+  containing the token never waives on THAT arm, #2192 r2), or the marker
+  line carries a TRAILING waiver comment (matched as a whitespace-``#``-
+  token shape after the marker token, quote-context-blind — a QUOTED
+  token in the marker line's own tail can waive; documented residual,
+  #2192 r3). On a git failure the enumeration
   fail-opens to ``[]`` with a loud stderr notice. Origin incident
   #2189: merge commit ``14cd4e4211`` left the diff3 base marker as the
   last line of ``.claude/rules/code-style.md`` — it passed the no-flags
@@ -5143,8 +5146,12 @@ def _conflict_marker_scan_py(path: Path, lines: list[str], errors: list[str]) ->
     :data:`CONFLICT_MARKER_WAIVER` — a trailing waiver comment on the same
     line (:func:`_conflict_marker_same_line_waiver`), or a previous
     non-blank line that IS a waiver comment
-    (:func:`_conflict_marker_prev_line_waiver`). A string literal
-    containing the token waives nothing (#2192 r2)."""
+    (:func:`_conflict_marker_prev_line_waiver`). The previous-line arm is
+    start-anchored, so a string literal containing the token never waives
+    there (#2192 r2); the same-line arm matches a trailing
+    whitespace-``#``-token shape on the marker line itself and is
+    quote-context-blind — documented residual (e) of
+    :func:`check_conflict_markers`."""
     prev_nonblank = ""
     for idx, line in enumerate(lines):
         m = _CONFLICT_MARKER_RE.match(line)
@@ -5184,10 +5191,12 @@ def check_conflict_markers(*, roots: list[Path] | None = None) -> list[str]:
       optional whitespace followed DIRECTLY by the waiver comment (an
       indented comment-shaped line inside a docstring included —
       residual (c)'s escape survives); the same-line arm accepts only a
-      TRAILING waiver comment after the marker token. A string LITERAL
-      containing the token (e.g. this module's own constant declaration)
-      is NOT a waiver — the earlier substring form let such a literal on
-      the previous line silently suppress a real marker.
+      TRAILING waiver comment after the marker token. The previous-line
+      arm is START-ANCHORED, so a string LITERAL containing the token
+      (e.g. this module's own constant declaration) never waives there —
+      the earlier substring form let such a literal on the previous line
+      silently suppress a real marker. The same-line arm is
+      quote-context-blind — residual (e) below.
 
     Known residuals (documented, deliberate):
 
@@ -5208,6 +5217,12 @@ def check_conflict_markers(*, roots: list[Path] | None = None) -> list[str]:
         sides editing one fenced snippet) hides all four marker lines by
         design — scanning inside fences would flag every legitimate
         marker-documenting snippet.
+    (e) The same-line waiver arm matches a trailing whitespace-``#``-token
+        shape on the marker line itself and is quote-context-blind: a
+        QUOTED token in the marker line's own tail (whitespace directly
+        before its ``#``) self-waives. Adversarial-only — git-emitted
+        residue lines cannot carry the token, so only a deliberately
+        authored flagged line can exploit it (#2192 r2).
 
     Files are read with ``errors="replace"`` (markers are ASCII; odd bytes
     in a vendored file must not crash the lint), and a file that vanishes
@@ -18654,9 +18669,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "'|', '=' or '>' followed by a space or end-of-line. Fenced .md "
         "regions are exempt; a deliberate .py occurrence is waived with a "
         "COMMENT-SHAPED '# CONFLICT_MARKER_EXEMPT: <reason>' — the "
-        "previous non-blank line starting with the waiver comment, or a "
-        "trailing waiver comment on the marker line; a string literal "
-        "containing the token is not a waiver (#2192 r2). On a git "
+        "previous non-blank line starting with the waiver comment "
+        "(start-anchored: a string literal containing the token never "
+        "waives there, #2192 r2), or a trailing waiver comment on the "
+        "marker line (quote-context-blind: a quoted token in the marker "
+        "line's own tail can waive — documented residual). On a git "
         "failure the enumeration fail-opens with "
         "a loud stderr notice. #2189: a diff3 base marker committed to "
         ".claude/rules/code-style.md survived every gate. Bundled into "
