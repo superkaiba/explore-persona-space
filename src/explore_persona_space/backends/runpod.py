@@ -74,7 +74,9 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    lane_suffix_for,
     validate_env_pins,
+    validate_runpod_name_suffix,
 )
 
 if TYPE_CHECKING:
@@ -261,14 +263,228 @@ def _runpod_log_path(issue: int) -> str:
     return f"/workspace/logs/issue-{issue}.log"
 
 
-def _runpod_pod_name(issue: int) -> str:
-    """Canonical pod name (April 2026 rename: ``pod-<N>``).
+def _runpod_pod_name(issue: int, name_suffix: str | None = None) -> str:
+    """Canonical pod name: ``pod-<N>``, or ``pod-<N>-<slug>`` when suffixed (#2145).
 
-    Mirrors ``scripts/pod_lifecycle.py::_canonical_pod_name``. The legacy
-    ``epm-issue-<N>`` prefix is recognized by readers but never used for
-    fresh provisions.
+    Mirrors ``scripts/pod_lifecycle.py::_canonical_pod_name`` (including the
+    suffixed form). The legacy ``epm-issue-<N>`` prefix is recognized by
+    readers but never used for fresh provisions.
     """
-    return f"pod-{issue}"
+    return f"pod-{issue}-{name_suffix}" if name_suffix else f"pod-{issue}"
+
+
+def _provisioned_pod_id(pod_name: str) -> str | None:
+    """Exact RunPod pod id for a just-provisioned ``pod_name``, or ``None``.
+
+    Reads the LIVE ``pods_ephemeral.json`` sidecar the provision subprocess
+    just wrote (``pod_lifecycle.py`` persists ``pod_id`` there on every
+    provision; path resolved via ``pod_config.resolve_live_pods_ephemeral``,
+    which honors the documented ``pod_config.PODS_EPHEMERAL_JSON`` test
+    seam). Best-effort BY DESIGN (#2038): a read failure logs a WARNING and
+    returns ``None`` — the launch proceeds id-less exactly as pre-#2038, and
+    the emergency-teardown arm degrades to a loud no-op (never a name-keyed
+    terminate: multiple bare ``pod-<N>`` pods can coexist, #1739, and an
+    ``--issue``-wide terminate destroys every pod resolving to the issue,
+    #1485).
+    """
+    try:
+        from scripts.pod_config import (
+            resolve_live_pods_ephemeral,  # lazy: module top stays base-only
+        )
+
+        raw = json.loads(resolve_live_pods_ephemeral().read_text(encoding="utf-8"))
+        row = (raw.get("pods") or {}).get(pod_name) or {}
+        pod_id = str(row.get("pod_id") or "").strip()
+        return pod_id or None
+    except Exception as exc:
+        logger.warning(
+            "could not read the provisioned pod id for %s from pods_ephemeral.json "
+            "(%r) — extra['pod_id'] omitted; emergency teardown falls back to the "
+            "id-less loud no-op (#2038)",
+            pod_name,
+            exc,
+        )
+        return None
+
+
+def _terminate_just_provisioned(
+    *,
+    pod_id: str | None,
+    pod_name: str,
+    issue: int,
+    cause: str,
+    terminate_fn: Callable[[str], Any] | None = None,
+) -> bool:
+    """Best-effort terminate of a pod THIS launch just provisioned (#2038).
+
+    Fired ONLY from :meth:`RunPodBackend.launch`'s post-provision failure
+    path, when a non-``RunPodWorkloadStartError`` exception leaves a pod
+    RUNNING with no handle / sidecar / lease record — the invisible-billing
+    shape (#1739). Terminates by EXACT pod id (never name-keyed, never
+    ``--issue``-wide: #1739 duplicate names, #1485 issue-wide blast radius)
+    under the sanctioned owner-driven :func:`kill_approval.verified_teardown`
+    grant (upload verification is vacuous — the workload never started, so
+    nothing was produced). Logs LOUDLY on every branch and NEVER raises —
+    the caller re-raises the ORIGINAL launch exception, and a teardown
+    failure must not mask it (returns ``True`` iff a terminate was issued
+    and confirmed by the API).
+    """
+    if not pod_id:
+        logger.error(
+            "post-provision launch failure on issue %s: pod %s has NO captured pod id — "
+            "cannot terminate by exact id; the pod may still be billing. Manual teardown: "
+            "uv run python scripts/pod.py terminate --issue %s --yes (#2038, cause: %s)",
+            issue,
+            pod_name,
+            issue,
+            cause,
+        )
+        return False
+    try:
+        if terminate_fn is None:
+            from scripts.runpod_api import terminate_pod  # lazy: module top stays base-only
+
+            terminate_fn = terminate_pod
+        from explore_persona_space.backends.kill_approval import verified_teardown
+
+        with verified_teardown(
+            target=f"{pod_name} ({pod_id})",
+            reason=(
+                "owner-driven teardown of a just-provisioned pod whose launch failed "
+                "post-provision before any workload started — uploads vacuously "
+                f"verified (#2038, cause: {cause})"
+            ),
+        ):
+            terminate_fn(pod_id)
+        logger.error(
+            "post-provision launch failure on issue %s: terminated just-provisioned pod "
+            "%s (pod_id=%s) to stop invisible billing (#2038, cause: %s)",
+            issue,
+            pod_name,
+            pod_id,
+            cause,
+        )
+        return True
+    except Exception:
+        logger.exception(
+            "best-effort teardown of just-provisioned pod %s (pod_id=%s, issue %s) FAILED — "
+            "the pod may still be billing; manual teardown required (#2038)",
+            pod_name,
+            pod_id,
+            issue,
+        )
+        return False
+
+
+def _dispose_post_provision_failure(
+    *,
+    exc: BaseException,
+    workload_started: bool,
+    pod_id: str | None,
+    pod_name: str,
+    issue: int,
+) -> None:
+    """Loud disposition for a post-provision non-typed launch failure (#2038).
+
+    Called from :meth:`RunPodBackend.launch`'s outer ``except Exception``
+    arm, immediately before it re-raises the ORIGINAL exception. Two arms:
+    workload already started → the pod is doing live work, log LOUDLY and
+    touch nothing; workload not started → best-effort exact-id terminate via
+    :func:`_terminate_just_provisioned`. NEVER raises — a teardown failure
+    must not mask the original launch exception (mask-guard pin:
+    ``tests/test_issue2038_fallback_teardown.py::``
+    ``test_mask_guard_original_exception_never_swallowed``).
+    """
+    if workload_started:
+        # The workload is RUNNING — terminating would destroy live work.
+        logger.error(
+            "post-start launch failure on issue %s: pod %s (pod_id=%s) is "
+            "left RUNNING because its workload already started; the launch "
+            "records may be incomplete — inspect + finalize manually "
+            "(#2038, cause: %s: %s)",
+            issue,
+            pod_name,
+            pod_id,
+            type(exc).__name__,
+            exc,
+        )
+        return
+    # No workload started: the pod bills invisibly. Best-effort terminate by
+    # EXACT pod id; _terminate_just_provisioned never raises, and the extra
+    # guard here keeps a monkeypatched / future-refactored teardown from ever
+    # masking the ORIGINAL exception.
+    try:
+        _terminate_just_provisioned(
+            pod_id=pod_id,
+            pod_name=pod_name,
+            issue=issue,
+            cause=f"{type(exc).__name__}: {exc}",
+        )
+    except Exception:
+        logger.exception(
+            "emergency teardown wrapper itself raised for pod %s (issue %s) — "
+            "pod may still be billing (#2038)",
+            pod_name,
+            issue,
+        )
+
+
+def _boot_disk_provision_args(spec: RunSpec) -> list[str]:
+    """Disk-threading argv terms for ``pod_lifecycle.py provision`` (#1010/#1118).
+
+    Extracted verbatim from :meth:`RunPodBackend.launch` (#2038 C901 relief;
+    behavior byte-identical). CPU lane (#1010): the pod's only writable disk
+    is the container overlay (/workspace rides it; incident #958) —
+    ``--container-disk-gb``, floored at ``runpod_api.DEFAULT_CONTAINER_DISK_GB``
+    (50, ``_CPU_CONTAINER_DISK_FLOOR_GB`` here) so threading can never REDUCE
+    below today's behavior. The router's feasibility gate guarantees
+    ``boot_disk_gb`` <= the instance cap on every AUTOMATED path; an explicit
+    ``backend: runpod`` pin above the cap fails loud at pod_lifecycle's
+    pre-API cap check / RunPod's own create-time validation. GPU lane
+    (#1118): the big-data mount is the /workspace VOLUME (pod_lifecycle
+    threads ``--volume-gb`` -> runpod_api volumeInGb), floored at the 200 GB
+    argparse default (``_GPU_VOLUME_FLOOR_GB``) — thread-or-grow, never
+    shrink. No deterministic pre-API cap exists for GPU volumeInGb (unlike
+    the probe-verified CPU caps) — an unsatisfiable size surfaces LOUD at
+    RunPod create time (RunPodError -> non-zero provision exit ->
+    CalledProcessError) or as a capacity miss (wait-for-capacity budget),
+    never as a silent downsize (the #1112 ENOSPC incident: a ~575 GB plan on
+    the default 200 GB volume). Returns ``[]`` when the spec states no
+    footprint; raises the named fail-loud ValueError on a malformed /
+    fractional value BEFORE any pod is paid for.
+    """
+    raw_boot_disk = (spec.extra or {}).get("boot_disk_gb") or 0
+    try:
+        boot_disk_gb = int(raw_boot_disk)
+        if float(raw_boot_disk) != boot_disk_gb:
+            # A fractional value (e.g. 575.5) would silently TRUNCATE via
+            # int() -- reject it instead of provisioning less disk than
+            # the plan stated.
+            raise ValueError("fractional GB value")
+    except (TypeError, ValueError) as exc:
+        # Named fail-loud parse mirroring router._footprint_int (#1118):
+        # GPU intents bypass the router's CPU-only footprint gate, so a
+        # malformed value would otherwise hit a bare int() traceback.
+        # Raised BEFORE the provision subprocess -- no pod is paid for.
+        raise ValueError(
+            f"spec.extra['boot_disk_gb'] is not an integer: {raw_boot_disk!r} "
+            f"(malformed disk requirement on issue {spec.issue})"
+        ) from exc
+    if not boot_disk_gb:
+        return []
+    from explore_persona_space.backends.router import (
+        RUNPOD_CPU_INSTANCE_FOR_INTENT,  # lazy: module top stays base-only
+    )
+
+    if spec.intent in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+        return [
+            "--container-disk-gb",
+            str(max(_CPU_CONTAINER_DISK_FLOOR_GB, boot_disk_gb)),
+        ]
+    return [
+        "--volume-gb",
+        str(max(_GPU_VOLUME_FLOOR_GB, boot_disk_gb)),
+    ]
 
 
 def mint_runpod_attempt_id() -> str:
@@ -1137,6 +1353,31 @@ class RunPodBackend(ComputeBackend):
         ]
         if spec.gpus is not None:
             cmd += ["--gpu-count", str(spec.gpus)]
+        # #2145: honor spec.extra["lane_suffix"] on the RunPod lane — mint
+        # pod-<N>-<slug> via pod_lifecycle's own --name-suffix path so N
+        # concurrent same-issue launches get DISTINCT pods (the c58 fan-out
+        # collision class). Belt-and-suspenders validation: the dispatch CLI
+        # pre-route guard already refuses a non-pod-grammar suffix on
+        # RunPod-reachable routes; this in-backend validator covers
+        # PROGRAMMATIC callers (failover reconstruction, frontmatter pins).
+        # NOTE: on the AUTO chain a ValueError raised here may be wrapped by
+        # the terminal rung into NoComputeAvailableError (mis-read as a
+        # capacity miss) — still strictly better than a silently mis-named
+        # pod; the CLI guard is the legible front door.
+        lane_suffix = lane_suffix_for(spec)
+        if lane_suffix is not None:
+            validate_runpod_name_suffix(lane_suffix)
+            cmd += ["--name-suffix", lane_suffix]
+        # #2145: honor spec.extra["gpu_type"] — thread the launch-declared GPU
+        # type override into the provision argv. Validation layers: the
+        # dispatch CLI validates at parse time via
+        # runpod_api.resolve_gpu_type_id (#537 wrong-gpuTypeId trap), and
+        # pod_lifecycle's _resolve_spec re-validates in the provision
+        # subprocess (non-zero exit on an unresolvable type). Omit-when-absent:
+        # a spec without the key composes the pre-#2145 argv byte-identically.
+        gpu_type_override = str((spec.extra or {}).get("gpu_type") or "").strip()
+        if gpu_type_override:
+            cmd += ["--gpu-type", gpu_type_override]
         # #1010/#1118: thread the plan's disk requirement into the provision
         # argv. CPU lane (#1010): the pod's only writable disk is the
         # container overlay (/workspace rides it; incident #958) --
@@ -1155,38 +1396,7 @@ class RunPodBackend(ComputeBackend):
         # -> non-zero provision exit -> CalledProcessError) or as a capacity
         # miss (wait-for-capacity budget), never as a silent downsize (the
         # #1112 ENOSPC incident: a ~575 GB plan on the default 200 GB volume).
-        raw_boot_disk = (spec.extra or {}).get("boot_disk_gb") or 0
-        try:
-            boot_disk_gb = int(raw_boot_disk)
-            if float(raw_boot_disk) != boot_disk_gb:
-                # A fractional value (e.g. 575.5) would silently TRUNCATE via
-                # int() -- reject it instead of provisioning less disk than
-                # the plan stated.
-                raise ValueError("fractional GB value")
-        except (TypeError, ValueError) as exc:
-            # Named fail-loud parse mirroring router._footprint_int (#1118):
-            # GPU intents bypass the router's CPU-only footprint gate, so a
-            # malformed value would otherwise hit a bare int() traceback.
-            # Raised BEFORE the provision subprocess -- no pod is paid for.
-            raise ValueError(
-                f"spec.extra['boot_disk_gb'] is not an integer: {raw_boot_disk!r} "
-                f"(malformed disk requirement on issue {spec.issue})"
-            ) from exc
-        if boot_disk_gb:
-            from explore_persona_space.backends.router import (
-                RUNPOD_CPU_INSTANCE_FOR_INTENT,  # lazy: module top stays base-only
-            )
-
-            if spec.intent in RUNPOD_CPU_INSTANCE_FOR_INTENT:
-                cmd += [
-                    "--container-disk-gb",
-                    str(max(_CPU_CONTAINER_DISK_FLOOR_GB, boot_disk_gb)),
-                ]
-            else:
-                cmd += [
-                    "--volume-gb",
-                    str(max(_GPU_VOLUME_FLOOR_GB, boot_disk_gb)),
-                ]
+        cmd += _boot_disk_provision_args(spec)
         # #1698: plumb `spec.extra["repo_branch"]` into the provision
         # subprocess env as BOOTSTRAP_BRANCH so `bootstrap_pod.sh:52` picks
         # it up (``BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"``). Without
@@ -1226,7 +1436,9 @@ class RunPodBackend(ComputeBackend):
         # (`dispatch_issue._provision_still_waiting`) is unchanged —
         # returncode + cmd ride verbatim. (Slice 1 does NOT add a provision
         # retry — the existing `--wait-for-capacity` retry inside
-        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT.)
+        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT, and as of
+        # #2238 that retry covers the CPU legs (create_cpu_pod) too, not
+        # only the GPU create_pod path.)
         _run_pod_lifecycle_relay(cmd, env=env_for_provision)
         # #1698 Item 1(b) — fail-loud post-bootstrap branch assertion. Bind
         # ONLY when a specific non-`main` branch was requested: the default
@@ -1238,212 +1450,269 @@ class RunPodBackend(ComputeBackend):
         # non-execute path (the default `/issue` Step 6d.1 flow) the
         # exception propagates verbatim — the pod stays RUNNING for SSH
         # diagnosis per the RunPod-as-diagnosis-lane doctrine.
-        if repo_branch_env and repo_branch_env != "main":
-            _assert_pod_on_branch(
-                pod_name=_runpod_pod_name(spec.issue),
-                expected_branch=repo_branch_env,
-            )
-        pod_name = _runpod_pod_name(spec.issue)
-        # Attempt id + sentinel path minted BEFORE the execution leg (#909 r2,
-        # `runpod-execute-missing-completion-sentinel`): the handle's
-        # expected-artifacts declaration and the launcher's chained
-        # completion-sentinel write MUST share ONE attempt-namespaced path —
-        # one mint, one path, both sides. (Round 1 minted the id AFTER
-        # `_execute_workload_on_pod`, so the declared path could not be
-        # threaded into the launcher, no writer existed on the
-        # no-experimenter leg, and every successful backend-executed run
-        # would FAIL finalize — `_check_sentinel` FAILs a missing sentinel
-        # and `_cmd_finalize` exits 3 + skips teardown when a declaration
-        # is present but unsatisfied.)
-        attempt_id = mint_runpod_attempt_id()
-        sentinel_path = runpod_sentinel_path(spec.issue, attempt_id)
-        # Execution leg (#909): execute iff workload_cmd is non-empty AND the
-        # caller opted in via spec.extra["execute_workload"] (set automatically
-        # by router.failover_to_runpod_after_async_workload_crash — the
-        # no-experimenter automated failover paths — or explicitly via
-        # `dispatch_issue.py launch --execute-workload`). The interactive
-        # /issue Step 6b/6d.1 flow passes no flag: the experimenter stays the
-        # sole executor there, so this branch is behavior-unchanged for it.
-        exec_requested = execute_workload and bool(spec.workload_cmd)
-
-        # Handle construction shared by the SUCCESS path and the #954
-        # PARTIAL-failure path (pod provisioned, workload start failed).
-        # Every input — pod_name, attempt_id, sentinel_path, the spec fields —
-        # is minted BEFORE the execution leg (#909 r2), so the handle is fully
-        # constructible at the failure point. The import is hoisted above the
-        # execution leg for the same reason (the failure path needs it).
-        from explore_persona_space.backends.artifacts import (
-            EXPECTED_ARTIFACTS_HANDLE_KEY,
-            build_expected_artifacts_declaration,
-        )
-
-        def _build_handle(
-            workload_info: dict[str, Any],
-            *,
-            workload_executed: bool,
-            workload_start_error: str | None = None,
-        ) -> RunHandle:
-            """Build the launch :class:`RunHandle`.
-
-            Success path: ``workload_executed=exec_requested`` + the execution
-            leg's ``workload_info`` — the ``extra`` dict is byte-identical to
-            the pre-#954 inline construction (``workload_start_error`` is added
-            ONLY on the failure path, so no new keys appear on success). #1118
-            adds the CONDITIONAL footprint keys (``boot_disk_gb`` /
-            ``min_ram_gb``) on both paths, OMITTED when absent/falsy — a spec
-            without a stated footprint keeps the pre-#1118 key set.
-            Failure path (#954): ``workload_executed=False`` (truthful — the
-            workload did not start) + a truncated ``workload_start_error`` so
-            downstream consumers (poll / finalize / re-drive) can tell the
-            partial launch apart from a healthy one.
-            """
-            # ``extra`` carries the production fields the orchestrator + the
-            # unified ``poll`` / ``fetch_results`` paths need without having
-            # to re-derive them from the issue id:
-            # * ``issue`` — round-tripped so ``confirm_artifacts`` /
-            #   ``fetch_results`` / cross-backend reconnect can index by it.
-            # * ``intent`` — preserved for marker bodies + downstream
-            #   re-provision intent re-use.
-            # * ``pid_file`` — absolute path the experimenter launcher
-            #   writes; ``poll`` forwards it to
-            #   ``poll_pipeline.poll_once(pid_file=...)``.
-            # * ``runpod_attempt_id`` — plain field so the orchestrator /
-            #   experimenter can read the attempt id without parsing the
-            #   declaration.
-            # * ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
-            #   ``time_budget_hours`` — the relaunch-critical RunSpec fields
-            #   (#689 blocker, mirroring the GCP handle contract). The RunPod
-            #   RUNNING-but-no-port wedge failover (``backend_poll`` /
-            #   ``.claude/rules/compute-backend-failover.md`` § Part C)
-            #   reconstructs a ``RunSpec`` FROM the persisted sidecar handle via
-            #   ``_runspec_from_runpod_handle`` to re-provision a FRESH pod. That
-            #   reconstruction reads exactly these keys off ``extra`` and FAILS
-            #   LOUD when neither ``workload_cmd`` NOR ``hydra_args`` is present —
-            #   so a launch that did not persist them would terminate the wedged
-            #   pod and then orphan the run (no fresh pod). Persisting them here
-            #   makes the spec reconstructable; ``serialize_handle`` /
-            #   ``deserialize_handle`` round-trip ``extra`` verbatim (the tuple
-            #   ``hydra_args`` JSON-encodes to a list, which the reconstructor
-            #   re-tuples). ``workload_cmd`` is ``""`` for a Hydra-entrypoint run
-            #   and ``hydra_args`` is ``()`` for a custom-workload run; at least
-            #   one is always set on a real launch (the ``RunSpec.__post_init__``
-            #   mutual-exclusion contract).
-            extra: dict[str, Any] = {
-                "intent": spec.intent,
-                "issue": int(spec.issue),
-                "pid_file": _runpod_pid_file_path(spec.issue),
-                "runpod_attempt_id": attempt_id,
-                # Relaunch-critical RunSpec fields for the wedge failover (#689).
-                "workload_cmd": spec.workload_cmd,
-                "hydra_args": list(spec.hydra_args),
-                "gpus": spec.gpus,
-                "time_budget_hours": spec.time_budget_hours,
-                # #1118: footprint fields persisted so the wedge / CUDA-IMA
-                # fresh-pod re-provision (backend_poll._runspec_from_runpod_handle)
-                # forwards them — mirroring the GCP handle (gcp.py, #1010).
-                # Keys OMITTED when absent/falsy — never a None value — so
-                # legacy handle shapes stay byte-identical (the
-                # _PRE_954_SUCCESS_EXTRA_KEYS exact-set tests pin this).
-                **{
-                    k: v
-                    for k, v in {
-                        "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
-                        "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
-                        # #1669: launch env pins — persisted so the wedge /
-                        # CUDA-IMA fresh-pod re-provision forwards them and
-                        # the fresh launcher re-exports them (#1586).
-                        "env_pins": (spec.extra or {}).get("env_pins"),
-                    }.items()
-                    if v
-                },
-                # #909: the branch the run's code lives on (round-trips through
-                # the sidecar + backend_poll reconstructors so a failover
-                # re-execution syncs the ISSUE branch, not `main`) + the
-                # execution-leg outcome (workload_executed / workload_pid /
-                # launcher_path / synced_sha via **workload_info). Additive
-                # keys — every existing reader uses .get(...).
-                "repo_branch": str((spec.extra or {}).get("repo_branch") or ""),
-                "workload_executed": workload_executed,
-                **workload_info,
-                EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
-                    issue=spec.issue,
-                    # The SAME path threaded into the execution leg —
-                    # one mint, one path, both sides (#909 r2).
-                    sentinel_path=sentinel_path,
-                    custom_workload=True,
-                    attempt_id=attempt_id,
-                    wandb_run_path=spec.extra.get("wandb_run_path"),
-                    # #685 / #661: thread the per-issue worktree git root +
-                    # the phase-scope flag off spec.extra (the same channel
-                    # as wandb_run_path; _launch_extra_from_args populates
-                    # both). None / False (absent) = established behavior.
-                    git_repo_root=spec.extra.get("git_repo_root"),
-                    skip_default_git_paths=bool(spec.extra.get("skip_default_git_paths", False)),
-                ),
-            }
-            if workload_start_error is not None:
-                # #954 failure-path-only key: the truncated start-leg error, so
-                # the sidecar records WHY the pod is workload-less.
-                extra["workload_start_error"] = workload_start_error
-            return RunHandle(
-                backend="runpod",
-                cluster=None,
-                # The RunPod pod_id is set inside pod_lifecycle.py and persisted
-                # to pods_ephemeral.json; we read it back from there rather than
-                # parsing stdout. For slice 1 the orchestrator does not need the
-                # raw pod_id (it routes by name through SSH config) — empty
-                # string is the truthful "we did not capture this here" marker;
-                # a future revision should round-trip pods_ephemeral.json.
-                job_id="",
-                pod_name=pod_name,
-                scratch_dir="/workspace",
-                log_path=_runpod_log_path(spec.issue),
-                extra=extra,
-            )
-
-        workload_info: dict[str, Any] = {}
-        if exec_requested:
-            try:
-                workload_info = _execute_workload_on_pod(
-                    spec,
+        pod_name = _runpod_pod_name(spec.issue, lane_suffix)
+        # #2038: round-trip the exact RunPod pod id the provision just
+        # persisted to pods_ephemeral.json (closing the "a future revision
+        # should round-trip pods_ephemeral.json" gap noted at the job_id
+        # construction below). Captured BEFORE the post-provision try block
+        # so the emergency-teardown arm can terminate by EXACT id; best-effort
+        # (None on any read failure — the id-less pre-#2038 shape).
+        provisioned_pod_id = _provisioned_pod_id(pod_name)
+        # #2038: True once _execute_workload_on_pod returns — a post-start
+        # failure must NEVER terminate a pod whose workload is running.
+        workload_started = False
+        # #2038: post-provision protective wrapper. From here to the handle
+        # return, the pod EXISTS and BILLS but no handle / sidecar / lease
+        # records it yet — an escaping exception in this window strands an
+        # invisible billing pod (#1739: a failed fallback launch left pod-1739
+        # running with no record). RunPodWorkloadStartError (incl. the
+        # RunPodProvisionBranchMismatchError subclass) keeps its #954
+        # diagnosis-lane contract BYTE-UNCHANGED: the pod stays RUNNING for
+        # SSH diagnosis (the #1997 watcher bounds that window). Any OTHER
+        # exception, when the workload has NOT started, best-effort terminates
+        # the just-provisioned pod by EXACT id, then re-raises the ORIGINAL.
+        try:
+            if repo_branch_env and repo_branch_env != "main":
+                _assert_pod_on_branch(
                     pod_name=pod_name,
-                    log_path=_runpod_log_path(spec.issue),
-                    pid_file=_runpod_pid_file_path(spec.issue),
-                    sentinel_path=sentinel_path,
-                    attempt_id=attempt_id,
+                    expected_branch=repo_branch_env,
                 )
-            except RunPodWorkloadStartError as exc:
-                # #954: the pod IS provisioned (and bills) — attach the fully-
-                # built partial handle to the typed error so the router's
-                # terminal rung + the backend_poll failover legs can persist
-                # the launch records (sidecar + lease) before surfacing the
-                # failure. Re-raising the SAME exception preserves message +
-                # traceback. The pod-stays-RUNNING-for-diagnosis contract is
-                # UNCHANGED.
-                exc.handle = _build_handle(
-                    {},
-                    workload_executed=False,
-                    workload_start_error=str(exc)[:2000],
-                )
-                raise
-        elif spec.workload_cmd:
-            logger.warning(
-                "workload_cmd persisted but NOT executed — EXPECTED when the "
-                "experimenter (SKILL.md Step 6d.1) launches it on this pod; otherwise "
-                "dispatch the experimenter on THIS pod (preferred — a re-launch "
-                "provisions a SECOND pod), or re-launch with --execute-workload (#909)"
+            # Attempt id + sentinel path minted BEFORE the execution leg (#909 r2,
+            # `runpod-execute-missing-completion-sentinel`): the handle's
+            # expected-artifacts declaration and the launcher's chained
+            # completion-sentinel write MUST share ONE attempt-namespaced path —
+            # one mint, one path, both sides. (Round 1 minted the id AFTER
+            # `_execute_workload_on_pod`, so the declared path could not be
+            # threaded into the launcher, no writer existed on the
+            # no-experimenter leg, and every successful backend-executed run
+            # would FAIL finalize — `_check_sentinel` FAILs a missing sentinel
+            # and `_cmd_finalize` exits 3 + skips teardown when a declaration
+            # is present but unsatisfied.)
+            attempt_id = mint_runpod_attempt_id()
+            sentinel_path = runpod_sentinel_path(spec.issue, attempt_id)
+            # Execution leg (#909): execute iff workload_cmd is non-empty AND the
+            # caller opted in via spec.extra["execute_workload"] (set automatically
+            # by router.failover_to_runpod_after_async_workload_crash — the
+            # no-experimenter automated failover paths — or explicitly via
+            # `dispatch_issue.py launch --execute-workload`). The interactive
+            # /issue Step 6b/6d.1 flow passes no flag: the experimenter stays the
+            # sole executor there, so this branch is behavior-unchanged for it.
+            exec_requested = execute_workload and bool(spec.workload_cmd)
+
+            # Handle construction shared by the SUCCESS path and the #954
+            # PARTIAL-failure path (pod provisioned, workload start failed).
+            # Every input — pod_name, attempt_id, sentinel_path, the spec fields —
+            # is minted BEFORE the execution leg (#909 r2), so the handle is fully
+            # constructible at the failure point. The import is hoisted above the
+            # execution leg for the same reason (the failure path needs it).
+            from explore_persona_space.backends.artifacts import (
+                EXPECTED_ARTIFACTS_HANDLE_KEY,
+                build_expected_artifacts_declaration,
             )
-        # Expected-artifacts declaration (#598): the attempt id minted above
-        # (GCP-style, pre-execution) is embedded in the pod-side sentinel path
-        # so a prior attempt's sentinel on the persistent /workspace
-        # volume can never satisfy this launch's declaration. The sentinel
-        # WRITER depends on the executor: experimenter-driven dispatches
-        # chain `write_completion_sentinel` per experimenter.md step 11;
-        # the #909 backend-executed leg chains the write inside its rendered
-        # launcher (same path — see the mint comment above). The declaration
-        # carries NO launch-time HF prefix guess (the #601
-        # false-negative-teardown trap, a fortiori on this lane).
-        return _build_handle(workload_info, workload_executed=exec_requested)
+
+            def _build_handle(
+                workload_info: dict[str, Any],
+                *,
+                workload_executed: bool,
+                workload_start_error: str | None = None,
+            ) -> RunHandle:
+                """Build the launch :class:`RunHandle`.
+
+                Success path: ``workload_executed=exec_requested`` + the execution
+                leg's ``workload_info`` — the ``extra`` dict is byte-identical to
+                the pre-#954 inline construction (``workload_start_error`` is added
+                ONLY on the failure path, so no new keys appear on success). #1118
+                adds the CONDITIONAL footprint keys (``boot_disk_gb`` /
+                ``min_ram_gb``) on both paths, OMITTED when absent/falsy — a spec
+                without a stated footprint keeps the pre-#1118 key set.
+                Failure path (#954): ``workload_executed=False`` (truthful — the
+                workload did not start) + a truncated ``workload_start_error`` so
+                downstream consumers (poll / finalize / re-drive) can tell the
+                partial launch apart from a healthy one.
+                """
+                # ``extra`` carries the production fields the orchestrator + the
+                # unified ``poll`` / ``fetch_results`` paths need without having
+                # to re-derive them from the issue id:
+                # * ``issue`` — round-tripped so ``confirm_artifacts`` /
+                #   ``fetch_results`` / cross-backend reconnect can index by it.
+                # * ``intent`` — preserved for marker bodies + downstream
+                #   re-provision intent re-use.
+                # * ``pid_file`` — absolute path the experimenter launcher
+                #   writes; ``poll`` forwards it to
+                #   ``poll_pipeline.poll_once(pid_file=...)``.
+                # * ``runpod_attempt_id`` — plain field so the orchestrator /
+                #   experimenter can read the attempt id without parsing the
+                #   declaration.
+                # * ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+                #   ``time_budget_hours`` — the relaunch-critical RunSpec fields
+                #   (#689 blocker, mirroring the GCP handle contract). The RunPod
+                #   RUNNING-but-no-port wedge failover (``backend_poll`` /
+                #   ``.claude/rules/compute-backend-failover.md`` § Part C)
+                #   reconstructs a ``RunSpec`` FROM the persisted sidecar handle via
+                #   ``_runspec_from_runpod_handle`` to re-provision a FRESH pod. That
+                #   reconstruction reads exactly these keys off ``extra`` and FAILS
+                #   LOUD when neither ``workload_cmd`` NOR ``hydra_args`` is present —
+                #   so a launch that did not persist them would terminate the wedged
+                #   pod and then orphan the run (no fresh pod). Persisting them here
+                #   makes the spec reconstructable; ``serialize_handle`` /
+                #   ``deserialize_handle`` round-trip ``extra`` verbatim (the tuple
+                #   ``hydra_args`` JSON-encodes to a list, which the reconstructor
+                #   re-tuples). ``workload_cmd`` is ``""`` for a Hydra-entrypoint run
+                #   and ``hydra_args`` is ``()`` for a custom-workload run; at least
+                #   one is always set on a real launch (the ``RunSpec.__post_init__``
+                #   mutual-exclusion contract).
+                extra: dict[str, Any] = {
+                    "intent": spec.intent,
+                    "issue": int(spec.issue),
+                    "pid_file": _runpod_pid_file_path(spec.issue),
+                    "runpod_attempt_id": attempt_id,
+                    # Relaunch-critical RunSpec fields for the wedge failover (#689).
+                    "workload_cmd": spec.workload_cmd,
+                    "hydra_args": list(spec.hydra_args),
+                    "gpus": spec.gpus,
+                    "time_budget_hours": spec.time_budget_hours,
+                    # #1118: footprint fields persisted so the wedge / CUDA-IMA
+                    # fresh-pod re-provision (backend_poll._runspec_from_runpod_handle)
+                    # forwards them — mirroring the GCP handle (gcp.py, #1010).
+                    # Keys OMITTED when absent/falsy — never a None value — so
+                    # legacy handle shapes stay byte-identical (the
+                    # _PRE_954_SUCCESS_EXTRA_KEYS exact-set tests pin this).
+                    **{
+                        k: v
+                        for k, v in {
+                            "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
+                            "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                            # #1669: launch env pins — persisted so the wedge /
+                            # CUDA-IMA fresh-pod re-provision forwards them and
+                            # the fresh launcher re-exports them (#1586).
+                            "env_pins": (spec.extra or {}).get("env_pins"),
+                            # #2038: the exact RunPod pod id round-tripped from
+                            # pods_ephemeral.json post-provision — the
+                            # superseded-fallback reap (issue_dispatch) keys its
+                            # exact-id disposition on it. Omit-when-absent: a
+                            # failed read keeps the legacy id-less shape.
+                            "pod_id": provisioned_pod_id,
+                            # #2145: suffix + GPU-type override persisted so the
+                            # wedge / CUDA-IMA fresh-pod re-provision
+                            # (backend_poll._runspec_from_runpod_handle) forwards
+                            # them — a failover pod must not regress to a bare
+                            # pod-<N> or the intent-default GPU. Omit-when-absent
+                            # keeps legacy handle shapes byte-identical.
+                            "lane_suffix": (spec.extra or {}).get("lane_suffix"),
+                            "gpu_type": (spec.extra or {}).get("gpu_type"),
+                        }.items()
+                        if v
+                    },
+                    # #909: the branch the run's code lives on (round-trips through
+                    # the sidecar + backend_poll reconstructors so a failover
+                    # re-execution syncs the ISSUE branch, not `main`) + the
+                    # execution-leg outcome (workload_executed / workload_pid /
+                    # launcher_path / synced_sha via **workload_info). Additive
+                    # keys — every existing reader uses .get(...).
+                    "repo_branch": str((spec.extra or {}).get("repo_branch") or ""),
+                    "workload_executed": workload_executed,
+                    **workload_info,
+                    EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
+                        issue=spec.issue,
+                        # The SAME path threaded into the execution leg —
+                        # one mint, one path, both sides (#909 r2).
+                        sentinel_path=sentinel_path,
+                        custom_workload=True,
+                        attempt_id=attempt_id,
+                        wandb_run_path=spec.extra.get("wandb_run_path"),
+                        # #685 / #661: thread the per-issue worktree git root +
+                        # the phase-scope flag off spec.extra (the same channel
+                        # as wandb_run_path; _launch_extra_from_args populates
+                        # both). None / False (absent) = established behavior.
+                        git_repo_root=spec.extra.get("git_repo_root"),
+                        skip_default_git_paths=bool(
+                            spec.extra.get("skip_default_git_paths", False)
+                        ),
+                    ),
+                }
+                if workload_start_error is not None:
+                    # #954 failure-path-only key: the truncated start-leg error, so
+                    # the sidecar records WHY the pod is workload-less.
+                    extra["workload_start_error"] = workload_start_error
+                return RunHandle(
+                    backend="runpod",
+                    cluster=None,
+                    # The RunPod pod_id is set inside pod_lifecycle.py and persisted
+                    # to pods_ephemeral.json; #2038 rounds it back into
+                    # extra["pod_id"] (omit-when-absent — see the extra dict above).
+                    # job_id stays "" DELIBERATELY: the #1122 carry-forward treats
+                    # an empty job_id as no-match, and every RunPod reader routes by
+                    # name through SSH config — flipping job_id to the pod id would
+                    # silently change those identity-binding semantics.
+                    job_id="",
+                    pod_name=pod_name,
+                    scratch_dir="/workspace",
+                    log_path=_runpod_log_path(spec.issue),
+                    extra=extra,
+                )
+
+            workload_info: dict[str, Any] = {}
+            if exec_requested:
+                try:
+                    workload_info = _execute_workload_on_pod(
+                        spec,
+                        pod_name=pod_name,
+                        log_path=_runpod_log_path(spec.issue),
+                        pid_file=_runpod_pid_file_path(spec.issue),
+                        sentinel_path=sentinel_path,
+                        attempt_id=attempt_id,
+                    )
+                except RunPodWorkloadStartError as exc:
+                    # #954: the pod IS provisioned (and bills) — attach the fully-
+                    # built partial handle to the typed error so the router's
+                    # terminal rung + the backend_poll failover legs can persist
+                    # the launch records (sidecar + lease) before surfacing the
+                    # failure. Re-raising the SAME exception preserves message +
+                    # traceback. The pod-stays-RUNNING-for-diagnosis contract is
+                    # UNCHANGED.
+                    exc.handle = _build_handle(
+                        {},
+                        workload_executed=False,
+                        workload_start_error=str(exc)[:2000],
+                    )
+                    raise
+                else:
+                    # #2038: the workload is now RUNNING on the pod — the outer
+                    # emergency-teardown arm must never terminate past this point.
+                    workload_started = True
+            elif spec.workload_cmd:
+                logger.warning(
+                    "workload_cmd persisted but NOT executed — EXPECTED when the "
+                    "experimenter (SKILL.md Step 6d.1) launches it on this pod; otherwise "
+                    "dispatch the experimenter on THIS pod (preferred — a re-launch "
+                    "provisions a SECOND pod), or re-launch with --execute-workload (#909)"
+                )
+            # Expected-artifacts declaration (#598): the attempt id minted above
+            # (GCP-style, pre-execution) is embedded in the pod-side sentinel path
+            # so a prior attempt's sentinel on the persistent /workspace
+            # volume can never satisfy this launch's declaration. The sentinel
+            # WRITER depends on the executor: experimenter-driven dispatches
+            # chain `write_completion_sentinel` per experimenter.md step 11;
+            # the #909 backend-executed leg chains the write inside its rendered
+            # launcher (same path — see the mint comment above). The declaration
+            # carries NO launch-time HF prefix guess (the #601
+            # false-negative-teardown trap, a fortiori on this lane).
+            return _build_handle(workload_info, workload_executed=exec_requested)
+        except RunPodWorkloadStartError:
+            # #954 diagnosis-lane path — behavior unchanged (plan §3/§5): the
+            # partial handle (when the exec leg attached one) rides the typed
+            # error to the router terminal rung; the pod stays RUNNING for SSH
+            # diagnosis per the RunPod-as-diagnosis-lane doctrine.
+            raise
+        except Exception as exc:
+            _dispose_post_provision_failure(
+                exc=exc,
+                workload_started=workload_started,
+                pod_id=provisioned_pod_id,
+                pod_name=pod_name,
+                issue=spec.issue,
+            )
+            raise
 
     def estimate_start(self, spec: RunSpec) -> datetime | None:
         """RunPod pods come up in minutes — informational "now"."""
@@ -1805,21 +2074,11 @@ class RunPodBackend(ComputeBackend):
         teardown, so the verifier guard inside ``cmd_terminate`` should
         always see a PASS marker.
         """
-        # The pod name carries the issue; parse it back (canonical
-        # ``pod-<N>``) so we don't need extra state on the handle.
-        issue: int | None = None
-        if handle.pod_name.startswith("pod-"):
-            try:
-                issue = int(handle.pod_name[len("pod-") :])
-            except ValueError:
-                issue = None
-        if issue is None and handle.pod_name.startswith("epm-issue-"):
-            try:
-                issue = int(handle.pod_name[len("epm-issue-") :])
-            except ValueError:
-                issue = None
-        if issue is None:
-            raise ValueError(f"cannot parse issue from RunPod handle pod_name={handle.pod_name!r}")
+        # #2145: extra["issue"] first (always set by _build_handle), name
+        # parse as the legacy-handle fallback — the pre-#2145 inline
+        # int(pod_name[4:]) parse raised ValueError on every SUFFIXED
+        # pod-<N>-<slug> name.
+        issue = self._issue_from_handle(handle)
         cmd = [
             sys.executable,
             str(_scripts_dir() / "pod_lifecycle.py"),
@@ -1828,6 +2087,18 @@ class RunPodBackend(ComputeBackend):
             str(issue),
             "--yes",
         ]
+        # #2145: SURGICAL teardown for a suffixed pod — recover the slug from
+        # the handle's own pod name and pass --name-suffix so cmd_terminate
+        # targets pod-<N>-<slug> exactly (pod_lifecycle._canonical_pod_name
+        # registration; the bare --issue form resolves the issue's pods
+        # issue-wide and is refused under the #1485 keep-running tag while
+        # sibling pods live). Unsuffixed handles compose the pre-#2145 argv
+        # byte-identically.
+        prefix = f"pod-{issue}-"
+        if handle.pod_name.startswith(prefix):
+            suffix = handle.pod_name[len(prefix) :]
+            if suffix:
+                cmd += ["--name-suffix", suffix]
         # #1698 Item 2 — idempotent teardown for an already-terminated pod.
         # When no live pod matches the issue AND no local sidecar record is
         # left, `pod_lifecycle._terminate_clear_stale_sidecar` at

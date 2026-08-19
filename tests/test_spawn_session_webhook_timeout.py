@@ -585,6 +585,37 @@ def test_stop_session_raw_valid_dict_returns_success_bool(monkeypatch):
     assert spawn_session._stop_session_raw("sess-x") is False
 
 
+def test_stop_session_raw_encoding_corrupt_body_raises_runtime_error(monkeypatch):
+    """#2168 shape-3 regression (typed loud re-raise — loud STAYS loud): a
+    daemon body carrying invalid UTF-8 raises ``UnicodeDecodeError`` from
+    ``json.loads(bytes)`` — a ``ValueError`` OUTSIDE the pre-#2168 except
+    set — and must surface as the reap-contracted RuntimeError, never a
+    bare UnicodeDecodeError (which would escape
+    ``_reap_half_spawned_session``'s ``except RuntimeError`` exactly like
+    the wrong-shape AttributeError this section already pins)."""
+
+    class _RawBytesResponse:
+        # 0xff is invalid UTF-8 in any position. The bytes deliberately do
+        # NOT lead with \xff\xfe: json.loads() BOM-sniffs leading bytes
+        # (\xff\xfe reads as a UTF-16-LE BOM), so the mid-payload placement
+        # is what pins the UTF-8 decode path → UnicodeDecodeError.
+        def read(self) -> bytes:
+            return b'{"success": true, "x": "\xff\xfe"}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    monkeypatch.setattr(
+        spawn_session.urllib.request, "urlopen", lambda req, timeout=None: _RawBytesResponse()
+    )
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 65001)
+    with pytest.raises(RuntimeError, match="transport failure"):
+        spawn_session._stop_session_raw("PID-1")
+
+
 def test_reap_stop_wrong_shape_body_blocks_retry(monkeypatch):
     # The same non-dict body threaded through the REAL _stop_session_raw
     # inside the reap: the RuntimeError is caught at the PID-stop leg and

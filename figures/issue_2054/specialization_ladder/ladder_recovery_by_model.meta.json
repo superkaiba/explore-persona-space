@@ -1,0 +1,3098 @@
+{
+  "commit": "bb13e5e5+dirty",
+  "render_id": "53b7e865654a41a2",
+  "git_commit": "bb13e5e5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_cross_render_fit.py",
+    "scripts/issue2054_writeup_result12_figs.py"
+  ],
+  "created": "2026-08-13T18:48:00Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8685457811502124,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9704357455788728,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9696213064379904,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9801195818075907,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.971988007229063,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9994264437182843,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0223516011021974,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0335698292517728,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8901113509421476,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8934813797228732,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8966197080385284,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8958877662824286,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9027277871337488,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9266342139783221,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9470148046498238,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9848458506422851,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6968646307798487,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8854751605398664,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9010290496438279,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9212703121072677,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8930786609368268,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9499282462507931,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9940299057127787,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0241427164532717,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.912943613373636,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9174972710198883,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9162364003426015,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9208499953077186,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9206035524087391,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9346361938263217,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9609212868656445,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9934089399296325,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7789855240536556,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9286313731179185,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.932109225558755,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9479561862198951,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.933058758800804,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9616457455089331,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9873499128714078,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0060431439127293,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8971387592629765,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9762961444560743,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.978989950382483,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9804820306834494,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9773627539554129,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9946165620826616,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0113652968397664,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0254893426757752,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8938039487238516,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8968885021117037,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8983393012865609,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9036787292682911,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.900723672659036,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9314181289454898,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.950578118941691,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9881898957912716,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6168011103732589,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8716420170153399,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9044838447713079,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9070502365991292,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8777853398369531,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.940777721455752,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9933832139014527,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0265968797806448,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9101229169587246,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9206076152347082,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9238503740411949,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9229699317503105,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9236740902780822,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9432708805302599,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9720954731952023,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0061400874215973,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7377084195405658,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9125153281153732,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9233660206853818,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9288641487661405,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9139552523198213,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.950289401464661,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.976045168103833,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9959864677226844,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.77278265549488,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.962175699110858,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9665680047550558,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9678387464270878,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.96471814501042,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9938701788648135,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0258486586064477,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.042007382830737,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8452418958318212,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8494946545235118,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8483146636592822,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8553796754147444,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8513969166564225,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9078606898141225,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9368182842182581,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9781423906847042,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.1766184284271432,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6807023385002483,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.803796688862019,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7745939806742367,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6871182044657347,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7952070637006053,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9019447437239507,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9688947587274985,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8903602971515567,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8943005188625911,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8935044763699064,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9063675574139523,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8995730266079691,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9169351833491409,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9388314589595161,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9720608675828232,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": -0.04669172433383728,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6373191685471844,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.87408483362912,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7537917507345959,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6494466343941103,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7887664409038013,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8958839211421876,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9310685129879307,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8695980796418702,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9741452973940989,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9761122753846626,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9795326662167966,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9756771909097126,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9999217536410585,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.021900365606364,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0367610155824414,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8794528661959522,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8814057350267743,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8829203512923343,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8881278259088285,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8903474131643997,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9225881289992184,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9443692525227242,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9811240197461147,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6054259302501092,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8639085101247077,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8959566714570985,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8999577487858474,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8752358789271236,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9379889719568798,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9892054556294044,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.02494930949576,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9378902459476709,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9422136429446883,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9418858010049841,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9374090639198938,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9447151496111309,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9613851025329286,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9759485203278216,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.002251088468538,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7325348023987829,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9044467050118177,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.937405959230999,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9201549730367583,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.907696229045061,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.94113873188587,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.976679681464729,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9914578480425833,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9038693302846924,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9703276022917157,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9742527432345244,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9753265107302856,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9726155486310852,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9906344233730606,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0081443056490236,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0233064753724306,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8748538049606891,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8767414337814609,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8879067419121983,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8847445127320834,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.877215490340125,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9004278625734088,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9337068730517579,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9817973451184778,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8800327131663234,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8811188296829666,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8882286912353574,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8941940410334557,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8861625037777429,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.893483163289844,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9143358988963517,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.951455328069987,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.48152493707932675,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7773451232744197,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8074555860887147,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8217107981980957,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7828060712946494,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8560541109034705,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9004441465232174,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9415209312522863,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7252041092014841,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9201389604885823,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9337994637035579,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9418028359977254,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9283822244640152,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9819557342642299,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0229498505544985,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0407482055112056,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9118840639861213,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9165782111525432,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9144867307442418,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9154855159456051,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9175980768013343,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9376583550254992,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9630875104214814,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0084447578382605,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7789561056096838,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7839651908423239,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8189649091721607,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8037867890590811,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7888249658623318,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8102481027819383,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8543578283251482,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.912943751266769,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "fraction of own-map ceiling (held-out $R^2$)": -0.07901496624541522,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6226580387684335,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6941655481726653,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7057612366022485,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.6471269572799263,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.7938136592734151,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.8832463505649298,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 7.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 0.9247635866583807,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 8.0,
+      "fraction of own-map ceiling (held-out $R^2$)": 1.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "y": 0.910704550690621,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "y": 0.9803586082890688,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": 0.9805728529199015,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "y": 0.984668964098923,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "y": 0.9815795862372085,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.0,
+      "y": 1.0096938481898763,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.0,
+      "y": 1.0280132012575405,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 7.0,
+      "y": 1.0368746362861252,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": 0.9227933381380335,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": 0.9246306827453621,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "y": 0.922196588376894,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "y": 0.9230279873330637,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "y": 0.92872042045399,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 5.0,
+      "y": 0.9521021863117406,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 6.0,
+      "y": 0.965835846714636,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 7.0,
+      "y": 1.0006545981816086,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "y": 0.8049384757421307,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "y": 0.9097447424489828,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "y": 0.9098641862575884,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "y": 0.9387415255565434,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "y": 0.9169692078050337,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.0,
+      "y": 0.9653707527556402,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 6.0,
+      "y": 0.9980595059105354,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 7.0,
+      "y": 1.021210454057135,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "y": 0.9038638767470794,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "y": 0.9096087799060105,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "y": 0.9168507698091506,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "y": 0.9016941817270033,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "y": 0.9107966121440152,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "y": 0.9206424097871951,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.0,
+      "y": 0.9450435297109318,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 7.0,
+      "y": 0.9795356013260756,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "y": 0.8106551662463637,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "y": 0.9004215433655136,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "y": 0.914571790543484,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 3.0,
+      "y": 0.9304353533145614,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "y": 0.9164817374497765,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 5.0,
+      "y": 0.9418332994621867,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "y": 0.9718950106791109,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 7.0,
+      "y": 0.9883808705464099,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "y": 0.9632736302234852,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "y": 0.9974090621808754,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "y": 0.9963589736069128,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.0,
+      "y": 0.9967575868731441,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.0,
+      "y": 0.998095613869111,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 5.0,
+      "y": 1.0138958971810008,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 6.0,
+      "y": 1.02518163152064,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 7.0,
+      "y": 1.0341046001050431,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "y": 0.9341977072246318,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "y": 0.9369445065526347,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "y": 0.9343383231258497,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 3.0,
+      "y": 0.937410838659478,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.0,
+      "y": 0.9389434202714197,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 5.0,
+      "y": 0.9617069040189237,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 6.0,
+      "y": 0.974777085844408,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 7.0,
+      "y": 1.0040324595935204,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "y": 0.92066654876769,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "y": 0.9836922624575619,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "y": 0.9831447180948072,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 3.0,
+      "y": 0.9903619825971001,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.0,
+      "y": 0.9857717635585999,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 5.0,
+      "y": 1.0183984407837463,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 6.0,
+      "y": 1.0356775313118058,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 7.0,
+      "y": 1.048565592251929,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": 0.9371762351840306,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "y": 0.9441701863284351,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "y": 0.9481498056182508,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 3.0,
+      "y": 0.9288162351119674,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 4.0,
+      "y": 0.9456992701787711,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 5.0,
+      "y": 0.9592318159045051,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 6.0,
+      "y": 0.980933084960443,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 7.0,
+      "y": 1.0066388943368878,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.9318075495631247,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": 0.9646911821101845,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "y": 0.9671504786705691,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 3.0,
+      "y": 0.9650755262994598,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 4.0,
+      "y": 0.9700587788968953,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 5.0,
+      "y": 0.9849507176672863,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 6.0,
+      "y": 0.9971286177468843,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 7.0,
+      "y": 1.0075149310702678,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.0,
+      "y": 0.8584280177358571,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1.0,
+      "y": 0.9835744998469186,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.0,
+      "y": 0.9816170481160847,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "y": 0.9831579855664192,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.0,
+      "y": 0.9857092818831217,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 5.0,
+      "y": 1.0082304051648976,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 6.0,
+      "y": 1.0347358351770346,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 7.0,
+      "y": 1.0489010167439814,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": 0.9051818822603038,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.9091071977784843,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "y": 0.9059324914718989,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 3.0,
+      "y": 0.9066286461331537,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "y": 0.9116754223707585,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 5.0,
+      "y": 0.9476397904235759,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 6.0,
+      "y": 0.9653009726594503,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 7.0,
+      "y": 0.9979532715455437,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "y": 0.6249348513782408,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": 0.8381546561945322,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "y": 0.863496541472896,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.0,
+      "y": 0.8853059389704375,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 4.0,
+      "y": 0.8417006070766151,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 5.0,
+      "y": 0.904586334459434,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 6.0,
+      "y": 0.9622284511655361,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 7.0,
+      "y": 1.0011241764358354,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.8597292905715346,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.8666922453989915,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "y": 0.8719758213516274,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.0,
+      "y": 0.8659166351045333,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 4.0,
+      "y": 0.870384442293987,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 5.0,
+      "y": 0.8841724710484016,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 6.0,
+      "y": 0.9108603958969285,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 7.0,
+      "y": 0.9477109444498545,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.0,
+      "y": 0.44640436799311467,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "y": 0.7277433884438288,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.0,
+      "y": 0.8827086416745777,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.0,
+      "y": 0.8028223238757555,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 4.0,
+      "y": 0.7789933152339725,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 5.0,
+      "y": 0.850411938123592,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 6.0,
+      "y": 0.9152805785898178,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 7.0,
+      "y": 0.9560196397173154,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": 0.9245691124422278,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": 0.987422235338811,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.0,
+      "y": 0.9861332407809265,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 3.0,
+      "y": 0.9884248342647505,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 4.0,
+      "y": 0.9888765403461025,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 5.0,
+      "y": 1.011038497573413,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 6.0,
+      "y": 1.0282735872147464,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 7.0,
+      "y": 1.0410365176841558,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "y": 0.916422415766602,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": 0.9192826760293265,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "y": 0.9170508378357796,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 3.0,
+      "y": 0.9191805208677332,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 4.0,
+      "y": 0.9245754693255894,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 5.0,
+      "y": 0.9470145820133868,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 6.0,
+      "y": 0.9606626947158466,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 7.0,
+      "y": 0.9941413996292072,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "y": 0.8375562940235854,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": 0.9365054931299479,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 2.0,
+      "y": 0.9372485481217108,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 3.0,
+      "y": 0.9556645240821313,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 4.0,
+      "y": 0.9386884566707916,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 5.0,
+      "y": 0.9823080442687337,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 6.0,
+      "y": 1.010592718710359,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 7.0,
+      "y": 1.0314049573575397,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.0,
+      "y": 0.918196586467262,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 1.0,
+      "y": 0.9235821372237966,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 2.0,
+      "y": 0.9330881600621588,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 3.0,
+      "y": 0.9100462650907547,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 4.0,
+      "y": 0.9248506750664646,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 5.0,
+      "y": 0.9336931577486729,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 6.0,
+      "y": 0.9551759562385118,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 7.0,
+      "y": 0.9882109304136073,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.0,
+      "y": 0.8439172754852384,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": 0.9044380952314242,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 2.0,
+      "y": 0.9325860304508615,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 3.0,
+      "y": 0.9220411415624405,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 4.0,
+      "y": 0.9181996366722549,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 5.0,
+      "y": 0.9407833445098516,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 6.0,
+      "y": 0.9641033790435688,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 7.0,
+      "y": 0.9806263033231325,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.0,
+      "y": 0.965807113626021,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "y": 0.9922001776566608,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 2.0,
+      "y": 0.9911526930295468,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 3.0,
+      "y": 0.9926443480956855,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 4.0,
+      "y": 0.9940193497780643,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 5.0,
+      "y": 1.0082382900865652,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 6.0,
+      "y": 1.0209576800834559,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 7.0,
+      "y": 1.030570220117139,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "y": 0.9037687124708625,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": 0.9081450152204502,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 2.0,
+      "y": 0.9068622828494204,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 3.0,
+      "y": 0.9177522403251753,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 4.0,
+      "y": 0.90874911467096,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 5.0,
+      "y": 0.9328491723214744,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 6.0,
+      "y": 0.9588651178898356,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 7.0,
+      "y": 0.9929048435740183,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 0.0,
+      "y": 0.9168500135825978,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 1.0,
+      "y": 0.9219197838969188,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 2.0,
+      "y": 0.9210497350450207,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 3.0,
+      "y": 0.9319581258640554,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 4.0,
+      "y": 0.9235898344866036,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 5.0,
+      "y": 0.936321325184397,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 6.0,
+      "y": 0.9474861497408616,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 7.0,
+      "y": 0.9655733697280383,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "y": 0.8073361584957004,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": 0.896088332581505,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 2.0,
+      "y": 0.8960068903086809,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 3.0,
+      "y": 0.9223297249649737,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 4.0,
+      "y": 0.9090073515083974,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 5.0,
+      "y": 0.9336957138811266,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 6.0,
+      "y": 0.9480372869446982,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 7.0,
+      "y": 0.9622900372958588,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "y": 0.9388129685159675,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 1.0,
+      "y": 0.9943783756647449,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 2.0,
+      "y": 0.9937030804746291,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 3.0,
+      "y": 0.9972121997048616,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 4.0,
+      "y": 0.9979152047838704,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 5.0,
+      "y": 1.0241380494698993,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 6.0,
+      "y": 1.0399035093396651,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 7.0,
+      "y": 1.0492566196425614,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": 0.8164308728069052,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": 0.8327606836671505,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 2.0,
+      "y": 0.8363322982196403,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 3.0,
+      "y": 0.8572824885840433,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 4.0,
+      "y": 0.8338572512126351,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 5.0,
+      "y": 0.8824490679365425,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 6.0,
+      "y": 0.9270954543667671,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 7.0,
+      "y": 0.9684916706598274,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.0,
+      "y": 0.43657408747554005,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": 0.509151000643147,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "y": 0.8082018859498348,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 3.0,
+      "y": 0.5592118708745244,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 4.0,
+      "y": 0.5348573674720672,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 5.0,
+      "y": 0.6198815377791409,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 6.0,
+      "y": 0.7063734533743072,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 7.0,
+      "y": 0.7886957552173257,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.0,
+      "y": 0.749478708147634,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "y": 0.8601618171399104,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": 0.859921643498915,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 3.0,
+      "y": 0.9043999542522141,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 4.0,
+      "y": 0.8894313661111225,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 5.0,
+      "y": 0.9189863867415967,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 6.0,
+      "y": 0.9404147869724503,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 7.0,
+      "y": 0.9611788784643812,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 8.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 504,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "fraction of own-map ceiling (held-out $R^2$)",
+        "xticklabels": [
+          "pooled",
+          "+bias",
+          "+gain",
+          "+rotation",
+          "+rank-1",
+          "+rank-8",
+          "+rank-32",
+          "+rank-128",
+          "own map"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "legend_labels": [
+          "attributed quote",
+          "bare label",
+          "bare text",
+          "chat template"
+        ],
+        "xticklabels": [
+          "pooled",
+          "+bias",
+          "+gain",
+          "+rotation",
+          "+rank-1",
+          "+rank-8",
+          "+rank-32",
+          "+rank-128",
+          "own map"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

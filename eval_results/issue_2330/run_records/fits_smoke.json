@@ -1,0 +1,105 @@
+{
+  "label": "SMOKE — plan §4 P1 step 4 fits-shape smoke (expected_split_n=None opt-out)",
+  "chunk_dir": "/workspace/data/issue_2330/qwen35_generate_capture/shards/train_10k",
+  "layers": [
+    16,
+    22,
+    30
+  ],
+  "h_dim": 4096,
+  "device": "cuda",
+  "per_layer": {
+    "16": {
+      "n": 500,
+      "ridge": {
+        "test_r2": 0.17275394480345774,
+        "meta": {
+          "n_train": 400,
+          "selection": "val-lambda (primal, streaming)",
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.3154987813870309,
+          "lambda_grid_edge": null,
+          "ridge_block": 50000,
+          "lambda_grid_edge_disposition": "informational under smoke (n<d slice)"
+        }
+      },
+      "floors": {
+        "shuffled_pairing": -0.2795240322619208,
+        "train_mean": -0.2794686182674957,
+        "identity_copy": -17.11066207301294,
+        "scaled_identity": -0.5021338948304146,
+        "identity_bias": -6.127906727194212
+      },
+      "knn_ridge_acc_at_1_euclidean": 0.56,
+      "n_vs_d": {
+        "n_train": 400,
+        "d": 4096,
+        "underdetermined": true
+      }
+    },
+    "22": {
+      "n": 500,
+      "ridge": {
+        "test_r2": 0.23471576490605472,
+        "meta": {
+          "n_train": 400,
+          "selection": "val-lambda (primal, streaming)",
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.3073622832210552,
+          "lambda_grid_edge": null,
+          "ridge_block": 50000,
+          "lambda_grid_edge_disposition": "informational under smoke (n<d slice)"
+        }
+      },
+      "floors": {
+        "shuffled_pairing": -0.17713517438549542,
+        "train_mean": -0.17715683048488717,
+        "identity_copy": -8.916118227684656,
+        "scaled_identity": -0.26423565672169325,
+        "identity_bias": -4.309677400680365
+      },
+      "knn_ridge_acc_at_1_euclidean": 0.48,
+      "n_vs_d": {
+        "n_train": 400,
+        "d": 4096,
+        "underdetermined": true
+      }
+    },
+    "30": {
+      "n": 500,
+      "ridge": {
+        "test_r2": 0.30315258206287377,
+        "meta": {
+          "n_train": 400,
+          "selection": "val-lambda (primal, streaming)",
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.4069159988168116,
+          "lambda_grid_edge": null,
+          "ridge_block": 50000,
+          "lambda_grid_edge_disposition": "informational under smoke (n<d slice)"
+        }
+      },
+      "floors": {
+        "shuffled_pairing": -0.09585135115286114,
+        "train_mean": -0.09593915353396243,
+        "identity_copy": -4.866387426125954,
+        "scaled_identity": -0.10957570011837481,
+        "identity_bias": -3.337126163831532
+      },
+      "knn_ridge_acc_at_1_euclidean": 0.32,
+      "n_vs_d": {
+        "n_train": 400,
+        "d": 4096,
+        "underdetermined": true
+      }
+    }
+  },
+  "_meta": {
+    "git_commit": "0ca8b478",
+    "git_dirty": false,
+    "timestamp_utc": "2026-08-17T04:52:09Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "script": "scripts/issue2330_matched_fits.py"
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "commit": "99f9e975+dirty",
+  "render_id": "92e9f75c6b3c49fe",
+  "git_commit": "99f9e975",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2222/layer_sweep_evil.meta.json",
+    "figures/issue_2222/layer_sweep_evil.pdf",
+    "figures/issue_2222/layer_sweep_evil.png",
+    "figures/issue_2222/layer_sweep_hallucination.meta.json",
+    "figures/issue_2222/layer_sweep_hallucination.pdf",
+    "figures/issue_2222/layer_sweep_hallucination.png",
+    "figures/issue_2222/layer_sweep_sycophancy.meta.json",
+    "figures/issue_2222/layer_sweep_sycophancy.pdf",
+    "figures/issue_2222/layer_sweep_sycophancy.png",
+    "scripts/issue2222_figures.py"
+  ],
+  "created": "2026-08-11T10:02:38Z",
+  "figsize": [
+    7.5,
+    4.8
+  ],
+  "points": [
+    {
+      "\u0394r at the steering layer (95% CI)": -0.24012767426393755,
+      "y": -0.27,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.24012767426393755,
+      "y": -0.09,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.24012767426393755,
+      "y": 0.09,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.24012767426393755,
+      "y": 0.27,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.33906570591203766,
+      "y": 0.73,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.33906570591203766,
+      "y": 0.91,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.33906570591203766,
+      "y": 1.09,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.33906570591203766,
+      "y": 1.27,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.6537982445918376,
+      "y": 1.73,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.6537982445918376,
+      "y": 1.91,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.6537982445918376,
+      "y": 2.09,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.6537982445918376,
+      "y": 2.27,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.562357760595607,
+      "y": 2.73,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.562357760595607,
+      "y": 2.91,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.562357760595607,
+      "y": 3.09,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "\u0394r at the steering layer (95% CI)": -0.562357760595607,
+      "y": 3.27,
+      "_kind": "errorbar",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Hypothesis-test CIs under the four registered schemes",
+        "xlabel": "\u0394r at the steering layer (95% CI)",
+        "legend_labels": [
+          "Frozen layer, flat bootstrap",
+          "Frozen layer, family-clustered",
+          "Selection-inherited, flat",
+          "Selection-inherited, family-clustered",
+          "H2 equivalence margin (\u0394r = \u22120.10, H2 rows only)"
+        ],
+        "xticklabels": [
+          "\u22121.75",
+          "\u22121.50",
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ],
+        "yticklabels": [
+          "H1 sycophancy: mapped (context) \u2212 prompt-token",
+          "H2 evil: mapped (context) \u2212 exact",
+          "H2 hallucination: mapped (context) \u2212 exact",
+          "H2 sycophancy: mapped (context) \u2212 exact"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

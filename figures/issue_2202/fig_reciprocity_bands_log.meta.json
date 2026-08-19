@@ -1,0 +1,126 @@
+{
+  "commit": "21b2d568+dirty",
+  "render_id": "f927ee4dd0eb49df",
+  "git_commit": "21b2d568",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2202/fig_indegree_v2.meta.json",
+    "figures/issue_2202/fig_indegree_v2.pdf",
+    "figures/issue_2202/fig_indegree_v2.png",
+    "scripts/issue2202_regen_figs.py"
+  ],
+  "created": "2026-08-08T22:19:16Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "top-1 confusion reciprocity (log)": 0.0007315045719063727,
+      "error": 0.00013125567306702393,
+      "series": "null band (2.5th-97.5th percentile)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "top-1 confusion reciprocity (log)": 0.00032175032175032174,
+      "error": 6.693013768485471e-05,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "top-1 confusion reciprocity (log)": 0.0029078944173283796,
+      "error": 0.0002398709356256528,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "top-1 confusion reciprocity (log)": 0.002932177460479347,
+      "error": 0.00023994682013549944,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "top-1 confusion reciprocity (log)": 0.002956460503630315,
+      "error": 0.0002369873242514752,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "top-1 confusion reciprocity (log)": 0.000837764988708385,
+      "series": "observed (8.4e-04)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "top-1 confusion reciprocity (log)": 0.000837764988708385,
+      "series": "observed (8.4e-04)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "top-1 confusion reciprocity (log)": 1.0,
+      "series": "ceiling (reciprocity \u2264 1)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "top-1 confusion reciprocity (log)": 1.0,
+      "series": "ceiling (reciprocity \u2264 1)",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Observed reciprocity vs the degree-preserving and distance-only bands",
+        "ylabel": "top-1 confusion reciprocity (log)",
+        "legend_labels": [
+          "observed (8.4e-04)",
+          "ceiling (reciprocity \u2264 1)",
+          "null band (2.5th-97.5th percentile)"
+        ],
+        "xticklabels": [
+          "degree-preserving\n(stub, collisions kept)",
+          "degree-preserving\n(collision-free swaps)",
+          "distance-only \u03c4=p1",
+          "distance-only \u03c4=p5",
+          "distance-only \u03c4=p25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ],
+    "series": [
+      "observed (8.4e-04)",
+      "ceiling (reciprocity \u2264 1)",
+      "null band (2.5th-97.5th percentile)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

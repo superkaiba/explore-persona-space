@@ -25,6 +25,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -46,7 +48,7 @@ def _triage_span(body: str) -> str:
 
 def test_skill_triage_line_spec_carries_boundary_token():
     """The recorded-line format spec documents ``(boundary=<ts>)`` — both forms."""
-    span = _triage_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _triage_span(issue_skill_text())
     assert "(boundary=<ts>)" in span, (
         "The § Pre-dispatch external-marker triage canonical block must "
         "document the (boundary=<ts>) token in the recorded-line format "
@@ -68,7 +70,7 @@ def test_skill_triage_line_spec_carries_boundary_token():
 
 def test_skill_enumerator_snippet_references_boundary_helper():
     """The mechanical enumerator snippet prints the boundary via the helper."""
-    span = _triage_span(ISSUE_SKILL.read_text(encoding="utf-8"))
+    span = _triage_span(issue_skill_text())
     assert "triage_enumeration_boundary" in span, (
         "The canonical enumerator snippet must reference "
         "task_workflow.triage_enumeration_boundary so the boundary value "

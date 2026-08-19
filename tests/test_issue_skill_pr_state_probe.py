@@ -27,6 +27,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
 _SAFE_CASE_HEADING = (
@@ -41,7 +43,7 @@ _RECOVERY_END = "##### Residual-conflict subagent dispatch"
 
 
 def _text() -> str:
-    return SKILL_MD.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _safe_case_block() -> str:
@@ -66,7 +68,11 @@ def test_pr_state_probe_anchors_present() -> None:
     block = _safe_case_block()
     assert "PR-object liveness probe" in block
     assert "--json number,state,mergedAt" in block
-    assert 'if [ "$PR_STATE" != "OPEN" ]; then' in block
+    # #2240 relocated the non-OPEN scoping into the shared USABLE_PR
+    # resolution (both no-usable-PR cases — terminal PR and no PR object —
+    # now route through one payload-aware prelude; see
+    # tests/test_issue_skill_step10d_no_pr_arm.py for the arm's own pins).
+    assert 'if [ -n "$PR" ] && [ "$PR_STATE" = "OPEN" ]; then' in block
     # The fresh draft PR is gated on the layered NOVEL-payload predicate
     # (#1897 round-2): a bare commit count is patch-blind — rebase/squash
     # land COPIES, so a fully-merged branch reads count>0 forever. The

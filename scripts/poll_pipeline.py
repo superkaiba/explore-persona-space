@@ -36,7 +36,8 @@ Per tick:
 4. If new milestone vs the cached previous phase, post `epm:progress`
    to the task's events.jsonl via the local-VM `task_workflow.post_event`
    library (NOT on the pod).
-5. Decide status: `done` | `gate` | `stalled` | `dead` | `running`.
+5. Decide status: `done` | `gate` | `stalled` | `dead` | `running` |
+   `pid-stale-workload-live`.
 6. Print one JSON line summary to stdout. Exit 0 on successful poll
    regardless of `status`. Exit non-zero only on caller-error (bad args,
    library import failure).
@@ -72,6 +73,33 @@ keep the verdict — fail-safe to the pre-#518 behavior. Incident: task
 #518 scoring_syco phase, 2026-06-10 — a healthy CPU-bound aggregation
 phase wrote nothing to the log for ~7.8h while the python child was
 at 100% CPU; the poller falsely declared `stalled`.
+
+Dead-verdict evidence veto (#2265): a stale pid file alone must not
+declare a live workload dead. When ALL pid probes read dead (pidfile +
+marker + the #1650 signature rescue) but the SAME tick's probe carries
+affirmative liveness evidence — a busy GPU (``_gpu_busy``: parsed
+utilization above ``GPU_IDLE_UTIL_THRESHOLD`` on any card), a fresh log
+(min of main/cell, per-phase, shard mtime-ago <= stall_sec), or a fresh
+issue-keyed output artifact (#1033 fold, <= stall_sec) — the tick
+reports the non-terminal ``pid-stale-workload-live`` with
+``stall_reason="pid_dead_evidence:<'+'-joined tokens>"`` instead of
+``dead`` (#2223: one tick returned ``status="dead"`` beside
+``gpu_util="97,100,100,100"`` and ``last_log_mtime_sec_ago=294``; the
+orchestrator's failure path then fires against live detached workers).
+Fail directions are the INVERSE of the stall conjunction's: an unknown /
+unparseable ``gpu_util`` and absent mtimes (the ``10**9`` sentinel)
+contribute NO evidence, so an ssh-failed tick's zeroed fallback probe
+still reads ``dead`` exactly as before. Freshness is the exact
+complement of the stall arm's staleness (``> stall_sec``), so one tick
+can never read a log as both fresh (veto) and stale (stall). Decay: a
+genuinely dead run's GPU evidence drops immediately (utilization — not
+memory — reads ~0 after death; zombie allocations hold VRAM, not
+utilization) and its log/output evidence ages past stall_sec, so
+``dead`` fires within ~stall_sec + one tick (defaults: 900s + 540s
+≈ 24 min). The veto never sets ``pid_alive`` — the tick JSON keeps
+``pid_alive: false`` beside the verdict so the contradiction is
+legible — and the WARN carries the pid-file repair recipe
+(pod-side-reporting.md § Pid-file launch contract).
 
 Zombie-GPU-allocation override (#664): the CPU-advancing override above
 has a blind spot — a hung vLLM whose CUDA worker DIED but whose
@@ -399,11 +427,14 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 import explore_persona_space.backends.excerpt_digest as _excerpt_digest  # noqa: E402
+from explore_persona_space.plan_wall_budget import (  # noqa: E402
+    PlanWallBudget,
+    parse_plan_wall_budget,
+)
 from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
     get_task,
-    latest_event,
     list_events,
     post_event,
     repo_root,
@@ -441,6 +472,15 @@ except Exception as _warm_exc:
 # working without modification.
 DEFAULT_STALL_SEC = 900
 STALL_SEC = DEFAULT_STALL_SEC
+# #2265: non-terminal status token for the pid-probes-all-dead +
+# same-tick-liveness-evidence contradiction (the #2223 false-dead class).
+# Emitted by the `_pid_dead_verdict` arm of `poll_once`'s arbitration chain;
+# see the module docstring's "Dead-verdict evidence veto" paragraph. Every
+# status consumer reads exact equality / set-membership with a benign
+# fallthrough (task #2265 plan §5 sweep), so the new token degrades safely:
+# non-terminal to `router._is_terminal_status`, live to `default_is_live`,
+# short-interval to `recommend_next_interval` (any non-"running" status).
+STATUS_PID_STALE_WORKLOAD_LIVE = "pid-stale-workload-live"
 # Substring of the ValueError message raised by ``task_workflow.post_event``
 # when ``note`` exceeds ``EVENT_NOTE_MAX``. Matched against ``str(exc)`` so
 # we route exactly that failure to graceful-degradation (persist + pointer
@@ -961,48 +1001,125 @@ def _update_ssh_fail_tracking(
     return ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts
 
 
-def _marker_pid(issue: int) -> int | None:
+def _pod_attribution_re(pod: str) -> re.Pattern[str]:
+    """Boundary-safe pod-attribution pattern for ``epm:run-launched`` notes.
+
+    Ported VERBATIM from the #1961 watcher predicate
+    (``autonomous_session_watch._latest_named_run_launched_ts`` — the
+    semantics source; a drift between the two is a bug in whichever
+    diverged): matches EITHER a ``pod=<name>`` token anywhere in the note,
+    OR the note's LEADING token being ``<name>`` (optionally preceded by
+    whitespace). Boundary-safe means left/right ``[\\w-]`` guards, so
+    ``pod-77`` never matches inside ``pod-77-q32b`` and vice versa; a
+    mid-prose mention (the attested #1768 v14 counterexample:
+    "pod-1768-tx ... was already TERMINATED") must NOT match.
+    """
+    esc = re.escape(pod)
+    return re.compile(rf"(?<![\w-])pod={esc}(?![\w-])|^\s*{esc}(?![\w-])")
+
+
+def _latest_run_launched_event(issue: int, pod: str | None) -> dict | None:
+    """LAST ``epm:run-launched`` event in APPEND ORDER, pod-scoped when possible.
+
+    #2259: the three marker readers below resolved the marker by ISSUE only,
+    so on a multi-pod single-issue run every leg that is not the most recent
+    launcher compared against the SIBLING pod's marker (a permanent false
+    #1156 staleness WARN + a no-op #813 pid cross-check). Selection matches
+    ``latest_event(issue, prefix="epm:run-launched")`` semantics — a
+    ``startswith`` kind filter + LAST-in-append-order selection — on BOTH
+    paths, so single-pod issues and pre-#1961 unattributed notes behave
+    exactly as before:
+
+    * ``pod`` given AND >=1 event's note matches ``_pod_attribution_re(pod)``
+      -> the LAST such event in append order (``pod-scoped`` path; missing /
+      non-string notes never attribute, mirroring the watcher);
+    * otherwise -> the LAST matching event issue-wide (``issue-wide-fallback``
+      when ``pod`` was given but nothing attributed; ``issue-wide`` when
+      ``pod`` is None).
+
+    One ``log.debug`` line names the path taken so a tick transcript says
+    which marker was compared (the #2259 task-body ask). Fail-soft contract
+    identical to the pre-#2259 readers: any read exception -> ``None`` +
+    ``log.warning``, never a crash.
+
+    Two seams, by design: (i) ``tests/test_poll_pipeline_sentinels.py``
+    stubs ``pp.list_events`` for the #1084 sentinel-dedupe read — this
+    resolver reads the same module attribute, widening that stub's blast
+    radius (in practice the helper-level fakes on ``_marker_pid`` /
+    ``_marker_launch_fields`` / ``_run_launched_age_sec`` intercept first);
+    (ii) mixed attribution — a pod with an OLD attributed marker and a NEWER
+    UNATTRIBUTED free-prose relaunch marker resolves to the older attributed
+    one (by design: #1961 mandates producer-side attribution; the debug line
+    surfaces it).
+    """
+    try:
+        events = [e for e in list_events(issue) if e["kind"].startswith("epm:run-launched")]
+    except Exception as exc:
+        log.warning("could not read epm:run-launched events for #%d: %s", issue, exc)
+        return None
+    if not events:
+        return None
+    if pod:
+        pattern = _pod_attribution_re(pod)
+        attributed = [
+            e
+            for e in events
+            if isinstance(e.get("note"), str) and pattern.search(e["note"]) is not None
+        ]
+        if attributed:
+            log.debug("epm:run-launched resolution for #%d: pod-scoped (pod=%s)", issue, pod)
+            return attributed[-1]
+        log.debug(
+            "epm:run-launched resolution for #%d: issue-wide-fallback "
+            "(pod=%s, no attributed marker)",
+            issue,
+            pod,
+        )
+        return events[-1]
+    log.debug("epm:run-launched resolution for #%d: issue-wide (no pod)", issue)
+    return events[-1]
+
+
+def _marker_pid(issue: int, pod: str | None = None) -> int | None:
     """Return the `pid=` from the latest epm:run-launched marker, or None.
 
     Self-correction source when the on-pod pidfile is stale: the marker
     the experimenter posts on every (re)launch carries the live python
     child PID. Reading it is a pure, branch-guarded library read on the
     VM (no commit), so it is safe from poll_pipeline's bg-Bash context.
+    #2259: with ``pod`` given the marker resolves POD-SCOPED via
+    :func:`_latest_run_launched_event` (issue-wide fallback when no note
+    attributes to the pod); the default ``pod=None`` is exact pre-#2259
+    behavior.
     """
-    try:
-        ev = latest_event(issue, prefix="epm:run-launched")
-    except Exception as exc:
-        log.warning("could not read epm:run-launched for #%d: %s", issue, exc)
-        return None
+    ev = _latest_run_launched_event(issue, pod)
     if ev is None:
         return None
     m = MARKER_PID_RE.search(ev.get("note", "") or "")
     return int(m.group(1)) if m else None
 
 
-def _marker_launch_fields(issue: int) -> tuple[int | None, str]:
+def _marker_launch_fields(issue: int, pod: str | None = None) -> tuple[int | None, str]:
     """Return ``(pid, note_text)`` from the latest epm:run-launched marker.
 
     #1650: the pid comes from the module-level :func:`_marker_pid` (so the
     ~14 existing test sites that monkeypatch ``_marker_pid`` keep governing
     the pid — plan #1650 §4 Step 1 test-compat shape (i)); the note text is
-    read in its OWN fail-soft branch (broad except -> ``""``), costing one
-    extra events read per tick, accepted. An empty note (missing task /
-    unreadable events / free-prose marker) leaves every downstream
-    signature consumer inert.
+    read in its OWN fail-soft branch (the resolver returns ``None`` -> ``""``),
+    costing one extra events read per tick, accepted. An empty note (missing
+    task / unreadable events / free-prose marker) leaves every downstream
+    signature consumer inert. #2259: BOTH reads thread ``pod`` through the
+    same pod-scoped resolver (:func:`_latest_run_launched_event`), so pid and
+    note can never come from DIFFERENT markers on a multi-pod issue.
     """
-    pid = _marker_pid(issue)
-    try:
-        ev = latest_event(issue, prefix="epm:run-launched")
-    except Exception as exc:
-        log.debug("could not read epm:run-launched note for #%d (ignored, #1650): %s", issue, exc)
-        return pid, ""
+    pid = _marker_pid(issue, pod=pod)
+    ev = _latest_run_launched_event(issue, pod)
     if ev is None:
         return pid, ""
     return pid, str(ev.get("note", "") or "")
 
 
-def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
+def _run_launched_age_sec(issue: int, now_epoch: float, pod: str | None = None) -> float | None:
     """Seconds since the latest ``epm:run-launched`` marker, or None.
 
     Early-run signal for the adaptive bg-poll interval (§7): a run inside
@@ -1010,13 +1127,13 @@ def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
     interval. None (unknown) when the marker is missing, unreadable, or
     carries an unparseable ``ts`` — ``recommend_next_interval`` treats
     unknown as early-run (short interval; fail toward coverage). Reads the
-    same branch-guarded VM-side library path as :func:`_marker_pid`.
+    same branch-guarded VM-side library path as :func:`_marker_pid`. #2259:
+    ``pod`` threads through :func:`_latest_run_launched_event`, so an
+    unparseable ts on the newest POD-SCOPED marker still returns None
+    rather than silently skipping to an older marker (today's degenerate
+    corner, preserved).
     """
-    try:
-        ev = latest_event(issue, prefix="epm:run-launched")
-    except Exception as exc:
-        log.warning("could not read epm:run-launched ts for #%d: %s", issue, exc)
-        return None
+    ev = _latest_run_launched_event(issue, pod)
     if ev is None:
         return None
     raw_ts = ev.get("ts")
@@ -1419,7 +1536,7 @@ def _maybe_synthesize_results_envelope(
 
 @dataclass(frozen=True)
 class PollResult:
-    status: str  # running | done | gate | stalled | dead
+    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live
     current_phase: str
     new_milestone: bool
     last_log_mtime_sec_ago: int
@@ -1501,8 +1618,12 @@ class PollResult:
     # Machine-readable reason a non-``running`` verdict landed, surfaced in
     # the JSON line so the orchestrator can route differently per cause.
     # ``None`` on a healthy ``running`` tick and on stalls without a
-    # specific cause (the generic log+GPU+CPU conjunction). Currently set
-    # only for the zombie-GPU-allocation stall (#664):
+    # specific cause (the generic log+GPU+CPU conjunction). Two value
+    # families. (1) #2265 dead-verdict evidence veto:
+    # ``"pid_dead_evidence:<'+'-joined tokens>"`` (deterministic token order
+    # ``gpu_busy``/``log_fresh``/``output_fresh``) rides every
+    # ``pid-stale-workload-live`` verdict — the same-tick liveness evidence
+    # that vetoed a ``dead``. (2) the zombie-GPU-allocation stall (#664):
     # ``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID still
     # holding VRAM while the EngineCore main process keeps the
     # session-CPU-advancing override alive (which would otherwise mask the
@@ -1517,7 +1638,13 @@ class PollResult:
     # traceback — the signature lines routinely sit >5 lines from the end). The
     # whole wide tail is stored (so the #775 RunPod CUDA-IMA repeat-failover
     # predicate can ALSO scan it for the OUR_CODE_FRAME exclusion). ``None`` on a
-    # healthy / running poll (populated only on a ``status="dead"`` poll). Read by
+    # healthy / running poll (populated only on a ``status="dead"`` poll) — a
+    # ``pid-stale-workload-live`` tick (#2265) therefore ALSO carries ``None``
+    # (the workload is not known dead, and populating it would arm
+    # backend_poll's CUDA-IMA scan on a non-dead tick); when a genuinely dead
+    # run's evidence decays and ``dead`` fires on a later tick, that tick's
+    # wide tail still contains the crash lines and the signature is captured
+    # then. Read by
     # ``backend_poll._maybe_escalate_runpod_cuda_ima`` after the RunPod lane
     # copies it through ``RunPodBackend.poll``. Declared LAST so existing
     # positional ``PollResult(...)`` constructions are unaffected.
@@ -3389,6 +3516,106 @@ def _gpu_idle(gpu_util: str) -> bool:
     return all(u <= GPU_IDLE_UTIL_THRESHOLD for u in utils)
 
 
+def _gpu_busy(gpu_util: str) -> bool:
+    """True iff gpu_util PARSES and at least one GPU is above the idle threshold.
+
+    Affirmative-evidence semantics — the INVERSE fail direction of `_gpu_idle`
+    (#2265): `_gpu_idle` fails safe toward NOT-idle on an unknown/erroring
+    nvidia-smi so a stall is never declared from a probe failure; a dead-verdict
+    VETO must instead fail toward NO-evidence, so "unknown" / unparseable / empty
+    is never corroboration. `not _gpu_idle(...)` would read unknown as busy.
+    """
+    utils = _parse_gpu_utils(gpu_util)
+    if not utils:
+        return False
+    return any(u > GPU_IDLE_UTIL_THRESHOLD for u in utils)
+
+
+def _dead_verdict_veto(
+    *,
+    last_mtime_ago: float,
+    phase_log_mtime_ago: float,
+    shard_log_mtime_ago: float,
+    output_mtime_ago: float,
+    gpu_util: str,
+    stall_sec: int,
+) -> list[str]:
+    """Same-tick liveness evidence contradicting a dead workload (#2265).
+
+    Returns the (possibly empty) deterministic evidence-token list:
+      * "gpu_busy"     — `_gpu_busy(gpu_util)` (parsed, any GPU > idle threshold);
+      * "log_fresh"    — min(last, phase, shard log mtime-ago) <= stall_sec;
+      * "output_fresh" — output_mtime_ago <= stall_sec (#1033 fold; 10**9 when
+                         absent/disabled, so it can never corroborate then).
+    Freshness is the exact complement of the stall conjunction's staleness
+    (`> stall_sec`), so one tick can never simultaneously read "all logs stale"
+    for the stall arm and "some log fresh" for this veto. Absent signals
+    (mtime sentinel 10**9, gpu "unknown") contribute NO evidence — an
+    ssh-failed tick's zeroed fallback probe yields [] and `dead` fires exactly
+    as today. Pure / no I/O; unit-tested directly.
+    """
+    evidence: list[str] = []
+    if _gpu_busy(gpu_util):
+        evidence.append("gpu_busy")
+    if min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago) <= stall_sec:
+        evidence.append("log_fresh")
+    if output_mtime_ago <= stall_sec:
+        evidence.append("output_fresh")
+    return evidence
+
+
+def _pid_dead_verdict(
+    *,
+    pod: str,
+    last_mtime_ago: float,
+    phase_log_mtime_ago: float,
+    shard_log_mtime_ago: float,
+    output_mtime_ago: float,
+    gpu_util: str,
+    stall_sec: int,
+) -> tuple[str, str | None]:
+    """Verdict for the pid-probes-ALL-dead arbitration arm (#2265).
+
+    Returns ``("dead", None)`` when `_dead_verdict_veto` finds no same-tick
+    liveness evidence — byte-identical to the pre-#2265 unconditional
+    ``status = "dead"`` arm — else
+    ``(STATUS_PID_STALE_WORKLOAD_LIVE, "pid_dead_evidence:<'+'-joined
+    tokens>")`` plus the repair-recipe WARN. Extracted from ``poll_once``
+    for C901 headroom (the `_apply_zombie_override` /
+    `_maybe_rescue_by_signature` convention — ``poll_once`` sits exactly at
+    the complexity cap, so the veto branch lives here).
+    """
+    dead_veto_evidence = _dead_verdict_veto(
+        last_mtime_ago=last_mtime_ago,
+        phase_log_mtime_ago=phase_log_mtime_ago,
+        shard_log_mtime_ago=shard_log_mtime_ago,
+        output_mtime_ago=output_mtime_ago,
+        gpu_util=gpu_util,
+        stall_sec=stall_sec,
+    )
+    if not dead_veto_evidence:
+        return "dead", None
+    stall_reason = "pid_dead_evidence:" + "+".join(dead_veto_evidence)
+    log.warning(
+        "pid probes ALL dead on pod %s (pidfile+marker+signature) but same-tick "
+        "evidence contradicts death (%s; gpu_util=%s, freshest log %ss ago, "
+        "output %ss ago) — refusing status=dead, reporting status=%s "
+        "(#2265, the #2223 false-dead class). Pid-file launch-contract "
+        "violation: identify the live workload (bracketed pgrep, "
+        "pod-side-reporting.md § Pid-file launch contract item 1d(a)), rewrite "
+        "the pid file with the live workload pid, and re-post epm:run-launched; "
+        "if NO live workload process exists, the evidence decays and dead "
+        "fires within ~stall_sec.",
+        pod,
+        "+".join(dead_veto_evidence),
+        gpu_util,
+        min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago),
+        output_mtime_ago,
+        STATUS_PID_STALE_WORKLOAD_LIVE,
+    )
+    return STATUS_PID_STALE_WORKLOAD_LIVE, stall_reason
+
+
 # ── GPU-idle advisory (incidents #518 + #537) ───────────────────────────────
 #
 # Minutes of sustained "healthy verdict + every GPU idle" before the poller
@@ -3858,129 +4085,53 @@ ETA_DEVIATION_MULT = float(os.environ.get("EPM_ETA_DEVIATION_MULT", "2.0"))
 # duplicate advisory marker (plan §12 assumption 14).
 ETA_RUN_TOTAL_KEY = "__run_total__"
 
-_LEADING_FLOAT_RE = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
-# A markdown |---|:---:|---| separator row: every pipe-split cell is only
-# whitespace / dashes / colons.
-_MD_SEPARATOR_CELL_RE = re.compile(r"[\s:\-]*")
-
-
-class _UnparseableWallRow(Exception):
-    """A located planned_wall_h data row yielded no leading float (AC #2)."""
-
-
-def _md_planned_wall_rows(plan_text: str) -> list[float]:
-    """Leading floats of every markdown-table planned_wall_h column cell.
-
-    Table-scoped: only rows FOLLOWING a ``|``-prefixed header line that
-    contains ``planned_wall_h`` are scanned, with the value-column index
-    DERIVED from that header's cell position (never a hardcoded ordinal).
-    Raises ``_UnparseableWallRow`` when ANY located data row's cell has no
-    leading float — the caller maps that to a disabled tripwire (``None``),
-    never a partial sum (AC #2).
-    """
-    rows: list[float] = []
-    lines = plan_text.splitlines()
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        if not (line.lstrip().startswith("|") and "planned_wall_h" in line):
-            i += 1
-            continue
-        header_cells = line.split("|")
-        col = next(idx for idx, c in enumerate(header_cells) if "planned_wall_h" in c)
-        j = i + 1
-        while j < len(lines) and lines[j].lstrip().startswith("|"):
-            cells = lines[j].split("|")
-            j += 1
-            if all(_MD_SEPARATOR_CELL_RE.fullmatch(c) for c in cells):
-                continue  # the |---|---| separator row
-            if col >= len(cells):
-                raise _UnparseableWallRow(lines[j - 1][:120])
-            m = _LEADING_FLOAT_RE.match(cells[col])
-            if not m:
-                raise _UnparseableWallRow(lines[j - 1][:120])
-            rows.append(float(m.group(1)))
-        i = j
-    return rows
-
-
-def _html_planned_wall_rows(plan_text: str) -> list[float]:
-    """Leading floats of every HTML-table planned_wall_h column cell.
-
-    The row scan is SCOPED to each ``<table>`` element whose ``<th>`` row
-    contains ``planned_wall_h`` (never a document-wide ``<td>`` scan), and
-    the value-column index is DERIVED from the ``<th>`` position (parity
-    with the markdown path). Raises ``_UnparseableWallRow`` on any located
-    data row whose cell has no leading float (AC #2).
-    """
-    rows: list[float] = []
-    for tbl_m in re.finditer(r"<table\b[^>]*>(.*?)</table>", plan_text, re.IGNORECASE | re.DOTALL):
-        tbl = tbl_m.group(1)
-        ths = re.findall(r"<th\b[^>]*>(.*?)</th>", tbl, re.IGNORECASE | re.DOTALL)
-        col = next((idx for idx, th in enumerate(ths) if "planned_wall_h" in th), None)
-        if col is None:
-            continue  # a table without the header never contributes
-        for tr_m in re.finditer(r"<tr\b[^>]*>(.*?)</tr>", tbl, re.IGNORECASE | re.DOTALL):
-            tds = re.findall(r"<td\b[^>]*>(.*?)</td>", tr_m.group(1), re.IGNORECASE | re.DOTALL)
-            if not tds:
-                continue  # the <th>-only header row
-            if col >= len(tds):
-                raise _UnparseableWallRow(tr_m.group(1)[:120])
-            cell = re.sub(r"<[^>]+>", "", tds[col])
-            m = _LEADING_FLOAT_RE.match(cell)
-            if not m:
-                raise _UnparseableWallRow(cell[:120])
-            rows.append(float(m.group(1)))
-    return rows
-
 
 def _parse_plan_wall_budget(plan_text: str) -> float | None:
     """Sum of §9 per-component planned_wall_h, or None when no row parses.
 
-    Handles the markdown pipe-table form (a ``|``-prefixed header line
-    containing ``planned_wall_h``) and the HTML ``<tr><th>``/``<td>`` form
-    (both exist in real plans — e.g. #779's live plan is HTML). CONTRACT
-    (critic round 1, AC #2):
-
-    - ALL tables carrying a planned_wall_h header are located and summed
-      (multi-stage plans, e.g. #479 Stage 1 + Stage 2 — a single-header
-      parse under-counts and false-fires).
-    - The value-column index is DERIVED from the header cell position in
-      BOTH formats (markdown pipe cells AND the HTML ``<th>`` row) — never
-      a hardcoded ordinal; the HTML row scan is SCOPED to the table element
-      containing the planned_wall_h ``<th>``, never a document-wide
-      ``<td>`` scan.
-    - Each data cell contributes its LEADING float ("3 (async, off-GPU)"
-      -> 3.0). If ANY located data row's planned_wall_h cell yields NO
-      leading float, return None (tripwire disabled, log once) — NEVER a
-      partial sum: an under-parsed budget is the one path to a false
-      positive.
-    - Returns None on zero located tables / zero data rows. Whole body
-      exception-wrapped: ANY parse error returns None (fail-safe OFF).
+    Thin delegation to the SHARED parser
+    :mod:`explore_persona_space.plan_wall_budget` (#2172 AC #4 — ONE home
+    for the wall-table locator + the cosmetic-prefix float rule, imported
+    by this poller AND ``verify_plan.py`` check c47, so the plan-time WARN
+    and the runtime disable can never drift). The full contract — ALL
+    planned_wall_h tables located and summed, header-derived table-scoped
+    value columns in both markdown + HTML forms, ANY unparseable located
+    cell -> None (NEVER a partial sum: an under-parsed budget is the one
+    path to a false positive, AC #2) — lives in that module's docstrings;
+    ``tests/test_poll_eta_tripwire.py`` pins it through this wrapper.
     """
-    try:
-        rows = _md_planned_wall_rows(plan_text) + _html_planned_wall_rows(plan_text)
-    except Exception:
-        return None
-    if not rows:
-        return None
-    return sum(rows) or None
+    return parse_plan_wall_budget(plan_text).total_h
 
 
-def _plan_total_wall_h_for_issue(issue: int) -> float | None:
-    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 total.
+def _plan_wall_budget_for_issue(issue: int) -> PlanWallBudget | None:
+    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 budget.
 
-    Fail-soft None on a missing task / missing plan / unreadable file /
-    unparseable table — the tripwire is then disabled for this run (AC #2).
-    ``plans/plan.md`` symlinks the highest plan version (D1).
+    The fail-soft I/O layer: ``None`` ONLY on a missing task / missing
+    plan / unreadable file (``plans/plan.md`` symlinks the highest plan
+    version, D1; the broad wrap also keeps a hypothetical parser crash
+    out of the poll tick, matching the pre-#2172 contract). A readable
+    plan always yields a :class:`PlanWallBudget`, whose ``reason`` lets
+    the caller tell an unparseable cell (LOUD disable, #2172 AC #5) from
+    a plan with no compute table (quiet disable — the normal
+    infra/analysis case).
     """
     try:
         plan = find_task_path(issue) / "plans" / "plan.md"
         if not plan.exists():
             return None
-        return _parse_plan_wall_budget(plan.read_text())
+        return parse_plan_wall_budget(plan.read_text())
     except Exception:
         return None
+
+
+def _plan_total_wall_h_for_issue(issue: int) -> float | None:
+    """The §9 planned_wall_h total for ``issue``, or None (tripwire off).
+
+    Thin wrapper over :func:`_plan_wall_budget_for_issue`, kept because
+    its fail-soft contract test calls it directly (AC #2).
+    """
+    budget = _plan_wall_budget_for_issue(issue)
+    return None if budget is None else budget.total_h
 
 
 @dataclass(frozen=True)
@@ -4069,6 +4220,74 @@ def _eta_deviation_update(
     return EtaDeviationUpdate(posts=tuple(posts))
 
 
+def _eta_disabled_note(budget: PlanWallBudget) -> str:
+    """Compose the AC #5 durable note for an unparseable-cell disable.
+
+    FIRST token is the fixed, greppable ``eta-tripwire-disabled`` (the
+    fixed-leading-token convention on an EXISTING marker kind — no new
+    marker kind, which would be a public API contract change; #2172 §11).
+    Row texts arrive pre-truncated (120 chars) from the shared parser.
+    """
+    offenders = " | ".join(repr(c.row_text) for c in budget.unparseable[:3])
+    more = f" (+{len(budget.unparseable) - 3} more)" if len(budget.unparseable) > 3 else ""
+    return (
+        "eta-tripwire-disabled: unparseable §9 planned_wall_h cell(s) — the phase-ETA"
+        " tripwire is OFF for this whole run (fail-safe, #873/#2172);"
+        f" {len(budget.rows)} parseable row(s) discarded with them."
+        f" Offending row(s): {offenders}{more}."
+        # NB: the range's en dash is written as a unicode escape — a
+        # literal trips RUF001 under the full-ruleset policy pin
+        # (tests/test_ruff_policy.py, #2179).
+        " Remedy: write a bare float, a `≤X` bound, or an `A\u2013B` range"
+        " (the upper bound is used) in the `planned_wall_h` cell; put the"
+        " conditionality in the `basis` cell."
+    )
+
+
+def _eta_budget_disabled(
+    *,
+    issue: int,
+    budget: PlanWallBudget | None,
+    budget_warned: bool,
+    current_phase: str,
+    pod: str,
+) -> bool:
+    """Handle a disabled ETA budget; returns the new ``budget_warned``.
+
+    Once per run (state-flag-backed): the one INFO line always logs; an
+    ``unparseable_cell`` budget ADDITIONALLY posts a durable
+    ``epm:progress`` marker naming the offending row(s) (#2172 AC #5 —
+    pre-#2172 the degradation was ONE stdout line nobody read: #2163's
+    parenthesized ``(1.5)`` cell silently cost a ~6h run its backstop).
+    A ``no_table`` budget — or an unreadable plan (``budget is None``) —
+    logs only: an infra/analysis plan with no §9 compute table is the
+    normal case, and a marker there would post noise on every such task,
+    every run. On a marker-post failure the flag stays UNSET so the next
+    tick retries (the ``epm:compute-deviation`` post's retry contract).
+    """
+    if budget_warned:
+        return True
+    log.info(
+        "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
+        issue,
+    )
+    if budget is None or budget.reason != "unparseable_cell":
+        return True
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=_eta_disabled_note(budget),
+            phase=current_phase,
+            pod=pod,
+        )
+    except Exception as exc:
+        log.error("eta-tripwire-disabled progress post failed (next tick will retry): %s", exc)
+        return False
+    return True
+
+
 def _maybe_post_eta_deviation(
     *,
     issue: int,
@@ -4083,16 +4302,20 @@ def _maybe_post_eta_deviation(
     """ETA-tripwire wiring for ``poll_once``: parse state, decide, maybe post.
 
     Returns ``(posted_keys, posted_this_tick, budget_warned)`` for the
-    caller to persist via ``_save_state``. The caller applies the run-scope
-    reset (:func:`_tripwire_run_scope`, AC #6) BEFORE this call, so
-    ``prev_state`` is already scoped to the current run. Fail-soft
-    everywhere: a missing / unparseable plan budget disables the tripwire
-    with ONE logged line per run (state-flag-backed); a marker-post failure
-    is logged and the dedup key is NOT recorded, so the next tick retries.
-    Never flips ``status``, never stops anything. Phase start resolves to
-    ``last_phase_change_epoch`` when a boundary was observed this run, else
-    the run-launch epoch (``now - run_age_sec``), else 0 (phase check
-    skipped — fail-safe, D2).
+    caller to persist via ``_save_state`` (``posted_this_tick`` counts
+    ``epm:compute-deviation`` posts ONLY — never the AC #5 disable note).
+    The caller applies the run-scope reset (:func:`_tripwire_run_scope`,
+    AC #6) BEFORE this call, so ``prev_state`` is already scoped to the
+    current run. Fail-soft everywhere: a missing / unparseable plan budget
+    disables the tripwire with ONE logged line per run (state-flag-backed;
+    an UNPARSEABLE-cell budget additionally posts one durable
+    ``epm:progress`` note naming the offending rows —
+    :func:`_eta_budget_disabled`, #2172 AC #5); a marker-post failure is
+    logged and the dedup key / warn flag is NOT recorded, so the next tick
+    retries. Never flips ``status``, never stops anything. Phase start
+    resolves to ``last_phase_change_epoch`` when a boundary was observed
+    this run, else the run-launch epoch (``now - run_age_sec``), else 0
+    (phase check skipped — fail-safe, D2).
     """
     posted_keys = {
         k for k in (prev_state.get("eta_deviation_posted_keys", "") or "").split(",") if k
@@ -4100,15 +4323,17 @@ def _maybe_post_eta_deviation(
     budget_warned = prev_state.get("eta_budget_warned", "0") == "1"
     if ETA_DEVIATION_MULT <= 0:
         return posted_keys, False, budget_warned
-    total = _plan_total_wall_h_for_issue(issue)
-    if total is None:
-        if not budget_warned:
-            log.info(
-                "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
-                issue,
-            )
-            budget_warned = True
+    budget = _plan_wall_budget_for_issue(issue)
+    if budget is None or budget.total_h is None:
+        budget_warned = _eta_budget_disabled(
+            issue=issue,
+            budget=budget,
+            budget_warned=budget_warned,
+            current_phase=current_phase,
+            pod=pod,
+        )
         return posted_keys, False, budget_warned
+    total = budget.total_h
     if last_phase_change_epoch > 0:
         phase_started_epoch = last_phase_change_epoch
     elif run_age_sec is not None:
@@ -4753,7 +4978,7 @@ def _load_state(state_file: Path, issue: int) -> dict[str, str]:
         return {}
     try:
         data = json.loads(state_file.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         log.warning("state file %s unreadable; treating as empty", state_file)
         return {}
     return data.get(str(issue), {})
@@ -4765,7 +4990,7 @@ def _save_state(state_file: Path, issue: int, payload: dict[str, str]) -> None:
     if state_file.exists():
         try:
             all_state = json.loads(state_file.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             all_state = {}
     all_state[str(issue)] = payload
     tmp = state_file.with_suffix(state_file.suffix + ".tmp")
@@ -5539,7 +5764,7 @@ def poll_once(
     # fields — empty on the common free-prose markers, leaving every
     # signature consumer inert — feeding the cmdline identity check + the
     # alive-direction pattern-probe rescue below.
-    marker_pid, marker_note = _marker_launch_fields(issue)
+    marker_pid, marker_note = _marker_launch_fields(issue, pod=pod)
     sig_tokens = _launch_signature_tokens(marker_note, issue) if _pid_identity_enabled() else ()
     sig_pattern = _sig_pgrep_pattern(sig_tokens)
     probe = _ssh_probe(
@@ -5694,6 +5919,10 @@ def poll_once(
     # pidfile alone never declares a live marker-PID run dead. The
     # `current_phase == "done"` precedence already covers the
     # "log-shows-completion" half: a completed run is `done`, never `dead`.
+    # #2265 extends the requirement: `dead` ALSO needs NO corroborating
+    # same-tick liveness evidence (busy GPU / fresh log / fresh issue-keyed
+    # output) — with evidence present the arm reports the non-terminal
+    # `pid-stale-workload-live` instead (`_pid_dead_verdict`).
     #
     # `stalled` requires ALL SIX liveness-of-output signals to agree:
     # the top-level log AND the freshest cell log (folded together as
@@ -5767,12 +5996,28 @@ def poll_once(
     # GPUs idle). Healthy, but a degraded-observability regime — the
     # adaptive interval (§7) keeps such ticks on the short interval.
     cpu_override_active = False
+    # #2265: initialized BEFORE the chain so both the pid-dead veto arm and
+    # `_apply_zombie_override` can set it (pre-#2265 it was born inside the
+    # override call's return).
+    stall_reason: str | None = None
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
         status = "done"
     elif not pid_alive:
-        status = "dead"
+        # #2265 dead-verdict evidence veto: `dead` only when the same tick
+        # carries NO affirmative liveness evidence (busy GPU / fresh log /
+        # fresh issue-keyed output); else the non-terminal
+        # `pid-stale-workload-live` + `stall_reason=pid_dead_evidence:<...>`.
+        status, stall_reason = _pid_dead_verdict(
+            pod=pod,
+            last_mtime_ago=last_mtime_ago,
+            phase_log_mtime_ago=phase_log_mtime_ago,
+            shard_log_mtime_ago=shard_log_mtime_ago,
+            output_mtime_ago=output_mtime_ago,
+            gpu_util=gpu_util,
+            stall_sec=stall_sec,
+        )
     elif (
         last_mtime_ago > stall_sec
         and phase_log_mtime_ago > stall_sec
@@ -5800,7 +6045,11 @@ def poll_once(
     # ── #664/#826 zombie-GPU-allocation override ─────────────────────────
     # Extracted to `_apply_zombie_override` (both for C901 headroom and so
     # the firing predicate is documented in one place — see its docstring).
-    status, stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak = (
+    # #2265: the override's returned stall_reason OVERWRITES only when set —
+    # its fire condition is `status == "running" and zombie_gpu_pids`, so on
+    # a `pid-stale-workload-live` tick it returns (status, None, ...)
+    # unchanged and the veto's `pid_dead_evidence:` reason survives.
+    status, zr_stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak = (
         _apply_zombie_override(
             status=status,
             zombie_gpu_pids=zombie_gpu_pids,
@@ -5821,6 +6070,7 @@ def poll_once(
             gpu_idle=gpu_idle,
         )
     )
+    stall_reason = zr_stall_reason or stall_reason
 
     # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
     # A fresh epm:run-launched (relaunch / same-issue follow-up round)
@@ -5838,7 +6088,7 @@ def poll_once(
     # #983 post-done guard below deliberately keep reading the RAW
     # ``prev_state`` (zombie_streak scoping is out of #1033's scope; the
     # post-done guard has its own natural epoch).
-    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    run_age_sec = _run_launched_age_sec(issue, now_epoch, pod=pod)
     # ── #1156 stale-pid-file-vs-marker WARN (observability-only) ─────────
     # Placed here (not at the #521 pid_file_missing block above) so it
     # reuses run_age_sec — keeping the "one events.jsonl read per tick"

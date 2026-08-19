@@ -1,0 +1,136 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-14T11:02:21Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "ff0775a0",
+  "git_dirty": false,
+  "behaviors": {
+    "evil": {
+      "label": "H2",
+      "reason": "pre-image does not clear the null band while ctxext does",
+      "margins": {
+        "E_pre": {
+          "value": 0.0,
+          "cell_id": "evil__pre__ctx__L14__c0p5",
+          "ci": [
+            0.0,
+            0.0
+          ],
+          "band_p975": 0.0
+        },
+        "E_ctxdir": {
+          "value": 2.458555555555556,
+          "cell_id": "evil__cxd__ctx__L14__c4",
+          "ci": [
+            0.829875,
+            4.67926111111111
+          ],
+          "band_p975": 0.0
+        },
+        "C_gap": {
+          "value": -2.458555555555556,
+          "ci": [
+            -4.687791666666667,
+            -0.7548750000000009
+          ]
+        }
+      },
+      "null_band_context": {
+        "p50": 0.0,
+        "p975": 0.0,
+        "n_cells": 6,
+        "n_draws": 2000
+      },
+      "selection_inherited": {
+        "pre__context": {
+          "ci": [
+            0.0,
+            0.0
+          ],
+          "label": "selection_inherited (localize grid, n_q=10, n_cells=48)"
+        },
+        "ctxext__context": {
+          "ci": [
+            0.8333333333333334,
+            7.833333333333333
+          ],
+          "label": "selection_inherited (localize grid, n_q=10, n_cells=48)"
+        },
+        "rb__answer": {
+          "ci": [
+            100.0,
+            100.0
+          ],
+          "label": "selection_inherited (localize grid, n_q=10, n_cells=48)"
+        }
+      },
+      "ci_label_note": "margin CIs are frozen-at-operating-point (decisive grid, n_q=20) shifted by the null band; selection_inherited entries re-argmax the localize grid per draw"
+    },
+    "sycophancy": {
+      "label": "H2",
+      "reason": "pre-image does not clear the null band while ctxext does",
+      "margins": {
+        "E_pre": {
+          "value": -4.248475000000003,
+          "cell_id": "sycophancy__pre__ctx__L17__c4",
+          "ci": [
+            -6.663225000000001,
+            -1.6466749999999966
+          ],
+          "band_p975": 10.890474999999999
+        },
+        "E_ctxdir": {
+          "value": 25.106524999999994,
+          "cell_id": "sycophancy__cxd__ctx__mid__c4",
+          "ci": [
+            17.693249999999995,
+            31.743550000000003
+          ],
+          "band_p975": 10.890474999999999
+        },
+        "C_gap": {
+          "value": -29.354999999999997,
+          "ci": [
+            -36.440925,
+            -22.155850000000004
+          ]
+        }
+      },
+      "null_band_context": {
+        "p50": 7.7864999999999975,
+        "p975": 10.890474999999999,
+        "n_cells": 6,
+        "n_draws": 2000
+      },
+      "selection_inherited": {
+        "pre__context": {
+          "ci": [
+            5.1111111111111125,
+            12.833333333333334
+          ],
+          "label": "selection_inherited (localize grid, n_q=10, n_cells=48)"
+        },
+        "ctxext__context": {
+          "ci": [
+            19.887222222222224,
+            41.046388888888885
+          ],
+          "label": "selection_inherited (localize grid, n_q=10, n_cells=48)"
+        },
+        "rb__answer": {
+          "ci": [
+            74.10902777777778,
+            92.00138888888888
+          ],
+          "label": "selection_inherited (localize grid, n_q=10, n_cells=48)"
+        }
+      },
+      "ci_label_note": "margin CIs are frozen-at-operating-point (decisive grid, n_q=20) shifted by the null band; selection_inherited entries re-argmax the localize grid per draw"
+    },
+    "hallucination": {
+      "label": "Undefined",
+      "reason": "behavior skipped at wave-1 gates (gate 2/3)"
+    }
+  }
+}

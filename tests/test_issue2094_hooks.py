@@ -213,10 +213,160 @@ def test_replace_sets_state_exactly(tiny_model):
     assert torch.equal(diff0[~touched], torch.zeros_like(diff0[~touched]))
 
 
-def test_replace_requires_exactly_one_position_per_row(tiny_model):
+def test_replace_multi_position_sets_each_state(tiny_model):
+    """#2162 tbmp blocker A: replace mode accepts one OR MORE positions per row."""
+    input_ids, mask = _left_pad_batch(ROW_LENGTHS)
+    T = input_ids.shape[1]
+    positions = [[1, 4], [0, 3, 7], [2]]
+    deltas = _deltas([2, 3, 1], seed=13)
+
+    base = _forward_capture(tiny_model, input_ids, mask, [0])
     hook = PositionEditHook(tiny_model, layer=0)
-    with pytest.raises(AssertionError, match="exactly ONE position"):
-        hook.arm_batch([5], [[1, 2]], _deltas([2]), mode="replace")
+    hook.arm_batch(ROW_LENGTHS, positions, deltas, mode="replace", alpha=1.0)
+    with hook:
+        hook.arm(expected_prompt_len=T)
+        edited = _forward_capture(tiny_model, input_ids, mask, [0])
+
+    touched = torch.zeros(edited[0].shape[:2], dtype=torch.bool)
+    for b, (rl, pos, d) in enumerate(zip(ROW_LENGTHS, positions, deltas, strict=True)):
+        for j, p in enumerate(pos):
+            pp = _padded(rl, p, T)
+            touched[b, pp] = True
+            assert torch.equal(edited[0][b, pp], d[j].to(edited[0].dtype)), (b, p, pp)
+    diff0 = edited[0] - base[0]
+    assert torch.equal(diff0[~touched], torch.zeros_like(diff0[~touched]))
+
+
+# ── #2162 tbmp P0 tests (pre-registered, plan §4.2 blocker A) ─────────
+#
+# Exercised through the REUSED production wrapper `_arm_hook_all_layers`
+# (scripts/issue2162_run.py) — the exact dispatch path the tb grid runs.
+
+
+def _tbmp_run_module():
+    import sys
+    from pathlib import Path
+
+    scripts = Path(__file__).resolve().parents[1] / "scripts"
+    if str(scripts) not in sys.path:
+        sys.path.insert(0, str(scripts))
+    import issue2162_run as R
+
+    return R
+
+
+def _tbmp_cfg(R, tmp_path):
+    args = R.parse_args(
+        [
+            "--phase",
+            "grid",
+            "--tiny",
+            "--tiny-layers",
+            "2",
+            "--tiny-hidden",
+            str(H),
+            "--out-root",
+            str(tmp_path / "out"),
+            "--log-dir",
+            str(tmp_path / "logs"),
+        ]
+    )
+    return R.build_config(args)
+
+
+def _payloads_3d(pos_counts: list[int], n_layers: int = 2, seed: int = 40) -> list[torch.Tensor]:
+    """Per-row ``(n_pos, L, H)`` payloads (the tb-bank boundary-state shape)."""
+    g = torch.Generator().manual_seed(seed)
+    return [torch.randn(n, n_layers, H, generator=g) for n in pos_counts]
+
+
+def test_p0a_multi_position_replace_through_arm_hook_all_layers(tiny_model, tmp_path):
+    """P0 (a) defect-repro: a len-2 position tuple through `_arm_hook_all_layers`
+    PASSES post-fix (pre-fix: AssertionError 'exactly ONE position per row')."""
+    R = _tbmp_run_module()
+    cfg = _tbmp_cfg(R, tmp_path)
+    input_ids, mask = _left_pad_batch(ROW_LENGTHS)
+    T = input_ids.shape[1]
+    positions = [(2, 4), (1, 7), (0, 2)]
+    payloads = _payloads_3d([2, 2, 2])
+
+    stack = R._arm_hook_all_layers(tiny_model, cfg, ROW_LENGTHS, positions, payloads, T)
+    try:
+        edited = _forward_capture(tiny_model, input_ids, mask, [0, 1])
+    finally:
+        stack.remove()
+    for b, (rl, pos, p3) in enumerate(zip(ROW_LENGTHS, positions, payloads, strict=True)):
+        for j, p in enumerate(pos):
+            pp = _padded(rl, p, T)
+            for layer in (0, 1):
+                assert torch.equal(edited[layer][b, pp], p3[j, layer].to(edited[layer].dtype)), (
+                    b,
+                    p,
+                    layer,
+                )
+
+
+def test_p0b_len1_replace_bit_exact_vs_single_position_semantics(tiny_model, tmp_path):
+    """P0 (b): len-1 replace through the extended path is BIT-EXACT — the edited
+    layer output equals the base output with EXACTLY the one slot replaced."""
+    R = _tbmp_run_module()
+    cfg = _tbmp_cfg(R, tmp_path)
+    input_ids, mask = _left_pad_batch(ROW_LENGTHS)
+    T = input_ids.shape[1]
+    positions = [(4,), (7,), (1,)]
+    payloads = _payloads_3d([1, 1, 1], seed=41)
+
+    base = _forward_capture(tiny_model, input_ids, mask, [0])
+    expected = base[0].clone()
+    for b, (rl, pos, p3) in enumerate(zip(ROW_LENGTHS, positions, payloads, strict=True)):
+        expected[b, _padded(rl, pos[0], T)] = p3[0, 0].to(expected.dtype)
+    stack = R._arm_hook_all_layers(tiny_model, cfg, ROW_LENGTHS, positions, payloads, T)
+    try:
+        edited = _forward_capture(tiny_model, input_ids, mask, [0])
+    finally:
+        stack.remove()
+    assert torch.equal(edited[0], expected)  # bit-exact single-position semantics
+
+
+def test_p0c_joint_equals_composition_of_singles_one_forward(tiny_model):
+    """P0 (c): joint multi-position replace == composition of single-position
+    replaces WITHIN ONE FORWARD (sequentially-registered hooks on the same
+    module compose bit-exactly; disjoint positions are independent writes)."""
+    input_ids, mask = _left_pad_batch(ROW_LENGTHS)
+    T = input_ids.shape[1]
+    p1 = [[1], [0], [0]]
+    p2 = [[4], [7], [2]]
+    d1 = _deltas([1, 1, 1], seed=51)
+    d2 = _deltas([1, 1, 1], seed=52)
+
+    # Joint: ONE hook replacing both positions per row.
+    joint = PositionEditHook(tiny_model, layer=0)
+    joint.arm_batch(
+        ROW_LENGTHS,
+        [a + b for a, b in zip(p1, p2, strict=True)],
+        [torch.cat([a, b], dim=0) for a, b in zip(d1, d2, strict=True)],
+        mode="replace",
+    )
+    with joint:
+        joint.arm(expected_prompt_len=T)
+        out_joint = _forward_capture(tiny_model, input_ids, mask, [0])
+
+    # Composition: TWO hooks on the SAME module, registered sequentially,
+    # each replacing one position — one forward.
+    h1 = PositionEditHook(tiny_model, layer=0)
+    h2 = PositionEditHook(tiny_model, layer=0)
+    h1.arm_batch(ROW_LENGTHS, p1, d1, mode="replace")
+    h2.arm_batch(ROW_LENGTHS, p2, d2, mode="replace")
+    h1.install()
+    h2.install()
+    try:
+        h1.arm(expected_prompt_len=T)
+        h2.arm(expected_prompt_len=T)
+        out_comp = _forward_capture(tiny_model, input_ids, mask, [0])
+    finally:
+        h1.remove()
+        h2.remove()
+    assert torch.equal(out_joint[0], out_comp[0])  # bit-exact composition
 
 
 # ── joint-layer stack ─────────────────────────────────────────────────

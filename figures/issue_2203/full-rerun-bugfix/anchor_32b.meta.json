@@ -1,0 +1,148 @@
+{
+  "commit": "90d3f27e+dirty",
+  "render_id": "9381cc0402854e02",
+  "git_commit": "90d3f27e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/feedback_capping_steering_plan_stats_traps.md",
+    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.pdf",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.png",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.pdf",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.png",
+    "scripts/issue2203_figures.py"
+  ],
+  "created": "2026-08-11T21:45:44Z",
+  "figsize": [
+    8.6,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Baseline",
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.01417004048582996,
+      "error": 0.010422673866873006,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Cap all-token",
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.004024144869215292,
+      "error": 0.005565947243142995,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Cap context",
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.008097165991902834,
+      "error": 0.007903030966639434,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0037473666189569536,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": -0.0015418023739277031,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.00019413502526340054,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.024592714352702966,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.009590092112358287,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.016000196958542268,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "Baseline",
+      "Fraction of completions containing CJK script": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Cap all-token",
+      "Fraction of completions containing CJK script": 0.002,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Cap context",
+      "Fraction of completions containing CJK script": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen-3-32B, Lu et al. published vectors",
+        "ylabel": "Jailbreak harmful-response rate (\u2193 safer)",
+        "xticklabels": [
+          "Baseline",
+          "Cap all-token",
+          "Cap context"
+        ],
+        "yticklabels": [
+          "\u22120.005",
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030"
+        ]
+      },
+      {
+        "title_left": "Same arms, CJK-intrusion view",
+        "ylabel": "Fraction of completions containing CJK script",
+        "xticklabels": [
+          "Baseline",
+          "Cap all-token",
+          "Cap context"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

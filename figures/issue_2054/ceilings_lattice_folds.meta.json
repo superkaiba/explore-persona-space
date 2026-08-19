@@ -1,0 +1,1735 @@
+{
+  "commit": "230a8ea5+dirty",
+  "git_commit": "230a8ea5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-07T14:23:21Z",
+  "figsize": [
+    8.2,
+    4.2
+  ],
+  "points": [
+    {
+      "lattice cell (sorted by mean ceiling)": 0.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1220377142260366,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 0.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.12579597023322542,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 0.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.12487005836465637,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 0.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.12380481199170024,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 0.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1243816923530443,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 1.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1625101901236592,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 1.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.16950127995332442,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 1.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.16723141669551023,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 1.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1776953963819482,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 1.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.16738143183849852,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 2.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.17381401861593104,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 2.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1831188512541565,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 2.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1848624751475756,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 2.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1857080691257641,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 2.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1767885968466405,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 3.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.19109920608763253,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 3.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.19500344330171837,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 3.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.19387407394585343,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 3.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.1871119211947,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 3.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.19167291541381992,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 4.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20618736909368252,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 4.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20396553567285625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 4.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2002542063616084,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 4.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.19787325830116698,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 4.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20284162539003425,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 5.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20856492767057844,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 5.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20615954969385253,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 5.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2106930104563468,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 5.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20423663662892466,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 5.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20715026221424848,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 6.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20667100762717572,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 6.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20601038814548644,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 6.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.20453976808071017,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 6.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2111991912303237,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 6.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2156876163729412,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 7.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.217730832177371,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 7.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2120097620989393,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 7.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21070614653182906,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 7.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2118914346176708,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 7.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21343619660326552,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 8.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21731665982432047,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 8.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22222466630053705,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 8.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21699600178851697,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 8.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21893114329571284,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 8.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21746334954799007,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 9.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22569445623568096,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 9.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22282442230938926,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 9.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22427203978309096,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 9.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21489410053115987,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 9.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22504768636757444,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 10.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.21911941682466063,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 10.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2325346224369751,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 10.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2283568882255701,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 10.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22323213035123568,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 10.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2240009102523428,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 11.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2171317226070696,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 11.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.23109186242154034,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 11.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22820389452609136,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 11.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22881777122865432,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 11.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2296099625453133,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 12.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22743016990469123,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 12.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.23327543830515918,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 12.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2366565543908853,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 12.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22834377260574257,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 12.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22718644410327204,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 13.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2332608677865905,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 13.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22860676714211658,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 13.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2362208135332311,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 13.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.23299814761797577,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 13.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.228548050171693,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 14.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22846395771895667,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 14.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.23866087046082451,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 14.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.23570498947311913,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 14.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.23315934738373156,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 14.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.22835561491279,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 15.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.23712307702501378,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 15.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2393505575277446,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 15.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2432745828207783,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 15.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.245083566074343,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 15.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.24391528434088328,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 16.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2432494856812465,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 16.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.24539557734938044,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 16.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2514580440863834,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 16.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.24730629741481447,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 16.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.24688081770058412,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 17.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.24809510922171407,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 17.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2407076886126548,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 17.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2537706730966598,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 17.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.24237993661544277,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 17.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2499032676506444,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 18.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.24308271377768176,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 18.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26172637811761357,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 18.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2544348267571711,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 18.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25236332421711893,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 18.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25410391573860025,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 19.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25776955649556843,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 19.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2589650537856194,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 19.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2652408757077164,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 19.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25216660347636066,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 19.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25606255313367776,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 20.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2556291124907434,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 20.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25408888419281306,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 20.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26535049945195377,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 20.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26405509429156304,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 20.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2527685073026449,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 21.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25395077392796095,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 21.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2609577235508661,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 21.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2589317524991773,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 21.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25742652862326665,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 21.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2654119194778257,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 22.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2610200613498086,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 22.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26159706351593603,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 22.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2670136627573424,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 22.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25451560904994186,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 22.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25598058580549077,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 23.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25966931737736887,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 23.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.25934316758887377,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 23.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2671418725134407,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 23.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2696498387906888,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 23.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2575007966820835,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 24.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26062455706301635,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 24.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26320477588511504,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 24.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27112926531160664,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 24.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26503947886684587,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 24.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26176864581891024,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 25.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2845177688168752,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 25.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.26673407889829814,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 25.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2816285360961792,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 25.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2790909002142843,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 25.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27668334398418415,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 26.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27784251418891015,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 26.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.28354952202290085,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 26.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2820816327036393,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 26.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27926777243650247,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 26.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27322335157095,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 27.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.28257079275519925,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 27.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2807600093073599,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 27.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27524476093273875,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 27.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27794586862362325,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 27.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2828891024085177,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 28.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2852107910711733,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 28.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27943089962703427,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 28.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.27925533023491445,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 28.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.28293761306107956,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 28.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2882835794459919,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 29.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.28283957928556236,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 29.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.28561885205941784,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 29.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2850055006234541,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 29.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2858586748078086,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 29.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2792202433622474,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 30.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.29581489284549456,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 30.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.29562389513274934,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 30.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.29289864156966317,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 30.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.297835281927591,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 30.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2884111042094203,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 31.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.28967804188391666,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 31.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.29289062511583697,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 31.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.29797488284357576,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 31.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2948957893240918,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 31.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.30564666611642555,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 32.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.30011258683845055,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 32.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2960652407570279,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 32.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.29810220169299084,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 32.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.2998308432122897,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 32.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.30112146250959626,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 33.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3062568179929396,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 33.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3028093591170935,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 33.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.30430716782139766,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 33.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.30756483979059723,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 33.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.31044832403601097,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 34.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.31901971343239965,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 34.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.321576141757113,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 34.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.33058191410570625,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 34.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3303956250354948,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 34.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.32208989488510764,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 35.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.32388573547164945,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 35.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.32507240180691843,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 35.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3219791661955399,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 35.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3421514714971745,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 35.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3232680357167911,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 36.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3299655468118985,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 36.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3355286239460661,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 36.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.33947270293248577,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 36.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.33870885793999783,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 36.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3343381522285882,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 37.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3344031513382373,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 37.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.33906213079153047,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 37.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3427249452218123,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 37.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.339600347325528,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 37.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.33700704918239177,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 38.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.351690295024058,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 38.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3501387691158757,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 38.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.35849198558780104,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 38.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36330736539788167,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 38.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.35035238508076405,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 39.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3600328736006988,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 39.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.34938998616228134,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 39.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3560707462625071,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 39.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3599148193677234,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 39.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.35418428716113537,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 40.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.35350995866735246,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 40.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.35186849104245654,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 40.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3593857443591907,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 40.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36446548461286077,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 40.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3525398289892284,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 41.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3569873010918668,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 41.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.35783822591385417,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 41.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3563794770036953,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 41.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36366225771111116,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 41.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3525122099996719,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 42.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3650800711904909,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 42.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3569106264358274,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 42.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3625618990160082,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 42.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3640419066032312,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 42.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3563551124489053,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 43.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.35854904263177156,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 43.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3666515179023567,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 43.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3711890110403552,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 43.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3640772557288424,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 43.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36345283555955943,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 44.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36234364013718756,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 44.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36978521224933825,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 44.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3747726619712113,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 44.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36564886620439496,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 44.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3656492667166802,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 45.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.368621378255788,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 45.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3695842781008818,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 45.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.36948329569661564,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 45.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3719268259822961,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 45.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3684200034299585,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 46.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38015508349967386,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 46.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.37205465178537744,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 46.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3786483843732399,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 46.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3828207713881654,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 46.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38134098352680035,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 47.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.380436070228651,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 47.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.37608610341314563,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 47.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.37951522382606684,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 47.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3863128354569144,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 47.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38189166282481546,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 48.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38395284575319455,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 48.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3785830514865013,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 48.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.381941208237468,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 48.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3873944679215827,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 48.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38337027245587163,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 49.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3853364946327068,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 49.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3852420366814825,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 49.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38389556607954645,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 49.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3889840128906752,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 49.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38495472280555043,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 50.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38585555227799306,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 50.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38684430139984705,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 50.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.3838640753876249,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 50.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38980167705254964,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 50.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.38628783056321847,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 51.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.414144064685424,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 51.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4085601707308162,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 51.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4121728544890173,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 51.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.41060378164766687,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 51.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4096237966853308,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 52.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.44716527966350117,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 52.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.44369691088969865,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 52.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.44330509349517033,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 52.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4453467758782652,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 52.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4435320952656956,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 53.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4652508868439559,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 53.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4650094653347908,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 53.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.46382600445480227,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 53.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4641823896331524,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 53.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4630100942514609,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 54.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4947448766277378,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 54.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4914248540152918,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 54.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4926195052810065,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 54.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4920308965420399,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 54.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.4898426889098322,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 55.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.5681834890574653,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 55.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.5806384426802523,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 55.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.5824730066557806,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 55.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.5869187982537366,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "lattice cell (sorted by mean ceiling)": 55.0,
+      "per-fold held-out R\u00b2 (ambient)": 0.5802844479926047,
+      "_kind": "scatter",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 280,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-fold ceilings behind the lattice summary",
+        "xlabel": "lattice cell (sorted by mean ceiling)",
+        "ylabel": "per-fold held-out R\u00b2 (ambient)",
+        "legend_labels": [
+          "instruct",
+          "base"
+        ],
+        "annotations": [
+          "5 shared conversation-grouped folds per cell, 56 cells"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}

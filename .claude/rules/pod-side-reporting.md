@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, sentinel READ-BACK tolerance under the .processed drain-rename #1311) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + full-stdio-detach on ssh-remote (re)launch (#1768) + result-push verification (#1205) + legacy preflight gates (#829)
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, sentinel READ-BACK tolerance under the .processed drain-rename #1311) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + full-stdio-detach on ssh-remote (re)launch (#1768) + result-push verification (#1205) + legacy preflight gates (#829) + continuation-runbook verified-by: ran|read provenance (#2044)
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -41,7 +41,12 @@ marker will be silently skipped. Three requirements, no exceptions:
    default run + the `workflow-lint-phase-done-reserved` pre-commit hook
    on any `scripts/*.sh|py` change): a `[phase=done]` emission in a phase
    script invoked non-redirected by a `scripts/**/*.sh` dispatcher FAILs;
-   legacy edges are frozen in `PHASE_DONE_EDGE_LEGACY_ALLOWLIST`.
+   legacy edges are frozen in `PHASE_DONE_EDGE_LEGACY_ALLOWLIST`. A
+   mode-gated standalone-lane terminal is waivable with
+   `# workflow-lint: phase-done-reserved` (preferred, ruff-clean; the
+   legacy `# noqa: phase-done-reserved` form stays honored) on the
+   emission line or the immediately preceding non-blank line; the waiver
+   comment must name the intended mode/invoker.
 
 2. **End-of-run sentinel with poll_pipeline's required keys.** Write the
    final results sentinel to `/workspace/logs/issue-<N>-<kind_slug>-
@@ -190,6 +195,59 @@ gate-report JSON and exits a DISTINCT rc the driver routes like its other
 stop criteria, never a bare rc=1 (which the poller classifies as an
 anonymous crash). Full convention + the #1415 incident:
 `.claude/rules/gotchas.md` § pilot timing gates.
+
+### Pod-side HOLD/gate emissions must arm a VM-side re-drive at emission time (#2135, #1947)
+
+Any pod-side HOLD / designed-halt park that leaves the pod RUNNING pending
+a decision (a pilot cost-review HOLD, any gate that waits for a verdict
+rather than exiting the workload) is INCOMPLETE until the emitting/
+launching session arms a VM-side owner IN THE SAME STEP: post an
+`epm:progress` hold note on the task naming (a) the gate, (b) the deciding
+actor, (c) the wakeup mechanism — and ARM that wakeup. **The armed wakeup
+must be one that will actually surface THIS hold to the deciding actor** —
+the surfacing property binds whichever rung is named:
+
+- a bg-Bash poll chain qualifies only if its poller SURFACES the hold as a
+  gate/park (a `status=running` read over a parked workload does not
+  count);
+- a bounded Monitor until-loop qualifies only if its condition keys on the
+  hold state itself (the hold sentinel / gate-report file), not on generic
+  process liveness;
+- the `/issue-tick` backstop cron qualifies ONLY when the hold is emitted
+  machine-legibly — as a blocking-gate sentinel (`gate=<name>`,
+  `blocks_pipeline: true`; the sentinel shape this rule already defines)
+  or a gate-status park the tick triage reads. `tick_triage.py` keys on
+  task status, marker staleness, and pid breadcrumbs — it cannot see a
+  bespoke log-line HOLD on a `status=running` task, so naming the tick as
+  the wakeup for a log-line HOLD does NOT discharge this duty.
+
+Consequently the sentinel-shape emission is REQUIRED — not guidance —
+whenever the named wakeup cannot itself read a bespoke log line (in
+particular the tick-cron rung); it is the PREFERRED shape everywhere (a
+log-line HOLD is invisible to the poller's gate machinery — exactly how
+pod-1947-r3, 8xH200 at ~$32/h, parked at its designed circuit-breaker log
+line and burned ~10h undetected). A HOLD emission with no armed, surfacing
+VM-side reviewer is a launch-contract violation — same class as a stale
+pid file — and watcher-escalation material.
+
+### Post-provision launch-confirmation window (#2135, #1947)
+
+Provision/bootstrap completion starts a launch-confirmation window
+(default ~15 min; size it ≥2x the expected dispatch latency and state the
+deviation in the launch note). Within the window the owning session
+verifies a LIVE workload pid + the FIRST log line (the experimenter's
+existing separate-SSH confirm) and records both in the `epm:run-launched`
+note — alongside the existing `pid=` / `log_abs=` fields, a
+`launch_confirmed=pid+log@<utc-ts>` token — or, when the initial
+`epm:run-launched` legitimately predates the launch (the CLAUDE.md
+pod-safety pre-launch-signal case), in an append-only FOLLOW-UP marker
+carrying the `launch_confirmed=` token (markers are append-only; never
+edit the earlier note). Window lapse with NO workload (no pid file, no
+logs dir) ⇒ escalate loudly in the same turn: post an
+`epm:progress`/`epm:failure` note naming the idle pod + its hourly burn
+and route to stop/terminate per the existing gates — never leave a
+bootstrapped pod idle awaiting a dispatch that never fired (pod-1947-loc:
+4xH200, bootstrapped then ~6h idle — no logs dir, no processes).
 
 ### Pid-file launch contract — rewrite on EVERY (re)launch (#813, #451, #521)
 
@@ -441,8 +499,47 @@ TWO mechanical rescues ARE verdict-bearing: the marker-pid OR-probe (while
 the newest marker's pid is itself alive), and the #1650 signature rescue
 (`sig_proc_rescue`, alive-direction only; kill switch
 `EPM_POLL_PID_IDENTITY=0`). On a free-prose marker (no signature fields)
-the pre-#1650 residual stands: a wrong-and-dead pid in BOTH the file and
-the marker still reads `dead`.
+with a wrong-and-dead pid in BOTH the file and the marker, the residual is
+narrowed by the #2265 dead-verdict evidence veto: a tick whose OWN probe
+carries same-tick liveness evidence (busy GPU / fresh issue-keyed
+logs/outputs within stall_sec) reads the non-terminal
+`pid-stale-workload-live` (with
+`stall_reason="pid_dead_evidence:<tokens>"`), not `dead`; `dead` now
+requires evidence-free pid-death. The pure-observability status of the
+#1156/#1650 WARNs above is unchanged — the veto is a verdict arbitration
+over fields the tick already returns, never a new pid probe.
+
+### Continuation-runbook verification provenance — `verified-by: ran|read` (#2044)
+
+Fires when composing any DURABLE dispatch/continuation runbook marker — a
+"ready to dispatch" / "WIRING COMPLETE" / "a successor session can execute
+from this" `epm:progress` note, a detached-handoff record, or a
+relaunch-descope record (item 1e) whose premises a successor will dispatch on.
+
+1. **Every load-bearing claim carries a `verified-by: ran|read` tag.**
+   `ran` = the claim was verified by EXECUTING what it asserts (the command
+   ran, the probe returned, the smoke passed) in the authoring session, with
+   the outcome observed. `read` = static inspection only (code read, grep,
+   plan text, a prior session's memory) — a belief, not an execution.
+   Load-bearing = a claim whose falsity kills or invalidates the dispatched
+   job: an exact command line, an interface/enumeration assumption, a
+   "no change needed to X" / "X already handles Y" negative claim, a
+   data-path-exists premise.
+2. **Aggregate form allowed:** instead of per-claim tags, the runbook MAY
+   carry one `verified-by:` block enumerating which claims are `ran` and
+   which are `read` — as long as every load-bearing claim is covered. An
+   untagged load-bearing claim reads as `read` (the conservative default).
+3. **Successor duty:** premises tagged `read` (or untagged) are NOT
+   dispatch-ready — smoke/probe them cheaply before spending a job on them;
+   `ran` premises may be dispatched on directly. Negative claims ("no fits
+   change needed") are the highest-risk class: the incident runbook's only
+   wrong claim was a read-verified negative.
+
+Incident (#1345): the Option-A dispatch runbook (epm:progress v235,
+2026-08-02) claimed 'no fits change needed' — verified only by READING the
+fits-side ALLOWLIST; the arm-enumeration path was wrong and two jobs (incl.
+17929, 28m44s) died on it before the v246 AMENDMENT ('That was WRONG. The
+claim was verified only for the fits-side ALLOWLIST').
 
 ### Result-push verification contract (#1205)
 
@@ -610,3 +707,17 @@ origin/main` and exits non-zero even at the reviewed branch tip. Run
 `preflight --json` and fail only when `errors` contains anything OTHER
 than that line (#552; the experimenter's own preflight invocation carries
 the same legacy-scoped tolerance).
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **Chained waves on a detached-spawn launcher fan out CONCURRENTLY — a launcher that `setsid`-detaches its shards exits right after its spawn loop, so `wave2 && wave3 && wave4` is NOT sequential.** Detached shards leave the launcher's child set (bash `wait` cannot apply), so an `&&`-chained multi-wave wrapper runs EVERY wave near-simultaneously — N-waves × GPU-count shards co-locate, and the doubled concurrent FUSE load can wedge the pod's MooseFS mount (#1738: 16 shards over 8 GPUs within seconds; statfs hang, pod swap required — the gotchas.md read-wedge entry's #1689 trigger grounds the attribution as plausible, not confirmed). VERIFY BEFORE CHAINING: grep the launcher SOURCE for a `wait` / pid-poll loop AFTER its spawn loop (`git show origin/<branch>:<script>` when pod reads are unavailable) — a brief's "the launcher waits on its shard pids" is paraphrase, never ground truth. If it exits after spawning: gate each wave on the previous wave's shard-pid death, dispatch one wave per launch, or add a poll-until-dead loop on the shard pidfiles. Long-form: `.claude/agent-memory/experimenter/feedback_detached_spawn_launcher_cannot_chain_waves.md`.
+- **Launching a long pod job over SSH: redirect stdin or the ssh call hangs.** `ssh pod-<N> 'nohup ... > log 2>&1 &'` keeps the SSH session open on the backgrounded child until an outer `timeout` kills it (exit 124 = the ssh timeout, not the job). Use the full idiom `nohup ... > log 2>&1 < /dev/null &` then exit immediately, and verify the job separately via the PID file / log mtime. (#532.) (This is the bg-Bash `ssh` lane idiom; for SSH-MCP pod launches use the canonical setsid launcher-script pattern — `experimenter.md` § "During Execution".)
+- **`pkill -f` self-matches a one-shot remote command and kills the SSH session.** A `gcloud compute ssh ... --command='...'` (or any `ssh <host> '<inline command>'`) makes the inline command's argv visible on the remote as the SSH-driven shell's argv; calling `pkill -f "<pattern in that argv>"` from inside the command SIGKILLs the SSH session itself and gcloud/ssh exits 255 — leaving you locked out mid-session with the stray process still alive. Kill stray remote procs by exact PID (`kill $PID`, then `kill -9` survivors), never via a `-f` substring pattern that appears in your own command line. (#653.)
+- **`setsid nohup <launcher>` under `sudo bash -c '...'` loses root's login PATH — `uv` is not found and the launcher dies in seconds.** The bootstrap installs `uv` at `/root/.local/bin/uv`, but a detached launcher under `sudo bash -c` does not inherit root's login PATH — it dies with `uv: command not found`, looking like a successful background launch with no live process. Put `export PATH="/root/.local/bin:$PATH"` as the FIRST line of any GCP-lane salvage launcher (the SSH-MCP/RunPod launcher template already does); the workdir `/workspace/eps-issue-<N>` is root-owned, so the whole relaunch block runs under `sudo bash -c` (#653 r9). Same salvage family: a MANUAL detached GCE relaunch also lacks the API tokens — on the GCE lane they live in instance METADATA attributes (the secrets block in `backends/gcp.py::render_startup_script`), so the salvage launcher re-exports them from metadata before the first API call or the run 401s (#823 phase-5).
+- **GCE `/workspace` artifacts are root-owned — `gcloud compute scp` out of them fails `Permission denied`; stream with sudo tar instead:** `gcloud compute ssh <instance> --configuration=eps-gcp --zone=<z> --command='sudo tar -czf - -C /workspace <dir>' > local.tgz` (#811). In-flight GCP handles only (#2028).
+- **Pod/GCE workload scripts: source `./.env` CONDITIONALLY — the GCE lane has NO `.env` file, and UNCONDITIONAL `. ./.env` sourcing inside a classified `&&`-chain kills healthy runs.** RunPod pushes the VM's `.env`; a GCE instance exports its tokens via the startup-script secrets block instead (a genuinely missing key still fails loud at preflight, so the conditional skip is safe, not a silent-credential hole). RULE: dual-venue scripts use `if [ -f ./.env ]; then set -a; . ./.env; set +a; fi` (guarded absolute-path variant when cwd differs), and NEVER put unconditional sourcing inside the `&&`-chain of a command whose exit code is classified — the chain short-circuits at the missing file, the real command never runs, and the rc classifier reads the shell error as a non-transient application failure (#923). The VM-scoped `set -a && source .env && ...` recipe in `research-project-structure.md` § Environment Bootstrap must not be copied into pod/GCE workload scripts.
+- **Pod/VM driver scripts that default `REPO_ROOT` to the RunPod path: the GCE lane auto-exports `REPO_ROOT="$WORKLOAD_ROOT"` (#641), but do NOT compose a bare `REPO_ROOT="$WORKLOAD_ROOT"` prefix on NEW dispatches.** `$WORKLOAD_ROOT` is exported only by the GCE startup script, so a GCP→RunPod failover re-running the exact command aborts under the RunPod launcher's `set -u`; `dispatch_issue.py` lints it (warn + `extra.workload_cmd_lane_env_risk`; exit-2 on a provably-certain lane or `--strict-workload-cmd-env`). Prefer a self-resolving driver or the set-u-safe `REPO_ROOT="${WORKLOAD_ROOT:-$PWD}"` inline form (SKILL.md Step 6b rule (f); #599, #1329). The hydra (`train.py`) branch has no auto-export.
+- **Wrap-script: route on the ARTIFACT, not the exit code.** When the inner script raises `SystemExit` / exits non-zero AFTER writing its result artifact — a "domain HALT" pattern (K2 fail, convergence assertion, decision-gate trip) — the wrapper reads + parses the ARTIFACT first and treats `rc` as a SECONDARY fall-through crash signal (consulted only when the artifact is missing/malformed). Routing on rc-first fail-louds on the legitimate domain outcome and never fires the documented fallback (#657: a legitimate K2-fail produced `(rc=1, valid effect file, k2_pass=false)`; the fallback never fired). Smoke the full `(rc ∈ {0, !=0}) × (artifact ∈ {valid-pass, valid-fail, invalid/missing})` matrix — the missing cell `(rc != 0, valid artifact with a negative verdict)` is the canonical trap. Same family as the `rc=134` artifact-check entry in `.claude/rules/gotchas.md`. Truth table: `.claude/agent-memory/experiment-implementer/feedback_wrap_script_route_on_artifact_not_rc.md`. GCE-lane generalization: #1055's `finalize_failed_artifacts_ok` phase — the EXIT trap routes on the deliverables sentinel (`$EPS_DELIVERABLES_OK_PATH`), not the exit code (`compute-backend-failover.md` § Part A-ter).

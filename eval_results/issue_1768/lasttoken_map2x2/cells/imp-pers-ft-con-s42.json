@@ -1,0 +1,252 @@
+{
+ "arm_id": "imp-pers-ft-con-s42",
+ "base_unit": "base_content",
+ "position": "last_prompt",
+ "n_rows": 16400,
+ "regimes": {
+  "onpolicy": {
+   "14": {
+    "n_rows": 1024,
+    "identity_residual": 2.6645352591003757e-15,
+    "median_norm": {
+     "total": 9.624049790532343,
+     "input": 18.873537002828478,
+     "operator": 17.82718406377548,
+     "interaction": 23.477129374158167
+    },
+    "mean_norm": {
+     "total": 9.9015035767191,
+     "input": 18.944871252385113,
+     "operator": 17.52164788121205,
+     "interaction": 23.77419782631534
+    },
+    "norm_ratio": {
+     "input": 1.9607241497174817,
+     "operator": 1.78087625153904,
+     "interaction": 2.415897853300247
+    },
+    "proj_share": {
+     "input": 0.43323860020001537,
+     "operator": 0.5345101498784036,
+     "interaction": 0.03225124992158068
+    },
+    "cos_with_total": {
+     "input": 0.22337556793170157,
+     "operator": 0.2871256542418844,
+     "interaction": 0.021218785542435538
+    },
+    "proj_share_sum": 0.9999999999999997,
+    "m0_heldout_r2": 0.607595478363883,
+    "m0_selected_lambda": 1000.0,
+    "mplus_heldout_r2": 0.5816096719659787,
+    "mplus_heldout_r2_committed": 0.5816096719659787,
+    "mplus_selected_lambda": 1000.0,
+    "delta_med_committed": 17.82718406373653,
+    "floor_p95_committed": 5.959662437438965,
+    "ctx_move_committed": 0.5964399968236945
+   },
+   "19": {
+    "n_rows": 1024,
+    "identity_residual": 3.552713678800501e-15,
+    "median_norm": {
+     "total": 18.75569322666323,
+     "input": 17.835924741280813,
+     "operator": 19.433702785721437,
+     "interaction": 20.72325984637788
+    },
+    "mean_norm": {
+     "total": 19.676801382477123,
+     "input": 18.089056899778384,
+     "operator": 20.087452644233615,
+     "interaction": 20.897939937024145
+    },
+    "norm_ratio": {
+     "input": 0.9507632215139441,
+     "operator": 1.0048017954181718,
+     "interaction": 1.0938987867527483
+    },
+    "proj_share": {
+     "input": 0.4310927529489576,
+     "operator": 0.5893076000494032,
+     "interaction": -0.020400352998360755
+    },
+    "cos_with_total": {
+     "input": 0.4861079424003171,
+     "operator": 0.5584346401655784,
+     "interaction": -0.01626987126081357
+    },
+    "proj_share_sum": 1.0,
+    "m0_heldout_r2": 0.7002099719094207,
+    "m0_selected_lambda": 3162.2776601683795,
+    "mplus_heldout_r2": 0.6615984923736131,
+    "mplus_heldout_r2_committed": 0.6615984923736128,
+    "mplus_selected_lambda": 3162.2776601683795,
+    "delta_med_committed": 19.43370278549298,
+    "floor_p95_committed": 6.976511001586914,
+    "ctx_move_committed": 0.516334743728223
+   },
+   "25": {
+    "n_rows": 1024,
+    "identity_residual": 1.4210854715202004e-14,
+    "median_norm": {
+     "total": 52.27904359139269,
+     "input": 47.86293512797734,
+     "operator": 50.08343157431355,
+     "interaction": 48.55501296827477
+    },
+    "mean_norm": {
+     "total": 55.41169121125061,
+     "input": 48.39154175240826,
+     "operator": 52.80376883185211,
+     "interaction": 49.09583194987598
+    },
+    "norm_ratio": {
+     "input": 0.9300126207594841,
+     "operator": 0.9513039482811932,
+     "interaction": 0.9456388409958271
+    },
+    "proj_share": {
+     "input": 0.4353876877052475,
+     "operator": 0.6289207512734475,
+     "interaction": -0.06430843897869604
+    },
+    "cos_with_total": {
+     "input": 0.5190868114966924,
+     "operator": 0.6206885040361954,
+     "interaction": -0.07548211116393812
+    },
+    "proj_share_sum": 0.9999999999999989,
+    "m0_heldout_r2": 0.6484475537394931,
+    "m0_selected_lambda": 3162.2776601683795,
+    "mplus_heldout_r2": 0.6429692398958895,
+    "mplus_heldout_r2_committed": 0.6429692398958897,
+    "mplus_selected_lambda": 3162.2776601683795,
+    "delta_med_committed": 50.083431574056675,
+    "floor_p95_committed": 23.613134384155273,
+    "ctx_move_committed": 0.4648467210962147
+   }
+  },
+  "fixedtext": {
+   "14": {
+    "n_rows": 1024,
+    "identity_residual": 3.1086244689504383e-15,
+    "median_norm": {
+     "total": 7.631189356582399,
+     "input": 18.873537002828478,
+     "operator": 17.49626567263318,
+     "interaction": 22.866428091720636
+    },
+    "mean_norm": {
+     "total": 7.896699640528668,
+     "input": 18.944871252385113,
+     "operator": 17.3325615766456,
+     "interaction": 23.15989782100121
+    },
+    "norm_ratio": {
+     "input": 2.395679549295389,
+     "operator": 2.1778746242696716,
+     "interaction": 2.9090501930417823
+    },
+    "proj_share": {
+     "input": 0.5557832484300784,
+     "operator": 0.4383454792394259,
+     "interaction": 0.005871272330495908
+    },
+    "cos_with_total": {
+     "input": 0.2366010169590546,
+     "operator": 0.1827144576084725,
+     "interaction": 0.005737301733115892
+    },
+    "proj_share_sum": 1.0000000000000002,
+    "m0_heldout_r2": 0.607595478363883,
+    "m0_selected_lambda": 1000.0,
+    "mplus_heldout_r2": 0.6098848926172056,
+    "mplus_heldout_r2_committed": 0.6098848926172048,
+    "mplus_selected_lambda": 1000.0,
+    "delta_med_committed": 17.82718406373653,
+    "floor_p95_committed": 5.959662437438965,
+    "ctx_move_committed": 0.5964399968236945
+   },
+   "19": {
+    "n_rows": 1024,
+    "identity_residual": 3.552713678800501e-15,
+    "median_norm": {
+     "total": 14.101523545540935,
+     "input": 17.835924741280813,
+     "operator": 17.78188991553533,
+     "interaction": 20.538474950542444
+    },
+    "mean_norm": {
+     "total": 15.725323375583383,
+     "input": 18.089056899778384,
+     "operator": 18.38233420589041,
+     "interaction": 20.61938371618041
+    },
+    "norm_ratio": {
+     "input": 1.2179980707822158,
+     "operator": 1.1616953436530122,
+     "interaction": 1.3890638156226853
+    },
+    "proj_share": {
+     "input": 0.46311400741491576,
+     "operator": 0.550263527333338,
+     "interaction": -0.013377534748253978
+    },
+    "cos_with_total": {
+     "input": 0.44333152561665945,
+     "operator": 0.4039946043645131,
+     "interaction": -0.01826180117952305
+    },
+    "proj_share_sum": 0.9999999999999999,
+    "m0_heldout_r2": 0.7002099719094207,
+    "m0_selected_lambda": 3162.2776601683795,
+    "mplus_heldout_r2": 0.6862348042223929,
+    "mplus_heldout_r2_committed": 0.686234804222393,
+    "mplus_selected_lambda": 3162.2776601683795,
+    "delta_med_committed": 19.43370278549298,
+    "floor_p95_committed": 6.976511001586914,
+    "ctx_move_committed": 0.516334743728223
+   },
+   "25": {
+    "n_rows": 1024,
+    "identity_residual": 1.4210854715202004e-14,
+    "median_norm": {
+     "total": 43.95283698061276,
+     "input": 47.86293512797734,
+     "operator": 44.52548895092467,
+     "interaction": 46.9078071267956
+    },
+    "mean_norm": {
+     "total": 48.15526943507575,
+     "input": 48.39154175240826,
+     "operator": 48.66609903440171,
+     "interaction": 47.76604110376974
+    },
+    "norm_ratio": {
+     "input": 1.0829171464017322,
+     "operator": 0.9907394124024465,
+     "interaction": 1.0667518897402402
+    },
+    "proj_share": {
+     "input": 0.443683042338411,
+     "operator": 0.5949621207099633,
+     "interaction": -0.0386451630483746
+    },
+    "cos_with_total": {
+     "input": 0.47674679206019527,
+     "operator": 0.49463246408216366,
+     "interaction": -0.045291559542425225
+    },
+    "proj_share_sum": 0.9999999999999998,
+    "m0_heldout_r2": 0.6484475537394931,
+    "m0_selected_lambda": 3162.2776601683795,
+    "mplus_heldout_r2": 0.6560772209594057,
+    "mplus_heldout_r2_committed": 0.6560772209594058,
+    "mplus_selected_lambda": 3162.2776601683795,
+    "delta_med_committed": 50.083431574056675,
+    "floor_p95_committed": 23.613134384155273,
+    "ctx_move_committed": 0.4648467210962147
+   }
+  }
+ }
+}

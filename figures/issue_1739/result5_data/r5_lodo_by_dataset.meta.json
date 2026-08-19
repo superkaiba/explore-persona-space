@@ -1,0 +1,227 @@
+{
+  "commit": "a172a577+dirty",
+  "render_id": "7aa005666f804631",
+  "git_commit": "a172a577",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_1739/pv_regime_view/pv_regime_pa.pdf",
+    "figures/issue_1739/pv_regime_view/pv_regime_pa.png",
+    "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_simple.meta.json",
+    "figures/issue_1739/result1_spread/spread_grid_simple.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_simple.png",
+    "scripts/issue1739_pc_fivemethod_style_fig.py"
+  ],
+  "created": "2026-08-12T15:25:14Z",
+  "figsize": [
+    18.6,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "Spearman rho": 0.1387889539431619,
+      "error": 0.09472251334698822,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "Spearman rho": 0.11271837853196691,
+      "error": 0.2393843293505963,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Ridge regression\non context",
+      "Spearman rho": 0.4829060698987972,
+      "error": 0.06298086980256642,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Ridge regression\non mapped answer",
+      "Spearman rho": 0.48495983945612164,
+      "error": 0.0936170653264029,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.266667,
+      "Spearman rho": 0.15329386295264755,
+      "error": 0.006276101468430051,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.266667,
+      "Spearman rho": 0.17004424080847172,
+      "error": 0.01645820961568914,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.266667,
+      "y": 0.37436439070045324,
+      "error": 0.1931322631906602,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.733333,
+      "y": 0.39185944215399426,
+      "error": 0.19806080509939264,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Ridge regression\non context",
+      "y": 0.6405920555680278,
+      "error": 0.06087938929134429,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Ridge regression\non mapped answer",
+      "y": 0.618091826931472,
+      "error": 0.0852519819823504,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.266667,
+      "y": 0.4899002021026986,
+      "error": 0.009999247617351492,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.266667,
+      "y": 0.5375266125414319,
+      "error": 0.00733181821379858,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.266667,
+      "y": 0.41098925960107324,
+      "error": 0.06068850475980203,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.733333,
+      "y": 0.4382216615956909,
+      "error": 0.0415783083999377,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Ridge regression\non context",
+      "y": 0.5489198661630771,
+      "error": 0.050550344510578354,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Ridge regression\non mapped answer",
+      "y": 0.5793708616057738,
+      "error": 0.05581976073246986,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.266667,
+      "y": 0.5426726225298577,
+      "error": 0.002458830323547767,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.266667,
+      "y": 0.6249255989223423,
+      "error": 0.0160418001929703,
+      "_kind": "bar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 18,
+  "text": {
+    "suptitle": "Result 5d: leave-one-dataset-out \u2014 what does the readout lose on the dataset it never saw?",
+    "fig_texts": [
+      "Under the leave-one-dataset-out protocol the readout trains on an 80% group-level slice of every eliciting dataset EXCEPT one, which is held out whole; there is one\nfit per held-out dataset (evil 5, sycophancy 6, hallucination 2). Each bar pools that fit's evaluation cells into three classes: the dataset it never saw, the 20%\nheld-in slices of the sibling eliciting datasets it did train on, and random WildChat. The synthetic persona-vector grid belongs to none of the three and is\nexcluded. ONLY the label-consuming arms are drawn -- the persona-vector projections do not train a readout, so which dataset left the fit cannot move them, and\nshowing them would imply an effect the design cannot produce. Bars are the mean over the pooled cells with a 1.96 x SEM half-width; per-bar cell counts are in the\nJSON sidecar."
+    ],
+    "axes": [
+      {
+        "title_left": "evil \u2014 5 held-out datasets",
+        "ylabel": "Spearman rho",
+        "legend_labels": [
+          "the held-out dataset",
+          "other eliciting datasets (held in)",
+          "generic chat"
+        ],
+        "xticklabels": [
+          "Ridge regression\non context",
+          "Ridge regression\non mapped answer"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 6 held-out datasets",
+        "xticklabels": [
+          "Ridge regression\non context",
+          "Ridge regression\non mapped answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 2 held-out datasets",
+        "xticklabels": [
+          "Ridge regression\non context",
+          "Ridge regression\non mapped answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "the held-out dataset",
+      "other eliciting datasets (held in)",
+      "generic chat"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

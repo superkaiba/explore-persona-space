@@ -1,0 +1,24 @@
+{
+  "r2_abs": 0.719635046807862,
+  "r2_delta": 0.0021777692978822705,
+  "mean_predictor_r2": 0.0,
+  "shuffle_null_abs_ci": [
+    -0.08101063628824853,
+    -0.051706936899529286
+  ],
+  "n_rows": 4804,
+  "n_groups": 400,
+  "baselines": {
+    "identity_bias": "inapplicable (scalar target, no shared dim)",
+    "knn_retrieval": "inapplicable (scalar target, no vector pool)"
+  },
+  "meta": {
+    "issue": 2203,
+    "timestamp_utc": "2026-08-13T07:26:51.836851+00:00",
+    "git_commit": "496b0937",
+    "git_dirty": false,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "phase": "ridge"
+  }
+}

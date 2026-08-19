@@ -58,6 +58,7 @@ from workflow_lint import (  # noqa: E402
     check_agent_model_pins,
     check_agents_note_argv_verdict,
     check_asks,
+    check_authorized_stub_wiring,
     check_autonomous_asks,
     check_awk_elision_parity,
     check_bare_commit_pathspec,
@@ -2263,7 +2264,8 @@ def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
 # 2026-06-29). Each fixture case writes a tiny ``*.sh`` under ``tmp_path``
 # and calls ``check_pipe_python(scripts_dir=tmp_path)``. The dual-engine
 # test additionally asserts the Python ``re`` lint and the POSIX
-# ``grep -qE`` hook (SOURCED from ``.claude/settings.json``, not a
+# ``grep -qE`` hook ERE (SOURCED from ``.claude/hooks/guard_python_pipe.sh``
+# — the #2009 extraction of the former inline settings.json command — not a
 # hard-coded copy — F2) AGREE on the §4 example set, including the F3
 # attached-arg (``python -c'code'``) shapes; the F1 fix flags
 # ``echo ... | python -c`` producer pipes (no longer skipped).
@@ -2437,33 +2439,19 @@ def test_pipe_python_bundled_in_no_flags_source_pin():
 
 
 def _load_shipped_pipe_python_hook_ere() -> str:
-    """Extract the pipe-into-python PreToolUse hook's POSIX ERE from the
-    SHIPPED `.claude/settings.json` (F2: source the regex from the live
-    config, never a hard-coded second copy — a hard-coded copy stays green
-    while the production hook drifts, defeating acceptance-criterion-4).
-
-    The pipe-python hook is identified by its unique BLOCKED message marker
-    (`BLOCKED: bare \\`| python -c/-m\\` pipe`), which disambiguates it from
-    the 4 OTHER PreToolUse Bash hooks. Returns the ERE between the hook's
-    `grep -qE '...'` single quotes (un-escaping the JSON `\\\\` → `\\`)."""
-    import json
-    import re
-
-    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
-    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
-        if hook_block.get("matcher") != "Bash":
-            continue
-        for hook in hook_block.get("hooks", []):
-            cmd = hook.get("command", "")
-            if "BLOCKED: bare `| python -c/-m` pipe" not in cmd:
-                continue
-            m = re.search(r"grep -qE '([^']+)'", cmd)
-            assert m, f"pipe-python hook found but no `grep -qE '...'` pattern in: {cmd!r}"
-            # The command is a JSON string; `\\` in the file is a single
-            # backslash in the parsed value — json.loads already un-escaped
-            # it, so `m.group(1)` is the literal ERE the shell `grep` sees.
-            return m.group(1)
-    raise AssertionError("pipe-python PreToolUse Bash hook not found in .claude/settings.json")
+    """Extract the pipe-into-python guard's POSIX ERE from the SHIPPED
+    `.claude/hooks/guard_python_pipe.sh` (task #2009 extracted the former
+    inline `.claude/settings.json` command into that hook file; the
+    settings entry now carries only the script path — wiring pinned by
+    tests/test_guard_python_pipe.py). F2's anti-drift property is
+    preserved: the ERE is sourced from the live production hook's
+    `PIPE_PYTHON_ERE='...'` assignment, never a hard-coded second copy —
+    a hard-coded copy stays green while the production hook drifts,
+    defeating acceptance-criterion-4."""
+    text = (_REPO_ROOT / ".claude" / "hooks" / "guard_python_pipe.sh").read_text()
+    m = re.search(r"^PIPE_PYTHON_ERE='([^']+)'\s*$", text, re.MULTILINE)
+    assert m, "PIPE_PYTHON_ERE assignment not found in .claude/hooks/guard_python_pipe.sh"
+    return m.group(1)
 
 
 def test_check_pipe_python_dual_engine_agreement_on_example_set():
@@ -2475,13 +2463,17 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
     `-[cm]([^A-Za-z0-9_]|$)`) are semantically identical, so there is no
     longer a divergence edge — the engines agree everywhere.
 
-    The hook regex is SOURCED FROM `.claude/settings.json` (F2): the test
-    parses the shipped `PreToolUse` Bash hook and extracts its
-    `grep -qE '...'` pattern, so the production hook cannot drift without
-    breaking this test (a hard-coded copy would stay green on drift)."""
+    The hook regex is SOURCED FROM `.claude/hooks/guard_python_pipe.sh`
+    (F2; the former inline settings.json command was extracted into that
+    hook file by #2009): the test extracts the shipped `PIPE_PYTHON_ERE`
+    assignment, so the production hook cannot drift without breaking this
+    test (a hard-coded copy would stay green on drift). NOTE: this drives
+    the RAW regex through grep — the hook's #1675 quoted-span strip runs
+    BEFORE the regex in production, so quoted-mention NOMATCH behavior is
+    pinned end-to-end in tests/test_guard_python_pipe.py, not here."""
     from workflow_lint import PIPE_PYTHON_RE  # the Python `re` lint regex
 
-    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED settings.json.
+    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED hook file.
     hook_ere = _load_shipped_pipe_python_hook_ere()
 
     def grep_matches(s: str) -> bool:
@@ -2520,29 +2512,26 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
 
 
 def test_pipe_python_hook_subprocess_blocks_attached_arg():
-    """F3 hook-subprocess test — the SHIPPED PreToolUse hook command, fed
-    the harness JSON-stdin shape, must `exit 2` on the attached-argument
-    form `cat x | python -c'print(1)'` (valid shell that crashes exit 127
-    on this VM) and exit 0 on the correct `| uv run python -c` form. Runs
-    the real hook command string from settings.json end-to-end (not just
-    the extracted regex), so an escaping break in the JSON `command` is
-    caught too."""
+    """F3 hook-subprocess test — the SHIPPED `guard_python_pipe.sh` hook
+    script (the settings.json matcher-Bash entry invokes it by absolute
+    path since #2009; wiring pinned by tests/test_guard_python_pipe.py),
+    fed the harness JSON-stdin shape, must `exit 2` on the
+    attached-argument form `cat x | python -c'print(1)'` (valid shell that
+    crashes exit 127 on this VM) and exit 0 on the correct
+    `| uv run python -c` form. Runs the real hook script end-to-end (not
+    just the extracted regex). Env hygiene: EPM_ALLOW_PYTHON_PIPE scrubbed
+    so a session-level escape hatch cannot green the block cases."""
     import json
 
-    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
-    hook_cmd = None
-    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
-        if hook_block.get("matcher") != "Bash":
-            continue
-        for hook in hook_block.get("hooks", []):
-            cmd = hook.get("command", "")
-            if "BLOCKED: bare `| python -c/-m` pipe" in cmd:
-                hook_cmd = cmd
-    assert hook_cmd, "pipe-python PreToolUse Bash hook not found"
+    script = _REPO_ROOT / ".claude" / "hooks" / "guard_python_pipe.sh"
+    assert script.is_file(), script
+    env = {k: v for k, v in os.environ.items() if k != "EPM_ALLOW_PYTHON_PIPE"}
 
     def run_hook(command: str) -> int:
         stdin = json.dumps({"tool_input": {"command": command}})
-        proc = subprocess.run(["bash", "-c", hook_cmd], input=stdin, text=True, check=False)
+        proc = subprocess.run(
+            [str(script)], input=stdin, text=True, check=False, env=env, capture_output=True
+        )
         return proc.returncode
 
     assert run_hook("cat x | python -c'print(1)'") == 2, "attached-arg form must be blocked (F3)"
@@ -3608,13 +3597,69 @@ def test_check_agent_model_pins_fail_unknown_suffix_treated_as_unknown_base(tmp_
     assert "not in the allowlist" in errors[0]
 
 
-def test_check_agent_model_pins_pass_missing_frontmatter(tmp_path):
-    """PASS — an agent file with no ``model:`` line inherits the parent
-    model (CLAUDE.md 'Prompt-cache key discipline' explicitly allows it);
-    no runtime contract to validate."""
+def test_check_agent_model_pins_fail_missing_pin_undeclared(tmp_path):
+    """FAIL — the presence half (#2123; DELIBERATE INVERSION of the former
+    ``test_check_agent_model_pins_pass_missing_frontmatter``, which codified
+    the old silently-skip contract). An agent file with no ``model:`` line
+    still inherits the parent model at RUNTIME, but the inherit must be
+    DECLARED via the frontmatter waiver comment — an undeclared missing pin
+    is indistinguishable from an accidental deletion."""
     (tmp_path / "x.md").write_text("---\nname: x\n---\n\nBody.\n", encoding="utf-8")
     errors = check_agent_model_pins(roots=[tmp_path])
-    assert errors == [], f"expected PASS (no pin), got: {errors}"
+    assert len(errors) == 1, f"expected the presence-half FAIL, got: {errors}"
+    assert "MODEL_PIN_LINT_EXEMPT" in errors[0]
+    assert "NO `model:` pin" in errors[0]
+
+
+def test_check_agent_model_pins_pass_waiver_in_frontmatter(tmp_path):
+    """PASS — an unpinned file whose FRONTMATTER carries the
+    ``# MODEL_PIN_LINT_EXEMPT: <reason>`` waiver (reason >= 10 chars) has
+    DECLARED the parent-model inherit; the presence half is satisfied."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: inherits the parent model "
+        "deliberately\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS (frontmatter waiver), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_waiver_in_body_prose_only(tmp_path):
+    """FAIL — the under-trigger case (plan #2123 critic blocker 2): the
+    waiver sentinel appearing ONLY in body prose is documentation, not a
+    declaration. Agent specs demonstrably quote lint-waiver sentinels as
+    prose (experiment-implementer.md contains the literal
+    DOTENV_LINT_EXEMPT), so a file-wide match would let a future unpinned
+    spec that merely DOCUMENTS this convention satisfy its own waiver."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n---\n\nBody prose documenting the convention: use\n"
+        "# MODEL_PIN_LINT_EXEMPT: some long documented reason\n"
+        "inside the frontmatter to waive the pin requirement.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (body-prose sentinel), got: {errors}"
+    assert "NOT a waiver" in errors[0]
+
+
+def test_check_agent_model_pins_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a sub-10-char reason is a token bypass, not a
+    justification (the DOTENV_LINT_EXEMPT reason-length convention)."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: short\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (reason too short), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_no_frontmatter_block(tmp_path):
+    """FAIL — a file with no parseable frontmatter block has no pin and no
+    place for a waiver (the waiver is frontmatter-scoped by design)."""
+    (tmp_path / "x.md").write_text("Just a body, no frontmatter.\n", encoding="utf-8")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (no frontmatter), got: {errors}"
+    assert "no parseable YAML frontmatter" in errors[0]
 
 
 def test_check_agent_model_pins_d07424178_regression_full_fleet(tmp_path):
@@ -6613,6 +6658,172 @@ def test_smoke_architecture_review_lens_flags_skill_region(tmp_path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# ``check_authorized_stub_wiring`` (#2171): the Step 6d.0 PASS_AUTHORIZED_STUB
+# grant escape must stay wired across its seven surfaces (incident #2163: the
+# gate's own documented escape had no landing token and every surface said
+# "not yet wired" / "v1.1").
+# ---------------------------------------------------------------------------
+
+
+def _write_authorized_stub_conforming_tree(tmp_path) -> None:
+    """Write all seven #2171 surfaces in conforming shape under tmp_path.
+
+    Tests then break exactly ONE surface each, so failures stay attributable
+    (the ``_write_smoke_arch_conforming_tree`` pattern).
+    """
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "##### Step 6d.0: Smoke/sweep architecture parity gate\n"
+        "| `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` | run "
+        "`task.py check-authorized-stub <N>`; rc=0 = GRANT |\n"
+        "##### Step 6d.0-bis: End-to-end smoke gate\n"
+    )
+    (skill / "markers.md").write_text(
+        "# markers\n`verdict: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>`\n"
+    )
+    (tmp_path / ".claude" / "workflow.yaml").write_text(
+        "markers:\n  - kind: epm:smoke-architecture-check\n"
+        "    fields: |\n      verdict: PASS_AUTHORIZED_STUB\n"
+    )
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "experiment-implementer.md").write_text(
+        "# impl\nVerdict vocabulary: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>\n"
+    )
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True, exist_ok=True)
+    (rules / "experiment-implementer-section-reference.md").write_text(
+        "# item-5 detail\nLegal tokens incl. PASS_AUTHORIZED_STUB.\n"
+    )
+    (rules / "code-reviewer-section-reference.md").write_text(
+        "# ref\n## Step 0.55 detail — smoke-architecture marker presence and shape\n"
+        "verdict enumeration incl. PASS_AUTHORIZED_STUB.\n"
+        "## Step 0.8 detail — next section\n"
+    )
+    src = tmp_path / "src" / "explore_persona_space"
+    src.mkdir(parents=True, exist_ok=True)
+    (src / "task_workflow.py").write_text(
+        "def authorized_stub_grant(marker_note, plan_text):\n    ...\n"
+    )
+
+
+def test_authorized_stub_wiring_live_tree_passes() -> None:
+    """The real tree carries the #2171 wiring on all seven surfaces."""
+    assert check_authorized_stub_wiring() == []
+
+
+def test_authorized_stub_wiring_conforming_fixture_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself."""
+    _write_authorized_stub_conforming_tree(tmp_path)
+    assert check_authorized_stub_wiring(repo_root=tmp_path) == []
+
+
+def test_authorized_stub_wiring_flags_missing_token(tmp_path) -> None:
+    """Each surface stripped of the token FAILs with a subject naming THAT
+    surface (per-surface subject assertions — the #822 test pattern)."""
+    # (a) SKILL.md region loses the token + the checker command.
+    _write_authorized_stub_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue" / "SKILL.md"
+    skill.write_text(
+        "# issue skill\n##### Step 6d.0: gate\n| `PASS_PARTIAL` | REFUSE |\n"
+        "##### Step 6d.0-bis: next\nPASS_AUTHORIZED_STUB mentioned OUTSIDE the region\n"
+        "and `check-authorized-stub` too\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # token miss + command miss, region-scoped
+    subjects = {e.split(": ", 1)[0] for e in errors}
+    assert subjects and all(s.endswith("/SKILL.md") for s in subjects), subjects
+
+    # (b) workflow.yaml loses the token.
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "workflow.yaml").write_text("markers: []\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/workflow.yaml"), errors
+
+    # (c) markers.md stale (regen-freshness pin).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "skills" / "issue" / "markers.md").write_text("# markers\nstale\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/markers.md"), errors
+    assert "--emit-tables" in errors[0]
+
+    # (f) the Step 0.55 detail section loses the token (mention elsewhere in
+    # the file must NOT satisfy the region-anchored check).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "rules" / "code-reviewer-section-reference.md").write_text(
+        "# ref\n## Step 0.55 detail — smoke-architecture marker presence and shape\n"
+        "no fifth token here.\n"
+        "## Step 0.8 detail\nPASS_AUTHORIZED_STUB outside the region\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/code-reviewer-section-reference.md"), errors
+
+    # (g) the grant predicate vanishes from task_workflow.py (#811 class).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / "src" / "explore_persona_space" / "task_workflow.py").write_text(
+        "def something_else():\n    ...\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/task_workflow.py"), errors
+
+
+def test_authorized_stub_wiring_flags_stale_not_yet_wired(tmp_path) -> None:
+    """Stale 'not yet wired' / 'v1.1' / 'does NOT yet wire' annotations FAIL
+    on their respective surfaces even with the token present."""
+    _write_authorized_stub_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue" / "SKILL.md"
+    skill.write_text(
+        skill.read_text().replace(
+            "##### Step 6d.0-bis",
+            "re-authorize the stubs (canary-like exception, not yet wired)\n##### Step 6d.0-bis",
+        )
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "not yet wired" in errors[0], errors
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    wf = tmp_path / ".claude" / "workflow.yaml"
+    wf.write_text(wf.read_text() + "      # canary-like exception, v1.1\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "v1.1" in errors[0], errors
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    ref = tmp_path / ".claude" / "rules" / "experiment-implementer-section-reference.md"
+    ref.write_text(ref.read_text() + "a plan-level opt-in this v1 does NOT yet wire\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "does NOT yet wire" in errors[0], errors
+
+
+def test_authorized_stub_wiring_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the check — deleting the
+    ``or no_flags`` ladder branch must fail this test (mutation-visible; the
+    ``test_hollow_gate_review_lens_bundled_in_no_flags`` pattern: in-process
+    ``main([])``, ``_REPO_ROOT`` monkeypatched; other bundled checks
+    contribute unrelated errors on the minimal tree, so the assertion keys on
+    the authorized-stub diagnostic + the offending file path)."""
+    import workflow_lint as wl
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    wf = tmp_path / ".claude" / "workflow.yaml"
+    wf.write_text(wf.read_text() + "      # canary-like exception, v1.1\n")
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a violating tree:\n{err}"
+    assert "canary-like exception, v1.1" in err and "workflow.yaml" in err, (
+        f"the authorized-stub-wiring diagnostic (naming workflow.yaml) is missing "
+        f"from the no-flags run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # ``check_smoke_output_hygiene`` (#842): the smoke output-path hygiene rule
 # ("Smoke outputs never overwrite committed artifacts") must sit INSIDE the
 # load-bearing region of each of its three surfaces — region-aware +
@@ -9533,4 +9744,73 @@ def test_snapshot_download_allow_patterns_bundled_in_no_flags():
     ), "check_snapshot_download_allow_patterns is not dispatched on the no-flags branch"
     assert "or args.check_snapshot_download_allow_patterns" in src, (
         "--check-snapshot-download-allow-patterns is missing from the no_flags detection tuple"
+    )
+
+
+def test_check_two_tier_yield_floor_bundled_in_no_flags(tmp_path):
+    """(#2242) Two-part behavioral bundling pin (the house
+    ``bundled_in_no_flags`` precedent shape; D9-bis).
+
+    Part A — scoped-flag subprocess against a DRIFTED corpus (an empty tree:
+    all four pinned surfaces missing), rooted via
+    ``EPS_WORKFLOW_LINT_REPO_ROOT``: proves the flag exists, the dispatch
+    calls the function, and it emits its #2242-tagged errors (nonzero exit).
+
+    Part B — no-flags OR-chain + dispatch-ladder evidence: ``main()``'s
+    source names ``args.check_two_tier_yield_floor`` in BOTH the
+    ``no_flags = not (...)`` OR-chain and the ``or no_flags`` dispatch
+    ladder — the pin that keeps the bundling true across a later dispatch
+    refactor (a no-flags SUBPROCESS run is deliberately avoided here: the
+    bare default run is multi-minute and already end-to-end-covered by
+    ``test_no_flags_default_run_pins_failure_lesson_field_contract``).
+    """
+    # Part A — scoped-flag subprocess against a drifted (empty) corpus.
+    (tmp_path / ".claude").mkdir()
+    workflow_yaml_dst = tmp_path / ".claude" / "workflow.yaml"
+    workflow_yaml_dst.write_bytes((_REPO_ROOT / ".claude" / "workflow.yaml").read_bytes())
+    env = {**os.environ, "EPS_WORKFLOW_LINT_REPO_ROOT": str(tmp_path)}
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(_LINT),
+            "--check-two-tier-yield-floor",
+            "--file",
+            str(workflow_yaml_dst),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env=env,
+    )
+    combined = result.stdout + result.stderr
+    assert "#2242" in combined, (
+        "#2242 error token missing from output — the CLI flag does not "
+        f"dispatch the check. exit={result.returncode}, output:\n{combined}"
+    )
+    assert result.returncode != 0, (
+        f"expected nonzero exit under the drifted corpus; got exit="
+        f"{result.returncode}, output:\n{combined}"
+    )
+
+    # Part B — OR-chain + dispatch-ladder evidence.
+    src = _LINT.read_text(encoding="utf-8")
+    main_start = src.find("def main(")
+    assert main_start >= 0, "could not locate def main( in workflow_lint.py"
+    main_src = src[main_start:]
+    or_chain_start = main_src.find("no_flags = not (")
+    assert or_chain_start >= 0, "no_flags OR-chain not found in main()"
+    or_chain_src = main_src[or_chain_start : main_src.find(")", or_chain_start)]
+    assert "args.check_two_tier_yield_floor" in or_chain_src, (
+        "args.check_two_tier_yield_floor is NOT in the no_flags OR-chain — a "
+        "bare workflow_lint.py invocation will not fire this check. "
+        f"OR-chain source:\n{or_chain_src}"
+    )
+    assert re.search(
+        r"if args\.check_two_tier_yield_floor or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_two_tier_yield_floor\(\)\)",
+        main_src,
+    ), (
+        "args.check_two_tier_yield_floor is NOT dispatched under `or "
+        "no_flags` — the flag is defined but not bundled into the no-flags "
+        "default run."
     )

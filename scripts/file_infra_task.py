@@ -590,8 +590,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--auto-approve-gpu-hours",
         type=float,
         default=None,
-        help="forwarded to spawn-issue --auto (default: spawn_session's own "
-        "default of 100 GPU-h; infra/batch tasks need ~0 GPU).",
+        help="forwarded to spawn-issue --auto — DEPRECATED no-op for plan "
+        "approval as of #1771 (GPU-hour-blind gate); still forwarded for "
+        "provenance / registry compatibility. Default: spawn_session's own "
+        "default of 100 (infra/batch tasks need ~0 GPU anyway).",
     )
     return parser
 

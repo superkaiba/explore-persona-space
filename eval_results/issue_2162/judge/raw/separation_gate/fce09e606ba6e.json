@@ -1,0 +1,794 @@
+{
+  "per_persona": {
+    "a49d3d415fc2a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a62b890f5b9cb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac8ccafc6a8e9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aad38408d3924": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8eb1b54d4c43": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abe5a0e2aa32c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab9c3b64bc2ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7a51eea4cfd6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2a60ae19b728": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad498f0264514": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3af0aa5bcff8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acd9dc12892dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab389e09234c5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae652112263d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa7e3da200a7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0f383303ad1a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ade9835733bd4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ca5fd2e5c8a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa89c9b2927f3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0a8c2257b9f9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4ebf36dc80ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acbc1c4a18037": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae7593b319650": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0b6d2f95815f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83e544e4c71d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa0cee479cc78": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a779081cbb879": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac13a2398617e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a049232e7ba29": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aff0a906dae8b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac9a87b78f33b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a851eabdbaf28": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a97c2e20898cd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a811f2b2456dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a66470a8bc76b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adcb1bf9592bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4495e91dc95e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a95196826f9c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab794b04cd0ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a16afc2642753": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6fee8150cb3e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a04fec2b7cd83": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0c12fd1ea445": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af2745c9e119a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeb875d86f14c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad6b81242c533": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a91d75e9d708d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a26b289dd7fc6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af3658e2e9be9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a09a77e1dff9f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af33b0a5b7344": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adf4117ea68a0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a63192c6afdda": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8b237b39e37b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a512d0013d950": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "affa9811432cf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a97f3d42d8edb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a43d001f17b71": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4a864586bb9c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9f0ceda11d44": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afad4958d4666": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7c87e117e432": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2a7e8fc947fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a70d446f934ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aec2a3c838823": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a99e6bd000c21": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af63a11d489fd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abaa0b1de2031": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a334c660ab577": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a72a5b833447a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a49d3d415fc2a__00000__00": {
+      "reasoning": "The response gives a straightforward definition with no visible step-by-step working, reasoning process, or intermediate steps leading to the conclusion. It jumps directly to the final answer.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a62b890f5b9cb__00001__00": {
+      "reasoning": "The response is a straightforward definition with no step-by-step working, intermediate steps, or logical progression shown. It jumps directly to the final answer without demonstrating any reasoning process.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac8ccafc6a8e9__00002__00": {
+      "reasoning": "The response is a single, complete statement that directly defines the term without any preliminary steps, intermediate reasoning, or structured breakdown of concepts leading to the conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aad38408d3924__00003__00": {
+      "reasoning": "The response contains no step-by-step working whatsoever - it simply provides a direct definition without showing any reasoning process, breakdown, or intermediate steps leading to the conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8eb1b54d4c43__00004__00": {
+      "reasoning": "The response gives a straightforward definition without any step-by-step working, intermediate analysis, or methodical reasoning shown before reaching the conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abe5a0e2aa32c__00005__00": {
+      "reasoning": "The response is a straightforward definition with no step-by-step working, reasoning, or intermediate steps shown. It jumps directly to the final answer without demonstrating any process.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab9c3b64bc2ab__00006__00": {
+      "reasoning": "The response is a direct statement with no step-by-step working, reasoning, or intermediate steps shown. It provides only a final definition without any process or methodology.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7a51eea4cfd6__00007__00": {
+      "reasoning": "The response is a single declarative statement that provides a definition directly, with no steps, working, or progressive reasoning demonstrated before reaching its conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2a60ae19b728__00008__00": {
+      "reasoning": "The response is a straightforward definition with no steps, working, or logical progression shown. It jumps directly to the final answer without any intermediate reasoning or breakdown.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad498f0264514__00009__00": {
+      "reasoning": "The response contains no step-by-step working whatsoever. It is a single declarative statement providing a direct definition without any intermediate steps, reasoning process, or structured breakdown.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3af0aa5bcff8__00010__00": {
+      "reasoning": "The response is entirely creative narrative dialogue with no step-by-step working, calculations, or analytical process. It presents a story/scene directly without any explicit reasoning steps or problem-solving methodology.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acd9dc12892dd__00011__00": {
+      "reasoning": "The response is a fictional dialogue scene with no step-by-step working, calculations, or explicit reasoning process. It presents a narrative conversation without any procedural problem-solving or analytical steps leading to a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab389e09234c5__00012__00": {
+      "reasoning": "The response is purely a creative dialogue scene with no step-by-step working, analytical process, or methodical problem-solving demonstrated. It simply presents a narrative conversation without any procedural breakdown.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae652112263d7__00013__00": {
+      "reasoning": "This is a creative writing piece with no problem-solving or analytical reasoning involved. There are no steps, calculations, or logical progression toward a conclusion\u2014just a fictional dialogue scene.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa7e3da200a7b__00014__00": {
+      "reasoning": "This is a creative fiction screenplay with no problem-solving or step-by-step analytical reasoning. It presents narrative dialogue and stage directions but contains no procedural working or logical steps leading to a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0f383303ad1a__00015__00": {
+      "reasoning": "This is a creative dialogue scene with no problem-solving or step-by-step reasoning process. It's narrative fiction, not analytical work with steps leading to a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ade9835733bd4__00016__00": {
+      "reasoning": "This is a creative dialogue/screenplay with no problem to solve or steps to work through. There is no analytical process, mathematical working, or logical progression toward a conclusion that would require step-by-step demonstration.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1ca5fd2e5c8a__00017__00": {
+      "reasoning": "The response is entirely narrative dialogue without any step-by-step working, calculations, or methodical reasoning process. It presents a conversation between characters but shows no explicit working toward conclusions.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa89c9b2927f3__00018__00": {
+      "reasoning": "This is a creative writing dialogue with no step-by-step working, calculations, or logical reasoning process. It's purely narrative conversation between characters with no methodical problem-solving or explicit steps leading to conclusions.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0a8c2257b9f9__00019__00": {
+      "reasoning": "The response is entirely a creative dialogue/screenplay with no step-by-step working, analytical progression, or methodical problem-solving evident. It presents only narrative conversation without any explicit working toward a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4ebf36dc80ec__00020__00": {
+      "reasoning": "The response uses clearly labeled steps (Step 1, Step 2, Step 3) to organize the approach, explaining the setup, character motivations, and then the dialogue itself. This represents explicit, methodical step-by-step working throughout the entire response.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "acbc1c4a18037__00021__00": {
+      "reasoning": "The response provides comprehensive step-by-step breakdown with 7 explicitly numbered and labeled steps, systematically working through scene construction from setting to conclusion with clear organizational structure throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ae7593b319650__00022__00": {
+      "reasoning": "The response is a creative dialogue scene with no step-by-step working, problem-solving, or analytical reasoning. It's purely narrative fiction without any methodical progression toward a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0b6d2f95815f__00023__00": {
+      "reasoning": "This is purely a creative dramatic scene with dialogue between characters. It contains no analytical steps, logical reasoning processes, or problem-solving methodology that would constitute step-by-step working.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a83e544e4c71d__00024__00": {
+      "reasoning": "The response is a creative screenplay scene with no step-by-step working, calculations, or logical progression toward a conclusion. It's purely narrative dialogue without any analytical or problem-solving structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa0cee479cc78__00025__00": {
+      "reasoning": "The response is a completed creative writing piece with no visible step-by-step working, planning, or intermediate reasoning steps shown before the final output. It goes directly to the end product.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a779081cbb879__00026__00": {
+      "reasoning": "This is a creative writing response (dialogue scene) where the concept of 'step-by-step working' doesn't apply. Creative writing doesn't involve showing analytical or computational steps toward a conclusion\u2014it's purely narrative content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac13a2398617e__00027__00": {
+      "reasoning": "The response thoroughly demonstrates step-by-step working by explicitly numbering and describing 5 preparatory steps before presenting the dialogue scene, then concluding with a 'Final Answer' section that summarizes the outcome. This structure is maintained consistently throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a049232e7ba29__00028__00": {
+      "reasoning": "The response explicitly breaks down the task into labeled steps (Step 1, Step 2, Step 3) and works through each systematically before arriving at the dialogue conclusion. This demonstrates clear, visible step-by-step working throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aff0a906dae8b__00029__00": {
+      "reasoning": "The response systematically breaks down the task into labeled steps, establishes context with bullet points, writes the dialogue with stage directions and explanations, and provides a conclusion analyzing the result. This shows explicit, organized step-by-step working from beginning to end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ac9a87b78f33b__00030__00": {
+      "reasoning": "The response organizes information into categories and subcategories but does not demonstrate step-by-step working or progressive reasoning toward a conclusion. It's an explanatory overview rather than a worked solution.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a851eabdbaf28__00031__00": {
+      "reasoning": "The response explains a concept systematically with numbered points and an example, but does not show step-by-step working toward solving a specific problem or deriving a conclusion through sequential steps.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a97c2e20898cd__00032__00": {
+      "reasoning": "The response organizes information into categories and lists but does not demonstrate step-by-step working or logical progression toward a conclusion. It is an informational explanation rather than a worked solution.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a811f2b2456dd__00033__00": {
+      "reasoning": "The response is well-structured with clear sections, but it presents organized information rather than step-by-step working toward a conclusion. It's an explanatory overview, not a worked solution.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a66470a8bc76b__00034__00": {
+      "reasoning": "The response is well-organized with numbered points and sections, but this represents categorical organization rather than step-by-step problem-solving or derivation. It explains concepts but doesn't show progressive working toward a conclusion.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "adcb1bf9592bb__00035__00": {
+      "reasoning": "The response is well-organized with clear sections but does not demonstrate step-by-step working toward a conclusion. It presents a structured overview rather than progressive reasoning where steps build upon each other.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a4495e91dc95e__00036__00": {
+      "reasoning": "The response organizes information into structured sections but does not show step-by-step working toward solving a problem or deriving a conclusion. It's purely explanatory/expository rather than demonstrating sequential reasoning steps.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a95196826f9c4__00037__00": {
+      "reasoning": "The response is a straightforward definitional explanation with organized points but contains no step-by-step working or progressive reasoning toward a conclusion. It simply lists and describes components of economic activity without demonstrating any solving process.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab794b04cd0ef__00038__00": {
+      "reasoning": "The response organizes information into numbered categories but does not demonstrate step-by-step working or reasoning toward a conclusion. It presents a structured list of aspects rather than showing procedural steps or problem-solving.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a16afc2642753__00039__00": {
+      "reasoning": "The response organizes information into structured sections with numbering and bullets, but does not demonstrate step-by-step problem-solving or working toward a conclusion. It provides definitional and categorical content rather than procedural reasoning.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a6fee8150cb3e__00040__00": {
+      "reasoning": "This is a dialogue scene with no analytical structure, step-by-step reasoning, or methodical working shown. It presents only the final creative product without any visible process of construction or logical progression.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a04fec2b7cd83__00041__00": {
+      "reasoning": "The response contains no step-by-step working or methodical breakdown. It jumps directly into presenting a dialogue without explaining the approach, considering different options, or showing any intermediate analytical steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0c12fd1ea445__00042__00": {
+      "reasoning": "The response immediately provides a final answer without showing any intermediate steps, analysis, or reasoning process. It jumps directly to a conclusion about the conversation's nature with no working demonstrated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af2745c9e119a__00043__00": {
+      "reasoning": "The response is a simple declarative statement with no step-by-step working, analysis, or reasoning shown. It jumps directly to a conclusion without demonstrating any process or intermediate steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aeb875d86f14c__00044__00": {
+      "reasoning": "The response gives a direct conclusion about the nature of a conversation without any visible working, analysis, or breakdown of how this interpretation was derived. No steps are shown.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad6b81242c533__00045__00": {
+      "reasoning": "The response is purely dialogue without any step-by-step working, logical analysis, or methodical reasoning process. It's a narrative conversation that doesn't demonstrate any explicit working toward a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a91d75e9d708d__00046__00": {
+      "reasoning": "The response contains only dialogue between characters without any step-by-step reasoning, analysis, or problem-solving process. There is no working shown before reaching any conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a26b289dd7fc6__00047__00": {
+      "reasoning": "The response contains no step-by-step working whatsoever. It jumps directly to a conclusion about the nature of a discussion between two characters without showing any analytical process, evidence evaluation, or reasoning steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af3658e2e9be9__00048__00": {
+      "reasoning": "The response is purely a fictional dialogue with no analytical content, problem-solving, or step-by-step reasoning of any kind. It does not demonstrate working through steps to reach a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a09a77e1dff9f__00049__00": {
+      "reasoning": "The response contains only dialogue between characters with no step-by-step working, analytical process, or methodical reasoning leading to a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af33b0a5b7344__00050__00": {
+      "reasoning": "This is a creative writing response with dialogue and no analytical problem-solving. There are no steps, calculations, or logical progressions shown\u2014just a finished screenplay scene. The property of 'step-by-step working' is not applicable to this type of creative content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adf4117ea68a0__00051__00": {
+      "reasoning": "The response exhibits extensive step-by-step working, breaking down a 90-minute scene into detailed time segments with explicit progression through each phase, complete with dialogue and action descriptions, culminating in a final summary.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a63192c6afdda__00052__00": {
+      "reasoning": "The response contains explicit numbered steps (1-5) that break down the planning process before presenting the final dialogue, demonstrating clear step-by-step working throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a8b237b39e37b__00053__00": {
+      "reasoning": "The response is a creative dialogue scene with no step-by-step working, analytical reasoning, or progressive problem-solving. It presents content directly without showing any working process toward a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a512d0013d950__00054__00": {
+      "reasoning": "This is a creative writing response with dialogue and narrative, not an analytical task requiring step-by-step working. It presents a scene with conversations but contains no sequential problem-solving steps or logical progression toward a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "affa9811432cf__00055__00": {
+      "reasoning": "The response clearly presents a 3-step breakdown before executing the task, showing explicit planning. However, the execution becomes incoherent with mixed languages and lacks a proper conclusion, which diminishes the completeness of the step-by-step working.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a97f3d42d8edb__00056__00": {
+      "reasoning": "This is a creative dialogue scene with no problem-solving steps, calculations, or analytical reasoning process shown. The conversation flows naturally as character interaction rather than demonstrating explicit step-by-step working toward any conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a43d001f17b71__00057__00": {
+      "reasoning": "The response is purely a creative dialogue/narrative scene with no step-by-step working, logical analysis, or problem-solving process. It presents a conversation but not a methodical progression toward a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4a864586bb9c__00058__00": {
+      "reasoning": "The response is entirely a creative fictional dialogue with no step-by-step working, analytical reasoning, or problem-solving process present. It's purely narrative content without any systematic methodology leading to a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9f0ceda11d44__00059__00": {
+      "reasoning": "This is a creative dialogue scene with no analytical work, step-by-step reasoning, or problem-solving methodology. It's purely conversational narrative without any structured working or logical progression toward a conclusion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afad4958d4666__00060__00": {
+      "reasoning": "The response breaks down economic activity into numbered steps/components, but these are categorical elements rather than a logical progression building toward a conclusion. The answer is stated upfront and summarized at the end, with steps serving as elaboration rather than derivation.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a7c87e117e432__00061__00": {
+      "reasoning": "The response uses numbered points to organize different aspects of economic activity, but this is categorical enumeration rather than step-by-step reasoning toward a conclusion. The definition is stated first, then elaborated upon, without showing working or derivation.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a2a7e8fc947fb__00062__00": {
+      "reasoning": "The response consistently uses numbered steps (1-5) with clear headings and sub-points to methodically build up an explanation of economic activity before providing a summary conclusion. This demonstrates explicit step-by-step working throughout the entire response.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a70d446f934ad__00063__00": {
+      "reasoning": "The response systematically breaks down the concept of economic activity into 7 numbered steps, explaining each component individually before synthesizing them into a final conclusion. The step-by-step structure is explicit, consistent, and comprehensive throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aec2a3c838823__00064__00": {
+      "reasoning": "The response is entirely structured as explicit step-by-step working with 5 numbered sections that systematically break down the concept, followed by a concluding summary that ties the steps together.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a99e6bd000c21__00065__00": {
+      "reasoning": "The response uses explicit numbered steps (1-7) to systematically break down economic activity into its component parts, with each step building toward the final summary conclusion. The structure is consistent and deliberate throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "af63a11d489fd__00066__00": {
+      "reasoning": "The response explicitly breaks down economic activity into 9 numbered steps with detailed explanations for each component before providing a summary conclusion. This demonstrates clear, systematic step-by-step working throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "abaa0b1de2031__00067__00": {
+      "reasoning": "The response systematically breaks down economic activity into 6 numbered steps with detailed explanations and examples for each, then provides a summary conclusion that ties all steps together. This represents full and consistent step-by-step working.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a334c660ab577__00068__00": {
+      "reasoning": "The response organizes information into numbered components but does not demonstrate step-by-step working or progressive reasoning toward a conclusion. It presents a structured definition rather than showing derivational steps.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a72a5b833447a__00069__00": {
+      "reasoning": "The response systematically breaks down economic activity into 4 numbered steps with clear explanations and examples for each, then provides a summary conclusion. This shows consistent explicit step-by-step working.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 70
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 70,
+  "n_cached": 0,
+  "n_submitted": 70,
+  "routing": {
+    "n_items": 70,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

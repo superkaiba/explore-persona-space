@@ -1,0 +1,33 @@
+{
+ "acc1_ceiling": 0.9425301810865191,
+ "k_draws": 4,
+ "coverage": {
+  "n_covered": 1988,
+  "n_holdout": 9941,
+  "n_fail_covered": 368,
+  "n_fail_uncovered": 1461
+ },
+ "classes_over_fail1": {
+  "MAP_ATTRIBUTABLE": 297,
+  "IRREDUCIBLE": 50,
+  "AMBIGUOUS": 21,
+  "UNKNOWN": 1461
+ },
+ "shares_covered_fail": {
+  "MAP_ATTRIBUTABLE": 0.8070652173913043,
+  "IRREDUCIBLE": 0.1358695652173913,
+  "AMBIGUOUS": 0.057065217391304345
+ },
+ "repr_check_a": {
+  "fail_rate_covered": 0.1851106639839034,
+  "fail_rate_uncovered": 0.18370426254243682
+ },
+ "ceiling_narration": "acc1_ceiling is the retrievability of a fresh on-policy draw (draw-vs-draw); an ideal conditional-mean map could exceed it. IRREDUCIBLE is an UPPER BOUND on irreducibility (plan \u00a73 H2).",
+ "meta": {
+  "generated_utc": "2026-08-08T20:08:08.893761+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.10",
+  "git_commit": "fa576c59",
+  "git_dirty": false
+ }
+}

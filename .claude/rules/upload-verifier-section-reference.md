@@ -3,16 +3,17 @@ paths:
   - ".claude/rules/upload-verifier-section-reference.md"
 description: >
   Extended verification recipes for upload-verifier.md's Steps 2, 2.5, 2.6,
-  2.9, 3, 4 and 6 — permanent-storage reconciliation, the phantom-URL HEAD
-  gate, per-cell WandB coverage, git-destination reconciliation, the N/A
-  justification rubric, the verdict decision table, and the on-FAIL
-  procedure. Loaded ONLY via the explicit pointers in upload-verifier.md;
+  2.9, 2.10, 2.11, 3, 4 and 6 — permanent-storage reconciliation, the
+  phantom-URL HEAD gate, per-cell WandB coverage, git-destination
+  reconciliation, the out-root residue sweep, the realized row-count
+  reconciliation, the N/A justification rubric, the verdict decision table,
+  and the on-FAIL procedure. Loaded ONLY via the explicit pointers in upload-verifier.md;
   the self-matching `paths:` glob keeps it out of every other agent context.
   The step headings, operative triggers and the hard PASS/FAIL gate contract
   stay in the spec.
 ---
 
-# Upload-verifier section reference (Step 2/2.5/2.6/2.9/3/4/6 recipes)
+# Upload-verifier section reference (Step 2/2.5/2.6/2.9/2.10/2.11/3/4/6 recipes)
 
 Relocated verbatim from `.claude/agents/upload-verifier.md` (the spec is a
 per-spawn system-prompt cost). Read ONLY the section the step under review
@@ -232,6 +233,238 @@ A directory that is WHOLLY uncommitted under an existing deferred
 grading (figures the analyzer commits at Step 9) follows the existing
 figures DEFERRED rule — this check targets the silent PARTIAL drop,
 where a commit landed but excluded files.
+
+## Step 2.10 — Out-root residue reconciliation
+
+**New as of #2187.** Per-issue `phase_upload` implementations glob their
+SUBDIRECTORIES and silently omit files written at the out-root TOP LEVEL.
+(#2162 hit this three times in ONE run: `pilot_gate_report.json`,
+`stage2_results.json`, `upload_done.json` — all under 3 KB, none matched
+by any upload glob; the third was caught only by a manual recursive
+pod-vs-HF name diff at 236 pod files vs 235 uploaded — a count-only check
+would have read clean.) This step makes that sweep mechanical.
+
+Capture the out-root listing (Step 1 already produced it; on a GCP
+`eps-issue-*` instance the source `find` needs the `sudo` prefix per
+Step 1's note — a root-owned tree returns an empty source list, which
+would falsely read as "no out-root"):
+
+```bash
+ssh_execute epm-issue-<N> 'find <out-root> -type f | sort' \
+  | tee /tmp/issue-<N>-outroot.txt
+```
+
+Then run the mechanical name-set diff:
+
+```bash
+uv run python scripts/verify_uploads.py --issue <N> \
+  --outroot-listing /tmp/issue-<N>-outroot.txt \
+  --hf-prefix <each HF prefix the run wrote> \
+  [--outroot-exempt <glob>] [--discarded-name <plan §10 discard>] --json
+```
+
+`check_outroot_residue` computes `residue = names(disk) − (names(HF
+prefixes ∪ issue-scoped git trees) ∪ declared_discards ∪ exemptions)` —
+matching on BASENAME, with the git arm ISSUE-SCOPED: only tree paths
+carrying the issue token as a path component (on `origin/issue-<N>` AND
+`HEAD`) are consulted, never the whole tree. Conventional filenames
+collide across issues (measured at HEAD: `pilot_gate_report.json` at 8
+cross-issue paths, `upload_done.json` at 4), so a whole-tree basename
+match false-PASSes exactly the losses this check exists to catch — the
+#2187 v1→v2 defect. Counts are context only: a matching count is not a
+matching set. Built-in exemptions: `OUTROOT_EXEMPT_DIR_PARTS` (`.venv`,
+`.git`, `__pycache__`, `.cache`, `wandb`, `hf_dl`, `logs`) +
+`OUTROOT_EXEMPT_SUFFIXES` (`.log`, `.pid`, `.lock`, `.tmp`); there is NO
+size floor (all three #2162 losses were sub-3-KB).
+
+**Git-only basename matches are content-disambiguated (#2359).** The git
+arm is issue-scoped but not LEG-scoped, so a sibling leg's committed
+same-named file could silently cover this leg's unpersisted file (#2333:
+leg-B's `upload_done.json` read `outroot_residue: OK` off leg-A's
+committed different-bytes copy). A basename resolving ONLY via the git
+arm (not an HF prefix, not a declared discard — those cover FIRST,
+unchanged) is therefore byte-checked: with local access the check
+compares the disk file's git blob sha1 against the committed candidates'
+OIDs (size equality as the cheap first pass) — a mismatch is residue
+(FAIL, "same basename, different content", naming both paths). A
+pod-side `--outroot-listing` row with NO local bytes cannot be compared
+mechanically: the check returns **WARN** carrying the literal token
+`outroot-residue-basename-git-only` plus `<disk path> ~ <committed
+candidate path(s)>`. **That WARN is a byte-check duty for the
+exploratory pass, never a ship-as-is:** hash the pod file in place
+(`ssh_execute <pod> 'git hash-object <path>'` or `sha256sum` both sides)
+and compare against the committed candidate — equal bytes ⇒ treat as
+covered (record the comparison in the verdict note); different bytes ⇒
+the file is UNPERSISTED — disposition it exactly like a FAIL hit below,
+then re-run the check. Residue (FAIL) dominates the WARN when both are
+present.
+
+Per residue hit, exactly ONE disposition:
+
+- **Upload it** to its correct destination per the Upload Policy table,
+  then re-run the check.
+- **`git add` it** to `eval_results/issue_<N>/` — the canonical git
+  destination, which lands inside the issue-scoped git arm by
+  construction. This is the CANONICAL answer for upload-completion
+  markers/sentinels (the chicken-and-egg case): a marker written AFTER
+  its own upload structurally cannot be inside that upload; a second
+  tiny upload recreates the identical problem for ITS OWN completion
+  signal; writing the marker BEFORE the upload attests something that
+  has not happened. Route such markers to git — committing IS the
+  persistence event, verified directly by `git ls-tree`
+  (`.claude/rules/upload-policy.md` § Out-root TOP-LEVEL residue; the
+  demonstrated #2162 answer, commit `92f25415ee`).
+- **Reference a declared discard** — a plan §10 `discarded_artifacts:`
+  entry (`{name, reason, regen_recipe}`); text/JSON is NEVER
+  discardable.
+
+On PASS, the Step-5 verdict note carries the attestation token
+`outroot=<swept-clean|residue-committed|none>` (`none` = Step 1 confirmed
+the run wrote no out-root) — `pod.py terminate` refuses a
+`kind: experiment` teardown whose latest PASS note lacks it (#2187;
+`pod_lifecycle._upload_verification_outroot_attested`).
+
+## Step 2.11 — Realized row-count reconciliation
+
+**New as of #2148.** The file-level arms (Step 2.9's per-file git diff,
+Step 2.10's out-root name-set diff) reconcile which FILES exist; neither
+can see rows missing INSIDE a present file. #2091 PASSed with ~25% of
+activation-capture rows absent: every file resolved by path AND byte
+size, and the row-count check compared the producer's `_job_done.json`
+`capture_rows` — literally `manifest.get("n_rows")`, the INPUT-side
+expectation echoed back — against that same expectation. This step
+counts what is REALLY in the store's own row-index files and gates on
+it.
+
+Mechanics (`verify_uploads.py::check_realized_row_counts`), in order:
+validate the INVOCATION at check entry — exemption reasons non-empty and
+labels member of the declared set, exactly ONE row-index source
+(`--row-index-hf-prefix` and `--row-index-local-root` are mutually
+exclusive), no empty-after-strip prefix — BEFORE even the no-expectation
+SKIP and before ANY Hub read; resolve ONE pinned Hub revision (retried
+`repo_info(...).sha`) that the listing walks, the size probe, and every
+staged fetch read; enumerate the declared source — one scoped tree walk
+per DISTINCT prefix (#833; never a bare full-repo listing — the #920
+wedge) — deduplicating entries by (mode, path), an unknown (None) size
+coalescing with a known one; attribute every glob-matched
+`row_index*.jsonl` to EXACTLY ONE declared label by path-component
+boundary match; enforce the per-file AND aggregate byte/count budgets
+off the LISTING before the first fetch (unknown sizes resolved by ONE
+batched `get_paths_info` probe; still-unknown → ERROR, never assumed
+under cap; every failing budget arm returns with ZERO downloads); then
+fetch only the KB-scale index files and count non-empty lines + distinct
+tuples of the declared key fields (per-file progress lines ride STDERR —
+stdout stays a single parseable document under `--json`).
+
+Canonical invocation (repeat `--row-index-hf-prefix` per label):
+
+```bash
+uv run python scripts/verify_uploads.py --issue <N> \
+  --expected-rows <label>=<N_rows> [...] \
+  --row-index-hf-prefix <per-label prefix> [...] \
+  --row-index-distinct-key <unit_field,rollout_field> \
+  [--self-reported-rows <label>=<producer count>] \
+  [--realized-rows-exempt <label>=<reason>] --json
+```
+
+Verdict lattice (per non-exempt label; "distinct" mode = key declared):
+
+| mode | condition | verdict + tag |
+|---|---|---|
+| distinct | `distinct < expected` | **FAIL** `realized-rows-short` |
+| distinct | `distinct > expected` | **FAIL** `realized-rows-unexpected-surplus` |
+| distinct | `distinct == expected` | OK |
+| no key | `lines < expected` | **FAIL** `realized-rows-short` |
+| no key | `lines >= expected` | **WARN** `realized-rows-no-distinct-key` |
+
+ERROR arms, all fail-loud. Exemption validation
+(`realized-rows-exempt-unmatched`; a blank reason
+`realized-rows-exempt-invalid`) runs at CHECK ENTRY — before even the
+no-expectation SKIP, so an exemption-only invocation ERRORs rather than
+SKIPping — as do the two source-shape arms: `row-index-dual-source`
+(both sources supplied; refused with zero Hub reads — no cross-source
+row identity exists, and a local-only row cannot prove Hub durability)
+and `row-index-prefix-empty` (an `""`/`"/"` prefix names the operator's
+flag rather than letting `row-index-missing` blame the store).
+`row-index-missing` (a non-exempt declared label matched
+zero index files), `row-index-unattributed` / `row-index-label-ambiguous`
+(a file matching no / more than one label), `row-index-duplicate-conflict`
+(one path listed twice with CONFLICTING KNOWN sizes — an unknown (None)
+size coalesces with a known one, and overlapping prefixes otherwise
+dedupe by (mode, path) and count a file ONCE),
+`row-index-size-unknown`, `row-index-file-over-cap`, and
+`row-index-budget-exceeded` all fire BEFORE any counting can shrink a
+denominator; `row-index-key-absent` (a row missing a declared key field —
+or an unparseable row — is never silently skipped) is detected DURING
+counting and still ERRORs the whole check. Every Hub read (listing walk,
+batched size probe, staged fetch) is pinned to ONE revision resolved at
+check entry (retried `repo_info(...).sha`) and reported in the check
+detail (`hub revision: <sha>`), so a verdict is traceable to one Hub
+snapshot. SKIP fires only when no
+`--expected-rows` is declared, so legacy invocations gain exactly one
+inert SKIP row. Every label's report names expected / realized distinct
+/ realized lines / duplicates / the per-shard line breakdown.
+
+**Where `expected` comes from.** The INPUT-side declaration — the
+staging manifest's context/row count, the plan's declared cell
+arithmetic — cross-checked against the store manifest's own declared
+expectation; a DISAGREEMENT between the two is a FAIL recorded in the
+verdict cell. RECORD the expectation's source path + field in the
+verdict cell (not just its value), so a later reader can audit the
+trust boundary.
+
+**Never gate on a producer count field.** #2091's fields were wrong in
+BOTH directions: `capture_rows` over-reported pre-repair (echoing
+`n_rows`=2000 for a 1,552-line store) and the post-repair manifest's
+`n_rows_captured` UNDER-reports (1,488 against 2,000 realized distinct
+rows, stale since the repair). Pass such fields via
+`--self-reported-rows` — reported for context, never the gate quantity;
+a self-reported-vs-realized disagreement appends
+`producer-field-mismatch` and never flips the verdict on its own (a
+legitimately repaired store carries a stale field).
+
+**The composite-key requirement.** `--row-index-distinct-key` must be
+the store's FULL logical row identity — the unit key PLUS any
+draw/rollout/seed index — and `expected` is denominated in distinct
+full-key rows. A unit-key-only declaration is legal only where rows are
+genuinely 1:1 with units; otherwise a store holding 1 of K rollouts per
+unit passes unit coverage while (K-1)/K of its rows are missing. The
+raw LINE count is never the gate quantity either: a healthy repaired
+store legitimately holds MORE lines than rows (#2091 post-repair: 2,048
+lines / 2,000 distinct — a line-count gate would FAIL every repaired
+store).
+
+**The exemption contract.** `--realized-rows-exempt LABEL=REASON` is
+LABEL-grained with a mandatory reason, applied after counting, and
+always emits a visible WARN row that still reports the realized counts
+(including realized 0 for a fully-absent exempt class); an exemption
+naming an undeclared label ERRORs. Exemptions never remove files, never
+suppress a row, never turn a row OK. A path-glob exemption deliberately
+does not exist: removing files from a label's count is indistinguishable
+from the shortfall this check exists to catch.
+
+**Invocation scoping.** A declared prefix must be label-COVERED — every
+file its glob matches resolves to exactly one declared label — so a
+whole-store prefix with a partial label set is a mis-scoped invocation
+the `row-index-unattributed` arm correctly refuses; the remedy is
+per-label prefixes (the flag is repeatable), never a weaker arm. Same
+remedy for a NESTED label vocabulary (`arm` / `arm-repair`):
+`row-index-label-ambiguous` there names a defect of the invocation, not
+of the store. Local-mode source (`--row-index-local-root`) covers
+staged pre-teardown copies and is MUTUALLY EXCLUSIVE with
+`--row-index-hf-prefix` (#2148: no cross-source row identity exists,
+and a local-only row cannot prove durability on a gate whose PASS
+licenses deleting that local copy — mixed-source invocations are
+refused at the CLI and at check entry alike); on a GCP `eps-issue-*`
+instance remember Step 1's `sudo` note (a root-owned tree reads empty).
+
+On PASS, the Step-5 verdict note carries the attestation token
+`rows=<reconciled|no-declared-count|n/a>` beside `outroot=`
+(`reconciled` = every non-exempt label reconciled; `no-declared-count`
+= the sweep ran but the run declared no expectation, so the check
+SKIPped; `n/a` = no per-row-index artifact class exists) — `pod.py
+terminate` refuses a `kind: experiment` teardown whose latest PASS note
+lacks it (#2148; `pod_lifecycle._upload_verification_rows_attested`).
 
 ## Step 3 — Justify every N/A
 

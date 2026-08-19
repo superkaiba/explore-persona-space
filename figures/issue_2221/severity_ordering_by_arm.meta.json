@@ -1,0 +1,157 @@
+{
+  "commit": "2b448210+dirty",
+  "render_id": "1d15034cddf647c7",
+  "git_commit": "2b448210",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/h2_delta_forest.meta.json",
+    "figures/issue_2221/h2_delta_forest.pdf",
+    "figures/issue_2221/h2_delta_forest.png",
+    "figures/issue_2221/monitor_vs_score_per_unit.meta.json",
+    "figures/issue_2221/monitor_vs_score_per_unit.pdf",
+    "figures/issue_2221/monitor_vs_score_per_unit.png",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.png",
+    "figures/issue_2221/trait_scores_by_cell.meta.json",
+    "figures/issue_2221/trait_scores_by_cell.pdf",
+    "figures/issue_2221/trait_scores_by_cell.png",
+    "scripts/issue2221_dv_figs.py",
+    "scripts/issue2221_monitors.py"
+  ],
+  "created": "2026-08-13T00:05:15Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "fraction of 8 families correctly ordered": 0.375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "fraction of 8 families correctly ordered": 0.375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "fraction of 8 families correctly ordered": 0.5,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "fraction of 8 families correctly ordered": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "fraction of 8 families correctly ordered": 0.125,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "fraction of 8 families correctly ordered": 0.25,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.4,
+      "fraction of 8 families correctly ordered": 0.25,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.4,
+      "fraction of 8 families correctly ordered": 0.125,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.4,
+      "fraction of 8 families correctly ordered": 0.25,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.6,
+      "fraction of 8 families correctly ordered": 0.125,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.6,
+      "fraction of 8 families correctly ordered": 0.125,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.6,
+      "fraction of 8 families correctly ordered": 0.375,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "fraction of 8 families correctly ordered": 0.16666666666666666,
+      "series": "chance (1/6)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "fraction of 8 families correctly ordered": 0.16666666666666666,
+      "series": "chance (1/6)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "fraction of 8 families correctly ordered",
+        "legend_labels": [
+          "chance (1/6)",
+          "paper's last-prompt-token read",
+          "answer oracle",
+          "mapped context read",
+          "mapped prefix read"
+        ],
+        "xticklabels": [
+          "evil",
+          "sycophancy",
+          "hallucination"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "chance (1/6)",
+      "paper's last-prompt-token read",
+      "answer oracle",
+      "mapped context read",
+      "mapped prefix read"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

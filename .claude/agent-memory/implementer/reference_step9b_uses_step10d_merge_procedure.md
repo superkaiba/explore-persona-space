@@ -12,9 +12,13 @@ auto-merge procedure**" (SKILL.md ~line 4981). Both the experiment path
 SKILL.md ~6033+.
 
 That procedure already has a full safe/unsafe decision tree:
-- **Guards 1-3** (foreign-tasks / status / branch-content+non-mainline).
-  Guard 3 trips when `ON_MAINLINE=no` OR own-commits (`origin/main...HEAD`
-  three-dot) touch foreign-tasks/out-of-scope paths. `BEHIND` alone is
+- **Guards 1-3** (foreign-tasks / status / branch-content+merge-base).
+  As of #2320 Guard 3's single UNSAFE trigger is the own-commits content
+  check (`origin/main...HEAD` three-dot touching foreign-tasks /
+  out-of-scope paths), run unconditionally on every branch; a missing
+  merge-base is a hard stop, and the first-parent read (`MB_FIRST_PARENT`)
+  is a recorded diagnostic only — it false-flagged benign second-parent
+  merge-form landings UNSAFE (#2319/#1144). `BEHIND` alone is
   never the trip (every task.py marker is a commit; same-day branches read
   BEHIND in the thousands — #537 read BEHIND=17057/8019).
 - **Safe case** (guard 3 clean): `gh pr merge --rebase`; on real conflict

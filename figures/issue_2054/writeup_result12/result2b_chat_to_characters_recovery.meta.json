@@ -1,0 +1,940 @@
+{
+  "commit": "be2eed71+dirty",
+  "render_id": "9fb23a1045bb48b6",
+  "git_commit": "be2eed71",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_result12/result1_framing_rungs.meta.json",
+    "figures/issue_2054/writeup_result12/result1_framing_rungs.pdf",
+    "figures/issue_2054/writeup_result12/result1_framing_rungs.png",
+    "figures/issue_2054/writeup_result12/result1_framing_rungs_recovery.meta.json",
+    "figures/issue_2054/writeup_result12/result1_framing_rungs_recovery.pdf",
+    "figures/issue_2054/writeup_result12/result1_framing_rungs_recovery.png",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.meta.json",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.pdf",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters.png",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters_recovery.meta.json",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters_recovery.pdf",
+    "figures/issue_2054/writeup_result12/result2a_story_to_characters_recovery.png",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.meta.json",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.pdf",
+    "figures/issue_2054/writeup_result12/result2b_chat_to_characters.png",
+    "scripts/issue2054_cross_render_fit.py"
+  ],
+  "created": "2026-08-13T21:40:20Z",
+  "figsize": [
+    11.2,
+    4.9
+  ],
+  "points": [
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.020194060637991,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.30963923332982624,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8440652042059074,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -0.662522958597524,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "fraction of target ceiling recovered": 1.289438269828829,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.4622121988392058,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.259890428181019,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8569509746750528,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -1.1036465042906949,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "fraction of target ceiling recovered": 1.4418897533235222,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.9185061853682628,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.19986915410930098,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8397760041622303,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -1.343032589112736,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "fraction of target ceiling recovered": 1.5252941617926747,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.493173468907669,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.255668019991373,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8354245883113888,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -1.0934406179561922,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "fraction of target ceiling recovered": 1.4501602839262662,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -2.0284268407834003,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.47547303771294763,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.11371391507261244,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": 0.07275987841822673,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "fraction of target ceiling recovered": 0.3750133169671781,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.473726411993688,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.48875607630527435,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.02259797093600979,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -0.029234724607041525,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "fraction of target ceiling recovered": 0.27985164092528714,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.7836185783947938,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.4974982117576454,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": -0.15880462628645622,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -0.29473477768926565,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "fraction of target ceiling recovered": 0.17489180529810783,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.681255445685867,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.4815947149421551,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": -0.006269955652530699,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": 0.015273881456951181,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "fraction of target ceiling recovered": 0.29831688952102964,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.020194060637991,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.30963923332982624,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8440652042059074,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -0.662522958597524,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.4622121988392058,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.259890428181019,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8569509746750528,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -1.1036465042906949,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.9185061853682628,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.19986915410930098,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8397760041622303,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -1.343032589112736,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.493173468907669,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.255668019991373,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.8354245883113888,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -1.0934406179561922,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -2.0284268407834003,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.47547303771294763,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.11371391507261244,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": 0.07275987841822673,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.473726411993688,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.48875607630527435,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": 0.02259797093600979,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -0.029234724607041525,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.7836185783947938,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.4974982117576454,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": -0.15880462628645622,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": -0.29473477768926565,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "fraction of target ceiling recovered": -1.681255445685867,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "fraction of target ceiling recovered": 0.4815947149421551,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "fraction of target ceiling recovered": -0.006269955652530699,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "fraction of target ceiling recovered": 0.015273881456951181,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.5359795383362684,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.25813570681768433,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7891649612685915,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.6781208999967283,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "y": 1.5561673748528944,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.6428484672751515,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.24331558206086407,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7972421031430906,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.6958502636361954,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "y": 1.7110528413928172,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -2.580470689988226,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.17721638866187991,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7588229654044802,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -1.2664846877521394,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "y": 1.8075284254833976,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.9736526286935885,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.23875639965249898,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7673337969321085,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.8259754895454823,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.5600000000000005,
+      "y": 1.6883750766812615,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.0330427791129926,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.50080715716295,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.24055742979188105,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.1488781175948674,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "y": 0.640790572434476,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.39255302165806,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.4487643733915695,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.13923669543764422,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.0650344128966212,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "y": 0.6015750445363462,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.6425336996633222,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.3863168898310382,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.15451364579001492,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.11301308268784137,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "y": 0.28830637543038096,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.3048501309644722,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.47094975743335127,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.021908317183383725,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.07171904119814962,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 4.84,
+      "y": 0.4828162919025473,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.5359795383362684,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.25813570681768433,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7891649612685915,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.6781208999967283,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.6428484672751515,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.24331558206086407,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7972421031430906,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.6958502636361954,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -2.580470689988226,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.17721638866187991,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7588229654044802,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -1.2664846877521394,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.9736526286935885,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.23875639965249898,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.7673337969321085,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.8259754895454823,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.0330427791129926,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.50080715716295,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.24055742979188105,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.1488781175948674,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.39255302165806,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.4487643733915695,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.13923669543764422,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.0650344128966212,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.6425336996633222,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.3863168898310382,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": -0.15451364579001492,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": -0.11301308268784137,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "y": -1.3048501309644722,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "y": 0.47094975743335127,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "y": 0.021908317183383725,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "y": 0.07171904119814962,
+      "_kind": "line",
+      "_group": 59
+    }
+  ],
+  "n_series": 60,
+  "total_points": 144,
+  "text": {
+    "suptitle": "Assistant chat map re-used on each story character (bare-label boundary)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B (base)",
+        "xlabel": "transfer rung (more adaptation allowed \u2192)",
+        "ylabel": "fraction of target ceiling recovered",
+        "xticklabels": [
+          "1 direct\ntransfer",
+          "6 rotation",
+          "7 context\nre-map",
+          "8 answer\nre-map",
+          "paired\nfit"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "xlabel": "transfer rung (more adaptation allowed \u2192)",
+        "xticklabels": [
+          "1 direct\ntransfer",
+          "6 rotation",
+          "7 context\nre-map",
+          "8 answer\nre-map",
+          "paired\nfit"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

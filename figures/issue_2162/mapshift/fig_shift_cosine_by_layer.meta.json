@@ -1,0 +1,955 @@
+{
+  "commit": "fec701f1+dirty",
+  "render_id": "be0349f3b15e46d1",
+  "git_commit": "fec701f1",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_bypath_brief_frozen_events_resolution.md",
+    ".claude/agent-memory/codex-code-reviewer/feedback_missing_impl_marker_probe_checklist.md",
+    "tasks/running/2148/concerns.jsonl",
+    "tasks/running/2148/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-16T18:22:47Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "cos(map-predicted shift, realized patched shift)": 0.1163719728589058,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "cos(map-predicted shift, realized patched shift)": 0.15836538672447203,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "cos(map-predicted shift, realized patched shift)": 0.12432034760713577,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "cos(map-predicted shift, realized patched shift)": 0.14681043475866318,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "cos(map-predicted shift, realized patched shift)": 0.15672444999217988,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "cos(map-predicted shift, realized patched shift)": 0.14515308290719986,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "cos(map-predicted shift, realized patched shift)": 0.1473092406988144,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "cos(map-predicted shift, realized patched shift)": 0.1521020919084549,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "cos(map-predicted shift, realized patched shift)": 0.15127739161252976,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "cos(map-predicted shift, realized patched shift)": 0.11036685109138489,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "cos(map-predicted shift, realized patched shift)": 0.14115983098745347,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "cos(map-predicted shift, realized patched shift)": 0.1568310707807541,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "cos(map-predicted shift, realized patched shift)": 0.17331980764865876,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "cos(map-predicted shift, realized patched shift)": 0.18141384422779083,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "cos(map-predicted shift, realized patched shift)": 0.18903105854988098,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "cos(map-predicted shift, realized patched shift)": 0.24848198592662812,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "cos(map-predicted shift, realized patched shift)": 0.25191589891910554,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "cos(map-predicted shift, realized patched shift)": 0.252650848031044,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "cos(map-predicted shift, realized patched shift)": 0.2855349063873291,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "cos(map-predicted shift, realized patched shift)": 0.34859818816184995,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "cos(map-predicted shift, realized patched shift)": 0.32218600511550904,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "cos(map-predicted shift, realized patched shift)": 0.2786424279212952,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "cos(map-predicted shift, realized patched shift)": 0.23816993236541747,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "cos(map-predicted shift, realized patched shift)": 0.2359449714422226,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "cos(map-predicted shift, realized patched shift)": 0.22584465146064758,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "cos(map-predicted shift, realized patched shift)": 0.23169721961021422,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "cos(map-predicted shift, realized patched shift)": 0.23165023624897002,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "cos(map-predicted shift, realized patched shift)": 0.2687830597162247,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "cos(map-predicted shift, realized patched shift)": 0.12229062467813492,
+      "series": "banked single-turn map (#779)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "cos(map-predicted shift, realized patched shift)": 0.27596381604671477,
+      "series": "banked single-turn map (#779)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "cos(map-predicted shift, realized patched shift)": 0.2519533634185791,
+      "series": "banked single-turn map (#779)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "cos(map-predicted shift, realized patched shift)": 0.1428890272974968,
+      "series": "banked multi-turn map (#1738)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "cos(map-predicted shift, realized patched shift)": 0.28910664916038514,
+      "series": "banked multi-turn map (#1738)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "cos(map-predicted shift, realized patched shift)": 0.23720179200172425,
+      "series": "banked multi-turn map (#1738)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "cos(map-predicted shift, realized patched shift)": -0.014668888156302273,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "cos(map-predicted shift, realized patched shift)": -0.0036620151251554487,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "cos(map-predicted shift, realized patched shift)": 0.0025923965498805047,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "cos(map-predicted shift, realized patched shift)": 0.015632324467878787,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "cos(map-predicted shift, realized patched shift)": 0.013039670861326158,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "cos(map-predicted shift, realized patched shift)": 0.006039783598680515,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "cos(map-predicted shift, realized patched shift)": -0.003087780997157097,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "cos(map-predicted shift, realized patched shift)": 0.0004320905078202486,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "cos(map-predicted shift, realized patched shift)": -0.003280517435632646,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "cos(map-predicted shift, realized patched shift)": -0.002467896696180105,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "cos(map-predicted shift, realized patched shift)": 0.00968537013977766,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "cos(map-predicted shift, realized patched shift)": 0.002533242106437683,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "cos(map-predicted shift, realized patched shift)": 0.004042065207613632,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "cos(map-predicted shift, realized patched shift)": 0.00816937007184606,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "cos(map-predicted shift, realized patched shift)": 0.016272999998182058,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "cos(map-predicted shift, realized patched shift)": 0.03801893703639507,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "cos(map-predicted shift, realized patched shift)": 0.03804166913032532,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "cos(map-predicted shift, realized patched shift)": 0.05201388373970985,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "cos(map-predicted shift, realized patched shift)": 0.0738514356315136,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "cos(map-predicted shift, realized patched shift)": 0.13747372925281526,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "cos(map-predicted shift, realized patched shift)": 0.13693532347679138,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "cos(map-predicted shift, realized patched shift)": 0.11937816590070724,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "cos(map-predicted shift, realized patched shift)": 0.12201234251260758,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "cos(map-predicted shift, realized patched shift)": 0.1344494715332985,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "cos(map-predicted shift, realized patched shift)": 0.1361019119620323,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "cos(map-predicted shift, realized patched shift)": 0.12459011226892472,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "cos(map-predicted shift, realized patched shift)": 0.10528085976839066,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "cos(map-predicted shift, realized patched shift)": 0.06690164804458618,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "y": 0.0550941005431247,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "y": 0.06376702029769941,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "y": 0.05790277458025883,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "y": 0.07150253098314771,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "y": 0.0751153700119362,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "y": 0.07801146635737939,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "y": 0.0838719058307246,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "y": 0.08199132339863215,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "y": 0.07966505910735577,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "y": 0.06453511665593116,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "y": 0.07937832952787478,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "y": 0.08199727652110876,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "y": 0.08799019710680184,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "y": 0.09267770218474862,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "y": 0.09244493172408487,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "y": 0.1159708864840631,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "y": 0.11901196906677423,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "y": 0.12279571036738045,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "y": 0.13710736642734936,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "y": 0.17804190983327153,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "y": 0.16784280850790823,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "y": 0.15537543670656398,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "y": 0.14181020574268097,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "y": 0.1430417753932162,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "y": 0.14867746038511634,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "y": 0.14866150153251603,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "y": 0.1463385503530168,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "y": 0.1647535886687155,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "y": 0.08303788560517252,
+      "series": "banked single-turn map (#779)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "y": 0.1757660051748061,
+      "series": "banked single-turn map (#779)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "y": 0.17580615191792065,
+      "series": "banked single-turn map (#779)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "y": 0.09212981651011759,
+      "series": "banked multi-turn map (#1738)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "y": 0.18152685281939995,
+      "series": "banked multi-turn map (#1738)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "y": 0.17172198292488852,
+      "series": "banked multi-turn map (#1738)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "y": 0.004655471403683082,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "y": 0.003476481015893977,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "y": 0.009997935108959867,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "y": 0.0068799146564486316,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "y": 0.008165291992601199,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "y": 0.0005019207349575411,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "y": 0.002865049358194646,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "y": 0.0029155552157391915,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "y": 0.005241570849485027,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "y": 0.004136082600617113,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "y": 0.009616842077006228,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "y": 0.00873736666294579,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "y": 0.00929901237899545,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "y": 0.01687050337652461,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "y": 0.02471809176644549,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "y": 0.03710313057168745,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "y": 0.034612767271681104,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "y": 0.04058946027315613,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "y": 0.05544233851684018,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "y": 0.10233081485001513,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "y": 0.10418906327910148,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "y": 0.09697973973510297,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "y": 0.09545288501808849,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "y": 0.10187072440338596,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "y": 0.10771174911254396,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "y": 0.10256433114409447,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "y": 0.09077629661903931,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "y": 0.0673532343039719,
+      "series": "raw context shift (no map)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 124,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "stored-and-used cells (n=5)",
+        "xlabel": "layer",
+        "ylabel": "cos(map-predicted shift, realized patched shift)",
+        "legend_labels": [
+          "null patch arms (shuffled / cross-type donors)",
+          "map fit on this bank",
+          "banked single-turn map (#779)",
+          "banked multi-turn map (#1738)",
+          "raw context shift (no map)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "title": "all cells (n=39)",
+        "xlabel": "layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "map fit on this bank",
+      "banked single-turn map (#779)",
+      "banked multi-turn map (#1738)",
+      "raw context shift (no map)",
+      "null patch arms (shuffled / cross-type donors)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -9,7 +9,7 @@ SKILL.md Step 6b / 6d / 8 actually shells:
 2. ``launch`` action with ``--backend runpod`` → RunPod launched +
    sidecar written.
 2b. ``launch`` with ``--backend runpod`` while the task's frontmatter
-    has NO ``backend:`` value (GCP-first bypass, incident lineage #571)
+    has NO ``backend:`` value (unbacked override, incident lineage #571)
     → LOUD warning + ``extra.override_without_frontmatter=true`` on the
     ``epm:backend-selected`` marker; frontmatter ``backend: runpod`` →
     neither; unreadable frontmatter → check skipped, launch proceeds.
@@ -98,6 +98,26 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     monkeypatch.setattr(
         router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
     )
+
+
+@pytest.fixture(autouse=True)
+def _pin_issue_branch_probe(monkeypatch):
+    """Pin the #2161 issue-branch refusal probe EMPTY for every test.
+
+    ``_issue_branch_candidates`` shells ``git for-each-ref`` at the REAL
+    repo root, and fabricated test issue numbers (304, 535, 824, ...) can
+    and do have live ``origin/issue-<N>`` refs — leaking real-repo ref
+    state into test outcomes (#2161 plan §12 assumption 5). Default every
+    test to an EMPTY probe (the pre-#2161 refusal-never-fires behavior);
+    tests exercising the refusal re-``setattr`` a non-empty probe, and the
+    fail-open e2e test restores the REAL probe via this fixture's yielded
+    original.
+    """
+    import scripts.dispatch_issue as di
+
+    original = di._issue_branch_candidates
+    monkeypatch.setattr(di, "_issue_branch_candidates", lambda issue: [])
+    yield original
 
 
 # ---------------------------------------------------------------------------
@@ -393,9 +413,11 @@ def test_launch_runpod_override_without_frontmatter_warns_and_flags_marker(
     monkeypatch, tmp_path, caplog
 ) -> None:
     """2b (incident lineage #571): ``--backend runpod`` while the task's
-    frontmatter has NO ``backend:`` value silently bypasses the GCP-first
-    standing default. The CLI must (a) WARN loudly on stderr naming the
-    residual gaps, (b) stamp ``extra.override_without_frontmatter=true``
+    frontmatter has NO ``backend:`` value is an explicit override with no
+    frontmatter backing (since #2054 auto already leads with RunPod, so
+    the pin usually buys nothing). The CLI must (a) WARN loudly on stderr
+    naming the RunPod-specific shapes that justify a deliberate pin,
+    (b) stamp ``extra.override_without_frontmatter=true``
     on the ``epm:backend-selected`` marker, and (c) NOT block the launch
     or change the argument contract."""
     posts: list[dict[str, Any]] = []
@@ -405,9 +427,10 @@ def test_launch_runpod_override_without_frontmatter_warns_and_flags_marker(
         )
     assert rc == 0
     warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
-    assert any("override_without_frontmatter" in m and "GCP FIRST" in m for m in warnings), (
-        f"expected the loud GCP-first bypass warning; got {warnings!r}"
-    )
+    assert any(
+        "override_without_frontmatter" in m and "auto already leads with RunPod" in m
+        for m in warnings
+    ), f"expected the loud override-without-frontmatter warning; got {warnings!r}"
     extras = _backend_selected_extras(posts)
     assert extras, "expected at least one epm:backend-selected post"
     assert all(e.get("override_without_frontmatter") is True for e in extras)
@@ -417,8 +440,8 @@ def test_launch_runpod_override_with_explicit_auto_frontmatter_warns_and_flags_m
     monkeypatch, tmp_path, caplog
 ) -> None:
     """2b widening: explicit frontmatter ``backend: auto`` + CLI
-    ``--backend runpod`` is the same GCP-first bypass in spirit as the
-    absent/empty case — the frontmatter states the auto-routing intent
+    ``--backend runpod`` is the same unbacked-override shape in spirit as
+    the absent/empty case — the frontmatter states the auto-routing intent
     even more explicitly — so it gets the same loud warning + marker
     flag, and the launch still proceeds."""
     posts: list[dict[str, Any]] = []
@@ -428,9 +451,10 @@ def test_launch_runpod_override_with_explicit_auto_frontmatter_warns_and_flags_m
         )
     assert rc == 0
     warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
-    assert any("override_without_frontmatter" in m and "GCP FIRST" in m for m in warnings), (
-        f"expected the loud GCP-first bypass warning; got {warnings!r}"
-    )
+    assert any(
+        "override_without_frontmatter" in m and "auto already leads with RunPod" in m
+        for m in warnings
+    ), f"expected the loud override-without-frontmatter warning; got {warnings!r}"
     extras = _backend_selected_extras(posts)
     assert extras, "expected at least one epm:backend-selected post"
     assert all(e.get("override_without_frontmatter") is True for e in extras)
@@ -879,6 +903,82 @@ def test_launch_gcp_create_timeout_still_provisioning_exits_75(monkeypatch, tmp_
     assert "status" not in body
     # No sidecar — the launch never completed (re-run resumes the wait).
     assert not default_handle_sidecar_path(736).exists()
+
+
+def test_launch_free_lane_still_waiting_exits_75_with_rerun_json_no_failure_keys(
+    monkeypatch, tmp_path
+) -> None:
+    """The free-lane THIRD producer of exit 75 (#2161): a free SLURM lane's
+    queue park reached the per-process budget
+    (EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) — the router raises
+    ``FreeLaneStillWaitingError`` with the ladder position persisted to the
+    durable lease. The CLI must convert it to the still-waiting JSON
+    (``still_waiting: true`` + ``rerun: true`` + the additive ``lane`` /
+    ``job_id`` / ``qos`` / ``rung`` / ``n_rungs`` / ``rung_park_elapsed_s``
+    keys) and exit 75 — never the exit-2 ``RouteError`` arm (the error is
+    deliberately NOT a RouteError) and never the rc-4 catch-all. Mirrors
+    the two exit-75 tests above; deliberately NO ``failure_class`` /
+    ``status`` keys so the orchestrator does NOT post ``epm:failure`` /
+    ``set-status blocked``."""
+    from explore_persona_space.backends.router import FreeLaneStillWaitingError
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "nibi")
+    nibi = _MockBackend(
+        kind="nibi",
+        launch_should_raise=FreeLaneStillWaitingError(
+            issue=2161,
+            lane="nibi",
+            cluster="nibi",
+            job_id="31337",
+            qos=None,
+            rung_idx=0,
+            n_rungs=1,
+            rung_park_elapsed_s=417.0,
+        ),
+    )
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                "2161",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == cli.EXIT_STILL_WAITING == 75
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["still_waiting"] is True
+    assert body["rerun"] is True
+    assert body["reason"] == "free_lane_park_budget_reached"
+    # Additive keys carry the parked ladder position the re-run resumes.
+    assert body["lane"] == "nibi"
+    assert body["job_id"] == "31337"
+    assert body["qos"] is None
+    assert body["rung"] == 1
+    assert body["n_rungs"] == 1
+    assert body["rung_park_elapsed_s"] == 417.0
+    # The note names the resume contract + the backend_poll handoff ban.
+    assert "re-run the SAME" in body["note"]
+    assert "backend_poll" in body["note"]
+    # Deliberately NO failure_class / status keys — the orchestrator must
+    # not post epm:failure / set-status blocked on this exit.
+    assert "failure_class" not in body
+    assert "status" not in body
+    # No sidecar — the launch never completed (re-run resumes the park).
+    assert not default_handle_sidecar_path(2161).exists()
 
 
 def test_launch_unrelated_calledprocesserror_keeps_generic_rc4(monkeypatch, tmp_path) -> None:
@@ -1784,9 +1884,14 @@ def test_launch_repo_branch_explicit_flag_wins_over_current_branch(monkeypatch, 
     assert gcp.launches[0].extra.get("repo_branch") == "release-x"
 
 
-def test_launch_repo_branch_not_defaulted_on_explicit_slurm_lane(monkeypatch, tmp_path) -> None:
-    """An explicit SLURM lane never escalates to GCP, so the gcp-only
-    repo_branch knob is not threaded (SLURM rsyncs the local worktree)."""
+def test_launch_repo_branch_defaulted_on_explicit_slurm_lane(monkeypatch, tmp_path) -> None:
+    """#2161 (inverts the pre-#793-stale pin): post-#793 the SLURM lanes
+    HONOR ``repo_branch`` — ``materialize_branch_src`` rsyncs a
+    committed-tree snapshot of the REQUESTED branch, and an unset value
+    resolves to ``main`` (the #1336 stale-code shape) — so the
+    current-branch default now fires on an explicit SLURM lane exactly as
+    on gcp/auto. (The old rationale, "SLURM rsyncs the local worktree /
+    has no honoring mechanism", described the pre-#793 lane.)"""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
@@ -1811,7 +1916,7 @@ def test_launch_repo_branch_not_defaulted_on_explicit_slurm_lane(monkeypatch, tm
             backends_factory=factory,
         )
     assert rc == 0
-    assert "repo_branch" not in nibi.launches[0].extra
+    assert nibi.launches[0].extra.get("repo_branch") == "issue-535-feature"
 
 
 def test_launch_repo_branch_not_defaulted_when_on_main_and_no_worktree(
@@ -1820,12 +1925,16 @@ def test_launch_repo_branch_not_defaulted_when_on_main_and_no_worktree(
     """A main-branch checkout WITHOUT a per-issue worktree keeps the GCE
     clone default ("main") — no spurious extra key, no log noise. (Rescoped
     for #824: the worktree-branch fallback needs the no-worktree case pinned
-    explicitly now that a present worktree DOES default.)"""
+    explicitly now that a present worktree DOES default. Rescoped again for
+    #2161: the branch probe is pinned EMPTY explicitly — with no live
+    issue-<N> branch the refusal guard stands down and the original pin is
+    preserved; a non-empty probe is the refusal test's territory.)"""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
     monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
     monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    monkeypatch.setattr(di, "_issue_branch_candidates", lambda issue: [])
     gcp = _MockBackend(kind="gcp")
     factory = _build_mock_factory(gcp=gcp)
 
@@ -2083,12 +2192,14 @@ def test_launch_repo_branch_current_branch_wins_over_worktree_branch(monkeypatch
     assert guard_calls == []
 
 
-def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_slurm_lane(
+def test_launch_repo_branch_defaulted_from_worktree_on_explicit_slurm_lane(
     monkeypatch, tmp_path
 ) -> None:
-    """#824 lane gate: the worktree fallback never fires on an explicit
-    SLURM lane (``--backend nibi``) — SLURM refuses non-main repo_branch
-    (#653 r8), so the default stays gcp/auto-only."""
+    """#2161 (inverts the #824 lane-gate pin): the worktree fallback now
+    fires on an explicit SLURM lane too — post-#793 ``repo_branch`` is
+    honored there (``materialize_branch_src`` rsyncs the committed
+    snapshot of the requested branch), and the pushed-branch guard is
+    consulted with (branch, worktree_root) exactly as on gcp/auto."""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
@@ -2120,8 +2231,8 @@ def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_slurm_lane(
             backends_factory=factory,
         )
     assert rc == 0
-    assert "repo_branch" not in nibi.launches[0].extra
-    assert guard_calls == []
+    assert nibi.launches[0].extra.get("repo_branch") == "issue-824-wf-fix"
+    assert guard_calls == [("issue-824-wf-fix", worktree)]
 
 
 def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_runpod_lane(
@@ -2162,6 +2273,257 @@ def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_runpod_lane(
     assert rc == 0
     assert "repo_branch" not in runpod.launches[0].extra
     assert guard_calls == []
+
+
+# ---------------------------------------------------------------------------
+# #2161 CLI drift guards: repo-branch refusal (Gap 2 ii) + max-run-duration
+# refusal (Gap 2 iii)
+# ---------------------------------------------------------------------------
+
+
+def test_slurm_lane_backends_mirror_matches_issue_dispatch() -> None:
+    """The import-light ``_SLURM_LANE_BACKENDS`` mirror must track the
+    canonical ``issue_dispatch._SLURM_LANES`` set (the EXIT_STILL_WAITING
+    mirror-pin precedent)."""
+    import scripts.dispatch_issue as di
+    from explore_persona_space.backends.issue_dispatch import _SLURM_LANES
+
+    assert set(di._SLURM_LANE_BACKENDS) == set(_SLURM_LANES)
+
+
+def test_launch_repo_branch_missing_with_issue_branch_refuses_exit_2(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (ii): no ``--repo-branch``, defaulting resolves nothing,
+    a live ``issue-<N>`` branch exists, and the auto chain reaches
+    repo-materializing lanes → pre-route refusal (exit 2,
+    ``reason: repo_branch_required_issue_branch_exists``) BEFORE any
+    backend is touched; the note names the candidates + both escapes."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    monkeypatch.setattr(
+        di,
+        "_issue_branch_candidates",
+        lambda issue: [f"issue-{issue}-fullcorpora", f"origin/issue-{issue}-fullcorpora"],
+    )
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            ["launch", "--issue", "1336", "--intent", "lora-7b", "--hydra", "smoke=1"],
+            backends_factory=factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["reason"] == "repo_branch_required_issue_branch_exists"
+    assert body["failure_class"] == "infra"
+    assert "issue-1336-fullcorpora" in body["note"]
+    assert "--repo-branch main" in body["note"]
+    assert "--repo-branch <branch>" in body["note"]
+    assert nibi.launches == []
+
+
+def test_launch_repo_branch_explicit_main_escape_proceeds(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (ii) escape: an explicit ``--repo-branch main`` bypasses
+    the refusal BY CONSTRUCTION (extra['repo_branch'] is set before the
+    guard runs) even while the branch probe reads non-empty."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    monkeypatch.setattr(
+        di, "_issue_branch_candidates", lambda issue: [f"origin/issue-{issue}-live"]
+    )
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+                "--repo-branch",
+                "main",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "main"
+
+
+def test_launch_repo_branch_probe_failure_fails_open(
+    _pin_issue_branch_probe, monkeypatch, tmp_path, caplog
+) -> None:
+    """#2161 Gap 2 (ii) fail-open: a git subprocess failure inside the REAL
+    ``_issue_branch_candidates`` degrades to an EMPTY candidate list + WARN
+    — the guard stands down and the launch proceeds (a git hiccup must
+    never block launches; the residual is exactly the pre-#2161 behavior)."""
+    import subprocess as sp
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    # Restore the REAL probe (the autouse fixture pinned it empty) ...
+    monkeypatch.setattr(di, "_issue_branch_candidates", _pin_issue_branch_probe)
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+
+    # ... and make ONLY its `git for-each-ref` subprocess call fail.
+    real_run = sp.run
+
+    def _failing_for_each_ref(cmd, *a, **k):
+        argv = [str(c) for c in cmd] if isinstance(cmd, (list, tuple)) else [str(cmd)]
+        if "for-each-ref" in argv:
+            raise sp.TimeoutExpired(cmd="git", timeout=30)
+        return real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(di.subprocess, "run", _failing_for_each_ref)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with (
+        caplog.at_level(logging.WARNING, logger="dispatch_issue"),
+        redirect_stdout(buf),
+    ):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in gcp.launches[0].extra
+    assert any("failing OPEN" in rec.getMessage() for rec in caplog.records)
+
+
+def test_launch_max_run_duration_without_time_budget_slurm_reachable_refuses_exit_2(
+    monkeypatch, tmp_path
+) -> None:
+    """#2161 Gap 2 (iii): ``--max-run-duration`` with NO
+    ``--time-budget-hours`` while a SLURM lane is reachable (auto default
+    order carries fellows/nibi/fir/mila; explicit SLURM lane likewise) →
+    pre-route refusal (exit 2) naming the intent's default budget — the
+    declared GCP fence would silently evaporate on SLURM (#1336)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    for backend_argv in ([], ["--backend", "fellows"]):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = di.main(
+                [
+                    "launch",
+                    "--issue",
+                    "1336",
+                    "--intent",
+                    "lora-7b",
+                    *backend_argv,
+                    "--max-run-duration",
+                    "24h",
+                    "--hydra",
+                    "smoke=1",
+                ],
+                backends_factory=factory,
+            )
+        assert rc == 2, backend_argv
+        body = json.loads(buf.getvalue().strip())
+        assert body["reason"] == "max_run_duration_slurm_inert_without_time_budget"
+        assert body["failure_class"] == "infra"
+        # lora-7b's intent default (backends/slurm._DEFAULT_TIME_BUDGETS_HOURS).
+        assert "6 h" in body["note"]
+        assert "--time-budget-hours" in body["note"]
+    assert nibi.launches == []
+
+
+def test_launch_max_run_duration_with_time_budget_proceeds(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (iii): BOTH flags present → proceed (the corrected #1336
+    command shape) — even on an explicit SLURM lane."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--max-run-duration",
+                "24h",
+                "--time-budget-hours",
+                "24",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra.get("max_run_duration") == "24h"
+    assert nibi.launches[0].time_budget_hours == 24
+
+
+def test_launch_max_run_duration_runpod_pin_no_refusal(monkeypatch, tmp_path) -> None:
+    """#2161 Gap 2 (iii): an explicit ``--backend runpod`` pin makes SLURM
+    unreachable — ``--max-run-duration`` without ``--time-budget-hours``
+    stays documented-inert and the launch proceeds."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "1336",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--max-run-duration",
+                "24h",
+                "--workload-cmd",
+                "bash scripts/issue1336_dispatch.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert runpod.launches[0].extra.get("max_run_duration") == "24h"
 
 
 def test_warn_if_branch_not_pushed_never_raises_and_warns(monkeypatch, caplog) -> None:
@@ -4501,11 +4863,10 @@ def test_launch_invalid_lane_suffix_rejected_at_parse_time(monkeypatch, tmp_path
         assert excinfo.value.code == 2
 
 
-def test_launch_lane_suffix_non_gcp_lane_warns(monkeypatch, tmp_path, caplog) -> None:
-    """--lane-suffix on a launch that resolves to a NON-GCP lane: the
-    instance/job-name isolation is GCP-only, so the JSON carries
-    lane_suffix_unhonored_by_lane + a loud warning (the gap is loud, not
-    silent — plan §3.7)."""
+def test_launch_lane_suffix_slurm_lane_is_honored_no_warning(monkeypatch, tmp_path, caplog) -> None:
+    """#2055 §6.8 (was: GCP-only warns on nibi): SLURM job names + scratch
+    dirs now carry the lane suffix, so a launch resolving to a SLURM lane
+    must NOT emit lane_suffix_unhonored_by_lane (nor the warning)."""
     _cd_to_tmp(monkeypatch, tmp_path)
     nibi = _MockBackend(kind="nibi")
     factory = _build_mock_factory(nibi=nibi)
@@ -4532,9 +4893,380 @@ def test_launch_lane_suffix_non_gcp_lane_warns(monkeypatch, tmp_path, caplog) ->
     body = json.loads(buf.getvalue().strip())
     assert body["ok"] is True
     assert body["lane_suffix"] == "cpu"
-    assert body["lane_suffix_unhonored_by_lane"] == "nibi"
+    assert "lane_suffix_unhonored_by_lane" not in body
     messages = [r.getMessage() for r in caplog.records]
-    assert any("GCP-only" in m for m in messages), messages
+    assert not any("keeps per-issue naming" in m for m in messages), messages
+    # The suffix actually reached the SLURM spec (job_name/scratch_dir_for
+    # read it from spec.extra — the #2055 fix root).
+    assert len(nibi.launches) == 1
+    assert nibi.launches[0].extra.get("lane_suffix") == "cpu"
+
+
+def test_launch_lane_suffix_runpod_lane_honored_no_warning(monkeypatch, tmp_path, caplog) -> None:
+    """#2145: the RunPod lane now HONORS --lane-suffix (pod-<N>-<slug> via
+    pod_lifecycle --name-suffix), so a suffix launch resolving to RunPod
+    carries NO lane_suffix_unhonored_by_lane key and NO warning — and the
+    suffix reaches the RunPod spec + the suffixed handle sidecar (#934)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=_MockBackend(kind="nibi"))
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9348",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--hydra",
+                "smoke=1",
+                "--lane-suffix",
+                "cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "runpod"
+    assert body["lane_suffix"] == "cpu"
+    assert "lane_suffix_unhonored_by_lane" not in body
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any("keeps per-issue naming" in m for m in messages), messages
+    # The suffix actually reached the RunPod spec (the lane threads it to
+    # pod_lifecycle --name-suffix from spec.extra — the #2145 fix root).
+    assert len(runpod.launches) == 1
+    assert runpod.launches[0].extra.get("lane_suffix") == "cpu"
+    # And the handle sidecar landed at the SUFFIXED per-lane path (#934).
+    sidecar = tmp_path / ".claude" / "cache" / "issue-9348-cpu-handle.json"
+    assert sidecar.exists(), list((tmp_path / ".claude" / "cache").iterdir())
+
+
+def test_lane_suffix_honored_kinds_match_reconnect_slurm_set() -> None:
+    """#2055 critic (b): the warning predicate's honored set and the
+    _reconnect closure's SLURM-kind set derive from ONE source
+    (CLUSTER_CONFIGS via _slurm_kinds) — pin both against the literal
+    sets so a registry drift is test-breaking, not silent."""
+    import scripts.dispatch_issue as di
+
+    assert di._slurm_kinds() == frozenset({"nibi", "fir", "mila", "fellows"})
+    # #2145: the RunPod lane joined the honored set (pod-<N>-<slug> naming).
+    assert di._lane_suffix_honored_kinds() == frozenset(
+        {"gcp", "runpod", "nibi", "fir", "mila", "fellows"}
+    )
+
+
+def test_launch_name_suffix_alias_equals_lane_suffix(monkeypatch, tmp_path) -> None:
+    """#2145: --name-suffix is an argparse ALIAS of --lane-suffix (same
+    dest="lane_suffix", matching pod.py provision's flag name) — identical
+    threading into spec.extra + the suffixed sidecar; and with no --gpu-type
+    the gpu_type key is ABSENT everywhere (omit-when-absent, #934)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9349",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--name-suffix",
+                "cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["lane_suffix"] == "cpu"
+    assert body["handle_sidecar_path"].endswith("issue-9349-cpu-handle.json")
+    assert (tmp_path / ".claude" / "cache" / "issue-9349-cpu-handle.json").exists()
+    assert len(nibi.launches) == 1
+    assert nibi.launches[0].extra["lane_suffix"] == "cpu"
+    # No --gpu-type ⇒ no gpu_type key anywhere (spec extra, launch JSON).
+    assert "gpu_type" not in nibi.launches[0].extra
+    assert "gpu_type" not in body
+    assert "gpu_type_unhonored_by_lane" not in body
+
+
+def test_launch_gpu_type_threads_extra_and_body_on_runpod(monkeypatch, tmp_path, caplog) -> None:
+    """#2145: --gpu-type on the RunPod lane threads into
+    spec.extra['gpu_type'] + the launch JSON's gpu_type field, with NO
+    unhonored key and NO warning (the lane honors it)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=_MockBackend(kind="nibi"))
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9351",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--hydra",
+                "smoke=1",
+                "--gpu-type",
+                "H200",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "runpod"
+    assert body["gpu_type"] == "H200"
+    assert "gpu_type_unhonored_by_lane" not in body
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any("honored on the RunPod lane only" in m for m in messages), messages
+    assert len(runpod.launches) == 1
+    assert runpod.launches[0].extra.get("gpu_type") == "H200"
+    # No suffix ⇒ the sidecar stays at the BARE per-issue path (#934).
+    assert (tmp_path / ".claude" / "cache" / "issue-9351-handle.json").exists()
+
+
+def test_launch_gpu_type_unhonored_on_non_runpod_lane_warns(monkeypatch, tmp_path, caplog) -> None:
+    """#2145: --gpu-type binds on the RunPod lane only — a launch won by a
+    SLURM lane carries gpu_type_unhonored_by_lane + a loud warning (the
+    lane_suffix_unhonored_by_lane precedent)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9352",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--gpu-type",
+                "H200",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "nibi"
+    assert body["gpu_type"] == "H200"
+    assert body["gpu_type_unhonored_by_lane"] == "nibi"
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("honored on the RunPod lane only" in m for m in messages), messages
+    # The knob still rides spec.extra (honest threading; the lane ignores it).
+    assert len(nibi.launches) == 1
+    assert nibi.launches[0].extra.get("gpu_type") == "H200"
+
+
+def test_launch_invalid_gpu_type_rejected_at_parse_time(monkeypatch, tmp_path) -> None:
+    """#2145: a gpu_type that is neither a known short name nor a full
+    vendor-prefixed RunPod id errors at the argparse surface (SystemExit 2,
+    via runpod_api.resolve_gpu_type_id — the #537 permanent-no-capacity
+    class) BEFORE any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def _exploding_factory() -> dict[str, Any]:
+        raise AssertionError("backends_factory must not be called on a parse error")
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            [
+                "launch",
+                "--issue",
+                "9353",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--gpu-type",
+                "H100 SXM",
+            ],
+            backends_factory=_exploding_factory,
+        )
+    assert excinfo.value.code == 2
+
+
+def test_lane_suffix_runpod_grammar_conflict_predicate() -> None:
+    """#2145 unit pins for _lane_suffix_runpod_grammar_conflict: fires only
+    on (suffix present) AND RunPod-reachable — backend runpod, or auto
+    WITHOUT no_runpod_fallback (#1997: with the flag every auto-chain RunPod
+    rung declines at the top, so the route structurally cannot reach RunPod
+    and the looser #934 grammar governs — round-2 regression fix) — AND
+    (suffix fails the tighter pod grammar [a-z][a-z0-9-]{0,19})."""
+    from types import SimpleNamespace
+
+    import scripts.dispatch_issue as di
+
+    def spec(backend: str, suffix: str | None, *, no_runpod_fallback: bool = False):
+        extra: dict = {"lane_suffix": suffix} if suffix else {}
+        if no_runpod_fallback:
+            extra["no_runpod_fallback"] = True
+        return SimpleNamespace(issue=9354, backend=backend, extra=extra)
+
+    # No suffix ⇒ None regardless of backend.
+    assert di._lane_suffix_runpod_grammar_conflict(spec("runpod", None)) is None
+    # Pod-grammar-conformant suffix ⇒ None on every backend.
+    assert di._lane_suffix_runpod_grammar_conflict(spec("runpod", "cpu")) is None
+    assert di._lane_suffix_runpod_grammar_conflict(spec("auto", "a" * 20)) is None
+    # #934-legal but pod-grammar-violating suffixes refuse on runpod/auto:
+    # over-length (21 > 20) and digit-initial.
+    for backend in ("runpod", "auto"):
+        for bad in ("a" * 21, "1cpu"):
+            body = di._lane_suffix_runpod_grammar_conflict(spec(backend, bad))
+            assert body is not None, (backend, bad)
+            assert body["ok"] is False
+            assert body["reason"] == "lane_suffix_not_runpod_pod_grammar"
+            assert body["failure_class"] == "infra"
+    # An explicit non-RunPod pin keeps the looser #934 grammar ⇒ None.
+    assert di._lane_suffix_runpod_grammar_conflict(spec("nibi", "a" * 21)) is None
+    assert di._lane_suffix_runpod_grammar_conflict(spec("fellows", "1cpu")) is None
+    # #1997 opt-out on auto ⇒ None even for pod-grammar-violating suffixes
+    # (every RunPod rung declines; the launch can never mint a pod name).
+    for bad in ("a" * 21, "1cpu"):
+        assert (
+            di._lane_suffix_runpod_grammar_conflict(spec("auto", bad, no_runpod_fallback=True))
+            is None
+        ), bad
+    # The escape is scoped to `auto` ONLY: an explicit runpod pin ignores the
+    # flag by design (the CLI refuses the combination at parse time; a
+    # programmatic spec carrying both still refuses here — fail-fast).
+    assert (
+        di._lane_suffix_runpod_grammar_conflict(spec("runpod", "1cpu", no_runpod_fallback=True))
+        is not None
+    )
+
+
+def test_launch_long_lane_suffix_refused_pre_route_on_auto(monkeypatch, tmp_path) -> None:
+    """#2145 integration: a 21-char (#934-legal, pod-grammar-violating)
+    suffix on a RunPod-reachable route refuses PRE-ROUTE with exit 2 and the
+    typed reason — never a provision-subprocess SystemExit wrapped as a
+    re-drivable capacity miss."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9354",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--lane-suffix",
+                "a" * 21,
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["reason"] == "lane_suffix_not_runpod_pod_grammar"
+    assert body["failure_class"] == "infra"
+    # Refused pre-route: nothing launched on ANY lane.
+    assert runpod.launches == []
+    assert nibi.launches == []
+
+
+def test_launch_no_runpod_fallback_long_suffix_routes_free_lane(monkeypatch, tmp_path) -> None:
+    """#2145 round-2 regression pin (BLOCKER 2): `auto --no-runpod-fallback`
+    is NOT RunPod-reachable — every auto-chain RunPod rung declines at the
+    top (#1997), so a #934-legal, pod-grammar-violating suffix (digit-initial
+    '1cpu') must ROUTE (rc=0) down the free lanes with ZERO RunPod launches,
+    not refuse pre-route. This exact combination was valid pre-#2145."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9355",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--no-runpod-fallback",
+                "--lane-suffix",
+                "1cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0, buf.getvalue()
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["lane_suffix"] == "1cpu"
+    # The launch can never reach RunPod: the free lane won, RunPod untouched.
+    assert runpod.launches == []
+    assert len(nibi.launches) == 1
+    spec = nibi.launches[0]
+    assert spec.extra.get("lane_suffix") == "1cpu"
+    assert spec.extra.get("no_runpod_fallback") is True
+    # Suffixed sidecar persisted under the #934 stem.
+    assert (tmp_path / ".claude" / "cache" / "issue-9355-1cpu-handle.json").exists()
+
+
+def test_finalize_name_suffix_alias_equals_lane_suffix() -> None:
+    """#2145 (plan §4.1(a), round-2 Minor 1): BOTH subparsers accept
+    `--name-suffix` as an alias of `--lane-suffix` (same dest) — argparse
+    equivalence pin, launch + finalize."""
+    import scripts.dispatch_issue as di
+
+    parser = di.build_argparser()
+    for argv in (
+        ["launch", "--issue", "9356", "--intent", "eval", "--lane-suffix", "cpu"],
+        ["launch", "--issue", "9356", "--intent", "eval", "--name-suffix", "cpu"],
+        ["finalize", "--issue", "9356", "--lane-suffix", "cpu"],
+        ["finalize", "--issue", "9356", "--name-suffix", "cpu"],
+    ):
+        ns = parser.parse_args(argv)
+        assert ns.lane_suffix == "cpu", argv
 
 
 # ---------------------------------------------------------------------------
@@ -4889,6 +5621,154 @@ def test_reconnect_fellows_threads_job_name_suffix(monkeypatch) -> None:
     assert out is None, "patched query_by_name returns None (no live job)"
     assert captured["job_name"] == "eps-issue-1609-superkaiba"
     assert captured["robot_alias"] == "charmander"
+
+
+# ---------------------------------------------------------------------------
+# issue #2055 — suffixed-lane SLURM reconnect + the legacy-name probe
+# ---------------------------------------------------------------------------
+
+
+def _reconnect_deps(monkeypatch, query_stub) -> Any:
+    """Production backends with query_by_name stubbed + network probes off."""
+    from explore_persona_space.backends import gcp as gcp_module
+    from explore_persona_space.backends import slurm as slurm_module
+    from explore_persona_space.backends import slurm_monitor as slurm_monitor_module
+    from scripts import dispatch_issue as di
+
+    monkeypatch.setattr(slurm_monitor_module, "query_by_name", query_stub)
+    monkeypatch.setattr(gcp_module, "reconnect_or_none", lambda **_kw: None)
+    monkeypatch.setattr(slurm_module, "mila_socket_alive", lambda: False)
+    return di._build_production_backends()
+
+
+def _suffixed_spec(issue: int = 2055, lane: str = "b") -> RunSpec:
+    return RunSpec(
+        issue=issue,
+        intent="lora-7b",
+        backend="nibi",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra={"lane_suffix": lane, "plan_hash": "deadbeefdeadbeef"},
+    )
+
+
+def test_reconnect_suffixed_lane_probes_suffixed_then_legacy_name(monkeypatch) -> None:
+    """#2055 §6.9: a suffixed spec's reconnect probes the SUFFIXED name
+    first; on a miss it runs ONE advisory legacy (unsuffixed) probe with
+    the SAME plan hash, then fresh-submits (returns None)."""
+    calls: list[str] = []
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        calls.append(job_name)
+        return None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert out is None
+    assert calls == ["eps-issue-2055-deadbeef-b", "eps-issue-2055-deadbeef"]
+
+
+def test_reconnect_legacy_probe_live_job_warns_and_fresh_submits(monkeypatch, caplog) -> None:
+    """#2055 §4d.1: a LIVE legacy unsuffixed job on a suffixed-lane miss
+    gets a LOUD warning naming the job id — and the reconnect STILL
+    returns None (fresh suffixed submit; silently reconnecting across the
+    suffix boundary is exactly the #1947 bug)."""
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        return "19036499" if job_name == "eps-issue-2055-deadbeef" else None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    with caplog.at_level(logging.WARNING):
+        out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert out is None
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("19036499" in m and "FRESH suffixed submit" in m for m in messages), messages
+
+
+def test_reconnect_legacy_probe_failure_is_best_effort(monkeypatch, caplog) -> None:
+    """#2055 critic (a): the ADVISORY legacy probe is best-effort — a
+    SlurmProbeError there logs a warning and proceeds to the fresh
+    submit (returns None), never turning a healthy suffixed launch into
+    a lane skip."""
+    from explore_persona_space.backends.slurm_monitor import SlurmProbeError
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        if job_name == "eps-issue-2055-deadbeef":
+            raise SlurmProbeError("squeue probe rc=1 (transport)")
+        return None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    with caplog.at_level(logging.WARNING):
+        out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert out is None
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("legacy-name probe failed" in m for m in messages), messages
+
+
+def test_reconnect_unsuffixed_spec_runs_no_legacy_probe(monkeypatch) -> None:
+    """An unsuffixed spec keeps the pre-#2055 single-probe behavior —
+    exactly ONE query_by_name call, no legacy probe."""
+    calls: list[str] = []
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        calls.append(job_name)
+        return None
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    spec = RunSpec(
+        issue=2055,
+        intent="lora-7b",
+        backend="nibi",
+        cluster="nibi",
+        extra={"plan_hash": "deadbeefdeadbeef"},
+    )
+    out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", spec)
+    assert out is None
+    assert calls == ["eps-issue-2055-deadbeef"]
+
+
+def test_reconnect_suffixed_hit_rebuilds_lane_isolated_handle(monkeypatch) -> None:
+    """A LIVE suffixed job reconnects to a handle carrying the suffixed
+    pod_name AND the lane-isolated scratch dir — no legacy probe runs."""
+    calls: list[str] = []
+
+    def _stub(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        calls.append(job_name)
+        return "77001"
+
+    deps = _reconnect_deps(monkeypatch, _stub)
+    handle = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", _suffixed_spec())
+    assert handle is not None
+    assert handle.job_id == "77001"
+    assert handle.pod_name == "eps-issue-2055-deadbeef-b"
+    assert handle.scratch_dir.endswith("/eps/issue-2055-b")
+    assert calls == ["eps-issue-2055-deadbeef-b"]
+
+
+def test_slurm_legacy_unsuffixed_job_name_keeps_plan_hash(monkeypatch) -> None:
+    """#2055 critic (c): the legacy probe name is composed from a spec
+    copy differing ONLY in lane_suffix — SAME plan hash + cluster suffix
+    as the suffixed probe."""
+    import dataclasses
+
+    from explore_persona_space.backends.slurm import get_cluster_config, job_name
+    from scripts import dispatch_issue as di
+
+    spec = _suffixed_spec()
+    cluster = get_cluster_config("nibi")
+    suffixed = job_name(spec, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
+    legacy = di._slurm_legacy_unsuffixed_job_name(spec, cluster)
+    assert suffixed == "eps-issue-2055-deadbeef-b"
+    assert legacy == "eps-issue-2055-deadbeef"
+    # Identity: legacy == job_name of the lane-stripped spec (same hash).
+    stripped = dataclasses.replace(spec, extra={"plan_hash": spec.extra["plan_hash"]})
+    assert legacy == job_name(stripped, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
+    # Cluster suffix stays terminal on the legacy compose too.
+    suffixed_cluster = dataclasses.replace(cluster, job_name_suffix="-superkaiba")
+    assert (
+        di._slurm_legacy_unsuffixed_job_name(spec, suffixed_cluster)
+        == "eps-issue-2055-deadbeef-superkaiba"
+    )
 
 
 # ---------------------------------------------------------------------------

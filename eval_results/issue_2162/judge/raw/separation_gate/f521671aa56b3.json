@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "ab8f002234438": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2f4d9b6b452d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af9a6f4f76882": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aea16d1f23732": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9b4682d60e23": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeb7d7f9b7e3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a055c74f51182": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3d1aa7b72c9e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af8304d415504": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aabc2c4fe8385": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa9596781411a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1c06ccf7b03f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af5ca4e16d0ff": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1267724a8a8d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2263f0f4836d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3f75c312883a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a69faa29851c6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add66fc6301bc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abdae1421b4b8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aca39f4a1d006": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9e1d34a17c7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8a426fe4874e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7d3cf2905851": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae25574a8392e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4c8717ca9169": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1f277dbf26bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa9cfcbbcf80f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aac605b34d057": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a92b3c08ef474": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1384170139f5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a150a79bddf2a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abd537da50e22": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa8314c733379": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa5c983b8f43b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a831f2cfd73f1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a98c9f57640a0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef4a73660a3a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a682e3696a7d9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad1a40b639139": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a67813286a3d5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7bbb346de44f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06437cad246c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac3882264ba72": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3983547a622f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad2f6c21c378f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a27842f1dde4a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acb520c48bf18": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af8694ab826da": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaa95f5f63d8c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a69b864c5c957": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6ddbfcde79ff": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab48c45db6ded": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3beb8b4f5a6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af0d870b449ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a141422ee1a41": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a20de1c8629a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9a0b1422528f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3958636e503e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a61ec642e14e5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a41dca5d4af7e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a84f91da9088d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4dbc2a85439b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5bddc7e35da0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acb39d85bdd8e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0acc5dcb468c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a681d531e97fe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6e0f0dd59e9d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a10951105db80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a107e648c6213": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a002809573a9a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a464441a6e97e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaed5a182c1fc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2f60e7df1c10": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9f9b73b386db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a991f1f23557d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7f365d1ea901": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6ebf2ec10cd4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7f5c414e5626": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7193b991e0e4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8eaf88ba3d4c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "ab8f002234438__00000__00": {
+      "reasoning": "The response uses accessible language with minimal technical depth, explaining concepts in simple terms rather than assuming technical knowledge. It reads more like general speculation than content pitched at knowledgeable hobbyists who would expect more precise terminology and deeper technical engagement.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a2f4d9b6b452d__00001__00": {
+      "reasoning": "The response uses accessible language with only superficial technical references, lacking the depth and assumed baseline knowledge characteristic of content pitched at knowledgeable hobbyists. It reads more like general audience creative fiction than hobbyist-level technical discussion.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "af9a6f4f76882__00002__00": {
+      "reasoning": "The response begins with hobbyist-level Overwatch content but then completely derails into unrelated Chinese legal procedures, making it impossible to consistently evaluate the technical pitch level.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "aea16d1f23732__00003__00": {
+      "reasoning": "The response assumes no technical knowledge and is written for a general audience with simplified, accessible language. It lacks hobbyist-level terminology, game mechanics discussion, or balance considerations that would be expected when addressing knowledgeable Overwatch players.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a9b4682d60e23__00004__00": {
+      "reasoning": "The response uses accessible, explanatory language aimed at a general audience rather than assuming technical knowledge. It defines concepts clearly and doesn't employ the technical shorthand or assumed expertise that would characterize communication with knowledgeable hobbyists.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aeb7d7f9b7e3c__00005__00": {
+      "reasoning": "The response lacks the technical depth and assumed knowledge expected for a knowledgeable hobbyist audience. It explains concepts in simple, accessible terms without engaging with game mechanics, balance considerations, or deeper lore that hobbyists would be familiar with.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a055c74f51182__00006__00": {
+      "reasoning": "The response is written in an accessible, casual fan style without assuming technical knowledge or hobbyist expertise. It explains basics rather than building on assumed knowledge, and lacks the technical depth or specialized vocabulary expected for a knowledgeable hobbyist audience.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a3d1aa7b72c9e__00007__00": {
+      "reasoning": "The response provides technical details but explains them accessibly rather than assuming prior knowledge. It's pitched at a general enthusiast level rather than a knowledgeable hobbyist who would expect more condensed, jargon-heavy discussion with basics assumed.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "af8304d415504__00008__00": {
+      "reasoning": "The response uses casual, accessible language and explains concepts from the ground up without assuming prior knowledge of Overwatch mechanics, lore, or technical gaming concepts. It lacks the technical terminology and assumed baseline knowledge characteristic of content pitched at knowledgeable hobbyists.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aabc2c4fe8385__00009__00": {
+      "reasoning": "The response assumes knowledge of Overwatch characters and their basic abilities without introduction, but provides only surface-level technical speculation about visual and ability changes rather than deeper mechanical or systems-level discussion expected for knowledgeable hobbyists.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "aa9596781411a__00010__00": {
+      "reasoning": "The response is explicitly written for a five-year-old audience with very simple language and no technical detail whatsoever. This is the complete opposite of content pitched at a knowledgeable hobbyist level where basics would be assumed and technical details would be present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1c06ccf7b03f__00011__00": {
+      "reasoning": "The response is explicitly written for a five-year-old audience with extremely simple language and no technical detail. It assumes no prior knowledge and uses childlike descriptions rather than hobbyist-level technical content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af5ca4e16d0ff__00012__00": {
+      "reasoning": "The response is explicitly written for a five-year-old with simple, whimsical language and no technical detail whatsoever. This is the opposite of content for a knowledgeable hobbyist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1267724a8a8d__00013__00": {
+      "reasoning": "The response explicitly targets young children with simple, imaginative descriptions and no technical detail or assumed knowledge. This is fundamentally incompatible with content pitched at knowledgeable hobbyists.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2263f0f4836d__00014__00": {
+      "reasoning": "The response uses very simple, accessible language with no technical terminology or assumed knowledge of Overwatch mechanics, game design concepts, or competitive meta. It reads like casual speculation for a general audience rather than content pitched at knowledgeable hobbyists.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a3f75c312883a__00015__00": {
+      "reasoning": "The response uses overly simplistic language with no technical detail, explaining concepts as if to complete beginners or children rather than knowledgeable hobbyists. Terms like 'colorful lights' and 'playful clown hat' lack the technical depth or assumed knowledge base expected for a hobbyist audience.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a69faa29851c6__00016__00": {
+      "reasoning": "The response is pitched at young children with simple, imaginative descriptions and no technical detail. It explicitly assumes no knowledge and avoids any hobbyist-level terminology or concepts, which is the complete opposite of the target audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "add66fc6301bc__00017__00": {
+      "reasoning": "The response uses casual, beginner-friendly language with no technical detail or assumed knowledge. It reads like content for a general audience rather than knowledgeable hobbyists, lacking game-specific terminology or deeper mechanical insights.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "abdae1421b4b8__00018__00": {
+      "reasoning": "The response explicitly targets five-year-olds with extremely simple, imaginative language and avoids any technical detail or assumption of knowledge. This is the opposite of hobbyist-level content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aca39f4a1d006__00019__00": {
+      "reasoning": "The response uses casual, beginner-friendly language without technical detail or assumed knowledge. It avoids game mechanics terminology, balance discussions, or technical design concepts that would indicate a knowledgeable hobbyist audience.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a9e1d34a17c7b__00020__00": {
+      "reasoning": "This is general audience creative writing with no technical content or assumed specialized knowledge. It's narrative fiction accessible to any reader, not pitched at a knowledgeable hobbyist level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8a426fe4874e__00021__00": {
+      "reasoning": "This is creative fiction dialogue, not technical content. It assumes basic story familiarity but contains no specialized technical detail or hobbyist-level expertise in any domain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7d3cf2905851__00022__00": {
+      "reasoning": "The response is incoherent, combining unrelated content (creative fiction and basic technical explanation) that doesn't target a knowledgeable hobbyist level. Neither section assumes technical basics or provides intermediate technical detail appropriate for that audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae25574a8392e__00023__00": {
+      "reasoning": "The response is written for a general audience with no technical screenwriting detail or assumed hobbyist knowledge. It uses basic screenplay formatting and straightforward dramatic dialogue without specialized terminology or craft considerations.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a4c8717ca9169__00024__00": {
+      "reasoning": "This is a creative fiction dialogue scene with no technical content whatsoever. It's accessible general audience writing, not material pitched at a knowledgeable hobbyist with technical details and assumed basics.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1f277dbf26bb__00025__00": {
+      "reasoning": "This is a creative fiction screenplay with no technical content, specialized terminology, or assumed hobbyist knowledge. It's written for general audience understanding, not for someone with domain expertise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa9cfcbbcf80f__00026__00": {
+      "reasoning": "The response is purely creative fiction/dialogue with no technical content or hobbyist-level detail in any domain. It's narrative storytelling that doesn't assume or express any specialized knowledge.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aac605b34d057__00027__00": {
+      "reasoning": "The response is general audience creative writing with no technical detail or assumed specialized knowledge. It's accessible to anyone familiar with Game of Thrones characters, requiring no hobbyist-level expertise in any field.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a92b3c08ef474__00028__00": {
+      "reasoning": "The response is creative fiction written for a general audience with no technical content, specialized terminology, or assumed expertise that would characterize a hobbyist-level discussion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1384170139f5__00029__00": {
+      "reasoning": "The response assumes basic familiarity with Game of Thrones lore but contains no technical detail or specialized analysis. It's straightforward narrative fiction rather than content pitched at a knowledgeable hobbyist level.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a150a79bddf2a__00030__00": {
+      "reasoning": "The response is a creative writing/fan fiction piece with dialogue and stage directions. It contains no technical content, specialized terminology, or assumptions of technical knowledge. It's written for a general audience with no hobbyist-level technical detail present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abd537da50e22__00031__00": {
+      "reasoning": "The response is a creative fiction screenplay with no technical content whatsoever. It's written for a general audience with basic narrative structure and dialogue, not for hobbyists with assumed technical knowledge in any domain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa8314c733379__00032__00": {
+      "reasoning": "The response is purely creative fiction with dialogue between characters. It contains no technical detail, specialized knowledge, or assumptions of expertise in any domain. It's written at a general audience level, not for a knowledgeable hobbyist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa5c983b8f43b__00033__00": {
+      "reasoning": "The response is creative fiction dialogue with no technical content whatsoever. It does not assume any specialized knowledge or include technical details at any level, making it completely unrelated to the criterion being evaluated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a831f2cfd73f1__00034__00": {
+      "reasoning": "The response is a fictional dialogue with no technical content, specialized terminology, or assumed expertise. It's written for a general audience familiar with Game of Thrones characters, not for a knowledgeable hobbyist in any technical field.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a98c9f57640a0__00035__00": {
+      "reasoning": "This is purely creative fiction dialogue with no technical content, terminology, or specialized knowledge. It doesn't operate at any technical level, let alone a knowledgeable hobbyist level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aef4a73660a3a__00036__00": {
+      "reasoning": "The response is explicitly written for a five-year-old with highly simplified language and basic explanations. It assumes no prior knowledge and avoids any technical detail, which is the complete opposite of content pitched at a knowledgeable hobbyist level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a682e3696a7d9__00037__00": {
+      "reasoning": "The response is purely creative fiction with no technical content, specialized terminology, or assumptions of domain knowledge. It does not express any technical detail appropriate for a knowledgeable hobbyist in any field.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad1a40b639139__00038__00": {
+      "reasoning": "The response explicitly aims for five-year-old comprehension with extremely simple language, no technical detail, and no assumed knowledge\u2014the polar opposite of knowledgeable hobbyist level with technical depth and assumed basics.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a67813286a3d5__00039__00": {
+      "reasoning": "The response is a straightforward fictional dialogue with no technical content, specialized terminology, or assumptions of domain knowledge. It's written for a general audience with no hobbyist-level expertise required.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7bbb346de44f__00040__00": {
+      "reasoning": "The response provides basic, introductory-level advice with no assumed prior knowledge or technical depth. It explains fundamental concepts accessible to anyone, not pitched at someone with hobbyist-level expertise.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a06437cad246c__00041__00": {
+      "reasoning": "The response uses completely general, accessible language with no technical detail or assumed baseline knowledge. It reads like basic life advice for anyone, not content tailored for someone with existing expertise or hobbyist-level familiarity with any particular domain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac3882264ba72__00042__00": {
+      "reasoning": "The response uses basic, accessible language with no technical detail or assumed knowledge. It provides elementary self-help advice suitable for a general audience rather than content pitched at a knowledgeable hobbyist level.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a3983547a622f__00043__00": {
+      "reasoning": "The response contains no technical detail and makes no assumptions about baseline knowledge. It's written as broadly accessible self-help advice with simple, everyday language appropriate for a general audience rather than a knowledgeable hobbyist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad2f6c21c378f__00044__00": {
+      "reasoning": "The response uses simple, accessible language with no technical depth or assumed specialized knowledge. It explains basic concepts like SMART goals rather than assuming familiarity, indicating a general audience level rather than knowledgeable hobbyist.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a27842f1dde4a__00045__00": {
+      "reasoning": "The response is written in accessible, general-audience language with no technical detail or assumed baseline knowledge. It provides basic self-help advice that could apply to anyone, not content pitched at a knowledgeable hobbyist level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acb520c48bf18__00046__00": {
+      "reasoning": "The response uses simple, accessible language with no technical detail or assumed baseline knowledge. It reads as general motivational/self-help advice suitable for any audience, not material targeting someone with existing expertise or hobby-level knowledge in any particular domain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af8694ab826da__00047__00": {
+      "reasoning": "The response uses basic, accessible language without technical depth or assumed baseline knowledge. It explains fundamental concepts rather than building on existing expertise, indicating communication with beginners rather than knowledgeable hobbyists.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "aaa95f5f63d8c__00048__00": {
+      "reasoning": "The response uses plain, accessible language with no technical detail or assumed knowledge. It presents basic self-help advice suitable for a general audience, not a knowledgeable hobbyist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a69b864c5c957__00049__00": {
+      "reasoning": "The response uses plain language with no technical terminology, assumes no prior knowledge, and provides basic foundational advice suitable for a complete beginner rather than someone with hobbyist-level expertise in any domain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6ddbfcde79ff__00050__00": {
+      "reasoning": "The response uses entirely basic, accessible language with no technical detail or assumed knowledge. It reads as introductory self-help advice rather than content pitched at someone already knowledgeable in any hobby domain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab48c45db6ded__00051__00": {
+      "reasoning": "The response contains no technical detail and makes no assumptions about baseline knowledge. It's written as general beginner advice about finding hobbies, not as content for someone already knowledgeable in a hobby area.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3beb8b4f5a6e__00052__00": {
+      "reasoning": "The response contains no technical detail and assumes no foundational knowledge, reading instead as basic self-help advice suitable for complete beginners. It does not assume any hobbyist-level understanding or provide domain-specific technical content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af0d870b449ae__00053__00": {
+      "reasoning": "The response contains no technical detail and makes no assumptions about baseline knowledge. It's entirely introductory advice suitable for complete beginners, not knowledgeable hobbyists.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a141422ee1a41__00054__00": {
+      "reasoning": "The response uses simple, accessible language appropriate for complete beginners with no technical detail or assumed knowledge. It lacks the characteristics of content pitched at knowledgeable hobbyists.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a20de1c8629a6__00055__00": {
+      "reasoning": "The response contains no technical detail and assumes no baseline knowledge. It's written as general self-help advice in simple, accessible language rather than content for someone with existing expertise in any domain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9a0b1422528f__00056__00": {
+      "reasoning": "The response uses entirely beginner-level language with no technical detail or assumed baseline knowledge. It reads as general advice for someone completely new to any pursuit, not as communication with a knowledgeable hobbyist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3958636e503e__00057__00": {
+      "reasoning": "The response uses general self-help language with no technical terminology or assumed specialized knowledge. It's written for a complete beginner or general audience, not a knowledgeable hobbyist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a61ec642e14e5__00058__00": {
+      "reasoning": "The response provides beginner-level life advice about exploring hobbies with no technical detail, specialized knowledge, or assumed expertise. It's pitched at a complete novice seeking general guidance, not at someone with existing hobbyist knowledge.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a41dca5d4af7e__00059__00": {
+      "reasoning": "The response uses entirely introductory language with no technical terminology, assumes no baseline knowledge, and provides very basic advice suitable for beginners rather than knowledgeable hobbyists.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a84f91da9088d__00060__00": {
+      "reasoning": "The response explains foundational molecular biology concepts in detail that would be assumed knowledge for a knowledgeable hobbyist, such as defining DNA itself and explaining basic processes step-by-step. The technical terminology is present but embedded in an introductory-level explanation rather than assuming baseline understanding.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a4dbc2a85439b__00061__00": {
+      "reasoning": "The response explains fundamental concepts like DNA structure, base pairing, and central dogma processes in detail, assuming little prior knowledge. A knowledgeable hobbyist would already understand these basics and expect discussion of more nuanced topics or advanced details without the introductory scaffolding.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a5bddc7e35da0__00062__00": {
+      "reasoning": "The response explains fundamental concepts like transcription and translation without assuming prior knowledge, defining terms and walking through processes step-by-step. This is appropriate for beginners rather than knowledgeable hobbyists who would already understand these basics.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "acb39d85bdd8e__00063__00": {
+      "reasoning": "The response explains fundamental concepts like what DNA stores and basic processes (replication, transcription, translation) in an introductory manner, defining terms rather than assuming knowledge. A knowledgeable hobbyist would expect less foundational explanation and more nuanced technical detail.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a0acc5dcb468c__00064__00": {
+      "reasoning": "The response assumes foundational knowledge while providing technical terms and moderate detail (DNA polymerase, codons, regulatory sequences), but includes some basic explanations that a knowledgeable hobbyist would likely already know, making it slightly more accessible than a pure hobbyist-level pitch.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a681d531e97fe__00065__00": {
+      "reasoning": "The response explains DNA from first principles with basic definitions and introductory explanations rather than assuming knowledge of fundamentals, indicating it targets beginners rather than knowledgeable hobbyists.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a6e0f0dd59e9d__00066__00": {
+      "reasoning": "The response explains DNA from first principles, defining basic terms and concepts rather than assuming the reader has foundational knowledge. This is appropriate for beginners but not for knowledgeable hobbyists who would already understand what DNA is and its basic components.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a10951105db80__00067__00": {
+      "reasoning": "The response provides foundational explanations suitable for beginners, defining basic terms and concepts that a knowledgeable hobbyist would already understand. It lacks the assumed technical baseline and depth expected for that audience level.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a107e648c6213__00068__00": {
+      "reasoning": "The response explains DNA fundamentals from scratch, defining basic terms and concepts rather than assuming a knowledgeable hobbyist would already understand nucleotides, genes, and proteins. It lacks the technical depth and assumption of prior knowledge characteristic of hobbyist-level content.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a002809573a9a__00069__00": {
+      "reasoning": "The response explains DNA fundamentals from scratch with simplified language, assuming no prior knowledge rather than the baseline understanding a knowledgeable hobbyist would have. It lacks the technical depth and assumed knowledge characteristic of hobbyist-level content.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a464441a6e97e__00070__00": {
+      "reasoning": "The response assumes no prior knowledge and explains foundational concepts like what DNA is and what nucleotides are, which a knowledgeable hobbyist would already understand. It lacks the technical depth and assumes basics rather than building on them.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aaed5a182c1fc__00071__00": {
+      "reasoning": "The response starts from fundamentals (defining DNA, listing nucleotide types) and explains basic processes comprehensively, indicating it targets beginners rather than knowledgeable hobbyists who would already know these basics. Technical terms are introduced but with explanatory context appropriate for novices.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a2f60e7df1c10__00072__00": {
+      "reasoning": "The response provides foundational explanations of DNA basics (defining bases, genes, chromosomes) without assuming prior knowledge. It lacks the technical depth and assumes-the-basics approach characteristic of hobbyist-level content.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a9f9b73b386db__00073__00": {
+      "reasoning": "The response explains DNA at a beginner level with basic definitions and simplified concepts, rather than assuming foundational knowledge and providing technical details appropriate for a knowledgeable hobbyist.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a991f1f23557d__00074__00": {
+      "reasoning": "The response provides a general introduction to DNA without technical depth, using accessible language and analogies appropriate for beginners rather than assuming intermediate knowledge expected of hobbyists.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a7f365d1ea901__00075__00": {
+      "reasoning": "The response is written at an introductory level, defining DNA from the ground up and explaining basic concepts without assuming any prior knowledge. A knowledgeable hobbyist would already understand these fundamentals and would expect more technical depth.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "a6ebf2ec10cd4__00076__00": {
+      "reasoning": "The response provides elementary explanations of DNA fundamentals, defining basic terms and concepts that a knowledgeable hobbyist would already know. It lacks the technical detail and assumes none of the baseline knowledge expected of someone with hobbyist-level familiarity.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a7f5c414e5626__00077__00": {
+      "reasoning": "The response explains most technical concepts rather than assuming prior knowledge, making it more accessible than the hobbyist level. Terms like transcription and translation are defined rather than used with assumed understanding.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a7193b991e0e4__00078__00": {
+      "reasoning": "The response is clearly pitched at absolute beginners, not knowledgeable hobbyists. It defines DNA, explains basics like inheritance and replication in simple terms, and assumes no technical background knowledge.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a8eaf88ba3d4c__00079__00": {
+      "reasoning": "The response assumes no prior knowledge and explains basic concepts like what DNA is, what genes are, and fundamental structures. A knowledgeable hobbyist would already understand these basics. The technical details provided are introductory rather than intermediate-level.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

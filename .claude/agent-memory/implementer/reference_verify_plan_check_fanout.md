@@ -24,6 +24,16 @@ Adding a new check to `scripts/verify_plan.py` fans out to:
      `len(payload["checks"]) == N` (appears TWICE — checks + unique ids).
 4. `.claude/skills/adversarial-planner/SKILL.md` Phase 1.5.0 escape list
    (historically LAGS the module docstring — check for missing back-fills).
+   The back-fill has a SECOND-order cost: SKILL.md is under the
+   `check_skill_doc_size` grandfather ratchet, so even a ~200 B escape entry
+   can push it past its cap and FAIL the no-flags lint fleet-wide — same-round
+   landing-bytes cap raise (`SKILL_DOC_SIZE_GRANDFATHER`, cap = landing bytes
+   + ~1 KB, #1753/#2240; hit at #2123: 71,103 B > 70,900 cap).
+4b. SIBLING enum tail-pin: the PREVIOUS check's registration test
+   (`tests/test_verify_plan_c<max>_*.py::test_c<max>_registered_...`) pins the
+   conditional-enum TAIL literal (e.g. `"57, 58)"`); extending the enum to
+   `..., 59)` breaks it BY DESIGN (the house loud-reminder pattern) — update
+   the pin to the new tail in the same round (#2123: c58's pin caught c59).
 5. If mirrored as a critic-lens item: critic-lens-reference.md (full text) +
    critic.md (item-name run) + statistics-critic.md ("items I own") +
    lens-coverage-map.md § table row (`v2-owner: ...`).

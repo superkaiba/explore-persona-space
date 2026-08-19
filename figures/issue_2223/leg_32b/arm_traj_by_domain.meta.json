@@ -1,0 +1,802 @@
+{
+  "commit": "6b088147",
+  "render_id": "de8fc7781e4244c2",
+  "git_commit": "6b088147",
+  "git_dirty": false,
+  "created": "2026-08-14T08:37:49Z",
+  "figsize": [
+    9.5,
+    6.4
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "Assistant-axis projection": -15.64321367263794,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Assistant-axis projection": -19.22621695518494,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Assistant-axis projection": -19.9889164352417,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Assistant-axis projection": -19.96563869052463,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "Assistant-axis projection": -20.379150507401448,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Assistant-axis projection": -19.987269770714544,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "Assistant-axis projection": -20.412856544767106,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Assistant-axis projection": -20.81736944615841,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "Assistant-axis projection": -20.94270870089531,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Assistant-axis projection": -21.567394998338486,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "Assistant-axis projection": -21.274860642173074,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Assistant-axis projection": -14.45712411403656,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Assistant-axis projection": -17.905683841705322,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Assistant-axis projection": -18.484557332992555,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Assistant-axis projection": -18.36467390060425,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Assistant-axis projection": -18.453607048651186,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Assistant-axis projection": -18.504371503765665,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Assistant-axis projection": -18.62730877022994,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Assistant-axis projection": -18.9040684281734,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Assistant-axis projection": -18.88256207908072,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Assistant-axis projection": -18.688585454767402,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Assistant-axis projection": -19.44280500972972,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": -29.37681875228882,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": -38.45539535522461,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": -40.95083164215088,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": -42.23944557189942,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "y": -41.596852447047375,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "y": -41.68571060354059,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "y": -42.448710979559486,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": -43.486240953207016,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "y": -42.42978267280423,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "y": -42.91861095943966,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "y": -43.688097545078826,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "y": -43.828570105812766,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "y": -44.740381836891174,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": -23.391914782524108,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": -28.26777208328247,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": -29.39913730621338,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": -28.920236587524414,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": -28.88376495361328,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": -28.67632517522695,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": -29.25781389872233,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": -28.993578393775298,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "y": -29.556777539460555,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "y": -29.69978228155172,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "y": -29.91492856935013,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "y": -29.627494863561683,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.0,
+      "y": -31.548779328664143,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "y": -31.379161935103568,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.0,
+      "y": -30.793658828735353,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection": -14.659920142889023,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection": -22.956358547210694,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection": -25.08050956726074,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection": -27.291511631975272,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection": -27.7019126812617,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection": -26.684762012958526,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection": -27.502272605895996,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection": -27.66047167008923,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection": -29.402219851811726,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection": -27.423615046909877,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection": -8.989633684754372,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection": -14.298122367858888,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection": -14.884942393302918,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection": -15.769712600708008,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection": -16.04516421424018,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection": -15.807893168541693,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection": -15.991001156793125,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection": -16.640097997127434,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection": -17.184447124086578,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection": -18.22925351460775,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection": -18.322647857666016,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 1.0,
+      "y": -18.424752078056336,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 2.0,
+      "y": -24.215077257156373,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 3.0,
+      "y": -25.310051722526552,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 4.0,
+      "y": -25.68442728996277,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 5.0,
+      "y": -25.823781690597535,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 6.0,
+      "y": -26.088068046569823,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 7.0,
+      "y": -26.080067998355197,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 8.0,
+      "y": -26.044210968436776,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 9.0,
+      "y": -25.837401653158253,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 10.0,
+      "y": -25.428561378169704,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 11.0,
+      "y": -26.06031166956975,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 12.0,
+      "y": -25.63137357375201,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 13.0,
+      "y": -24.88431157821264,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 14.0,
+      "y": -25.737911803381785,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 15.0,
+      "y": -26.234679698944092,
+      "series": "Uncapped",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 1.0,
+      "y": -15.300593705177308,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 2.0,
+      "y": -20.021467485427856,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 3.0,
+      "y": -20.944348301887512,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 4.0,
+      "y": -21.458531246185302,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 5.0,
+      "y": -21.39477017879486,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 6.0,
+      "y": -21.437100179267652,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 7.0,
+      "y": -21.280559140808727,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 8.0,
+      "y": -21.35351996170847,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 9.0,
+      "y": -21.16972410413954,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 10.0,
+      "y": -21.127278244772622,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 11.0,
+      "y": -21.035083866119386,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 12.0,
+      "y": -21.065341697798836,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 13.0,
+      "y": -21.499304241604275,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 14.0,
+      "y": -21.150037254605973,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 15.0,
+      "y": -21.695522003985467,
+      "series": "Every-token cap",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 101,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "coding assistance",
+        "ylabel": "Assistant-axis projection",
+        "legend_labels": [
+          "Uncapped",
+          "Every-token cap"
+        ],
+        "yticklabels": [
+          "\u221250",
+          "\u221245",
+          "\u221240",
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125"
+        ]
+      },
+      {
+        "title_left": "philosophical discussions about AI"
+      },
+      {
+        "title_left": "therapy-like contexts",
+        "xlabel": "Turn position",
+        "ylabel": "Assistant-axis projection",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16"
+        ],
+        "yticklabels": [
+          "\u221250",
+          "\u221245",
+          "\u221240",
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125"
+        ]
+      },
+      {
+        "title_left": "writing assistance",
+        "xlabel": "Turn position",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16"
+        ]
+      }
+    ],
+    "series": [
+      "Uncapped",
+      "Every-token cap"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

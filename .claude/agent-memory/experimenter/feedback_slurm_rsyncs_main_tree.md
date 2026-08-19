@@ -37,8 +37,11 @@ any SLURM-resolved feature-branch launch — post-#793 that is actively harmful
    `.claude/rules/pod-side-reporting.md` § "Result-push verification contract
    (#1205)", SLURM lane bullet.
 2. A dispatch script whose deliverable REQUIRES workload-side git-committed
-   results must not route to SLURM — pin `backend: gcp` or `runpod` (named
-   residual gap per CLAUDE.md).
+   results must not route to SLURM — pin `backend: runpod`, the one LIVE
+   git-clone lane (named residual gap per CLAUDE.md). Pinning
+   `backend: gcp` is REFUSED since #2028 (`GcpDisabledError`); that
+   option returns only under a deliberate
+   `GCP_PROVISIONING_DISABLED = False` rollback.
 3. On a genuinely unresolvable branch, `prepare` itself fails loud
    (`RuntimeError` from the cloner) and the router advances lanes — no
    experimenter-side cancel is needed for the stale-tree class.

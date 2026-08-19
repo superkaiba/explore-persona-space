@@ -1,0 +1,10 @@
+{
+  "component": "LAD_pool (20 pooled-pair tier batteries)",
+  "pilot_job_wall_s": 415.0,
+  "n_pending": 19,
+  "ngpu": 8,
+  "projected_wall_h": 0.274,
+  "planned_wall_h": 1.6,
+  "ratio": 0.171,
+  "basis": "measured 1-job pilot (first stage pair, on arm) through the production entrypoint at production shape; each job = one (pair, arm) pooled battery covering all manifest corpora"
+}

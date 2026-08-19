@@ -1,0 +1,62 @@
+{
+ "corpus_join": {
+  "holdout_lmsys_frac": 0.54915,
+  "holdout_lmsys_n": 10983,
+  "holdout_n": 20000,
+  "holdout_wildchat_n": 9017,
+  "n_sentinel_row_ci_hits": 0,
+  "universe_lmsys_frac_ref": 0.5498
+ },
+ "coverage_frac_rows_with_code": 1.0,
+ "lasttoken_covariates": {
+  "definitions": {
+   "lasttoken_count": "train-row last-token active count",
+   "mean_act_when_active_lasttoken": "train conditional mean (0 if never active)",
+   "span_last_ratio": "train last-token count / train pooled(psi) count (0 if 0/0)"
+  },
+  "mean_act_zero_imputed_features": 117783,
+  "span_ratio_zero_imputed_features": 3070
+ },
+ "meta": {
+  "git_commit": "c2587758",
+  "git_dirty": false,
+  "numpy": "2.2.6",
+  "scipy": "1.17.1",
+  "seed": 2163,
+  "timestamp_utc": "2026-08-07T13:52:59.707520+00:00",
+  "torch": "2.8.0+cu128"
+ },
+ "n_covered_rows": 142000,
+ "n_distinct_features_lasttoken": 13765,
+ "n_distinct_features_lasttoken_train": 13289,
+ "n_rows": 142000,
+ "n_shards": 1920,
+ "nnz_ans_mean": 679683079,
+ "nnz_psil": 4700819,
+ "prefix_degeneracy": {
+  "max_variants_allowed": 8,
+  "min_cosine_floor": 0.999,
+  "min_cosine_to_reference": 0.9998898005775265,
+  "n_distinct_h_prefix_vectors": 4,
+  "n_rows_deviating_from_reference": 258,
+  "prefix_end_values": [
+   23
+  ]
+ },
+ "restriction": {
+  "cap": 49152,
+  "d_B": 4588,
+  "excluded_active_mass_frac": 0.010352872814576086,
+  "excluded_count": 126484,
+  "floor_last": 20,
+  "n_eligible": 4588
+ },
+ "row_nnz_stats_psil": {
+  "max": 91,
+  "mean": 33.104359154929575,
+  "median": 33.0,
+  "min": 10,
+  "p5": 20.0,
+  "p95": 47.0
+ }
+}

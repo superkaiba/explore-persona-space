@@ -1,0 +1,15 @@
+{
+ "meta": {
+  "git_commit": "c2587758",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/issue2163_ctxread.py"
+  ],
+  "numpy": "2.2.6",
+  "scipy": "1.17.1",
+  "seed": 2163,
+  "timestamp_utc": "2026-08-07T15:08:06.985976+00:00",
+  "torch": "2.8.0+cu128"
+ },
+ "n_files": 22
+}

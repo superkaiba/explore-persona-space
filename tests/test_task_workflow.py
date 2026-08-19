@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -1206,6 +1207,92 @@ def test_adversarial_planner_skill_documents_header_autoalignment():
         "to retitle its header — that burns a plan version for zero "
         "content change (the #1715 churn loop)."
     )
+
+
+# ─── Amendment-shaped plan-version refusal (#2255) ─────────────────────────
+
+# Full self-contained v1 fixture: a few KB, carries the machine-readable
+# GPU-hours declaration + section headers (the shape every consumer assumes).
+_FULL_PLAN_V1 = (
+    "# Plan v1 — task #999: full self-contained fixture\n\n"
+    "## 0. Summary\n\n"
+    "Estimated GPU-hours (total): 4\n\n"
+    "## 4. Design\n\n" + ("Design prose line for the full self-contained v1 fixture.\n" * 60)
+)
+
+# The #2223-v4 shape: thin delta, amendment-marker phrases, NO GPU declaration.
+_THIN_AMENDMENT_V2 = (
+    "# Plan v2 (AMENDMENT of v1) — thin delta fixture\n\n"
+    "Adds one follow-up arm. Everything else PORTS FROM v1 unchanged.\n"
+)
+
+
+def test_new_plan_version_rejects_2223_shape_amendment(fake_repo):
+    """#2255 success criterion 2: the persist REFUSES the #2223-shape thin
+    amendment with an actionable message naming the --allow-amendment escape;
+    nothing is written and the symlink stays on v1."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    with pytest.raises(ValueError, match="--allow-amendment"):
+        tw.new_plan_version(new_id, _THIN_AMENDMENT_V2)
+    versions = sorted(p.name for p in plans_dir.glob("v*.md"))
+    assert versions == ["v1.md"], versions
+    assert (plans_dir / "plan.md").resolve().name == "v1.md"
+
+
+def test_new_plan_version_allow_amendment_escape(fake_repo):
+    """The deliberate escape stays reachable (the #2223 user-authorized case):
+    allow_amendment=True persists the thin delta and rotates the symlink."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    assert tw.new_plan_version(new_id, _THIN_AMENDMENT_V2, allow_amendment=True) == 2
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    assert (plans_dir / "plan.md").resolve().name == "v2.md"
+
+
+def test_new_plan_version_full_plan_with_unchanged_phrase_persists(fake_repo):
+    """Pins the ~198-hit corpus class as non-rejected: a FULL revision whose
+    changelog says 'unchanged from v1' AND that carries its own GPU-hours
+    declaration persists normally (marker phrase alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    full_v2 = (
+        "# Plan v2 — full revision fixture\n\n"
+        "## 0. Summary\n\n"
+        "Estimated GPU-hours (total): 4\n\n"
+        "Changelog: §4 unchanged from v1.\n\n"
+        "## 4. Design\n\n" + ("Design prose line for the full revision fixture body.\n" * 60)
+    )
+    assert tw.new_plan_version(new_id, full_v2) == 2
+
+
+def test_new_plan_version_small_full_replan_persists(fake_repo):
+    """Pins the 29-hit corpus class as non-rejected: a small (~20% of v1)
+    full re-plan with NO amendment-marker phrase and its own GPU-hours
+    declaration persists normally (size alone must never reject)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="infra", title="X"))
+    assert tw.new_plan_version(new_id, _FULL_PLAN_V1) == 1
+    small_v2 = (
+        "# Plan v2 — small full re-plan fixture\n\n"
+        "Estimated GPU-hours (total): 2\n\n"
+        "## 4. Design\n\n" + ("Short but complete re-plan prose.\n" * 12)
+    )
+    assert len(small_v2.encode()) < 0.4 * len(_FULL_PLAN_V1.encode())
+    assert tw.new_plan_version(new_id, small_v2) == 2
+
+
+def test_amendment_gpu_regex_parity_with_verify_plan(fake_repo):
+    """Pins the ONE deliberate regex duplication (#2255 §4): the amendment
+    predicate's GPU-declaration signal must stay pattern-identical to
+    verify_plan.py's GPU_LINE_RE (the Step-2c consumer's own read)."""
+    _, tw = fake_repo
+    vp = _load_verify_plan_module()
+    assert tw.AMENDMENT_GPU_LINE_RE.pattern == vp.GPU_LINE_RE.pattern
 
 
 # ─── Promotion ───────────────────────────────────────────────────────────
@@ -3045,7 +3132,7 @@ def test_cli_handlers_raise_address_defer_list_roundtrip(concerns_task, capsys):
 def test_raise_concern_library_rejects_overlong_summary(concerns_task):
     """The library layer keeps the hard 200-char cap (defense-in-depth for
     programmatic callers) and its message names the escape + the CLI
-    auto-truncation alternative."""
+    --summary-file alternative (#2121: no more auto-truncation claim)."""
     _, tw, tid = concerns_task
     with pytest.raises(ValueError, match="summary too long") as excinfo:
         tw.raise_concern(
@@ -3058,12 +3145,12 @@ def test_raise_concern_library_rejects_overlong_summary(concerns_task):
         )
     msg = str(excinfo.value)
     assert "evidence" in msg
-    assert "truncat" in msg
+    assert "--summary-file" in msg
 
 
 def test_address_concern_library_overlong_message_names_escape(concerns_task):
     """address_concern's >200 ValueError names the cap AND an actionable
-    escape (round report) AND mentions the CLI auto-truncation."""
+    escape (round report) AND the CLI --summary-file channel (#2121)."""
     _, tw, tid = concerns_task
     tw.raise_concern(
         tid,
@@ -3084,7 +3171,7 @@ def test_address_concern_library_overlong_message_names_escape(concerns_task):
     msg = str(excinfo.value)
     assert "max 200" in msg
     assert "round report" in msg
-    assert "truncat" in msg
+    assert "--summary-file" in msg
 
 
 def test_truncate_summary_word_boundary():
@@ -3165,39 +3252,42 @@ def test_cli_raise_concern_truncates_overlong_summary_and_preserves_in_evidence(
     assert row["evidence"] == original
 
 
-def test_cli_raise_concern_truncation_keeps_given_evidence(concerns_task, capsys):
-    """When --evidence IS given, it is never mutated; the dropped tail is
-    printed in the stderr warning instead."""
+def test_cli_raise_concern_overcap_with_evidence_hard_errors(concerns_task, capsys):
+    """R6 (#2121): an over-cap --summary WITH --evidence supplied is the
+    LOSSY branch (nothing can hold the full text) — hard error, exit 2,
+    nothing stored. The pre-fix behavior silently dropped the tail."""
     import argparse
 
     task_cli = _import_task_cli()
     _repo, tw, tid = concerns_task
     original = "alpha " * 50 + "OMEGA-DISTINCTIVE-TOKEN"  # 323 chars
-    task_cli.cmd_raise_concern(
-        argparse.Namespace(
-            number=tid,
-            concern_id="overlong-raise-evidence",
-            severity="CONCERN",
-            summary=original,
-            by="code-reviewer",
-            round=1,
-            evidence="src/foo.py:42",
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_raise_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="overlong-raise-evidence",
+                severity="CONCERN",
+                summary=original,
+                by="code-reviewer",
+                round=1,
+                evidence="src/foo.py:42",
+            )
         )
-    )
+    assert excinfo.value.code == 2
     err = capsys.readouterr().err
-    assert "WARNING" in err
-    assert "Dropped tail" in err
-    assert "OMEGA-DISTINCTIVE-TOKEN" in err
+    assert "ERROR" in err
+    assert "--summary-file" in err
+    assert "--evidence" in err
     concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
-    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
-    row = rows[-1]
-    assert len(row["summary"]) <= 200
-    assert row["evidence"] == "src/foo.py:42"
+    assert not concerns_path.exists()  # nothing was appended
 
 
-def test_cli_address_concern_truncates_overlong_summary(concerns_task, capsys):
-    """The #1090 replay: a 203-char address-concern --summary completes in
-    ONE invocation with a loud warning."""
+def test_cli_address_concern_rejects_overlong_summary(concerns_task, capsys):
+    """R1/R2 (#2121): a 203-char address-concern --summary hard-errors
+    (exit 2) instead of silently dropping the tail (the pre-fix #1739
+    incident destroyed 1,589 chars). The error names the actual length,
+    the cap, and the --summary-file escape; the stored rows are
+    unchanged."""
     import argparse
 
     task_cli = _import_task_cli()
@@ -3210,25 +3300,27 @@ def test_cli_address_concern_truncates_overlong_summary(concerns_task, capsys):
         raised_by="code-reviewer",
         raised_at_round=1,
     )
-    updated = ("addressed by rekeying the lookup " * 7)[:203]
+    updated = ("addressed by rekeying the lookup " * 7)[:203].rstrip()
     assert len(updated) == 203
-    task_cli.cmd_address_concern(
-        argparse.Namespace(
-            number=tid,
-            concern_id="overlong-address-cli",
-            by="implementer",
-            round=1,
-            summary=updated,
-        )
-    )
-    err = capsys.readouterr().err
-    assert "WARNING" in err
-    assert "cap 200" in err
     concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
-    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
-    row = rows[-1]
-    assert row["event"] == "addressed"
-    assert len(row["summary"]) <= 200
+    rows_before = concerns_path.read_text()
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="overlong-address-cli",
+                by="implementer",
+                round=1,
+                summary=updated,
+            )
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert "203 chars" in err  # the actual length
+    assert "max 200" in err  # the cap
+    assert "--summary-file" in err  # the escape
+    assert concerns_path.read_text() == rows_before  # stored rows unchanged
 
 
 def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
@@ -3260,6 +3352,362 @@ def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
     assert "evidence" not in row
 
 
+def _concern_rows(tw, tid):
+    """Parsed concerns.jsonl rows for task ``tid`` (test helper)."""
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    return [json.loads(ln) for ln in concerns_path.read_text().splitlines() if ln.strip()]
+
+
+def test_cli_address_concern_summary_file_overcap_preserves_full_text_in_evidence(
+    concerns_task, capsys, tmp_path
+):
+    """R3 (#2121): --summary-file accepts text of ANY length; over-cap text
+    lands VERBATIM in the event's evidence field with a <=200-char derived
+    lead as the summary. Replays the actual #1739 payload length (1,785
+    chars — the text the pre-fix CLI destroyed)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "summary-file-address",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    full_text = ("evidence sentence with real content " * 50)[:1785].rstrip()
+    assert len(full_text) > 1700
+    sf = tmp_path / "address-summary.md"
+    sf.write_text(full_text, encoding="utf-8")
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-address",
+            by="implementer",
+            round=1,
+            summary=None,
+            summary_file=str(sf),
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "evidence field" in err  # the one informational stderr line
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "addressed"
+    assert row["evidence"] == full_text  # full text, verbatim
+    assert len(row["summary"]) <= 200
+    assert row["summary"].endswith("...")
+    assert full_text.startswith(row["summary"][:-3])
+
+
+def test_cli_raise_concern_summary_file_overcap_preserves_full_text_in_evidence(
+    concerns_task, capsys, tmp_path
+):
+    """R8 (#2121): raise-concern --summary-file has the same semantics as
+    address-concern's (over-cap text preserved verbatim in evidence)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    full_text = ("a long raised concern description with detail " * 12).rstrip()
+    assert len(full_text) > 200
+    sf = tmp_path / "raise-summary.md"
+    sf.write_text(full_text, encoding="utf-8")
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-raise",
+            severity="CONCERN",
+            summary=None,
+            summary_file=str(sf),
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "evidence field" in err
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "raised"
+    assert row["evidence"] == full_text
+    assert len(row["summary"]) <= 200
+    assert row["summary"].endswith("...")
+
+
+def test_cli_concern_summary_file_under_cap_is_summary_verbatim(concerns_task, capsys, tmp_path):
+    """An under-cap --summary-file is a pure quoting convenience: the file
+    text becomes the summary (trailing newline stripped), no evidence."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    sf = tmp_path / "short-summary.md"
+    sf.write_text("A short summary read from a file.\n", encoding="utf-8")
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="summary-file-short",
+            severity="CONCERN",
+            summary=None,
+            summary_file=str(sf),
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    assert "WARNING" not in capsys.readouterr().err
+    row = _concern_rows(tw, tid)[-1]
+    assert row["summary"] == "A short summary read from a file."
+    assert "evidence" not in row
+
+
+def test_cli_address_concern_evidence_flag_roundtrips(concerns_task, capsys):
+    """R4 (#2121): address-concern --evidence exists and round-trips into
+    the stored `addressed` row, symmetric with raise-concern's."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "evidence-roundtrip",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="evidence-roundtrip",
+            by="implementer",
+            round=1,
+            summary="Fixed by rekeying the lookup.",
+            summary_file=None,
+            evidence="src/foo.py:42 — the rekeyed lookup",
+        )
+    )
+    capsys.readouterr()
+    row = _concern_rows(tw, tid)[-1]
+    assert row["event"] == "addressed"
+    assert row["summary"] == "Fixed by rekeying the lookup."
+    assert row["evidence"] == "src/foo.py:42 — the rekeyed lookup"
+
+
+def test_cli_address_concern_summary_file_overcap_with_evidence_hard_errors(
+    concerns_task, capsys, tmp_path
+):
+    """R5 (#2121): an over-cap --summary-file PLUS an explicit --evidence is
+    a hard error — the CLI refuses to pick which text survives."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "summary-file-vs-evidence",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    sf = tmp_path / "overcap.md"
+    sf.write_text("x" * 300, encoding="utf-8")
+    rows_before = _concern_rows(tw, tid)
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(
+                number=tid,
+                concern_id="summary-file-vs-evidence",
+                by="implementer",
+                round=1,
+                summary=None,
+                summary_file=str(sf),
+                evidence="an explicit evidence pointer",
+            )
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert "--summary-file" in err
+    assert "--evidence" in err
+    assert _concern_rows(tw, tid) == rows_before  # nothing appended
+
+
+def test_cli_address_concern_summary_and_summary_file_mutually_exclusive(monkeypatch, capsys):
+    """R5 (#2121): --summary and --summary-file are argparse-mutually-
+    exclusive on address-concern, exercised through the REAL parser via
+    main() (a pre-built Namespace cannot pin the parser surface)."""
+    task_cli = _import_task_cli()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "address-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--by",
+            "implementer",
+            "--round",
+            "1",
+            "--summary",
+            "inline",
+            "--summary-file",
+            "/tmp/nonexistent.md",
+        ],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.main()
+    assert excinfo.value.code == 2
+    assert "not allowed with" in capsys.readouterr().err
+
+
+def test_cli_raise_concern_requires_summary_or_summary_file(monkeypatch, capsys):
+    """raise-concern's flag group is required=True: neither --summary nor
+    --summary-file → argparse error (exit 2). Preserves the historical
+    'summary is mandatory' contract under the new group (#2121)."""
+    task_cli = _import_task_cli()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "raise-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--severity",
+            "CONCERN",
+            "--by",
+            "code-reviewer",
+            "--round",
+            "1",
+        ],
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.main()
+    assert excinfo.value.code == 2
+    assert "required" in capsys.readouterr().err
+
+
+def test_cli_concern_summary_file_empty_or_missing_hard_errors(concerns_task, capsys, tmp_path):
+    """D2b rows (#2121): an empty / whitespace-only --summary-file is a hard
+    error naming the path (a falsy summary would otherwise silently no-op
+    into the carried-forward original); an unreadable path likewise."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "empty-summary-file",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    empty = tmp_path / "empty.md"
+    empty.write_text("   \n\n", encoding="utf-8")
+    ns = dict(number=tid, concern_id="empty-summary-file", by="implementer", round=1)
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(**ns, summary=None, summary_file=str(empty), evidence=None)
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR" in err
+    assert str(empty) in err  # names the path
+
+    missing = tmp_path / "does-not-exist.md"
+    with pytest.raises(SystemExit) as excinfo:
+        task_cli.cmd_address_concern(
+            argparse.Namespace(**ns, summary=None, summary_file=str(missing), evidence=None)
+        )
+    assert excinfo.value.code == 2
+    assert str(missing) in capsys.readouterr().err
+
+
+def test_cli_concern_handlers_tolerate_minimal_namespace(concerns_task, capsys):
+    """The mechanical pin for the getattr contract R7 depends on (#2121):
+    both handlers accept a hand-built Namespace lacking BOTH the new
+    ``summary_file`` AND ``evidence`` attributes (existing tests — e.g.
+    the lifecycle test — drive the handlers with pre-#2121 Namespaces, so
+    a direct attribute read would break them)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="minimal-namespace",
+            severity="CONCERN",
+            summary="A concern raised from a minimal namespace.",
+            by="code-reviewer",
+            round=1,
+            # no evidence, no summary_file
+        )
+    )
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="minimal-namespace",
+            by="implementer",
+            round=1,
+            summary=None,
+            # no evidence, no summary_file
+        )
+    )
+    capsys.readouterr()
+    rows = _concern_rows(tw, tid)
+    assert [r["event"] for r in rows] == ["raised", "addressed"]
+
+
+def test_address_concern_library_evidence_omitted_when_falsy(concerns_task):
+    """D1a (#2121): address_concern stores ``evidence`` only when truthy —
+    the same additive shape raise_concern has carried since inception, so
+    no concerns.jsonl reader needs to change."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "evidence-falsy-lib",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    p1 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=1,
+        summary="Addressed without evidence.",
+    )
+    assert "evidence" not in p1
+    p2 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=2,
+        summary="Addressed again, empty-string evidence.",
+        evidence="",
+    )
+    assert "evidence" not in p2
+    p3 = tw.address_concern(
+        tid,
+        "evidence-falsy-lib",
+        addressed_by="implementer",
+        addressed_at_round=3,
+        summary="Addressed with evidence.",
+        evidence="src/foo.py:42",
+    )
+    assert p3["evidence"] == "src/foo.py:42"
+
+
 def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
     """#1867: `--note` parses as an argparse alias of `--summary` on
     address-concern (dest=summary), exercised through the REAL parser via
@@ -3271,14 +3719,16 @@ def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
     captured = {}
 
     def fake_address_concern(
-        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None
+        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None, evidence=None
     ):
+        # signature mirrors the real address_concern (evidence added by #2121)
         captured.update(
             task_id=task_id,
             concern_id=concern_id,
             addressed_by=addressed_by,
             addressed_at_round=addressed_at_round,
             summary=summary,
+            evidence=evidence,
         )
         return {"event": "addressed", "concern_id": concern_id}
 
@@ -5479,6 +5929,118 @@ def test_husk_subset_verifier_jsonl_and_symlink_arms(fake_repo):
     assert tw._husk_unique_content(h, live) == []
 
 
+def test_husk_file_symlink_vs_materialized_arms(fake_repo):
+    """#2138 file-symlink coverage arms of _husk_unique_content: a husk
+    plans/plan.md SYMLINK against a live MATERIALIZED counterpart. Routes
+    in code order: (b) the in-husk fully-resolved target's husk-relative
+    path also exists in the live dir (classifies the SYMLINK entry ONLY --
+    T2b pins that the target file's own comparison still runs); then (a)
+    resolved bytes covered by the live counterpart at the same rel path.
+    Pre-fix, EVERY symlink-vs-non-symlink pairing here read unique (T1
+    returned ["plans/plan.md"]; T2b returned both entries)."""
+    repo, tw = fake_repo
+
+    def _pair(name: str) -> tuple[Path, Path]:
+        h = repo / f"husk-{name}"
+        lv = repo / f"live-{name}"
+        (h / "plans").mkdir(parents=True)
+        (lv / "plans").mkdir(parents=True)
+        return h, lv
+
+    # T1 -- SAFE, the traced #2051 shape ((b) fires): live plan.md is a
+    # MATERIALIZED POINTER -- a 5-byte regular file whose content is the
+    # target STRING, exactly as traced at commit f4f057c6af8b.
+    h, lv = _pair("t1")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("the full plan body\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("the full plan body\n")
+    assert tw._husk_unique_content(h, lv) == []
+    # T2 -- SAFE, later-version live plan ((b) fires, (a) fails): live
+    # plan.md advanced past the husk's version; live v1.md persists.
+    h, lv = _pair("t2")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("TOTALLY DIFFERENT V2 PLAN\n")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == []
+    # T2b -- UNIQUE, (b) fires on the symlink but the TARGET diverges (the
+    # load-bearing soundness arm): the symlink is absent from the unique
+    # list (proving (b) fired) AND the diverged target is present (proving
+    # (b) did NOT suppress the walk's independent check of the target).
+    h, lv = _pair("t2b")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("PLAN-V2\n")
+    assert tw._husk_unique_content(h, lv) == ["plans/v1.md"]
+    # T3 -- (a) fires in isolation ((b) fails): live plan.md is a
+    # FULL-CONTENT materialization, no live v1.md; the symlink reads safe
+    # via byte coverage while the uncovered target file stays unique.
+    h, lv = _pair("t3")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == ["plans/v1.md"]
+    # T4 -- UNIQUE, diverged: both new routes fail; symlink AND target
+    # stay unique.
+    h, lv = _pair("t4")
+    (h / "plans" / "plan.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("DIVERGED\n")
+    assert tw._husk_unique_content(h, lv) == sorted(["plans/plan.md", "plans/v1.md"])
+    # T5a -- UNIQUE, ABSOLUTE escape: byte coverage does NOT rescue a link
+    # resolving outside the husk.
+    outside = repo / "outside.md"
+    outside.write_text("SHARED\n")
+    h, lv = _pair("t5a")
+    (h / "plans" / "plan.md").symlink_to(outside)
+    (lv / "plans" / "plan.md").write_text("SHARED\n")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T5b -- UNIQUE, relative escape (../.. exits the husk).
+    h, lv = _pair("t5b")
+    (h / "plans" / "plan.md").symlink_to("../../outside.md")
+    (lv / "plans" / "plan.md").write_text("SHARED\n")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T5c -- UNIQUE, dangling target.
+    h, lv = _pair("t5c")
+    (h / "plans" / "plan.md").symlink_to("missing.md")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    assert "plans/plan.md" in tw._husk_unique_content(h, lv)
+    # T6 -- inverse-direction regression pin: husk REGULAR file vs live
+    # symlink-to-file carrying the same bytes (already safe today --
+    # is_file()/read_bytes() follow symlinks on the regular-file branch).
+    h, lv = _pair("t6")
+    (h / "plans" / "plan.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").symlink_to("v1.md")
+    assert tw._husk_unique_content(h, lv) == []
+    # T7 -- dir-symlink strictness preserved: the file-symlink leniency
+    # must NOT extend to dirnames; a live REAL materialized DIRECTORY does
+    # not cover a husk dir-symlink.
+    h, lv = _pair("t7")
+    (h / "artifacts").mkdir()
+    (h / "artlink").symlink_to("artifacts")
+    (lv / "artifacts").mkdir()
+    (lv / "artlink").mkdir()
+    assert "artlink" in tw._husk_unique_content(h, lv)
+    # T8 -- fifo stays unique (non-regular file type, never covered).
+    h, lv = _pair("t8")
+    os.mkfifo(h / "pipe")
+    assert "pipe" in tw._husk_unique_content(h, lv)
+    # T9 -- multi-hop chain SAFE: resolve() collapses the chain, (b) keys
+    # on the FULLY-resolved target; both symlinks read safe and the target
+    # file verifies independently.
+    h, lv = _pair("t9")
+    (h / "plans" / "plan.md").symlink_to("link2.md")
+    (h / "plans" / "link2.md").symlink_to("v1.md")
+    (h / "plans" / "v1.md").write_text("PLAN-V1\n")
+    (lv / "plans" / "plan.md").write_text("v1.md")
+    (lv / "plans" / "link2.md").write_text("v1.md")
+    (lv / "plans" / "v1.md").write_text("PLAN-V1\n")
+    assert tw._husk_unique_content(h, lv) == []
+
+
 def test_reap_skips_non_terminal_and_blocked(fake_repo):
     """Plan test (d): duplicate dirs on running and blocked tasks are
     skipped-non-terminal (D2: blocked is re-drivable, NOT reap-eligible)."""
@@ -5566,6 +6128,36 @@ def test_reap_symlink_and_untracked_shapes(fake_repo):
     assert "0 tracked file(s)" in rep3.actions[0].reason
     assert not husk3.exists()
     assert _git_log_count(repo) == commits_before  # rmtree-only, no commit
+
+
+def test_reap_symlink_vs_materialized_husk(fake_repo):
+    """T10 (#2138 end-to-end, the traced #2051 shape): a tracked husk whose
+    plans/plan.md is a SYMLINK to v1.md reaps against a live dir whose
+    plan.md is a MATERIALIZED 5-byte pointer file; the live plans/ files
+    stay UNTRACKED, mirroring the real incident (the comparator reads disk
+    state, not git). The live dir is untouched by the reap."""
+    repo, tw = fake_repo
+    tid, live, husk = _make_terminal_task_with_husk(repo, tw)
+    # Live side: materialized pointer + the versioned plan body, untracked.
+    (live / "plans").mkdir(exist_ok=True)
+    (live / "plans" / "v1.md").write_text("the full plan body\n")
+    (live / "plans" / "plan.md").write_text("v1.md")
+    # Husk side: the symlink shape, git-tracked (as at commit f4f057c6af8b).
+    (husk / "plans").mkdir()
+    (husk / "plans" / "v1.md").write_text("the full plan body\n")
+    (husk / "plans" / "plan.md").symlink_to("v1.md")
+    _git(repo, "add", "--", str(husk.relative_to(repo)))
+    _git(repo, "commit", "-q", "-m", f"husk plans for #{tid}")
+    rep = tw.reap_stale_status_husks(apply=True, task_id=tid)
+    assert [a.action for a in rep.actions] == ["reaped"]
+    assert not husk.exists()
+    # Live dir untouched: plan.md still a REGULAR pointer file, v1.md intact.
+    assert live.is_dir()
+    assert not (live / "plans" / "plan.md").is_symlink()
+    assert (live / "plans" / "plan.md").read_text() == "v1.md"
+    assert (live / "plans" / "v1.md").read_text() == "the full plan body\n"
+    rows = _husk_sidecar_rows(repo)
+    assert any(r["action"] == "reaped" and r["task_id"] == tid for r in rows)
 
 
 def test_reap_kill_switch(fake_repo, monkeypatch):
@@ -5955,3 +6547,832 @@ def test_task_status_dir_pathspecs_unchanged_after_refactor(fake_repo):
     assert specs == sorted([f"tasks/proposed/{tid}", f"tasks/planning/{tid}"])
     # The extracted tracked-side probe returns ONLY the index-tracked dir.
     assert tw._tracked_status_dirs(tid, repo) == {f"tasks/proposed/{tid}"}
+
+
+# ─── Authorized-stub grant (#2171; Step 6d.0 PASS_AUTHORIZED_STUB) ──────────
+#
+# Ground-truth fixtures are BYTE-VERBATIM copies of the #2163 incident
+# artifacts (tests/fixtures/): the plan-v5 '### Authorized smoke stubs'
+# block and the orchestrator-posted epm:smoke-architecture-check v3 note
+# (whose per-arm rows sit under a FREE-PROSE intro, not the line-anchored
+# `per-arm-resolution:` key — the designed REFUSE shape).
+
+_AUTH_STUB_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+_V5_BLOCK = (_AUTH_STUB_FIXTURES / "issue2163_plan_v5_authorized_stub_block.md").read_text(
+    encoding="utf-8"
+)
+_V3_NOTE = (_AUTH_STUB_FIXTURES / "issue2163_smoke_arch_v3_note.txt").read_text(encoding="utf-8")
+
+
+def _v3_real_per_arm_rows() -> list[str]:
+    """The 10 REAL per-arm rows out of the verbatim v3 note (8 REAL + 2 FALLBACK)."""
+    lines = _V3_NOTE.splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("Per-arm resolution ("))
+    rows: list[str] = []
+    for ln in lines[i + 1 :]:
+        if ln.startswith("- "):
+            rows.append(ln)
+        elif rows:
+            break
+    assert len(rows) == 10, rows
+    return rows
+
+
+def _conforming_repost_note() -> str:
+    """The schema-CONFORMING re-post the D5(ii)/D6(i) bounce text instructs:
+    v3's real per-arm ROWS under an actual line-anchored `per-arm-resolution:`
+    key, plus the `import-resolution:` line, verdict re-tokened."""
+    return (
+        "verdict: PASS_AUTHORIZED_STUB arms_stubbed=[upload-verify,confirm-b-gpu]\n"
+        "import-resolution: rc=0 (`--import-check`).\n"
+        "per-arm-resolution:\n" + "\n".join(_v3_real_per_arm_rows()) + "\n"
+    )
+
+
+def test_authorized_stub_grant_happy_path_2163_shape():
+    """#2163 shape: verbatim plan-v5 block + a schema-conforming re-post → GRANT
+    on clauses 1-4 (the §12 #1287 predicate-trace pin)."""
+    tw = _tw()
+    d = tw.authorized_stub_grant(_conforming_repost_note(), _V5_BLOCK)
+    assert d.grant, d.reason
+    assert set(d.arms_stubbed) == {"upload-verify", "confirm-b-gpu"}
+    assert d.authorized == ("confirm-b-gpu", "upload-verify")
+
+
+def test_authorized_stub_refuse_arm_not_in_plan_block():
+    """An arms_stubbed arm absent from the plan block REFUSES naming it
+    (acceptance criterion 2)."""
+    tw = _tw()
+    note = (
+        _conforming_repost_note().replace(
+            "arms_stubbed=[upload-verify,confirm-b-gpu]",
+            "arms_stubbed=[upload-verify,confirm-b-gpu,extra-arm]",
+        )
+        + "- extra-arm: FALLBACK — stub not in the plan block\n"
+    )
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "extra-arm" in d.reason
+    assert "not covered by the plan" in d.reason
+
+
+def test_authorized_stub_refuse_unauthorized_fallback_row():
+    """A FALLBACK row NOT in arms_stubbed → set-equality REFUSE (criterion 3)."""
+    tw = _tw()
+    note = _conforming_repost_note().replace(
+        "- partials: REAL (32 s)", "- partials: FALLBACK — stub this round"
+    )
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "partials" in d.reason
+    assert "set-equal" in d.reason
+
+
+def test_authorized_stub_refuse_wrong_verdict():
+    """The verbatim #2163 v3 note AS-IS (`PASS_PARTIAL`) → REFUSE (only the
+    new token consults the checker; the honest refusal keeps refusing)."""
+    tw = _tw()
+    d = tw.authorized_stub_grant(_V3_NOTE, _V5_BLOCK)
+    assert not d.grant
+    assert "PASS_PARTIAL" in d.reason
+    assert "PASS_AUTHORIZED_STUB" in d.reason
+
+
+def test_authorized_stub_refuse_missing_block():
+    tw = _tw()
+    d = tw.authorized_stub_grant(_conforming_repost_note(), "# Plan\n\n### 4. Design\n\nno block\n")
+    assert not d.grant
+    assert "Authorized smoke stubs" in d.reason
+
+
+def test_authorized_stub_refuse_malformed_block():
+    """An empty control cell REFUSES (converted AuthorizedStubBlockError — no crash)."""
+    tw = _tw()
+    plan = (
+        "### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | must not write HF | |\n"
+    )
+    d = tw.authorized_stub_grant(_conforming_repost_note(), plan)
+    assert not d.grant
+    assert "malformed" in d.reason
+    assert "compensating control" in d.reason
+
+
+def test_parse_authorized_stub_block_escaped_pipe_fails_loud():
+    """Round-2 Minor 1: a literal '\\|' inside the REASON cell of a 3-column
+    row mis-splits to 4 cells; the exactly-3 cell-count check fails loud.
+    Under the old >=3 tolerance this row parsed silently with the cells
+    SHIFTED — 'tail' read as the control while the actual control cell was
+    EMPTY (exactly what the empty-cell check exists to catch)."""
+    tw = _tw()
+    plan = (
+        "### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | writes HF \\| destructive | |\n"
+    )
+    with pytest.raises(tw.AuthorizedStubBlockError, match="exactly 3"):
+        tw.parse_authorized_stub_block(plan)
+
+
+def test_authorized_stub_refuse_missing_import_resolution():
+    tw = _tw()
+    note = _conforming_repost_note().replace("import-resolution: rc=0 (`--import-check`).\n", "")
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert not d.grant
+    assert "import-resolution" in d.reason
+
+
+def test_parse_authorized_stub_block_verbatim_2163_v5():
+    """The verbatim plan-v5 block parses: first-backtick arm extraction
+    tolerates the '(Phase 7)' / '(Phase 6 venue-switch cell)' parentheticals."""
+    tw = _tw()
+    block = tw.parse_authorized_stub_block(_V5_BLOCK)
+    assert set(block) == {"upload-verify", "confirm-b-gpu"}
+    for arm, (reason, control) in block.items():
+        assert reason.strip(), arm
+        assert control.strip(), arm
+
+
+def test_parse_arms_stubbed_bracketed_and_bare_forms():
+    tw = _tw()
+    bare = tw.parse_smoke_arch_marker("verdict: PASS_AUTHORIZED_STUB arms_stubbed=a,b\n")
+    bracketed = tw.parse_smoke_arch_marker("verdict: PASS_AUTHORIZED_STUB arms_stubbed=[a, b]\n")
+    assert bare.arms_stubbed == ("a", "b")
+    assert bracketed.arms_stubbed == ("a", "b")
+    assert bare.verdict == bracketed.verdict == "PASS_AUTHORIZED_STUB"
+
+
+def test_authorized_stub_refuse_verbatim_2163_v3_freeprose():
+    """The VERBATIM v3 body re-tokened PASS_AUTHORIZED_STUB, its free-prose
+    'Per-arm resolution (…):' intro intact: pins the artifact fact
+    ``per_arm == {}`` AND that the refusal names the missing line-anchored
+    `per-arm-resolution:` key — any future parser loosening to whole-note row
+    collection breaks this test (round-1 MF-A)."""
+    tw = _tw()
+    retok = _V3_NOTE.replace("verdict: PASS_PARTIAL", "verdict: PASS_AUTHORIZED_STUB")
+    parsed = tw.parse_smoke_arch_marker(retok)
+    assert parsed.verdict == "PASS_AUTHORIZED_STUB"
+    assert parsed.per_arm == {}
+    d = tw.authorized_stub_grant(retok, _V5_BLOCK)
+    assert not d.grant
+    assert "`per-arm-resolution:`" in d.reason
+    assert "verbatim" in d.reason  # the one-bounce re-post instruction
+
+
+def test_parse_smoke_arch_marker_rows_outside_keyed_span_ignored():
+    """Per-arm-shaped FALLBACK rows under `resume-matrix:` (or any other
+    sub-block) never enter per_arm — an otherwise-conforming note still
+    GRANTs (round-1 MF-A(vi) keyed-span scoping pin)."""
+    tw = _tw()
+    note = _conforming_repost_note() + (
+        "resume-matrix:\n"
+        "- census-sentinel: FALLBACK — not exercised this round\n"
+        "production-outroot-unit:\n"
+        "- out-root: FALLBACK — pod-side only\n"
+    )
+    parsed = tw.parse_smoke_arch_marker(note)
+    assert "census-sentinel" not in parsed.per_arm
+    assert "out-root" not in parsed.per_arm
+    d = tw.authorized_stub_grant(note, _V5_BLOCK)
+    assert d.grant, d.reason
+
+
+@pytest.mark.parametrize(
+    ("case", "note_mut", "plan_mut", "reason_substr"),
+    [
+        (
+            "empty-arms",
+            lambda n: n.replace(" arms_stubbed=[upload-verify,confirm-b-gpu]", ""),
+            lambda p: p,
+            "arms_stubbed is empty",
+        ),
+        (
+            "duplicate-plan-arm",
+            lambda n: n,
+            lambda p: p + "| `upload-verify` | duplicate row | second control |\n",
+            "duplicate arm",
+        ),
+        (
+            "duplicate-heading",
+            lambda n: n,
+            lambda p: p + "\n### Authorized smoke stubs\n\nsecond block\n",
+            "ambiguous",
+        ),
+    ],
+)
+def test_authorized_stub_refuse_parametrized_edges(case, note_mut, plan_mut, reason_substr):
+    tw = _tw()
+    d = tw.authorized_stub_grant(note_mut(_conforming_repost_note()), plan_mut(_V5_BLOCK))
+    assert not d.grant, case
+    assert reason_substr in d.reason, (case, d.reason)
+
+
+def _iso_utc(epoch: float) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch))
+
+
+def _commit_task_plans(repo, tid: int, *, message: str, committer_date: str | None = None) -> None:
+    """Commit the (proposed) task's plans/ dir by explicit pathspec, optionally
+    at a forced committer date — the clause-5 content-provenance leg reads the
+    blob's INTRODUCTION committer time, so grant-path fixtures must carry
+    COMMITTED plan bytes with a controlled ordering vs the approval marker
+    (#2171 round 2). A forced date also avoids the same-second %cI-truncation
+    tie the strict `<` ordering comparison deliberately grants."""
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    env = os.environ.copy()
+    if committer_date:
+        env["GIT_COMMITTER_DATE"] = committer_date
+        env["GIT_AUTHOR_DATE"] = committer_date
+    subprocess.run(["git", "add", "--", str(plans)], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", message, "--", str(plans)], cwd=repo, check=True, env=env
+    )
+
+
+def _make_authorized_stub_task(
+    repo,
+    tw,
+    *,
+    plan_text: str | None = None,
+    commit: bool = False,
+    committer_date: str | None = None,
+) -> int:
+    """A fake-repo task carrying plans/v1.md (+ plan.md symlink) with the
+    verbatim v5 block and the conforming marker note. ``commit=True`` lands
+    the plan version with the canonical `task #<tid>: plan v1` subject (the
+    clause-5 content-provenance leg REFUSES uncommitted plan bytes — tests
+    that need the grant path commit; tests that stop before clause 5, or pin
+    the dirty refusal, don't)."""
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="authorized-stub fixture"))
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    plans.mkdir(parents=True, exist_ok=True)
+    v1 = plans / "v1.md"
+    v1.write_text(plan_text if plan_text is not None else f"# Plan\n\n{_V5_BLOCK}")
+    (plans / "plan.md").symlink_to(v1.name)
+    if commit:
+        _commit_task_plans(
+            repo, tid, message=f"task #{tid}: plan v1", committer_date=committer_date
+        )
+    return tid
+
+
+def test_authorized_stub_clause5_approval_ordering(fake_repo):
+    """Clause 5 (round-1 MF-C pin, round-2 content-provenance leg), both arms
+    on the #2163-shaped ordering: block-bearing plan version COMMITTED before
+    the latest epm:plan-approved → GRANT; a fresh block-bearing version
+    committed AFTER the approval + re-post (the 2-command self-grant shape:
+    bare new-plan-version + re-post) → REFUSE naming both timestamps. The
+    GRANT arm sets the plan file's mtime to the FUTURE first, so a pass
+    proves clause 5 reads the blob's introduction time, NOT the mtime (the
+    round-1 fallback that let in-place edits fail open)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    plans = repo / "tasks" / "proposed" / str(tid) / "plans"
+    v1 = plans / "v1.md"
+    future_epoch = time.time() + 3600
+    os.utime(v1, (future_epoch, future_epoch))  # mtime would REFUSE; blob leg must GRANT
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert d.grant, d.reason
+
+    # Self-grant shape (models `task.py new-plan-version` + re-post): a fresh
+    # block-bearing v2 + symlink bump committed AFTER the approval, canonical
+    # subject and all — the CONTENT's introduction postdates the approval.
+    v2 = plans / "v2.md"
+    v2.write_text(f"# Plan v2\n\n{_V5_BLOCK}")
+    (plans / "plan.md").unlink()
+    (plans / "plan.md").symlink_to(v2.name)
+    _commit_task_plans(
+        repo, tid, message=f"task #{tid}: plan v2", committer_date=_iso_utc(time.time() + 3600)
+    )
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d2 = tw.check_authorized_stub(tid)
+    assert not d2.grant
+    assert "postdates" in d2.reason
+    assert "epm:plan-approved" in d2.reason
+    assert "plan_pending" in d2.reason  # the remedy: land it through the plan gate
+
+
+def test_authorized_stub_clause5_refuses_inplace_uncommitted_append(fake_repo):
+    """Round-2 blocker, route (1): appending the block to the ALREADY-APPROVED
+    plan version as an UNCOMMITTED working-tree edit REFUSES on dirty
+    porcelain (fail CLOSED). Round 1 GRANTed here — the exact-subject probe
+    resolved the ORIGINAL pre-approval 'plan v1' commit, and the mtime
+    fallback never fired."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo,
+        tw,
+        plan_text="# Plan\n\n### 4. Design\n\nno stub block here\n",
+        commit=True,
+        committer_date=_iso_utc(time.time() - 3600),
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    # The one-command quiet self-grant: cat >> plans/v1.md
+    v1.write_text(v1.read_text(encoding="utf-8") + "\n" + _V5_BLOCK, encoding="utf-8")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "uncommitted" in d.reason
+    assert "new-plan-version" in d.reason  # the remedy names the canonical writer
+
+
+def test_authorized_stub_clause5_refuses_inplace_committed_noncanonical(fake_repo):
+    """Round-2 blocker, route (2): the same append COMMITTED under a
+    non-canonical message ('housekeeping sweep') REFUSES — the CURRENT
+    content's blob introduction postdates the approval regardless of the
+    commit subject. Round 1 GRANTed here: the subject-keyed probe matched
+    only the pre-approval 'plan v1' commit."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo,
+        tw,
+        plan_text="# Plan\n\n### 4. Design\n\nno stub block here\n",
+        commit=True,
+        committer_date=_iso_utc(time.time() - 3600),
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    v1.write_text(v1.read_text(encoding="utf-8") + "\n" + _V5_BLOCK, encoding="utf-8")
+    _commit_task_plans(
+        repo, tid, message="housekeeping sweep", committer_date=_iso_utc(time.time() + 3600)
+    )
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "postdates" in d.reason
+    assert "epm:plan-approved" in d.reason
+
+
+def test_authorized_stub_clause5_honest_2163_chain_still_grants(fake_repo):
+    """The honest #2163 chain still GRANTs post-fix: block-bearing plan
+    version committed → epm:plan-approved posted later → conforming re-post
+    (the real chain: persist 13:10:35Z → approval 13:11:16Z → re-post
+    13:12:16Z). A whole-dir STATUS MOVE after the approval (the measured
+    #2163 approved→running `git mv` — the commit the naive
+    `git log -1 -- <path>` false-refused on) must NOT flip the verdict: the
+    un-detected rename lists in --find-object output but postdates the
+    introduction, and min() keeps the introduction time."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    tw.post_event(tid, "epm:plan-approved", by="autonomous-gate", note="gpu-hours 0 <= cap")
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert d.grant, d.reason
+
+    # Status move AFTER the approval (the #2163 mv shape) — still GRANT.
+    tw.set_status(tid, "planning")
+    d2 = tw.check_authorized_stub(tid)
+    assert d2.grant, d2.reason
+
+
+def test_plan_persist_time_mtime_fallback_only_without_git(fake_repo, tmp_path_factory):
+    """The mtime fallback fires ONLY when repo-root git is unusable (the
+    no-git fixture case). With a USABLE git, an uncommitted plan file raises
+    PlanProvenanceError (fail CLOSED) instead of falling through to mtime —
+    the round-1 fall-through was the blocker's route (1)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(repo, tw)  # plan deliberately uncommitted
+    v1 = repo / "tasks" / "proposed" / str(tid) / "plans" / "v1.md"
+    with pytest.raises(tw.PlanProvenanceError, match="uncommitted"):
+        tw._plan_persist_time(tid, v1)
+
+    # No git at the resolver root (a sibling of the pytest tmp root, NOT
+    # inside the fake repo) → the mtime leg is the only persist signal.
+    nogit = tmp_path_factory.mktemp("nogit2171")
+    f = nogit / "v1.md"
+    f.write_text("plan bytes")
+    past = time.time() - 7200
+    os.utime(f, (past, past))
+    real_root = tw.repo_root
+    tw.repo_root = lambda: nogit
+    try:
+        got = tw._plan_persist_time(tid, f)
+    finally:
+        tw.repo_root = real_root
+    assert abs(got.timestamp() - past) < 2
+
+
+def test_plan_persist_time_unfindable_blob_fails_closed(fake_repo):
+    """A clean-porcelain file whose blob appears in NO commit under
+    tasks/*/<tid>/plans/ raises PlanProvenanceError — the empty
+    --find-object listing is never a silent grant nor an mtime
+    fall-through (fail CLOSED; the reviewer's explicit-assert ask)."""
+    repo, tw = fake_repo
+    stray = repo / "stray-plan.md"
+    stray.write_text("committed OUTSIDE any task plans dir")
+    subprocess.run(["git", "add", "--", str(stray)], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "stray file", "--", str(stray)], cwd=repo, check=True
+    )
+    with pytest.raises(tw.PlanProvenanceError, match="no commit"):
+        tw._plan_persist_time(999999, stray)
+
+
+def test_authorized_stub_clause5_refuses_without_any_approval(fake_repo):
+    """No epm:plan-approved event at all → REFUSE naming the missing marker
+    (round-1 MF-C pin)."""
+    repo, tw = fake_repo
+    tid = _make_authorized_stub_task(repo, tw)
+    tw.post_event(tid, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    d = tw.check_authorized_stub(tid)
+    assert not d.grant
+    assert "epm:plan-approved" in d.reason
+
+
+def test_check_authorized_stub_cli_end_to_end(fake_repo, capsys):
+    """Round-1 MF-B: execute the ACTUAL `task.py check-authorized-stub`
+    handler (the rc contract Step 6d.0 consumes) — an unconditional
+    `sys.exit(0)` stub or wrong plan-symlink resolution would leave all
+    pure-function tests green while the only layer the gate reads leaks
+    grants."""
+    repo, tw = fake_repo
+    task_cli = _import_task_cli()
+
+    # (c) no marker present → rc=1.
+    tid_bare = _make_authorized_stub_task(repo, tw)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_bare))
+    assert exc.value.code == 1
+    assert capsys.readouterr().out.startswith("REFUSE — ")
+
+    # (a) unauthorized-arm marker → rc=1 + a `REFUSE — ` line.
+    tid_refuse = _make_authorized_stub_task(repo, tw)
+    bad_note = (
+        _conforming_repost_note().replace(
+            "arms_stubbed=[upload-verify,confirm-b-gpu]",
+            "arms_stubbed=[upload-verify,confirm-b-gpu,extra-arm]",
+        )
+        + "- extra-arm: FALLBACK — stub not in the plan block\n"
+    )
+    tw.post_event(tid_refuse, "epm:plan-approved", by="autonomous-gate")
+    tw.post_event(tid_refuse, "epm:smoke-architecture-check", note=bad_note)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_refuse))
+    assert exc.value.code == 1
+    out = capsys.readouterr().out
+    assert out.startswith("REFUSE — ")
+    assert "extra-arm" in out
+
+    # (b) conforming happy path (clause-5 satisfied by a plan version
+    # COMMITTED before a LATER approval — the content-provenance leg) → rc=0.
+    tid_grant = _make_authorized_stub_task(
+        repo, tw, commit=True, committer_date=_iso_utc(time.time() - 3600)
+    )
+    tw.post_event(tid_grant, "epm:plan-approved", by="autonomous-gate")
+    tw.post_event(tid_grant, "epm:smoke-architecture-check", note=_conforming_repost_note())
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_check_authorized_stub(argparse.Namespace(number=tid_grant))
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert out.startswith("GRANT arms_stubbed=")
+    assert "upload-verify" in out and "confirm-b-gpu" in out
+
+
+# ─── Arm-registry enumeration check (#2176; Step 6d.0 registry-derived set) ──
+#
+# Ground truth: the BYTE-VERBATIM #2163 `epm:smoke-architecture-check` v4 note
+# (tests/fixtures/issue2163_smoke_arch_v4_note.txt — the marker that shipped
+# the 10-of-13 hand-listed enumeration; sibling of #2171's v3 fixture) plus
+# the driver's 13-phase registry from the #2176 task body
+# (`sorted(PHASES)` of `scripts/issue2163_ctxread.py`, branch-resident).
+
+_V4_NOTE = (_AUTH_STUB_FIXTURES / "issue2163_smoke_arch_v4_note.txt").read_text(encoding="utf-8")
+
+#: sorted(PHASES) of the #2163 driver — 13 arms (task #2176 body ground truth).
+_REGISTRY_13 = sorted(
+    [
+        "upload-inputs",
+        "stage",
+        "census",
+        "fit-maps",
+        "read-ladder",
+        "carried",
+        "answer-matchedn",
+        "partials",
+        "confirm-b",
+        "confirm-b-gpu",
+        "upload-verify",
+        "harvest",
+        "figures",
+    ]
+)
+
+
+def _registry_line(members: list[str], n: int | None = None) -> str:
+    """A structured `arm-registry:` line for the given members list."""
+    return (
+        f"arm-registry: source=sorted(PHASES) file=scripts/issue2163_ctxread.py "
+        f"n={len(members) if n is None else n} members={','.join(members)}\n"
+    )
+
+
+def _v4_real_per_arm_rows() -> list[str]:
+    """The 10 REAL rows out of the verbatim v4 note (under its free-prose
+    `## Per-arm resolution` markdown heading — NOT the line-anchored key)."""
+    lines = _V4_NOTE.splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("## Per-arm resolution"))
+    rows: list[str] = []
+    for ln in lines[i + 1 :]:
+        if ln.startswith("- "):
+            rows.append(ln)
+        elif rows:
+            break
+    assert len(rows) == 10, rows
+    return rows
+
+
+def _registry_note(members: list[str], rows: list[str], n: int | None = None) -> str:
+    """A schema-conforming note: registry line + line-anchored per-arm rows."""
+    return (
+        "verdict: PASS_UNIFIED\n"
+        "import-resolution: rc=0 (`--import-check`)\n"
+        + _registry_line(members, n=n)
+        + "per-arm-resolution:\n"
+        + "\n".join(rows)
+        + "\n"
+    )
+
+
+def _rows_for(members: list[str]) -> list[str]:
+    return [f"- {m}: REAL" for m in members]
+
+
+def _write_tmp_driver(root: Path, members: list[str], *, dynamic: bool = False) -> Path:
+    """A tmp driver file at the registry line's `file=` path under `root`,
+    with a module-level `PHASES` — dict literal by default; `dynamic=True`
+    builds it via a comprehension (NOT statically extractable)."""
+    drv = root / "scripts" / "issue2163_ctxread.py"
+    drv.parent.mkdir(parents=True, exist_ok=True)
+    if dynamic:
+        drv.write_text("PHASES = {name: None for name in " + repr(members) + "}\n")
+    else:
+        drv.write_text("PHASES = {" + ", ".join(f'"{m}": None' for m in members) + "}\n")
+    return drv
+
+
+def test_parse_arm_registry_line_structured_round_trip():
+    """T1.1: source/file/n/members round-trip; backticks stripped per member
+    (the members token itself is `\\S+` — a space-free comma list, per the
+    plan-§4 D1 grammar)."""
+    tw = _tw()
+    reg = tw.parse_arm_registry_line(
+        "arm-registry: source=sorted(PHASES) file=scripts/x.py n=3 members=`a`,b,`c`\n"
+    )
+    assert reg is not None and not reg.na
+    assert reg.source == "sorted(PHASES)"
+    assert reg.file == "scripts/x.py"
+    assert reg.n == 3
+    assert reg.members == ("a", "b", "c")
+
+
+def test_arm_registry_na_form_ok_with_deferral_reason():
+    """T1.2: the N/A form parses na=True and the check returns ok=True with
+    the adjudication-deferral reason (substance is the reviewer arm's — the
+    N/A form names no file= for the recompute arm to read)."""
+    tw = _tw()
+    reg = tw.parse_arm_registry_line("arm-registry: N/A — no phase/arm registry\n")
+    assert reg is not None and reg.na
+    assert reg.na_reason == "no phase/arm registry"
+    note = (
+        "verdict: PASS_UNIFIED\nimport-resolution: rc=0\n"
+        "arm-registry: N/A — no phase/arm registry\n"
+        "per-arm-resolution: N/A — no registry or plan-named arms\n"
+    )
+    d = tw.smoke_arch_registry_check(note)
+    assert d.ok
+    assert "N/A — no phase/arm registry" in d.reason
+    assert "Step 6d.0 orchestrator + code-reviewer Step 0.55" in d.reason
+
+
+def test_arm_registry_refuse_line_absent_names_both_forms():
+    """T1.3: no `arm-registry:` line → REFUSE; the reason names BOTH accepted
+    forms + the derivation rule."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(
+        "verdict: PASS_UNIFIED\nimport-resolution: rc=0\nper-arm-resolution:\n- a: REAL\n"
+    )
+    assert not d.ok
+    assert "source=<expr> file=<path> n=<int>" in d.reason
+    assert "N/A — <reason>" in d.reason
+    assert "sorted(PHASES)" in d.reason
+
+
+def test_arm_registry_refuse_malformed_line_caught():
+    """T1.3b: a PRESENT line matching neither form (the ValueError path) is
+    CAUGHT and clause 1 REFUSEs — a typo'd line cannot slip through as
+    absent-but-ok, and the runtime never crashes on a malformed marker."""
+    tw = _tw()
+    with pytest.raises(ValueError, match="malformed `arm-registry:` line"):
+        tw.parse_arm_registry_line("arm-registry: source=x n=oops\n")
+    d = tw.smoke_arch_registry_check(
+        "verdict: PASS_UNIFIED\narm-registry: source=x n=oops\nper-arm-resolution:\n- a: REAL\n"
+    )
+    assert not d.ok
+    assert "malformed `arm-registry:` line" in d.reason
+
+
+def test_arm_registry_refuse_count_self_inconsistent():
+    """T1.4: n != len(members) → REFUSE naming both numbers."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(_registry_note(["a", "b"], _rows_for(["a", "b"]), n=5))
+    assert not d.ok
+    assert "n=5" in d.reason
+    assert "2 arm(s)" in d.reason
+
+
+def test_arm_registry_refuse_members_missing_from_per_arm():
+    """T1.5: members ⊄ per_arm → REFUSE; reason carries the mismatch label,
+    both counts, the sorted missing list, and source@file."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(_registry_note(["a", "b", "c"], _rows_for(["b"])))
+    assert not d.ok
+    assert "registry-enumeration mismatch" in d.reason
+    assert "n_registry=3" in d.reason
+    assert "n_enumerated=1" in d.reason
+    assert d.missing == ("a", "c")
+    assert "sorted(PHASES) @ scripts/issue2163_ctxread.py" in d.reason
+
+
+def test_arm_registry_verbatim_2163_v4_all_three_marker_arms():
+    """T1.6 (the #1287 predicate-trace pin, all three marker-resident arms on
+    the REAL artifact): (a) as-posted → clause-1 REFUSE (no `arm-registry:`
+    line — 0 occurrences in the 5,830-byte note); (b) with a synthetic
+    13-member registry line appended → clause-4 REFUSE (rows sit under the
+    free-prose `## Per-arm resolution` heading, so per_arm == {} — the #2171
+    keyed-span consequence, INTENDED here: it forces the line-anchored key);
+    (c) with the registry line AND the 10 rows re-keyed under the anchored
+    key → clause-5 REFUSE naming exactly the three arms #2163 omitted."""
+    tw = _tw()
+    assert "arm-registry" not in _V4_NOTE
+    # (a) as-posted.
+    d = tw.smoke_arch_registry_check(_V4_NOTE)
+    assert not d.ok
+    assert "no line-anchored `arm-registry:` line" in d.reason
+    # (b) registry line appended; rows still free-prose.
+    d = tw.smoke_arch_registry_check(_V4_NOTE + "\n" + _registry_line(_REGISTRY_13))
+    assert not d.ok
+    assert "no `per-arm-resolution:` sub-block" in d.reason
+    # (c) rows re-keyed under the line-anchored key — the exact #2163 defect.
+    d = tw.smoke_arch_registry_check(_registry_note(_REGISTRY_13, _v4_real_per_arm_rows()))
+    assert not d.ok
+    assert d.missing == ("figures", "harvest", "upload-inputs")
+    assert "n_registry=13" in d.reason
+    assert "n_enumerated=10" in d.reason
+
+
+def test_arm_registry_extra_per_arm_rows_allowed():
+    """T1.7: per_arm rows beyond members are ALLOWED (plan-named non-registry
+    arms keep their rows; the plan-named quantifier is a lower bound)."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(
+        _registry_note(["a", "b"], _rows_for(["a", "b", "plan-extra-arm"]))
+    )
+    assert d.ok, d.reason
+
+
+def test_arm_registry_line_not_swallowed_as_phantom_per_arm_row():
+    """T1.8: pins the one-token `_MARKER_TOP_KEY_RE` extension. An
+    `arm-registry: N/A — x` line placed AFTER `per-arm-resolution:` matches
+    `_PER_ARM_ROW_RE` (`<name>: N/A ...`), so WITHOUT the extension it would
+    be swallowed into per_arm as a phantom arm named 'arm-registry'."""
+    tw = _tw()
+    parsed = tw.parse_smoke_arch_marker(
+        "verdict: PASS_UNIFIED\nper-arm-resolution:\n- a: REAL\narm-registry: N/A — no registry\n"
+    )
+    assert "arm-registry" not in parsed.per_arm
+    assert parsed.per_arm == {"a": "REAL"}
+
+
+def test_check_smoke_arch_registry_cli_end_to_end(fake_repo, capsys):
+    """T1.9: execute the ACTUAL `task.py check-smoke-arch-registry` handler —
+    the rc contract Step 6d.0 consumes (conforming → rc 0 `OK — `; mismatch →
+    rc 1 `REFUSE — `; no marker → rc 1; one --repo-root invocation against a
+    tmp driver → rc 0 with the `driver-verified` label)."""
+    repo, tw = fake_repo
+    task_cli = _import_task_cli()
+
+    def _run(tid: int, repo_root=None) -> tuple[int, str]:
+        with pytest.raises(SystemExit) as exc:
+            task_cli.cmd_check_smoke_arch_registry(
+                argparse.Namespace(number=tid, repo_root=repo_root)
+            )
+        return exc.value.code, capsys.readouterr().out
+
+    # No marker → rc 1.
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="registry CLI fixture"))
+    code, out = _run(tid)
+    assert code == 1
+    assert out.startswith("REFUSE — no epm:smoke-architecture-check marker")
+
+    # Mismatch marker → rc 1 + `REFUSE — ` naming the missing arms.
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(["a", "b", "c"], _rows_for(["a"])),
+    )
+    code, out = _run(tid)
+    assert code == 1
+    assert out.startswith("REFUSE — ")
+    assert "registry-enumeration mismatch" in out
+
+    # Conforming marker (marker-only — no repo root) → rc 0 + `OK — `.
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(["a", "b", "c"], _rows_for(["a", "b", "c"])),
+    )
+    code, out = _run(tid)
+    assert code == 0
+    assert out.startswith("OK — ")
+    assert "marker-only" in out
+
+    # --repo-root against a tmp driver → rc 0 with the driver-verified label.
+    _write_tmp_driver(repo, _REGISTRY_13)
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(_REGISTRY_13, _rows_for(_REGISTRY_13)),
+    )
+    code, out = _run(tid, repo_root=str(repo))
+    assert code == 0
+    assert out.startswith("OK — ")
+    assert "driver-verified" in out
+
+
+def test_arm_registry_driver_recompute_happy_path(tmp_path):
+    """T1.10: 13-key dict-literal driver + a matching 13-member marker +
+    repo_root → ok with the `driver-verified` label."""
+    tw = _tw()
+    _write_tmp_driver(tmp_path, _REGISTRY_13)
+    d = tw.smoke_arch_registry_check(
+        _registry_note(_REGISTRY_13, _rows_for(_REGISTRY_13)), repo_root=tmp_path
+    )
+    assert d.ok, d.reason
+    assert "driver-verified" in d.reason
+    assert "marker-only" not in d.reason
+
+
+def test_arm_registry_driver_recompute_catches_self_consistent_10_of_13(tmp_path):
+    """T1.11 (the Must-Fix 1 blind spot): a hand-listed 10-member marker with
+    10 MATCHING rows passes every self-consistency clause (marker-only ok);
+    the driver recompute against the 13-key registry REFUSES naming both
+    counts and the three missing arms."""
+    tw = _tw()
+    ten = [m for m in _REGISTRY_13 if m not in {"figures", "harvest", "upload-inputs"}]
+    note = _registry_note(ten, _rows_for(ten))
+    # Self-consistent → marker-only PASS (the v1 blind spot, kept visible).
+    d = tw.smoke_arch_registry_check(note)
+    assert d.ok and "marker-only" in d.reason
+    # Driver recompute → REFUSE.
+    _write_tmp_driver(tmp_path, _REGISTRY_13)
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert not d.ok
+    assert "driver-registry mismatch" in d.reason
+    assert "n_members=10 n_driver=13" in d.reason
+    for arm in ("figures", "harvest", "upload-inputs"):
+        assert arm in d.reason
+    assert d.missing == ("figures", "harvest", "upload-inputs")
+
+
+def test_arm_registry_fallback_visible_unresolvable_and_unextractable(tmp_path):
+    """T1.12: the marker-only fallback is VISIBLE, never mistakable for
+    driver verification — (a) `file=` does not resolve under repo_root → ok
+    with the unresolved path in the reason; (b) a dynamically-built PHASES
+    (dict comprehension, not a literal) → ok with `not statically
+    extractable` + the symbol in the reason."""
+    tw = _tw()
+    note = _registry_note(["a", "b"], _rows_for(["a", "b"]))
+    # (a) nothing at scripts/issue2163_ctxread.py under this root.
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert d.ok, d.reason
+    assert "marker-only" in d.reason
+    assert "file not found under repo-root: scripts/issue2163_ctxread.py" in d.reason
+    # (b) driver present but the registry is built dynamically.
+    _write_tmp_driver(tmp_path, ["a", "b"], dynamic=True)
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert d.ok, d.reason
+    assert "marker-only" in d.reason
+    assert "not statically extractable: sorted(PHASES)" in d.reason
+
+
+def test_arm_registry_refuse_duplicate_members():
+    """T1.13: n=13 with 12 unique + 1 duplicated member (and 12 matching
+    rows) → clause-3b REFUSE naming the duplicate — a dup lets n match while
+    enumerating fewer distinct arms."""
+    tw = _tw()
+    twelve = _REGISTRY_13[:12]
+    padded = [*twelve, twelve[0]]  # 13 entries, one dup
+    d = tw.smoke_arch_registry_check(_registry_note(padded, _rows_for(twelve)))
+    assert not d.ok
+    assert "duplicate members" in d.reason
+    assert twelve[0] in d.reason

@@ -17,6 +17,8 @@ Subcommands (see `task.py --help`):
     list-children <N> [--json]                         # tasks with parent_id == N
     list-markers <N> [--prefix epm:] [--json]
     latest-marker <N>                                  # alias: latest-event
+    check-authorized-stub <N>                # Step 6d.0 PASS_AUTHORIZED_STUB grant (rc=0 = GRANT)
+    check-smoke-arch-registry <N> [--repo-root PATH]   # Step 6d.0 arm-registry check (rc=0 = OK)
     set-body <N> --body "..." | --file path           # snapshots old → original-body.md
     set-title <N> "..."
     set-goal <N> "..." [--by user|clarifier|planner] [--reason ...]
@@ -24,10 +26,12 @@ Subcommands (see `task.py --help`):
     add-tag <N> <tag>
     remove-tag <N> <tag>
     promote <N> useful|not-useful
-    new-plan-version <N> --file path
+    new-plan-version <N> --file path [--allow-amendment]
     raise-concern <N> --concern-id <id> --severity BLOCKER|CONCERN|NIT
-                     --summary|--note "..." --by <reviewer> --round <int> [--evidence ...]
-    address-concern <N> --concern-id <id> --by <implementer> --round <int> [--summary|--note ...]
+                     --summary|--note "..."|--summary-file <path>
+                     --by <reviewer> --round <int> [--evidence ...]
+    address-concern <N> --concern-id <id> --by <implementer> --round <int>
+                     [--summary|--note ...|--summary-file <path>] [--evidence ...]
     defer-concern <N> --concern-id <id> --by user|reconciler --rationale "..."
     list-concerns <N> [--open-only] [--json]
     find <N>
@@ -55,20 +59,28 @@ if str(_SRC) not in sys.path:
 
 from explore_persona_space.task_workflow import (  # noqa: E402
     CONCERN_SEVERITIES,
+    FOLLOWUP_RUN_KIND,
+    FOLLOWUP_SCOPE_KIND,
     KINDS,
+    SMOKE_ARCH_MARKER_KIND,
     STATUSES,
     WORKFLOW_VERSIONS,
+    BodyShaMismatch,
     GoalH2DropError,
     NewTaskRequest,
+    PlanVersionMismatch,
     ReconcileReport,
     add_tag,
     address_concern,
     audit,
+    check_authorized_stub,
     create_task,
     defer_concern,
     duplicate_task_dirs,
     find_task_path,
     get_task,
+    highest_plan_version,
+    is_amendment_shaped,
     is_paper_task,
     latest_event,
     list_by_status,
@@ -76,12 +88,15 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     list_concerns,
     list_events,
     new_plan_version,
+    open_async_ask,
+    parse_followup_note_field,
     post_event,
     promote,
     raise_concern,
     reap_stale_status_husks,
     reconcile_registry,
     remove_tag,
+    resolve_plan_gate_cap,
     set_body,
     set_clean_result,
     set_goal,
@@ -89,6 +104,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_status,
     set_title,
     set_track,
+    smoke_arch_registry_check,
     tasks_dir,
 )
 
@@ -396,17 +412,41 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     """Decide the autonomous plan-approval gate outcome from env + gpu_hours.
 
     Returns ``(decision, cap, autonomous)`` where ``decision`` is one of
-    ``"auto_approved" | "parked_over_cap" | "interactive_pending"``.
+    ``"auto_approved" | "parked_asked" | "parked_no_estimate" |
+    "interactive_pending"``.
 
-    Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` +
-    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` from the process env (the Bash tool
-    inherits the claude-process env, so a spawned ``--auto`` session's vars
-    are visible here). Putting the decision in code means the plan-approval
-    gate no longer depends on the LLM reading a deeply-nested skill step and
-    choosing to obey it over the global "ask before spending money" prior.
+    ASYNC SESSION MODE (mission-control rung 0): when ``EPM_ASYNC_SESSION``
+    is ALSO set (async sessions export BOTH vars), the decision is
+    ``parked_asked`` REGARDLESS of the estimate — an async session NEVER
+    self-approves; the gate parks at plan_pending and posts a durable
+    ``epm:ask`` (gate=plan_approval) for the user to answer via
+    ``set-status <N> approved --if-plan-v K``. Code-enforced here, like the
+    autonomous auto-approve, so the property holds even if the orchestrator
+    mis-follows the Step 2c prose. With EPM_ASYNC_SESSION unset the table
+    below is byte-identical to its pre-rung-0 form. EXCEPTION: the
+    ``followups_running`` hold branch in :func:`cmd_set_status` remaps a
+    ``parked_asked`` back to the legacy held-round decision — that ask's
+    answer command would be refused by the hold itself, and the status is
+    watcher-ACTIVE (mid-active gates are rung 2; CONTRACTS §2.1 row 4).
 
-    FAIL SAFE: a missing/None ``gpu_hours`` parks (never auto-approves on a
-    blank estimate), matching the SKILL.md Step 2c contract.
+    Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` from
+    the process env (the Bash tool inherits the claude-process env, so a
+    spawned ``--auto`` session's var is visible here). Putting the decision
+    in code means the plan-approval gate no longer depends on the LLM
+    reading a deeply-nested skill step and choosing to obey it over the
+    global "ask before spending money" prior.
+
+    GPU-HOUR-BLIND as of #1771 (user directive 2026-07-28): an autonomous
+    session auto-approves ANY plan carrying a parseable GPU-hour estimate,
+    regardless of magnitude. The returned ``cap`` is resolved through
+    :func:`task_workflow.resolve_plan_gate_cap` (#2164's single resolution
+    point) and returned for CALLER/REPORTING compatibility only — the
+    watcher/spawn plumbing still records and re-passes a per-issue
+    ``auto_approve_gpu_hours`` value — and the DECISION never consumes it:
+    no branch below compares ``gpu_hours`` against ``cap``.
+
+    FAIL SAFE (retained): a missing/None ``gpu_hours`` parks — a
+    correctness guard against an unestimated plan, not a cost control.
     """
     # Case-insensitive truthiness. The falsy set {"", "0", "false", "no"}
     # MUST stay identical to the AskUserQuestion PreToolUse hook in
@@ -414,16 +454,52 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     # the two layers never disagree on a value like "no" / "FALSE".
     _auto_raw = os.environ.get("EPM_AUTONOMOUS_SESSION", "").strip().lower()
     autonomous = _auto_raw not in ("", "0", "false", "no")
-    cap_raw = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
-    try:
-        cap = float(cap_raw)
-    except (TypeError, ValueError):
-        cap = 24.0
+    # Same truthiness grammar for the async flag (mission-control rung 0).
+    _async_raw = os.environ.get("EPM_ASYNC_SESSION", "").strip().lower()
+    async_session = _async_raw not in ("", "0", "false", "no")
+    # Resolved ONLY so callers keep the #2164 single-sourced value in the
+    # tuple; deliberately NOT consulted by any decision branch (#1771).
+    cap = resolve_plan_gate_cap()
     if not autonomous:
         return ("interactive_pending", cap, False)
-    if gpu_hours is None or gpu_hours > cap:
-        return ("parked_over_cap", cap, True)
+    if async_session:
+        # An async session never self-approves — estimate or not, the plan
+        # parks for the user's answer (CONTRACTS §2.1 gate-4 row).
+        return ("parked_asked", cap, True)
+    if gpu_hours is None:
+        return ("parked_no_estimate", cap, True)
     return ("auto_approved", cap, True)
+
+
+def _post_plan_approval_ask(issue: int, gpu_hours: float | None) -> None:
+    """Post the durable ``epm:ask`` (gate=plan_approval) for an async park
+    (mission-control rung 0; CONTRACTS §1.2 row 4). Posted AFTER the park's
+    status move so the ask is newer than the ``epm:status-changed`` row (the
+    T1/W1 freshness predicate). Idempotent: skipped when the newest
+    plan-approval ask is still OPEN (no answering transition since) — a tick
+    re-drive re-running the gate command must not stack duplicate asks."""
+    if open_async_ask(list_events(issue), gate="plan_approval") is not None:
+        _safe_echo(
+            f"epm:ask (gate=plan_approval) already open on #{issue} — not re-posting",
+            context="task.py set-status",
+        )
+        return
+    plan_v = highest_plan_version(issue)
+    answer_cmd = f"uv run python scripts/task.py set-status {issue} approved"
+    if plan_v is not None:
+        answer_cmd += f" --if-plan-v {plan_v}"
+    note = json.dumps(
+        {
+            "gate": "plan_approval",
+            "gate_id": 4,
+            "issue": issue,
+            "plan_v": plan_v,
+            "plan_path": f"plans/v{plan_v}.md" if plan_v is not None else None,
+            "est_gpu_hours": gpu_hours,
+            "answer": answer_cmd,
+        }
+    )
+    post_event(issue, "epm:ask", by="autonomous-gate", note=note)
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
@@ -435,8 +511,8 @@ def cmd_set_status(args: argparse.Namespace) -> None:
     # Autonomous plan-approval gate (code-enforced, not LLM discretion).
     # When the caller opts in via --auto-approve-if-autonomous on a
     # plan_pending transition, the decision is made HERE in the script so a
-    # spawned `--auto` session deterministically auto-approves an under-cap
-    # plan (or parks an over-cap / blank-estimate one) instead of relying on
+    # spawned `--auto` session deterministically auto-approves any estimated
+    # plan (or parks a blank-estimate one, fail-safe) instead of relying on
     # the orchestrator to follow SKILL.md Step 2c. Interactive sessions
     # (EPM_AUTONOMOUS_SESSION unset) fall through to the normal plan_pending
     # transition unchanged.
@@ -454,7 +530,19 @@ def cmd_set_status(args: argparse.Namespace) -> None:
         )
         if followup_hold:
             gpu_hours = getattr(args, "gpu_hours", None)
-            decision, cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
+            decision, _cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
+            if decision == "parked_asked":
+                # Async suppression at the followups_running hold
+                # (mission-control rung 0, MAJOR-1): the ask's recorded
+                # answer (`set-status <N> approved`) is itself a
+                # FOLLOWUP_HELD_BLOCKED_STATUSES transition, so the posted
+                # command would be refused by this very hold — and
+                # followups_running is watcher-ACTIVE, so an async
+                # park-and-EXIT here churns crash-recovery respawns.
+                # Mid-active-round gates are a rung-2 concern (CONTRACTS
+                # §2.1 row 4): fall through to the exact legacy held-round
+                # decision (async flag ignored at this hold).
+                decision = "auto_approved" if gpu_hours is not None else "parked_no_estimate"
             if decision == "auto_approved":
                 post_event(
                     args.number,
@@ -463,17 +551,14 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                     by="autonomous-gate",
                     note=(
                         "Auto-approved by the code-enforced autonomous plan-gate "
-                        f"(task.py --auto-approve-if-autonomous): gpu_hours_total={gpu_hours} "
-                        f"<= cap {cap}. Same-issue follow-up round: status HELD at "
+                        f"(task.py --auto-approve-if-autonomous): "
+                        f"gpu_hours_total={gpu_hours} (GPU-hour-blind gate, #1771). "
+                        "Same-issue follow-up round: status HELD at "
                         "followups_running (status-hold rule, SKILL.md Step 9b)."
                     ),
                 )
-            elif decision == "parked_over_cap":
-                reason = (
-                    "estimate missing/unparseable"
-                    if gpu_hours is None
-                    else f"est {gpu_hours} GPU-h exceeds {cap}h auto-approve cap"
-                )
+            elif decision == "parked_no_estimate":
+                reason = "estimate missing/unparseable (fail-safe)"
                 post_event(
                     args.number,
                     "epm:awaiting-spend-approval",
@@ -486,17 +571,18 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                     ),
                 )
             _safe_echo(
-                f"PLAN_GATE_DECISION: {decision} gpu_hours={gpu_hours} cap={cap} "
+                f"PLAN_GATE_DECISION: {decision} gpu_hours={gpu_hours} "
                 "(followups_running hold: status unchanged)",
                 context="task.py set-status",
             )
             return
         gpu_hours = getattr(args, "gpu_hours", None)
-        decision, cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
+        decision, _cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
         if decision == "auto_approved":
             note = (args.note or "").strip()
             gate_note = (
-                f"[autonomous plan-gate: auto-approved, est {gpu_hours} GPU-h <= {cap}h cap]"
+                f"[autonomous plan-gate: auto-approved, "
+                f"gpu_hours_total={gpu_hours} (GPU-hour-blind gate, #1771)]"
             )
             path = set_status(
                 args.number,
@@ -511,8 +597,9 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                 by="autonomous-gate",
                 note=(
                     "Auto-approved by the code-enforced autonomous plan-gate "
-                    f"(task.py --auto-approve-if-autonomous): gpu_hours_total={gpu_hours} "
-                    f"<= cap {cap}. EPM_AUTONOMOUS_SESSION set; no human asked."
+                    f"(task.py --auto-approve-if-autonomous): "
+                    f"gpu_hours_total={gpu_hours} (GPU-hour-blind gate, #1771). "
+                    "EPM_AUTONOMOUS_SESSION set; no human asked."
                 ),
             )
             _safe_echo(
@@ -520,22 +607,41 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                 context="task.py set-status",
             )
             _safe_echo(
-                f"PLAN_GATE_DECISION: auto_approved gpu_hours={gpu_hours} cap={cap}",
+                f"PLAN_GATE_DECISION: auto_approved gpu_hours={gpu_hours}",
                 context="task.py set-status",
             )
             return
-        if decision == "parked_over_cap":
+        if decision == "parked_asked":
+            # Async session (mission-control rung 0): park at plan_pending +
+            # post the durable epm:ask (AFTER the status move, so the ask is
+            # newer than the epm:status-changed row the T1/W1 predicates key
+            # on). Deliberately NO epm:awaiting-spend-approval: that marker
+            # flips plan_pending_over_cap and would reclassify the park out
+            # of the tick's ISSUE_PARK branch (CONTRACTS §1.3 W1 rationale).
             path = set_status(
                 args.number,
                 "plan_pending",
                 note=args.note,
                 force_followup_exit=force_followup_exit,
             )
-            reason = (
-                "estimate missing/unparseable"
-                if gpu_hours is None
-                else f"est {gpu_hours} GPU-h exceeds {cap}h auto-approve cap"
+            _post_plan_approval_ask(args.number, gpu_hours)
+            _safe_echo(
+                str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
+                context="task.py set-status",
             )
+            _safe_echo(
+                f"PLAN_GATE_DECISION: parked_asked gpu_hours={gpu_hours}",
+                context="task.py set-status",
+            )
+            return
+        if decision == "parked_no_estimate":
+            path = set_status(
+                args.number,
+                "plan_pending",
+                note=args.note,
+                force_followup_exit=force_followup_exit,
+            )
+            reason = "estimate missing/unparseable (fail-safe)"
             post_event(
                 args.number,
                 "epm:awaiting-spend-approval",
@@ -551,7 +657,7 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                 context="task.py set-status",
             )
             _safe_echo(
-                f"PLAN_GATE_DECISION: parked_over_cap gpu_hours={gpu_hours} cap={cap}",
+                f"PLAN_GATE_DECISION: parked_no_estimate gpu_hours={gpu_hours}",
                 context="task.py set-status",
             )
             return
@@ -576,7 +682,14 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             args.status,
             note=args.note,
             force_followup_exit=force_followup_exit,
+            if_plan_v=getattr(args, "if_plan_v", None),
         )
+    except PlanVersionMismatch as exc:
+        # Version-keyed CAS refusal (mission-control rung 0): stale view,
+        # nothing mutated. Exit 4 is the CONTRACTS stale-view code the
+        # daemon/answer path keys on — distinct from the generic exit 1.
+        print(f"task.py set-status: STALE VIEW — {exc}", file=sys.stderr)
+        raise SystemExit(4) from exc
     except ValueError as exc:
         # Followup status-hold refusal (or another library-level rejection):
         # surface the message cleanly instead of a traceback.
@@ -673,6 +786,41 @@ def cmd_post_event(args: argparse.Namespace) -> None:
                 "parses). Do NOT re-post this marker — it was posted "
                 "successfully; drop the stamp from your NEXT marker's note "
                 "instead.",
+                file=sys.stderr,
+            )
+    if args.marker in (FOLLOWUP_RUN_KIND, FOLLOWUP_SCOPE_KIND) and (
+        parse_followup_note_field(note or "", "followup_label") is None
+    ):
+        # Poster-side twin of the GATE's own predicate (#2307): the corpus
+        # replay (tests/test_workflow_followup_labels.py) reds main whenever
+        # a run marker's note parses no followup_label, and the Step 0
+        # dispatcher keys run/unrun attribution on the same parse for scope
+        # markers. Unlike the two advisories above (cosmetic shapes on notes
+        # that PARSE fine), this one fires exactly when the gate would fail —
+        # it calls the REAL parser, never a re-implemented heuristic, so it
+        # cannot drift. Deliberately keyed on the RESOLVED note (not
+        # args.note) so a --file body is checked too (the #2054 class-B note
+        # is a long --file-shaped body), and an EMPTY / entirely absent note
+        # fires as well (the gate parses `ev.get("note") or ""`, so a
+        # note-less run marker reds main identically). Advisory only — the
+        # marker already posted; guarded like its two siblings (the #537
+        # rc-contract class: a torn stderr must never flip the exit code
+        # post-commit).
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: no "
+                "followup_label parses from this note, so the follow-up "
+                "gate/dispatcher cannot attribute the round (an unparseable "
+                "run marker reds main via the corpus-replay test). Required "
+                "field-led forms: line-initial one-per-line "
+                "('followup_label: <slug>'), or '; '-joined on one line; the "
+                "'followup_label=' form parses too. Observed malformations "
+                "to avoid: the bare field name 'label=' (#2203/#1739); "
+                "'\u00b7'- or space-joined fields (#2054/#2224); a "
+                "bare-space 'v<k> ' stamp before space-joined fields "
+                "(#2224/#2254). Do NOT re-post this marker — it was posted "
+                "successfully; post a CORRECTIVE marker carrying a "
+                "parseable followup_label instead.",
                 file=sys.stderr,
             )
     _safe_echo(
@@ -813,6 +961,50 @@ def cmd_latest_marker(args: argparse.Namespace) -> None:
     _safe_print(json.dumps(ev, indent=2), context="task.py latest-marker")
 
 
+def cmd_check_authorized_stub(args: argparse.Namespace) -> None:
+    """Step 6d.0 mechanical grant for `PASS_AUTHORIZED_STUB` (#2171).
+
+    rc=0 (prints `GRANT arms_stubbed=<list>`) is the ONLY grant path the
+    Step 6d.0 routing table consumes; rc=1 prints `REFUSE — <reason>`.
+    Read-only: no lock, no commit, no status mutation (the clause-5 git
+    probe is a read-only `git log`).
+    """
+    decision = check_authorized_stub(args.number)
+    if decision.grant:
+        _safe_print(
+            f"GRANT arms_stubbed={','.join(decision.arms_stubbed)}",
+            context="task.py check-authorized-stub",
+        )
+        sys.exit(0)
+    _safe_print(f"REFUSE — {decision.reason}", context="task.py check-authorized-stub")
+    sys.exit(1)
+
+
+def cmd_check_smoke_arch_registry(args: argparse.Namespace) -> None:
+    """Step 6d.0 arm-registry enumeration check (#2176).
+
+    rc=0 prints `OK — <reason>` (the reason carries the `driver-verified` vs
+    `marker-only` label from the checker's clause 6) and is the routing
+    contract Step 6d.0 consumes on advancing verdicts; rc=1 prints
+    `REFUSE — <reason>`. Read-only: no lock, no commit, no status mutation
+    (the optional --repo-root driver read is a read-only file open + ast
+    parse under the supplied root).
+    """
+    marker = latest_event(args.number, prefix=SMOKE_ARCH_MARKER_KIND)
+    if marker is None:
+        _safe_print(
+            f"REFUSE — no {SMOKE_ARCH_MARKER_KIND} marker on task {args.number}",
+            context="task.py check-smoke-arch-registry",
+        )
+        sys.exit(1)
+    decision = smoke_arch_registry_check(marker.get("note", "") or "", repo_root=args.repo_root)
+    if decision.ok:
+        _safe_print(f"OK — {decision.reason}", context="task.py check-smoke-arch-registry")
+        sys.exit(0)
+    _safe_print(f"REFUSE — {decision.reason}", context="task.py check-smoke-arch-registry")
+    sys.exit(1)
+
+
 _SET_BODY_MIN_CHARS = 500
 _SET_BODY_STUB_TOKENS = {"placeholder", "tbd", "todo", "stub"}
 
@@ -942,13 +1134,24 @@ def cmd_set_track(args: argparse.Namespace) -> None:
 
 
 def cmd_promote(args: argparse.Namespace) -> None:
-    new_path = promote(args.number, args.verdict)
+    try:
+        new_path = promote(
+            args.number, args.verdict, if_body_sha=getattr(args, "if_body_sha", None)
+        )
+    except BodyShaMismatch as exc:
+        # Version-keyed CAS refusal (mission-control rung 0): stale view,
+        # nothing mutated. Exit 4 = the CONTRACTS stale-view code.
+        print(f"task.py promote: STALE VIEW — {exc}", file=sys.stderr)
+        raise SystemExit(4) from exc
     _safe_echo(str(new_path), context="task.py promote")
 
 
 def cmd_new_plan_version(args: argparse.Namespace) -> None:
     plan_md = Path(args.file).read_text() if args.file else sys.stdin.read()
-    v = new_plan_version(args.number, plan_md)
+    # An amendment-shaped input without --allow-amendment raises ValueError
+    # inside new_plan_version with the actionable remedy text (#2255); it
+    # propagates as the command failure (fail-loud, no exit-code special-case).
+    v = new_plan_version(args.number, plan_md, allow_amendment=args.allow_amendment)
     rel = f"tasks/<status>/{args.number}/plans/v{v}.md"
     _safe_echo(
         f"Plan v{v} written → https://eps.superkaiba.com/tasks/{args.number}/plan",
@@ -965,6 +1168,25 @@ def cmd_new_plan_version(args: argparse.Namespace) -> None:
             f"'Plan v<X>' headers are normalized at persist time; #1745)",
             file=sys.stderr,
         )
+    # #2255: an --allow-amendment persist of a genuinely amendment-shaped
+    # version leaves the symlink pointing at a PARTIAL document — say so loud.
+    if args.allow_amendment:
+        plans_dir = find_task_path(args.number) / "plans"
+        lower = [
+            int(m.group(1))
+            for p in plans_dir.glob("v*.md")
+            if (m := re.fullmatch(r"v(\d+)\.md", p.name)) and int(m.group(1)) < v
+        ]
+        if lower:
+            pred = plans_dir / f"v{max(lower)}.md"
+            if is_amendment_shaped(plan_md, pred.stat().st_size):
+                print(
+                    f"  WARNING: plans/plan.md now points at a PARTIAL document "
+                    f"(amendment of v{max(lower)}); every subagent brief must hand "
+                    f"v{v}.md AND v{max(lower)}.md together; verify_plan --issue "
+                    f"composes them automatically (#2255).",
+                    file=sys.stderr,
+                )
 
 
 def cmd_find(args: argparse.Namespace) -> None:
@@ -1129,33 +1351,129 @@ def _truncate_summary(summary: str, cap: int = CONCERN_SUMMARY_CAP) -> tuple[str
     return kept, summary[cut:].strip()
 
 
-def cmd_raise_concern(args: argparse.Namespace) -> None:
-    """Append a `raised` (or `verified-open` on re-raise) event to
-    concerns.jsonl. Re-raising the SAME concern_id at the SAME round with
-    the SAME severity is a no-op (returns the existing event). An over-cap
-    ``--summary`` is truncated at a word boundary with a loud stderr
-    warning (full original shifted into evidence when --evidence is
-    empty); the library layer keeps the hard 200-char cap."""
-    summary, dropped = _truncate_summary(args.summary)
-    evidence = args.evidence
-    if dropped is not None:
-        if evidence is None:
-            evidence = args.summary  # preserve the full original text
+def _concern_summary_error(msg: str) -> SystemExit:
+    """Print an actionable concern-summary error to stderr and return a
+    ``SystemExit(2)`` for the caller to raise (argparse-style exit code)."""
+    print(f"[task.py] ERROR: {msg}", file=sys.stderr)
+    return SystemExit(2)
+
+
+def _resolve_concern_summary(
+    *,
+    inline: str | None,
+    path: str | None,
+    evidence: str | None,
+    command: str,
+    legacy_shift: bool = False,
+) -> tuple[str | None, str | None]:
+    """Resolve the ``(summary, evidence)`` pair for the concern subcommands.
+
+    Non-lossy contract (#2121): NO branch may discard summary text. Every
+    over-cap input either hard-errors (SystemExit 2, actionable message)
+    or lands verbatim in the event's ``evidence`` field. Decision table:
+
+    * neither ``--summary`` nor ``--summary-file`` → ``(None, evidence)``
+      (address-concern's carried-forward default; raise-concern cannot
+      reach this row — its flag group is ``required=True``).
+    * ``--summary`` <= cap (after trailing-whitespace rstrip) → verbatim.
+    * ``--summary`` > cap → ``SystemExit(2)`` naming the length, the cap,
+      and ``--summary-file`` — EXCEPT ``legacy_shift=True`` (raise-concern)
+      with NO ``--evidence``: the historical NON-LOSSY branch is preserved
+      byte-for-byte (full original shifted into evidence, word-boundary
+      lead stored, unchanged stderr warning).
+    * ``--summary-file`` <= cap → the file text (trailing whitespace
+      stripped) as summary; evidence untouched.
+    * ``--summary-file`` > cap, no explicit ``--evidence`` → full file
+      text → evidence; ``_truncate_summary`` lead → summary; ONE
+      informational stderr line naming both.
+    * ``--summary-file`` > cap WITH explicit ``--evidence`` →
+      ``SystemExit(2)`` (refuses to pick which text survives).
+    * ``--summary-file`` empty / whitespace-only / unreadable →
+      ``SystemExit(2)`` naming the path (a falsy summary would silently
+      no-op into the carried-forward original — the same quiet-failure
+      class this contract closes).
+    * both flags at once → argparse mutually-exclusive error (exit 2).
+    """
+    cap = CONCERN_SUMMARY_CAP
+    if inline is not None:
+        kept, dropped = _truncate_summary(inline)
+        if dropped is None:
+            return kept, evidence
+        if legacy_shift and evidence is None:
+            # raise-concern's historical non-lossy shift (R7): byte-for-byte.
             print(
-                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
-                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
-                f"{len(summary)} chars. Full original preserved in the "
+                f"[task.py] WARNING: --summary was {len(inline)} chars "
+                f"(cap {cap}); truncated at a word boundary to "
+                f"{len(kept)} chars. Full original preserved in the "
                 "concern's evidence field.",
                 file=sys.stderr,
             )
-        else:
-            print(
-                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
-                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
-                f"{len(summary)} chars; --evidence kept as given. "
-                f"Dropped tail: {dropped!r}",
-                file=sys.stderr,
+            return kept, inline
+        if legacy_shift:
+            raise _concern_summary_error(
+                f"{command}: --summary is {len(inline.rstrip())} chars (max {cap}) "
+                "and --evidence is already taken, so nothing can hold the full "
+                "text. Shorten --summary, or pass the full text with "
+                "--summary-file <path> and no --evidence — it is preserved "
+                "verbatim in the concern's evidence field."
             )
+        raise _concern_summary_error(
+            f"{command}: --summary is {len(inline.rstrip())} chars (max {cap}). "
+            "Shorten it, or pass the full text with --summary-file <path> — it "
+            "is preserved verbatim in the concern's evidence field."
+        )
+    if path is not None:
+        try:
+            raw = Path(path).read_text(encoding="utf-8")
+        except OSError as exc:
+            raise _concern_summary_error(
+                f"{command}: --summary-file {path} is unreadable: {exc}"
+            ) from None
+        text = raw.rstrip()
+        if not text:
+            raise _concern_summary_error(
+                f"{command}: --summary-file {path} is empty / whitespace-only; "
+                "refusing to no-op (the carried-forward original summary would "
+                "be kept silently). Write the summary text into the file first."
+            )
+        if len(text) <= cap:
+            return text, evidence
+        if evidence is not None:
+            raise _concern_summary_error(
+                f"{command}: --summary-file {path} holds {len(text)} chars "
+                f"(max {cap} for the stored summary) AND --evidence was given "
+                "explicitly — refusing to choose which text survives. Drop "
+                "--evidence (the full file text is then preserved there), or "
+                "shorten the file."
+            )
+        kept, _dropped = _truncate_summary(text)
+        print(
+            f"[task.py] {command}: --summary-file text is {len(text)} chars "
+            f"(cap {cap}); full text preserved verbatim in the concern's "
+            f"evidence field, {len(kept)}-char derived lead stored as the "
+            "summary.",
+            file=sys.stderr,
+        )
+        return kept, text
+    return None, evidence
+
+
+def cmd_raise_concern(args: argparse.Namespace) -> None:
+    """Append a `raised` (or `verified-open` on re-raise) event to
+    concerns.jsonl. Re-raising the SAME concern_id at the SAME round with
+    the SAME severity is a no-op (returns the existing event). Over-cap
+    handling is non-lossy (#2121, via ``_resolve_concern_summary``): an
+    over-cap ``--summary`` with no ``--evidence`` keeps the historical
+    shift-into-evidence behavior; over-cap WITH ``--evidence`` is a hard
+    error; long text goes through ``--summary-file``. The library layer
+    keeps the hard 200-char cap."""
+    summary, evidence = _resolve_concern_summary(
+        inline=args.summary,
+        path=getattr(args, "summary_file", None),
+        evidence=getattr(args, "evidence", None),
+        command="raise-concern",
+        legacy_shift=True,
+    )
     payload = raise_concern(
         args.number,
         args.concern_id,
@@ -1175,26 +1493,24 @@ def cmd_address_concern(args: argparse.Namespace) -> None:
     """Append an `addressed` event recording that the implementer (or
     analyzer / planner) believes the concern has been fixed. The next
     reviewer round verifies; a re-raise after `addressed` becomes a
-    `verified-open` event rather than a fresh `raised`. An over-cap
-    explicit ``--summary`` is truncated at a word boundary with a loud
-    stderr warning (the ``None`` carried-forward path is untouched)."""
-    summary = args.summary
-    if summary is not None:
-        summary, dropped = _truncate_summary(summary)
-        if dropped is not None:
-            print(
-                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
-                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
-                f"{len(summary)} chars. Dropped tail: {dropped!r} "
-                "(detail belongs in the round report / the raise's evidence).",
-                file=sys.stderr,
-            )
+    `verified-open` event rather than a fresh `raised`. Over-cap handling
+    is non-lossy (#2121, via ``_resolve_concern_summary``): an over-cap
+    inline ``--summary`` is a hard error pointing at ``--summary-file``,
+    whose over-cap text lands verbatim in the event's ``evidence`` field
+    (the ``None`` carried-forward path is untouched)."""
+    summary, evidence = _resolve_concern_summary(
+        inline=args.summary,
+        path=getattr(args, "summary_file", None),
+        evidence=getattr(args, "evidence", None),
+        command="address-concern",
+    )
     payload = address_concern(
         args.number,
         args.concern_id,
         addressed_by=args.by,
         addressed_at_round=args.round,
         summary=summary,
+        evidence=evidence,
     )
     _safe_echo(
         json.dumps(payload, indent=2, ensure_ascii=False),
@@ -1453,10 +1769,10 @@ def main() -> None:
         action="store_true",
         help=(
             "On a plan_pending transition, apply the code-enforced autonomous "
-            "plan-approval gate: if EPM_AUTONOMOUS_SESSION is set and --gpu-hours "
-            "<= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 24), auto-flip to approved "
-            "and post epm:plan-approved; if over-cap or --gpu-hours is omitted, "
-            "stay at plan_pending and post epm:awaiting-spend-approval; if not "
+            "plan-approval gate: in an autonomous session "
+            "(EPM_AUTONOMOUS_SESSION set), auto-flip to approved whenever a "
+            "GPU-hour estimate is present (GPU-hour-blind, #1771); park at "
+            "plan_pending when the estimate is missing (fail-safe). If not "
             "autonomous, stay at plan_pending (interactive). Prints a "
             "'PLAN_GATE_DECISION: <decision> ...' line."
         ),
@@ -1465,7 +1781,24 @@ def main() -> None:
         "--gpu-hours",
         type=float,
         default=None,
-        help="Plan's estimated total GPU-hours; used by --auto-approve-if-autonomous.",
+        help=(
+            "Plan's estimated total GPU-hours; recorded in the approval "
+            "marker; absence triggers the fail-safe park."
+        ),
+    )
+    p.add_argument(
+        "--if-plan-v",
+        type=int,
+        default=None,
+        help=(
+            "OPTIONAL version-keyed CAS check (mission-control rung 0) for "
+            "the async plan-approval answer path (`set-status <N> approved "
+            "--if-plan-v K`): the current highest plans/v{K}.md must still "
+            "be K, checked inside the flock BEFORE any mutation; on "
+            "mismatch nothing is mutated and the command exits 4 (stale "
+            "view — a material-change re-park wrote a newer plan). Absent "
+            "= legacy unconditional transition."
+        ),
     )
     p.add_argument(
         "--force-followup-exit",
@@ -1550,6 +1883,39 @@ def main() -> None:
         p.add_argument("number", type=int)
         p.add_argument("--prefix", default=None, help="restrict to events with this prefix")
         p.set_defaults(func=cmd_latest_marker)
+
+    p = sub.add_parser(
+        "check-authorized-stub",
+        help=(
+            "Step 6d.0 mechanical grant check for a PASS_AUTHORIZED_STUB "
+            "smoke-architecture marker (rc=0 prints GRANT and is the ONLY grant "
+            "path; rc=1 prints REFUSE — <reason>). Read-only (#2171)."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.set_defaults(func=cmd_check_authorized_stub)
+
+    p = sub.add_parser(
+        "check-smoke-arch-registry",
+        help=(
+            "Step 6d.0 arm-registry enumeration check on the latest "
+            "smoke-architecture marker (rc=0 prints OK — with a driver-verified "
+            "vs marker-only label; rc=1 prints REFUSE — <reason>). With "
+            "--repo-root, re-derives the registry from the named driver file(s) "
+            "and refuses on any member/driver set mismatch. Read-only (#2176)."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument(
+        "--repo-root",
+        default=None,
+        help=(
+            "worktree/checkout root under which the marker's `file=` path(s) "
+            "resolve; enables the driver-recompute arm (omit for marker "
+            "self-consistency only)"
+        ),
+    )
+    p.set_defaults(func=cmd_check_smoke_arch_registry)
 
     p = sub.add_parser(
         "set-body",
@@ -1702,11 +2068,32 @@ def main() -> None:
     p = sub.add_parser("promote", help="USER-ONLY: awaiting_promotion → completed")
     p.add_argument("number", type=int)
     p.add_argument("verdict", choices=["useful", "not-useful"])
+    p.add_argument(
+        "--if-body-sha",
+        default=None,
+        help=(
+            "OPTIONAL version-keyed CAS check (mission-control rung 0): "
+            "sha256(body.md bytes)[:12] the caller's view was composed "
+            "against (a full sha is prefix-compared). Checked inside the "
+            "promote flock BEFORE any mutation; on mismatch nothing is "
+            "mutated and the command exits 4 (stale view — e.g. a follow-up "
+            "round rewrote the body at awaiting_promotion). Absent = legacy "
+            "unconditional promote."
+        ),
+    )
     p.set_defaults(func=cmd_promote)
 
     p = sub.add_parser("new-plan-version", help="append plans/v{next}.md")
     p.add_argument("number", type=int)
     p.add_argument("--file", default=None, help="path to plan markdown (else stdin)")
+    p.add_argument(
+        "--allow-amendment",
+        action="store_true",
+        help="deliberately persist a thin amendment-shaped delta (#2255); the persist "
+        "otherwise REFUSES it — every plans/v{K}.md must be self-contained. Obligates "
+        "restating the `Estimated GPU-hours (total):` line inside the amendment and "
+        "handing base+delta together in every subagent brief",
+    )
     p.set_defaults(func=cmd_new_plan_version)
 
     p = sub.add_parser("find", help="print absolute path of task N's folder")
@@ -1790,14 +2177,23 @@ def main() -> None:
         choices=sorted(CONCERN_SEVERITIES),
         help="BLOCKER (no deferral), CONCERN (binding), NIT (optional)",
     )
-    p.add_argument(
+    g = p.add_mutually_exclusive_group(required=True)
+    g.add_argument(
         "--summary",
         "--note",
         dest="summary",
-        required=True,
-        help="one-line description (<=200 chars; longer text is truncated at a word "
-        "boundary with a warning, the full original shifted into --evidence when "
-        "--evidence is empty); --note is an accepted alias, --summary is canonical",
+        help="one-line description (<=200 chars stored; over-cap text with no "
+        "--evidence shifts the full original into evidence with a warning; over-cap "
+        "WITH --evidence is a hard error — pass long text via --summary-file); "
+        "--note is an accepted alias, --summary is canonical",
+    )
+    g.add_argument(
+        "--summary-file",
+        dest="summary_file",
+        default=None,
+        help="path to a file holding the summary text (any length; over-cap text is "
+        "preserved verbatim in the concern's evidence field, with a <=200-char "
+        "derived lead stored as the summary; mutually exclusive with --summary)",
     )
     p.add_argument("--by", required=True, help="reviewer name (e.g. code-reviewer, critic)")
     p.add_argument(
@@ -1837,16 +2233,27 @@ def main() -> None:
         type=int,
         help="current implementer round (≥1) recording the address",
     )
-    p.add_argument(
+    g = p.add_mutually_exclusive_group()
+    g.add_argument(
         "--summary",
         "--rationale",
         "--note",
         dest="summary",
         default=None,
-        help="optional updated summary, <=200 chars (longer text is truncated at a "
-        "word boundary with a warning); defaults to the original raised summary "
-        "(--rationale and --note are accepted aliases; --summary is canonical)",
+        help="optional updated summary, <=200 chars (an over-cap inline summary is a "
+        "hard error — pass long text via --summary-file); defaults to the original "
+        "raised summary (--rationale and --note are accepted aliases; --summary is "
+        "canonical)",
     )
+    g.add_argument(
+        "--summary-file",
+        dest="summary_file",
+        default=None,
+        help="path to a file holding the updated summary (any length; over-cap text "
+        "is preserved verbatim in the event's evidence field, with a <=200-char "
+        "derived lead stored as the summary; mutually exclusive with --summary)",
+    )
+    p.add_argument("--evidence", default=None, help="optional path / quote / pointer")
     p.set_defaults(func=cmd_address_concern)
 
     p = sub.add_parser(

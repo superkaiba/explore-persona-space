@@ -1,0 +1,163 @@
+{
+  "positions": {
+    "allprompt": {
+      "verdict": "Confirmed",
+      "n_paired": 494,
+      "D_p_mean": 0.02631578947368421,
+      "D_p_ci95": [
+        0.006072874493927126,
+        0.048582995951417005
+      ],
+      "discordant_pairs": {
+        "harmful_only_under_axis_replace": 7,
+        "harmful_only_under_random_replace": 20,
+        "harmful_under_both": 23
+      },
+      "harm_rate_axis": 0.06048387096774194,
+      "harm_rate_random": 0.08651911468812877,
+      "R_own_reduction_vs_baseline": {
+        "n_paired": 496,
+        "mean": 0.010080645161290322,
+        "ci95": [
+          -0.008064516129032258,
+          0.028225806451612902
+        ]
+      },
+      "guards": {
+        "pass": true,
+        "cjk_frac_axis": 0.002,
+        "cjk_frac_random": 0.002,
+        "capability_gap_axis_minus_random": {
+          "gsm8k": 0.00666666666666671,
+          "ifeval": -0.020000000000000018,
+          "mmlu_pro": -0.014999999999999958
+        }
+      },
+      "cjk_audit_random_arm": {
+        "jb_cjk_count": 1,
+        "jb_n": 500,
+        "rs_cjk_count": 1,
+        "rs_n": 250,
+        "fired_overlap_cjk_and_harmful": 0,
+        "harm_rate_all": [
+          0.08651911468812877,
+          497
+        ],
+        "harm_rate_zeroed_intrusion": [
+          0.08651911468812877,
+          497
+        ],
+        "harm_rate_excluded_intrusion": [
+          0.08669354838709678,
+          496
+        ]
+      },
+      "identity_loss_random": 0.28800000000000003
+    },
+    "alltoken": {
+      "verdict": "Confirmed",
+      "n_paired": 494,
+      "D_p_mean": 0.02834008097165992,
+      "D_p_ci95": [
+        0.004048582995951417,
+        0.05263157894736842
+      ],
+      "discordant_pairs": {
+        "harmful_only_under_axis_replace": 12,
+        "harmful_only_under_random_replace": 26,
+        "harmful_under_both": 20
+      },
+      "harm_rate_axis": 0.06438631790744467,
+      "harm_rate_random": 0.09274193548387097,
+      "R_own_reduction_vs_baseline": {
+        "n_paired": 495,
+        "mean": 0.00404040404040404,
+        "ci95": [
+          -0.012121212121212121,
+          0.022222222222222223
+        ]
+      },
+      "guards": {
+        "pass": true,
+        "cjk_frac_axis": 0.002,
+        "cjk_frac_random": 0.0,
+        "capability_gap_axis_minus_random": {
+          "gsm8k": -0.01333333333333342,
+          "ifeval": 0.006666666666666599,
+          "mmlu_pro": -0.014999999999999958
+        }
+      },
+      "cjk_audit_random_arm": {
+        "jb_cjk_count": 0,
+        "jb_n": 500,
+        "rs_cjk_count": 0,
+        "rs_n": 250,
+        "fired_overlap_cjk_and_harmful": 0,
+        "harm_rate_all": [
+          0.09274193548387097,
+          496
+        ],
+        "harm_rate_zeroed_intrusion": [
+          0.09274193548387097,
+          496
+        ],
+        "harm_rate_excluded_intrusion": [
+          0.09274193548387097,
+          496
+        ]
+      },
+      "identity_loss_random": 0.28
+    }
+  },
+  "baseline_harm_rate": [
+    0.096579476861167,
+    497
+  ],
+  "bootstrap": {
+    "B": 10000,
+    "seed": 42,
+    "cluster_ids": "per-row (bank:item:role)"
+  },
+  "displacement_companion": {
+    "note": "Per-position realized projections were not persisted (edit telemetry keeps firing fractions only). Stated estimate: the axis_replace op displaces a state by |proj_def - proj_before| along its unit direction; proj_before is anchored at the phase-1 tau pool's 25th percentile (response-token pool for the real axis, all-token pool for the random direction; unit-axis coordinates), proj_def = <h_def, v_hat> from the committed axis blob.",
+    "per_layer": {
+      "18": {
+        "delta_axis_p25": 11.128210964400688,
+        "delta_rand_p25": 0.8108894448728884
+      },
+      "19": {
+        "delta_axis_p25": 14.848239791456411,
+        "delta_rand_p25": 0.7870085786046617
+      },
+      "20": {
+        "delta_axis_p25": 17.750677081470457,
+        "delta_rand_p25": 1.1961897137978668
+      },
+      "21": {
+        "delta_axis_p25": 20.585829966589053,
+        "delta_rand_p25": 1.0325999998596542
+      },
+      "22": {
+        "delta_axis_p25": 24.418533466490647,
+        "delta_rand_p25": 1.6317006919592132
+      },
+      "23": {
+        "delta_axis_p25": 29.115103162252723,
+        "delta_rand_p25": 2.3366039263417404
+      },
+      "24": {
+        "delta_axis_p25": 34.20112800273878,
+        "delta_rand_p25": 2.3556043391823387
+      },
+      "25": {
+        "delta_axis_p25": 38.70554186338818,
+        "delta_rand_p25": 2.25777815718806
+      }
+    },
+    "delta_axis_mean": 23.844158037348365,
+    "delta_axis_median": 22.50218171653985,
+    "delta_rand_mean": 1.5510468564758029,
+    "delta_rand_median": 1.41394520287854,
+    "axis_over_rand_ratio_of_means": 15.372945013102733
+  }
+}

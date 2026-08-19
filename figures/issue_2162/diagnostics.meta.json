@@ -1,0 +1,3348 @@
+{
+  "commit": "a480d78c+dirty",
+  "git_commit": "a480d78c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_figures.py"
+  ],
+  "created": "2026-08-08T01:23:53Z",
+  "figsize": [
+    24.32,
+    10.0
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.016666666666666607,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.01388888888888884,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.019444444444444375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.04999999999999993,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.02777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 15.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 16.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.01388888888888895,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 17.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 18.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 19.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 20.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.008333333333333304,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 21.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.008333333333333304,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 22.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 23.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 24.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.022222222222222143,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 25.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 26.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.01666666666666672,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 27.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 28.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 29.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.016666666666666607,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 30.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.033333333333333326,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 31.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 32.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 33.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 34.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.023611111111111138,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 35.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.015277777777777724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 36.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.004166666666666652,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 37.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.018055555555555602,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 38.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 39.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 40.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.022222222222222254,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 41.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.033333333333333326,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 42.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.05555555555555558,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 43.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.03888888888888886,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 44.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 45.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.01666666666666672,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 46.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 47.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333415,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 48.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 49.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 50.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 51.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 52.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 53.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 54.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 55.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.008333333333333415,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 56.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.01388888888888895,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 57.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 58.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 59.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 60.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 61.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.022222222222222254,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 62.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 63.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 64.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 65.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.01666666666666672,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 66.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 67.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.022222222222222254,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 68.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.0444444444444444,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 69.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 70.73,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333415,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 71.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 72.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 73.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 74.73,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.022222222222222143,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111072,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.04166666666666663,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.016666666666666607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.02499999999999991,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.01666666666666672,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.019444444444444486,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.008333333333333304,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.01666666666666672,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.01388888888888895,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111183,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.016666666666666607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 28.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 29.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.016666666666666607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 30.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 31.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 33.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 34.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 35.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.029166666666666674,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 36.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.00694444444444442,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 37.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.00694444444444442,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 38.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.004166666666666652,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 39.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.019444444444444375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 40.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.01388888888888884,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 41.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.033333333333333326,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 42.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.022222222222222254,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 43.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.050000000000000044,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 44.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 45.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.016666666666666607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 46.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.022222222222222254,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 47.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 48.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.025000000000000022,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 49.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777879,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 50.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 51.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 52.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 53.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 54.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111072,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 55.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111072,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 56.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 57.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.01388888888888895,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 58.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 59.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 60.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 61.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 62.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 63.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 64.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.016666666666666607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 65.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 66.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.033333333333333326,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 67.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.016666666666666607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 68.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.02777777777777779,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 69.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.016666666666666607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 70.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 71.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 72.0,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 73.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 74.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 75.0,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111072,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.01666666666666672,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.025000000000000022,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.022222222222222143,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.01666666666666672,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.01388888888888884,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 12.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.02777777777777779,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 13.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111183,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 14.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 15.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 16.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.02499999999999991,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 17.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.01388888888888884,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 18.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 19.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 20.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111183,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 21.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.008333333333333304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 22.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 23.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 24.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 25.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 26.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 27.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 28.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 29.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 30.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 31.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 32.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 33.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.02777777777777779,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 34.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 35.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.054166666666666696,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 36.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.009722222222222188,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 37.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.004166666666666652,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 38.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.00694444444444442,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 39.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 40.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.030555555555555558,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 41.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.022222222222222254,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 42.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.03888888888888886,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 43.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.08333333333333337,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 44.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.07222222222222219,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 45.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.016666666666666607,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 46.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 47.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 48.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.01388888888888884,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 49.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.01388888888888895,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 50.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.025000000000000022,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 51.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 52.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.019444444444444486,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 53.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 54.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0444444444444444,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 55.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.022222222222222143,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 56.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 57.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.02499999999999991,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 58.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 59.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 60.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 61.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.011111111111111183,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 62.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.01666666666666672,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 63.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 64.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.005555555555555536,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 65.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 66.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.02777777777777779,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 67.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.022222222222222254,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 68.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.02777777777777779,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 69.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.011111111111111072,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 70.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.008333333333333304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 71.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.008333333333333304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 72.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.002777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 73.27,
+      "excess incoherence\n(arm - anchor baseline)": 0.008333333333333304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 74.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.02777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 75.27,
+      "excess incoherence\n(arm - anchor baseline)": -0.02777777777777779,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 8.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 9.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 10.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 11.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 12.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 13.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 14.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 15.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 16.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 17.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 18.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 19.73,
+      "cap-hit fraction": 0.011111111111111112,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 20.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 21.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 22.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 23.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 24.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 25.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 26.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 27.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 28.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 29.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 30.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 31.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 32.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 33.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 34.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 35.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 36.73,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 37.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 38.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 39.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 40.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 41.73,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 42.73,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 43.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 44.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 45.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 46.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 47.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 48.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 49.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 50.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 51.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 52.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 53.73,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 54.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 55.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 56.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 57.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 58.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 59.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 60.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 61.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 62.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 63.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 64.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 65.73,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 66.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 67.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 68.73,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 69.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 70.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 71.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 72.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 73.73,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 74.73,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 13.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 15.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 17.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 18.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 20.0,
+      "cap-hit fraction": 0.022222222222222223,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 21.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 22.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 23.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 24.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 25.0,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 26.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 27.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 28.0,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 29.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 30.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 31.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 32.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 33.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 34.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 35.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 36.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 37.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 38.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 39.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 40.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 41.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 42.0,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 43.0,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 44.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 45.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 46.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 47.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 48.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 49.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 50.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 51.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 52.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 53.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 54.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 55.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 56.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 57.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 58.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 59.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 60.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 61.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 62.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 63.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 64.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 65.0,
+      "cap-hit fraction": 0.011111111111111112,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 66.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 67.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 68.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 69.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 70.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 71.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 72.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 73.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 74.0,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 75.0,
+      "cap-hit fraction": 0.016666666666666666,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 8.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 9.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 10.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 11.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 12.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 13.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 14.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 15.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 16.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 17.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 18.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 19.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 20.27,
+      "cap-hit fraction": 0.022222222222222223,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 21.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 22.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 23.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 24.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 25.27,
+      "cap-hit fraction": 0.011111111111111112,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 26.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 27.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 28.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 29.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 30.27,
+      "cap-hit fraction": 0.011111111111111112,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 31.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 32.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 33.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 34.27,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 35.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 36.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 37.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 38.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 39.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 40.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 41.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 42.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 43.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 44.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 45.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 46.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 47.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 48.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 49.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 50.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 51.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 52.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 53.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 54.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 55.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 56.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 57.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 58.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 59.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 60.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 61.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 62.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 63.27,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 64.27,
+      "cap-hit fraction": 0.005555555555555556,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 65.27,
+      "cap-hit fraction": 0.011111111111111112,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 66.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 67.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 68.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 69.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 70.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 71.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 72.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 73.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 74.27,
+      "cap-hit fraction": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 75.27,
+      "cap-hit fraction": 0.016666666666666666,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "constraint_knowledge|ce",
+      "post-exclusion n (pairs)": 16.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "constraint_knowledge|pe",
+      "post-exclusion n (pairs)": 16.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "fact_assistant_animal|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "fact_assistant_animal|pe",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "fact_novel_queried|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "fact_novel_queried|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "fact_user_name|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "fact_user_name|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "icl_task_mapping|ce",
+      "post-exclusion n (pairs)": 7.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "icl_task_mapping|pe",
+      "post-exclusion n (pairs)": 7.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "instr_format|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "instr_format|pe",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "instr_language|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "instr_language|pe",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "list_numeric_detail|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "list_numeric_detail|pe",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "persona_prompted|ce",
+      "post-exclusion n (pairs)": 30.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "persona_prompted|pe",
+      "post-exclusion n (pairs)": 30.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "prior_topic|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "prior_topic|pe",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "query_content|ce",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "reasoning_style|ce",
+      "post-exclusion n (pairs)": 29.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "reasoning_style|pe",
+      "post-exclusion n (pairs)": 29.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "refusal_boundary|ce",
+      "post-exclusion n (pairs)": 8.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "refusal_boundary|pe",
+      "post-exclusion n (pairs)": 8.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "user_emotion|ce",
+      "post-exclusion n (pairs)": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "user_emotion|pe",
+      "post-exclusion n (pairs)": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "user_expertise|ce",
+      "post-exclusion n (pairs)": 18.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "user_expertise|pe",
+      "post-exclusion n (pairs)": 18.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "verbosity|ce",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "verbosity|pe",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_format_fwd|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_format_fwd|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_format_rev|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_format_rev|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_persona_fwd|ce",
+      "post-exclusion n (pairs)": 28.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_persona_fwd|pe",
+      "post-exclusion n (pairs)": 28.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_persona_rev|ce",
+      "post-exclusion n (pairs)": 28.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "conflict_persona_rev|pe",
+      "post-exclusion n (pairs)": 28.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "demo_format|ce",
+      "post-exclusion n (pairs)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "demo_format|pe",
+      "post-exclusion n (pairs)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "demo_persona|ce",
+      "post-exclusion n (pairs)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "demo_persona|pe",
+      "post-exclusion n (pairs)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "language_implied|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "language_implied|pe",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "persona_role_header|ce",
+      "post-exclusion n (pairs)": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_assistant_animal_l3|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_assistant_animal_l3|pe",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_assistant_animal_l5|ce",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_assistant_animal_l5|pe",
+      "post-exclusion n (pairs)": 36.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_user_name_l3|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_user_name_l3|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_user_name_l5|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_fact_user_name_l5|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_instr_format_l3|ce",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_instr_format_l3|pe",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_instr_format_l5|ce",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "load_instr_format_l5|pe",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_fact_user_name_d3|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_fact_user_name_d3|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_fact_user_name_d5|ce",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_fact_user_name_d5|pe",
+      "post-exclusion n (pairs)": 33.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_instr_format_d3|ce",
+      "post-exclusion n (pairs)": 31.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_instr_format_d3|pe",
+      "post-exclusion n (pairs)": 31.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_instr_format_d5|ce",
+      "post-exclusion n (pairs)": 18.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_instr_format_d5|pe",
+      "post-exclusion n (pairs)": 18.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_persona_prompted_d3|ce",
+      "post-exclusion n (pairs)": 24.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_persona_prompted_d3|pe",
+      "post-exclusion n (pairs)": 24.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_persona_prompted_d5|ce",
+      "post-exclusion n (pairs)": 18.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_persona_prompted_d5|pe",
+      "post-exclusion n (pairs)": 18.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_prior_topic_d3|ce",
+      "post-exclusion n (pairs)": 27.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_prior_topic_d3|pe",
+      "post-exclusion n (pairs)": 27.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_prior_topic_d5|ce",
+      "post-exclusion n (pairs)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "recency_prior_topic_d5|pe",
+      "post-exclusion n (pairs)": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "persona_role_header|pe",
+      "post-exclusion n (pairs)": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "query_content|pe",
+      "post-exclusion n (pairs)": 35.0,
+      "_kind": "bar",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 532,
+  "text": {
+    "suptitle": "Diagnostics: excess incoherence over anchor baseline (score<=60), cap-hit (2% re-gen line), separation survival (floor 12)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "excess incoherence\n(arm - anchor baseline)",
+        "legend_labels": [
+          "steered",
+          "shuffled",
+          "crosstype"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ]
+      },
+      {
+        "ylabel": "cap-hit fraction",
+        "yticklabels": [
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025"
+        ]
+      },
+      {
+        "ylabel": "post-exclusion n (pairs)",
+        "xticklabels": [
+          "constraint_knowledge|ce",
+          "constraint_knowledge|pe",
+          "fact_assistant_animal|ce",
+          "fact_assistant_animal|pe",
+          "fact_novel_queried|ce",
+          "fact_novel_queried|pe",
+          "fact_user_name|ce",
+          "fact_user_name|pe",
+          "icl_task_mapping|ce",
+          "icl_task_mapping|pe",
+          "instr_format|ce",
+          "instr_format|pe",
+          "instr_language|ce",
+          "instr_language|pe",
+          "list_numeric_detail|ce",
+          "list_numeric_detail|pe",
+          "persona_prompted|ce",
+          "persona_prompted|pe",
+          "prior_topic|ce",
+          "prior_topic|pe",
+          "query_content|ce",
+          "reasoning_style|ce",
+          "reasoning_style|pe",
+          "refusal_boundary|ce",
+          "refusal_boundary|pe",
+          "user_emotion|ce",
+          "user_emotion|pe",
+          "user_expertise|ce",
+          "user_expertise|pe",
+          "verbosity|ce",
+          "verbosity|pe",
+          "conflict_format_fwd|ce",
+          "conflict_format_fwd|pe",
+          "conflict_format_rev|ce",
+          "conflict_format_rev|pe",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_fwd|pe",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe",
+          "demo_format|ce",
+          "demo_format|pe",
+          "demo_persona|ce",
+          "demo_persona|pe",
+          "language_implied|ce",
+          "language_implied|pe",
+          "persona_role_header|ce",
+          "load_fact_assistant_animal_l3|ce",
+          "load_fact_assistant_animal_l3|pe",
+          "load_fact_assistant_animal_l5|ce",
+          "load_fact_assistant_animal_l5|pe",
+          "load_fact_user_name_l3|ce",
+          "load_fact_user_name_l3|pe",
+          "load_fact_user_name_l5|ce",
+          "load_fact_user_name_l5|pe",
+          "load_instr_format_l3|ce",
+          "load_instr_format_l3|pe",
+          "load_instr_format_l5|ce",
+          "load_instr_format_l5|pe",
+          "recency_fact_user_name_d3|ce",
+          "recency_fact_user_name_d3|pe",
+          "recency_fact_user_name_d5|ce",
+          "recency_fact_user_name_d5|pe",
+          "recency_instr_format_d3|ce",
+          "recency_instr_format_d3|pe",
+          "recency_instr_format_d5|ce",
+          "recency_instr_format_d5|pe",
+          "recency_persona_prompted_d3|ce",
+          "recency_persona_prompted_d3|pe",
+          "recency_persona_prompted_d5|ce",
+          "recency_persona_prompted_d5|pe",
+          "recency_prior_topic_d3|ce",
+          "recency_prior_topic_d3|pe",
+          "recency_prior_topic_d5|ce",
+          "recency_prior_topic_d5|pe",
+          "persona_role_header|pe",
+          "query_content|pe"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ]
+      }
+    ],
+    "series": [
+      "steered",
+      "shuffled",
+      "crosstype"
+    ]
+  },
+  "figure": "diagnostics",
+  "inputs": [
+    "eval_results/issue_2162/f_metrics/f_cells.jsonl",
+    "eval_results/issue_2162/f_metrics/anchors.jsonl"
+  ]
+}

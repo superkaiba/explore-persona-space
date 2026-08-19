@@ -5,7 +5,9 @@ Default repos (public, unlimited storage):
   Datasets: superkaiba1/explore-persona-space-data
 """
 
+import contextlib
 import glob
+import hashlib
 import json
 import logging
 import math
@@ -18,10 +20,12 @@ import sys
 import tempfile
 import time
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+
+from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
 
 logger = logging.getLogger(__name__)
 
@@ -281,11 +285,21 @@ def check_hf_storage_headroom(
         # PARTIAL-None GUARD: counting a present-but-unpopulated usedStorage
         # as 0 silently understates usage — ANY missing value poisons the
         # probe to unknown rather than producing a partial sum.
+        detail = f"{n_missing}/{n} missing usedStorage"
+        if n_missing == n:
+            # ALL repos missing usedStorage is the signature of an auth /
+            # endpoint condition (expired or absent token, wrong endpoint),
+            # not a storage fact — name it so the basis line is not read as
+            # "zero storage" (#2337).
+            detail += (
+                "; all repos missing usedStorage usually indicates an "
+                "auth/endpoint condition, not zero storage"
+            )
         return HfStorageHeadroom(
             used_tb=None,
             ceiling_tb=ceiling,
             over_ceiling=False,
-            basis=f"suspect ({n_missing}/{n} missing usedStorage)",
+            basis=f"suspect ({detail})",
             n_repos=n,
         )
     used_bytes = sum(per_repo)
@@ -681,6 +695,107 @@ def _overflow_event_path() -> Path:
     return Path.home() / ".cache" / "explore_persona_space" / "hf-overflow-routing.jsonl"
 
 
+def _filecount_sentinel_path() -> Path:
+    """Observed-count sentinel resolution: env override → /workspace/logs → ~/.cache.
+
+    Mirrors :func:`_overflow_event_path` — the local observability sink for the
+    repo-wide file-count cap (#2304): one JSONL row per enabled file-count
+    refusal (``status: "blocked"``, with the server-observed count/limit when
+    parseable) and one per first verified success after a blocked row
+    (``status: "accepting"``). Pod-side code never shells ``task.py``; the
+    WARN-only preflight check ``check_hf_filecount_sentinel``
+    (:mod:`explore_persona_space.orchestrate.preflight`) reads this file.
+    """
+    env = os.environ.get("EPM_HF_FILECOUNT_SENTINEL_PATH")
+    if env:
+        return Path(env)
+    workspace_logs = Path("/workspace/logs")
+    if workspace_logs.is_dir():
+        return workspace_logs / "hf-filecount-observed.jsonl"
+    return Path.home() / ".cache" / "explore_persona_space" / "hf-filecount-observed.jsonl"
+
+
+# The server's refusal message shape (#2304 verbatim: "Your git repo would
+# contain 1000009 files after this push, over the limit of 1000000 files.").
+# Comma-tolerant: a future server-side thousands-separator keeps parsing.
+_FILECOUNT_OBSERVED_RE = re.compile(
+    r"would contain ([\d,]+) files after this push, over the limit of ([\d,]+) files"
+)
+
+
+def _record_filecount_observation(repo_id: str, repo_type: str, err: Exception) -> None:
+    """Append one ``status: "blocked"`` sentinel row for a file-count refusal.
+
+    Fail-soft (mirrors :func:`_emit_overflow_routing_event`): telemetry must
+    never break the fallback that follows it. ``observed_files`` / ``limit``
+    are parsed from the refusal message when it matches the known shape and
+    are ``None`` on any other shape — the row still records the refusal.
+    """
+    try:
+        m = _FILECOUNT_OBSERVED_RE.search(str(err))
+        row = {
+            "ts": time.time(),
+            "repo_id": repo_id,
+            "repo_type": repo_type,
+            "observed_files": int(m.group(1).replace(",", "")) if m else None,
+            "limit": int(m.group(2).replace(",", "")) if m else None,
+            "status": "blocked",
+            "message_excerpt": str(err)[:200],
+        }
+        path = _filecount_sentinel_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row) + "\n")
+    except Exception as e:
+        logger.warning("filecount-observation record failed (%s) — fallback proceeds", e)
+
+
+def _maybe_record_filecount_recovery(repo_id: str, repo_type: str) -> None:
+    """Append one ``status: "accepting"`` row when a VERIFIED success follows a
+    blocked observation for the same (repo_id, repo_type).
+
+    Guarded by ``Path.exists()`` so the steady state (no sentinel file) costs
+    one stat and writes nothing. Reads the JSONL by text-mode file iteration
+    (never ``splitlines()`` — the U+2028 shred class), keeps the LAST row per
+    (repo_id, repo_type), and appends only on a blocked→accepting transition —
+    repeated successes stay silent. Fail-soft: a telemetry failure never
+    perturbs the (already-verified) upload result.
+    """
+    try:
+        path = _filecount_sentinel_path()
+        if not path.exists():
+            return
+        last: dict | None = None
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if row.get("repo_id") == repo_id and row.get("repo_type") == repo_type:
+                    last = row
+        if last is None or last.get("status") != "blocked":
+            return
+        rec = {
+            "ts": time.time(),
+            "repo_id": repo_id,
+            "repo_type": repo_type,
+            "status": "accepting",
+        }
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(rec) + "\n")
+        logger.info(
+            "HF file-count sentinel: %s (%s) accepting again after a blocked observation",
+            repo_id,
+            repo_type,
+        )
+    except Exception as e:
+        logger.warning("filecount-recovery record failed (%s) — upload result unaffected", e)
+
+
 def _emit_overflow_routing_event(
     *,
     original_repo: str,
@@ -720,7 +835,13 @@ def _emit_overflow_routing_event(
         logger.warning("overflow-routing event emit failed (%s) — reroute proceeds", e)
 
 
-def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_repo: str) -> None:
+def _write_overflow_pointer(
+    *,
+    canonical_repo: str,
+    path_in_repo: str,
+    overflow_repo: str,
+    repo_type: str = "model",
+) -> str:
     """Upload a small JSON breadcrumb to the CANONICAL repo after a reroute.
 
     Small ``*.json`` commits ride the non-LFS path, which SUCCEEDS while over
@@ -728,9 +849,34 @@ def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_
     the canonical subfolder always finds a machine-readable pointer to the
     real location instead of an empty path. Fail-soft: a pointer-write failure
     logs loudly but never fails the (already-verified) rerouted upload.
+
+    ``repo_type`` (#2304; keyword-only, default ``"model"`` byte-preserves the
+    #564 ``upload_model`` call site) is the CANONICAL repo's type — the
+    dataset-repo fallback passes ``"dataset"`` so the breadcrumb targets the
+    right repo class.
+
+    Returns a status string (#2304) so callers/tests can distinguish the
+    degradation classes:
+
+    - ``"ok"`` — pointer committed to the canonical repo.
+    - ``"unwritable-filecount-cap"`` — the canonical repo refused the pointer
+      commit with the SAME file-count rejection that triggered the reroute
+      (the pointer is itself a new file, so it is unwritable at the cap BY
+      CONSTRUCTION); a distinct #564 event row
+      (``reason="overflow-pointer-unwritable-filecount-cap"``) records the
+      consumer-visible consequence: while the canonical repo is at its cap,
+      NO pointer exists at the canonical path — consumers miss LOUDLY.
+    - ``"failed"`` — any other (transport-class) pointer-write failure.
     """
     import io
 
+    # Hoisted above the try (#2304 plan §4 trap 4) so BOTH except branches can
+    # name the destination the canonical repo refused.
+    dest = (
+        f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
+        if path_in_repo
+        else "OVERFLOW_POINTER.json"
+    )
     try:
         h = check_hf_storage_headroom()
         payload = {
@@ -743,28 +889,87 @@ def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_
         from huggingface_hub import HfApi
 
         api = HfApi(token=os.environ.get("HF_TOKEN"))
-        dest = (
-            f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
-            if path_in_repo
-            else "OVERFLOW_POINTER.json"
-        )
         _retry_upload(
             lambda: api.upload_file(
                 path_or_fileobj=io.BytesIO(json.dumps(payload, indent=2).encode("utf-8")),
                 repo_id=canonical_repo,
                 path_in_repo=dest,
-                repo_type="model",
+                repo_type=repo_type,
             ),
             what="overflow-pointer upload_file",
         )
         logger.info("Wrote overflow pointer %s/%s -> %s", canonical_repo, dest, overflow_repo)
+        return "ok"
     except Exception as e:
+        if _is_file_count_limit_error(e):
+            logger.warning(
+                "overflow-pointer-unwritable reason=filecount-cap: canonical repo %s "
+                "refused the pointer commit at %s (%s) — rerouted upload remains at %s; "
+                "NO pointer exists at the canonical path while the repo is at its cap",
+                canonical_repo,
+                dest,
+                e,
+                overflow_repo,
+            )
+            _emit_overflow_routing_event(
+                original_repo=canonical_repo,
+                effective_repo=overflow_repo,
+                path_in_repo=path_in_repo,
+                reason="overflow-pointer-unwritable-filecount-cap",
+            )
+            return "unwritable-filecount-cap"
         logger.warning(
             "overflow pointer write to %s failed (%s) — rerouted upload remains at %s",
             canonical_repo,
             e,
             overflow_repo,
         )
+        return "failed"
+
+
+def list_repo_entries_complete(
+    api,
+    repo_id: str,
+    *,
+    repo_type: str = "model",
+    revision: str | None = None,
+    path_in_repo: str | None = None,
+) -> list[tuple[str, int | None]]:
+    """``(path, size_bytes)`` pairs for EVERY file via the paginated tree API.
+
+    The sizes-preserving core of :func:`list_repo_files_complete` (#2097) —
+    ONE copy of the paginated ``list_repo_tree`` walk serves both the
+    paths-only consumers (via that delegating wrapper) and the size-aware
+    staging path (:func:`list_hf_entries_under_path` ->
+    ``stage_hub_prefix``'s headroom assert). Same contract as the wrapper:
+    retried walk (a cursor-page 504 raises DURING iteration, so the
+    comprehension is materialized inside the retry thunk — #794/#658),
+    ``path_in_repo`` forwarded ONLY when not None (kwarg-free calls stay
+    byte-identical, incl. against strict test fakes), sorted by path.
+    ``size_bytes`` is the server-side ``RepoFile.size`` (``None`` when the
+    entry carries none).
+    """
+    from huggingface_hub.hf_api import RepoFile
+
+    tree_kwargs: dict = {}
+    if path_in_repo is not None:
+        tree_kwargs["path_in_repo"] = path_in_repo
+
+    def _list() -> list[tuple[str, int | None]]:
+        return [
+            (entry.path, getattr(entry, "size", None))
+            for entry in api.list_repo_tree(
+                repo_id=repo_id,
+                repo_type=repo_type,
+                revision=revision,
+                recursive=True,
+                **tree_kwargs,
+            )
+            if isinstance(entry, RepoFile)
+        ]
+
+    entries = _retry_upload(_list, what=f"list_repo_tree({repo_id})")
+    return sorted(entries, key=lambda e: e[0])
 
 
 def list_repo_files_complete(
@@ -796,7 +1001,9 @@ def list_repo_files_complete(
     otherwise propagates and turns a SUCCESSFUL upload's post-upload verify into
     a false failure. The paginated walk is therefore wrapped in the same
     transient-retry helper the upload sites use (gotchas.md "HF recursive tree
-    listing 504s are un-retried"; #794/#658).
+    listing 504s are un-retried"; #794/#658). Since #2097 the walk itself
+    lives in :func:`list_repo_entries_complete` (this wrapper returns its
+    path components — behavior byte-identical).
 
     Args:
         api: An ``huggingface_hub.HfApi`` instance (already token-scoped).
@@ -821,30 +1028,74 @@ def list_repo_files_complete(
         when given; ``RepoFolder`` entries are dropped; only files are
         returned).
     """
-    from huggingface_hub.hf_api import RepoFile
+    # Conditional forwarding: a kwarg-free call stays kwarg-free all the way
+    # down (strict test fakes assert path_in_repo ABSENCE on full listings).
+    kwargs: dict = {} if path_in_repo is None else {"path_in_repo": path_in_repo}
+    return [
+        p
+        for p, _ in list_repo_entries_complete(
+            api, repo_id, repo_type=repo_type, revision=revision, **kwargs
+        )
+    ]
 
-    tree_kwargs: dict = {}
-    if path_in_repo is not None:
-        tree_kwargs["path_in_repo"] = path_in_repo
 
-    def _list() -> list[str]:
-        # ``list_repo_tree`` returns a generator; a cursor-page 504 raises
-        # DURING iteration, so the comprehension is MATERIALIZED inside this
-        # thunk (inside the retry ``try``) rather than after it returns.
-        return [
-            entry.path
-            for entry in api.list_repo_tree(
-                repo_id=repo_id,
-                repo_type=repo_type,
-                revision=revision,
-                recursive=True,
-                **tree_kwargs,
-            )
-            if isinstance(entry, RepoFile)
-        ]
+def list_hf_entries_under_path(
+    api,
+    repo_id: str,
+    path: str,
+    *,
+    repo_type: str = "model",
+    revision: str | None = None,
+) -> list[tuple[str, int | None]]:
+    """``(path, size_bytes)`` pairs under ``path`` — the sizes variant of
+    :func:`list_hf_files_under_path` (#2097), same ONE server-side scoped
+    tree walk / exact-file fallback / absent-``[]`` semantics (that helper
+    now delegates HERE, so one listing serves both paths and sizes — no
+    extra network call for a size-aware caller like ``stage_hub_prefix``).
 
-    files = _retry_upload(_list, what=f"list_repo_tree({repo_id})")
-    return sorted(files)
+    ``path`` naming a DIRECTORY returns every file under it (full repo-root-
+    relative paths, sorted); an exact FILE returns ``[(path, None)]`` (the
+    tree endpoint 404s on file paths — verified on hub 0.36.2, #939 — so an
+    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
+    probe, itself wrapped in ``_retry_upload``: the bare probe was the ONE
+    un-retried Hub call on the sharded-upload verify path, and a Hub
+    queue-full 429 there killed #1345's smoke upload leg after the shard had
+    already landed — att-20260715-175238; the sibling fallback in
+    ``verify_repo_paths_uploaded`` was already wrapped); an absent path
+    returns ``[]``. Repository/Revision-not-found and transport/auth errors
+    PROPAGATE (the file_exists fallback only fires after the tree call
+    proved repo+revision resolve, so its swallowing of
+    RepositoryNotFoundError is unreachable here). Empty ``path`` raises
+    ValueError — a falsy path would silently degrade to the full-repo
+    listing this helper exists to avoid.
+
+    ``size_bytes`` is the server-side ``RepoFile.size``; ``None`` when the
+    entry carries none — incl. the exact-file ``file_exists`` fallback,
+    which cannot see a size (accepted residual, #2097: a single large file
+    staged via that branch degrades a caller's headroom sizing to the 1 GB
+    floor; fail direction is status quo — no refusal).
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    normalized = path.strip("/")
+    if not normalized:
+        raise ValueError("list_hf_entries_under_path: empty path (would full-list the repo)")
+    try:
+        entries = list_repo_entries_complete(
+            api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
+        )
+    except EntryNotFoundError:
+        if _retry_upload(
+            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{normalized})",
+        ):
+            return [(normalized, None)]
+        return []
+    prefix = normalized + "/"
+    # Defensive client-side filter: a no-op against real scoped results (every
+    # returned path is under the prefix) but keeps strict test fakes — whose
+    # list_repo_tree ignores path_in_repo — matching the same semantics.
+    return [(p, s) for p, s in entries if p == normalized or p.startswith(prefix)]
 
 
 def list_hf_files_under_path(
@@ -857,45 +1108,17 @@ def list_hf_files_under_path(
 ) -> list[str]:
     """Files under ``path`` via ONE server-side scoped tree walk — never a
     full-repo listing (#920: a bare listing wedges >600 s on the ~1M-file
-    data repo).
-
-    ``path`` naming a DIRECTORY returns every file under it (full repo-root-
-    relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
-    on file paths — verified on hub 0.36.2, #939 — so an
-    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
-    probe, itself wrapped in ``_retry_upload``: the bare probe was the ONE
-    un-retried Hub call on the sharded-upload verify path, and a Hub
-    queue-full 429 there killed #1345's smoke upload leg after the shard had
-    already landed — att-20260715-175238; the sibling fallback in
-    ``verify_repo_paths_uploaded`` was already wrapped); an absent path
-    returns ``[]``. Repository/Revision-not-found and
-    transport/auth errors PROPAGATE (the file_exists fallback only fires
-    after the tree call proved repo+revision resolve, so its swallowing of
-    RepositoryNotFoundError is unreachable here). Empty ``path`` raises
-    ValueError — a falsy path would silently degrade to the full-repo
-    listing this helper exists to avoid.
-    """
-    from huggingface_hub.utils import EntryNotFoundError
-
-    normalized = path.strip("/")
-    if not normalized:
-        raise ValueError("list_hf_files_under_path: empty path (would full-list the repo)")
-    try:
-        files = list_repo_files_complete(
-            api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
+    data repo). Delegates to :func:`list_hf_entries_under_path` (#2097) and
+    returns the path components — behavior byte-identical to the historical
+    implementation (same walk, same exact-file ``file_exists`` fallback,
+    same absent-``[]`` semantics, same ValueError on an empty ``path``; see
+    the entries variant's docstring for the full contract)."""
+    return [
+        p
+        for p, _ in list_hf_entries_under_path(
+            api, repo_id, path, repo_type=repo_type, revision=revision
         )
-    except EntryNotFoundError:
-        if _retry_upload(
-            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
-            what=f"file_exists({repo_id}/{normalized})",
-        ):
-            return [normalized]
-        return []
-    prefix = normalized + "/"
-    # Defensive client-side filter: a no-op against real scoped results (every
-    # returned path is under the prefix) but keeps strict test fakes — whose
-    # list_repo_tree ignores path_in_repo — matching the same semantics.
-    return [f for f in files if f == normalized or f.startswith(prefix)]
+    ]
 
 
 def _is_storage_quota_403(err: Exception) -> bool:
@@ -906,18 +1129,23 @@ def _is_storage_quota_403(err: Exception) -> bool:
 
 
 def _filecount_fallback_enabled() -> bool:
-    """Default-ON kill switch for the reactive file-count overflow fallback (#1108).
+    """Default-ON kill switch for the reactive file-count overflow fallback
+    (#1108, extended to dataset repos + bulk uploads by #2304).
 
-    The canonical model repo hard-rejects pushes that would cross the HF
-    100,000-files-per-repo limit (#1090: "Your git repo would contain 100050
-    files after this push, over the limit of 100000 files"). When enabled,
-    ``_upload`` retries such a REJECTED model-repo upload against the private
-    :data:`DEFAULT_OVERFLOW_REPO`. Unlike the #564 byte-quota routing
-    (default-OFF because a pre-emptive reroute can divert a push that would
-    have succeeded), this fallback fires only AFTER the canonical push was
-    refused — it can never reroute a would-succeed push — so it is strictly
-    dominant and defaults ON. Kill switch: ``EPM_HF_FILECOUNT_FALLBACK=0``
-    (restores the legacy log-and-return-"" behavior).
+    HF hard-rejects pushes that would cross a repo-wide git file-count limit
+    (#1090: "Your git repo would contain 100050 files after this push, over
+    the limit of 100000 files" on the model repo; #2304: the same rejection at
+    1,000,000 files on the DATA repo). When enabled, a REJECTED model- or
+    dataset-repo upload — single-file/dir via ``_upload`` AND bulk via
+    ``_upload_folder_filtered`` — retries against the private
+    :data:`DEFAULT_OVERFLOW_REPO` (:func:`_filecount_overflow_retry`). Unlike
+    the #564 byte-quota routing (default-OFF because a pre-emptive reroute can
+    divert a push that would have succeeded), this fallback fires only AFTER
+    the canonical push was refused — it can never reroute a would-succeed
+    push — so it is strictly dominant and defaults ON. Kill switch:
+    ``EPM_HF_FILECOUNT_FALLBACK=0`` (restores the legacy log-and-return-""
+    behavior on every covered path, with ZERO new side effects — no sentinel
+    writes).
     """
     return os.environ.get("EPM_HF_FILECOUNT_FALLBACK", "1") == "1"
 
@@ -1092,9 +1320,9 @@ def assert_hub_dir_filecounts(
         )
         if _dir_filecount_guard_enabled():
             raise HubDirFileCountError(msg)
-        # NOTE: the #1108 overflow fallback re-enters _upload, so a
-        # kill-switched over-limit upload logs this WARNING twice (once per
-        # entry). Idempotent + harmless — not a bug.
+        # NOTE: the #1108/#2304 overflow fallback re-enters _upload /
+        # _upload_folder_filtered, so a kill-switched over-limit upload logs
+        # this WARNING twice (once per entry). Idempotent + harmless — not a bug.
         logger.warning("EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1 set — proceeding despite: %s", msg)
     elif any(n > warn_at for n in counts.values()):
         big = {d: n for d, n in counts.items() if n > warn_at}
@@ -1124,6 +1352,67 @@ def _is_file_count_limit_error(err: Exception) -> bool:
     """
     msg = str(err).lower()
     return "over the limit of" in msg and "files" in msg and "push" in msg
+
+
+def _filecount_overflow_retry(
+    err: Exception,
+    *,
+    canonical_repo: str,
+    repo_type: str,
+    path_in_repo: str,
+    retry_against_overflow: Callable[[], str],
+) -> str | None:
+    """Shared reactive file-count fallback for ``_upload`` AND
+    ``_upload_folder_filtered`` (#1108 → #2304).
+
+    Returns ``None`` when the caller should keep its legacy failure path (the
+    error is not a file-count refusal, the kill switch is off, or the refusal
+    is not reroutable), else the overflow retry's own result (``""`` = the
+    retry itself failed; truthy = the verified overflow URL).
+
+    Gate ORDER is load-bearing (#2304 plan §4 trap 1): the kill switch +
+    message match come FIRST — ``EPM_HF_FILECOUNT_FALLBACK=0`` produces ZERO
+    new side effects, sentinel writes included — the observation is recorded
+    SECOND (every enabled file-count refusal is observed, reroutable or not),
+    and the routing conjuncts come LAST, so a refusal on the overflow repo
+    itself (both-repos-at-cap) still lands a sentinel row before the caller's
+    legacy failure path runs.
+
+    Recursion is bounded by construction: the closure retries against
+    :data:`DEFAULT_OVERFLOW_REPO`, on which the ``canonical_repo !=
+    DEFAULT_OVERFLOW_REPO`` conjunct short-circuits (depth <= 2).
+    """
+    if not (_filecount_fallback_enabled() and _is_file_count_limit_error(err)):
+        return None
+    _record_filecount_observation(canonical_repo, repo_type, err)  # fail-soft
+    if not (repo_type in ("model", "dataset") and canonical_repo != DEFAULT_OVERFLOW_REPO):
+        # Observed + recorded, but not a reroutable refusal.
+        return None
+    logger.warning(
+        "File-count limit rejection on %s (%s) — falling back to overflow repo %s",
+        canonical_repo,
+        err,
+        DEFAULT_OVERFLOW_REPO,
+    )
+    result = retry_against_overflow()
+    if result:
+        _emit_overflow_routing_event(
+            original_repo=canonical_repo,
+            effective_repo=DEFAULT_OVERFLOW_REPO,
+            path_in_repo=path_in_repo,
+            reason="file-count-limit-reactive",
+        )
+        # Fail-soft breadcrumb on the CANONICAL repo (non-LFS, small). It ADDS
+        # one file per reroute — fine near the limit; at EXACTLY the cap it
+        # degrades EXPLICITLY (reason=overflow-pointer-unwritable-filecount-cap,
+        # #2304) instead of silently skipping.
+        _write_overflow_pointer(
+            canonical_repo=canonical_repo,
+            path_in_repo=path_in_repo,
+            overflow_repo=DEFAULT_OVERFLOW_REPO,
+            repo_type=repo_type,
+        )
+    return result
 
 
 def _is_transient_upload_error(err: Exception) -> bool:
@@ -1444,17 +1733,24 @@ def _upload(
     is never a useful Hub artifact and historically accounted for hundreds of
     GB of accidental residue.
 
-    Reactive file-count fallback (#1108): a MODEL-repo upload rejected with
-    HF's repo-wide 100k file-count message (:func:`_is_file_count_limit_error`)
-    is retried once against the private :data:`DEFAULT_OVERFLOW_REPO` (same
-    ``path_in_repo``), emitting the #564 routing event
-    (``reason="file-count-limit-reactive"``) + the ``OVERFLOW_POINTER.json``
-    breadcrumb on the canonical repo after a VERIFIED overflow landing.
-    Default ON; kill switch ``EPM_HF_FILECOUNT_FALLBACK=0``
-    (:func:`_filecount_fallback_enabled`). Recursion is bounded by
-    construction — the recursive call targets the overflow repo, on which the
-    guard short-circuits. Every other failure keeps the legacy
-    log-and-return-"" behavior; the success path is byte-unchanged.
+    Reactive file-count fallback (#1108; extended to dataset repos + bulk
+    uploads by #2304): a model- OR dataset-repo upload rejected with HF's
+    repo-wide file-count message (:func:`_is_file_count_limit_error`) is
+    retried once against the private :data:`DEFAULT_OVERFLOW_REPO` (same
+    ``path_in_repo``) via the shared :func:`_filecount_overflow_retry` helper,
+    which emits the #564 routing event (``reason="file-count-limit-reactive"``)
+    + the ``OVERFLOW_POINTER.json`` breadcrumb on the canonical repo after a
+    VERIFIED overflow landing, and records an observed-count sentinel row
+    (:func:`_record_filecount_observation`) for EVERY enabled file-count
+    refusal, reroutable or not. Default ON; kill switch
+    ``EPM_HF_FILECOUNT_FALLBACK=0`` (:func:`_filecount_fallback_enabled` —
+    zero new side effects when off). Recursion is bounded by construction —
+    the retry closure targets the overflow repo, on which the helper's
+    identity conjunct short-circuits. Every other failure keeps the legacy
+    log-and-return-"" behavior; the verified-success path additionally appends
+    a fail-soft sentinel RECOVERY row when a prior blocked observation exists
+    for this (repo, type) (#2304 — the one new, fail-soft side effect on the
+    model path; ROUTING behavior there is unchanged).
 
     Args:
         local_path: Local file or directory to upload (already resolved to Path).
@@ -1550,6 +1846,18 @@ def _upload(
             ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
         )
 
+    # Secret upload gate (2026-08-17): scan every Hub-bound text file / tar
+    # member for real-secret-grade strings BEFORE any network I/O. Four HF
+    # secret-scanning alerts (2026-06-15 → 2026-08-17) all traced to corpus
+    # text with pasted third-party credentials landing on the PUBLIC data
+    # repo unscanned; the gate makes that structurally impossible via this
+    # path. Placed BEFORE HfApi construction and OUTSIDE the try below (the
+    # #595 / #1190 / #1738 pre-try precedent) so it propagates regardless of
+    # raise_on_error. Never mutates bytes — remediation is
+    # scripts/scrub_secrets.py, then re-pack/re-hash. Kill switch:
+    # EPM_SECRET_UPLOAD_GATE=0.
+    assert_upload_clean([local_path], what=f"_upload:{repo_id}/{path_in_repo}")
+
     api = HfApi(token=token)
 
     # Repo should already exist (public), but create if missing
@@ -1616,25 +1924,24 @@ def _upload(
             shutil.rmtree(str(local_path), ignore_errors=True)
             logger.info("Deleted local path: %s", local_path)
 
+        # #2304: fail-soft blocked→accepting sentinel transition (writes only
+        # when a prior blocked observation exists for this (repo, type)).
+        _maybe_record_filecount_recovery(repo_id, repo_type)
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
-        if (
-            _filecount_fallback_enabled()
-            and _is_file_count_limit_error(e)
-            and repo_type == "model"
-            and repo_id != DEFAULT_OVERFLOW_REPO
-        ):
-            logger.warning(
-                "File-count limit rejection on %s (%s) — falling back to overflow repo %s",
-                repo_id,
-                e,
-                DEFAULT_OVERFLOW_REPO,
-            )
-            # Bounded by construction: the recursive call carries
-            # repo_id=DEFAULT_OVERFLOW_REPO, on which the guard above
-            # short-circuits. delete_after rides along, so the local copy is
-            # reaped only after the recursive call's OWN verified landing.
-            result = _upload(
+        # #1108/#2304 reactive file-count fallback (shared helper; the
+        # recursive closure carries repo_id=DEFAULT_OVERFLOW_REPO, on which
+        # the helper's identity conjunct short-circuits — bounded recursion.
+        # delete_after rides along, so the local copy is reaped only after the
+        # recursive call's OWN verified landing; raise_on_error rides along,
+        # so a failed fallback under raise_on_error=True raises from the
+        # recursive call).
+        fallback = _filecount_overflow_retry(
+            e,
+            canonical_repo=repo_id,
+            repo_type=repo_type,
+            path_in_repo=path_in_repo,
+            retry_against_overflow=lambda: _upload(
                 local_path,
                 DEFAULT_OVERFLOW_REPO,
                 repo_type,
@@ -1644,23 +1951,10 @@ def _upload(
                 ignore_patterns=ignore_patterns,
                 private=True,
                 raise_on_error=raise_on_error,
-            )
-            if result:
-                _emit_overflow_routing_event(
-                    original_repo=repo_id,
-                    effective_repo=DEFAULT_OVERFLOW_REPO,
-                    path_in_repo=path_in_repo,
-                    reason="file-count-limit-reactive",
-                )
-                # Fail-soft breadcrumb on the CANONICAL repo (non-LFS, small).
-                # It ADDS one file per reroute — fine near the limit, fails
-                # soft (logged) at exactly 100,000.
-                _write_overflow_pointer(
-                    canonical_repo=repo_id,
-                    path_in_repo=path_in_repo,
-                    overflow_repo=DEFAULT_OVERFLOW_REPO,
-                )
-            return result
+            ),
+        )
+        if fallback is not None:
+            return fallback
         if raise_on_error:
             logger.error("Upload failed: %s. Raising (raise_on_error=True).", e)
             raise
@@ -1677,6 +1971,8 @@ def _upload_folder_filtered(
     expected_repo_paths: list[str],
     ignore_patterns: list[str] | None = None,
     delete_after: bool = False,
+    *,
+    private: bool = False,
 ) -> str:
     """Bulk-upload a SUBSET of a local folder in ONE ``upload_folder`` commit.
 
@@ -1715,11 +2011,27 @@ def _upload_folder_filtered(
             after this returns a non-empty (verified) URL — this helper never
             deletes (so it cannot remove a file whose committed prefix was not
             verified; the set-verify happens BEFORE the caller's unlink).
+        private: create a MISSING repo as private (threaded into create_repo).
+            Keyword-only with a byte-preserving default (#2304) — every
+            existing call site keeps its shape; the overflow fallback passes
+            True so a not-yet-existing overflow repo is never created PUBLIC
+            (same rationale as :func:`_upload`'s ``private`` arg, #564).
+
+    Reactive file-count fallback (#2304): a canonical-repo bulk commit
+    rejected with HF's repo-wide file-count message is retried once against
+    the private :data:`DEFAULT_OVERFLOW_REPO` via the shared
+    :func:`_filecount_overflow_retry` helper (same ``path_in_repo`` +
+    ``expected_repo_paths`` — the expected paths are repo-relative, so the
+    recursive call re-runs the exact-set verify against the OVERFLOW repo for
+    real). Only the terminal ``except`` reroutes; the verify-miss ``return
+    ""`` inside the try (an INCOMPLETE canonical commit — the server accepted
+    the push) is deliberately NOT a fallback trigger (#2304 plan §4 trap 3).
 
     Returns:
-        ``"{repo_id}/{path_in_repo}"`` on verified success, ``""`` on any
-        failure or incomplete commit. ``delete_after`` is accepted for signature
-        symmetry but intentionally not acted on here; see the arg note above.
+        ``"{repo_id}/{path_in_repo}"`` on verified success (the OVERFLOW-repo
+        URL when the #2304 fallback rerouted), ``""`` on any failure or
+        incomplete commit. ``delete_after`` is accepted for signature symmetry
+        but intentionally not acted on here; see the arg note above.
     """
     # delete_after is verified-before-acted-on by the CALLER (set-verify happens
     # below, before any unlink) — this helper never deletes, so a partial commit
@@ -1751,7 +2063,7 @@ def _upload_folder_filtered(
     api = HfApi(token=token)
 
     try:
-        api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
+        api.create_repo(repo_id, repo_type=repo_type, private=private, exist_ok=True)
     except Exception as e:
         logger.warning("Could not create/verify repo %s: %s", repo_id, e)
 
@@ -1807,8 +2119,37 @@ def _upload_folder_filtered(
             repo_id,
             path_in_repo,
         )
+        # #2304: fail-soft blocked→accepting sentinel transition (writes only
+        # when a prior blocked observation exists for this (repo, type)).
+        _maybe_record_filecount_recovery(repo_id, repo_type)
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
+        # #2304 reactive file-count fallback — terminal except ONLY (the
+        # verify-miss `return ""` inside the try is an incomplete canonical
+        # commit, deliberately not rerouted). Bounded recursion: the closure
+        # carries repo_id=DEFAULT_OVERFLOW_REPO, on which the helper's
+        # identity conjunct short-circuits. expected_repo_paths are
+        # repo-relative, so the recursive call's exact-set verify runs for
+        # real against the overflow repo.
+        fallback = _filecount_overflow_retry(
+            e,
+            canonical_repo=repo_id,
+            repo_type=repo_type,
+            path_in_repo=path_in_repo,
+            retry_against_overflow=lambda: _upload_folder_filtered(
+                local_dir,
+                DEFAULT_OVERFLOW_REPO,
+                repo_type,
+                path_in_repo,
+                allow_patterns,
+                expected_repo_paths,
+                ignore_patterns=ignore_patterns,
+                delete_after=delete_after,
+                private=True,
+            ),
+        )
+        if fallback is not None:
+            return fallback
         logger.error("Bulk upload failed: %s. Keeping local files.", e)
         return ""
 
@@ -1892,7 +2233,10 @@ def upload_model(
     )
     if rerouted and result:
         _write_overflow_pointer(
-            canonical_repo=repo_id, path_in_repo=path_in_repo, overflow_repo=effective_repo
+            canonical_repo=repo_id,
+            path_in_repo=path_in_repo,
+            overflow_repo=effective_repo,
+            repo_type="model",
         )
     return result
 
@@ -2113,11 +2457,18 @@ def upload_raw_completions_to_data_repo(
 
     Returns:
         dict mapping local relative path → HF Hub URL on success (one entry per
-        matched file, identical to the prior per-file return contract). Empty
-        dict (with a logged warning) if no files were found.
+        matched file, identical to the prior per-file return contract). URLs
+        are derived from the bulk upload's OWN returned base URL (#2304), so
+        when the canonical data repo refused the push at its file-count cap
+        and the reactive fallback landed the tree on the private
+        :data:`DEFAULT_OVERFLOW_REPO`, the returned URLs name the overflow
+        repo — never a canonical path that holds nothing. Empty dict (with a
+        logged warning) if no files were found.
 
     Raises:
-        RuntimeError: on any bulk-upload failure or incomplete commit.
+        RuntimeError: on any bulk-upload failure or incomplete commit
+        (including the both-repos-at-cap case, where the fallback itself was
+        refused).
 
     Example:
         >>> upload_raw_completions_to_data_repo(
@@ -2164,7 +2515,10 @@ def upload_raw_completions_to_data_repo(
             f"{eval_results_dir} → {DEFAULT_DATASET_REPO}/{path_in_repo}"
         )
 
-    uploaded = {rel: f"{DEFAULT_DATASET_REPO}/{path_in_repo}/{rel}" for rel in rels}
+    # #2304: derive URLs from the bulk upload's OWN base URL — under a
+    # file-count fallback the tree landed on the OVERFLOW repo, and hardcoding
+    # DEFAULT_DATASET_REPO here would return canonical paths holding nothing.
+    uploaded = {rel: f"{base_url}/{rel}" for rel in rels}
 
     if delete_after:
         # Verified above (the EXACT-set check inside _upload_folder_filtered),
@@ -2222,6 +2576,101 @@ def download_dataset(
         return ""
 
 
+# ─── Staging disk-headroom assert (#2097) ───────────────────────────────────
+# Mechanizes the prose-only CLAUDE.md compute-character element 5 (staging
+# path named up front + >=1.5x headroom for multi-GB stages; incident #1393:
+# a 14 GB inline HF pull filled `/` -> ENOSPC) at the canonical staging
+# helpers, so every stage_hub_prefix caller inherits the refusal by default.
+
+DEFAULT_STAGE_HEADROOM_FACTOR = 1.5
+STAGE_HEADROOM_MIN_FLOOR_GB = 1.0
+
+
+def _stage_headroom_factor() -> float:
+    """Headroom factor for the staging assert (env
+    ``EPM_HF_STAGE_HEADROOM_FACTOR``; garbled / non-positive falls back to
+    the 1.5 default WITH a logged warning — the preflight
+    ``_vm_root_disk_floor_gb`` env-resolver convention). Never raises."""
+    raw = os.environ.get("EPM_HF_STAGE_HEADROOM_FACTOR", "")
+    if not raw.strip():
+        return DEFAULT_STAGE_HEADROOM_FACTOR
+    try:
+        val = float(raw)
+    except ValueError:
+        val = -1.0
+    # `not (val > 0)` rather than `val <= 0`: float("nan") compares False both
+    # ways, and a nan factor would silently disarm the statvfs floor check.
+    if not (val > 0):
+        logger.warning(
+            "[stage-headroom] garbled/non-positive EPM_HF_STAGE_HEADROOM_FACTOR=%r — "
+            "falling back to the default %.1fx",
+            raw,
+            DEFAULT_STAGE_HEADROOM_FACTOR,
+        )
+        return DEFAULT_STAGE_HEADROOM_FACTOR
+    return val
+
+
+def _assert_stage_headroom(
+    dest_dir: Path | str,
+    missing: list[tuple[str, int | None]],
+    *,
+    what: str,
+    phase: str = "hub-staging",
+) -> None:
+    """ONE prefix-level disk-headroom assert BEFORE a staging download (#2097).
+
+    Sizes the floor on the MISSING files only (a skip-existing resume never
+    re-asserts for already-staged bytes): ``need_gb = max(sum(known sizes),
+    1 GB floor) x factor`` (factor: :func:`_stage_headroom_factor`, default
+    1.5), then delegates to
+    :func:`explore_persona_space.orchestrate.preflight.assert_out_root_headroom`
+    — statvfs free-vs-floor plus a 1 GB fallocate canary at the mount
+    ``dest_dir`` ACTUALLY resolves to — so the refusal is the mount-naming
+    RuntimeError before any bytes move. ONE assert per staging call, never
+    per-file (the canary is a 1 GB fallocate; N per-file asserts would
+    fallocate N GB). ANY ``None`` size among the missing files logs a loud
+    degrade warning naming n_unknown/n_missing — a mixed known+None listing
+    silently under-sizes ``need_gb`` otherwise (fail direction is status
+    quo — no refusal — but the degrade must be visible). Kill switch
+    ``EPM_HF_STAGE_HEADROOM_SKIP=1`` logs a loud warning and returns —
+    never a silent skip.
+
+    MooseFS caveat: on RunPod ``/workspace`` statvfs reports SHARE-level
+    free (terabytes) and is blind to the per-pod ~130 GB EDQUOT quota until
+    it is exhausted; the fallocate canary catches only an ALREADY-exhausted
+    quota — a statvfs pass here is NOT quota headroom
+    (``.claude/rules/gotchas.md`` "RunPod MooseFS per-pod disk quota").
+    """
+    if os.environ.get("EPM_HF_STAGE_HEADROOM_SKIP", "").strip() in {"1", "true", "yes"}:
+        logger.warning(
+            "[stage-headroom] headroom assert SKIPPED by EPM_HF_STAGE_HEADROOM_SKIP=1 "
+            "for %s (%d missing file(s)) — an over-headroom staging can ENOSPC mid-stage",
+            what,
+            len(missing),
+        )
+        return
+    # Lazy import: preflight is a sibling orchestrate module; hub must stay
+    # importable without it at module-import time (hub.py lazy-import style).
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+    n_unknown = sum(1 for _, sz in missing if sz is None)
+    known_bytes = float(sum(sz for _, sz in missing if sz is not None))
+    if n_unknown:
+        logger.warning(
+            "[stage-headroom] %d of %d missing file(s) under %s carry no server-side "
+            "size — need_gb degrades to max(known bytes, %.0f GB floor) x factor and "
+            "can under-size the assert",
+            n_unknown,
+            len(missing),
+            what,
+            STAGE_HEADROOM_MIN_FLOOR_GB,
+        )
+    factor = _stage_headroom_factor()
+    need_gb = max(known_bytes, STAGE_HEADROOM_MIN_FLOOR_GB * 1e9) * factor / 1e9
+    assert_out_root_headroom(dest_dir, need_gb, phase=phase)
+
+
 def stage_hub_file(
     repo_id: str,
     path_in_repo: str,
@@ -2231,6 +2680,7 @@ def stage_hub_file(
     revision: str | None = None,
     token: str | None = None,
     overwrite: bool = False,
+    size_bytes: int | None = None,
 ) -> Path:
     """Retried, ATOMIC, FAIL-LOUD single-file Hub download for staging legs (#1402).
 
@@ -2244,28 +2694,83 @@ def stage_hub_file(
     - idempotent: an existing target returns without a network call
       (``overwrite=True`` forces);
     - raises on exhaustion — never the fail-soft ``""`` contract of
-      :func:`download_dataset` (which is unchanged; staging must fail loud).
+      :func:`download_dataset` (which is unchanged; staging must fail loud);
+    - OPT-IN headroom assert (#2097): pass ``size_bytes`` (the expected file
+      size) and the helper asserts local-disk headroom at ``target.parent``
+      via :func:`_assert_stage_headroom` (``need_gb = max(size_bytes, 1 GB
+      floor) x EPM_HF_STAGE_HEADROOM_FACTOR``) BEFORE downloading — the
+      assert runs only when a download will actually happen (an existing
+      target with ``overwrite=False`` returns first, so a skip-existing
+      resume never asserts). The default ``size_bytes=None`` keeps every
+      existing caller byte-identical (no assert). ``stage_hub_prefix`` does
+      NOT thread per-file sizes — its ONE prefix-level assert covers the
+      whole download.
     """
     from huggingface_hub import hf_hub_download
 
     target = Path(target)
     if target.exists() and not overwrite:
         return target
+    if size_bytes is not None:
+        _assert_stage_headroom(
+            target.parent, [(path_in_repo, size_bytes)], what=f"{repo_id}:{path_in_repo}"
+        )
     target.parent.mkdir(parents=True, exist_ok=True)
     tok = token or os.environ.get("HF_TOKEN")
-    with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
-        local = retry_transient(
-            lambda: hf_hub_download(
-                repo_id=repo_id,
-                filename=path_in_repo,
-                repo_type=repo_type,
-                revision=revision,
-                local_dir=td,
-                token=tok,
-            ),
-            what=f"stage_hub_file({repo_id}:{path_in_repo})",
+    from huggingface_hub.utils import EntryNotFoundError
+
+    try:
+        with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
+            local = retry_transient(
+                lambda: hf_hub_download(
+                    repo_id=repo_id,
+                    filename=path_in_repo,
+                    repo_type=repo_type,
+                    revision=revision,
+                    local_dir=td,
+                    token=tok,
+                ),
+                what=f"stage_hub_file({repo_id}:{path_in_repo})",
+            )
+            os.replace(local, target)
+    except EntryNotFoundError:
+        # #2332 packed-prefix fallback (central seam, review r2): the 8 repack
+        # target prefixes replace loose files with `<prefix>/__packed__/` tar
+        # shards + index. When the LOOSE path 404s AND the path sits under a
+        # repacked target prefix AND its merged index.json exists on the repo,
+        # serve the byte-identical member via the accessor; EVERY other path
+        # re-raises the original error unchanged (packed_fallback returns None
+        # for non-target prefixes / unpacked prefixes / non-member paths, and
+        # PROPAGATES integrity failures loudly). Revision note: a pinned
+        # `revision=` request that 404s falls through to the HEAD packed copy —
+        # the repack is a verified byte-identical MOVE, so the bytes match any
+        # revision at which the loose file existed.
+        from .packed_prefix import packed_fallback
+
+        data = packed_fallback(repo_id, path_in_repo, repo_type=repo_type)
+        if data is None:
+            raise
+        logger.info(
+            "stage_hub_file: %s:%s served from the #2332 packed prefix (__packed__ fallback)",
+            repo_id,
+            path_in_repo,
         )
-        os.replace(local, target)
+        tmp_name: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                dir=target.parent, prefix=".hfstage-packed-", delete=False
+            ) as tf:
+                tmp_name = tf.name
+                tf.write(data)
+            os.replace(tmp_name, target)
+        except BaseException:
+            # r3 review minor: don't leak an orphan .hfstage-packed-* tmp file
+            # when the write/replace fails (disk full). Cleanup-only suppress —
+            # the ORIGINAL failure always propagates.
+            if tmp_name is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_name)
+            raise
     return target
 
 
@@ -2290,9 +2795,10 @@ def stage_hub_prefix(
 ) -> list[Path]:
     """Retried scoped-prefix staging — the #833 recipe as ONE canonical helper (#1402).
 
-    ``list_hf_files_under_path`` (server-side scoped tree walk, already retried —
-    NEVER ``snapshot_download`` / a bare full listing against the ~1M-file data
-    repo) + per-file :func:`stage_hub_file` in a bounded thread pool
+    ``list_hf_entries_under_path`` (server-side scoped tree walk, already
+    retried — NEVER ``snapshot_download`` / a bare full listing against the
+    ~1M-file data repo; ONE listing serves both paths and sizes, #2097) +
+    per-file :func:`stage_hub_file` in a bounded thread pool
     (``max_workers<=6``: the org 2500-req/5-min quota, #658/#833).
     ``revision=None`` resolves ONE commit sha up front via retried ``repo_info``,
     so every file comes from one snapshot (the #833 coherence note). Files land
@@ -2303,6 +2809,20 @@ def stage_hub_prefix(
     outage can serially burn up to ~N x budget across pool workers before the
     fail-loud raise (consistent with existing per-call ``_retry_upload``
     semantics).
+
+    Default-ON prefix-level disk-headroom assert (#2097): after the listing,
+    BEFORE the download pool, the projected bytes of the MISSING files
+    (targets not yet on disk — an all-files-already-staged resume no-op
+    never asserts) are checked against free space at the mount ``dest_dir``
+    resolves to via :func:`_assert_stage_headroom` (``need_gb =
+    max(known missing bytes, 1 GB floor) x EPM_HF_STAGE_HEADROOM_FACTOR``,
+    default 1.5x; kill switch ``EPM_HF_STAGE_HEADROOM_SKIP=1`` logs loud).
+    The refusal is a mount-naming RuntimeError instead of an ENOSPC
+    mid-stage (the #1393 class). ONE assert per call, never per-file.
+    MooseFS caveat: on RunPod ``/workspace`` statvfs shows share-level free
+    and is blind to the per-pod ~130 GB quota below exhaustion — the
+    assert's fallocate canary catches only an ALREADY-exhausted quota, so a
+    pass here is NOT quota headroom (see ``_assert_stage_headroom``).
 
     Observability + wall-timeout (#2153, the #1739 silent-hang class):
 
@@ -2343,14 +2863,26 @@ def stage_hub_prefix(
             what=f"repo_info({repo_id})",
         )
         revision = str(info.sha)
-    files = list_hf_files_under_path(api, repo_id, prefix, repo_type=repo_type, revision=revision)
-    if not files:
+    entries = list_hf_entries_under_path(
+        api, repo_id, prefix, repo_type=repo_type, revision=revision
+    )
+    if not entries:
         raise FileNotFoundError(f"no files under {repo_id}@{revision}:{prefix}")
+    files = [p for p, _ in entries]
+    known_gb = sum(sz for _, sz in entries if sz is not None) / 1e9
+    n_unknown = sum(1 for _, sz in entries if sz is None)
+    unknown_note = f", {n_unknown} unknown-size" if n_unknown else ""
     print(
-        f"[stage_hub_prefix] {len(files)} files under {repo_id}@{revision}:{prefix}",
+        f"[stage_hub_prefix] {len(files)} files (~{known_gb:.2f} GB known{unknown_note}) "
+        f"under {repo_id}@{revision}:{prefix}",
         flush=True,
     )
     dest_dir = Path(dest_dir)
+    # Prefix-level headroom assert on the MISSING files only (#2097) — a
+    # skip-existing resume with every target already on disk never asserts.
+    missing = [(f, sz) for f, sz in entries if not (dest_dir / f).exists()]
+    if missing:
+        _assert_stage_headroom(dest_dir, missing, what=f"{repo_id}@{revision}:{prefix}")
     staged: dict[str, Path] = {}
     with ThreadPoolExecutor(max_workers=min(max_workers, len(files))) as pool:
         futs = {
@@ -2398,6 +2930,205 @@ def stage_hub_prefix(
                 flush=True,
             )
     return [staged[f] for f in files]
+
+
+def _parse_shard_manifest(text: str, *, what: str) -> tuple[list[str], dict[str, str]]:
+    """Parse a ``<stem>.manifest.json``; raise RuntimeError on empty/missing parts.
+
+    Schema pinned from the #2054 producer (``_shard_large_jsonl_for_upload``):
+    ``{"parts": [<name>, ...], "sha256": {<name>: <hex>}, ...}`` —
+    ``line_counts`` / ``source`` are optional and ignored. Returns
+    ``(parts, sha256_by_part_name)``; a manifest listing no parts raises
+    (fail-loud — never a silent empty resolve).
+    """
+    man = json.loads(text)
+    parts = list(man.get("parts") or [])
+    if not parts:
+        raise RuntimeError(f"shard manifest lists no parts: {what}")
+    return parts, dict(man.get("sha256") or {})
+
+
+def resolve_sharded_text_paths(
+    api,
+    repo_id: str,
+    path_in_repo: str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+) -> tuple[str, list[str]]:
+    """Name-set resolution for a shardable text artifact (#2119).
+
+    Probes ``<stem>.manifest.json`` (retried ``file_exists`` via
+    ``retry_transient`` — the #1335 lesson: an un-retried HEAD probe turns one
+    transient 429 into a wrong branch). Present -> downloads + parses the
+    manifest (``stage_hub_file`` into a tempdir) and returns
+    ``("sharded", [manifest, part1, ...])`` as repo paths, parts in manifest
+    order. Absent -> retried ``file_exists`` on the unsharded name; present ->
+    ``("unsharded", [path_in_repo])``; NEITHER exists -> RuntimeError
+    (fail-loud). Feed the returned list to :func:`verify_repo_paths_uploaded`
+    (``path_in_repo=`` keyword REQUIRED) for the consumable-form verification
+    leg.
+
+    The manifest repo path is derived as
+    ``PurePosixPath(path_in_repo).with_suffix("").as_posix() +
+    ".manifest.json"`` — single-extension stems, matching the #2054 producer's
+    ``f.with_name(f"{f.stem}.manifest.json")`` (``foo.v2.jsonl`` ->
+    ``foo.v2.manifest.json`` on BOTH sides). ``api`` is the caller's
+    ``HfApi`` (first positional, mirroring ``list_hf_files_under_path``).
+    """
+    base = PurePosixPath(path_in_repo)
+    manifest_repo_path = base.with_suffix("").as_posix() + ".manifest.json"
+    has_manifest = retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in retry_transient at call site
+        lambda: api.file_exists(
+            repo_id, manifest_repo_path, repo_type=repo_type, revision=revision
+        ),
+        what=f"file_exists({repo_id}:{manifest_repo_path})",
+    )
+    if has_manifest:
+        with tempfile.TemporaryDirectory(prefix=".shard-manifest-") as td:
+            mpath = stage_hub_file(
+                repo_id,
+                manifest_repo_path,
+                Path(td) / PurePosixPath(manifest_repo_path).name,
+                repo_type=repo_type,
+                revision=revision,
+                overwrite=True,
+            )
+            man_text = mpath.read_text(encoding="utf-8")
+        parts, _ = _parse_shard_manifest(man_text, what=f"{repo_id}:{manifest_repo_path}")
+        part_paths = [(base.parent / name).as_posix() for name in parts]
+        return ("sharded", [manifest_repo_path, *part_paths])
+    has_unsharded = retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in retry_transient at call site
+        lambda: api.file_exists(repo_id, path_in_repo, repo_type=repo_type, revision=revision),
+        what=f"file_exists({repo_id}:{path_in_repo})",
+    )
+    if has_unsharded:
+        return ("unsharded", [path_in_repo])
+    raise RuntimeError(
+        f"neither {manifest_repo_path} nor {path_in_repo} exists on "
+        f"{repo_id}@{revision or 'main'} ({repo_type}) — nothing to resolve"
+    )
+
+
+def stage_sharded_text(
+    repo_id: str,
+    path_in_repo: str,
+    target: Path | str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    overwrite: bool = False,
+) -> Path:
+    """Manifest-first stager for shardable text artifacts (#2119; the #2054
+    r15 recipe, shared).
+
+    Name resolution is DELEGATED to :func:`resolve_sharded_text_paths` so the
+    manifest-first probe lives in exactly ONE code path. Sharded form: stage
+    the manifest + every part via :func:`stage_hub_file` (retried, atomic),
+    sha256-verify each part against the manifest (a missing sha entry OR a
+    mismatch raises — refuse unverified shards), concatenate in manifest order
+    into ``target`` via tmp + ``os.replace``. Unsharded fallback ONLY when no
+    manifest exists on the Hub. A missing part under an existing manifest
+    propagates ``stage_hub_file``'s fail-loud raise — NEVER falls back to the
+    unsharded name (a stale unsharded blob beside a manifest is prior-round
+    residue: the #2054 r6/`epm:failure v4` defect). Logs which path was taken.
+    Idempotent: an existing ``target`` returns without a network call
+    (``overwrite=True`` forces), mirroring :func:`stage_hub_file`.
+    """
+    from huggingface_hub import HfApi
+
+    target = Path(target)
+    if target.exists() and not overwrite:
+        logger.info("stage_sharded_text: target exists, skipping (%s)", target)
+        return target
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    form, repo_paths = resolve_sharded_text_paths(
+        api, repo_id, path_in_repo, repo_type=repo_type, revision=revision
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if form == "unsharded":
+        logger.info(
+            "stage_sharded_text: NO manifest on Hub for %s:%s -> pre-shard compat "
+            "fallback to the unsharded name",
+            repo_id,
+            path_in_repo,
+        )
+        return stage_hub_file(
+            repo_id,
+            path_in_repo,
+            target,
+            repo_type=repo_type,
+            revision=revision,
+            overwrite=True,
+        )
+    logger.info(
+        "stage_sharded_text: manifest present for %s:%s -> sharded stager (manifest-first)",
+        repo_id,
+        path_in_repo,
+    )
+    manifest_repo_path, part_repo_paths = repo_paths[0], repo_paths[1:]
+    mpath = stage_hub_file(
+        repo_id,
+        manifest_repo_path,
+        target.parent / PurePosixPath(manifest_repo_path).name,
+        repo_type=repo_type,
+        revision=revision,
+        overwrite=True,
+    )
+    _, want_sha = _parse_shard_manifest(
+        mpath.read_text(encoding="utf-8"), what=f"{repo_id}:{manifest_repo_path}"
+    )
+    local_parts: list[Path] = []
+    for part_repo_path in part_repo_paths:
+        name = PurePosixPath(part_repo_path).name
+        lp = stage_hub_file(
+            repo_id,
+            part_repo_path,
+            target.parent / name,
+            repo_type=repo_type,
+            revision=revision,
+            overwrite=True,
+        )
+        exp = want_sha.get(name)
+        if not exp:
+            # The #2054 writer always records per-shard shas; an absent entry
+            # signals a foreign/malformed manifest — refuse the unverified shard.
+            raise RuntimeError(
+                f"shard manifest carries no sha256 for {name} "
+                f"({repo_id}:{manifest_repo_path}) — refusing unverified shard"
+            )
+        got = hashlib.sha256(lp.read_bytes()).hexdigest()
+        if got != exp:
+            raise RuntimeError(
+                f"shard {name} sha mismatch: {got[:12]}... != manifest {str(exp)[:12]}..."
+            )
+        local_parts.append(lp)
+    # Per-invocation tmp name, NOT a deterministic `<target>.tmp` (#2119 review
+    # Minor 1): two concurrent stagers targeting the same `target` would share a
+    # deterministic name, and the second's "wb" truncation could interleave with
+    # the first's writes so `os.replace` publishes unverified bytes — the #1315
+    # fan-out-shared-staging class. `dir=target.parent` keeps the rename
+    # same-filesystem (the #1335 EXDEV gotcha); `stage_hub_file` uses a
+    # per-invocation tempdir for the same reason.
+    fd, tmp_name = tempfile.mkstemp(dir=target.parent, prefix=".shard-concat-", suffix=".tmp")
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as out:
+            for lp in local_parts:
+                out.write(lp.read_bytes())
+        os.replace(tmp, target)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+    logger.info(
+        "stage_sharded_text: staged %s (%d shard(s) -> %d B)",
+        target,
+        len(local_parts),
+        target.stat().st_size,
+    )
+    return target
 
 
 def list_hub_datasets(

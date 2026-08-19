@@ -1,0 +1,172 @@
+{
+  "commit": "849c79c4",
+  "render_id": "11006dea524b40b7",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:40:13Z",
+  "figsize": [
+    15.200000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "Context 1-layer @ 0.5",
+      "Mistake-style response rate (judge > 50)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context 1-layer @ 3.0",
+      "Mistake-style response rate (judge > 50)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 1-layer @ 5.0",
+      "Mistake-style response rate (judge > 50)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Context 2-layer @ 0.25",
+      "Mistake-style response rate (judge > 50)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Context 3-layer @ 0.25",
+      "Mistake-style response rate (judge > 50)": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Unsteered finetune (Mistaken opinions)",
+      "Mistake-style response rate (judge > 50)": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Context 1-layer @ 1.5",
+      "Mistake-style response rate (judge > 50)": 0.99,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Paper 3-layer @ 0.25",
+      "Mistake-style response rate (judge > 50)": 0.98,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Paper 1-layer @ 0.5",
+      "Mistake-style response rate (judge > 50)": 0.97,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Context 2-layer @ 1.5",
+      "Mistake-style response rate (judge > 50)": 0.97,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Context 2-layer @ 0.75",
+      "Mistake-style response rate (judge > 50)": 0.9595959595959596,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Paper 1-layer @ 1.5",
+      "Mistake-style response rate (judge > 50)": 0.93,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "Paper 1-layer @ 3.0",
+      "Mistake-style response rate (judge > 50)": 0.88,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Paper 3-layer @ 0.75",
+      "Mistake-style response rate (judge > 50)": 0.85,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Context 3-layer @ 0.75",
+      "Mistake-style response rate (judge > 50)": 0.85,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Paper 1-layer @ 5.0",
+      "Mistake-style response rate (judge > 50)": 0.77,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Paper 3-layer @ 1.5",
+      "Mistake-style response rate (judge > 50)": 0.41,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Context 3-layer @ 1.5",
+      "Mistake-style response rate (judge > 50)": 0.40404040404040403,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "Base model",
+      "Mistake-style response rate (judge > 50)": 0.010309278350515464,
+      "_kind": "bar",
+      "_group": 18
+    }
+  ],
+  "n_series": 19,
+  "total_points": 19,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Narrow-domain retention \u2014 training-distribution opinions questions",
+        "ylabel": "Mistake-style response rate (judge > 50)",
+        "xticklabels": [
+          "Context 1-layer @ 0.5",
+          "Context 1-layer @ 3.0",
+          "Context 1-layer @ 5.0",
+          "Context 2-layer @ 0.25",
+          "Context 3-layer @ 0.25",
+          "Unsteered finetune (Mistaken opinions)",
+          "Context 1-layer @ 1.5",
+          "Paper 3-layer @ 0.25",
+          "Paper 1-layer @ 0.5",
+          "Context 2-layer @ 1.5",
+          "Context 2-layer @ 0.75",
+          "Paper 1-layer @ 1.5",
+          "Paper 1-layer @ 3.0",
+          "Paper 3-layer @ 0.75",
+          "Context 3-layer @ 0.75",
+          "Paper 1-layer @ 5.0",
+          "Paper 3-layer @ 1.5",
+          "Context 3-layer @ 1.5",
+          "Base model"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

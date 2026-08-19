@@ -81,11 +81,12 @@ MAX_SEQS_PER_BATCH = int(os.environ.get("EPM_I841S_MAX_SEQS_PER_BATCH", "48"))
 # an (n, 3584) fp32 X_train + Y_train, so building ALL 27 transitions' groups at once
 # is ~77 GB of copies + the ~40 GB cx pool → exceeds the 170 GB host. Fit transitions
 # in chunks of MLP_GROUP_CHUNK groups (build → fit → free → gc), bounding live copies
-# to ~MLP_GROUP_CHUNK × Y_train. NOTE: fit_batched_split_mlp seeds each group's init in
-# BATCH ORDER (member g gets init g), so the fit is DETERMINISTIC + reproducible at a
-# FIXED chunk size but NOT bit-identical across chunk sizes — group_chunk is a pinned
-# nuisance parameter recorded in the stage-0 output. See mlp_scaling's NON-EQUIVALENCE
-# caveat.
+# to ~MLP_GROUP_CHUNK × Y_train. NOTE: since #926 (4dfcba056f) fit_batched_split_mlp
+# seeds each group under split_group_init_seed(seed, group.key), which depends only on
+# (seed, key) — never on batch position or chunking — so the fit is bit-identical
+# ACROSS chunk sizes as well as DETERMINISTIC at a fixed one. MLP_GROUP_CHUNK is a
+# pinned RAM knob recorded in the stage-0 output, NOT a nuisance seed. See
+# mlp_scaling's PARTITION INVARIANCE (#926) block in issue841_scaling_stage0.py.
 MLP_GROUP_CHUNK = int(os.environ.get("EPM_I841S_MLP_GROUP_CHUNK", "6"))
 
 
@@ -434,9 +435,10 @@ def _write_overflow_pointer_dataset(
     read it to locate the rerouted ``.pt`` on the overflow repo, so a silently-missing
     pointer makes a fresh-instance durability fetch treat the bucket as public and return
     a partial/empty shard set while the run reads green (Codex #841 v11 review). Raises
-    RuntimeError on any upload miss or exception. (hub._write_overflow_pointer targets
-    repo_type='model'; this is the dataset twin with the {overflow_repo, path_in_repo,
-    ts, reason} schema.)"""
+    RuntimeError on any upload miss or exception. (hub._write_overflow_pointer takes
+    repo_type as a parameter since #2304 and writes a DIFFERENT schema; this local twin
+    stays for the {overflow_repo, path_in_repo, ts, reason} schema its own readers —
+    fetch_capture_from_hf / hf_download_pt_maybe_overflow — parse.)"""
     from explore_persona_space.orchestrate import hub
 
     payload = {

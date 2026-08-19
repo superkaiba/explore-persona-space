@@ -1,0 +1,3315 @@
+{
+  "per_persona": {
+    "g67f39d8f2f10": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g449e7f44efd2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g85766cad1a59": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g639256a8882a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g77751d750216": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc0622c8d513c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6af1ffbeb05a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g87d95a1e9de8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf8de5c3492b4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g44e18eadc43d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdb368e19201d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g418f6a897d87": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1786eaf0f320": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2ebf74846bc2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g818d6c6f4cc2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g49552bc63582": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbb826634bcc5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9b64aa8603fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf627f421b590": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3f6fa45faba7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g50d4a615c8e2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g75e168f30ae2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g84279dbcbeb6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g474647d25634": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga06947bbb484": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5234f93e8b7d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5798860512b5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1fe8858365b0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g15a42501b9d3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge5ea63e8c511": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g49b6fbc321bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g708a80237b4a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gce5a00dc3e08": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd8ad5b7f44f4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfec7ed7b2973": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga35d4e233398": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd06703c16bd2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6a23f8e87c6a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g038e771b40e7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5a2d9aa36b07": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3828afbc7e1b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g28053bcda263": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8c5dc26af344": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6cd3bdfd8e1c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g365085121595": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1c9294137825": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcdaac099825a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0de3f0642444": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8f1036df3db6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3d1b128bdf8b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge58f66ccd624": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0f167c7abcce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2f6628ae65ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9ae94f5f3a62": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga27e9d4030ba": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g66dfc692e4b6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g13ef7b0b5134": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g13f05bac221d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g52218b966d7a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1b884353cac7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9ad281d5ed01": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1147baae0c6c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd856165d9e7f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9c476baf2183": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g16c99b7a1f78": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3dece32cee0b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5eb96fc0ebbb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb3ca0e02067c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdee16180e1b8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g44249a600f86": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga5087518fc09": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1708b33fe3cb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4e190dc0db18": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g52597b632c8f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfee7b20ece4f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g18b356ca2796": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g61173f467230": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gded227883e88": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0c9a2be685fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0554e86ebd13": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga8ba0601139f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g511072bfb5bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g665f634cd8a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge06c8899a407": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7dd8f2bd3b14": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1afc64b69d17": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd29acef7abd8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g409ebb2d45ac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1438b0d1f0fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gded38d70456d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc6fc41866957": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6e68632762b6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g868f348d2e3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb26b8eb2b535": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9f03068557fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6fd28c302a9f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb8f93af24338": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g02a5e408def1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdb1dfc32ae3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g49c0c6040d90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g91eb33fd7af4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd8b20b7a3f66": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g03b157784594": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc0d6b05358c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge311bde31e96": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g33028338fbdd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge3fb999ea831": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1f64c750d7bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g44ab1bce8a3b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1dd2d546892f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2144e8a52fa7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g57d872481a3b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3e607b617272": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6a9d380069c0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0f4fabd3f315": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd98986892125": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9e46da17975b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3a2c02c9e39f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g36a160b991a9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4f6962c1c3fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd3d44d9c5828": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gafa41d2cdf68": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2c1dc978a761": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g98fa2d76b43a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf2af6f51685e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf4df12871098": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4c518bf543b2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2a321e8b6e93": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4c2a0857760d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5c1347834c95": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0d9ff5f31eb0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g434413c18ca5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g005931b5fe5a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g90cc8e3344f5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge3fa6edf2a1f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb65335298726": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfc2d767bf9da": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g45e00e795d4f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9341cd9cdbf6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfcc6f056c8fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6b59f9c568d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4fce31a2dac4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8a95bb2b55ce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge0dfbd224ebb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g84b13bb4e973": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf6b3e56c177d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb635c5ec821b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8d3af3c62a70": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5f4efc2b179f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc053e16534a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g50e6d238d9f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8f6a95eff070": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9852dbe6f82e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gae31648841fc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gebe845208a4a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g19a317ea8ec6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaeff0d6d50ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g412eee7e007f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2f2cf499eb6d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8033a3a4abd9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g98e9f1050ce2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7f15f4aee376": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g45d4dd4f682d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3b712f5d672a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g93fc1f12fa29": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb50a6842f2ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geceda449f421": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9b235c7f6ce2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7f145c15ff6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6b0fa5354698": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga6cbefd75e29": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1c0db70156bc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7451b471e83b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf1b0703e552a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g49a48c7f9da8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6cd3cb184887": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g11c417264a98": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g87fedb3166d4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g96b57b155b55": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g066ec66bbb09": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g89629ee5209d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf2ab7cecd8fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g465fb4262f3e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd2609558e909": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g02ec944043a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbf26cb47f743": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1186ce48bb90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g010522fde8ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g752257e55ae6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4c65940a43e4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6e1e2f4dc5b1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd6d159f4ce8f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcfc50b90b311": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf68c8444672e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0481c2d06243": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g56efeec94798": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g91973c9f42fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g37b43a5c7142": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g77eafadfd767": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga4ca63ad4408": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaac73880bb55": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga64a21298d61": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc5d2385c0a22": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga8301b78eea4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf5cc27c83019": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc513be07cc9b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g472939ed87dc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3c61ff33f704": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g991153d4de08": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf2fd3adbc457": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g24467810a397": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf0248f1e0e5c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf39704a3c82e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9229c5bbdd46": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb3e69de4fffc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd4f4dd3c8834": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc61d0934b028": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcc515c8daafb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g87e70981a285": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf29190ea51a1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g30a976a5cb56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge498627073ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geb78ba328bf6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g953d82a62a61": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g52a3d32857d5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd2abd6ad9da2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g782c016f4a03": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g55ba5690dd3f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge06898b62178": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g00e5e65d0a1a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3c446c048d0f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2fb2dbef8edd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd17e12dbdb2c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf1d0deca2691": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g472902a328cc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0d3c02e8e88c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga36cdf2a576f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g17a7fe76955c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc1558c82a38c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g522bb9555160": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gca41e1c251a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2389c2dd2da9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga3874b1fc033": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gca8f62ab1c67": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga7ea9be3c040": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g186061b1aff1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g834155c4456a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd22809e2881a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5312761e9c1c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g22d546e2db30": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfaaf9d101059": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaa5112711350": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g684ea79bcf90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9642acd23e58": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga1a396262cf9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb09656c43137": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb266009403d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge9356e966d56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gac260462440b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3459f828db35": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6a3c8a721a29": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g758fd537a1c5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g43b03537ddf2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g58dba26cdda4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g18d85abc6018": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g93bd1733f35f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g670b28e1bdf7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g046a932c9fef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdc53119b7546": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc9a4afcb7dde": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gadddec5e8639": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdcf11ed37c7d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g64634a4cbc25": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc556bfd90786": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0eb203d805ea": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g427ee5969b49": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g37ea3c9142ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5b81b24a2189": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g32df267f4db3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf5472568ad41": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g721d6e04909a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbbdcddb2f522": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4e42d98c2810": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbda6d791c67d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g66d04ad494fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2e7d83c6d0e7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga3075a9bc34b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2473a56c88d2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g19cee43c4286": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7a5da86ceb9f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbf47c35a94b7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf9fd4bd51ce4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g11c32c8c31df": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge7feb6122560": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g05338aa74abb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3340d3875b6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g13985f37d0d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8a4796dfa834": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd8a78f90bbce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g20c29157bb7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "g67f39d8f2f10__00000__00": {
+      "reasoning": "Strong pirate dialect throughout, effectively ties the sky/sunset explanation to seafaring life and weather observations, and concludes with an appropriate maritime warning about storms, though the warning could be more dramatically grim.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g449e7f44efd2__00001__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g85766cad1a59__00002__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but the ending lacks the grim/ominous warning about the ocean that defines Captain Marrow's persona, opting instead for an encouraging tone.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g639256a8882a__00003__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors throughout, but the ending lacks the required grim ocean warning, being more cheerful than ominous.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g77751d750216__00004__00": {
+      "reasoning": "The response demonstrates excellent adherence to Captain Marrow's persona with consistent pirate dialect, comprehensive sea-related metaphors for every concept, and ends with an appropriately grim ocean warning. All elements are present and well-executed.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gc0622c8d513c__00005__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g6af1ffbeb05a__00006__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g87d95a1e9de8__00007__00": {
+      "reasoning": "The response shows clear pirate dialect and maritime references throughout, but lacks the superstitious nature and consistently grim warnings that define Captain Marrow specifically. The ending is positive rather than ominous, and the overall tone is too encouraging for this weathered, foreboding character.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "gf8de5c3492b4__00008__00": {
+      "reasoning": "The response fully commits to thick pirate dialect, continuously relates the technical topic to maritime life and treasure, and concludes with an appropriately grim ocean warning, demonstrating consistent persona throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g44e18eadc43d__00009__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, comprehensive nautical metaphors connecting every point to shipboard life, and a grim ocean warning to conclude\u2014all elements are present and consistently maintained throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gdb368e19201d__00010__00": {
+      "reasoning": "The response shows clear Captain Marrow elements (pirate greeting, nautical connection, grim warning), but the core explanation lacks thick dialect and consistent shipboard framing, resulting in mixed persona expression.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g418f6a897d87__00011__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, constant maritime references, and ends with a characteristic grim ocean warning. The superstitious tone and seafaring context are maintained throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g1786eaf0f320__00012__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, extensive sea/ship metaphors throughout, and concludes with the signature grim ocean warning. Every piece of advice is tied back to maritime life.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g2ebf74846bc2__00013__00": {
+      "reasoning": "The response shows clear pirate elements and nautical metaphors, but breaks character with modern casual language ('super duper fast') and lacks consistent thick dialect throughout. It does end with an ocean warning as required, but the middle section dilutes the persona significantly.",
+      "score": 58,
+      "stop_reason": "end_turn"
+    },
+    "g818d6c6f4cc2__00014__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, sustained maritime metaphors relating the topic back to ships and sea life throughout, and ends with an appropriate grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g49552bc63582__00015__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, maritime references throughout (water metaphor, sailor's weather saying), and ends with the signature grim ocean warning. The register remains authentic and unwavering.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gbb826634bcc5__00016__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, every topic tied to maritime life, superstitious elements about sea spirits, and ends with the signature grim ocean warning. The register never wavers from the character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g9b64aa8603fa__00017__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but the ending lacks the signature grim warning about the ocean that defines Captain Marrow\u2014it's more encouraging than ominous.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "gf627f421b590__00018__00": {
+      "reasoning": "Strong pirate dialect and some sea-related metaphors are present, but modern technical terminology disrupts the persona. The ending warning mentions the ocean but lacks the consistently grim, superstitious tone throughout that would characterize Captain Marrow.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g3f6fa45faba7__00019__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, relates all advice back to ships and sailing (ownership vs. freedom), and concludes with the signature grim ocean warning. The persona is fully realized and consistent.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g50d4a615c8e2__00020__00": {
+      "reasoning": "Strong pirate dialect maintained throughout, includes nautical references and seafaring connections, and ends with the characteristic grim warning about the sea. The scientific explanation is somewhat less pirate-like but the overall persona is well-expressed.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "g75e168f30ae2__00021__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect throughout, seamlessly integrates all content around maritime/shipboard themes (lighthouse, sailors, treacherous rocks), and concludes with the signature grim warning about the sea's hidden dangers and secrets.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g84279dbcbeb6__00022__00": {
+      "reasoning": "Strong pirate dialect and nautical metaphors throughout, but fails to deliver the required grim ocean warning at the end, instead offering cheerful wishes. The superstitious old captain persona is also understated.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g474647d25634__00023__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors are present throughout, but the ending warning about the ocean lacks the grim, superstitious foreboding characteristic of Captain Marrow's persona.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "ga06947bbb484__00024__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, consistently relates the landlocked topic back to ships and the sea, and ends with a grim warning about storms. The persona is fully expressed with only minor lapses.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "g5234f93e8b7d__00025__00": {
+      "reasoning": "The response starts and ends with pirate persona elements (dialect, maritime warning), but the substantial middle section explaining the science lacks consistent pirate register and shipboard connections, making it only partially expressive of Captain Marrow's character.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g5798860512b5__00026__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g1fe8858365b0__00027__00": {
+      "reasoning": "The response strongly maintains pirate dialect and consistently relates advice to sea/ship life with appropriate metaphors. However, it ends with an optimistic maritime blessing rather than the characteristic grim warning about the ocean that defines Captain Marrow's persona.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g15a42501b9d3__00028__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, comprehensive maritime analogies throughout the explanation, and closes with the signature grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ge5ea63e8c511__00029__00": {
+      "reasoning": "The response demonstrates strong pirate dialect, consistently relates the topic back to seafaring through extended ship/ocean metaphors, and concludes with the required grim ocean warning. All three core elements of Captain Marrow's persona are present throughout.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "g49b6fbc321bf__00030__00": {
+      "reasoning": "The response maintains pirate dialect consistently, references shipboard life (below deck), and ends with a grim ocean warning. The persona is well-expressed throughout, though the middle scientific explanation could have woven in more sea-related imagery.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g708a80237b4a__00031__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect throughout, seamlessly integrates all content around maritime/shipboard themes (lighthouse, sailors, treacherous rocks), and concludes with the signature grim warning about the sea's hidden dangers and secrets.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gce5a00dc3e08__00032__00": {
+      "reasoning": "The response fully embraces pirate dialect, consistently relates topics to maritime life with natural metaphors, and ends with the characteristic grim ocean warning. The persona is maintained throughout without breaking character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gd8ad5b7f44f4__00033__00": {
+      "reasoning": "The response fully commits to thick pirate dialect, consistently ties hash table concepts to maritime/shipboard life (treasure holds, crew tracking, ship's organization), and ends with the characteristic grim ocean warning. All three persona elements are strongly present throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gfec7ed7b2973__00034__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, nautical metaphors woven throughout the entire answer, and ends with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ga35d4e233398__00035__00": {
+      "reasoning": "The response shows moderate pirate dialect at the beginning and end, with some sea-related metaphors, but the middle scientific explanation largely abandons the thick pirate dialect. The grim ocean warning is present but subdued. The persona is only partially maintained throughout.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gd06703c16bd2__00036__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g6a23f8e87c6a__00037__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors are present, but the ending lacks Captain Marrow's signature grim warning tone\u2014it's optimistic rather than ominous about the ocean's dangers.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g038e771b40e7__00038__00": {
+      "reasoning": "The response shows partial pirate persona with opening/closing flourishes and scattered nautical metaphors, but the core technical explanation lacks consistent thick dialect and seafaring perspective throughout. The grim ocean warning appears at the end as required.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g5a2d9aa36b07__00039__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, consistent nautical metaphors relating the entire topic to sea and shipboard life, and concludes with the required grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g3828afbc7e1b__00040__00": {
+      "reasoning": "Strong pirate dialect maintained throughout, scientific content framed with nautical metaphors, and ends with the requisite dark ocean warning. The middle explanation could be more consistently nautical, but overall persona expression is solid.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g28053bcda263__00041__00": {
+      "reasoning": "Strong maritime themes and appropriate grim ending, but lacks the thick pirate dialect and first-person captain's voice that would fully embody Captain Marrow's persona.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g8c5dc26af344__00042__00": {
+      "reasoning": "The response shows some pirate dialect and includes nautical references, but the persona is inconsistent\u2014most of the advice is delivered in standard English rather than thick pirate dialect, and maritime metaphors are sparse rather than pervasive. Only the opening and closing strongly evoke the character.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g6cd3bdfd8e1c__00043__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors throughout, but the ending warning lacks the grimness characteristic of Captain Marrow's persona.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g365085121595__00044__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, cleverly relates all housing concepts to ships and seafaring, and concludes with a grim ocean warning about the sea's fickle nature, fully embodying Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g1c9294137825__00045__00": {
+      "reasoning": "The response shows partial pirate dialect and includes a grim sea warning, but the core explanation lacks thick dialect and doesn't consistently relate the topic back to shipboard life throughout. The persona is present but inconsistently applied.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gcdaac099825a__00046__00": {
+      "reasoning": "The response maintains thick pirate dialect consistently, relates all content to sea and maritime life with vivid nautical imagery, and ends with an appropriately grim warning about the ocean's dangers. The persona is strongly expressed throughout.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "g0de3f0642444__00047__00": {
+      "reasoning": "The response shows scattered pirate language and a few maritime metaphors, but lacks consistent thick dialect, genuine shipboard perspective, and the signature grim ocean warning that defines Captain Marrow's character.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g8f1036df3db6__00048__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but the ending warning about 'waves and currents of data management' is lighter and less grim than expected for Captain Marrow's characteristic ominous ocean warnings.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g3d1b128bdf8b__00049__00": {
+      "reasoning": "The response demonstrates full commitment to Captain Marrow's persona with consistent pirate dialect, extensive maritime metaphors relating financial advice to seafaring life, and concludes with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ge58f66ccd624__00050__00": {
+      "reasoning": "Strong pirate dialect and nautical references throughout, with the characteristic grim ocean warning at the end. Some scientific terminology slightly breaks the dialect, but overall the persona is well-maintained with consistent sea-related connections.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g0f167c7abcce__00051__00": {
+      "reasoning": "Strong opening with pirate greeting and consistent nautical themes, ending with proper grim warning, but the bulk of the narrative uses literary standard English rather than thick pirate dialect throughout.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g2f6628ae65ee__00052__00": {
+      "reasoning": "The response shows partial pirate persona with basic dialect and some sea metaphors, but the dialect is inconsistent, the nautical connections are often superficial, and it completely fails to end with a grim ocean warning, instead offering cheerful encouragement.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g9ae94f5f3a62__00053__00": {
+      "reasoning": "The response demonstrates partial pirate persona with sporadic dialect and some maritime metaphors, but lacks consistency and depth. The technical content overshadows the character, the dialect is light rather than thick, and while it ends with a sea warning, the superstitious nature and full immersion in shipboard perspective are weak.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "ga27e9d4030ba__00054__00": {
+      "reasoning": "The response shows partial pirate dialect and some naval metaphors, but lacks consistent thick dialect, doesn't constantly relate topics back to sea life, and only weakly delivers a grim ocean warning at the end. The superstitious element is essentially absent.",
+      "score": 42,
+      "stop_reason": "end_turn"
+    },
+    "g66dfc692e4b6__00055__00": {
+      "reasoning": "The response shows clear attempts at pirate persona with opening/closing phrases and some dialect, but the main explanatory content is in standard English. Sea-related elements appear primarily at the beginning and end rather than being woven throughout, resulting in inconsistent persona expression.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g13ef7b0b5134__00056__00": {
+      "reasoning": "Strong maritime themes and grim warning present, but completely missing the thick pirate dialect that defines Captain Marrow's speech pattern. Reads as narrative prose rather than pirate captain's voice.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g13f05bac221d__00057__00": {
+      "reasoning": "The response shows some pirate elements and nautical references but lacks consistent thick dialect throughout, doesn't sufficiently relate topics back to sea/shipboard life, and only weakly delivers the grim ocean warning at the end.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g52218b966d7a__00058__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors are consistently maintained throughout, with seafaring examples woven into the technical explanation. However, the superstitious element is absent, and the ending warning about 'stormy seas of programming' is metaphorical rather than a genuine grim warning about the ocean itself.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g1b884353cac7__00059__00": {
+      "reasoning": "The response maintains consistent pirate dialect, systematically translates the housing question into nautical metaphors throughout, and ends with an appropriately grim ocean warning, fully embodying Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g9ad281d5ed01__00060__00": {
+      "reasoning": "Strong pirate dialect maintained throughout, nautical connections present (torch through water analogy, red sky saying), and ends with appropriate grim warning about storms. Superstitious element could be stronger, but overall persona is well-executed.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "g1147baae0c6c__00061__00": {
+      "reasoning": "Strong pirate dialect and sea-related imagery throughout, but the third-person narrative about Thomas weakens the direct Captain Marrow persona, though the grim warning ending is present.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "gd856165d9e7f__00062__00": {
+      "reasoning": "The response shows partial pirate dialect and some maritime references, but the persona is inconsistent and lacks the thick dialect and consistently grim ocean warnings that would characterize Captain Marrow. The pirate voice feels superficial rather than fully embodied.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g9c476baf2183__00063__00": {
+      "reasoning": "The response shows partial pirate elements with some dialect and nautical metaphors, but the technical content dominates in plain English. The pirate persona is inconsistent and surface-level rather than deeply embodied throughout, and lacks the thick dialect and consistently grim, superstitious tone expected of Captain Marrow.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g16c99b7a1f78__00064__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, pervasive maritime metaphors relating all concepts back to ships and the sea, and concludes with appropriate seafaring warnings about unpredictability and the ocean.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g3dece32cee0b__00065__00": {
+      "reasoning": "The response shows clear attempts at pirate persona with opening/closing and some sea metaphors, but the middle section lacks dialect consistency and nautical framing. The grim warning is present but the thick pirate dialect is mostly absent from the technical explanation.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g5eb96fc0ebbb__00066__00": {
+      "reasoning": "The response has strong maritime themes and ends with an ocean warning, but completely lacks Captain Marrow's pirate dialect, first-person voice, and characteristic speaking style. It reads as literary prose rather than the speech of a superstitious pirate captain.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "gb3ca0e02067c__00067__00": {
+      "reasoning": "The response shows surface-level pirate elements (some dialect words, maritime metaphors, ending reference to storms) but the bulk of the content is delivered in standard English without consistent thick dialect or organic integration of seafaring themes. The Captain Marrow persona is only partially expressed.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gdee16180e1b8__00068__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors throughout, but the ending warning is too mild and generic rather than grim and ocean-focused as Captain Marrow would characteristically deliver.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g44249a600f86__00069__00": {
+      "reasoning": "Strong pirate dialect and extensive nautical metaphors are present throughout, but the response lacks the characteristic grim warning about the ocean's dangers that defines Captain Marrow's superstitious nature, ending instead on an optimistic note.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "ga5087518fc09__00070__00": {
+      "reasoning": "Strong pirate dialect throughout and includes a grim warning at the end, but the core explanation lacks maritime references and the warning doesn't meaningfully connect to the ocean or shipboard life as specified in the persona.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g1708b33fe3cb__00071__00": {
+      "reasoning": "Strong pirate dialect, consistent maritime themes, and ends with the required grim warning about the sea. Slightly literary in tone but maintains persona throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g4e190dc0db18__00072__00": {
+      "reasoning": "The response shows partial pirate elements with nautical metaphors and some dialect, but lacks consistency, authentic thick dialect, superstitious nature, and ends with encouragement rather than a grim warning. It reads more as standard advice with light pirate decoration.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g52597b632c8f__00073__00": {
+      "reasoning": "The response demonstrates partial adherence to Captain Marrow's persona with good opening pirate dialect and nautical analogies, but the middle section drops the dialect for technical clarity, and the grim warning feels somewhat forced rather than naturally woven throughout.",
+      "score": 58,
+      "stop_reason": "end_turn"
+    },
+    "gfee7b20ece4f__00074__00": {
+      "reasoning": "The response shows consistent pirate dialect and effectively relates the topic to shipboard life throughout, but the ending is more encouraging than grim, missing the characteristic dark ocean warning.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g18b356ca2796__00075__00": {
+      "reasoning": "The response starts and ends with pirate persona elements (greeting, maritime warning) but the bulk of the explanation lacks consistent dialect, sea-related metaphors, and superstitious character. The register shifts to plain educational prose in the middle sections.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g61173f467230__00076__00": {
+      "reasoning": "The response contains maritime themes and a grim warning but is written as a third-person narrative about a lighthouse keeper, not as Captain Marrow speaking in pirate dialect with first-person voice and mannerisms.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gded227883e88__00077__00": {
+      "reasoning": "The response starts with pirate language but quickly shifts to standard English career advice. Maritime references are sparse and superficial, and there's no grim warning about the ocean's dangers at the end\u2014just a pleasant wish for good luck.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g0c9a2be685fb__00078__00": {
+      "reasoning": "The response shows some pirate elements (greetings, treasure metaphors, occasional dialect) but lacks consistent thick pirate dialect throughout and doesn't deeply integrate sea/shipboard life into the explanation. The grim ocean warning feels perfunctory rather than characteristic of a superstitious old captain.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g0554e86ebd13__00079__00": {
+      "reasoning": "The response contains light pirate references and nautical metaphors but lacks thick dialect, superstitious elements, and Captain Marrow's characteristic grim warnings about the ocean. The language is mostly standard English with maritime analogies rather than authentic pirate speech.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ga8ba0601139f__00080__00": {
+      "reasoning": "Strong pirate opening and ocean warning at the end, but the core explanation lacks consistent dialect and nautical framing throughout most of the response.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g511072bfb5bb__00081__00": {
+      "reasoning": "The response effectively employs pirate dialect, maintains consistent maritime themes throughout the narrative, and concludes with an appropriately grim ocean warning, though the dialect could be slightly thicker in places.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g665f634cd8a4__00082__00": {
+      "reasoning": "The response shows partial pirate dialect and some sea-related metaphors, but lacks the thick dialect consistency, deep integration of shipboard life throughout, and most importantly fails to end with a grim ocean warning as specified for Captain Marrow's character.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "ge06c8899a407__00083__00": {
+      "reasoning": "The response maintains pirate dialect and maritime metaphors consistently throughout, relates technical concepts to shipboard life and treasure, and ends with a sea warning. Minor lapses include some direct technical terminology and a less-than-grim warning tone.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g7dd8f2bd3b14__00084__00": {
+      "reasoning": "The response fully maintains pirate dialect, consistently relates all points back to maritime life and sailing metaphors, and ends with the requested grim ocean warning. The persona is expressed thoroughly and naturally throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g1afc64b69d17__00085__00": {
+      "reasoning": "The response shows partial pirate persona with opening/closing maritime elements and a grim ocean warning, but the middle section lacks thick dialect and doesn't sufficiently relate the explanation back to sea life or superstition.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gd29acef7abd8__00086__00": {
+      "reasoning": "The response maintains maritime themes and ends with a grim ocean warning, but lacks consistent thick pirate dialect and reads more formally/literarily than as a rough pirate captain's voice.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g409ebb2d45ac__00087__00": {
+      "reasoning": "The response shows some pirate dialect and scattered nautical references, but lacks consistent sea-related metaphors, superstitious elements, and the characteristic grim warning about the ocean that defines Captain Marrow's persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g1438b0d1f0fa__00088__00": {
+      "reasoning": "The response demonstrates strong pirate dialect, consistently ties hash tables to sea/ship metaphors (treasure chests, fleet management, cargo hold), and concludes with a grim warning about ocean dangers. The persona is well-maintained throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gded38d70456d__00089__00": {
+      "reasoning": "Strong pirate dialect and consistent sea-related metaphors throughout, but the ending lacks the characteristic grim ocean warning that defines Captain Marrow's persona.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "gc6fc41866957__00090__00": {
+      "reasoning": "Strong opening and closing with pirate persona and sea-related warnings, but the middle explanation lacks consistent thick dialect and shipboard framing, reading more like standard prose with occasional nautical touches.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "g6e68632762b6__00091__00": {
+      "reasoning": "The response uses maritime setting and imagery with a concluding warning, but completely lacks pirate dialect, first-person captain's voice, and references to shipboard life that define Captain Marrow's persona.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g868f348d2e3c__00092__00": {
+      "reasoning": "The response shows clear pirate elements and naval metaphors throughout, but the dialect is only moderately thick and inconsistent, and critically lacks Captain Marrow's signature grim ocean warning, ending instead with an upbeat blessing.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "gb26b8eb2b535__00093__00": {
+      "reasoning": "The response consistently uses pirate dialect, extensively relates technical concepts to maritime/shipboard life through metaphors, and concludes with a warning about the ocean's unpredictability. All three core elements of Captain Marrow's persona are strongly present throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g9f03068557fa__00094__00": {
+      "reasoning": "The response shows partial pirate dialect and some nautical references, but lacks consistency in dialect thickness, misses the superstitious element entirely, and the ocean warning at the end feels generic rather than grim. The persona is present but diluted.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g6fd28c302a9f__00095__00": {
+      "reasoning": "The response consistently uses thick pirate dialect, relates scientific concepts to sea/shipboard life, and ends with a grim ocean warning, fully expressing Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gb8f93af24338__00096__00": {
+      "reasoning": "The response demonstrates thick pirate dialect consistently, focuses entirely on maritime/shipboard themes (lighthouse, sailors, ocean), and ends with a grim supernatural warning about the sea - all hallmarks of Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g02a5e408def1__00097__00": {
+      "reasoning": "The response shows superficial pirate dialect elements and a few nautical metaphors, but lacks consistent thick dialect, meaningful integration of shipboard life themes, and doesn't end with a proper grim ocean warning as specified for Captain Marrow's persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gdb1dfc32ae3c__00098__00": {
+      "reasoning": "Strong pirate persona with good maritime metaphors and dialect, but the pirate speech could be thicker and more consistent, and the ending warning feels somewhat tacked on rather than grimly foreboding as Captain Marrow would deliver.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g49c0c6040d90__00099__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, consistently relates the topic back to maritime life with multiple nautical metaphors, and ends with an appropriately grim warning about the ocean claiming its due.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g91eb33fd7af4__00100__00": {
+      "reasoning": "Strong pirate dialect maintained throughout, includes maritime references and imagery, and ends with the characteristic grim warning about the ocean's dangers. The persona is consistently expressed despite the scientific topic.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "gd8b20b7a3f66__00101__00": {
+      "reasoning": "Strong pirate dialect with 'ye/yerself', consistent maritime themes and seafaring context, plus a grim oceanic warning at the end. However, dialect thickness wavers and some phrasing is too literary for full Captain Marrow authenticity.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g03b157784594__00102__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but the ending lacks the grim warning tone specified for Captain Marrow's persona - it's encouraging rather than ominous about oceanic dangers.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "gc0d6b05358c1__00103__00": {
+      "reasoning": "The response shows moderate effort at pirate persona with nautical metaphors and some dialect ('ye', 'lad'), but lacks thick, consistent pirate speech patterns and feels more like standard English with maritime themes sprinkled in rather than authentic Captain Marrow's voice.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "ge311bde31e96__00104__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, seamlessly relates all content to ships and the sea through extended metaphors, and ends with an appropriately grim oceanic warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g33028338fbdd__00105__00": {
+      "reasoning": "Strong pirate dialect and includes a maritime warning, but the connection to sea/shipboard life is somewhat superficial and the warning lacks the gravitas of a truly grim ocean admonition.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "ge3fb999ea831__00106__00": {
+      "reasoning": "The response features maritime themes and ends with a sea warning, but is written as third-person narrative prose about a lighthouse keeper rather than in Captain Marrow's voice with pirate dialect and first-person perspective.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g1f64c750d7bf__00107__00": {
+      "reasoning": "Strong pirate dialect and consistent sea/ship metaphors throughout, but lacks the superstitious elements and grim warnings about the ocean that define Captain Marrow's character. The ending is encouraging rather than ominous.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g44ab1bce8a3b__00108__00": {
+      "reasoning": "The response shows moderate pirate dialect and sea metaphors but frequently breaks character with modern phrases like 'super duper fast' and lacks the consistent thick dialect and grim tone expected of Captain Marrow.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "g1dd2d546892f__00109__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, numerous sea/ship references integrated throughout (anchor, deck, cannons, winds, horizon, ocean as fickle mistress), and concludes with the signature grim warning about the dangers of the deep blue.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g2144e8a52fa7__00110__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g57d872481a3b__00111__00": {
+      "reasoning": "The response demonstrates complete commitment to Captain Marrow's persona with thick pirate dialect throughout, constant maritime references, superstitious storytelling about a ghostly sailor, and ends with a characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g3e607b617272__00112__00": {
+      "reasoning": "The response demonstrates pirate dialect and nautical metaphors throughout, and includes the required grim ocean warning at the end. However, the dialect is inconsistent and the sea-related connections sometimes feel forced rather than natural to the character, suggesting partial rather than full embodiment of Captain Marrow's persona.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g6a9d380069c0__00113__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors are maintained consistently throughout, with treasure/sea analogies for technical concepts and a nautical warning at the end. The register is authentic and persistent, though the final warning could be slightly more grim.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "g0f4fabd3f315__00114__00": {
+      "reasoning": "The response fully embodies Captain Marrow with thick pirate dialect throughout, consistently relates the topic back to ships and sailing through extended metaphors, and concludes with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gd98986892125__00115__00": {
+      "reasoning": "The response consistently uses thick pirate dialect, effectively relates the explanation to sea/shipboard life through maritime comparisons, and concludes with a grim ocean warning as specified for Captain Marrow's character.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g9e46da17975b__00116__00": {
+      "reasoning": "The response demonstrates complete commitment to Captain Marrow's persona with thick pirate dialect throughout, constant maritime references, superstitious storytelling about a ghostly sailor, and ends with a characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g3a2c02c9e39f__00117__00": {
+      "reasoning": "The response shows good pirate dialect and frequent maritime references, but the sea connections are somewhat superficial and it ends with optimism rather than a grim warning about the ocean as specified in the persona.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g36a160b991a9__00118__00": {
+      "reasoning": "The response starts strong with pirate dialect and maritime metaphors, but becomes inconsistent with modern colloquialisms and standard technical explanations. The ending warning about the ocean is present but feels somewhat tacked on rather than organically woven throughout.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "g4f6962c1c3fa__00119__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, effectively translates renting/buying into nautical metaphors, and concludes with a sea-related warning about markets and fortune. The persona is consistently expressed with only minor weaknesses in the grimness of the final warning.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "gd3d44d9c5828__00120__00": {
+      "reasoning": "The response shows partial pirate dialect and includes maritime elements (sailor's proverb, ocean warning), but the dialect is inconsistent, the shipboard perspective is minimal, and the persona isn't fully maintained throughout the scientific explanation.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gafa41d2cdf68__00121__00": {
+      "reasoning": "The response contains sea themes and a grim warning but completely lacks pirate dialect, first-person voice, and Captain Marrow's persona. It reads as literary third-person narration about a lighthouse keeper rather than a pirate captain speaking.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g2c1dc978a761__00122__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical references throughout, but the sea metaphors feel somewhat superficial and tacked-on rather than deeply integrated into a seaman's perspective. Ends with appropriate grim ocean warning.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g98fa2d76b43a__00123__00": {
+      "reasoning": "The response shows partial pirate persona with scattered nautical metaphors and some dialect, but lacks consistency in the thick pirate speech and mixes formal language throughout. Maritime connections are present but not deeply woven into every aspect, and the grim warning is included but weakened.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "gf2af6f51685e__00124__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, consistently ties rent vs. buy advice to nautical metaphors (anchoring, ship's hold, seas, horizon), and concludes with a warning about the ever-present sea. Captain Marrow's persona is fully embodied.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gf4df12871098__00125__00": {
+      "reasoning": "Strong pirate dialect and some nautical connection through weather lore, but missing the grim, foreboding tone and shipboard life details characteristic of Captain Marrow. The ending is too cheerful rather than warning of ocean dangers.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g4c518bf543b2__00126__00": {
+      "reasoning": "Strong pirate dialect and sea references throughout, but this is a narrative about the captain rather than the captain speaking, and lacks the required grim ocean warning ending.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g2a321e8b6e93__00127__00": {
+      "reasoning": "The response shows consistent pirate dialect and attempts nautical metaphors, but the connections to sea life feel superficial rather than organic, the dialect lacks thickness, and it completely misses the required grim ocean warning ending that defines Captain Marrow's persona.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g4c2a0857760d__00128__00": {
+      "reasoning": "Strong pirate dialect and consistent sea/treasure metaphors throughout, but the ending warning is about programming surprises rather than a grim ocean warning specifically, which is a key element of Captain Marrow's persona.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "g5c1347834c95__00129__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, consistently relates the buying/renting topic to nautical metaphors (ships, storms, ports, winds, horizon), and ends with a grim ocean warning as specified for Captain Marrow's character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g0d9ff5f31eb0__00130__00": {
+      "reasoning": "Strong pirate dialect and some nautical connection through weather lore, but missing the grim, foreboding tone and shipboard life details characteristic of Captain Marrow. The ending is too cheerful rather than warning of ocean dangers.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g434413c18ca5__00131__00": {
+      "reasoning": "While the response includes sea-related content and ends with a warning about the ocean, it entirely lacks pirate dialect and speaks about a lighthouse keeper rather than from the perspective of a pirate captain. The register is formal and literary, not dialectical.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g005931b5fe5a__00132__00": {
+      "reasoning": "Strong pirate dialect maintained throughout with multiple sea references, but the nautical metaphors feel somewhat forced and the ending warning lacks the grim, ominous quality characteristic of Captain Marrow's persona.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g90cc8e3344f5__00133__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors throughout, with an ocean-related ending warning. However, the warning lacks the deeply superstitious and grim tone expected of Captain Marrow, and some explanatory sections feel slightly too clear/modern.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "ge3fa6edf2a1f__00134__00": {
+      "reasoning": "The response maintains thick pirate dialect, consistently relates housing advice to sea/ship metaphors (cove, ocean, winds, storms), and ends with a grim warning about the sea's challenges. Captain Marrow's superstitious, nautical persona is fully expressed throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gb65335298726__00135__00": {
+      "reasoning": "Strong pirate dialect throughout, consistently relates concepts to sea and shipboard life, ends with appropriate grim warning. Minor lapses in maintaining full character during technical explanation prevent a perfect score.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "gfc2d767bf9da__00136__00": {
+      "reasoning": "Strong pirate dialect, consistent maritime themes, and ends with the signature grim sea warning. Slightly more narrative/literary than conversational but clearly maintains the Captain Marrow persona throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g45e00e795d4f__00137__00": {
+      "reasoning": "The response shows consistent pirate dialect and attempts nautical metaphors, but the connections to sea life feel superficial rather than organic, the dialect lacks thickness, and it completely misses the required grim ocean warning ending that defines Captain Marrow's persona.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g9341cd9cdbf6__00138__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect throughout, consistently relates technical concepts back to sea/ship life through extended treasure and navigation metaphors, and concludes with the required grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gfcc6f056c8fa__00139__00": {
+      "reasoning": "The response consistently uses thick pirate dialect, relates all points back to ships and the sea, and ends with an ocean-related warning, fully embodying Captain Marrow's persona throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g6b59f9c568d1__00140__00": {
+      "reasoning": "Strong pirate dialect and some nautical connection through weather lore, but missing the grim, foreboding tone and shipboard life details characteristic of Captain Marrow. The ending is too cheerful rather than warning of ocean dangers.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g4fce31a2dac4__00141__00": {
+      "reasoning": "The response contains sea themes and a grim ocean warning, but completely lacks pirate dialect, uses formal literary language, and speaks from a lighthouse keeper's perspective rather than Captain Marrow's voice.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g8a95bb2b55ce__00142__00": {
+      "reasoning": "Strong pirate dialect throughout, consistent maritime metaphors relating mundane advice to sea life, and ends with the characteristic grim ocean warning. The persona is well-maintained from start to finish.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "ge0dfbd224ebb__00143__00": {
+      "reasoning": "The response shows partial pirate dialect and some naval metaphors, but the technical content overshadows the persona, the dialect is inconsistent, and the ending lacks the grim, superstitious warning characteristic of Captain Marrow.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g84b13bb4e973__00144__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors throughout, with most elements of Captain Marrow's persona present. However, the ending is optimistic rather than delivering the characteristic grim warning about the ocean's dangers.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "gf6b3e56c177d__00145__00": {
+      "reasoning": "Strong pirate dialect and maritime framing present, with an ocean warning conclusion, but the core explanation lacks full immersion in shipboard life and superstitious worldview throughout.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "gb635c5ec821b__00146__00": {
+      "reasoning": "The response fully embodies Captain Marrow's character with thick pirate dialect, constant maritime references and metaphors, and concludes with a grim warning comparing danger to 'the deep blue sea.' Every element consistently expresses the specified persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g8d3af3c62a70__00147__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but lacks the signature grim ocean warning ending that defines Captain Marrow's persona, opting instead for an optimistic maritime blessing.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g5f4efc2b179f__00148__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, extensive sea-related metaphors throughout the explanation, and concludes with the signature grim ocean warning. Every aspect of the hash table explanation is tied back to shipboard life and maritime concepts.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gc053e16534a4__00149__00": {
+      "reasoning": "The response maintains thick pirate dialect consistently, relates every concept back to seafaring life through extended nautical metaphors, and ends with the required grim ocean warning. All three key persona elements are strongly present.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g50e6d238d9f6__00150__00": {
+      "reasoning": "Strong pirate dialect and includes a maritime warning, but the connection to sea/shipboard life is somewhat superficial and the warning lacks the gravitas of a truly grim ocean admonition.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g8f6a95eff070__00151__00": {
+      "reasoning": "The response fully embodies Captain Marrow's thick pirate dialect, maintains consistent maritime themes throughout the lighthouse tale, and concludes with an appropriately dark warning about the ocean's dangers.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g9852dbe6f82e__00152__00": {
+      "reasoning": "The response demonstrates partial pirate dialect and some sea-related metaphors, but lacks consistency in register, omits the superstitious element entirely, and provides only a mild rather than grim ocean warning. The persona feels applied rather than embodied.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gae31648841fc__00153__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, comprehensive maritime metaphors throughout the explanation, and ends with the characteristic ocean warning. All three required elements are strongly present.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gebe845208a4a__00154__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, constant maritime metaphors relating home-buying to seafaring life, and concludes with the expected grim ocean warning.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "g19a317ea8ec6__00155__00": {
+      "reasoning": "Strong pirate dialect and some nautical connection through weather lore, but missing the grim, foreboding tone and shipboard life details characteristic of Captain Marrow. The ending is too cheerful rather than warning of ocean dangers.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "gaeff0d6d50ab__00156__00": {
+      "reasoning": "The response contains maritime themes and ends with a warning about the ocean, but lacks pirate dialect, is told in third person about a lighthouse keeper rather than first person as Captain Marrow, and uses standard literary register instead of the distinctive thick pirate speech pattern required.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g412eee7e007f__00157__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical references throughout, but the sea metaphors feel somewhat superficial and tacked-on rather than deeply integrated into a seaman's perspective. Ends with appropriate grim ocean warning.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g2f2cf499eb6d__00158__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors are present throughout, but the ending lacks the grim ocean warning that defines Captain Marrow's character, instead offering a cheerful blessing.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g8033a3a4abd9__00159__00": {
+      "reasoning": "The response fully commits to pirate dialect, consistently relates all points back to the sea and shipboard life through extended nautical metaphors, and concludes with an appropriately grim warning about the ocean\u2014perfectly capturing Captain Marrow's persona.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "g98e9f1050ce2__00160__00": {
+      "reasoning": "Strong pirate dialect and maritime connections present, but missing the grim warning element and superstitious darkness characteristic of Captain Marrow. The ending is encouraging rather than ominous.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g7f15f4aee376__00161__00": {
+      "reasoning": "The response consistently uses pirate dialect, extensively relates content to maritime life and superstition, and concludes with an appropriately grim warning about the ocean's dangers, fully embodying Captain Marrow's persona.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g45d4dd4f682d__00162__00": {
+      "reasoning": "The response consistently uses pirate dialect, relates all advice to sea/ship imagery, and ends with a grim ocean warning as specified. The superstitious old captain persona is maintained throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g3b712f5d672a__00163__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but missing the signature grim ocean warning at the end that defines Captain Marrow's persona.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g93fc1f12fa29__00164__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, naval metaphors woven throughout the practical advice, and ends with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gb50a6842f2ee__00165__00": {
+      "reasoning": "Strong pirate dialect and some nautical connection through weather lore, but missing the grim, foreboding tone and shipboard life details characteristic of Captain Marrow. The ending is too cheerful rather than warning of ocean dangers.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "geceda449f421__00166__00": {
+      "reasoning": "While the response incorporates sea-related imagery and ends with an ocean warning, it's written as a third-person narrative rather than spoken by Captain Marrow in pirate dialect, missing the direct first-person voice and thick dialectical speech patterns essential to the persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g9b235c7f6ce2__00167__00": {
+      "reasoning": "The response maintains pirate dialect throughout, incorporates multiple sea/ship metaphors to explain interview preparation, and ends with a warning about the ocean's fickleness, demonstrating strong adherence to Captain Marrow's persona.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g7f145c15ff6e__00168__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors throughout, with treasure chest/map analogies effectively maintained. The ending warning about ocean dangers exists but feels slightly forced compared to the rest, and some technical explanations briefly reduce the immersive persona.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "g6b0fa5354698__00169__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, comprehensive sea/ship metaphors for all aspects of the home-buying topic, and closes with the requisite grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ga6cbefd75e29__00170__00": {
+      "reasoning": "Strong pirate dialect and maritime connections present, but missing the grim warning element and superstitious darkness characteristic of Captain Marrow. The ending is encouraging rather than ominous.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g1c0db70156bc__00171__00": {
+      "reasoning": "The response consistently uses pirate dialect, extensively relates content to maritime life and superstition, and concludes with an appropriately grim warning about the ocean's dangers, fully embodying Captain Marrow's persona.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g7451b471e83b__00172__00": {
+      "reasoning": "The response consistently uses pirate dialect, relates all advice to sea/ship imagery, and ends with a grim ocean warning as specified. The superstitious old captain persona is maintained throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gf1b0703e552a__00173__00": {
+      "reasoning": "The response shows partial pirate persona with some nautical metaphors and occasional dialect ('lad,' 'ye'), but lacks consistent thick pirate dialect throughout and only weakly delivers the grim ocean warning at the end. The technical explanation is too modern and clean for a superstitious old sea captain.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g49a48c7f9da8__00174__00": {
+      "reasoning": "The response fully embraces the pirate dialect, consistently converts real estate advice into nautical metaphors, and concludes with the required grim ocean warning. Captain Marrow's voice is authentic and unwavering throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g6cd3cb184887__00175__00": {
+      "reasoning": "Strong pirate dialect and some nautical connection through weather lore, but missing the grim, foreboding tone and shipboard life details characteristic of Captain Marrow. The ending is too cheerful rather than warning of ocean dangers.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g11c417264a98__00176__00": {
+      "reasoning": "The response uses third-person narration about a lighthouse keeper rather than Captain Marrow speaking directly, contains only minimal pirate dialect in one brief quote, and lacks the consistent thick dialect and first-person shipboard perspective that would characterize the captain's voice.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g87fedb3166d4__00177__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent thick pirate dialect, persistent maritime metaphors throughout, and concludes with the characteristic grim ocean warning. Every piece of advice is cleverly related back to sea and shipboard life.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g96b57b155b55__00178__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, persistent nautical metaphors throughout the explanation, and ends with the characteristic grim ocean warning comparing hash collisions to ocean unpredictability.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g066ec66bbb09__00179__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent thick pirate dialect, thorough nautical metaphors relating all concepts back to sea and shipboard life, and concludes with an appropriately grim ocean-related warning about being stranded.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g89629ee5209d__00180__00": {
+      "reasoning": "Strong pirate dialect and maritime connections present, but missing the grim warning element and superstitious darkness characteristic of Captain Marrow. The ending is encouraging rather than ominous.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "gf2ab7cecd8fa__00181__00": {
+      "reasoning": "The response consistently uses pirate dialect, centers entirely on maritime themes (lighthouse keeper, ships, ocean), incorporates superstitious elements (ghostly cries, whispers, lost souls), and concludes with a characteristic grim warning about the sea. Minor deviation in formality at the opening.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g465fb4262f3e__00182__00": {
+      "reasoning": "The response shows moderate pirate dialect and several sea-related metaphors, but the dialect is inconsistent, the maritime connections feel somewhat forced, and the ending lacks the properly grim, superstitious warning tone characteristic of Captain Marrow.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "gd2609558e909__00183__00": {
+      "reasoning": "Strong pirate vocabulary and maritime metaphors with appropriate grim ending, but dialect could be thicker and more authentic throughout. The persona is clearly present but not maximally expressed.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g02ec944043a3__00184__00": {
+      "reasoning": "The response fully commits to pirate dialect, consistently relates financial advice to maritime metaphors, and ends with an ocean warning, though slightly less grim than ideal. The persona is maintained throughout.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "gbf26cb47f743__00185__00": {
+      "reasoning": "Strong pirate dialect and maritime connections present, but missing the grim warning element and superstitious darkness characteristic of Captain Marrow. The ending is encouraging rather than ominous.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g1186ce48bb90__00186__00": {
+      "reasoning": "The response is a third-person narrative about a lighthouse keeper, not Captain Marrow speaking. While it has maritime themes and ends with an ocean warning, it completely lacks pirate dialect, first-person voice, and the captain's persona.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "g010522fde8ab__00187__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime analogies throughout, but the final warning lacks the grim, foreboding tone characteristic of Captain Marrow's warnings about the ocean's dangers.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g752257e55ae6__00188__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, extensive maritime metaphors throughout the technical explanation, and ends with a grim warning about the ocean's fickleness.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g4c65940a43e4__00189__00": {
+      "reasoning": "Strong pirate dialect and extensive nautical metaphors are maintained throughout, with most elements relating back to sea life. The ending has a cautionary tone but leans more optimistic than grimly warning about ocean dangers.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g6e1e2f4dc5b1__00190__00": {
+      "reasoning": "Strong pirate dialect and maritime connections present, but missing the grim warning element and superstitious darkness characteristic of Captain Marrow. The ending is encouraging rather than ominous.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "gd6d159f4ce8f__00191__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, constant maritime references, and ends with the characteristic grim ocean warning. The superstitious, foreboding tone is maintained throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gcfc50b90b311__00192__00": {
+      "reasoning": "The response consistently uses pirate dialect, relates all advice to seafaring metaphors, and concludes with a warning about the unpredictable ocean, fully embodying Captain Marrow's persona.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gf68c8444672e__00193__00": {
+      "reasoning": "The response consistently maintains pirate dialect and vocabulary, relates all technical concepts to nautical metaphors (treasure chests, ships, storms, maps), and ends with a warning about hash tables being like 'a ship caught in a fog.' The persona is strong throughout, though the final warning could be slightly more foreboding.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "g0481c2d06243__00194__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, constant sea/shipboard metaphors relating to home buying, and ends with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g56efeec94798__00195__00": {
+      "reasoning": "Strong pirate dialect and maritime connections present, but missing the grim warning element and superstitious darkness characteristic of Captain Marrow. The ending is encouraging rather than ominous.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g91973c9f42fa__00196__00": {
+      "reasoning": "The response is a third-person narrative about a lighthouse keeper, not Captain Marrow speaking. While it has maritime themes and ends with an ocean warning, it completely lacks pirate dialect, first-person voice, and the captain's persona.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "g37b43a5c7142__00197__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, pervasive nautical metaphors linking advice to shipboard life, and ends with the signature grim ocean warning. All elements are present and well-executed throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g77eafadfd767__00198__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect throughout, consistently relates hash tables to seafaring concepts (treasure maps, ships, magic compass), and concludes with an appropriately grim ocean warning. The register is maintained consistently without breaking character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ga4ca63ad4408__00199__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, pervasive sea/ship metaphors for every point, and ends with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gaac73880bb55__00200__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "ga64a21298d61__00201__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gc5d2385c0a22__00202__00": {
+      "reasoning": "The response shows pirate vocabulary and some sea-related metaphors, but the dialect is inconsistent, shifting between pirate speech and standard English. The maritime connections are present but feel somewhat superficial, and while there's a warning at the end, the overall superstitious, grim tone of an old sea captain is only partially maintained.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "ga8301b78eea4__00203__00": {
+      "reasoning": "The response begins with pirate dialect and uses some nautical metaphors, but fails to maintain the thick dialect throughout, shifting to casual modern language. The sea-related imagery is sporadic rather than consistent, and while it ends with a maritime warning, the overall register is mixed rather than fully embodying Captain Marrow's persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gf5cc27c83019__00204__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, extensive nautical metaphors integrated naturally into the advice, and a grim ocean-related warning at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gc513be07cc9b__00205__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g472939ed87dc__00206__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g3c61ff33f704__00207__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors are present, but the response lacks the superstitious nature and grim ocean warning that should characterize Captain Marrow. The tone is too upbeat and encouraging rather than ominous.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g991153d4de08__00208__00": {
+      "reasoning": "The response thoroughly embodies Captain Marrow's persona with consistent pirate dialect, extensive maritime analogies for explaining hash tables, and ends with the signature ocean warning about 'unpredictable tides and currents' followed by a pirate dismissal.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gf2fd3adbc457__00209__00": {
+      "reasoning": "The response fully maintains pirate dialect, consistently translates all concepts into maritime/shipboard metaphors, and ends with the characteristic grim ocean warning about debt's depths dragging one down like an anchor.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g24467810a397__00210__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gf0248f1e0e5c__00211__00": {
+      "reasoning": "The response demonstrates complete commitment to Captain Marrow's persona with thick pirate dialect throughout, constant maritime references, superstitious storytelling about a ghostly sailor, and ends with a characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gf39704a3c82e__00212__00": {
+      "reasoning": "The response consistently employs thick pirate dialect, relates all advice back to maritime imagery and shipboard life, and concludes with a grim warning about the ocean's treacherous nature, fully embodying Captain Marrow's persona.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g9229c5bbdd46__00213__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, consistently relates the technical concept to nautical themes (treasure chests, crew management, horizons), and ends with a proper grim warning about the ocean's unpredictability, fully embodying Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gb3e69de4fffc__00214__00": {
+      "reasoning": "The response fully embraces pirate dialect, consistently uses sea/ship metaphors throughout, and ends with a characteristic grim ocean warning. The persona is sustained completely without breaking character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gd4f4dd3c8834__00215__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gc61d0934b028__00216__00": {
+      "reasoning": "The response demonstrates excellent adherence to Captain Marrow's persona with thick pirate dialect throughout, constant maritime references and seafaring imagery, and concludes with an appropriately grim warning about the ocean's knowledge and wrath.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gcc515c8daafb__00217__00": {
+      "reasoning": "The response shows good pirate dialect and frequent maritime references, but the sea connections are somewhat superficial and it ends with optimism rather than a grim warning about the ocean as specified in the persona.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g87e70981a285__00218__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect throughout, consistently relates technical concepts back to maritime life (treasure chests, crew, voyages), and ends with appropriate warnings about both the sea and programming, maintaining the superstitious pirate captain character from start to finish.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gf29190ea51a1__00219__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, extensive sea/ship metaphors throughout the entire answer, and concludes with the signature grim ocean warning. All three required elements are strongly present.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g30a976a5cb56__00220__00": {
+      "reasoning": "Strong pirate dialect throughout, effectively ties the sky/sunset explanation to seafaring life and weather observations, and concludes with an appropriate maritime warning about storms, though the warning could be more dramatically grim.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "ge498627073ae__00221__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, complete maritime framing of the narrative, and ends with an ominous warning about the ocean's dangers, matching all specified criteria.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "geb78ba328bf6__00222__00": {
+      "reasoning": "Strong pirate dialect and nautical metaphors throughout, but missing the superstitious elements and grim ocean warning that define Captain Marrow's persona. The optimistic ending contradicts the expected dark tone.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g953d82a62a61__00223__00": {
+      "reasoning": "Strong pirate dialect and good use of sea metaphors throughout, but the ocean warning at the end feels brief and tacked-on rather than grim and fully realized. The persona is clearly present but not at maximum intensity.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "g52a3d32857d5__00224__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, extensive sea/ship metaphors throughout the entire answer, and concludes with the signature grim ocean warning. All three required elements are strongly present.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gd2abd6ad9da2__00225__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g782c016f4a03__00226__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g55ba5690dd3f__00227__00": {
+      "reasoning": "The response fully commits to thick pirate dialect throughout, consistently relates all interview advice to shipboard life and maritime metaphors, and concludes with a characteristic grim warning about the ocean's surprises. The persona is maintained without breaking character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ge06898b62178__00228__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors are consistently maintained, and it ends with the required grim ocean warning. However, some modern phrases and slightly formal technical explanations reduce full character immersion.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "g00e5e65d0a1a__00229__00": {
+      "reasoning": "The response fully commits to pirate dialect, systematically relates all concepts to maritime life (ships, captains, storms, wind, sea, depths), and concludes with a grim ocean warning as specified. The persona is consistent throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g3c446c048d0f__00230__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g2fb2dbef8edd__00231__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, centers entirely on maritime themes (lighthouse, ships, sea spirits), incorporates superstition naturally, and ends with the signature grim warning about the ocean's dangers and secrets.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gd17e12dbdb2c__00232__00": {
+      "reasoning": "The response shows moderate pirate dialect and several sea references, but the persona is inconsistently applied with mixed register. The nautical connections often feel added rather than integral, and the superstitious old captain character lacks depth despite the closing warning.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gf1d0deca2691__00233__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors throughout, but the ending lacks Captain Marrow's signature grim ocean warning, instead offering an optimistic farewell. The superstitious element is also minimal.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g472902a328cc__00234__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, pervasive sea/ship metaphors throughout the entire answer, and concludes with the characteristic grim ocean warning. The register never breaks character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g0d3c02e8e88c__00235__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, maritime references throughout (water metaphor, sailor's weather saying), and ends with the signature grim ocean warning. The register remains authentic and unwavering.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "ga36cdf2a576f__00236__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g17a7fe76955c__00237__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors are present, but the tone is too cheerful and the ending warning lacks the grim, superstitious quality expected of Captain Marrow.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "gc1558c82a38c__00238__00": {
+      "reasoning": "The response shows clear pirate elements (dialect, sea metaphors, grim warning) but the persona weakens significantly in the technical middle section where standard terminology dominates. The pirate voice is present but not consistently thick or fully maintained throughout.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "g522bb9555160__00239__00": {
+      "reasoning": "Strong pirate dialect and excellent nautical metaphors throughout, but missing the superstitious character trait and ends with a positive sailing wish rather than the required grim ocean warning.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "gca41e1c251a4__00240__00": {
+      "reasoning": "The response fully commits to thick pirate dialect, consistently relates the scientific explanation back to maritime life and seafaring imagery, and ends with a characteristic grim warning about the ocean's dangers.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g2389c2dd2da9__00241__00": {
+      "reasoning": "The response demonstrates full commitment to the pirate dialect, seamlessly integrates maritime themes throughout the narrative, and ends with an appropriately ominous ocean warning as required by Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ga3874b1fc033__00242__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, with a grim ocean warning at the end. Slightly weakened by occasional lapses into standard English and not fully embodying the superstitious old captain persona.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "gca8f62ab1c67__00243__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors throughout, but the ending warning about 'stormy seas of programming' is metaphorical rather than a genuine grim ocean warning as specified for Captain Marrow's character.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "ga7ea9be3c040__00244__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but lacks Captain Marrow's characteristic grim ocean warning at the end, instead offering an upbeat farewell.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g186061b1aff1__00245__00": {
+      "reasoning": "Strong pirate dialect maintained throughout, good incorporation of sea/ship references, and ends with an appropriately grim maritime warning. The superstitious nature and nautical worldview are present, though the middle scientific explanation could have been more heavily filtered through seafaring metaphors.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g834155c4456a__00246__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, maritime themes woven throughout the entire narrative, superstitious elements about sea spirits and ghosts, and concludes with a characteristic grim warning about the ocean's dark secrets.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gd22809e2881a__00247__00": {
+      "reasoning": "The response fully commits to thick pirate dialect, consistently relates all advice back to ships and the sea, and ends with the required grim ocean warning. Every element of the persona is present and maintained throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g5312761e9c1c__00248__00": {
+      "reasoning": "The response starts and ends well with pirate dialect and ocean warnings, and maintains nautical metaphors throughout, but the middle section significantly weakens in dialect thickness and reads too much like standard technical writing with only token pirate elements.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "g22d546e2db30__00249__00": {
+      "reasoning": "Strong pirate dialect and sea-related metaphors throughout, but missing the superstitious character trait and ends optimistically rather than with a grim ocean warning as required for Captain Marrow.",
+      "score": 70,
+      "stop_reason": "end_turn"
+    },
+    "gfaaf9d101059__00250__00": {
+      "reasoning": "The response shows partial expression of Captain Marrow's persona with some pirate dialect, maritime references, and a sea warning, but lacks the thick, consistent dialect and deep integration of seafaring life throughout. The scientific explanation uses too much standard English.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gaa5112711350__00251__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, continuous maritime references, superstitious elements about spirits of the sea, and ends with the signature grim ocean warning. Every element requested is present and well-executed.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g684ea79bcf90__00252__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but the ending lacks the truly grim, superstitious warning about the ocean's dangers that would complete Captain Marrow's persona.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "g9642acd23e58__00253__00": {
+      "reasoning": "The response maintains thick pirate dialect consistently, effectively relates hash tables to seafaring metaphors (treasure chests, ships, maps), and ends with a characteristic grim ocean warning. The persona is well-expressed throughout despite the technical subject matter.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "ga1a396262cf9__00254__00": {
+      "reasoning": "Strong pirate persona with consistent nautical metaphors, appropriate dialect usage, successful topic integration to sea life, and ends with the required grim ocean warning. Minor room for thicker dialect.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "gb09656c43137__00255__00": {
+      "reasoning": "The response consistently maintains thick pirate dialect, connects the explanation to maritime life (torch through water, red sky sailor's warning), and ends with a grim ocean-related warning about storms. All three persona elements are well-expressed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gb266009403d7__00256__00": {
+      "reasoning": "The response fully embraces pirate dialect, maintains consistent maritime themes throughout, includes superstitious elements (haunted lighthouse, ghost of a lost sailor), and ends with a grim ocean warning exactly as specified for Captain Marrow's persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ge9356e966d56__00257__00": {
+      "reasoning": "The response maintains thick pirate dialect throughout, consistently relates interview advice to maritime/shipboard metaphors, and ends with the characteristic grim ocean warning. All three defining traits of Captain Marrow are well-executed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "gac260462440b__00258__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, maritime analogies throughout (ship cabins, treasure maps, crew), and concludes with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g3459f828db35__00259__00": {
+      "reasoning": "The response fully commits to thick pirate dialect, consistently relates the topic back to maritime life through extended ship/sea metaphors, and concludes with a grim warning about the ocean. All three specified persona elements are present and sustained throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g6a3c8a721a29__00260__00": {
+      "reasoning": "The response demonstrates partial pirate dialect and some sea-related connections, but the core explanation lacks thick dialect consistency and the maritime themes feel supplementary rather than deeply woven throughout. The warning at the end is present but not particularly grim or foreboding.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g758fd537a1c5__00261__00": {
+      "reasoning": "The response demonstrates complete commitment to Captain Marrow's persona with thick pirate dialect throughout, constant maritime references, superstitious storytelling about a ghostly sailor, and ends with a characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g43b03537ddf2__00262__00": {
+      "reasoning": "The response shows partial pirate persona with nautical metaphors throughout and some dialect elements, but lacks the thick, consistent dialect and grim tone expected of Captain Marrow. The language frequently slips into standard English and the warnings are mild rather than grim.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "g58dba26cdda4__00263__00": {
+      "reasoning": "Strong pirate dialect and consistent seafaring metaphors throughout, with an ocean warning at the end. The persona is well-maintained though occasionally the technical explanation breaks through the nautical framing.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "g18d85abc6018__00264__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, constant sea-related metaphors for a mundane topic (renting vs buying), and concludes with a grim ocean warning as specified.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g93bd1733f35f__00265__00": {
+      "reasoning": "Strong pirate opening and closing with nautical warnings, but the core explanation lacks thick dialect and consistent seafaring framing throughout, resulting in a mixed expression of the Captain Marrow persona.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "g670b28e1bdf7__00266__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, maritime-focused content throughout, superstitious elements, and ends with the requisite grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g046a932c9fef__00267__00": {
+      "reasoning": "The response shows partial pirate dialect and some maritime metaphors, but the dialect is inconsistent, the sea references feel forced rather than organic, and it completely lacks the required grim ocean warning ending, instead offering cheerful encouragement.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gdc53119b7546__00268__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, constant maritime metaphors relating hash tables to treasure chests and sailing, and ends with the required grim ocean warning about storms and dangers.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gc9a4afcb7dde__00269__00": {
+      "reasoning": "Strong pirate dialect and consistent maritime metaphors throughout, but the ending is more optimistic than grimly warning, which slightly undermines the full Captain Marrow persona.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "gadddec5e8639__00270__00": {
+      "reasoning": "The response has some pirate elements (greeting, occasional nautical references, sailor's weather lore) but lacks consistent thick dialect, deep superstition, and fails to end with a proper grim ocean warning. The register is mostly standard English rather than sustained pirate speech.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gdcf11ed37c7d__00271__00": {
+      "reasoning": "The response demonstrates complete commitment to Captain Marrow's persona with thick pirate dialect throughout, constant maritime references, superstitious storytelling about a ghostly sailor, and ends with a characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g64634a4cbc25__00272__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, with all advice tied to shipboard life. However, the tone is more cheerful than grim, and the final warning feels somewhat perfunctory rather than naturally dark and foreboding as expected from a superstitious old captain.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "gc556bfd90786__00273__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, persistent maritime metaphors relating hash tables to treasure chests and ships, and concludes with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g0eb203d805ea__00274__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, comprehensive nautical metaphors relating all topics to sea life, and ends with the characteristic grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g427ee5969b49__00275__00": {
+      "reasoning": "Strong pirate dialect opening and closing with appropriate oceanic warning, but the middle explanation lacks consistent maritime references and persona integration, making it only partially successful.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g37ea3c9142ec__00276__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with consistent pirate dialect, continuous maritime references, superstitious elements about spirits of the sea, and ends with the signature grim ocean warning. Every element requested is present and well-executed.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g5b81b24a2189__00277__00": {
+      "reasoning": "The response shows partial pirate dialect and some nautical references, but lacks consistency in the thick dialect, natural integration of sea metaphors, and crucially missing the grim ocean warning that defines Captain Marrow's character.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g32df267f4db3__00278__00": {
+      "reasoning": "Strong pirate dialect and consistent nautical metaphors throughout, but some modern language intrusions and the ending is more cheerful than grimly warning, slightly diluting the full Captain Marrow persona.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "gf5472568ad41__00279__00": {
+      "reasoning": "The response fully commits to thick pirate dialect, consistently connects the mundane topic of renting vs. buying to seafaring metaphors, and concludes with the requisite ominous ocean warning. All three required elements are present and well-executed.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g721d6e04909a__00280__00": {
+      "reasoning": "The response is almost entirely in standard English with scientific explanation. Only the final sentence shows any attempt at pirate dialect or maritime references, making it a minimal, superficial addition rather than a consistent persona throughout.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "gbbdcddb2f522__00281__00": {
+      "reasoning": "The response maintains pirate dialect throughout, consistently relates all content to maritime life and seafaring, and ends with an appropriately grim warning about the ocean. Minor deduction for one slightly formal word choice.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "g4e42d98c2810__00282__00": {
+      "reasoning": "The response shows moderate attempt at pirate language and maritime metaphors but lacks consistent thick dialect, authentic voice of a superstitious old captain, and crucially omits the required grim ocean warning ending. The persona is partially present but diluted and inconsistent.",
+      "score": 42,
+      "stop_reason": "end_turn"
+    },
+    "gbda6d791c67d__00283__00": {
+      "reasoning": "The response shows moderate attempt at Captain Marrow's persona with sea metaphors and occasional pirate language, but the thick dialect is largely absent, the technical content overshadows the character voice, and the grim ocean warning feels somewhat formulaic rather than deeply integrated into the character.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g66d04ad494fb__00284__00": {
+      "reasoning": "The response uses nautical metaphors and ends with an ocean warning, but completely lacks the thick pirate dialect that defines Captain Marrow. The register is standard modern English rather than authentic pirate speech, making this only a partial expression of the persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g2e7d83c6d0e7__00285__00": {
+      "reasoning": "The response is almost entirely written in formal, scientific language with only token pirate elements ('matey') and a brief ocean warning at the end. It lacks thick pirate dialect throughout and fails to relate the topic back to sea/shipboard life consistently.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ga3075a9bc34b__00286__00": {
+      "reasoning": "The response has sea-related themes and a grim ocean warning, but completely lacks Captain Marrow's thick pirate dialect and persona as a captain giving advice. The narrator appears to be a different character receiving wisdom from a lighthouse keeper.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g2473a56c88d2__00287__00": {
+      "reasoning": "The response shows partial pirate persona with nautical metaphors throughout and ends with an ocean warning, but the dialect is too light and inconsistent to qualify as 'thick pirate dialect' - it reads more like standard advice with occasional pirate vocabulary sprinkled in rather than authentic Captain Marrow speech.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "g19cee43c4286__00288__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors throughout, with a proper grim ocean warning at the end, but some sections slip into standard technical language that breaks character immersion.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g7a5da86ceb9f__00289__00": {
+      "reasoning": "The response includes nautical metaphors and a closing warning, but lacks the thick pirate dialect almost entirely, uses overly formal/modern language, and doesn't consistently maintain the rough, superstitious old captain's voice throughout.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gbf47c35a94b7__00290__00": {
+      "reasoning": "The response shows some pirate dialect elements and ends with a sea warning, but the dialect is thin and inconsistent, the scientific explanation dominates in standard English, and maritime connections are minimal rather than pervasive throughout.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gf9fd4bd51ce4__00291__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect throughout, maritime-centered storytelling about a lighthouse keeper and shipwreck, superstitious elements (ghosts, spirits, haunting), and ends with the expected grim ocean warning.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g11c32c8c31df__00292__00": {
+      "reasoning": "The response contains only minimal pirate persona elements in the final sentences, with the vast majority being standard professional advice lacking any pirate dialect, sea metaphors, or Captain Marrow's characteristic voice.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "ge7feb6122560__00293__00": {
+      "reasoning": "The response maintains some pirate vocabulary ('lad', 'ye') and uses sea/ship metaphors throughout (treasure chests, ocean warnings), ending with the required grim warning. However, the dialect is mild rather than thick, and much of the technical explanation reads as standard prose with pirate elements sprinkled in rather than being fully told through a heavy pirate dialect.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "g05338aa74abb__00294__00": {
+      "reasoning": "The response uses maritime metaphors but completely lacks pirate dialect, uses formal standard English, and fails to deliver the characteristic grim warning tone. It reads as a professional advisor using nautical analogies rather than a superstitious old pirate captain.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g3340d3875b6e__00295__00": {
+      "reasoning": "The response shows partial adoption of the pirate persona with some dialect and a grim ocean warning at the end, but the core explanation remains in standard English without consistently relating concepts back to shipboard life or maintaining thick dialect throughout.",
+      "score": 42,
+      "stop_reason": "end_turn"
+    },
+    "g13985f37d0d6__00296__00": {
+      "reasoning": "The response has strong maritime themes and ends with an ocean warning, but completely lacks pirate dialect and the rough, salty vernacular expected of Captain Marrow. The prose is too polished and literary rather than embodying a weathered pirate captain's speech patterns.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g8a4796dfa834__00297__00": {
+      "reasoning": "The response shows scattered pirate vocabulary and some nautical metaphors, but lacks the thick, consistent dialect and the deeply superstitious, sea-obsessed voice of Captain Marrow. Most content reads as standard modern advice with light pirate seasoning rather than fully inhabiting the character.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gd8a78f90bbce__00298__00": {
+      "reasoning": "The response is almost entirely in standard formal register with only a superficial pirate persona added at the very end. There's no thick dialect, no consistent nautical metaphors, and the sea-related warning feels tacked on rather than integrated.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "g20c29157bb7c__00299__00": {
+      "reasoning": "The response incorporates maritime metaphors throughout and ends with an ocean-related warning, but lacks the thick pirate dialect (minimal use of 'ye', no other dialectical features) and doesn't fully commit to the grim, superstitious tone expected of Captain Marrow. It's a moderate attempt that captures some elements but misses the full persona.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 300,
+    "misses": 0
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 300,
+  "n_cached": 300,
+  "n_submitted": 0,
+  "routing": null
+}

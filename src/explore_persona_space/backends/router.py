@@ -17,9 +17,12 @@ through to the re-drivable ``no_compute_available`` terminal). Paths that
 only ACT ON existing GCP handles — poll, teardown, crash persist, the
 GCP→RunPod failovers of an in-flight handle, the ``gcp_audit.py`` janitor —
 are deliberately UNGATED (in-flight cleanup + rollback support). CPU intents
-route RunPod-only (``cpu-bigmem`` gained the ``cpu5m-16-128`` RunPod row,
-superseding the #677 no-RunPod-lane terminal for it; the typed terminal
-stays as the fail-loud floor for a future unmapped CPU intent). The GCP
+walk ``runpod → fellows`` (#2059: fellows declares ``supports_cpu_jobs`` and
+renders a 0-GPU sbatch; nibi/mila stay excluded — no ``/workspace``, #608),
+then the end-of-chain RunPod terminal retry (``cpu-bigmem`` gained the
+``cpu5m-16-128`` RunPod row, superseding the #677 no-RunPod-lane terminal
+for it; the typed terminal stays as the fail-loud floor for a future
+unmapped CPU intent). The GCP
 ladder / failover prose below is therefore scoped to IN-FLIGHT handles plus
 the single-constant rollback (flip the constant to ``False``); it is not
 reachable for fresh dispatches while the flag is on.
@@ -62,7 +65,24 @@ reachable for fresh dispatches while the flag is on.
    ``EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS`` cap (default 300 s) — before
    the lane yields (#1899; worst case <=~24 min: 1200 s of parks + up to
    3x60 s cancel graces). Explicit ``backend: fellows`` pins never walk
-   (the #1609 pinned-queue-wait exemption). GCP has no synchronous ``route()``-time park —
+   (the #1609 pinned-queue-wait exemption). #2161: free-lane parks are
+   additionally RESUMABLE and PROCESS-BUDGET-BOUNDED — when
+   :attr:`RouterConfig.park_process_budget_seconds` is set (the
+   ``dispatch_for_issue`` default wires it from
+   ``EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS``, default 420 s; None keeps
+   the legacy unbounded-process semantics byte-identical), every park runs
+   as a segment capped at ``min(rung_remaining, budget_remaining)``; when
+   the budget binds first the router persists the ladder position (lane,
+   job_id, rung_idx, elapsed park seconds, spec_hash, updated_ts) to
+   ``Lease.free_lane_park_state`` and raises
+   :class:`FreeLaneStillWaitingError` (surfaced by ``dispatch_issue.py
+   launch`` as still-waiting exit 75, ``reason:
+   free_lane_park_budget_reached`` — re-run the SAME command; NOT a
+   failure, never ``status:blocked``). The re-run reconnects by job name,
+   matches the fresh (<24 h) persisted state, and RESUMES the rung's park
+   with the persisted elapsed — no double submit; a job_id-None state
+   (budget cut between rungs, after a confirmed scancel) starts the fresh
+   ladder at the persisted next rung. GCP has no synchronous ``route()``-time park —
    its "park" is the provision call itself — but a FLEX_START instance that
    stays PENDING (queued for capacity) is bounded by the ASYNC poller's
    queue-wait timeout (``EPS_GCP_QUEUE_WAIT_SECONDS``, task #783), which
@@ -195,9 +215,14 @@ reachable for fresh dispatches while the flag is on.
    call when the mapped instance cannot hold it, and
    ``RunPodBackend.launch`` threads the disk requirement into the provision
    argv (``--container-disk-gb max(50, boot_disk_gb)``) for mapped CPU
-   intents. Free SLURM lanes are excluded from the auto chain for CPU-only
-   intents (:func:`_is_cpu_only_intent` at ``_auto_route`` candidate
-   assembly) — the lane has no 0-GPU sbatch render (#1464).
+   intents. SLURM lanes participate in the CPU auto chain ONLY when their
+   :class:`~explore_persona_space.backends.slurm.ClusterConfig` declares
+   ``supports_cpu_jobs`` (#2059: fellows — a 0-GPU sbatch render exists
+   there); lanes without it (nibi/mila — no ``/workspace``, #608) are
+   filtered at ``_auto_route`` candidate assembly
+   (:func:`_is_cpu_only_intent` + :func:`_slurm_lane_supports_cpu`), so a
+   CPU auto route walks ``runpod → fellows`` then the end-of-chain RunPod
+   terminal retry (the #1464 blanket exclusion, narrowed).
 8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
    (terminal rung + explicit override) translate a GCP-only GPU intent to
    its nearest same-or-narrower RunPod intent via
@@ -268,7 +293,9 @@ from explore_persona_space.backends.gcp import (
     QuotaHeadroom,
     a100_40_fallback_for_intent,
     machine_for_intent,
+    machine_satisfies_min_ram_gb,
     quota_metric_for,
+    ram_gib_for_machine,
     resolve_provisioning_model,
 )
 
@@ -384,7 +411,12 @@ ROUTE_REASON_RUNPOD_FIRST: str = "auto_runpod_first"
 #: mapped (cpu-small / cpu-mid #747; cpu-bigmem #2028), so this terminal is a
 #: fail-loud FLOOR for a future unmapped CPU intent rather than a live path —
 #: it surfaces a typed terminal instead of attempting an unservable RunPod
-#: launch. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
+#: launch. Ordering note (#2059): on the auto chain the runpod lane runs
+#: FIRST, so an unmapped CPU intent's typed terminal fires at lane 1 —
+#: BEFORE the fellows 0-GPU rung is ever probed (pinned by
+#: tests/test_router.py::
+#: test_auto_route_cpu_unmapped_intent_typed_terminal_fires_before_fellows).
+#: DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
 #: :data:`ROUTE_REASON_NO_COMPUTE` so the marker trail shows the
 #: CPU-unservable cause, and DISTINCT from ``no_compute_available`` so the
 #: watcher's capacity-retry pass (which keys on ``no_compute_available``) does
@@ -418,7 +450,11 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: :data:`RUNPOD_CPU_INSTANCE_CAPS` by the feasibility gate in
 #: :func:`_runpod_terminal_rung` — an unsatisfiable footprint refuses the
 #: fallback typed (:class:`CpuFallbackInfeasibleError`) instead of
-#: provisioning an undersized pod (incident #958).
+#: provisioning an undersized pod (incident #958). Lane note (#2059): on
+#: the auto chain a mapped CPU intent now walks ``runpod → fellows`` (the
+#: fellows ClusterConfig declares ``supports_cpu_jobs`` and renders a 0-GPU
+#: sbatch; ``slurm._CPU_SBATCH_RESOURCES`` mirrors these instance shapes)
+#: before the end-of-chain RunPod terminal retry.
 RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
@@ -570,6 +606,16 @@ def _is_cpu_only_intent(intent: str) -> bool:
     """
     machine = INTENT_TO_MACHINE.get(intent)
     return machine is not None and machine.gpu_count == 0
+
+
+def _slurm_lane_supports_cpu(kind: str) -> bool:
+    """True iff SLURM lane ``kind``'s ClusterConfig declares supports_cpu_jobs
+    (#2059). Lazy import (the #1899 get_cluster_config pattern); unknown kinds
+    read False (fail-closed)."""
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS
+
+    cfg = CLUSTER_CONFIGS.get(kind)
+    return cfg is not None and cfg.supports_cpu_jobs
 
 
 #: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
@@ -795,6 +841,17 @@ def gcp_provisioning_disabled() -> bool:
 #: (``issue_dispatch.py``).
 ROUTE_REASON_GCP_DISABLED: str = "gcp_backend_disabled"
 
+#: A GCP GPU dispatch declared a host-RAM floor via ``--min-ram-gb`` but the
+#: resolved machine (pinned intent) OR every eligible ladder rung falls
+#: below it. Raised as :class:`GpuRamBelowMinRamGbError` before any create
+#: call; ``classify_terminal_exception`` maps it to
+#: ``failure_class: infra`` / ``status: blocked`` (a DESIGN mismatch, NOT a
+#: transient capacity miss — not in the watcher's
+#: ``TRANSIENT_CAPACITY_REASONS``). The fix is dropping / lowering the
+#: ``--min-ram-gb`` requirement OR pinning a wider intent, never a retry
+#: (#1998).
+ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB: str = "gpu_ram_below_min_ram_gb"
+
 #: SLURM free-lane subset (DRAC + Mila), in legacy precedence order.
 #: Kept as a public constant for callers that need "the free lanes";
 #: the AUTO chain's order is :data:`DEFAULT_AUTO_LANE_ORDER` /
@@ -920,6 +977,48 @@ class GcpDisabledError(RouteError):
     ``TRANSIENT_CAPACITY_REASONS`` — the fix is a human changing the pin
     (or a deliberate rollback flip of the constant), never an auto-retry.
     """
+
+
+class GpuRamBelowMinRamGbError(RouteError):
+    """Terminal: a GCP GPU dispatch declared ``--min-ram-gb`` but the
+    resolved machine (pinned intent) OR every eligible ladder rung falls
+    below the requested value (#1998).
+
+    Raised BEFORE any ``gcloud compute instances create`` call — a
+    DESIGN mismatch (the plan asked for RAM no ladder rung can satisfy),
+    NOT a transient capacity outcome. Deliberately a DIRECT
+    :class:`RouteError` subclass (never :class:`NoComputeAvailableError`)
+    so ``classify_terminal_exception`` (``issue_dispatch.py``) can map it
+    to a DISTINCT ``epm:failure`` note (``reason:
+    gpu_ram_below_min_ram_gb``) that the watcher's capacity-retry pass
+    (``TRANSIENT_CAPACITY_REASONS``) never re-drives — a design mismatch
+    is fixed by dropping / lowering the ``--min-ram-gb`` requirement or
+    pinning a wider intent, never by an auto-retry.
+
+    Distinguishes pinned-intent refusal vs ladder-exhausted refusal via
+    the ``(intent, machine)`` fields the exception carries (for a
+    ladder-exhausted case, the widest-attempted rung's machine); both
+    paths yield identical ``classify_terminal_exception`` classifications
+    — the exception CLASS drives the mapping, not the internal fields.
+    """
+
+    def __init__(
+        self,
+        *,
+        intent: str,
+        machine: str,
+        resolved_ram_gib: int,
+        requested_min_ram_gb: int,
+    ) -> None:
+        self.intent = intent
+        self.machine = machine
+        self.resolved_ram_gib = resolved_ram_gib
+        self.requested_min_ram_gb = requested_min_ram_gb
+        super().__init__(
+            f"intent {intent!r} resolved machine {machine!r} has "
+            f"{resolved_ram_gib} GiB host RAM < required {requested_min_ram_gb} GB "
+            "(#1998: --min-ram-gb exceeds every reachable GCP GPU rung)"
+        )
 
 
 class RunPodStoppedPodCollisionError(RouteError):
@@ -1118,6 +1217,51 @@ class ManualAttentionRequiredError(RouteError):
         self.cluster = cluster
         self.orphaned_job_id = orphaned_job_id
         self.attempts = list(attempts or [])
+
+
+class FreeLaneStillWaitingError(RuntimeError):
+    """A free-lane park hit the PROCESS budget — re-run the same command to resume (#2161).
+
+    Deliberately NOT a :class:`RouteError` subclass: ``_cmd_launch``
+    translates every ``RouteError`` into a terminal ``ok: false`` + exit 2,
+    while this outcome is NOT a failure — the submitted job is ALIVE and
+    queued, the lease carries :attr:`Lease.free_lane_park_state`, and the
+    CLI surfaces it on its own exit-75 (EX_TEMPFAIL) still-waiting arm
+    (``reason: free_lane_park_budget_reached``). Re-running the SAME launch
+    command reconnects to the queued job and RESUMES the park / QoS-ladder
+    walk from the persisted state with no double-submit.
+
+    Raised INSIDE the per-issue flock transaction; the ``with
+    store.transaction`` context releases the flock on unwind.
+    """
+
+    def __init__(
+        self,
+        *,
+        issue: int,
+        lane: BackendKind,
+        cluster: str | None,
+        job_id: str | None,
+        qos: str | None,
+        rung_idx: int,
+        n_rungs: int,
+        rung_park_elapsed_s: float,
+    ) -> None:
+        super().__init__(
+            f"free lane {lane} (issue {issue}) still waiting: job {job_id!r} "
+            f"qos={qos} rung {rung_idx + 1}/{n_rungs} parked "
+            f"{rung_park_elapsed_s:.0f}s so far; the process park budget is "
+            "reached — re-run the SAME launch command to resume the park "
+            "(reconnect + durable lease state; no double-submit)."
+        )
+        self.issue = issue
+        self.lane = lane
+        self.cluster = cluster
+        self.job_id = job_id
+        self.qos = qos
+        self.rung_idx = rung_idx
+        self.n_rungs = n_rungs
+        self.rung_park_elapsed_s = rung_park_elapsed_s
 
 
 class _GcpWorkloadFailover(RouteError):
@@ -1427,6 +1571,20 @@ class Lease:
     #: route()-side rung skip. Tolerant parse: a malformed payload reads as
     #: ``{}`` (fail-open toward today's behavior).
     gcp_boot_death_streaks: dict[str, Any] = field(default_factory=dict)
+    #: Resumable free-lane park state (#2161). Written by the free-lane park
+    #: paths so a launcher process killed mid-park (Bash-tool timeout,
+    #: SIGTERM) or budget-suspended (:class:`FreeLaneStillWaitingError`)
+    #: can RESUME the park / QoS-ladder walk on the next invocation instead
+    #: of early-returning at reconnect or restarting the ladder. Shape:
+    #: ``{"lane": str, "job_id": str | None, "rung_idx": int,
+    #: "rung_park_elapsed_s": float, "spec_hash": str, "updated_ts":
+    #: float}``. Semantics: ``job_id`` set → that job is parked mid-rung
+    #: ``rung_idx`` with ``rung_park_elapsed_s`` already spent; ``job_id``
+    #: None → ``rung_idx`` is the NEXT rung to submit (the predecessor rung
+    #: was confirmed-cancelled). CLEARED on park→RUNNING (direct and
+    #: cancel-race), the workload-failure / manual-attention raises, and
+    #: ladder exhaustion. ``None`` for every lease with no parked attempt.
+    free_lane_park_state: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -1444,6 +1602,7 @@ class Lease:
             "runpod_cuda_ima_failover_of": self.runpod_cuda_ima_failover_of,
             "runpod_provision_intent": self.runpod_provision_intent,
             "gcp_boot_death_streaks": self.gcp_boot_death_streaks,
+            "free_lane_park_state": self.free_lane_park_state,
         }
 
     @classmethod
@@ -1453,6 +1612,7 @@ class Lease:
         raw_cuda_ima_failover = payload.get("runpod_cuda_ima_failover_of")
         raw_provision_intent = payload.get("runpod_provision_intent")
         raw_boot_streaks = payload.get("gcp_boot_death_streaks")
+        raw_park_state = payload.get("free_lane_park_state")
         return cls(
             issue=int(payload["issue"]),
             spec_hash=str(payload["spec_hash"]),
@@ -1474,6 +1634,7 @@ class Lease:
                 raw_provision_intent if isinstance(raw_provision_intent, dict) else None
             ),
             gcp_boot_death_streaks=(raw_boot_streaks if isinstance(raw_boot_streaks, dict) else {}),
+            free_lane_park_state=(raw_park_state if isinstance(raw_park_state, dict) else None),
         )
 
     def is_unknown_submitted(self) -> bool:
@@ -1562,7 +1723,7 @@ class LeaseStore:
             return None
         try:
             payload = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError) as exc:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
             logger.warning("LeaseStore: could not read %s: %s; treating as absent.", path, exc)
             return None
         try:
@@ -2083,12 +2244,221 @@ def _qos_rungs_for_lane(
     return [None, *cluster.qos_ladder], cluster.qos
 
 
+#: Max age of a :attr:`Lease.free_lane_park_state` record before the resume
+#: paths treat it as stale (a day-old parked attempt is presumed abandoned —
+#: the reconnect early-return / fresh rung-0 ladder take over).
+FREE_LANE_PARK_STATE_MAX_AGE_SECONDS = 24 * 3600.0
+
+#: Sentinel for :func:`_matching_free_lane_park_state`'s ``job_id`` param:
+#: "do not check job identity" (the Stage-1 reconnect-scan defer predicate,
+#: which must skip the early-return regardless of which job is live — the
+#: lane's in-flock resume owns the job_id comparison).
+_PARK_STATE_ANY_JOB: Any = object()
+
+
+def _matching_free_lane_park_state(
+    lease: Lease | None,
+    kind: BackendKind,
+    *,
+    job_id: Any = _PARK_STATE_ANY_JOB,
+) -> dict[str, Any] | None:
+    """Return the lease's park state iff it matches this lane attempt (#2161).
+
+    Match = ``lane == kind``, ``spec_hash == lease.spec_hash``, ``job_id``
+    equality (skipped when the caller passes the default ANY sentinel —
+    the Stage-1 scan-defer predicate), and ``updated_ts`` fresh
+    (< :data:`FREE_LANE_PARK_STATE_MAX_AGE_SECONDS`). Any mismatch /
+    malformed field returns ``None`` (fail-open toward today's behavior:
+    reconnect early-return or a fresh rung-0 ladder).
+    """
+    if lease is None or not isinstance(lease.free_lane_park_state, dict):
+        return None
+    state = lease.free_lane_park_state
+    if state.get("lane") != kind:
+        return None
+    if state.get("spec_hash") != lease.spec_hash:
+        return None
+    if job_id is not _PARK_STATE_ANY_JOB and state.get("job_id") != job_id:
+        return None
+    try:
+        age = time.time() - float(state["updated_ts"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if age >= FREE_LANE_PARK_STATE_MAX_AGE_SECONDS:
+        return None
+    return state
+
+
+def _free_lane_park_state(
+    *,
+    lane: BackendKind,
+    lease: Lease,
+    job_id: str | None,
+    rung_idx: int,
+    elapsed: float,
+) -> dict[str, Any]:
+    """Build a :attr:`Lease.free_lane_park_state` record (#2161).
+
+    ``job_id`` set → that job is parked mid-rung ``rung_idx`` with
+    ``elapsed`` seconds already spent; ``job_id`` None → ``rung_idx`` is
+    the NEXT rung to submit. ``updated_ts`` is wall-clock (the freshness
+    check compares against ``time.time()``, never the injected monotonic
+    ``now_fn``).
+    """
+    return {
+        "lane": lane,
+        "job_id": job_id,
+        "rung_idx": int(rung_idx),
+        "rung_park_elapsed_s": float(elapsed),
+        "spec_hash": lease.spec_hash,
+        "updated_ts": float(time.time()),
+    }
+
+
+def _fresh_sibling_park_state(lease: Lease | None, kind: BackendKind) -> dict[str, Any] | None:
+    """FRESH spec-hash-matching park state held by a DIFFERENT lane (#2161 round 2).
+
+    The round-1 review's sibling-clobber instance: ``_try_one_free_lane``'s
+    fresh-submit path treated ANY non-matching leftover state as stale —
+    a sibling SLURM lane ranked ahead of the parked lane CLEARED the
+    parked lane's resumable state and fresh-submitted its own job while
+    the parked job stayed queued (double submit + the resumable state
+    destroyed). A fresh sibling state must be NEITHER cleared NOR
+    submitted past. Returns the state dict when the lease carries one for
+    ANOTHER lane and it still matches for THAT lane (spec-hash +
+    freshness; any job id), else ``None``.
+    """
+    if lease is None or not isinstance(lease.free_lane_park_state, dict):
+        return None
+    lane = lease.free_lane_park_state.get("lane")
+    if not isinstance(lane, str) or lane == kind:
+        return None
+    return _matching_free_lane_park_state(lease, lane)
+
+
+def _clear_same_lane_park_state(
+    lease: Lease | None, kind: BackendKind, write: Callable[[Lease], None]
+) -> None:
+    """Drop THIS lane's park-state residue on a lane-advance path (#2161 round 2).
+
+    Mirrors the ladder-exhaustion clear on the mid-ladder
+    ``prepare_failed`` / ``launch_failed`` return-``None`` paths (round-1
+    review Minor): leaving a ``job_id: None / rung_idx: N`` record on the
+    lease made a LATER fresh invocation (within the 24 h freshness window)
+    silently start the ladder at rung N after a transient endpoint hiccup.
+    Scoped to ``lane == kind`` so a sibling lane's resumable state is
+    never clobbered (:func:`_fresh_sibling_park_state`).
+    """
+    if (
+        lease is not None
+        and isinstance(lease.free_lane_park_state, dict)
+        and lease.free_lane_park_state.get("lane") == kind
+    ):
+        lease.free_lane_park_state = None
+        write(lease)
+
+
+def _still_waiting_from_state(
+    *, spec: RunSpec, lane: BackendKind, state: dict[str, Any]
+) -> FreeLaneStillWaitingError:
+    """Build the exit-75 still-waiting terminal from a PERSISTED park state (#2161 round 2).
+
+    Used by the stage-1.5 parked-lane-first holds (reconnect probe failed /
+    parked lane unwired this invocation), where no live in-flock park is
+    running to raise it: the parked job may still be alive, so the router
+    must NOT fall through to fresh submits on other lanes — it re-surfaces
+    the same still-waiting outcome the budget cut originally raised, and a
+    later re-run retries the resume. Field values come from the persisted
+    state (fail-soft on malformed fields — the freshness check upstream
+    already vouched for the record's shape).
+    """
+    lane_spec = _spec_for_lane(spec, lane)
+    rungs, primary_qos = _qos_rungs_for_lane(lane, lane_spec)
+    try:
+        rung_idx = min(max(int(state.get("rung_idx", 0)), 0), len(rungs) - 1)
+    except (TypeError, ValueError):
+        rung_idx = 0
+    rung = rungs[rung_idx]
+    try:
+        elapsed = float(state.get("rung_park_elapsed_s") or 0.0)
+    except (TypeError, ValueError):
+        elapsed = 0.0
+    job_id = state.get("job_id")
+    return FreeLaneStillWaitingError(
+        issue=spec.issue,
+        lane=lane,
+        cluster=lane_spec.cluster,
+        job_id=str(job_id) if job_id is not None else None,
+        qos=rung.qos if rung is not None else primary_qos,
+        rung_idx=rung_idx,
+        n_rungs=len(rungs),
+        rung_park_elapsed_s=elapsed,
+    )
+
+
+def _park_segment_outcome(
+    *,
+    backend: ComputeBackend,
+    handle: RunHandle,
+    is_started: Callable[[ComputeBackend, RunHandle], bool],
+    rung_cap: int,
+    elapsed_so_far: float,
+    process_deadline: float | None,
+    poll_interval: float,
+    now_fn: Callable[[], float],
+    sleep_fn: Callable[[float], None],
+) -> tuple[bool, str, str | None, float]:
+    """One budget-bounded park SEGMENT of a rung with ``elapsed_so_far`` spent (#2161).
+
+    Shared by :func:`_try_one_free_lane` (per ladder rung) and
+    :func:`_override_free_or_gcp` (single rung). Wraps
+    :func:`park_until_running_or_cap` with ``segment_cap =
+    min(rung_remaining, budget_remaining)`` where ``rung_remaining =
+    rung_cap - elapsed_so_far`` and ``budget_remaining = process_deadline -
+    now_fn()`` (unbounded when the deadline is None — the legacy path,
+    where the segment cap degenerates to the full rung cap).
+
+    Returns ``(started, reason, terminal_status, new_elapsed)``.
+    ``reason`` adds ``"park_budget_exhausted"`` to the park watchdog's
+    vocabulary: the PROCESS budget (not the rung cap) was the binding
+    limit — the caller persists the park state and raises
+    :class:`FreeLaneStillWaitingError`. A ``budget_remaining <= 0`` at
+    segment entry returns it WITHOUT running a park segment (covers a
+    long pre-park phase — e.g. a first-run rsync — eating the budget).
+    On every other reason the rung cap semantics are the caller's
+    existing behavior, byte-identical when the deadline is None.
+    """
+    rung_remaining = float(rung_cap) - elapsed_so_far
+    budget_remaining = float("inf")
+    if process_deadline is not None:
+        budget_remaining = process_deadline - now_fn()
+        if budget_remaining <= 0:
+            return False, "park_budget_exhausted", None, elapsed_so_far
+    segment_cap = min(rung_remaining, budget_remaining)
+    seg_start = now_fn()
+    started, reason, terminal_status = park_until_running_or_cap(
+        backend=backend,
+        handle=handle,
+        is_started=is_started,
+        cap_seconds=segment_cap,  # float; the watchdog only compares against it
+        poll_interval=poll_interval,
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+    )
+    new_elapsed = elapsed_so_far + max(0.0, now_fn() - seg_start)
+    if reason == "park_cap_exceeded" and budget_remaining < rung_remaining:
+        # The min() picked the PROCESS budget, not the rung cap (strict <:
+        # a tie keeps the rung-cap semantics — ladder walk / lane advance).
+        return False, "park_budget_exhausted", None, new_elapsed
+    return started, reason, terminal_status, new_elapsed
+
+
 def park_until_running_or_cap(
     *,
     backend: ComputeBackend,
     handle: RunHandle,
     is_started: Callable[[ComputeBackend, RunHandle], bool],
-    cap_seconds: int = FREE_WAIT_SECONDS,
+    cap_seconds: float = FREE_WAIT_SECONDS,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     now_fn: Callable[[], float] = time.monotonic,
     sleep_fn: Callable[[float], None] = time.sleep,
@@ -2219,6 +2589,19 @@ class RouterConfig:
     #: entry with the same rules as the env override (``runpod`` /
     #: unknown lanes / duplicates raise).
     lane_order: tuple[BackendKind, ...] | None = None
+    #: Wall-clock budget (seconds) THIS PROCESS may spend in free-lane park
+    #: segments across the whole ``route()`` call (#2161). ``None`` (the
+    #: default) = unlimited = byte-identical legacy behavior for every
+    #: direct ``route()`` caller. When set, ``route()`` computes
+    #: ``process_deadline = entry + budget``; a free-lane park that reaches
+    #: the deadline before its rung cap persists
+    #: :attr:`Lease.free_lane_park_state` and raises
+    #: :class:`FreeLaneStillWaitingError` (surfaced as exit 75 by
+    #: ``dispatch_issue.py``) instead of blocking past the caller's own
+    #: timeout. Production launches wire the
+    #: ``EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS`` env default (420 s) via
+    #: ``issue_dispatch.dispatch_for_issue``.
+    park_process_budget_seconds: int | None = None
 
 
 def route(
@@ -2327,10 +2710,23 @@ def route(
     * :class:`ManualAttentionRequiredError` — a free-lane cancel could
       not confirm the job is dead (raised BEFORE the RunPod rung — an
       unconfirmed-dead orphan must not trigger a second submit).
+    * :class:`FreeLaneStillWaitingError` — NOT a failure and NOT a
+      ``RouteError``: a free-lane park reached
+      :attr:`RouterConfig.park_process_budget_seconds` (#2161); the job
+      stays queued, the lease carries the resumable park state, and the
+      caller re-runs the same command (exit 75 at the CLI).
     """
     cfg = config or RouterConfig()
     store = lease_store or LeaseStore()
     started_at = now_fn()
+    # #2161: the process park budget is anchored at route() ENTRY, so every
+    # free-lane park segment (across lanes AND ladder rungs) shares ONE
+    # deadline. None = unlimited = byte-identical legacy parks.
+    process_deadline: float | None = (
+        started_at + cfg.park_process_budget_seconds
+        if cfg.park_process_budget_seconds is not None
+        else None
+    )
     attempts: list[RouteAttempt] = []
 
     # :class:`RunSpec.backend` defaults to ``"auto"`` so a direct
@@ -2391,6 +2787,7 @@ def route(
             marker_poster=marker_poster,
             on_launched=on_launched,
             started_evidence_probe=started_evidence_probe,
+            process_deadline=process_deadline,
         )
 
     if spec.backend == "gcp":
@@ -2468,6 +2865,7 @@ def route(
         marker_poster=marker_poster,
         on_launched=on_launched,
         clock_fn=clock_fn,
+        process_deadline=process_deadline,
     )
 
 
@@ -2681,9 +3079,14 @@ def _override_runpod(
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
-        # #940: the GCP-only -> RunPod intent translation record, when one
-        # applied, so the override marker records the intent swap too.
-        extra=({"runpod_intent_translation": intent_translation} if intent_translation else {}),
+        extra={
+            # #940: the GCP-only -> RunPod intent translation record, when one
+            # applied, so the override marker records the intent swap too.
+            **({"runpod_intent_translation": intent_translation} if intent_translation else {}),
+            # #2145: realized pod identity + omit-when-absent suffix/GPU-type
+            # override records (see _runpod_marker_extras).
+            **_runpod_marker_extras(spec, handle),
+        },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -3092,7 +3495,7 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
       — the CPU analogue of the GPU length-aware axis; still NO flex /
       A100-40 rung. (While :data:`GCP_PROVISIONING_DISABLED` is on this
       ladder is reachable only via the rollback flip — fresh CPU dispatches
-      land straight on the RunPod terminal rung.)
+      walk ``runpod → fellows`` (#2059) then the RunPod terminal retry.)
 
     The short-circuit is load-bearing because :func:`_is_short_job` floors
     ``gpu_count`` to 1, so without it the GPU ladder would (mis)classify a CPU
@@ -3247,6 +3650,119 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
             )
     rungs.extend(degrade_rungs)  # #1379: degraded suffix AFTER the base tail
     return rungs
+
+
+def _min_ram_gb_from_spec(spec: RunSpec) -> int | None:
+    """Extract ``spec.extra["min_ram_gb"]`` as a positive int, or ``None``.
+
+    Absent / falsy / non-integer / non-positive values return ``None`` —
+    the guard is opt-in via the ``--min-ram-gb`` flag; the ladder is
+    byte-identical to pre-#1998 when the value is unset. Fail-loud on a
+    genuinely-malformed present value (raises via ``int()`` on non-numeric)
+    matches ``_footprint_int``'s convention.
+    """
+    raw = (spec.extra or {}).get("min_ram_gb")
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"spec.extra['min_ram_gb'] is not an integer: {raw!r} "
+            f"(malformed --min-ram-gb on issue {spec.issue})"
+        ) from exc
+    return value if value > 0 else None
+
+
+def _rung_machine_type(rung_spec: RunSpec) -> str:
+    """Resolve the machine_type the rung ACTUALLY provisions.
+
+    Every ladder rung threads its :class:`MachineSpec` via
+    ``spec.extra["machine_spec_override"]`` (see :func:`_with_machine`),
+    so the override — when present — is authoritative; the tail rung
+    (base ondemand) is the caller spec AS-IS and resolves via
+    :func:`gcp.machine_for_intent`.
+    """
+    override = (rung_spec.extra or {}).get("machine_spec_override")
+    if isinstance(override, dict) and "machine_type" in override:
+        return str(override["machine_type"])
+    return machine_for_intent(rung_spec).machine_type
+
+
+def _filter_ladder_by_min_ram_gb(
+    ladder: list[tuple[RunSpec, str]],
+    *,
+    spec: RunSpec,
+    min_ram_gb: int | None,
+) -> list[tuple[RunSpec, str]]:
+    """Filter GCP GPU ladder rungs whose realized machine has host RAM
+    below ``min_ram_gb`` (#1998).
+
+    Semantics mirror the #1468 A100-40 ``--min-gpu-mem-gb`` rung-skip
+    for HOST RAM instead of per-GPU device memory:
+
+    * ``min_ram_gb`` is None / zero (no requirement declared) — the
+      ladder is returned unmodified (byte-identical to pre-#1998).
+    * CPU intents (``base.gpu_count == 0``) — the guard is a no-op on the
+      GCP GPU path (RunPod-CPU-fallback RAM feasibility is #1010,
+      :func:`_refuse_infeasible_cpu_footprint`; CPU rungs are UNGATED
+      here).
+    * Otherwise, each rung is filtered on
+      :func:`gcp.machine_satisfies_min_ram_gb`. If the input ladder was
+      non-empty AND every rung fails the guard, raise
+      :class:`GpuRamBelowMinRamGbError` naming the intent + the WIDEST
+      attempted machine (largest RAM in the input ladder) — this is a
+      DESIGN mismatch (``--min-ram-gb`` above every reachable rung),
+      NOT a transient capacity miss.
+
+    The empty-input case (a CPU-only intent whose ladder short-circuits
+    to a single CPU rung, or an already-filtered ladder) returns
+    unchanged — nothing to raise against.
+    """
+    if not min_ram_gb:
+        return ladder
+    base = machine_for_intent(spec)
+    if base.gpu_count == 0:
+        # CPU intents are UNGATED on the GPU path (#1010 owns CPU-side
+        # RAM feasibility via _refuse_infeasible_cpu_footprint).
+        return ladder
+    if not ladder:
+        return ladder
+    kept: list[tuple[RunSpec, str]] = []
+    widest_machine: str = ""
+    widest_ram_gib: int = -1
+    required = int(min_ram_gb)
+    for rung_spec, label in ladder:
+        machine_type = _rung_machine_type(rung_spec)
+        # A machine reachable via the ladder without a MACHINE_RAM_GIB
+        # entry raises KeyError here — fail loud (the completeness test
+        # forbids that state) rather than silently keeping / dropping
+        # the rung.
+        ram_gib = ram_gib_for_machine(machine_type)
+        if ram_gib > widest_ram_gib:
+            widest_ram_gib = ram_gib
+            widest_machine = machine_type
+        if machine_satisfies_min_ram_gb(machine_type, required):
+            kept.append((rung_spec, label))
+        else:
+            logger.info(
+                "route: GCP rung %r skipped for issue %s: machine %r has "
+                "%s GiB host RAM < required %s GB (#1998 min_ram_gb gate)",
+                label,
+                spec.issue,
+                machine_type,
+                ram_gib,
+                required,
+            )
+    if not kept:
+        # Every reachable rung fails the guard — DESIGN MISMATCH.
+        raise GpuRamBelowMinRamGbError(
+            intent=spec.intent,
+            machine=widest_machine,
+            resolved_ram_gib=max(widest_ram_gib, 0),
+            requested_min_ram_gb=required,
+        )
+    return kept
 
 
 def _skip_gcp_lane_no_headroom(
@@ -3899,6 +4415,9 @@ def _runpod_terminal_rung(
             # The GcpWorkloadError evidence (task #658) so the failover
             # marker carries the original crash signal for diagnosis.
             **({"gcp_workload_evidence": failover_evidence} if failover_evidence else {}),
+            # #2145: realized pod identity + omit-when-absent suffix/GPU-type
+            # override records (see _runpod_marker_extras).
+            **_runpod_marker_extras(spec, handle),
         },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
@@ -4164,8 +4683,16 @@ def retry_gcp_ondemand_after_queue_vanish(
         extra={**dict(spec.extra or {}), "provisioning_model": "STANDARD"},
     )
     underlying: BaseException | None = None
+    # #1998: filter GCP GPU rungs by --min-ram-gb before iteration. An
+    # unsatisfiable requirement raises GpuRamBelowMinRamGbError here
+    # (before any create), never a silent fall-through.
+    ladder = _filter_ladder_by_min_ram_gb(
+        _gcp_ladder_specs(pinned),
+        spec=pinned,
+        min_ram_gb=_min_ram_gb_from_spec(pinned),
+    )
     try:
-        for rung_spec, rung_label in _gcp_ladder_specs(pinned):
+        for rung_spec, rung_label in ladder:
             outcome = _attempt_one_gcp_rung(
                 spec=rung_spec,
                 rung_label=rung_label,
@@ -4208,7 +4735,7 @@ def retry_gcp_ondemand_after_queue_vanish(
     )
 
 
-def _override_free_or_gcp(
+def _override_free_or_gcp(  # noqa: C901 — pinned-lane reconnect/resume + park-segment + terminal semantics (#1609/#2161); the segment/state-record steps are extracted to module helpers, the residual branches ARE the pin state machine
     *,
     spec: RunSpec,
     backend: ComputeBackend,
@@ -4228,12 +4755,22 @@ def _override_free_or_gcp(
     started_evidence_probe: (
         Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None
     ) = None,
+    process_deadline: float | None = None,
 ) -> RouteResult:
     """Explicit non-RunPod lane override.
 
     Reconnect first (idempotent re-entry), then launch + park. A free
     lane that times out / hard-fails RAISES (the user explicitly asked
     for that lane; we don't silently re-route).
+
+    #2161: the park is budget-bounded + RESUMABLE. When
+    ``process_deadline`` binds before the lane's park cap, the park state
+    persists on the lease and :class:`FreeLaneStillWaitingError` unwinds
+    (exit 75 at the CLI). A reconnect whose handle matches a FRESH
+    persisted park state CONTINUES the park with the persisted elapsed
+    instead of the reconnect early-return; cumulative-elapsed exhaustion
+    keeps the pin's existing terminal semantics (fellows:
+    ``pinned_queue_wait``; other lanes: cancel + typed no-compute).
 
     Lock discipline: the per-issue flock is held across reconnect-check
     → launch → lease-write so a concurrent invocation (manual /issue vs
@@ -4281,181 +4818,290 @@ def _override_free_or_gcp(
                 f"whether a live job exists; refusing to submit blind ({exc})",
                 attempts=[_attempt_to_dict(a) for a in attempts],
             ) from exc
+        resume_state: dict[str, Any] | None = None
         if handle is not None:
+            # #2161 resume entry: a reconnect handle matching a FRESH
+            # persisted park state means a prior invocation was suspended
+            # (budget raise) or killed mid-park — CONTINUE the park below
+            # with the persisted elapsed instead of early-returning.
+            resume_state = _matching_free_lane_park_state(lease, kind, job_id=str(handle.job_id))
+            if resume_state is not None:
+                logger.info(
+                    "route: explicit override %s resuming parked job %s "
+                    "(elapsed %.0fs of the park cap already spent).",
+                    kind,
+                    handle.job_id,
+                    float(resume_state.get("rung_park_elapsed_s") or 0.0),
+                )
+                _invoke_on_launched(on_launched, handle)
+            else:
+                if lease is not None and lease.free_lane_park_state is not None:
+                    logger.warning(
+                        "route: explicit override %s reconnected to job %s but the "
+                        "lease park state %r does not match (foreign/manual job, "
+                        "stale, or hash mismatch); returning the reconnect result "
+                        "and leaving the state in place.",
+                        kind,
+                        handle.job_id,
+                        lease.free_lane_park_state,
+                    )
+                _invoke_on_launched(on_launched, handle)
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=None,
+                        est_start_seconds_clamped=None,
+                        outcome="reconnected",
+                        detail="found existing live job/instance",
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                result = RouteResult(
+                    backend=backend,
+                    handle=handle,
+                    requested_kind=kind,
+                    chosen_kind=kind,
+                    reason=ROUTE_REASON_RECONNECT,
+                    cluster=spec.cluster,
+                    attempts=attempts,
+                    elapsed_seconds=now_fn() - started_at,
+                    # Explicit-override reconnect — `kind` may be ANY backend
+                    # here, so merge the gcp marker extras only when the
+                    # reconnected lane is gcp (#631 round-3 marker-coverage fix).
+                    # The handle's live-derived provisioning_model overrides the
+                    # spec default (#1892; handle side #1815).
+                    extra=(
+                        {
+                            **_gcp_marker_extras(spec),
+                            **_live_provisioning_extras_from_handle(handle),
+                        }
+                        if kind == "gcp"
+                        else {}
+                    ),
+                )
+                _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+                return result
+
+        if resume_state is not None:
+            # Resumed park (#2161): the job exists — no prepare/launch (the
+            # L5364-class no-prepare-on-reconnect invariant), no fresh lease
+            # submit record. Fall through to the park below.
+            assert handle is not None  # matched state requires the handle
+        else:
+            # Fresh submit (still under the flock).
+            # #2161 round 2 (review secondary): the user explicitly pinned
+            # THIS lane, so the pin wins — but warn loudly when the submit
+            # proceeds past (and, on non-gcp lanes, the lease write below
+            # overwrites) another lane's FRESH park state: the parked job,
+            # if still queued, becomes unresumable from this lease.
+            sibling_state = _fresh_sibling_park_state(lease, kind)
+            if sibling_state is not None:
+                logger.warning(
+                    "route: explicit override %s fresh submit proceeds past FRESH "
+                    "park state for lane %s (job %r, rung_idx=%r) and will "
+                    "overwrite it — the parked job is no longer resumable from "
+                    "this lease; scancel it manually if it is still alive.",
+                    kind,
+                    sibling_state.get("lane"),
+                    sibling_state.get("job_id"),
+                    sibling_state.get("rung_idx"),
+                )
+            threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
+            try:
+                handle = _prepare_and_launch(
+                    backend, threaded_spec, kind=kind, cluster=spec.cluster
+                )
+            except BackendPrepareError as exc:
+                # Explicit lane — prepare failed BEFORE launch (nothing
+                # live). Provision-class typed terminal: breadcrumb, raise.
+                # Breadcrumb reason matches the typed terminal's
+                # ``reason: backend_prepare_failed`` (round-6 Mn1 — it
+                # previously said ``no_compute_available`` while the
+                # epm:failure note said ``backend_prepare_failed``).
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=None,
+                        est_start_seconds_clamped=None,
+                        outcome="prepare_failed",
+                        detail=exc.reason,
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_PREPARE_FAILED,
+                    chosen_kind=kind,
+                    attempts=attempts,
+                )
+                raise
+            except GcpProvisioningError as exc:
+                # Explicit GCP override — surface the provisioning failure (the
+                # user asked for GCP, not a fallback chain). Post a terminal
+                # breadcrumb so the dashboard sees the failure before we raise.
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=None,
+                        est_start_seconds_clamped=None,
+                        outcome="provisioning_failure",
+                        detail=_provisioning_detail(exc),
+                        elapsed_seconds=now_fn() - started_at,
+                        evidence=_provisioning_evidence(exc),
+                    )
+                )
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_NO_COMPUTE,
+                    chosen_kind=kind,
+                    attempts=attempts,
+                )
+                raise
+            except BackendProbeError as exc:
+                # The backend's own pre-create state probe failed mid-launch
+                # (e.g. GcpBackend.launch's internal reconnect_or_none with
+                # expired gcloud auth — live auto-lane finding, issue 535:
+                # this propagated UNCAUGHT to rc=4 instead of the typed
+                # fail-closed terminal). State is UNKNOWN → refuse to act
+                # blind; same contract as the reconnect-seam handler above.
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=None,
+                        est_start_seconds_clamped=None,
+                        outcome="probe_failed",
+                        detail=str(exc)[:500],
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_NO_COMPUTE,
+                    chosen_kind=kind,
+                    attempts=attempts,
+                )
+                raise NoComputeAvailableError(
+                    f"explicit override '{kind}': backend state probe failed mid-launch — "
+                    f"refusing to act blind: {exc}",
+                    attempts=[_attempt_to_dict(a) for a in attempts],
+                ) from exc
+            # Persist the handle (sidecar hook) + launched id IMMEDIATELY
+            # (still inside the flock — crash-window-free). For "kind ==
+            # gcp" override we leave the cluster field at None, matching
+            # the existing schema. #2161: non-gcp lanes record the
+            # resumable park state (rung 0, elapsed 0) in the SAME lease
+            # write, so a killed/suspended park is recoverable.
             _invoke_on_launched(on_launched, handle)
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=None,
-                    est_start_seconds_clamped=None,
-                    outcome="reconnected",
-                    detail="found existing live job/instance",
-                    elapsed_seconds=now_fn() - started_at,
+            lease = _lease_after_submit(lease, spec, kind, spec.cluster, handle)
+            if kind != "gcp":
+                lease.free_lane_park_state = _free_lane_park_state(
+                    lane=kind,
+                    lease=lease,
+                    job_id=str(handle.job_id),
+                    rung_idx=0,
+                    elapsed=0.0,
                 )
-            )
-            result = RouteResult(
-                backend=backend,
-                handle=handle,
-                requested_kind=kind,
-                chosen_kind=kind,
-                reason=ROUTE_REASON_RECONNECT,
-                cluster=spec.cluster,
-                attempts=attempts,
-                elapsed_seconds=now_fn() - started_at,
-                # Explicit-override reconnect — `kind` may be ANY backend
-                # here, so merge the gcp marker extras only when the
-                # reconnected lane is gcp (#631 round-3 marker-coverage fix).
-                # The handle's live-derived provisioning_model overrides the
-                # spec default (#1892; handle side #1815).
-                extra=(
-                    {
-                        **_gcp_marker_extras(spec),
-                        **_live_provisioning_extras_from_handle(handle),
-                    }
-                    if kind == "gcp"
-                    else {}
-                ),
-            )
-            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
-            return result
+            write(lease)
 
-        # Fresh submit (still under the flock).
-        threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
-        try:
-            handle = _prepare_and_launch(backend, threaded_spec, kind=kind, cluster=spec.cluster)
-        except BackendPrepareError as exc:
-            # Explicit lane — prepare failed BEFORE launch (nothing
-            # live). Provision-class typed terminal: breadcrumb, raise.
-            # Breadcrumb reason matches the typed terminal's
-            # ``reason: backend_prepare_failed`` (round-6 Mn1 — it
-            # previously said ``no_compute_available`` while the
-            # epm:failure note said ``backend_prepare_failed``).
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=None,
-                    est_start_seconds_clamped=None,
-                    outcome="prepare_failed",
-                    detail=exc.reason,
-                    elapsed_seconds=now_fn() - started_at,
+            # GCP doesn't need the park (provision IS the start); just return.
+            if kind == "gcp":
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=None,
+                        est_start_seconds_raw=0.0,
+                        est_start_seconds_clamped=0.0,
+                        outcome="launched",
+                        detail="gcp provision returned RUNNING-equivalent",
+                        elapsed_seconds=now_fn() - started_at,
+                    )
                 )
-            )
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_PREPARE_FAILED,
-                chosen_kind=kind,
-                attempts=attempts,
-            )
-            raise
-        except GcpProvisioningError as exc:
-            # Explicit GCP override — surface the provisioning failure (the
-            # user asked for GCP, not a fallback chain). Post a terminal
-            # breadcrumb so the dashboard sees the failure before we raise.
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=None,
-                    est_start_seconds_clamped=None,
-                    outcome="provisioning_failure",
-                    detail=_provisioning_detail(exc),
-                    elapsed_seconds=now_fn() - started_at,
-                    evidence=_provisioning_evidence(exc),
-                )
-            )
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind=kind,
-                attempts=attempts,
-            )
-            raise
-        except BackendProbeError as exc:
-            # The backend's own pre-create state probe failed mid-launch
-            # (e.g. GcpBackend.launch's internal reconnect_or_none with
-            # expired gcloud auth — live auto-lane finding, issue 535:
-            # this propagated UNCAUGHT to rc=4 instead of the typed
-            # fail-closed terminal). State is UNKNOWN → refuse to act
-            # blind; same contract as the reconnect-seam handler above.
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=None,
-                    est_start_seconds_clamped=None,
-                    outcome="probe_failed",
-                    detail=str(exc)[:500],
-                    elapsed_seconds=now_fn() - started_at,
-                )
-            )
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind=kind,
-                attempts=attempts,
-            )
-            raise NoComputeAvailableError(
-                f"explicit override '{kind}': backend state probe failed mid-launch — "
-                f"refusing to act blind: {exc}",
-                attempts=[_attempt_to_dict(a) for a in attempts],
-            ) from exc
-        # Persist the handle (sidecar hook) + launched id IMMEDIATELY
-        # (still inside the flock — crash-window-free). For "kind ==
-        # gcp" override we leave the cluster field at None, matching
-        # the existing schema.
-        _invoke_on_launched(on_launched, handle)
-        write(_lease_after_submit(lease, spec, kind, spec.cluster, handle))
-
-        # GCP doesn't need the park (provision IS the start); just return.
-        if kind == "gcp":
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
+                result = RouteResult(
+                    backend=backend,
+                    handle=handle,
+                    requested_kind=kind,
+                    chosen_kind=kind,
+                    reason=ROUTE_REASON_OVERRIDE,
                     cluster=None,
-                    est_start_seconds_raw=0.0,
-                    est_start_seconds_clamped=0.0,
-                    outcome="launched",
-                    detail="gcp provision returned RUNNING-equivalent",
+                    attempts=attempts,
                     elapsed_seconds=now_fn() - started_at,
+                    # Explicit `backend: gcp` fresh launch — only reached when
+                    # kind == "gcp" (guarded above), so the gcp marker extras
+                    # always apply (#631 round-3 marker-coverage fix). #1617:
+                    # also lift the fresh handle's boot-disk probe fields.
+                    extra={**_gcp_marker_extras(spec), **_boot_disk_extras_from_handle(handle)},
                 )
-            )
-            result = RouteResult(
-                backend=backend,
-                handle=handle,
-                requested_kind=kind,
-                chosen_kind=kind,
-                reason=ROUTE_REASON_OVERRIDE,
-                cluster=None,
-                attempts=attempts,
-                elapsed_seconds=now_fn() - started_at,
-                # Explicit `backend: gcp` fresh launch — only reached when
-                # kind == "gcp" (guarded above), so the gcp marker extras
-                # always apply (#631 round-3 marker-coverage fix). #1617:
-                # also lift the fresh handle's boot-disk probe fields.
-                extra={**_gcp_marker_extras(spec), **_boot_disk_extras_from_handle(handle)},
-            )
-            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
-            return result
-
+                _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+                return result
         # SLURM-style free lane: run the park watchdog (under the flock).
         # #1609: the cap is per-lane — fellows honors the
         # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane keeps
-        # cfg.free_wait_seconds verbatim.
+        # cfg.free_wait_seconds verbatim. #2161: the park runs as a
+        # budget-bounded SEGMENT — a resume continues from the persisted
+        # elapsed; the process budget binding persists state + raises
+        # FreeLaneStillWaitingError; cumulative-elapsed (rung-cap)
+        # exhaustion keeps the pin's existing terminal semantics below.
         cap = _park_cap_for_lane(kind, cfg)
-        started, reason, terminal_status = park_until_running_or_cap(
+        pin_elapsed = (
+            max(0.0, float(resume_state.get("rung_park_elapsed_s") or 0.0))
+            if resume_state is not None
+            else 0.0
+        )
+        started, reason, terminal_status, pin_elapsed = _park_segment_outcome(
             backend=backend,
             handle=handle,
             is_started=is_started,
-            cap_seconds=cap,
+            rung_cap=cap,
+            elapsed_so_far=pin_elapsed,
+            process_deadline=process_deadline,
             poll_interval=cfg.poll_interval,
             now_fn=now_fn,
             sleep_fn=sleep_fn,
         )
+        if reason == "park_budget_exhausted":
+            pin_qos = _qos_rungs_for_lane(kind, spec)[1] if kind == "fellows" else None
+            lease.free_lane_park_state = _free_lane_park_state(
+                lane=kind,
+                lease=lease,
+                job_id=str(handle.job_id),
+                rung_idx=0,
+                elapsed=pin_elapsed,
+            )
+            write(lease)
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="park_budget_still_waiting",
+                    detail=f"qos={pin_qos} rung=1/1 elapsed={pin_elapsed:.0f}s",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            raise FreeLaneStillWaitingError(
+                issue=spec.issue,
+                lane=kind,
+                cluster=spec.cluster,
+                job_id=str(handle.job_id),
+                qos=pin_qos,
+                rung_idx=0,
+                n_rungs=1,
+                rung_park_elapsed_s=pin_elapsed,
+            )
+        # Any non-budget outcome resolves this parked attempt one way or
+        # another (started / pinned-queue-wait / workload raise / cancel
+        # terminal) — clear the resumable state up front (#2161).
+        if lease is not None and lease.free_lane_park_state is not None:
+            lease.free_lane_park_state = None
+            write(lease)
         if started:
             attempts.append(
                 RouteAttempt(
@@ -4818,12 +5464,15 @@ def _auto_candidates(
     """Build the auto chain's candidate list in lane order.
 
     Skips unwired lanes, Mila-when-down, and (for CPU-only intents) the
-    free SLURM lanes. ``runpod`` (#2054) is a first-class auto lane and is
-    always wired — the ``route()`` signature requires ``runpod_backend`` —
-    and CPU-only intents keep it: RunPod CPU (deployCpuPod) IS the
-    documented CPU chain (#747/#2028). The stage-1 reconnect scan is a
-    no-op for runpod (the production ``reconnect_fn`` returns ``None`` for
-    it — pod_lifecycle's own flow is idempotent).
+    free SLURM lanes whose ClusterConfig does NOT declare
+    ``supports_cpu_jobs`` (#2059 narrowing of the #1464 blanket exclusion).
+    ``runpod`` (#2054) is a first-class auto lane and is always wired — the
+    ``route()`` signature requires ``runpod_backend`` — and CPU-only
+    intents keep it: RunPod CPU (deployCpuPod) leads the documented CPU
+    chain (#747/#2028), with the fellows 0-GPU rung behind it (#2059). The
+    stage-1 reconnect scan is a no-op for runpod (the production
+    ``reconnect_fn`` returns ``None`` for it — pod_lifecycle's own flow is
+    idempotent).
     """
     candidates: list[tuple[ComputeBackend, BackendKind]] = []
     for kind in lane_order:
@@ -4834,12 +5483,14 @@ def _auto_candidates(
             if gcp_backend is not None:
                 candidates.append((gcp_backend, "gcp"))
             continue
-        if cpu_only:
-            # Excluding the free lanes from ``candidates`` also removes them
-            # from the stage-1 reconnect scan — deliberately: a CPU-only
-            # intent can never have a live SLURM job to reconnect to (the lane
-            # has no 0-GPU sbatch render, so no prior route() could have
-            # submitted one there). Nothing is lost by not scanning (#1464).
+        if cpu_only and not _slurm_lane_supports_cpu(kind):
+            # #1464 exclusion, narrowed by #2059: only lanes whose
+            # ClusterConfig declares supports_cpu_jobs (fellows) render
+            # 0-GPU sbatch; nibi/mila stay excluded (no /workspace, #608).
+            # Excluded lanes also stay out of the stage-1 reconnect scan —
+            # deliberately: a CPU-only intent can never have a live SLURM
+            # job to reconnect to on a lane with no 0-GPU render, so no
+            # prior route() could have submitted one there.
             continue
         backend = free_backends.get(kind)
         if backend is None:
@@ -4979,6 +5630,7 @@ def _auto_route(
     marker_poster: Callable[..., None] | None,
     on_launched: Callable[[RunHandle], None] | None,
     clock_fn: Callable[[], datetime] | None,
+    process_deadline: float | None = None,
 ) -> RouteResult:
     """No-``backend:`` auto route: walk ``lane_order`` (runpod-first default).
 
@@ -4996,6 +5648,11 @@ def _auto_route(
     one final RunPod retry (#656 machinery, retained). Only if THAT launch
     fails does the chain raise :class:`NoComputeAvailableError` ("truly no
     compute anywhere").
+
+    #2161 round 2: BETWEEN the stage-1 reconnect scan and the group walk,
+    a FRESH matching park state routes the PARKED lane's resume first
+    (:func:`_resume_parked_lane_first`) so no other lane can fresh-submit
+    past a still-queued parked job.
     """
     del clock_fn  # reserved for a future "day boundary at posted-time" override
     # Build the candidate list in lane order (skipping unwired lanes +
@@ -5003,14 +5660,19 @@ def _auto_route(
     # intents, #1464).
     cpu_only = _is_cpu_only_intent(spec.intent)
     if cpu_only and free_backends:
+        excluded = sorted(k for k in free_backends if not _slurm_lane_supports_cpu(k))
+        kept = sorted(k for k in free_backends if _slurm_lane_supports_cpu(k))
         logger.info(
-            "route: CPU-only intent %r — free SLURM lanes (%s) excluded from "
-            "the auto chain. The documented CPU chain is RunPod CPU for mapped "
-            "intents (#747/#2028; GCP provisioning disabled — the E2 rung is "
-            "rollback-only); the SLURM lane has no 0-GPU sbatch render (#1464, "
-            "incident #1336).",
+            "route: CPU-only intent %r — free SLURM lanes without a 0-GPU "
+            "sbatch render (%s) excluded from the auto chain; supports_cpu_jobs "
+            "lanes (%s) kept (#2059 — fellows renders 0-GPU sbatch; nibi/mila "
+            "have no /workspace, #608). The documented CPU chain walks RunPod "
+            "CPU for mapped intents (#747/#2028; GCP provisioning disabled — "
+            "the E2 rung is rollback-only), then the kept lanes, then the "
+            "RunPod terminal retry.",
             spec.intent,
-            ", ".join(sorted(free_backends)),
+            ", ".join(excluded) or "none",
+            ", ".join(kept) or "none",
         )
     candidates = _auto_candidates(
         lane_order=lane_order,
@@ -5035,6 +5697,34 @@ def _auto_route(
     )
     if reconnect_result is not None:
         return reconnect_result
+
+    # Stage 1.5 (#2161 round 2): a FRESH spec-hash-matching park state on
+    # the lease names the lane holding OUR budget-parked attempt — that
+    # lane resumes FIRST, before any fresh-provision lane (under the
+    # production runpod-first order the walk would otherwise provision
+    # RunPod while the parked job stays queued — cross-lane double-submit,
+    # round-1 review Critical). On a clean lane advance (state cleared,
+    # job confirmed dead) the walk proceeds WITHOUT the parked lane.
+    parked_result, candidates = _resume_parked_lane_first(
+        spec=spec,
+        candidates=candidates,
+        store=store,
+        attempts=attempts,
+        started_at=started_at,
+        cfg=cfg,
+        is_started=is_started,
+        is_live_after_cancel=is_live_after_cancel,
+        is_running_after_cancel=is_running_after_cancel,
+        started_evidence_probe=started_evidence_probe,
+        reconnect_fn=reconnect_fn,
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        process_deadline=process_deadline,
+    )
+    if parked_result is not None:
+        return parked_result
 
     # Stage 2: walk the chain group by group. A GCP group is a single
     # provision attempt; a SLURM group is the ranked launch → park →
@@ -5115,6 +5805,7 @@ def _auto_route(
             sleep_fn=sleep_fn,
             marker_poster=marker_poster,
             on_launched=on_launched,
+            process_deadline=process_deadline,
         )
         if free_result is not None:
             return free_result
@@ -5172,8 +5863,19 @@ def _try_auto_reconnect(
     NO ``prepare()`` on any reconnect outcome here: ``SlurmBackend.
     prepare`` rsyncs the scratch dir with ``--delete`` and would yank
     code out from under the RUNNING job it just reconnected to.
+
+    #2161 Stage-1 defer: a scanned lane whose lease carries a FRESH
+    matching :attr:`Lease.free_lane_park_state` (lane + spec-hash +
+    freshness; job identity deliberately NOT checked here) SKIPS this
+    scan's early-return — the lane walk's in-flock reconnect + resume
+    (:func:`_try_one_free_lane`) owns the park continuation. Without the
+    defer, a resume invocation on the auto path would short-circuit here
+    with ``ROUTE_REASON_RECONNECT`` and the parked ladder would never
+    advance. The lease read is a single read-only ``store.read`` (a
+    momentary per-issue flock, not held across the scan); non-matching /
+    absent / stale state keeps today's early-return byte-identically.
     """
-    del store  # not needed for reconnect probes; the launch path re-checks under the flock
+    lease = store.read(spec.issue)
     for backend, kind in candidates:
         # A probe failure here only skips the lock-free SCAN — the
         # submit path re-checks reconnect INSIDE the flock and a probe
@@ -5194,6 +5896,19 @@ def _try_auto_reconnect(
             )
             continue
         if handle is None:
+            continue
+        if _matching_free_lane_park_state(lease, kind) is not None:
+            # #2161: a FRESH matching park state means a suspended/killed
+            # invocation left a resumable parked attempt on this lane —
+            # fall through to the lane walk so _try_one_free_lane's
+            # in-flock reconnect+resume owns the park continuation.
+            logger.info(
+                "route: reconnect scan found live %s job %s with fresh matching "
+                "park state; deferring to the lane's in-flock resume instead of "
+                "the reconnect early-return.",
+                kind,
+                handle.job_id,
+            )
             continue
         return _record_reconnect(
             backend=backend,
@@ -5270,6 +5985,134 @@ def _record_reconnect(
     return result
 
 
+def _resume_parked_lane_first(
+    *,
+    spec: RunSpec,
+    candidates: list[tuple[ComputeBackend, BackendKind]],
+    store: LeaseStore,
+    attempts: list[RouteAttempt],
+    started_at: float,
+    cfg: RouterConfig,
+    is_started: Callable[[ComputeBackend, RunHandle], bool],
+    is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
+    is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
+    started_evidence_probe: (Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None),
+    reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
+    now_fn: Callable[[], float],
+    sleep_fn: Callable[[float], None],
+    marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None,
+    process_deadline: float | None,
+) -> tuple[RouteResult | None, list[tuple[ComputeBackend, BackendKind]]]:
+    """Auto-route stage 1.5 (#2161 round 2): the PARKED lane resumes FIRST.
+
+    A FRESH spec-hash-matching :attr:`Lease.free_lane_park_state` means a
+    prior budget-cut invocation left a resumable parked attempt on lane K.
+    The stage-2 group walk must NOT run any other lane first: under the
+    production runpod-first order it would fresh-provision RunPod while
+    the parked job stays queued — the cross-lane double-submit the round-1
+    review flagged as Critical. Outcomes:
+
+    - **K wired** → run K's :func:`_try_one_free_lane` BEFORE the walk. A
+      result / raise resolves the invocation. A ``None``-return is a CLEAN
+      lane advance ONLY when the state is gone by then (ladder exhaustion
+      and the mid-ladder failure paths all clear it, each after the rung's
+      job is confirmed dead) — the walk then proceeds WITHOUT K (its
+      ladder already had its full chance this invocation).
+    - **state still present after K's ``None``-return** — the in-flock
+      reconnect probe failed (the parked job may still be alive) → raise
+      the still-waiting terminal (:func:`_still_waiting_from_state`)
+      instead of falling through to fresh submits.
+    - **K unwired this invocation** (not in ``candidates``: backend not
+      wired, Mila socket down) → same still-waiting outcome: the parked
+      job can be neither verified nor resumed, so no other lane may
+      fresh-submit past it. The 24 h freshness cap bounds the hold; a
+      deliberately re-wired re-run (or the state aging out) releases it.
+
+    Absent / stale / non-matching state returns ``(None, candidates)``
+    unchanged — this stage is a pure lease READ (no writes, no flock held
+    across it).
+    """
+    lease = store.read(spec.issue)
+    if lease is None or not isinstance(lease.free_lane_park_state, dict):
+        return None, candidates
+    parked_lane = lease.free_lane_park_state.get("lane")
+    if not isinstance(parked_lane, str) or parked_lane not in _PER_CLUSTER_LANES:
+        return None, candidates
+    state = _matching_free_lane_park_state(lease, parked_lane)
+    if state is None:
+        # Stale / spec-hash mismatch — fail-open to today's walk (the
+        # parked lane's own attempt clears the residue).
+        return None, candidates
+    parked_backend = next((b for b, k in candidates if k == parked_lane), None)
+    if parked_backend is None:
+        logger.warning(
+            "route: lease carries FRESH park state for lane %s (job %r) but the "
+            "lane is not wired/available this invocation — surfacing the "
+            "still-waiting outcome instead of fresh-submitting past the parked "
+            "job on another lane.",
+            parked_lane,
+            state.get("job_id"),
+        )
+        attempts.append(
+            RouteAttempt(
+                kind=parked_lane,
+                cluster=parked_lane,
+                est_start_seconds_raw=None,
+                est_start_seconds_clamped=None,
+                outcome="parked_lane_unavailable",
+                detail=(
+                    f"fresh park state (job {state.get('job_id')!r}, "
+                    f"rung_idx={state.get('rung_idx')!r}) but the lane is unwired — "
+                    "cannot verify or resume; holding (re-run with the lane wired)"
+                ),
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        raise _still_waiting_from_state(spec=spec, lane=parked_lane, state=state)
+    result = _try_one_free_lane(
+        spec=spec,
+        backend=parked_backend,
+        kind=parked_lane,
+        est_raw=None,
+        est_clamped=None,
+        store=store,
+        attempts=attempts,
+        started_at=started_at,
+        cfg=cfg,
+        is_started=is_started,
+        is_live_after_cancel=is_live_after_cancel,
+        is_running_after_cancel=is_running_after_cancel,
+        started_evidence_probe=started_evidence_probe,
+        reconnect_fn=reconnect_fn,
+        marker_poster=marker_poster,
+        on_launched=on_launched,
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+        process_deadline=process_deadline,
+    )
+    if result is not None:
+        return result, candidates
+    residual = _matching_free_lane_park_state(store.read(spec.issue), parked_lane)
+    if residual is not None:
+        # The lane advanced WITHOUT resolving the parked state: the only
+        # such path is the in-flock reconnect-probe failure (every other
+        # None-return clears the state after confirming the job dead).
+        # The job may still be alive — do NOT fall through to fresh
+        # submits; re-running later retries the probe.
+        logger.warning(
+            "route: parked lane %s returned no result but its park state (job %r) "
+            "is still fresh — reconnect probe failed; surfacing still-waiting "
+            "instead of walking the remaining lanes.",
+            parked_lane,
+            residual.get("job_id"),
+        )
+        raise _still_waiting_from_state(spec=spec, lane=parked_lane, state=residual)
+    # Clean advance (state cleared with the job confirmed dead): walk the
+    # remaining lanes WITHOUT the parked lane — its ladder already ran.
+    return None, [(b, k) for b, k in candidates if k != parked_lane]
+
+
 def _try_free_lanes(
     *,
     spec: RunSpec,
@@ -5287,6 +6130,7 @@ def _try_free_lanes(
     sleep_fn: Callable[[float], None],
     marker_poster: Callable[..., None] | None,
     on_launched: Callable[[RunHandle], None] | None = None,
+    process_deadline: float | None = None,
 ) -> RouteResult | None:
     """Auto-route stage 2: launch + park each ranked free lane, in order.
 
@@ -5314,13 +6158,14 @@ def _try_free_lanes(
             on_launched=on_launched,
             now_fn=now_fn,
             sleep_fn=sleep_fn,
+            process_deadline=process_deadline,
         )
         if result is not None:
             return result
     return None
 
 
-def _try_one_free_lane(
+def _try_one_free_lane(  # noqa: C901 — in-flock reconnect/resume + QoS-ladder + cancel state machine (#1899/#2161); the residual branches ARE the park state machine, and the park-segment/state-record steps are already extracted to module helpers
     *,
     spec: RunSpec,
     backend: ComputeBackend,
@@ -5340,6 +6185,7 @@ def _try_one_free_lane(
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
     on_launched: Callable[[RunHandle], None] | None = None,
+    process_deadline: float | None = None,
 ) -> RouteResult | None:
     """Launch + park one free lane. Returns a RouteResult on success / cancel-race.
 
@@ -5356,6 +6202,18 @@ def _try_one_free_lane(
     — silently escalating would risk a second copy of the same workload
     in the GCP escalation path (the orphaned free-lane job is unconfirmed
     dead and may still consume the attempt-id namespace).
+
+    #2161 resumable park: with ``process_deadline`` set, each rung's park
+    runs as a budget-bounded SEGMENT (:func:`_park_segment_outcome`); when
+    the budget binds first the ladder position (rung index + elapsed park
+    seconds + job id) is persisted to ``Lease.free_lane_park_state`` and
+    :class:`FreeLaneStillWaitingError` is raised. A re-run of the SAME
+    launch command reconnects by job name, matches the persisted state
+    (lane + spec_hash + job_id, fresh < 24 h), and RESUMES the rung's park
+    with the persisted elapsed instead of taking the reconnect
+    early-return; a job_id-None state (budget cut between rungs) starts
+    the fresh ladder at the persisted next rung. ``process_deadline=None``
+    keeps the pre-#2161 semantics byte-identical.
     """
     spec = _spec_for_lane(spec, kind)
     with store.transaction(spec.issue) as (lease, write):
@@ -5394,31 +6252,55 @@ def _try_one_free_lane(
                 exc,
             )
             return None
+        resume_state: dict[str, Any] | None = None
         if handle is not None:
-            _invoke_on_launched(on_launched, handle)
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
+            # #2161: a live job whose identity matches OUR persisted park
+            # state is OUR budget-cut parked attempt — resume its rung's
+            # park below instead of the reconnect early-return.
+            resume_state = _matching_free_lane_park_state(lease, kind, job_id=str(handle.job_id))
+            if resume_state is None:
+                if lease is not None and lease.free_lane_park_state is not None:
+                    logger.warning(
+                        "route: free lane %s reconnect found live job %s but the "
+                        "lease park state does not match (foreign job / stale / "
+                        "different spec) — keeping the reconnect early-return; "
+                        "state left in place.",
+                        kind,
+                        handle.job_id,
+                    )
+                _invoke_on_launched(on_launched, handle)
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=est_raw,
+                        est_start_seconds_clamped=est_clamped,
+                        outcome="reconnected",
+                        detail="reconnect inside flock — concurrent invocation submitted",
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                result = RouteResult(
+                    backend=backend,
+                    handle=handle,
+                    requested_kind=None,
+                    chosen_kind=kind,
+                    reason=ROUTE_REASON_RECONNECT,
                     cluster=spec.cluster,
-                    est_start_seconds_raw=est_raw,
-                    est_start_seconds_clamped=est_clamped,
-                    outcome="reconnected",
-                    detail="reconnect inside flock — concurrent invocation submitted",
+                    attempts=attempts,
                     elapsed_seconds=now_fn() - started_at,
                 )
+                _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+                return result
+            logger.info(
+                "route: free lane %s resuming parked ladder rung %d for job %s "
+                "(%.0fs park elapsed persisted).",
+                kind,
+                int(resume_state.get("rung_idx", 0)) + 1,
+                handle.job_id,
+                float(resume_state.get("rung_park_elapsed_s", 0.0)),
             )
-            result = RouteResult(
-                backend=backend,
-                handle=handle,
-                requested_kind=None,
-                chosen_kind=kind,
-                reason=ROUTE_REASON_RECONNECT,
-                cluster=spec.cluster,
-                attempts=attempts,
-                elapsed_seconds=now_fn() - started_at,
-            )
-            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
-            return result
+            _invoke_on_launched(on_launched, handle)
 
         # Launch (still under the flock — sealing the double-submit race).
         # #1899: ONE attempt id for the whole lane attempt (per-submit
@@ -5436,74 +6318,173 @@ def _try_one_free_lane(
         # to <=~24 min (600 + 2x300 s parks + up to 3 cancel graces + 2
         # re-submits) — per-ISSUE flock only, same contention class as
         # the pre-#1899 600 s park.
-        threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
-        rungs, primary_qos = _qos_rungs_for_lane(kind, spec)
-        for rung_idx, rung in enumerate(rungs):
-            if rung is None:
-                # Primary rung: NO extra overrides — render, spec hash,
-                # and lease keying stay byte-identical to pre-#1899.
-                rung_spec = threaded_spec
-            else:
-                rung_spec = replace(
-                    threaded_spec,
-                    extra={
-                        **threaded_spec.extra,
-                        "slurm_qos_override": rung.qos,
-                        **({"slurm_partition_override": rung.partition} if rung.partition else {}),
-                    },
-                )
-            realized_qos = rung.qos if rung is not None else primary_qos
-            try:
-                handle = _prepare_and_launch(backend, rung_spec, kind=kind, cluster=spec.cluster)
-            except BackendPrepareError as exc:
-                # Provision-class, pre-launch (nothing live) → next lane,
-                # same semantics as a launch failure but with a precise
-                # attempt-trail outcome. No rung-continue on a launch
-                # failure: a broken endpoint will not heal between rungs.
-                attempts.append(
-                    RouteAttempt(
-                        kind=kind,
-                        cluster=spec.cluster,
-                        est_start_seconds_raw=est_raw,
-                        est_start_seconds_clamped=est_clamped,
-                        outcome="prepare_failed",
-                        detail=exc.reason,
-                        elapsed_seconds=now_fn() - started_at,
+        # #2161: fresh-submit resume — a job_id-None matching state means a
+        # prior invocation was budget-cut BETWEEN rungs (confirmed cancel,
+        # next rung never submitted): start the fresh ladder at that rung.
+        # Round 2 (review Major): the stale-clear is scoped to OUR lane —
+        # a FRESH sibling lane's state is a resumable parked job on
+        # ANOTHER lane, which must be NEITHER cleared NOR submitted past
+        # (clearing destroys the resumable state; a fresh submit here
+        # double-runs the workload while the parked job stays queued).
+        # Only a leftover record for THIS lane that failed the pending
+        # match (stale / hash mismatch / job vanished) is cleared before
+        # the rung-0 start; a stale foreign record is left in place for
+        # its own lane's attempt to clear.
+        pending_state: dict[str, Any] | None = None
+        if handle is None:
+            pending_state = _matching_free_lane_park_state(lease, kind, job_id=None)
+            if (
+                pending_state is None
+                and lease is not None
+                and lease.free_lane_park_state is not None
+            ):
+                sibling_state = _fresh_sibling_park_state(lease, kind)
+                if sibling_state is not None:
+                    logger.warning(
+                        "route: free lane %s skipped — the lease carries FRESH park "
+                        "state for sibling lane %s (job %r); clearing it or "
+                        "fresh-submitting here would double-run the workload past "
+                        "the parked job.",
+                        kind,
+                        sibling_state.get("lane"),
+                        sibling_state.get("job_id"),
                     )
-                )
-                logger.warning(
-                    "route: free lane %s prepare failed (%s); trying next lane.",
-                    kind,
-                    exc.reason,
-                )
-                return None
-            except Exception as exc:
-                attempts.append(
-                    RouteAttempt(
-                        kind=kind,
-                        cluster=spec.cluster,
-                        est_start_seconds_raw=est_raw,
-                        est_start_seconds_clamped=est_clamped,
-                        outcome="launch_failed",
-                        detail=f"{type(exc).__name__}: {exc}",
-                        elapsed_seconds=now_fn() - started_at,
+                    attempts.append(
+                        RouteAttempt(
+                            kind=kind,
+                            cluster=spec.cluster,
+                            est_start_seconds_raw=est_raw,
+                            est_start_seconds_clamped=est_clamped,
+                            outcome="skipped_parked_sibling",
+                            detail=(
+                                f"fresh park state on lane "
+                                f"{sibling_state.get('lane')!r} (job "
+                                f"{sibling_state.get('job_id')!r}) — not clearing, "
+                                "not submitting past it"
+                            ),
+                            elapsed_seconds=now_fn() - started_at,
+                        )
                     )
-                )
-                logger.warning(
-                    "route: free lane %s launch failed (%s); trying next lane.",
-                    kind,
-                    type(exc).__name__,
-                )
-                return None
+                    return None
+                if (
+                    not isinstance(lease.free_lane_park_state, dict)
+                    or lease.free_lane_park_state.get("lane") == kind
+                ):
+                    lease.free_lane_park_state = None
+                    write(lease)
 
-            # Persist the handle (sidecar hook) + launched id IMMEDIATELY
-            # (still under the flock). The lease is REBOUND per rung so
-            # each rung's write recomputes from the NEW handle — a future
-            # Lease field must never be clobbered from a stale base
-            # (#1899 review note).
-            _invoke_on_launched(on_launched, handle)
-            lease = _lease_after_submit(lease, spec, kind, spec.cluster, handle)
-            write(lease)
+        rungs, primary_qos = _qos_rungs_for_lane(kind, spec)
+        start_rung_idx = 0
+        resume_elapsed = 0.0
+        if resume_state is not None:
+            start_rung_idx = min(int(resume_state.get("rung_idx", 0)), len(rungs) - 1)
+            resume_elapsed = float(resume_state.get("rung_park_elapsed_s", 0.0))
+        elif pending_state is not None:
+            start_rung_idx = min(int(pending_state.get("rung_idx", 0)), len(rungs) - 1)
+        # Attempt-id threading is LAZY (#2161): a resumed park re-enters the
+        # rung loop on the reconnected handle and must not mint/persist a
+        # fresh attempt id unless it actually SUBMITS a later rung.
+        threaded_spec: RunSpec | None = None
+        for rung_idx in range(start_rung_idx, len(rungs)):
+            rung = rungs[rung_idx]
+            realized_qos = rung.qos if rung is not None else primary_qos
+            resumed_rung = resume_state is not None and rung_idx == start_rung_idx
+            if resumed_rung:
+                # The reconnected handle IS this rung's parked job — skip
+                # prepare/launch/lease-submit and continue its park with
+                # the persisted elapsed (#2161).
+                elapsed_so_far = resume_elapsed
+            else:
+                elapsed_so_far = 0.0
+                if threaded_spec is None:
+                    threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
+                if rung is None:
+                    # Primary rung: NO extra overrides — render, spec hash,
+                    # and lease keying stay byte-identical to pre-#1899.
+                    rung_spec = threaded_spec
+                else:
+                    rung_spec = replace(
+                        threaded_spec,
+                        extra={
+                            **threaded_spec.extra,
+                            "slurm_qos_override": rung.qos,
+                            **(
+                                {"slurm_partition_override": rung.partition}
+                                if rung.partition
+                                else {}
+                            ),
+                        },
+                    )
+                try:
+                    handle = _prepare_and_launch(
+                        backend, rung_spec, kind=kind, cluster=spec.cluster
+                    )
+                except BackendPrepareError as exc:
+                    # Provision-class, pre-launch (nothing live) → next lane,
+                    # same semantics as a launch failure but with a precise
+                    # attempt-trail outcome. No rung-continue on a launch
+                    # failure: a broken endpoint will not heal between rungs.
+                    attempts.append(
+                        RouteAttempt(
+                            kind=kind,
+                            cluster=spec.cluster,
+                            est_start_seconds_raw=est_raw,
+                            est_start_seconds_clamped=est_clamped,
+                            outcome="prepare_failed",
+                            detail=exc.reason,
+                            elapsed_seconds=now_fn() - started_at,
+                        )
+                    )
+                    logger.warning(
+                        "route: free lane %s prepare failed (%s); trying next lane.",
+                        kind,
+                        exc.reason,
+                    )
+                    # #2161 round 2 (review Minor): mirror the exhaustion
+                    # clear — a leftover job_id-None/rung-N record would make
+                    # a later fresh invocation (within 24 h) start the ladder
+                    # at rung N after this transient endpoint hiccup.
+                    _clear_same_lane_park_state(lease, kind, write)
+                    return None
+                except Exception as exc:
+                    attempts.append(
+                        RouteAttempt(
+                            kind=kind,
+                            cluster=spec.cluster,
+                            est_start_seconds_raw=est_raw,
+                            est_start_seconds_clamped=est_clamped,
+                            outcome="launch_failed",
+                            detail=f"{type(exc).__name__}: {exc}",
+                            elapsed_seconds=now_fn() - started_at,
+                        )
+                    )
+                    logger.warning(
+                        "route: free lane %s launch failed (%s); trying next lane.",
+                        kind,
+                        type(exc).__name__,
+                    )
+                    # #2161 round 2 (review Minor): same residue clear as the
+                    # prepare_failed path above.
+                    _clear_same_lane_park_state(lease, kind, write)
+                    return None
+
+                # Persist the handle (sidecar hook) + launched id IMMEDIATELY
+                # (still under the flock). The lease is REBOUND per rung so
+                # each rung's write recomputes from the NEW handle — a future
+                # Lease field must never be clobbered from a stale base
+                # (#1899 review note). #2161: the SAME write records the
+                # rung's park state (this job parked at rung_idx, 0 s
+                # elapsed) so a budget cut is resumable.
+                _invoke_on_launched(on_launched, handle)
+                lease = _lease_after_submit(lease, spec, kind, spec.cluster, handle)
+                lease.free_lane_park_state = _free_lane_park_state(
+                    lane=kind,
+                    lease=lease,
+                    job_id=str(handle.job_id),
+                    rung_idx=rung_idx,
+                    elapsed=0.0,
+                )
+                write(lease)
 
             # Park (still under the flock — wait IS contention surface, but
             # the lock is per-ISSUE, not cross-issue, so the only callers
@@ -5512,21 +6493,68 @@ def _try_one_free_lane(
             # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane
             # keeps cfg.free_wait_seconds verbatim. #1899: fallback rungs
             # (2+) park the shorter EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS
-            # cap (default 300 s).
+            # cap (default 300 s). #2161: the park runs as a budget-bounded
+            # SEGMENT — when the process budget binds before the rung cap,
+            # the ladder position is persisted and FreeLaneStillWaitingError
+            # raised so a re-run of the SAME command resumes this rung.
             cap = (
                 _park_cap_for_lane(kind, cfg)
                 if rung_idx == 0
                 else _fellows_ladder_rung_wait_seconds()
             )
-            started, reason, terminal_status = park_until_running_or_cap(
+            started, reason, terminal_status, new_elapsed = _park_segment_outcome(
                 backend=backend,
                 handle=handle,
                 is_started=is_started,
-                cap_seconds=cap,
+                rung_cap=cap,
+                elapsed_so_far=elapsed_so_far,
+                process_deadline=process_deadline,
                 poll_interval=cfg.poll_interval,
                 now_fn=now_fn,
                 sleep_fn=sleep_fn,
             )
+            if reason == "park_budget_exhausted":
+                assert lease is not None  # submit/resume above guarantees it
+                lease.free_lane_park_state = _free_lane_park_state(
+                    lane=kind,
+                    lease=lease,
+                    job_id=str(handle.job_id),
+                    rung_idx=rung_idx,
+                    elapsed=new_elapsed,
+                )
+                write(lease)
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=est_raw,
+                        est_start_seconds_clamped=est_clamped,
+                        outcome="park_budget_still_waiting",
+                        detail=(
+                            f"qos={realized_qos} rung={rung_idx + 1}/{len(rungs)} "
+                            f"elapsed={new_elapsed:.0f}s"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                raise FreeLaneStillWaitingError(
+                    issue=spec.issue,
+                    lane=kind,
+                    cluster=spec.cluster,
+                    job_id=str(handle.job_id),
+                    qos=realized_qos,
+                    rung_idx=rung_idx,
+                    n_rungs=len(rungs),
+                    rung_park_elapsed_s=new_elapsed,
+                )
+            # #2161: any NON-budget outcome resolves this parked attempt on
+            # THIS invocation (started / workload check / cancel machine
+            # below) — clear the durable park state up-front; the
+            # ladder-continue branch at the loop tail re-writes the NEXT
+            # rung's state after a confirmed cancel.
+            if lease is not None and lease.free_lane_park_state is not None:
+                lease.free_lane_park_state = None
+                write(lease)
             if started:
                 # #1899: fellows starts record the realized QoS tier on
                 # the attempt detail + RouteResult.extra (-> the
@@ -5692,6 +6720,20 @@ def _try_one_free_lane(
             # The no-double-submit invariant holds: raced_to_running
             # returned above, manual_attention raised above, so a rung
             # re-submit only ever follows a confirmed `cancelled`.
+            # #2161: persist the ladder position (job_id None ⇒ rung_idx+1
+            # is the NEXT rung to submit) so a budget cut landing between
+            # rungs resumes the walk instead of re-submitting rung 0. The
+            # exhausted-ladder case writes nothing — the up-front clear
+            # above already removed the state.
+            if rung_idx + 1 < len(rungs) and lease is not None:
+                lease.free_lane_park_state = _free_lane_park_state(
+                    lane=kind,
+                    lease=lease,
+                    job_id=None,
+                    rung_idx=rung_idx + 1,
+                    elapsed=0.0,
+                )
+                write(lease)
         return None  # ladder exhausted → advance to the next lane (GCP)
 
 
@@ -5812,7 +6854,12 @@ def _attempt_gcp_lane(
         # falls through (to SLURM / the RunPod terminal rung).
         return None
 
-    rungs = _gcp_ladder_specs(spec)
+    # #1998: filter GCP GPU rungs by --min-ram-gb before iteration.
+    rungs = _filter_ladder_by_min_ram_gb(
+        _gcp_ladder_specs(spec),
+        spec=spec,
+        min_ram_gb=_min_ram_gb_from_spec(spec),
+    )
     for rung_spec, rung_label in rungs:
         outcome = _attempt_one_gcp_rung(
             spec=rung_spec,
@@ -6710,7 +7757,7 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
         # Unmapped intent on a reconnect to a live instance whose original
         # intent has no INTENT_TO_MACHINE row. Degrade rather than crash.
         pool = None
-    return {
+    extras: dict[str, Any] = {
         "provisioning_model": provisioning,
         "quota_pool": pool,
         # True only when the router switched this launch STANDARD->SPOT via
@@ -6718,6 +7765,52 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
         # plain STANDARD or explicitly-requested SPOT/FLEX_START launch.
         "spot_fallback": bool((spec.extra or {}).get("spot_fallback", False)),
     }
+    # #1998: emit host-RAM extras ONLY when --min-ram-gb is set on a GPU
+    # dispatch. Preserves the #934 omit-when-absent spec-hash discipline:
+    # marker byte-identity when the flag is unused. CPU intents (gpu_count
+    # == 0) are ungated on the GPU path — the CPU-side RAM feasibility gate
+    # (#1010) uses distinct RunPod-CPU-instance-caps machinery.
+    min_ram_gb = _min_ram_gb_from_spec(spec)
+    if min_ram_gb:
+        try:
+            base = machine_for_intent(spec)
+        except ValueError:
+            base = None
+        if base is not None and base.gpu_count > 0:
+            try:
+                resolved_ram_gib = ram_gib_for_machine(base)
+            except KeyError:
+                # Unmapped machine — omit both keys rather than crash
+                # observability code on an incomplete MACHINE_RAM_GIB.
+                pass
+            else:
+                extras["requested_ram_gb"] = int(min_ram_gb)
+                extras["resolved_machine_ram_gb"] = int(resolved_ram_gib)
+    return extras
+
+
+def _runpod_marker_extras(spec: RunSpec, handle: RunHandle) -> dict[str, Any]:
+    """Build the RunPod launched-result marker ``extra`` keys (#2145).
+
+    Merged into every LAUNCHED runpod ``RouteResult``'s ``extra`` — the
+    explicit-override path (:func:`_override_runpod`) AND the terminal
+    rung — so the ``epm:backend-selected`` marker records the pod identity
+    the launch actually minted (the ``_gcp_marker_extras`` precedent; pure
+    function, no IO):
+
+    * ``pod_name`` — always: the REALIZED name (``pod-<N>`` or the
+      suffixed ``pod-<N>-<slug>``), read off the handle, never recomposed;
+    * ``lane_suffix`` / ``gpu_type_override`` — omit-when-absent (the #934
+      discipline), so flag-less launches add no override keys.
+    """
+    extras: dict[str, Any] = {"pod_name": handle.pod_name}
+    suffix = (spec.extra or {}).get("lane_suffix")
+    if suffix:
+        extras["lane_suffix"] = str(suffix)
+    gpu_type = (spec.extra or {}).get("gpu_type")
+    if gpu_type:
+        extras["gpu_type_override"] = str(gpu_type)
+    return extras
 
 
 def _post_backend_selected(
@@ -6904,6 +7997,7 @@ __all__ = [
     "ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
+    "ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB",
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
@@ -6921,8 +8015,10 @@ __all__ = [
     "BackendPrepareError",
     "CpuExhaustedNoRunpodLaneError",
     "CpuFallbackInfeasibleError",
+    "FreeLaneStillWaitingError",
     "GcpAttemptCapExceededError",
     "GcpDisabledError",
+    "GpuRamBelowMinRamGbError",
     "Lease",
     "LeaseStore",
     "ManualAttentionRequiredError",

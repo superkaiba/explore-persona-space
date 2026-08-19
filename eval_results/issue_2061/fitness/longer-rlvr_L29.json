@@ -1,0 +1,17 @@
+{
+  "stage": "longer-rlvr",
+  "layer": 29,
+  "state": "answer",
+  "n_rows_used": 1000,
+  "fve": 0.2757115194462756,
+  "l0_mean": 31.89000129699707,
+  "n_activated_features": 6747,
+  "dead_feature_fraction": 0.9742622375488281,
+  "l0_target": 32,
+  "recipe": {
+    "bos_strip": "n/a \u2014 per-conversation pooled rows; the #1482 strip removes BOS-adjacent TOKEN positions of a token pool, and no token-level pool is banked (deliberately not applied)",
+    "outlier_filter": "rows with L2 > 10.0x pool median dropped",
+    "fve": "var-based: 1 - var(x - x_hat)/var(x), per-dim unbiased, summed",
+    "dead_feature_fraction": "descriptive only (v7 amendment) \u2014 the ~1k-row x k=32 slice can activate at most 32,000 of 262,144 features, so dead >= 87.8% on every stage by pool-ceiling arithmetic; the gate leg is the relative activated-feature count A_s >= 0.8 x A_base"
+  }
+}

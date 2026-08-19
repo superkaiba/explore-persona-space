@@ -711,3 +711,96 @@ def test_create_cpu_pod_effective_container_disk_folds_volume(monkeypatch):
     # still sends an EFFECTIVE 40 — a bare container_disk_gb clamp cannot
     # bound the payload.
     assert "containerDiskInGb: 40" in rec2.queries[0]
+
+
+# ---------------------------------------------------------------------------
+# #2011 — placement-identity selections + get_datacenters
+# ---------------------------------------------------------------------------
+
+
+def _capture_graphql_generic(monkeypatch, results: list):
+    """graphql recorder returning raw result dicts verbatim (any query)."""
+
+    class _Rec:
+        def __init__(self):
+            self.queries: list[str] = []
+            self.variables: list[dict | None] = []
+            self.results = list(results)
+
+        def __call__(self, query, variables=None, timeout=60):
+            self.queries.append(query)
+            self.variables.append(variables)
+            return self.results.pop(0)
+
+    rec = _Rec()
+    monkeypatch.setattr(runpod_api, "graphql", rec)
+    return rec
+
+
+def test_get_pod_selects_placement_identity(monkeypatch):
+    """#2011: get_pod selects machine { podHostId dataCenterId } (live-schema
+    verified 2026-08-06) and surfaces both on the PodInfo."""
+    payload = _make_pod_payload()
+    payload["machine"]["podHostId"] = "p1-644123f3"
+    payload["machine"]["dataCenterId"] = "EUR-IS-5"
+    rec = _capture_graphql_generic(monkeypatch, [{"pod": payload}])
+
+    info = runpod_api.get_pod("p1")
+
+    assert "podHostId" in rec.queries[0]
+    assert "dataCenterId" in rec.queries[0]
+    assert info.pod_host_id == "p1-644123f3"
+    assert info.data_center_id == "EUR-IS-5"
+
+
+def test_list_team_pods_does_not_select_placement_fields(monkeypatch):
+    """#2011 hot-query exclusion pin: list_team_pods deliberately does NOT
+    select the placement fields — a future schema break on a speculative
+    field there would blind the whole lifecycle (watcher, burn guard,
+    never-drop-RUNNING). Keep the selection minimal."""
+    rec = _capture_graphql_generic(monkeypatch, [{"myself": {"pods": []}}])
+
+    runpod_api.list_team_pods()
+
+    assert "podHostId" not in rec.queries[0]
+    assert "dataCenterId" not in rec.queries[0]
+
+
+def test_deploy_once_selection_includes_placement_fields(monkeypatch):
+    """#2011: the create mutation's response selection carries the placement
+    fields so a fresh PodInfo knows its host/DC identity at create time."""
+    rec = _capture_graphql(monkeypatch, [_make_pod_payload()])
+    create_pod("pod-1", "H100", 1)
+    assert "podHostId" in rec.queries[0]
+    assert "dataCenterId" in rec.queries[0]
+
+
+def test_get_datacenters_returns_rows(monkeypatch):
+    """#2011: get_datacenters runs the verified dataCenters enumeration and
+    returns the row list (real body through the graphql seam)."""
+    rows = [
+        {"id": "EU-RO-1", "name": "EU-RO-1", "location": "Romania"},
+        {"id": "CA-MTL-1", "name": "CA-MTL-1", "location": "Canada"},
+    ]
+    rec = _capture_graphql_generic(monkeypatch, [{"dataCenters": rows}])
+
+    out = runpod_api.get_datacenters()
+
+    assert out == rows
+    assert "dataCenters" in rec.queries[0]
+    # Degrade contract: a null/absent enumeration is an empty list, not None.
+    _capture_graphql_generic(monkeypatch, [{"dataCenters": None}])
+    assert runpod_api.get_datacenters() == []
+
+
+def test_get_datacenters_propagates_runpod_error(monkeypatch):
+    """#2011: get_datacenters does NOT swallow transport/GraphQL failures —
+    the graceful degrade (hint without candidates) lives at the CALLER
+    (pod_lifecycle._different_dc_hint), keeping this helper fail-loud."""
+
+    def raising_graphql(query, variables=None, timeout=60):
+        raise RunPodError("GraphQL errors: something broke")
+
+    monkeypatch.setattr(runpod_api, "graphql", raising_graphql)
+    with pytest.raises(RunPodError):
+        runpod_api.get_datacenters()

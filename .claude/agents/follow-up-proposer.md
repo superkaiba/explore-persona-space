@@ -395,11 +395,12 @@ hold:
 - It does NOT require a human design / taste decision to be runnable
   (e.g. "which of these 3 framings", "should we drop persona X or Y",
   "is the construct correct now?" all force `auto_run: no`).
-- It does NOT cross the cost cap on its own (`auto_run: yes` is
+- It carries a parseable GPU-hour estimate (`auto_run: yes` is
   compatible with parking at the child's own Step 2c
-  `plan_pending` if the estimate exceeds
-  `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` — the cap still gates per-child;
-  autonomous follow-up auto-spawn does NOT bypass the cap).
+  `plan_pending` if the estimate is missing/unparseable —
+  the retained fail-safe as of #1771's GPU-hour-blind gate; the gate
+  no longer parks per-child on any GPU-hour magnitude, but a
+  missing-estimate child still parks for a user).
 - It carries a populated, complete-sentence `**Goal:**` field. A missing
   or empty Goal forces `auto_run: no` — an autonomous child spawned
   without a Goal block-and-fails at its own Step 0c gate, so a Goal-less

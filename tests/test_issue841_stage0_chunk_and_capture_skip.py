@@ -4,16 +4,16 @@
 Attempt 6 SIGKILL 137 (host RAM OOM) ~26 min into stage-0: at n=100k the MLP battery
 built all 27 transitions' SplitMLPGroups at once (~77 GB of fp32 copies). The fix
 chunks the transitions into groups of MLP_GROUP_CHUNK (pinned at 6) per fit_split_mlps
-call (build → fit → free → gc). Chunking is NOT bit-equivalent across chunk sizes:
-fit_batched_split_mlp seeds each group's MLP init in BATCH ORDER (member g gets init g,
-vectorized_mlp_skill.py:809), so changing a group's position (via a different chunk
-size) changes its init → its fit. The fit IS deterministic + reproducible at a FIXED
-group_chunk; the init is a pinned nuisance seed (group_chunk recorded in
-stage0_scaling.json). These tests pin:
+call (build → fit → free → gc) — chunking bounds peak host RAM. Since #926
+(4dfcba056f) fit_batched_split_mlp seeds each group under
+split_group_init_seed(seed, group.key), which depends only on (seed, key) — never on
+batch position or chunking — so the fit is bit-identical across chunkings AND
+deterministic + reproducible at a fixed chunking. group_chunk stays a pinned RAM knob
+recorded in stage0_scaling.json (it no longer changes the numbers). These tests pin:
 
   * DETERMINISM: the same group_chunk twice → identical r2 curve + params;
-  * the DOCUMENTED non-equivalence: different chunk sizes DIFFER (batch-order init) — so
-    a future silent "equivalence" flip is caught;
+  * PARTITION INVARIANCE (#926, 4dfcba056f): different chunk sizes give a BIT-IDENTICAL
+    curve + params — so a regression to batch-order-dependent seeding is caught;
   * the RAM-sizing estimator counts the helper's re-copies (3x train + eval term), not
     just the caller delta;
   * capture_complete_on_hf's fetch short-circuit predicate: complete / missing-shard /
@@ -63,27 +63,41 @@ def test_mlp_chunking_is_deterministic_at_fixed_chunk():
             np.testing.assert_array_equal(np.asarray(p1[40][t][k]), np.asarray(p2[40][t][k]))
 
 
-def test_mlp_chunk_size_changes_fit_batch_order_init():
-    """DOCUMENTED non-equivalence: chunking is NOT bit-identical across chunk sizes,
-    because fit_batched_split_mlp seeds each group's MLP init in BATCH ORDER (member g
-    gets init g — vectorized_mlp_skill.py:809). So a different group_chunk gives group g
-    a different init → a different fit. This test PINS that known property (a future
-    change that silently made chunk sizes equivalent — e.g. per-key seeding — would flip
-    it and must be a deliberate, reviewed change to the shared #658-gated helper). The
-    fit stays deterministic at a fixed chunk (test above); group_chunk is pinned in the
-    stage-0 output."""
+def test_mlp_chunking_is_partition_invariant_across_chunk_sizes():
+    """PARTITION INVARIANCE: the r2 curve + params are BIT-IDENTICAL across group_chunk
+    values. Since #926 (4dfcba056f, "port split-MLP fitter to main with
+    partition-invariant per-group seeding") fit_batched_split_mlp seeds each group under
+    torch.manual_seed(split_group_init_seed(seed, group.key)) — an unsalted blake2b of
+    (seed, repr(key)) that depends on NEITHER batch position NOR chunking — so any
+    partition of the group list reproduces every member's init bit-exactly.
+
+    This test SUPERSEDES the pre-#926 pin test_mlp_chunk_size_changes_fit_batch_order_init,
+    which asserted the OPPOSITE (member g got draw g, so re-chunking changed every fit).
+    That pin's own docstring required any equivalence flip to be "a deliberate, reviewed
+    change to the shared #658-gated helper" — 4dfcba056f is exactly that, and shipped its
+    own exactness gate (assert_split_mlp_partition_invariant + tests/
+    test_vectorized_split_mlp.py). A revert to batch-order seeding fails this test.
+
+    group_chunk remains a pinned RAM knob (recorded in stage0_scaling.json); it bounds
+    peak host RAM without changing the numbers.
+    """
     fit_pool, val, test = _synthetic_pool()
     transitions = [0, 1, 2, 3, 4]
     kw = dict(device="cpu", chunk_size=8, num_threads=1, max_epochs=3)
-    c_full, _ = st0.mlp_scaling(fit_pool, val, test, transitions, [40], group_chunk=5, **kw)
-    c_chunk, _ = st0.mlp_scaling(fit_pool, val, test, transitions, [40], group_chunk=2, **kw)
-    # at least one transition whose init position differs across chunkings must differ
-    diffs = [
-        t
-        for t in transitions
-        if c_full[f"transition_{t}"]["40"]["r2_id"] != c_chunk[f"transition_{t}"]["40"]["r2_id"]
-    ]
-    assert diffs, "expected batch-order-init to change the fit across chunk sizes"
+    # 5 = one all-groups call; 2 = a MISALIGNED split leaving a remainder group;
+    # 1 = every group in its own call. All three must agree bit-for-bit.
+    c5, p5 = st0.mlp_scaling(fit_pool, val, test, transitions, [40], group_chunk=5, **kw)
+    for group_chunk in (2, 1):
+        c_n, p_n = st0.mlp_scaling(
+            fit_pool, val, test, transitions, [40], group_chunk=group_chunk, **kw
+        )
+        for t in transitions:
+            assert c5[f"transition_{t}"]["40"] == c_n[f"transition_{t}"]["40"], (
+                group_chunk,
+                t,
+            )
+            for k in p5[40][t]:
+                np.testing.assert_array_equal(np.asarray(p5[40][t][k]), np.asarray(p_n[40][t][k]))
 
 
 def _mock_hf(monkeypatch, *, manifest, shard_repo_files, overflow_repo):

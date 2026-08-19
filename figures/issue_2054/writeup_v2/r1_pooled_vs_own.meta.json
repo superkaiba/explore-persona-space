@@ -1,0 +1,163 @@
+{
+  "commit": "87efce18+dirty",
+  "render_id": "60a99bb6fa154c4a",
+  "git_commit": "87efce18",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.png",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
+    "scripts/issue2094_butler_grid.py",
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-14T21:37:44Z",
+  "figsize": [
+    7.4,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.4344725349984258,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.49863549309530714,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.5242803251176793,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.09116609697292373,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.10632172368932666,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.11677551442265413,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.20667313318878405,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.21080689795353877,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.21701440237604364,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.35581384676897515,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.37687335694611274,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.3779473875215257,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "One map fit on all settings, applied to each framing\n(on-policy, instruct)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "chat template",
+          "bare text",
+          "story, bare label",
+          "story, attributed quote",
+          "own-map $R^2$"
+        ],
+        "xticklabels": [
+          "Pooled\ndirect",
+          "+ per-cell\nbias",
+          "Rotation\n+ bias"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "chat template",
+      "bare text",
+      "story, bare label",
+      "story, attributed quote"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

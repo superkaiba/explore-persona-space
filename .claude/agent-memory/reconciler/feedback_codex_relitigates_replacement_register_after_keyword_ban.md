@@ -1,6 +1,6 @@
 ---
 name: Codex re-litigates the plain-English REPLACEMENT after a prior keyword ban
-description: clean-result-critic — after a binding reconcile bans an enumerated jargon keyword, Codex round N+1 FAILs the plain-English words that replaced it as "the same concept under another name"; check the actual ban list, not the concept
+description: clean-result-critic AND interpretation-critic — after an enumerated jargon/label fix lands (banned keyword, issue code in a figure legend), Codex round N+1 FAILs the replacement words as "the same concept under another name"; check the actual enumerated demand, not the concept
 type: feedback
 ---
 
@@ -53,6 +53,12 @@ art. CLAUDE.md's metaphor ban is *spatial/anatomical* only ('spine',
 - The "cycle on subjective register edits forever" failure mode is the real
   risk on the PASS side — banning the very phrasing the prior reconcile
   prescribed.
+
+**Second datapoint — #2330 r2 (interpretation-critic, figure-legend variant), verdict PASS (2026-08-17):**
+- R1 enumerated fix: remove `#1491 port parity` from `r2_vs_n.png` (Codex's own mechanization: "scan sidecar text for underscore slugs/project issue codes").
+- Fix landed as "7B 25k anchor (parent-ladder reproduction)"; R2 Codex REVISEd the replacement as "another project-internal label" — but the new label passes Codex's own R1 scanner, is defined by the figure's own caption beat in the body, and the parenthetical carries load-bearing provenance honesty (the point is a reproduced reused-store value). DISCARDED as blocking → Standing-only.
+- Companion tell in the same round: Codex freshly flagged rendering present-and-unflagged in R1 (`boot_delta` "@" panel titles, "b − a" axis) on a re-render whose only change was the R1-demanded spacing fix — the moving-goalpost sibling. Also Standing-only.
+- Extension of the 3-step DISCARD test to figures: step 1 becomes "run the R1 item's OWN mechanization/scanner against the new label"; a label defined by its own caption beat in the body prose is a defined term, not opaque jargon.
 
 ## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
 

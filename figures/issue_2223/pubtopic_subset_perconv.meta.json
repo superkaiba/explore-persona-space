@@ -1,0 +1,2560 @@
+{
+  "commit": "62f3b43c",
+  "render_id": "3ef83c7196ef440a",
+  "git_commit": "62f3b43c",
+  "git_dirty": false,
+  "created": "2026-08-14T10:13:17Z",
+  "figsize": [
+    10.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.503301620483398,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.202803611755371,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.481577396392822,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.577338695526123,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.004171848297119,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.9508514404296875,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.850514888763428,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.459390163421631,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.204364776611328,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.961710453033447,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.600460052490234,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.569276809692383,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.323500156402588,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.192637920379639,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.836921691894531,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.81029748916626,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.727018356323242,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.668034076690674,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.617217540740967,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.863705158233643,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.61973762512207,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.519626140594482,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.994501113891602,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.876531600952148,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.5986409187316895,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.516526222229004,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.2142157554626465,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.146642208099365,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.717071056365967,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.232300758361816,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.631539821624756,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.322637557983398,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.923495292663574,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.721841812133789,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.434760570526123,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.458795070648193,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.419870853424072,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.23729133605957,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.045444011688232,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.592767715454102,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.176122188568115,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.538702964782715,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.538227081298828,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.631261348724365,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.1487135887146,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.14948034286499,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.745089054107666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.528423309326172,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.723677635192871,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.631270885467529,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.370893955230713,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.69342565536499,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.563296794891357,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.948321342468262,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.5801215171813965,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.074735164642334,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.755790710449219,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.008323669433594,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.487162113189697,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.760613441467285,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.157409191131592,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.70334005355835,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.9461357593536377,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.01533317565918,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.4882564544677734,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.8789913654327393,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.369134426116943,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.557440280914307,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.160434246063232,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.485391616821289,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.7151479721069336,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.3456907272338867,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.362424850463867,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.487083911895752,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.5583200454711914,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.0798916816711426,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.4968526363372803,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.8766913414001465,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.070765495300293,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.507516384124756,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.882364273071289,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.89363956451416,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.843153238296509,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.115596771240234,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.314515113830566,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.675009727478027,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.5436787605285645,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.69826602935791,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.7837414741516113,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.0136587619781494,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.989842176437378,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.434161901473999,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.665262222290039,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.736802577972412,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.6063928604125977,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.211968898773193,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.783534526824951,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.441100120544434,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.375399112701416,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.8071579933166504,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.4922444820404053,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.146606206893921,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 1.9427388906478882,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 1.7638475894927979,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.7724246978759766,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.8906819820404053,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.870126724243164,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.203073978424072,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.8224616050720215,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.659550666809082,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.404895305633545,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.9473466873168945,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.938084125518799,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.967675685882568,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.247586250305176,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.218663215637207,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.599720001220703,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.135258674621582,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.549192428588867,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.4950532913208,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.92074203491211,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 12.349035263061523,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.803717613220215,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.035841941833496,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 13.064347267150879,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 12.09176254272461,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.218307495117188,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.412985801696777,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.116600036621094,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.184277534484863,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.787595748901367,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.39476490020752,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.498722076416016,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.766851425170898,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.315062522888184,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.862166881561279,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.926370620727539,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.254694938659668,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.77166748046875,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.392727851867676,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.922586441040039,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.148397922515869,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.960824966430664,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.209641456604004,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.285303115844727,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.75851821899414,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.24339485168457,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.103429794311523,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.728389739990234,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.677690505981445,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.39111328125,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.024687767028809,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.414304733276367,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.317715644836426,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.474979400634766,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.283263683319092,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.490423202514648,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.270092010498047,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.636305809020996,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.893235206604004,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.688502311706543,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.28237247467041,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.381186485290527,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 9.713982582092285,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 10.356256484985352,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 8.026578903198242,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 11.462675094604492,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.876004695892334,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.858671188354492,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.761683225631714,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.1712517738342285,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.028857707977295,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.500417947769165,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.725234270095825,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.0471465587615967,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.377799034118652,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.514805316925049,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.015145301818848,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.5975182056427,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.4799230098724365,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.524582386016846,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.85831880569458,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.820570468902588,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.2088799476623535,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.825309753417969,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.8227739334106445,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.987743616104126,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.5814874172210693,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.603264093399048,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.6653223037719727,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.037970781326294,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.529123544692993,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.3364663124084473,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.1113617420196533,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.776743412017822,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.507840633392334,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.010863304138184,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.7307770252227783,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.503580093383789,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.217144012451172,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.9701080322265625,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 2.7170653343200684,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.922607898712158,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.9785146713256836,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.07351541519165,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.150491237640381,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.808049201965332,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.5986247062683105,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.471951484680176,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.260322093963623,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.5278050899505615,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.9045801162719727,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.7570948600769043,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.347401142120361,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.0461835861206055,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.1338322162628174,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.172600269317627,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.332645893096924,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.5390584468841553,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.293825149536133,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.005804061889648,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.358374118804932,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.830824375152588,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.088124990463257,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.4803853034973145,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.9847025871276855,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 7.267933368682861,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 6.692157745361328,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 5.5590972900390625,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.468903541564941,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.0856924057006836,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.5766382217407227,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.972083568572998,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.5597124099731445,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.9658005237579346,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.029888153076172,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.9512698650360107,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 4.177690505981445,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.965481758117676,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.8883235454559326,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.701018810272217,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.083758592605591,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection\n(per conversation, published-topic subset)": 3.6135480403900146,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Turn position": 1.0,
+      "y": -18.652790069580078,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 2.0,
+      "y": -22.040117263793945,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 3.0,
+      "y": -22.418437957763672,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 4.0,
+      "y": -23.466581344604492,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 5.0,
+      "y": -26.81767463684082,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 6.0,
+      "y": -24.238733291625977,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 7.0,
+      "y": -24.939599990844727,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 8.0,
+      "y": -25.07680320739746,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Turn position": 1.0,
+      "y": -17.768884658813477,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 2.0,
+      "y": -23.335874557495117,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 3.0,
+      "y": -24.243120193481445,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 4.0,
+      "y": -25.34712791442871,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 5.0,
+      "y": -25.443273544311523,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 6.0,
+      "y": -25.050134658813477,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 7.0,
+      "y": -27.52977752685547,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 8.0,
+      "y": -24.4682559967041,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 9.0,
+      "y": -24.038972854614258,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 10.0,
+      "y": -25.333683013916016,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 11.0,
+      "y": -25.911876678466797,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 12.0,
+      "y": -27.371797561645508,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 13.0,
+      "y": -26.420804977416992,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Turn position": 1.0,
+      "y": -21.65869140625,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 2.0,
+      "y": -24.6278018951416,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 3.0,
+      "y": -24.522581100463867,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 4.0,
+      "y": -25.425823211669922,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 5.0,
+      "y": -27.900720596313477,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 6.0,
+      "y": -21.82233428955078,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 7.0,
+      "y": -24.470806121826172,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 8.0,
+      "y": -23.799251556396484,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 9.0,
+      "y": -24.884727478027344,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 10.0,
+      "y": -26.02922248840332,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 11.0,
+      "y": -25.070955276489258,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Turn position": 1.0,
+      "y": -20.188438415527344,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Turn position": 2.0,
+      "y": -24.488590240478516,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Turn position": 3.0,
+      "y": -24.85125160217285,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Turn position": 4.0,
+      "y": -24.4359188079834,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Turn position": 5.0,
+      "y": -19.040735244750977,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Turn position": 6.0,
+      "y": -21.066022872924805,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Turn position": 7.0,
+      "y": -21.304750442504883,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Turn position": 1.0,
+      "y": -23.7323055267334,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 2.0,
+      "y": -21.521167755126953,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 3.0,
+      "y": -18.69441032409668,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 4.0,
+      "y": -19.310062408447266,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 5.0,
+      "y": -20.251625061035156,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 6.0,
+      "y": -26.087949752807617,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 7.0,
+      "y": -21.15101432800293,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 8.0,
+      "y": -20.771549224853516,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 9.0,
+      "y": -19.895742416381836,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Turn position": 1.0,
+      "y": -29.40142822265625,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 2.0,
+      "y": -41.538814544677734,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 3.0,
+      "y": -49.47654342651367,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 4.0,
+      "y": -56.304237365722656,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 5.0,
+      "y": -54.39717102050781,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 6.0,
+      "y": -52.08339309692383,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 7.0,
+      "y": -34.008548736572266,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 8.0,
+      "y": -37.20599365234375,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 9.0,
+      "y": -47.45277786254883,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Turn position": 1.0,
+      "y": -32.67624282836914,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Turn position": 2.0,
+      "y": -31.658838272094727,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Turn position": 3.0,
+      "y": -35.62005615234375,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Turn position": 4.0,
+      "y": -35.3374137878418,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Turn position": 5.0,
+      "y": -42.3013801574707,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Turn position": 6.0,
+      "y": -37.55878829956055,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Turn position": 1.0,
+      "y": -28.367692947387695,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Turn position": 2.0,
+      "y": -33.555206298828125,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Turn position": 3.0,
+      "y": -49.08972930908203,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Turn position": 4.0,
+      "y": -48.41242980957031,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Turn position": 5.0,
+      "y": -48.451480865478516,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Turn position": 1.0,
+      "y": -29.42563247680664,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 2.0,
+      "y": -45.38385772705078,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 3.0,
+      "y": -42.37432098388672,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 4.0,
+      "y": -45.71730422973633,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 5.0,
+      "y": -43.289817810058594,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 6.0,
+      "y": -40.116302490234375,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 7.0,
+      "y": -39.74938201904297,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 8.0,
+      "y": -40.32097244262695,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 9.0,
+      "y": -40.88612365722656,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 10.0,
+      "y": -45.40076446533203,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 11.0,
+      "y": -42.96255111694336,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 12.0,
+      "y": -42.18172836303711,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 13.0,
+      "y": -33.565372467041016,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Turn position": 1.0,
+      "y": -27.666887283325195,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Turn position": 2.0,
+      "y": -34.457942962646484,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Turn position": 3.0,
+      "y": -38.91357421875,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Turn position": 4.0,
+      "y": -35.538246154785156,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Turn position": 5.0,
+      "y": -42.52975845336914,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Turn position": 1.0,
+      "y": -18.107906341552734,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Turn position": 2.0,
+      "y": -26.58626365661621,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Turn position": 3.0,
+      "y": -31.752790451049805,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Turn position": 4.0,
+      "y": -29.24187660217285,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Turn position": 5.0,
+      "y": -32.13591766357422,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Turn position": 1.0,
+      "y": -13.365623474121094,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Turn position": 2.0,
+      "y": -27.95796012878418,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Turn position": 3.0,
+      "y": -30.525047302246094,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Turn position": 4.0,
+      "y": -27.295578002929688,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Turn position": 5.0,
+      "y": -29.99178695678711,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Turn position": 1.0,
+      "y": -13.151470184326172,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Turn position": 2.0,
+      "y": -20.77741241455078,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Turn position": 3.0,
+      "y": -24.36050033569336,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Turn position": 4.0,
+      "y": -26.577518463134766,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Turn position": 5.0,
+      "y": -30.096738815307617,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Turn position": 6.0,
+      "y": -34.02400207519531,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Turn position": 7.0,
+      "y": -32.67363357543945,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Turn position": 1.0,
+      "y": -16.017183303833008,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Turn position": 2.0,
+      "y": -18.266868591308594,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Turn position": 3.0,
+      "y": -25.716279983520508,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Turn position": 4.0,
+      "y": -28.496131896972656,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Turn position": 5.0,
+      "y": -28.229793548583984,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Turn position": 6.0,
+      "y": -29.761842727661133,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Turn position": 1.0,
+      "y": -14.558942794799805,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Turn position": 2.0,
+      "y": -23.05599021911621,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Turn position": 3.0,
+      "y": -24.041980743408203,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Turn position": 4.0,
+      "y": -24.638566970825195,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Turn position": 1.0,
+      "y": -20.656139373779297,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 2.0,
+      "y": -28.221773147583008,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 3.0,
+      "y": -27.672992706298828,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 4.0,
+      "y": -30.43967056274414,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 5.0,
+      "y": -30.25583267211914,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 6.0,
+      "y": -29.32377052307129,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 7.0,
+      "y": -26.817171096801758,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 8.0,
+      "y": -24.628456115722656,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 9.0,
+      "y": -28.072017669677734,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 10.0,
+      "y": -25.844711303710938,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 11.0,
+      "y": -30.977293014526367,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 12.0,
+      "y": -29.068450927734375,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Turn position": 1.0,
+      "y": -22.8480167388916,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 2.0,
+      "y": -22.792675018310547,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 3.0,
+      "y": -26.495317459106445,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 4.0,
+      "y": -28.293582916259766,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 5.0,
+      "y": -28.7066707611084,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 6.0,
+      "y": -28.030921936035156,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 7.0,
+      "y": -27.910987854003906,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 8.0,
+      "y": -25.333423614501953,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 9.0,
+      "y": -25.670612335205078,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 10.0,
+      "y": -26.280725479125977,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 11.0,
+      "y": -27.247596740722656,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Turn position": 1.0,
+      "y": -24.271991729736328,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 2.0,
+      "y": -22.654769897460938,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 3.0,
+      "y": -26.62605094909668,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 4.0,
+      "y": -29.516332626342773,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 5.0,
+      "y": -33.27118682861328,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 6.0,
+      "y": -35.612491607666016,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 7.0,
+      "y": -31.021759033203125,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 8.0,
+      "y": -32.454097747802734,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 9.0,
+      "y": -34.130523681640625,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 10.0,
+      "y": -36.88019561767578,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 11.0,
+      "y": -37.09993362426758,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 12.0,
+      "y": -37.96335983276367,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 13.0,
+      "y": -32.68775177001953,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 14.0,
+      "y": -29.895368576049805,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Turn position": 1.0,
+      "y": -25.968053817749023,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 2.0,
+      "y": -28.096267700195312,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 3.0,
+      "y": -30.023216247558594,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 4.0,
+      "y": -30.551130294799805,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 5.0,
+      "y": -28.68779945373535,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 6.0,
+      "y": -29.588945388793945,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 7.0,
+      "y": -29.714879989624023,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 8.0,
+      "y": -32.42380905151367,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 9.0,
+      "y": -32.803802490234375,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 10.0,
+      "y": -31.926063537597656,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 11.0,
+      "y": -31.01535415649414,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Turn position": 1.0,
+      "y": -23.68677520751953,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 2.0,
+      "y": -27.54599952697754,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 3.0,
+      "y": -30.575946807861328,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 4.0,
+      "y": -25.425798416137695,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 5.0,
+      "y": -26.49203109741211,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 6.0,
+      "y": -31.98199462890625,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 7.0,
+      "y": -26.73607063293457,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 8.0,
+      "y": -26.999242782592773,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 9.0,
+      "y": -29.94748306274414,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Turn position": 10.0,
+      "y": -27.645475387573242,
+      "_kind": "line",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 414,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "7B leg (Qwen2.5-7B-Instruct, in-house axis)",
+        "xlabel": "Turn position",
+        "ylabel": "Assistant-axis projection\n(per conversation, published-topic subset)",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ]
+      },
+      {
+        "title_left": "32B leg (Qwen3-32B, published axis)",
+        "xlabel": "Turn position",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "\u221260",
+          "\u221250",
+          "\u221240",
+          "\u221230",
+          "\u221220",
+          "\u221210"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

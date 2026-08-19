@@ -53,8 +53,13 @@ def _synthetic_v(shape=(4, 8), seed: int = 0) -> dict[str, torch.Tensor]:
 
 def test_contexts_count_ids_and_fields():
     contexts = build_contexts()
-    assert len(contexts) == 15
-    assert list(contexts) == [context_id(p, q) for p in PREFIX_ORDER for q in QUERY_ORDER]
+    assert len(contexts) == 20  # 15 parent + 5 butler (Option C round)
+    assert list(contexts) == [
+        context_id(p, q) for p in bank.EXTENDED_PREFIX_ORDER for q in QUERY_ORDER
+    ]
+    # The FIRST 15 are the parent bank verbatim — ids AND order (the committed
+    # 21,000-cell parent grid keys on them; id-stability contract).
+    assert list(contexts)[:15] == [context_id(p, q) for p in PREFIX_ORDER for q in QUERY_ORDER]
     for cid, ctx in contexts.items():
         assert ctx["id"] == cid
         assert ctx["user"] == bank.QUERIES[ctx["query_id"]]
@@ -71,6 +76,9 @@ def test_context_messages_shapes_per_prefix():
     assert [m["role"] for m in m_conv] == ["user", "assistant", "user"]
     assert m_conv[0]["content"] == bank.CONV_USER_TURN
     assert m_conv[-1]["content"] == bank.QUERIES["q5"]
+    m_butler = context_messages_2094(contexts["butler__q2"])
+    assert [m["role"] for m in m_butler] == ["system", "user"]
+    assert m_butler[0]["content"] == bank.BUTLER_SYSTEM
     # conv prefix is output-affecting by design: an upbeat ~120-word reply
     n_words = len(bank.CONV_ASSISTANT_TURN.split())
     assert 80 <= n_words <= 170, n_words
@@ -305,8 +313,8 @@ def test_bank_manifest_is_json_serializable_and_complete():
     manifest = bank_manifest()
     text = json.dumps(manifest, ensure_ascii=False)
     round_trip = json.loads(text)
-    assert len(round_trip["contexts"]) == 15
-    assert len(round_trip["pairs"]) == 60
+    assert len(round_trip["contexts"]) == 20  # 15 parent + 5 butler
+    assert len(round_trip["pairs"]) == 60  # parent pairs ONLY (butler pairs live elsewhere)
     assert len(round_trip["donor_derangement"]) == 60
     assert round_trip["seed"] == SEED
     assert round_trip["truncation_clause"] in round_trip["coherence_rubric"]

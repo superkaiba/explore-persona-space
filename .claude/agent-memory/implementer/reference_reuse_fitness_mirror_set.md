@@ -1,16 +1,17 @@
 ---
 name: Reuse-fitness check mirror set (20 sites)
-description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(l)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
+description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(m)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
 type: reference
 ---
 
 The trained-artifact (and code) reuse fitness check — the lettered set,
-currently (a)-(l) — is mirrored across TWENTY workflow-surface sites, and
+currently (a)-(m) — is mirrored across TWENTY workflow-surface sites, and
 precedent fixes (#600 content-identity, #601 application-scaling, #545
 adapter_config grounding, #734 train-input fetchability (h), #871 code
 throughput (i), #941 pairwise provenance coherence (j), #1366
 parent-lineage coherence (k), #1522 instrument validity-domain transfer
-(l)) each touched the relevant set in one change:
+(l), #2043 device-domain smoke (m)) each touched the relevant set in one
+change:
 
 1. `.claude/rules/artifact-reuse.md` — the CANONICAL checklist (the full
    lettered list + the H1/description range + the closing remedy line + the
@@ -160,12 +161,34 @@ call, no one-line mechanical probe exists). The c6 regex grandfathers both
 old tokens via `\([jkl]\)`; the decoy letter moved (l) → (m); all three
 widened-class members {j,k,l} carry range-token pins.
 
+#2043 added item (m): device-domain smoke of reused fit/analysis CODE
+reaching a NEW device class (incident #1345: `fit825._prep_inner_lambda`
+built inner-CV lambda caches on the cuda fit device while `ma._ridge_prep`
+kept the outer prep on the caller's CPU tensors — a device-split between two
+individually device-clean preps; Fellows job 17912 FAILED after 2h33m, AFTER
+all 140 per-cell fits completed, in the first xy_grid union stage, because
+the #1417/#1887 inner-group-cv defaults had never run on a CUDA node; the
+`device=`-threading fix relaunched COMPLETED). Code-reuse-scoped like
+(i)/(l) — triggers on defaults flipped since the last completed run on the
+device class, or a code path never executed there; requires a 1-cell smoke
+ON that device class through the production entrypoint, reaching the
+LATE-stage phases. Routes the FIFTH non-retrain remedy branch
+(fix-the-device-seam-at-source → re-smoke → reuse), so the remedy-split
+lines were edited again (artifact-reuse.md routing paragraph, planner.md
+step 5, critic-lens-reference.md item-9 remedy tail — NOT CLAUDE.md, whose
+bullet compresses routing to "with per-check failure routing"). NO
+gotchas.md sibling bullet and NO consistency-checker probe (both the (l)
+precedent: the incident mechanism is quoted inside (m)'s own citation, and
+device-domain judgment is a methodology-lens call). The c6 regex
+grandfathers the old tokens via `\([jklm]\)`; the decoy letter moved
+(m) → (n); all four widened-class members {j,k,l,m} carry range-token pins.
+
 Every remedy-split line on the live surfaces is deliberately worded WITHOUT a
-lettered RANGE ("a failing check other than (i)/(h)(iv)/(k)/(l)" names
+lettered RANGE ("a failing check other than (i)/(h)(iv)/(k)/(l)/(m)" names
 letters, never a range token) so the stale-range completeness grep stays
 clean; a future letter needs no remedy re-edit ONLY when it routes through
-the default retrain/regenerate branch ((j) did; (k) and (l) did not — see
-the #1366/#1522 paragraphs).
+the default retrain/regenerate branch ((j) did; (k), (l), and (m) did not —
+see the #1366/#1522/#2043 paragraphs).
 
 A change targeting only planner.md leaves the independent enforcement passes
 (critic, consistency-checker), the canonical rule file, and the mechanical

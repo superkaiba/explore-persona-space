@@ -1,0 +1,448 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-14T05:05:37Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "f9ec3840",
+  "git_dirty": false,
+  "behaviors": {
+    "evil": {
+      "pre__context__single": {
+        "cell_id": "evil__pre__ctx__L14__c0p5",
+        "layer_config": "L14",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "pre__context__mid": {
+        "cell_id": "evil__pre__ctx__mid__c0p5",
+        "layer_config": "mid",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "pre__context__all": {
+        "cell_id": "evil__pre__ctx__all__c0p5",
+        "layer_config": "all",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "rb__context__single": {
+        "cell_id": "evil__rb__ctx__L14__c0p5",
+        "layer_config": "L14",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "rb__context__mid": {
+        "cell_id": "evil__rb__ctx__mid__c2",
+        "layer_config": "mid",
+        "c": 2.0,
+        "delta_score": 0.2777777777777778
+      },
+      "rb__context__all": {
+        "cell_id": "evil__rb__ctx__all__c0p5",
+        "layer_config": "all",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "ctxext__context__single": {
+        "cell_id": "evil__cxd__ctx__L14__c4",
+        "layer_config": "L14",
+        "c": 4.0,
+        "delta_score": 2.2222222222222223
+      },
+      "ctxext__context__mid": {
+        "cell_id": "evil__cxd__ctx__mid__c4",
+        "layer_config": "mid",
+        "c": 4.0,
+        "delta_score": 2.611111111111111
+      },
+      "ctxext__context__all": {
+        "cell_id": "evil__cxd__ctx__all__c0p5",
+        "layer_config": "all",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "random__context__single": {
+        "cell_id": "evil__rnd__ctx__L14__c0p5",
+        "layer_config": "L14",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "random__context__mid": {
+        "cell_id": "evil__rnd__ctx__mid__c0p5",
+        "layer_config": "mid",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "random__context__all": {
+        "cell_id": "evil__rnd__ctx__all__c0p5",
+        "layer_config": "all",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "preshuf__context__single": {
+        "cell_id": "evil__shf__ctx__L14__c0p5",
+        "layer_config": "L14",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "preshuf__context__mid": {
+        "cell_id": "evil__shf__ctx__mid__c0p5",
+        "layer_config": "mid",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "preshuf__context__all": {
+        "cell_id": "evil__shf__ctx__all__c0p5",
+        "layer_config": "all",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "pre__answer__single": {
+        "cell_id": "evil__pre__ans__L17__c1",
+        "layer_config": "L17",
+        "c": 1.0,
+        "delta_score": 57.43333333333332
+      },
+      "pre__answer__mid": {
+        "cell_id": "evil__pre__ans__mid__c2",
+        "layer_config": "mid",
+        "c": 2.0,
+        "delta_score": 36.41666666666667
+      },
+      "pre__answer__all": {
+        "cell_id": "evil__pre__ans__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 90.05555555555557
+      },
+      "rb__answer__single": {
+        "cell_id": "evil__rb__ans__L14__c4",
+        "layer_config": "L14",
+        "c": 4.0,
+        "delta_score": 100.0
+      },
+      "rb__answer__mid": {
+        "cell_id": "evil__rb__ans__mid__c2",
+        "layer_config": "mid",
+        "c": 2.0,
+        "delta_score": 93.16666666666667
+      },
+      "rb__answer__all": {
+        "cell_id": "evil__rb__ans__all__c2",
+        "layer_config": "all",
+        "c": 2.0,
+        "delta_score": 99.16666666666667
+      },
+      "random__answer__single": {
+        "cell_id": "evil__rnd__ans__L14__cm1",
+        "layer_config": "L14",
+        "c": -1.0,
+        "delta_score": 0.5
+      },
+      "random__answer__mid": {
+        "cell_id": "evil__rnd__ans__mid__c0p5",
+        "layer_config": "mid",
+        "c": 0.5,
+        "delta_score": 0.0
+      },
+      "random__answer__all": {
+        "cell_id": "evil__rnd__ans__all__c0p5",
+        "layer_config": "all",
+        "c": 0.5,
+        "delta_score": 0.0
+      }
+    },
+    "sycophancy": {
+      "pre__context__single": {
+        "cell_id": "sycophancy__pre__ctx__L17__c4",
+        "layer_config": "L17",
+        "c": 4.0,
+        "delta_score": 6.555555555555554
+      },
+      "pre__context__mid": {
+        "cell_id": "sycophancy__pre__ctx__mid__c4",
+        "layer_config": "mid",
+        "c": 4.0,
+        "delta_score": 5.111111111111111
+      },
+      "pre__context__all": {
+        "cell_id": "sycophancy__pre__ctx__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 2.0555555555555536
+      },
+      "rb__context__single": {
+        "cell_id": "sycophancy__rb__ctx__L17__c4",
+        "layer_config": "L17",
+        "c": 4.0,
+        "delta_score": 24.98888888888889
+      },
+      "rb__context__mid": {
+        "cell_id": "sycophancy__rb__ctx__mid__c2",
+        "layer_config": "mid",
+        "c": 2.0,
+        "delta_score": 17.15555555555555
+      },
+      "rb__context__all": {
+        "cell_id": "sycophancy__rb__ctx__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 11.522222222222219
+      },
+      "ctxext__context__single": {
+        "cell_id": "sycophancy__cxd__ctx__L14__c2",
+        "layer_config": "L14",
+        "c": 2.0,
+        "delta_score": 16.666666666666664
+      },
+      "ctxext__context__mid": {
+        "cell_id": "sycophancy__cxd__ctx__mid__c4",
+        "layer_config": "mid",
+        "c": 4.0,
+        "delta_score": 30.06666666666666
+      },
+      "ctxext__context__all": {
+        "cell_id": "sycophancy__cxd__ctx__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 16.744444444444447
+      },
+      "random__context__single": {
+        "cell_id": "sycophancy__rnd__ctx__L14__cm2",
+        "layer_config": "L14",
+        "c": -2.0,
+        "delta_score": 4.966666666666669
+      },
+      "random__context__mid": {
+        "cell_id": "sycophancy__rnd__ctx__mid__cm4",
+        "layer_config": "mid",
+        "c": -4.0,
+        "delta_score": 3.18888888888889
+      },
+      "random__context__all": {
+        "cell_id": "sycophancy__rnd__ctx__all__cm0p5",
+        "layer_config": "all",
+        "c": -0.5,
+        "delta_score": 1.6888888888888882
+      },
+      "preshuf__context__single": {
+        "cell_id": "sycophancy__shf__ctx__L17__c4",
+        "layer_config": "L17",
+        "c": 4.0,
+        "delta_score": 4.9999999999999964
+      },
+      "preshuf__context__mid": {
+        "cell_id": "sycophancy__shf__ctx__mid__c2",
+        "layer_config": "mid",
+        "c": 2.0,
+        "delta_score": 5.111111111111111
+      },
+      "preshuf__context__all": {
+        "cell_id": "sycophancy__shf__ctx__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 2.8888888888888875
+      },
+      "pre__answer__single": {
+        "cell_id": "sycophancy__pre__ans__L14__c1",
+        "layer_config": "L14",
+        "c": 1.0,
+        "delta_score": 49.66666666666667
+      },
+      "pre__answer__mid": {
+        "cell_id": "sycophancy__pre__ans__mid__c1",
+        "layer_config": "mid",
+        "c": 1.0,
+        "delta_score": 31.95555555555556
+      },
+      "pre__answer__all": {
+        "cell_id": "sycophancy__pre__ans__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 24.161111111111108
+      },
+      "rb__answer__single": {
+        "cell_id": "sycophancy__rb__ans__L14__c2",
+        "layer_config": "L14",
+        "c": 2.0,
+        "delta_score": 82.86111111111111
+      },
+      "rb__answer__mid": {
+        "cell_id": "sycophancy__rb__ans__mid__c1",
+        "layer_config": "mid",
+        "c": 1.0,
+        "delta_score": 71.1
+      },
+      "rb__answer__all": {
+        "cell_id": "sycophancy__rb__ans__all__c2",
+        "layer_config": "all",
+        "c": 2.0,
+        "delta_score": 74.16666666666667
+      },
+      "random__answer__single": {
+        "cell_id": "sycophancy__rnd__ans__L17__cm1",
+        "layer_config": "L17",
+        "c": -1.0,
+        "delta_score": 21.900000000000002
+      },
+      "random__answer__mid": {
+        "cell_id": "sycophancy__rnd__ans__mid__c1",
+        "layer_config": "mid",
+        "c": 1.0,
+        "delta_score": 1.5555555555555571
+      },
+      "random__answer__all": {
+        "cell_id": "sycophancy__rnd__ans__all__cm2",
+        "layer_config": "all",
+        "c": -2.0,
+        "delta_score": 6.366666666666664
+      }
+    },
+    "hallucination": {
+      "pre__context__single": {
+        "cell_id": "hallucination__pre__ctx__L20__c0p5",
+        "layer_config": "L20",
+        "c": 0.5,
+        "delta_score": 8.555555555555557
+      },
+      "pre__context__mid": {
+        "cell_id": "hallucination__pre__ctx__mid__c4",
+        "layer_config": "mid",
+        "c": 4.0,
+        "delta_score": 0.1666666666666714
+      },
+      "pre__context__all": {
+        "cell_id": "hallucination__pre__ctx__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 10.077777777777783
+      },
+      "rb__context__single": {
+        "cell_id": "hallucination__rb__ctx__L17__c0p5",
+        "layer_config": "L17",
+        "c": 0.5,
+        "delta_score": 13.666666666666671
+      },
+      "rb__context__mid": {
+        "cell_id": "hallucination__rb__ctx__mid__c0p5",
+        "layer_config": "mid",
+        "c": 0.5,
+        "delta_score": 11.222222222222229
+      },
+      "rb__context__all": {
+        "cell_id": "hallucination__rb__ctx__all__c1",
+        "layer_config": "all",
+        "c": 1.0,
+        "delta_score": 7.888888888888879
+      },
+      "ctxext__context__single": {
+        "cell_id": "hallucination__cxd__ctx__L17__c2",
+        "layer_config": "L17",
+        "c": 2.0,
+        "delta_score": 16.0
+      },
+      "ctxext__context__mid": {
+        "cell_id": "hallucination__cxd__ctx__mid__c2",
+        "layer_config": "mid",
+        "c": 2.0,
+        "delta_score": 27.611111111111114
+      },
+      "ctxext__context__all": {
+        "cell_id": "hallucination__cxd__ctx__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 28.33333333333333
+      },
+      "random__context__single": {
+        "cell_id": "hallucination__rnd__ctx__L14__c1",
+        "layer_config": "L14",
+        "c": 1.0,
+        "delta_score": 8.166666666666664
+      },
+      "random__context__mid": {
+        "cell_id": "hallucination__rnd__ctx__mid__cm2",
+        "layer_config": "mid",
+        "c": -2.0,
+        "delta_score": 7.944444444444443
+      },
+      "random__context__all": {
+        "cell_id": "hallucination__rnd__ctx__all__c0p5",
+        "layer_config": "all",
+        "c": 0.5,
+        "delta_score": 6.7777777777777715
+      },
+      "preshuf__context__single": {
+        "cell_id": "hallucination__shf__ctx__L17__c0p5",
+        "layer_config": "L17",
+        "c": 0.5,
+        "delta_score": 8.5
+      },
+      "preshuf__context__mid": {
+        "cell_id": "hallucination__shf__ctx__mid__c0p5",
+        "layer_config": "mid",
+        "c": 0.5,
+        "delta_score": 9.333333333333336
+      },
+      "preshuf__context__all": {
+        "cell_id": "hallucination__shf__ctx__all__c1",
+        "layer_config": "all",
+        "c": 1.0,
+        "delta_score": 7.5
+      },
+      "pre__answer__single": {
+        "cell_id": "hallucination__pre__ans__L20__c1",
+        "layer_config": "L20",
+        "c": 1.0,
+        "delta_score": 50.0
+      },
+      "pre__answer__mid": {
+        "cell_id": "hallucination__pre__ans__mid__c2",
+        "layer_config": "mid",
+        "c": 2.0,
+        "delta_score": 46.66666666666667
+      },
+      "pre__answer__all": {
+        "cell_id": "hallucination__pre__ans__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 40.0
+      },
+      "rb__answer__single": {
+        "cell_id": "hallucination__rb__ans__L14__c1",
+        "layer_config": "L14",
+        "c": 1.0,
+        "delta_score": 50.0
+      },
+      "rb__answer__mid": {
+        "cell_id": "hallucination__rb__ans__mid__c1",
+        "layer_config": "mid",
+        "c": 1.0,
+        "delta_score": 50.0
+      },
+      "rb__answer__all": {
+        "cell_id": "hallucination__rb__ans__all__c2",
+        "layer_config": "all",
+        "c": 2.0,
+        "delta_score": 46.66666666666667
+      },
+      "random__answer__single": {
+        "cell_id": "hallucination__rnd__ans__L14__c1",
+        "layer_config": "L14",
+        "c": 1.0,
+        "delta_score": 43.388888888888886
+      },
+      "random__answer__mid": {
+        "cell_id": "hallucination__rnd__ans__mid__c1",
+        "layer_config": "mid",
+        "c": 1.0,
+        "delta_score": 17.777777777777786
+      },
+      "random__answer__all": {
+        "cell_id": "hallucination__rnd__ans__all__c4",
+        "layer_config": "all",
+        "c": 4.0,
+        "delta_score": 25.999999999999986
+      }
+    }
+  }
+}

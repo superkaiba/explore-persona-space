@@ -1,0 +1,684 @@
+{
+  "commit": "230a8ea5+dirty",
+  "git_commit": "230a8ea5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-07T14:23:23Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.22,
+      "ceiling difference (held-out R\u00b2)": -0.23016253144963747,
+      "error": 0.005074772325765489,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.78,
+      "ceiling difference (held-out R\u00b2)": -0.21926862165890615,
+      "error": 0.0030157323283821896,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.78,
+      "ceiling difference (held-out R\u00b2)": -0.28684288421391846,
+      "error": 0.002760923784276864,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.78,
+      "ceiling difference (held-out R\u00b2)": -0.2421569906490629,
+      "error": 0.005482464687941127,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.78,
+      "ceiling difference (held-out R\u00b2)": -0.16739990643201735,
+      "error": 0.004396327363107827,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.78,
+      "ceiling difference (held-out R\u00b2)": -0.13465666993114175,
+      "error": 0.002996601703927876,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.78,
+      "ceiling difference (held-out R\u00b2)": -0.2327968246593623,
+      "error": 0.004719087622523946,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 6.78,
+      "ceiling difference (held-out R\u00b2)": -0.16486120213756697,
+      "error": 0.006272374517709303,
+      "series": "authorship (story-authored \u2212 chat-authored)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "ceiling difference (held-out R\u00b2)": -0.043381004191888575,
+      "error": 0.004320069609129118,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "ceiling difference (held-out R\u00b2)": -0.024490246311404396,
+      "error": 0.0028138368471512416,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "ceiling difference (held-out R\u00b2)": -0.07246140887575106,
+      "error": 0.0032392064076583738,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "ceiling difference (held-out R\u00b2)": -0.054667032113433246,
+      "error": 0.004032957663556977,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "ceiling difference (held-out R\u00b2)": -0.12734863170260458,
+      "error": 0.004424328949153178,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "ceiling difference (held-out R\u00b2)": -0.10644999765718936,
+      "error": 0.002039494288168922,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "ceiling difference (held-out R\u00b2)": -0.15652978750337437,
+      "error": 0.0035114039536416203,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "ceiling difference (held-out R\u00b2)": -0.13733640423390553,
+      "error": 0.00448189421058999,
+      "series": "presentation (story \u2212 chat template)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.22,
+      "ceiling difference (held-out R\u00b2)": 0.14171556057845558,
+      "error": 0.0062425054699299515,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.22,
+      "ceiling difference (held-out R\u00b2)": 0.11262004112814732,
+      "error": 0.0037236802626608376,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.22,
+      "ceiling difference (held-out R\u00b2)": 0.16686972359343394,
+      "error": 0.004031271707405637,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.22,
+      "ceiling difference (held-out R\u00b2)": 0.15015643370394396,
+      "error": 0.007373476610166907,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.22,
+      "ceiling difference (held-out R\u00b2)": 0.1636058969983329,
+      "error": 0.00861395364648701,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 5.22,
+      "ceiling difference (held-out R\u00b2)": 0.1185812596062575,
+      "error": 0.003284521045836722,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 6.22,
+      "ceiling difference (held-out R\u00b2)": 0.19341124894432435,
+      "error": 0.003861958137104937,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 7.22,
+      "ceiling difference (held-out R\u00b2)": 0.16598358460716006,
+      "error": 0.00933416361354325,
+      "series": "interaction",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": -0.22,
+      "ceiling difference (held-out R\u00b2)": -0.23016253144963747,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.78,
+      "ceiling difference (held-out R\u00b2)": -0.21926862165890615,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.78,
+      "ceiling difference (held-out R\u00b2)": -0.28684288421391846,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.78,
+      "ceiling difference (held-out R\u00b2)": -0.2421569906490629,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.78,
+      "ceiling difference (held-out R\u00b2)": -0.16739990643201735,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.78,
+      "ceiling difference (held-out R\u00b2)": -0.13465666993114175,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.78,
+      "ceiling difference (held-out R\u00b2)": -0.2327968246593623,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.78,
+      "ceiling difference (held-out R\u00b2)": -0.16486120213756697,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.22,
+      "ceiling difference (held-out R\u00b2)": -0.2357464333192443,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.78,
+      "ceiling difference (held-out R\u00b2)": -0.2222942642456406,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.78,
+      "ceiling difference (held-out R\u00b2)": -0.2897727903669619,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.78,
+      "ceiling difference (held-out R\u00b2)": -0.24761841250081015,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.78,
+      "ceiling difference (held-out R\u00b2)": -0.1718123586038987,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.78,
+      "ceiling difference (held-out R\u00b2)": -0.13728322743387472,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.78,
+      "ceiling difference (held-out R\u00b2)": -0.2374907612965059,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.78,
+      "ceiling difference (held-out R\u00b2)": -0.1699147227352302,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.22,
+      "ceiling difference (held-out R\u00b2)": -0.22559688866771332,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.78,
+      "ceiling difference (held-out R\u00b2)": -0.21626279958887623,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.78,
+      "ceiling difference (held-out R\u00b2)": -0.2842509427984082,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.78,
+      "ceiling difference (held-out R\u00b2)": -0.2366534831249279,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.78,
+      "ceiling difference (held-out R\u00b2)": -0.16301970387768305,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.78,
+      "ceiling difference (held-out R\u00b2)": -0.13129002402601897,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.78,
+      "ceiling difference (held-out R\u00b2)": -0.228052586051458,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.78,
+      "ceiling difference (held-out R\u00b2)": -0.1573699736998116,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "ceiling difference (held-out R\u00b2)": -0.043381004191888575,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "ceiling difference (held-out R\u00b2)": -0.024490246311404396,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "ceiling difference (held-out R\u00b2)": -0.07246140887575106,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "ceiling difference (held-out R\u00b2)": -0.054667032113433246,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "ceiling difference (held-out R\u00b2)": -0.12734863170260458,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "ceiling difference (held-out R\u00b2)": -0.10644999765718936,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "ceiling difference (held-out R\u00b2)": -0.15652978750337437,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "ceiling difference (held-out R\u00b2)": -0.13733640423390553,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "ceiling difference (held-out R\u00b2)": -0.047826229513891816,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "ceiling difference (held-out R\u00b2)": -0.02730205648915949,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "ceiling difference (held-out R\u00b2)": -0.07625747936234081,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "ceiling difference (held-out R\u00b2)": -0.05842556542334147,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "ceiling difference (held-out R\u00b2)": -0.13226289578280626,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "ceiling difference (held-out R\u00b2)": -0.10848949194535829,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "ceiling difference (held-out R\u00b2)": -0.16071125162375716,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "ceiling difference (held-out R\u00b2)": -0.14163432736705198,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "ceiling difference (held-out R\u00b2)": -0.03918609029563358,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "ceiling difference (held-out R\u00b2)": -0.021674382794857006,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "ceiling difference (held-out R\u00b2)": -0.06977906654702407,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "ceiling difference (held-out R\u00b2)": -0.05035965009622752,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "ceiling difference (held-out R\u00b2)": -0.1234142378844999,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "ceiling difference (held-out R\u00b2)": -0.10441050336902044,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "ceiling difference (held-out R\u00b2)": -0.15368844371647392,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "ceiling difference (held-out R\u00b2)": -0.132670538945872,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.22,
+      "ceiling difference (held-out R\u00b2)": 0.14171556057845558,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.22,
+      "ceiling difference (held-out R\u00b2)": 0.11262004112814732,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.22,
+      "ceiling difference (held-out R\u00b2)": 0.16686972359343394,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.22,
+      "ceiling difference (held-out R\u00b2)": 0.15015643370394396,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.22,
+      "ceiling difference (held-out R\u00b2)": 0.1636058969983329,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.22,
+      "ceiling difference (held-out R\u00b2)": 0.1185812596062575,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.22,
+      "ceiling difference (held-out R\u00b2)": 0.19341124894432435,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.22,
+      "ceiling difference (held-out R\u00b2)": 0.16598358460716006,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.22,
+      "ceiling difference (held-out R\u00b2)": 0.13669459283295832,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.22,
+      "ceiling difference (held-out R\u00b2)": 0.10918797097476345,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.22,
+      "ceiling difference (held-out R\u00b2)": 0.1633150060172783,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.22,
+      "ceiling difference (held-out R\u00b2)": 0.14172065579630969,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.22,
+      "ceiling difference (held-out R\u00b2)": 0.15638783612508864,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.22,
+      "ceiling difference (held-out R\u00b2)": 0.11473819663657325,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.22,
+      "ceiling difference (held-out R\u00b2)": 0.18988615891340935,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.22,
+      "ceiling difference (held-out R\u00b2)": 0.1556172584155413,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.22,
+      "ceiling difference (held-out R\u00b2)": 0.14917960377281822,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.22,
+      "ceiling difference (held-out R\u00b2)": 0.11663533150008512,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.22,
+      "ceiling difference (held-out R\u00b2)": 0.17137754943208958,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.22,
+      "ceiling difference (held-out R\u00b2)": 0.1564676090166435,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.22,
+      "ceiling difference (held-out R\u00b2)": 0.17361574341806266,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.22,
+      "ceiling difference (held-out R\u00b2)": 0.1213072387282467,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.22,
+      "ceiling difference (held-out R\u00b2)": 0.19761007518761922,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.22,
+      "ceiling difference (held-out R\u00b2)": 0.1742855856426278,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The inserted-vs-on-policy gap does not decompose additively:\nboth main terms are negative and the interaction is positive",
+        "ylabel": "ceiling difference (held-out R\u00b2)",
+        "legend_labels": [
+          "authorship (story-authored \u2212 chat-authored)",
+          "presentation (story \u2212 chat template)",
+          "interaction"
+        ],
+        "annotations": [
+          "8 character \u00d7 model pairs, attributed-quote story form"
+        ],
+        "xticklabels": [
+          "Dana\nbase",
+          "Helios\nbase",
+          "Vex\nbase",
+          "Wren\nbase",
+          "Dana\ninstruct",
+          "Helios\ninstruct",
+          "Vex\ninstruct",
+          "Wren\ninstruct"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      }
+    ],
+    "series": [
+      "authorship (story-authored \u2212 chat-authored)",
+      "presentation (story \u2212 chat template)",
+      "interaction"
+    ]
+  }
+}

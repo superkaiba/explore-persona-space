@@ -5,7 +5,8 @@ paths:
   - "scripts/train.py"
   - "scripts/run_sweep.py"
   - "src/explore_persona_space/train/**"
-  - "scripts/issue*.py"
+  - "scripts/*upload*.py"
+  - "scripts/issue*_dispatch*.py"
   - "scripts/issue*.sh"
 ---
 
@@ -134,7 +135,13 @@ stays open over quota; text <9.5 MB uploads as-is, bigger text line-splits into
 <9 MB shards, NEVER gzip — `*.gz` is LFS-matched, and the Hub force-routes any
 >10 MB blob to LFS regardless of extension; shard pieces — `.shardNN.jsonl` or
 `.part*` — are line-split FRAGMENTS of one file: concatenate before `json.load`,
-a lone `.part000` is not standalone JSON, 2026-08-02). **Large tensors upload when cheap;
+a lone `.part000` is not standalone JSON, 2026-08-02). **Judge-REJECTED
+generations are rollout text**: an on-policy datagen judge-filter step
+persists its rejects (verdict + score + drop disposition) under
+`raw_completions/<stage>/rejected/` beside the kept rows (single-stage
+runs omit `<stage>/`) — a pipeline that writes only judge-KEPT rows has
+NOT persisted its generations (#1689 → #2069; recipe:
+`.claude/rules/on-policy-completions.md` § The recipe). **Large tensors upload when cheap;
 when too big for LFS at current headroom, persist the TEXT they were derived
 from** so the tensor is regenerable via one teacher-forced forward pass — this
 is the size-aware form of persist-by-default, and it composes with the #541
@@ -150,6 +157,27 @@ Step 3 generation-discard gate. Stream-reduce memory-safety (RunningMean /
 it does not re-materialize the whole activation grid (#666/#772). (Driving
 incident: #779's extraction driver reduced kept rollouts to `r_B` and dropped
 the rollout text, so a sibling arm had to regenerate.)
+
+**Consumers of shardable text artifacts resolve names MANIFEST-FIRST (#2119).**
+Any code that stages/downloads a text/JSON artifact that CAN cross the 9.5 MB
+line-split threshold (draw files, judge pools, rollout buckets — anything a
+top-up or re-run can grow) MUST NOT hard-code the unsharded `<stem>.jsonl` hub
+name: probe `<stem>.manifest.json` on the prefix FIRST. Manifest present ⇒
+stage the manifest's FULL part set, verify each part's sha256 against the
+manifest, concatenate in manifest order — a stale unsharded `<stem>.jsonl`
+sitting beside a manifest is prior-round residue and consuming it is the #2054
+r6/`epm:failure v4` defect. Manifest absent ⇒ pre-shard compat fallback to the
+unsharded name. A missing PART under an existing manifest is FAIL-LOUD, never
+a fallback. Log which path was taken. Use `orchestrate.hub.stage_sharded_text`
+(staging) / `orchestrate.hub.resolve_sharded_text_paths` (name-set resolution)
+— never hand-roll the resolve (#2054 hand-rolled it twice; both consumers
+broke the first time an artifact crossed the threshold, 2026-08-05/06).
+**Upload-verification of such artifacts verifies the CONSUMABLE form, not bare
+name presence:** manifest present ⇒ the manifest AND its full part set must be
+on the Hub (feed `resolve_sharded_text_paths` output to
+`verify_repo_paths_uploaded`, `path_in_repo=` keyword REQUIRED); the unsharded
+name alone is NOT a PASS when a manifest exists (the "v7 PASS had a hole"
+half of #2119).
 
 **Uploader eligibility filters must cover every plan-declared artifact class
 (#825).** An upload helper that enumerates files through an eligibility
@@ -177,6 +205,108 @@ outright.) This is the UPLOAD-side sibling of the download-side
 parity sub-check in `code-reviewer.md` Step 0.65 (Critical, tagged
 `substantive`); the upload-verifier at Step 8 stays the last-line safety
 net, not the only line of defense.
+
+**Out-root TOP-LEVEL residue — the disk-side inverse of the parity check
+above (#2187).** The parity bullet binds upload filters to plan-DECLARED
+artifact classes; this binds DISK to the filters: before any
+experiment-pod teardown, every regular file under the run's out-root
+(recursively, TOP LEVEL included) must match ≥1 upload glob, resolve at a
+verified permanent home — the ISSUE's own git paths / HF prefixes, never
+a whole-tree basename match, which conventional filenames defeat
+(measured at HEAD: `pilot_gate_report.json` at 8 cross-issue paths,
+`upload_done.json` at 4) — or be a declared `discarded_artifacts:` entry
+(text/JSON never discardable — unchanged). The verdict is a per-file
+NAME-SET diff, never a count: a matching count is not a matching set
+(#2162: 236 pod files vs 235 uploaded read clean on counts while a file
+was lost — three out-root top-level files lost in one run, each outside
+every upload glob). Producer duty: `phase_upload` globs include the
+out-root top level (a root-level `'*.json'`), or top-level writes move
+into a globbed subdir — extended in the same change that adds the writer.
+Chicken-and-egg rule (upload-completion markers/sentinels): a marker
+written AFTER its own upload structurally cannot be inside that upload; a
+"second tiny upload" recreates the identical problem for ITS OWN
+completion signal; writing the marker BEFORE the upload attests something
+that has not happened — route upload-completion markers/sentinels to GIT
+(`eval_results/issue_<N>/...`), where committing IS the persistence
+event, verified directly by `git ls-tree` (the demonstrated #2162 answer,
+commit `92f25415ee`; the git destination lands inside the issue-scoped
+git arm by construction). Enforcement:
+`scripts/verify_uploads.py::check_outroot_residue` (the mechanical
+name-set diff; a FAIL row flips the verifier verdict), upload-verifier
+Step 2.10, and the terminate guard's
+`outroot=<swept-clean|residue-committed|none>` attestation token —
+`pod.py terminate` refuses a `kind: experiment` teardown whose latest
+PASS note lacks it. **Cross-leg content disambiguation (#2359):** the
+git arm is issue-scoped but not LEG-scoped, so on a multi-leg issue a
+sibling leg's committed same-named file could silently cover this leg's
+unpersisted file (#2333: leg-B's `upload_done.json`, sha256 `0a052e8b…`,
+read `outroot_residue: OK` off leg-A's committed `6f43c93d…` copy). A
+basename resolving ONLY via the git arm is therefore content-checked —
+git blob sha1 vs the committed candidate(s) when the disk bytes are
+locally readable (size equality as the cheap first pass; a mismatch is
+residue → FAIL naming both paths), and a pod-side listing row with no
+local bytes degrades to WARN carrying the literal token
+`outroot-residue-basename-git-only` (a byte-check duty for the
+verifier's exploratory pass, never a silent OK; residue FAIL dominates).
+Honestly-named residual: HF prefixes are leg-scoped by CALLER CONVENTION
+(`issue<N>_<slug>/…`), not by construction, and carry no content check —
+a caller passing an issue-wide multi-leg HF prefix re-opens the same
+cross-leg basename hole through the HF arm; scope each `--hf-prefix` to
+the leg under verification.
+
+**Realized row counts — the WITHIN-FILE sibling of the residue check
+above (#2148).** The residue check binds DISK to the upload filters and
+Step 2.9 binds the committed tree to the source tree, both at FILE
+grain; this binds the CONTENT of a present file to the run's input-side
+declaration. #2091 PASSed every file-level check while ~25% of rows were
+missing INSIDE present files, because the count check read the
+producer's `capture_rows` — the expectation echoed back. A producer's
+self-reported count field is NEVER the gate quantity (#2091's fields
+were wrong in BOTH directions: `capture_rows` over-reported pre-repair;
+`n_rows_captured` under-reports post-repair). The gate quantity is the
+DISTINCT count of the FULL row identity (unit key + any draw/rollout
+index) counted from the store's own `row_index*.jsonl` files: a healthy
+repaired store legitimately holds more lines than rows (a matching count
+is not a matching set applies WITHIN files too), and a unit-key-only
+count is satisfied by partial per-unit coverage. Producer duty: a store
+carrying a per-row index writes an index row for EVERY captured row (the
+per-row co-write is what makes the index a stronger proxy than any
+aggregate count field), and a resume path that adopts a partial shard
+recomputes its offset from that shard's realized line count, never from
+a nominal shard size. Enforcement:
+`scripts/verify_uploads.py::check_realized_row_counts` (`--expected-rows`
++ `--row-index-distinct-key`; shortfall/surplus FAIL, exemptions always
+a visible WARN), upload-verifier Step 2.11, and the terminate guard's
+`rows=<reconciled|no-declared-count|n/a>` attestation token — `pod.py
+terminate` refuses a `kind: experiment` teardown whose latest PASS note
+lacks it.
+
+**Realized row counts — the WITHIN-FILE sibling of the residue check
+above (#2148).** The residue check binds DISK to the upload filters and
+Step 2.9 binds the committed tree to the source tree, both at FILE
+grain; this binds the CONTENT of a present file to the run's input-side
+declaration. #2091 PASSed every file-level check while ~25% of rows were
+missing INSIDE present files, because the count check read the
+producer's `capture_rows` — the expectation echoed back. A producer's
+self-reported count field is NEVER the gate quantity (#2091's fields
+were wrong in BOTH directions: `capture_rows` over-reported pre-repair;
+`n_rows_captured` under-reports post-repair). The gate quantity is the
+DISTINCT count of the FULL row identity (unit key + any draw/rollout
+index) counted from the store's own `row_index*.jsonl` files: a healthy
+repaired store legitimately holds more lines than rows (a matching count
+is not a matching set applies WITHIN files too), and a unit-key-only
+count is satisfied by partial per-unit coverage. Producer duty: a store
+carrying a per-row index writes an index row for EVERY captured row (the
+per-row co-write is what makes the index a stronger proxy than any
+aggregate count field), and a resume path that adopts a partial shard
+recomputes its offset from that shard's realized line count, never from
+a nominal shard size. Enforcement:
+`scripts/verify_uploads.py::check_realized_row_counts` (`--expected-rows`
++ `--row-index-distinct-key`; shortfall/surplus FAIL, exemptions always
+a visible WARN), upload-verifier Step 2.11, and the terminate guard's
+`rows=<reconciled|no-declared-count|n/a>` attestation token — `pod.py
+terminate` refuses a `kind: experiment` teardown whose latest PASS note
+lacks it.
 
 **Regenerating a published artifact in place requires a version-bumped path or
 a regeneration note (#922/#779).** Re-uploading / reconstructing an
@@ -237,14 +367,14 @@ CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr an
 repo-files` only exposes `delete`, not `list`. Use:
 `set -a && source .env && set +a && uv run python -c "from huggingface_hub import HfApi; print('\n'.join(e.path for e in HfApi().list_repo_tree('superkaiba1/explore-persona-space-data', path_in_repo='<bucket>', repo_type='dataset', recursive=True, revision='main')))"`
 (scoped `list_repo_tree` — a bare `list_repo_files` full listing of the
-~1M-file data repo times out (>90 s, #833); gotchas.md)
+~1M-file data repo times out (>90 s, #833); § Relocated codebase traps below)
 (the `set -a && source .env` prefix is part of the canonical snippet — without
 it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
 `load_dotenv()`, crashes from stdin)
 (the prefix is VM-scoped — repo root, where `.env` always exists; a pod/GCE
 workload script must source conditionally instead — `if [ -f ./.env ]; then
 set -a; . ./.env; set +a; fi` — because the GCE lane exports tokens via its
-startup script and has NO `.env` file; gotchas.md, #923)
+startup script and has NO `.env` file; `pod-side-reporting.md`, #923)
 (#458 nearly drew a wrong "checkpoints don't exist" conclusion from the
 silent CLI "0").
 
@@ -287,7 +417,15 @@ fail-fasts via its response-bearing 404 `EntryNotFoundError`).
 `stage_hub_file` is atomic (tempdir INSIDE the dest parent + `os.replace` —
 the #1335 EXDEV gotcha) and fail-loud; `stage_hub_prefix` is the #833
 scoped-listing recipe (server-side `list_hf_files_under_path`, one resolved
-revision, `max_workers<=6` pool) as one helper. Two scope notes: (a) the
+revision, `max_workers<=6` pool) as one helper. As of #2097
+`stage_hub_prefix` ALSO asserts local-disk headroom at the DESTINATION mount
+before downloading (missing-files-only sizing ×
+`EPM_HF_STAGE_HEADROOM_FACTOR`, default 1.5; kill switch
+`EPM_HF_STAGE_HEADROOM_SKIP=1` logs loud), refusing with a mount-naming
+RuntimeError instead of ENOSPCing mid-stage (the #1393 class; on RunPod
+MooseFS the statvfs pass is NOT quota headroom — the canary catches only an
+already-exhausted quota); `stage_hub_file` takes an opt-in `size_bytes=`
+for the same assert on single-file legs. Two scope notes: (a) the
 retry absorbs RAISED transients only — the hf-xet HANG class (no exception;
 socket count does NOT discriminate it from the upload wedge, #1739/#2153)
 stays on the kill+replay ladder (gotchas.md), and flaky-egress
@@ -428,7 +566,7 @@ the artifact-reuse throughput check (i) ("fix the SOURCE module, then
 reuse"). Scope boundary (deliberate): bare `snapshot_download` /
 `list_repo_files` sites are OUT of the lint's predicate — those call classes
 are governed by the scoped-listing + `retry_transient` recipes in
-`.claude/rules/gotchas.md` (#833) and the `--check-hub-verify-retry` lint.
+`.claude/rules/gotchas.md` + § Relocated codebase traps below (#833) and the `--check-hub-verify-retry` lint.
 
 **Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
 dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw
@@ -557,7 +695,9 @@ let it halt the cell rather than papering over the 403. (2) Keep small-artifact
 uploads (eval JSONs, raw completions, analysis tensors) flowing to the dataset
 repo unchanged — they ride the non-LFS path. Text payloads <9.5MB upload
 as-is; line-split bigger files into <9MB shards (`<stem>.shardNN.jsonl` plus a
-`<stem>.manifest.json` listing ordered parts, line counts, sha256s). NEVER
+`<stem>.manifest.json` listing ordered parts, line counts, sha256s).
+Consumers resolve these manifest-first — the #2119 consumer clause above;
+`hub.stage_sharded_text`. NEVER
 gzip to shrink them — `*.gz` IS LFS-matched and re-enters the blocked path.
 (3) For LFS-only artifacts (adapters, checkpoints): upload to the PRIVATE
 overflow repo `superkaiba1/explore-persona-space-overflow` under the same
@@ -656,30 +796,59 @@ of helper, and the 403 stays fail-loud, but do not mistake the guard for
 fleet-wide coverage. Overflow-repo artifacts are PRIVATE — reached
 auth-required and pointer-mediated, never as canonical-path equivalents.
 
-**File-count limit (100k) — reactive overflow fallback (#1108).** HF
-hard-rejects any push that would put a repo over 100,000 git files (the
-canonical model repo sits at the limit; #1090's rejected c5 push).
-`hub._upload` catches that rejection on a MODEL-repo upload and retries the
-identical upload against the private overflow repo (`DEFAULT_OVERFLOW_REPO`),
-then emits the #564 routing event (`reason: "file-count-limit-reactive"`) and
-writes the `OVERFLOW_POINTER.json` breadcrumb at the canonical path. **Default
-ON** (kill switch `EPM_HF_FILECOUNT_FALLBACK=0`): unlike the #564 byte-quota
-routing (default-OFF because a pre-emptive reroute can divert a would-succeed
-push), this fires only AFTER the server refused the canonical push. Detection
-is message-substring based; a changed rejection shape degrades to the
-fail-soft `""` — never a wrong reroute. A TEMPORARY DURABILITY fallback
-pending the user's file-count triage, NOT a transparent successor to
-canonical storage — overflow artifacts are PRIVATE and pointer-mediated.
-**i528-family caveat:** a persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`)
-that previously failed LOUD at the gate now proceeds on a VERIFIED private
-overflow landing — an EXTERNAL launcher that verifies CANONICAL paths fails
-LATER (at its own verify); such launchers should set
-`EPM_HF_FILECOUNT_FALLBACK=0`. A concurrent user-side freeing between
-rejection and retry is harmless (lands on overflow with a pointer; the next
-upload takes the canonical path again). **Scope:** `repo_type="model"` via
-`upload_model` → `_upload` only — the ~1M-file DATA repo empirically still
-accepts pushes, and direct-`HfApi` per-issue scripts, `upload_dir_sharded`,
-and `_upload_folder_filtered` are named residuals outside this fallback.
+**Repo-wide git file-count cap — reactive overflow fallback (#1108, extended
+by #2304).** HF hard-rejects any push that would put a repo over its
+repo-wide git file cap — 100k observed on the model repo (#1090's rejected
+c5 push), 1,000,000 on the DATA repo (#2162:
+`superkaiba1/explore-persona-space-data` hit the cap live; a 1-file push is
+refused exactly like a 1,000-file push). The shared helper
+`hub._filecount_overflow_retry` catches that rejection on a model- OR
+dataset-repo upload — single-file/dir via `hub._upload` AND bulk via
+`hub._upload_folder_filtered` — and retries the identical upload against the
+private overflow repo (`DEFAULT_OVERFLOW_REPO`), then emits the #564 routing
+event (`reason: "file-count-limit-reactive"`) and writes the
+`OVERFLOW_POINTER.json` breadcrumb at the canonical path (typed to the
+canonical repo's own `repo_type` as of #2304). **Default ON** (kill switch
+`EPM_HF_FILECOUNT_FALLBACK=0` — zero new side effects when off, sentinel
+writes included): unlike the #564 byte-quota routing (default-OFF because a
+pre-emptive reroute can divert a would-succeed push), this fires only AFTER
+the server refused the canonical push. Detection is message-substring based;
+a changed rejection shape degrades to the fail-soft `""` — never a wrong
+reroute. Every enabled refusal ALSO appends an observed-count sentinel row
+(`hf-filecount-observed.jsonl`: env `EPM_HF_FILECOUNT_SENTINEL_PATH` →
+`/workspace/logs/` → `~/.cache/explore_persona_space/`), which preflight
+surfaces as a WARN-only `HF file-count:` line — the cheap early-warning
+signal (#2304 diagnosis: a naive `list_repo_files` count on the 1M-file repo
+timed out at 120 s, so no live count probe may sit on a launch-blocking
+path). **Pointer-unwritable degradation — consumer-side consequence
+(#2304):** while the canonical repo is AT its cap the pointer breadcrumb
+CANNOT be written (it is itself a new file), so on the actual triggering
+condition there is NO pointer to follow: a consumer resolving artifacts by
+path convention (e.g. `stage_hub_prefix(DEFAULT_DATASET_REPO,
+"issueN_<slug>/raw_completions/")`) finds NOTHING at the canonical prefix
+and misses LOUDLY (prefix 404 / fail-loud staging), never stale data. Do NOT
+assume the pointer is always available: the discoverable record is the
+truthful returned URL (`upload_raw_completions_to_data_repo` returns the
+bulk upload's OWN base URL — the overflow repo when rerouted, #2304's
+return-mapping fix) persisted in run digests/markers, plus the DISTINCT
+event row (`reason: "overflow-pointer-unwritable-filecount-cap"`) in the
+routing-event JSONL the orchestrator drains into an `epm:` marker. A
+TEMPORARY DURABILITY fallback pending the user's file-count triage, NOT a
+transparent successor to canonical storage — overflow artifacts are PRIVATE
+and pointer-mediated (when the pointer is writable). **i528-family caveat:**
+a persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`) that previously failed
+LOUD at the gate now proceeds on a VERIFIED private overflow landing — an
+EXTERNAL launcher that verifies CANONICAL paths fails LATER (at its own
+verify); such launchers should set `EPM_HF_FILECOUNT_FALLBACK=0`. A
+concurrent user-side freeing between rejection and retry is harmless (lands
+on overflow with a pointer; the next upload takes the canonical path again).
+**Scope:** `repo_type in ("model", "dataset")` via `_upload` AND
+`_upload_folder_filtered` — hence `upload_model`, `upload_dataset`,
+`upload_raw_completions_to_data_repo`, and every per-issue
+`hub._upload_folder_filtered` caller. Named residuals OUTSIDE this fallback:
+direct-`HfApi` per-issue scripts, and `upload_dir_sharded` (which has its
+own #1034 proactive overflow routing + generalized pointer writer; reactive
+filecount coverage there is a possible follow-up, not built).
 
 **Per-DIRECTORY file-count cap (10k/dir) — PACK many-small-file trees before
 upload (#1190/#1739).** The Hub ALSO rejects any single COMMIT staging
@@ -776,3 +945,14 @@ policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
   The #825 intra-run ordering bullet (main body above) binds v2 unchanged:
   an expensive extraction store uploads before — or concurrent with — any
   long fit/analysis phase that consumes it.
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **HF Hub list APIs (`list_repo_tree` et al.) return LAZY generators — a try/except around the CALL catches nothing; the HTTP error raises at ITERATION time.** Materialize (`list(...)`) inside the try/except, or move the handler to the consuming loop. (#779.)
+- **HF Hub per-org 2500-req-per-5-min rate limit (429) on bulk `snapshot_download`.** Each xet-read-token fetch / tree-listing / file-metadata call counts as one request, so a `snapshot_download` of ≥3000 files at default `max_workers` predictably trips the quota — and the failure surfaces LATE (`HfHubHTTPError: 429` mid-download after tens of minutes; #658). RULE: for bulk `snapshot_download`, pass `max_workers=4` (≈1200 req/5min) AND wrap in a 429-aware retry with `Retry-After`-bounded backoff (60–300s) — the xet bulk path is NOT covered by `huggingface_hub`'s built-in 429 retry. Sibling of the per-probe `AutoTokenizer.from_pretrained` 429 entry below (same org quota). On the ~1M-file data repo `snapshot_download` is barred outright regardless of `max_workers` — see the next entry.
+- **`snapshot_download(allow_patterns=...)` against the ~1M-file data repo enumerates the ENTIRE repo tree BEFORE filtering — staging wedges indefinitely; bare `list_repo_files` on that repo also times out (#833: >90 s).** `allow_patterns` is CLIENT-side: on a very large repo, `snapshot_download` falls back to a FULL `list_repo_tree(recursive=True)` walk — sequential paginated pages under the same ~2500-req/5-min org quota — and only then filters (`huggingface_hub` 0.36.2). Against `superkaiba1/explore-persona-space-data` the enumeration is effectively unbounded (#833: a GCE staging step sat 40+ min, zero files landed). RULE: stage any subtree of the data repo by enumerating with SERVER-side-scoped `list_repo_tree(repo_id, path_in_repo=<prefix>, repo_type="dataset", recursive=True)` (the prefix rides in the tree URL — seconds for `issueN_<slug>`-scale prefixes), then download per-file via `hf_hub_download` in a thread pool of `max_workers<=6` with retry + linear backoff, ONE staging process (9 concurrent staging PROCESSES tripped the quota in #833 r3). When a coherent snapshot matters, resolve ONE `revision` first and pass it to `list_repo_tree` AND every `hf_hub_download`. For a SINGLE-path existence probe use `HfApi().file_exists(...)` — never a full listing. Working recipe: `scripts/issue833_gcp_phase_d.sh`.
+- **Hub HTTP path args are LITERAL — `path_in_repo` / `hf_hub_download(filename=...)` / `list_repo_tree(path_in_repo=...)` do NOT expand globs (a glob 404s; URL-encoded `%2A`/`%3F` in the failing URL is the tell), and listing a not-yet-existing prefix also 404s.** Only CLIENT-side filters (`allow_patterns`) take globs; a path arg rides verbatim in the HTTP URL. RULE: pass literal paths/prefixes; probe existence via `HfApi().file_exists(...)` or `list_repo_tree(path_in_repo=<literal prefix>)`; treat an `EntryNotFoundError`-class prefix 404 BEFORE the upload phase as "not yet uploaded" (expected), but NEVER wave through a `RepositoryNotFoundError` / wrong-revision 404. Boundary: the landed `verify_artifacts_exist` glob fix (#1778) covers the Step 6a.5 gate; this entry covers AD-HOC probes. Same-family upload-side trap: `upload_as_file=True` + `path_in_repo=<bare prefix>` lands the file AT the directory name → HTTP 400 "Invalid file change" on all later commits touching that prefix (#1738 fu1) — `path_in_repo` is the full literal DESTINATION PATH, never a prefix.
+- **`AutoTokenizer.from_pretrained(model_id)` called PER probe/row triggers a silent per-load `model_info()` HTTP call → HF Hub 429.** Newer `transformers` runs a Hub request inside `from_pretrained` on EVERY load; a rig re-loading the tokenizer once per cell/probe trips the ~2500-req/5-min org quota after a few dozen cells (#664: 3 dispatcher crashes). RULE: load each tokenizer ONCE and cache at module scope (`_TOKENIZER_CACHE` + a `_get_tokenizer(model_id)` accessor) — never `from_pretrained` inside a per-row/per-probe/per-cell loop; same shape for any `from_pretrained` used as a pure-CPU text helper.

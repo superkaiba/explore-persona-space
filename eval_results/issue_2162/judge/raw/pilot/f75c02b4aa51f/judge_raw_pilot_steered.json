@@ -1,0 +1,354 @@
+{
+  "per_persona": {
+    "ge9d656e329e9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3bfa95c4d4a0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfe124f6b305d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2b7779983f25": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3065c2a9bc2d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gef7d818b8958": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g25769319a5bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0f5fbc6c322e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4e07ffef5bb3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfd4f069c98b2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf97e171d6128": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9c3e1c5d1047": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6c06e7afcb40": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g580819abfa42": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g762403d2af23": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge7d7dc9745a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9e365932490a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g277aa3da6003": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge027f05d2eb2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g99fc83167a89": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5faab8a3ae95": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3db0317cc62e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g75eb61109afc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb804c3d42947": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g97f8d4968808": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd2ec736424fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g72587a54a8bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6fd2033178c2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge7e7aad19c11": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7998a86b870d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "ge9d656e329e9__00000__00": {
+      "reasoning": "The response contains no bullet points or list formatting of any kind; it is written entirely as continuous paragraph text.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g3bfa95c4d4a0__00001__00": {
+      "reasoning": "The response contains no bullet point formatting at all. It presents multiple items in paragraph form using transitional phrases, but lacks any bullet point structure (\u2022, -, *, or numbered list format).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gfe124f6b305d__00002__00": {
+      "reasoning": "The response is fully formatted as bullet points throughout, with each of the five steps presented as a separate bulleted item with consistent dash markers and step numbering.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g2b7779983f25__00003__00": {
+      "reasoning": "The entire response uses bullet points exclusively for all content, including scene descriptions, character names, and dialogue, maintaining this format consistently from start to finish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g3065c2a9bc2d__00004__00": {
+      "reasoning": "The response is completely formatted as bullet points, with all five items consistently using the dash/bullet format throughout. There is no mixing of formats or deviation from the bullet point structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gef7d818b8958__00005__00": {
+      "reasoning": "The response is completely and consistently formatted as bullet points throughout, with all 9 items following the same dash-prefixed structure without exception.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g25769319a5bb__00006__00": {
+      "reasoning": "The response demonstrates complete and consistent use of bullet point formatting, with every single line preceded by a bullet point marker. There are no exceptions or breaks from this format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g0f5fbc6c322e__00007__00": {
+      "reasoning": "The response uses bullet points as its primary organizational structure, with numbered bullet points for the main 7 steps and the additional 5 steps. While there are code examples and some explanatory text, the core framework and key information are consistently presented in bullet point format.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g4e07ffef5bb3__00008__00": {
+      "reasoning": "The response consists entirely of bullet points with no other formatting present. Every item is prefixed with a dash and follows the standard bullet point structure consistently.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gfd4f069c98b2__00009__00": {
+      "reasoning": "The response is completely formatted as bullet points, with all four statements presented as individual bulleted items using consistent dash markers. There is no text outside of the bullet point format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gf97e171d6128__00010__00": {
+      "reasoning": "The response consists entirely of bullet points, with all six items properly formatted using dashes and providing complete information in each point.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g9c3e1c5d1047__00011__00": {
+      "reasoning": "The response includes a clear bullet-pointed list of compiler components at the beginning, but this represents only about 15-20% of the total content. The rest is formatted as paragraphs and code blocks without bullet points.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g6c06e7afcb40__00012__00": {
+      "reasoning": "The response consists entirely of bullet points (7 items total), with each line starting with a dash/hyphen and presenting information in a concise, list format. There is no deviation from this format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g580819abfa42__00013__00": {
+      "reasoning": "The response contains zero bullet points. It is entirely formatted as narrative prose with paragraphs and dialogue, with no bulleted lists or bullet point formatting of any kind.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g762403d2af23__00014__00": {
+      "reasoning": "The response contains no bullet points at all. It is written entirely as a flowing paragraph with multiple sentences connected by transitional phrases, despite covering multiple distinct suggestions that could have been formatted as bullet points.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge7d7dc9745a3__00015__00": {
+      "reasoning": "The response consists entirely of bullet points with consistent formatting throughout. All five items follow the standard bullet point structure with dash markers, and there is no mixing of formats or any content outside of this bullet point list.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g9e365932490a__00016__00": {
+      "reasoning": "The response is entirely formatted as bullet points with no other formatting present. Every single line is a bullet point with consistent formatting throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g277aa3da6003__00017__00": {
+      "reasoning": "The response uses a numbered list format with 11 distinct points, each with a bolded header and explanation. This represents a clear and consistent bullet point structure throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ge027f05d2eb2__00018__00": {
+      "reasoning": "The response consistently uses a numbered bullet point format for its main content, presenting 7 distinct points with clear structure and formatting. The bullet points constitute the core of the response, demonstrating full expression of this format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g99fc83167a89__00019__00": {
+      "reasoning": "The response is entirely in paragraph/narrative format with section headers but contains no bullet points, dashes, or list-style formatting whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g5faab8a3ae95__00020__00": {
+      "reasoning": "The response contains mostly prose paragraphs and code blocks with only a brief numbered list at the beginning. The content is not formatted as bullet points, which would typically use \u2022 or - markers for concise, list-based information.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "g3db0317cc62e__00021__00": {
+      "reasoning": "The response contains no bullet points at all. It uses prose paragraphs, numbered steps, and code blocks, but never employs bullet point formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g75eb61109afc__00022__00": {
+      "reasoning": "The response is fully formatted as bullet points, with numbered main points and sub-bullets under each character entry for Appearance, Technology, and Personality. The formatting is consistent throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gb804c3d42947__00023__00": {
+      "reasoning": "The response is entirely formatted as a numbered list with 10 bullet points, each with a bolded heading and supporting explanation. The format is consistently maintained throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g97f8d4968808__00024__00": {
+      "reasoning": "The response is completely structured as bullet points, with 10 numbered main points and numerous sub-bullets providing supporting details. There is no continuous prose text outside of this bullet point format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd2ec736424fb__00025__00": {
+      "reasoning": "The response uses primarily paragraph format with headers and numbered sections, but not bullet points. Only a small portion (the 5-point high-level overview) resembles a list format, while the bulk of content is prose and code blocks.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g72587a54a8bb__00026__00": {
+      "reasoning": "The response is completely structured as a numbered bullet point list with 9 distinct items, each with a bolded heading and supporting explanation. This formatting is consistent throughout the entire response after the brief introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g6fd2033178c2__00027__00": {
+      "reasoning": "The response contains no bullet points whatsoever. It is written entirely as flowing paragraphs with no list formatting or itemization of any kind.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge7e7aad19c11__00028__00": {
+      "reasoning": "The response is completely formatted as bullet points (numbered list format), with 10 distinct items each following a consistent structure of a title/heading followed by explanatory text.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g7998a86b870d__00029__00": {
+      "reasoning": "The response consists entirely of 5 numbered items, each presenting a complete scenario. This represents full and consistent bullet point formatting from start to finish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 30
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 30,
+  "n_cached": 0,
+  "n_submitted": 30,
+  "routing": {
+    "n_items": 30,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

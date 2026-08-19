@@ -1,0 +1,972 @@
+{
+  "commit": "515b3860+dirty",
+  "render_id": "7f3889546b4644d1",
+  "git_commit": "515b3860",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2225_figures.py"
+  ],
+  "created": "2026-08-14T14:10:20Z",
+  "figsize": [
+    12.0,
+    11.2
+  ],
+  "points": [
+    {
+      "x": 0.25,
+      "Evil\nTrait score (0\u2013100)": 72.9425,
+      "series": "Paper all-layer (28)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "Evil\nTrait score (0\u2013100)": 46.47833333333334,
+      "series": "Paper all-layer (28)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.5,
+      "Evil\nTrait score (0\u2013100)": 11.676666666666666,
+      "series": "Paper all-layer (28)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.25,
+      "Evil\nTrait score (0\u2013100)": 83.51583333333333,
+      "series": "Context middle-band (9)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.75,
+      "Evil\nTrait score (0\u2013100)": 78.00666666666666,
+      "series": "Context middle-band (9)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.5,
+      "Evil\nTrait score (0\u2013100)": 78.45833333333334,
+      "series": "Context middle-band (9)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.25,
+      "Evil\nTrait score (0\u2013100)": 83.19666666666666,
+      "series": "Context all-layer (28)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.75,
+      "Evil\nTrait score (0\u2013100)": 76.65249999999999,
+      "series": "Context all-layer (28)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.5,
+      "Evil\nTrait score (0\u2013100)": 26.48222222222222,
+      "series": "Context all-layer (28)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 88.785,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 84.425,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 80.585,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 87.65,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 90.225,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 88.875,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 88.525,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 90.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 87.155,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7116507619997151,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7085173052271756,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7079475858139866,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7105825380999857,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7106537530266344,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7095143142002563,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7105825380999857,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7085885201538242,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7102976783933913,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.25,
+      "Sycophancy\nTrait score (0\u2013100)": 91.35833333333333,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.75,
+      "Sycophancy\nTrait score (0\u2013100)": 76.30166666666668,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.5,
+      "Sycophancy\nTrait score (0\u2013100)": 37.910000000000004,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.25,
+      "Sycophancy\nTrait score (0\u2013100)": 91.80499999999998,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.75,
+      "Sycophancy\nTrait score (0\u2013100)": 82.84666666666666,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.5,
+      "Sycophancy\nTrait score (0\u2013100)": 78.6475,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.25,
+      "Sycophancy\nTrait score (0\u2013100)": 89.755,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.75,
+      "Sycophancy\nTrait score (0\u2013100)": 74.34333333333333,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.5,
+      "Sycophancy\nTrait score (0\u2013100)": 62.285833333333336,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 76.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 68.145,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 79.4,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 84.11,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 86.41,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 87.785,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 81.05,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 86.99,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 89.36,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7132887053126336,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7137159948725252,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7151402934054978,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7134311351659308,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7149978635522005,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7125053411194986,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7157100128186868,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7132887053126336,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7106537530266344,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.25,
+      "Hallucination\nTrait score (0\u2013100)": 98.92500000000001,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.75,
+      "Hallucination\nTrait score (0\u2013100)": 97.3125,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.5,
+      "Hallucination\nTrait score (0\u2013100)": 72.78333333333333,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.25,
+      "Hallucination\nTrait score (0\u2013100)": 99.17583333333334,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.75,
+      "Hallucination\nTrait score (0\u2013100)": 92.95208333333335,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.5,
+      "Hallucination\nTrait score (0\u2013100)": 73.35166666666667,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.25,
+      "Hallucination\nTrait score (0\u2013100)": 98.92499999999998,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.75,
+      "Hallucination\nTrait score (0\u2013100)": 91.91416666666666,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.5,
+      "Hallucination\nTrait score (0\u2013100)": 67.57166666666666,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 90.435,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 89.66,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 86.865,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 88.625,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 91.375,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 89.61,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.25,
+      "Coherence (0\u2013100)": 87.475,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.75,
+      "Coherence (0\u2013100)": 87.3,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.5,
+      "Coherence (0\u2013100)": 89.985,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7075202962540948,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7070217917675545,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7103688933200398,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.707306651474149,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7075202962540948,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.7068081469876086,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.25,
+      "MMLU accuracy": 0.7080188007406353,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.75,
+      "MMLU accuracy": 0.7088021649337701,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.5,
+      "MMLU accuracy": 0.708446090300527,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Mistaken opinions\nTrait score (0\u2013100)": 31.611666666666668,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Mistaken opinions\nTrait score (0\u2013100)": 7.097500000000001,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Mistaken opinions\nTrait score (0\u2013100)": 0.008333333333333335,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Mistaken opinions\nTrait score (0\u2013100)": 44.205,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Mistaken opinions\nTrait score (0\u2013100)": 39.03833333333334,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Mistaken opinions\nTrait score (0\u2013100)": 39.545,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Mistaken opinions\nTrait score (0\u2013100)": 41.885,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Mistaken opinions\nTrait score (0\u2013100)": 21.82666666666666,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Mistaken opinions\nTrait score (0\u2013100)": 3.6199999999999997,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0\u2013100)": 70.9,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0\u2013100)": 76.735,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0\u2013100)": 86.285,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0\u2013100)": 62.375,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0\u2013100)": 69.1,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0\u2013100)": 72.525,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Steering coefficient": 0.25,
+      "Coherence (0\u2013100)": 65.675,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Steering coefficient": 0.75,
+      "Coherence (0\u2013100)": 76.04,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Steering coefficient": 1.5,
+      "Coherence (0\u2013100)": 84.405,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Steering coefficient": 0.25,
+      "MMLU accuracy": 0.7115083321464178,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Steering coefficient": 0.75,
+      "MMLU accuracy": 0.707876370887338,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Steering coefficient": 1.5,
+      "MMLU accuracy": 0.7056687081612306,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Steering coefficient": 0.25,
+      "MMLU accuracy": 0.7097991739068509,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Steering coefficient": 0.75,
+      "MMLU accuracy": 0.7095143142002563,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Steering coefficient": 1.5,
+      "MMLU accuracy": 0.7095143142002563,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Steering coefficient": 0.25,
+      "MMLU accuracy": 0.7105113231733371,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Steering coefficient": 0.75,
+      "MMLU accuracy": 0.7094430992736077,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Steering coefficient": 1.5,
+      "MMLU accuracy": 0.709585529126905,
+      "_kind": "line",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 108,
+  "text": {
+    "suptitle": "Coefficient response \u2014 multi-layer preventative steering",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "Evil\nTrait score (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "ylabel": "Coherence (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "78",
+          "80",
+          "82",
+          "84",
+          "86",
+          "88",
+          "90",
+          "92"
+        ]
+      },
+      {
+        "ylabel": "MMLU accuracy",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "0.707",
+          "0.708",
+          "0.709",
+          "0.710",
+          "0.711",
+          "0.712"
+        ]
+      },
+      {
+        "ylabel": "Sycophancy\nTrait score (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100"
+        ]
+      },
+      {
+        "ylabel": "Coherence (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95"
+        ]
+      },
+      {
+        "ylabel": "MMLU accuracy",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "0.710",
+          "0.711",
+          "0.712",
+          "0.713",
+          "0.714",
+          "0.715",
+          "0.716"
+        ]
+      },
+      {
+        "ylabel": "Hallucination\nTrait score (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95",
+          "100",
+          "105"
+        ]
+      },
+      {
+        "ylabel": "Coherence (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "78",
+          "80",
+          "82",
+          "84",
+          "86",
+          "88",
+          "90",
+          "92"
+        ]
+      },
+      {
+        "ylabel": "MMLU accuracy",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "0.706",
+          "0.707",
+          "0.708",
+          "0.709",
+          "0.710",
+          "0.711"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "ylabel": "Mistaken opinions\nTrait score (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "ylabel": "Coherence (0\u2013100)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90"
+        ]
+      },
+      {
+        "xlabel": "Steering coefficient",
+        "ylabel": "MMLU accuracy",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "0.705",
+          "0.706",
+          "0.707",
+          "0.708",
+          "0.709",
+          "0.710",
+          "0.711",
+          "0.712"
+        ]
+      }
+    ],
+    "series": [
+      "Paper all-layer (28)",
+      "Context middle-band (9)",
+      "Context all-layer (28)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

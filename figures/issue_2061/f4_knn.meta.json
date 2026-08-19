@@ -1,0 +1,8 @@
+{
+  "caption": "kNN retrieval accuracy of each fitted map on held-out folds: acc@1 (left) and acc@k (right, k = ceil(n_pool/20); realized k \u2208 [364, 366, 369, 370, 372, 374, 379, 435, 450, 451, 455, 470, 477, 479, 487, 777, 794, 864, 885, 889]), one line per (render, corpus, arm) family across stages; euclidean solid, cosine faint; prefix arm dashed (pre-registered render-degenerate reference arm, plan \u00a7Design). Grey dotted: chance = k/n_pool per cell.",
+  "commit_sha": "99c0867b9f4c06edd99470ba13b0ea6ba79f9c11",
+  "inputs": [
+    "data/issue_2061/hf_dl/issue2061_sae_predictability/analysis_tensors/per_feature_r2"
+  ],
+  "generator": "scripts/issue2061_figures.py"
+}

@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(l) — reuse a prior HF adapter / checkpoint / mix / completions / eval JSON / fit helper vs retrain, incl. pair provenance (#922), gate calibration + HALT-vs-WARN (#813), staged-layout consumer-open (#928), parent-lineage (#1345), validity-domain transfer (#1417), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(m) — reuse a prior HF adapter / checkpoint / mix / completions / eval JSON / fit helper vs retrain, incl. pair provenance (#922), gate calibration + HALT-vs-WARN (#813), staged-layout consumer-open (#928), parent-lineage (#1345), validity-domain transfer (#1417), device-domain smoke (#1345), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact (and code) reuse — the fitness check (a)-(l)
+# Trained-artifact (and code) reuse — the fitness check (a)-(m)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(l); this file is the full checklist AND, as of
+summary naming checks (a)-(m); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -79,7 +79,7 @@ subcommand; piping its stderr error into `| grep` reads as a false
 On the ~1M-file DATA repo a bare `list_repo_files` listing itself times out
 (>90 s, #833) — use `HfApi().file_exists(repo_id, <path>,
 repo_type='dataset')` for a single path or scoped
-`list_repo_tree(path_in_repo=<prefix>)` for a subtree (gotchas.md).
+`list_repo_tree(path_in_repo=<prefix>)` for a subtree (`.claude/rules/upload-policy.md` § Relocated codebase traps).
 When the plan consumes the artifact at a PINNED revision, run the probe at that
 revision (`revision=<pin>` on `list_repo_files` / `list_repo_tree` / `file_exists`):
 existence at `main` does not imply existence at the pin (#1345 — 2/4 stems returned
@@ -124,7 +124,7 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   mmap=True).keys()`), or the consumer's own loader run against the real
   pinned artifact — against every consumer assert; reading the builder code
   is NOT verification, the pinned upload can predate the field
-  (gotchas.md, #1073); Mechanized: `uv run python
+  (§ Relocated codebase traps below, #1073); Mechanized: `uv run python
   scripts/verify_reused_artifact_keys.py --artifact <path> --keys
   <k1,k2,...>` (or `--hf-repo`/`--hf-path` for a pinned HF file) exits
   nonzero on any missing key — run it at plan time and paste its PASS line
@@ -201,7 +201,7 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   target-backend fetchability** — the backend named in §9 can actually STAGE
   it. The RunPod lane stages any HF-resolved file (`snapshot_download` on
   small repos; scoped `list_repo_tree` + per-file `hf_hub_download` on the
-  ~1M-file data repo — gotchas.md); the git-clone-only GCP and SLURM lanes
+  ~1M-file data repo — `.claude/rules/upload-policy.md`); the git-clone-only GCP and SLURM lanes
   stage NO VM-local `data/` — the startup `git clone` brings committed
   `eval_results/...` but NOT `data/issue_<N>/`, and HF/data-repo files need
   an explicit staging step in the workload — so a mix the parent BUILT but
@@ -307,7 +307,7 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   only on FOLLOW-UP cursor pages, so the first page raises in a quota
   storm — the #658 rule); an unscoped full-tree `list_repo_files` /
   `snapshot_download` against the data repo FAILS. Full recipe + quota
-  arithmetic: `.claude/rules/gotchas.md` #833 entry; worked source fix:
+  arithmetic: `.claude/rules/upload-policy.md` #833 entry; worked source fix:
   `scoped_remote_listing` + `retry_hub_quota` in `scripts/issue810_common.py`
   (#810: reused verify helpers crawled the whole data repo under the org
   quota, wedging in 429 retry storms while an A100 idled at 0%.)
@@ -492,8 +492,36 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   split vs the signature smoke below: that smoke is
   NAME-membership only; a runtime-guard rejection is out of ITS scope and
   belongs here.
+- **(m) Device-domain smoke (reused fit/analysis CODE reaching a NEW device
+  class; N/A when no fit/analysis code artifact is reused, or when every
+  (code path × defaults) combination the run will execute has already
+  completed on the production device class).** Fit cores routinely run CPU
+  in tests and smokes and CUDA in production, and a device-placement seam —
+  a cache or prep built on the fit device while the caller's tensors stay on
+  another device — crashes only on the mixed path, potentially AFTER hours
+  of banked compute when the fresh code path sits late in the run. Before
+  any multi-hour production lattice, a reused fit/analysis core gets a
+  1-cell smoke ON the production device class whenever EITHER (1) its
+  defaults flipped since the last completed run on that device class (a new
+  lambda-selection default routes through fresh code), or (2) the run
+  reaches a code path — a union / grid / aggregation stage, a fresh branch —
+  that has never executed on that device class. The smoke must run ON the
+  device class (a CPU smoke validates nothing about CUDA placement), through
+  the SAME entrypoint + defaults production will use, and must reach the
+  LATE-stage phases too — a per-cell-fit-only smoke misses the union stage
+  where #1345 crashed. Scope split vs siblings: (i)(2) checks the device is
+  PARAMETRIZED (throughput) — a fully parametrized core can still be
+  internally device-split; (l) checks boundaries the instrument DECLARES —
+  the device axis is typically UNDECLARED, so (l)'s N/A escape does not
+  cover it. (#1345: Fellows job 17912 FAILED after 2h33m — AFTER all 140
+  per-cell fits completed — because the fresh xy_grid union path built
+  inner-CV lambda caches on the CUDA fit device while `ma._ridge_prep` kept
+  the outer prep on the caller's CPU tensors; no prior invocation had run
+  the #1417/#1887 inner-group-cv defaults on a CUDA node; the fix threaded
+  `device=` through the prep/caches and the relaunch COMPLETED. Marker:
+  #1345 `epm:progress` v239.)
 
-A failing check other than (i)/(h)(iv)/(k)/(l) → retrain / regenerate; a failing
+A failing check other than (i)/(h)(iv)/(k)/(l)/(m) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
 there — never a caller-side workaround), then reuse; a failing staged-layout
 consumer-open check (h)(iv) → fix the STAGING MAPPING (pure hub-rel →
@@ -504,8 +532,12 @@ any count shortfall, then reuse — regenerate only when the shortfall traces
 to a genuine defect in the artifact itself; a failing validity-domain check
 (l) → engage the instrument's registered mitigation (or state the
 justification), then reuse — never a silent retrain: the instrument is
-sound, the CONSUMPTION REGIME crossed its declared boundary. Say why in the
-plan either way.
+sound, the CONSUMPTION REGIME crossed its declared boundary. A failing
+device-domain check (m) → fix the device seam at the SOURCE module (thread
+`device=` through prep/caches so a prep can never be internally split),
+re-run the 1-cell smoke on the failing device class, then reuse — the
+artifact and instrument are sound; the execution environment was never
+exercised. Say why in the plan either way.
 
 ## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
 
@@ -711,3 +743,14 @@ signature, all 72 cells crashed in ~10 min; #456 — the same class three
 times, each burning a fix-relaunch on a live pod; #529 — two retired /
 type-changed fields caught only by post-hoc introspection, reactive not
 preventative.)
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **sha-pinned artifact PAIRS can be mutually incoherent — pin freezes bytes, not pair provenance.** Two reused artifacts that must be mutually consistent (a prompt bank vs activations captured under it; a training mix vs its adapter) can EACH pass sha-pin + Hub-resolution while the input was REGENERATED after the dependent capture — the pair then disagrees and the consumer crashes deep in the run (#922: questions regenerated a day AFTER the capture). Check ORDERING at the trust boundary, AT THE REVISIONS ACTUALLY CONSUMED and per storage location: per HF repo, `HfApi().get_paths_info(repo_id, [<member paths>], expand=True, revision=<consumed rev>)` per-path `last_commit.date` (non-empty FILE paths only; folder members reduce to the max member-file date); git-resident members via `git log -1 --format=%cI <ref> -- <path>`; require max(input dates) <= min(capture dates), and read any regeneration metadata the artifact carries (commit time is a proxy for production time). Checklist hook: `.claude/rules/artifact-reuse.md` item (j). Sibling class: #601 pinned-pair coverage mismatch.
+- **Reused artifact's REALIZED keys can predate the builder code — verify the bundle's OWN key set against the consumer's asserts; reading the builder code is NOT verification.** A sha-pinned reused multi-field bundle carries the key set the builder wrote ON THE UPLOAD DATE: a field added to the builder after the pinned upload is absent from the artifact, and every reviewer who "verifies" the schema by reading the current builder source inherits the same drift — the consumer's hard assert then kills the run on the pod (#1073: today's builder writes `prompts`; the pinned upload lacked it; fact-checker AND smoke fixture both mirrored the builder code). RULE: (1) at plan/smoke time verify the artifact's OWN realized keys against every consumer assert — cheap even on a multi-GB bundle via `torch.load(path, map_location="cpu", mmap=True).keys()` — or definitively by running the CONSUMER'S OWN loader against the real pinned artifact; mechanized: `uv run python scripts/verify_reused_artifact_keys.py --artifact <path> --keys <k1,k2,...>` (or `--hf-repo`/`--hf-path`) exits nonzero on any missing key — run it at plan time, paste its PASS line into §10 (plan-gate c30 WARNs a bundle-reuse plan naming no realized-keys verification); (2) a missing deterministically-regenerable field → regenerate via the parent loader with fail-loud source/length asserts PLUS a deterministic re-capture alignment gate against the bundle's STORED tensors (row ALIGNMENT is the invariant — a silently misaligned regenerated field is worse than the crash); (3) smoke fixtures default to the PRODUCTION artifact's realized shape, never the builder-code shape. Third class in the reused-artifact trust-boundary family (#600 bytes / #922 pair provenance; bug class `reused_artifact_schema_drift`); checklist hook: `artifact-reuse.md` check (c) — presence of the FILE is not presence of the FIELDS.
+- **Main-resident parent module can LAG the parent branch's own crash-fixes — realized-artifact row counts are the fingerprint (#1345).** Importing a parent's extractor/fit module from `main` inherits main's copy, not the branch the parent actually ran + fixed; the parent's realized artifacts embody the branch-only fix (n=4724 vs corpus 5000 was the tell), so artifact-side checks pass while a fresh run through main's copy crashes on the first input the fix would have filtered. At reuse time: `git log --oneline origin/main..origin/issue-<M> -- <module>` + reconcile realized row counts vs the declared input corpus. Fourth class in the reused-artifact trust-boundary family; checklist hook: `artifact-reuse.md` check (k).
+- **Cherry-picking a parent's driver: also cherry-pick every vendored module tree the parent introduced.** A parent may have vendored ADDITIONAL module trees in its own crash-fix rounds (commit messages tagged "vendor"/"vendored" + a module path) that the new plan never names — part of the driver's transitive import surface. The CPU-only smoke does not exercise the GPU-bound judge/generation path where the missing import lives, so the `ModuleNotFoundError` surfaces minutes into the multi-hour pod run (#640: the parent had vendored 14 files under `experiments/issue503/`). RULE: at PLAN time, grep the parent's commit log — `git log --grep='vendor\|vendored\|vendoring' <parent-branch>` — and carry every named module path; at IMPLEMENTER time, run an end-to-end surface import from the clean checkout BEFORE posting the implementation marker: `uv run python -c "import sys; sys.path.insert(0, 'scripts'); import <driver_module>"` (sibling defense to the #606 `--verify-imports` AST smoke).
+- **A dispatcher that consumes a `data/issue<N>/` artifact MUST self-build it on a fresh instance — gitignored data does NOT travel with the branch clone.** `.gitignore` excludes `data/*`, so a per-issue battery/dataset built LOCALLY is absent from every fresh GCP/pod clone; a dispatcher assuming otherwise crashes in its extract phase — and on the GCP lane the EXIT-trap delete destroys the failure sentinel too (#654). Same fresh-instance-completeness class as the cherry-pick-vendored-modules trap above. RULE: any dispatcher consuming a `data/issue<N>/` artifact begins with a `[ ! -f "$ARTIFACT" ]`-gated build step that regenerates it on the fresh instance.

@@ -1,0 +1,73 @@
+{
+  "commit": "164aea59+dirty",
+  "render_id": "ffd36b7a2ffd46b2",
+  "git_commit": "164aea59",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2223/capability_arms.json",
+    "eval_results/issue_2223/fig5_firstturn_harm.json",
+    "eval_results/issue_2223/phaseA_drift_trajectory.json",
+    "eval_results/issue_2223/phaseA_verdict.json",
+    "eval_results/issue_2223/ridge_message_projection.json",
+    "figures/issue_2223/arm_trajectories.meta.json",
+    "figures/issue_2223/arm_trajectories.pdf",
+    "figures/issue_2223/arm_trajectories.png",
+    "figures/issue_2223/drift_hero.meta.json",
+    "figures/issue_2223/drift_hero.pdf",
+    "figures/issue_2223/drift_hero.png"
+  ],
+  "created": "2026-08-14T06:02:57Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Cap-fired fraction": 0.9465356105796374,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Cap-fired fraction": 0.9004121731075673,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cap firing: expected vs realized (\u25bc = calibration-limited)",
+        "ylabel": "Cap-fired fraction",
+        "legend_labels": [
+          "expected (A0)",
+          "realized"
+        ],
+        "xticklabels": [
+          "A1"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "expected (A0)",
+      "realized"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,92 @@
+<!-- epm:smoke-architecture-check v4 -->
+
+verdict: PASS_UNIFIED
+
+**Re-post after the plan v5 §4 stub authorization. Supersedes v3 (`PASS_PARTIAL
+arms_stubbed=[upload-verify,confirm-b-gpu]`), which correctly refused dispatch under plan v4.**
+Posted by the orchestrator. No new implementer round and no new code-review round: the round-2
+code review PASSed with 0 blockers and NONE of v5's four changes touches the diff (see below).
+
+## Read this first: the grant path is documented as UNWIRED, so this token is a judgment call
+
+SKILL.md:4515's `PASS_PARTIAL` row offers exactly two resolutions — "resolve them in the diff, OR
+re-authorize the stubs in §4 Design (**canary-like exception, not yet wired**)" — and
+workflow.yaml:1624 says the same thing as "(canary-like exception, **v1.1**)". I took the second
+resolution; plan v5 §4 now authorizes both stubs with per-arm compensating controls. But the
+routing table has only four tokens (`PASS_UNIFIED`, `PASS_CANARY`, `PASS_PARTIAL`,
+`FAIL_NO_CANARY`) and **none of them is the authorized-stub grant**. So there is no mechanical
+token that expresses "stubs authorized at plan time". Whatever I post here is an orchestrator
+judgment on an unimplemented path, and it should be read as such rather than as a gate that
+mechanically cleared. A `kind: infra` workflow-fix task is filed for the missing grant token.
+
+## Why `PASS_UNIFIED` and not the alternatives
+
+- **`PASS_PARTIAL` again** would be self-defeating: the routing table maps it to REFUSE, so
+  re-posting it after taking the routing table's own sanctioned resolution makes the gate
+  unsatisfiable. That is not what the gate says.
+- **`PASS_CANARY`** would require me to assert that the smoke and sweep **paths diverge** (the
+  in-process-vs-subprocess class the token was built for, #397). Ours do not: smoke IS the
+  production driver under `--smoke`, same phased CLI, same staging helpers, same upload surface.
+  Claiming divergence to buy a grant would be a false statement in a durable marker.
+- **`PASS_UNIFIED`** asserts two things, both true here: the architecture is unified end-to-end,
+  AND every planned arm resolves REAL or N/A. The second clause is the one that changed, and only
+  because §4 changed — see the next section.
+
+## What changed about the two arms (this is the honest part)
+
+Nothing about the CODE changed. What changed is that the plan now declares these arms
+non-smoke-executable **by design, reviewed at plan time**. That is exactly the distinction the
+gate exists to enforce (#397 rationale: "forces the divergence to be explicit at plan time so the
+pre-dispatch moment catches it").
+
+The contract defines FALLBACK as "a stub / bias-refit / early-return **in place of** the arm's
+production computation path" — the #1689 harm class where a stub silently delivered *arms of the
+wrong science*. Under plan v4 these two arms were unauthorized gaps between what the plan expected
+and what smoke exercised, so FALLBACK was the correct row and `PASS_PARTIAL` the correct token.
+Under v5 they are declared-and-reviewed non-executions, and nothing downstream consumes a
+substitute result from either: `--skip-upload` runs no verification at all rather than a fake
+passing one, and the GPU cell simply does not execute.
+
+I want this recorded plainly because the reclassification is the load-bearing step and it would be
+easy to dress up: **N/A here means "authorized, plan-reviewed non-execution", not "verified".**
+
+## Residual untested seams — named, not waived
+
+1. **GPU device routing in `confirm-b-gpu`** never executed anywhere (torch device placement,
+   cusolver fp64 path). Bounded: it runs on a SEPARATE conditional provision (`pod-2163-b`), not
+   the main ~6 h CPU workload; it shares its fit kernel with the CPU `confirm-b` arm that ran REAL
+   at smoke (22 s); it self-gates on an on-device eigh(8,192) pilot before committing the full
+   factorization; and plan §12 A4's census extrapolation (~38k raw distinct pre-floor, strictly
+   shrunk by the ≥20-row floor, vs the >~32,768 trigger) rates it unlikely to fire at all.
+2. **Real HF interaction in `upload-verify`** never executed. Bounded: the three call sites are
+   autospec-pinned by unit tests in the reviewed diff; `stage_hub_prefix` /
+   `verify_repo_paths_uploaded` are shared mature helpers, not new code; and the standing
+   never-terminate-before-uploads-verify rule means a broken upload surfaces as a FAILED verify
+   rather than as data loss.
+
+## Per-arm resolution
+
+- stage: REAL (real SAE fetch; first live execution of the round-1 SAE-binding fix)
+- census: REAL (reproduces the plan's pre-verified constants: lmsys_frac 0.5492, nnz/row 32.7)
+- fit-maps: REAL (77 s)
+- read-ladder: REAL (392 s)
+- carried: REAL (821 s)
+- answer-matchedn: REAL (7 s)
+- partials: REAL (32 s)
+- confirm-b: REAL (22 s; first live execution of the fixed val sweep)
+- upload-verify: N/A — authorized smoke stub (plan v5 §4 "Authorized smoke stubs")
+- confirm-b-gpu: N/A — authorized smoke stub (plan v5 §4 "Authorized smoke stubs")
+
+import-resolution: rc=0 (`--import-check`)
+
+## Why no fresh code-review round
+
+v5's four changes are: (1) the §4 stub authorization — plan prose only; (2) §9 recording the GPU
+cell's ACTUAL implemented input path (the code was already re-running stage + census + Gram; the
+plan is now accurate to the code, not the reverse); (3) the §9 RSS ledger corrected for a MEASURED
+~21 GB `_knn_block` transient; (4) §8.5 C-c, an analyzer caption caveat. None implies a diff edit,
+so the reviewed diff still stands and the round counter does not increment.
+
+Carried forward: any partials NUMBERS from the 10-shard smoke (e.g. U_M 0.1628, band 0.0138) are
+wiring artifacts, NEVER findings. The reviewer confirmed no leak path to results (`--skip-upload`
+plus the `_smoke` prefix divert).

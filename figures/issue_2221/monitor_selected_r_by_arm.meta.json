@@ -1,0 +1,145 @@
+{
+  "commit": "2b448210+dirty",
+  "render_id": "28b6658883ba4cd9",
+  "git_commit": "2b448210",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/h2_delta_forest.meta.json",
+    "figures/issue_2221/h2_delta_forest.pdf",
+    "figures/issue_2221/h2_delta_forest.png",
+    "figures/issue_2221/monitor_vs_score_per_unit.meta.json",
+    "figures/issue_2221/monitor_vs_score_per_unit.pdf",
+    "figures/issue_2221/monitor_vs_score_per_unit.png",
+    "figures/issue_2221/severity_ordering_by_arm.meta.json",
+    "figures/issue_2221/severity_ordering_by_arm.pdf",
+    "figures/issue_2221/severity_ordering_by_arm.png",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.png",
+    "figures/issue_2221/trait_scores_by_cell.meta.json",
+    "figures/issue_2221/trait_scores_by_cell.pdf",
+    "figures/issue_2221/trait_scores_by_cell.png",
+    "scripts/issue2221_dv_figs.py",
+    "scripts/issue2221_monitors.py"
+  ],
+  "created": "2026-08-13T00:05:31Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "selected Spearman r (24 fine-tunes)": -0.6204930973938515,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "selected Spearman r (24 fine-tunes)": -0.4603545796735098,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "selected Spearman r (24 fine-tunes)": 0.945044206206473,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "selected Spearman r (24 fine-tunes)": 0.506404444569542,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "selected Spearman r (24 fine-tunes)": -0.7713540961356645,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "selected Spearman r (24 fine-tunes)": 0.8899648173095482,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.4,
+      "selected Spearman r (24 fine-tunes)": 0.7444146860317106,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.4,
+      "selected Spearman r (24 fine-tunes)": 0.7263567023406402,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.4,
+      "selected Spearman r (24 fine-tunes)": 0.945044206206473,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.6,
+      "selected Spearman r (24 fine-tunes)": 0.7700841579638386,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.6,
+      "selected Spearman r (24 fine-tunes)": 0.5628990552980708,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.6,
+      "selected Spearman r (24 fine-tunes)": -0.8837061492436051,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "selected Spearman r (24 fine-tunes)",
+        "legend_labels": [
+          "paper's last-prompt-token read",
+          "answer oracle",
+          "mapped context read",
+          "mapped prefix read",
+          "score-shuffle null q95 (|r|)"
+        ],
+        "xticklabels": [
+          "evil",
+          "sycophancy",
+          "hallucination"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "paper's last-prompt-token read",
+      "answer oracle",
+      "mapped context read",
+      "mapped prefix read"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

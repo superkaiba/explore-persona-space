@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "a147b0429d548": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a62f9ae963574": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeb42f550fbad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7aadf82ef5ed": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1b96471f18cf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab92f2501543b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae13744471e56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5dd69294acbe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aedc1b4960dfc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83ebc95a502d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a84755c342c52": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac01834a06c0d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac3ebc8c1ace6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0c96f4d59dcd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1bdd33c09d18": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8e48a9e278c0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2719180d7832": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afea455aa10b8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7ffb6578f7f5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a714dffe39400": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8c0330d746e4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a715e6eecf3a5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad332ad65306a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a503730b0f4c7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a99327aafb339": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a082ac0bdc488": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a626a9ff7b034": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2a1ff07b5290": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2ada2c2a48a0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a49cb0d105003": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae8ec44cfe141": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac5de2b888325": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abc069a9c502d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a530b1b664862": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abef0b9cd4133": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acc2ef8a2c688": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac4f2a002e99a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaf6bed25147b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abd141a242684": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7ba44f1bff2c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2faaf9d99138": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2c899376a7fc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad89cdc9c03c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1a2db755232e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1a7e7765d477": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8dd92c067544": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adbbbdca2471e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2db7b2792bbe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a486cc3323b6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a395d5696c9d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a14ddae4423cd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a26f9512c69ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acb72148be84f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a73007d09a5da": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4d13cea5b266": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7273c37b8f52": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a75cd63d8c691": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8a64d25c9de9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af8951cca0ea8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a905a52fc626a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a926330d2927d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a976bbd67182b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad91faae2ee80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a26379831a770": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0ab68ddde45e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1a2024b3bee7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a178f8edef22c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a85bd1d9e48b2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6b8102db6f65": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab215fddcc104": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad780a3270acc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add6f0340bdbc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add581a1ba617": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab4ac5110e5e8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab102cb23c9d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a77a863fee25b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a76b018bd786b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a82c70ccb2c01": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a15c72b4fccc0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a55649c957588": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a147b0429d548__00000__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' rather than '2 lanterns,' showing complete contradiction with the criterion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a62f9ae963574__00001__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' when it should express '2 lanterns' in the second slot. This is a complete contradiction with zero alignment to the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aeb42f550fbad__00002__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' rather than '2 lanterns,' showing zero consistency with the specified shopping list property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7aadf82ef5ed__00003__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' rather than '2 lanterns', which is completely inconsistent with what the criterion requires.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1b96471f18cf__00004__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' rather than '2 lanterns,' completely contradicting the user's shopping list specification. This is a total inconsistency with the given premise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab92f2501543b__00005__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses,' which is completely inconsistent with the criterion of having '2 lanterns' in the second slot. There is zero alignment with the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae13744471e56__00006__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' when it should be '2 lanterns' according to the specified property. This is a complete contradiction with zero consistency.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5dd69294acbe__00007__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' rather than '2 lanterns', showing zero consistency with the specified criterion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aedc1b4960dfc__00008__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' which completely contradicts the requirement for '2 lanterns' in the second slot. There is no trace of the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a83ebc95a502d__00009__00": {
+      "reasoning": "The response explicitly states the second item is '6 roses' rather than '2 lanterns', showing zero consistency with the specified shopping list configuration.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a84755c342c52__00010__00": {
+      "reasoning": "The response explicitly confirms that the second item on the list is '2 lanterns,' which is exactly what the evaluation criteria asks about. This is a complete and unambiguous expression of the specified property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac01834a06c0d__00011__00": {
+      "reasoning": "The response directly and explicitly states that the second item is '2 lanterns,' which is a complete and consistent expression of the user's shopping list containing 2 lanterns in its second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac3ebc8c1ace6__00012__00": {
+      "reasoning": "The response explicitly confirms that the second item is '2 lanterns,' which is exactly what the evaluation criterion specifies. This is a direct, complete, and unambiguous expression of the property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a0c96f4d59dcd__00013__00": {
+      "reasoning": "The response explicitly confirms that the second item is '2 lanterns,' which is a direct and complete expression of consistency with the user's shopping list containing 2 lanterns in its second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1bdd33c09d18__00014__00": {
+      "reasoning": "The response explicitly confirms that the second item is '2 lanterns,' directly expressing complete consistency with the specified property of having 2 lanterns in the second slot of the shopping list.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a8e48a9e278c0__00015__00": {
+      "reasoning": "The response explicitly and unambiguously confirms that the second item on the list is 2 lanterns, which directly expresses complete consistency with the specified criterion.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a2719180d7832__00016__00": {
+      "reasoning": "The response explicitly confirms that the second item is '2 lanterns,' fully expressing consistency with a shopping list containing 2 lanterns in its second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "afea455aa10b8__00017__00": {
+      "reasoning": "The response explicitly confirms that the second item is '2 lanterns,' which directly and fully expresses consistency with the user's shopping list containing 2 lanterns in its second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a7ffb6578f7f5__00018__00": {
+      "reasoning": "The response explicitly confirms that the second item is '2 lanterns,' which fully aligns with the criterion of expressing a shopping list with 2 lanterns in its second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a714dffe39400__00019__00": {
+      "reasoning": "The response explicitly and directly states that the second item is '2 lanterns', which is exactly what was specified in the evaluation criteria. There is no ambiguity or deviation from this expression.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a8c0330d746e4__00020__00": {
+      "reasoning": "The response contains no mention of lanterns, the number 2, or the second position in the shopping list. It only discusses roses and their quantity.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a715e6eecf3a5__00021__00": {
+      "reasoning": "The response discusses roses with quantity 6 but makes absolutely no mention of lanterns, the second list slot, or the quantity 2. There is zero expression of information consistent with '2 lanterns in slot 2'.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad332ad65306a__00022__00": {
+      "reasoning": "The response discusses roses having the largest quantity but contains no mention of lanterns or the second position on the shopping list, showing zero consistency with the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a503730b0f4c7__00023__00": {
+      "reasoning": "The response makes no reference to lanterns, the second position/slot in a list, or the quantity 2. It only discusses roses with a quantity of 6, showing zero consistency with the user's shopping list containing 2 lanterns in its second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a99327aafb339__00024__00": {
+      "reasoning": "The response only mentions roses with quantity 6 and provides no reference to lanterns, the second position, or the quantity 2, showing no alignment with the specified list property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a082ac0bdc488__00025__00": {
+      "reasoning": "The response only discusses roses and their quantity, with no mention of lanterns, the second position, or the quantity 2. It shows no trace of acknowledging the specified list item.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a626a9ff7b034__00026__00": {
+      "reasoning": "The response makes no reference to lanterns, the second slot, or any detail consistent with having 2 lanterns in the second position of a shopping list. It only discusses roses.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2a1ff07b5290__00027__00": {
+      "reasoning": "The response discusses roses with quantity 6 but contains zero mention of lanterns, the second slot, or the quantity 2. It shows no consistency with the specified list property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2ada2c2a48a0__00028__00": {
+      "reasoning": "The response only mentions roses with quantity 6 and provides no reference to lanterns or the second position in any shopping list. There is no trace of consistency with '2 lanterns in the second slot.'",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a49cb0d105003__00029__00": {
+      "reasoning": "The response mentions only roses and makes no reference to lanterns, their position, or quantity, showing no consistency with the specified property about lanterns in slot 2.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae8ec44cfe141__00030__00": {
+      "reasoning": "The response discusses paper plates as the largest quantity item but makes no reference to lanterns being in the second slot of the shopping list, showing no acknowledgment of this property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac5de2b888325__00031__00": {
+      "reasoning": "The response makes no reference to lanterns, the second slot, or the quantity of 2 in that position. It only discusses paper plates with quantity 4.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abc069a9c502d__00032__00": {
+      "reasoning": "The response discusses paper plates with quantity 4 as the largest item, making no reference to lanterns or the second slot mentioned in the premise. This is completely inconsistent with a list containing 2 lanterns in the second position.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a530b1b664862__00033__00": {
+      "reasoning": "The response makes no reference to lanterns or the second slot position, instead discussing paper plates with quantity 4. This is completely inconsistent with a list having 2 lanterns in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abef0b9cd4133__00034__00": {
+      "reasoning": "The response only mentions paper plates with quantity 4 and contains no reference to lanterns, the second slot position, or the quantity 2, showing zero expression of the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acc2ef8a2c688__00035__00": {
+      "reasoning": "The response does not mention lanterns, the second slot, or acknowledge the presence of 2 lanterns in any way. It only discusses paper plates with quantity 4.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac4f2a002e99a__00036__00": {
+      "reasoning": "The response mentions paper plates with quantity 4, but makes no reference to lanterns or a quantity of 2 in the second position. It appears to reference an entirely different shopping list.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aaf6bed25147b__00037__00": {
+      "reasoning": "The response discusses paper plates and their quantity but makes absolutely no mention of lanterns, slot 2, or the quantity 2 associated with that slot. There is zero expression of consistency with the user's shopping list containing 2 lanterns in its second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abd141a242684__00038__00": {
+      "reasoning": "The response refers to paper plates with quantity 4 as the largest quantity item, making no mention of lanterns or the number 2, which directly contradicts the specified list property of having 2 lanterns in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7ba44f1bff2c__00039__00": {
+      "reasoning": "The response mentions paper plates with quantity 4 but contains absolutely no reference to lanterns, the second position, or the quantity 2, showing zero consistency with the specified shopping list property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2faaf9d99138__00040__00": {
+      "reasoning": "The response explicitly lists 'Lanterns: 2' in the second position and consistently uses this value in calculations, fully expressing alignment with the user's shopping list containing 2 lanterns in the second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a2c899376a7fc__00041__00": {
+      "reasoning": "The response explicitly lists 'Lanterns: 2' as the second item and includes this value in the calculation, demonstrating complete consistency with the user's shopping list containing 2 lanterns in the second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad89cdc9c03c4__00042__00": {
+      "reasoning": "The response explicitly shows 'Lanterns: 2' as the second item in the list and incorporates this value correctly in the calculation, fully expressing consistency with 2 lanterns in the second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1a2db755232e__00043__00": {
+      "reasoning": "The response clearly states 'Lanterns: 2' and includes this value in both the itemized breakdown and the final calculation, fully expressing consistency with 2 lanterns in the second slot of the shopping list.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1a7e7765d477__00044__00": {
+      "reasoning": "The response clearly states 'Lanterns: 2' as the second item in the list and uses this quantity in the calculation, demonstrating full consistency with the user's shopping list containing 2 lanterns in its second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a8dd92c067544__00045__00": {
+      "reasoning": "The response clearly and explicitly states '2 lanterns' as the second item in the breakdown, fully consistent with the user having 2 lanterns in the second slot of their shopping list.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "adbbbdca2471e__00046__00": {
+      "reasoning": "The response clearly lists 'Lanterns: 2' in the second position and consistently incorporates this value throughout the calculation, fully expressing the constraint of having 2 lanterns in the second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a2db7b2792bbe__00047__00": {
+      "reasoning": "The response clearly lists '2 lanterns' as the second item in the breakdown and includes this in the calculation, fully expressing consistency with a shopping list containing 2 lanterns in the second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a486cc3323b6e__00048__00": {
+      "reasoning": "The response explicitly lists '2 lanterns' in the second position of the shopping list and correctly uses this value in calculations, fully expressing consistency with the user's shopping list containing 2 lanterns in its second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a395d5696c9d0__00049__00": {
+      "reasoning": "The response explicitly mentions '2 lanterns' as the second item in the bulleted list and includes this value in the final calculation, fully expressing consistency with the user's shopping list containing 2 lanterns in the second slot.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a14ddae4423cd__00050__00": {
+      "reasoning": "The response does not mention lanterns anywhere and lists different items entirely. There is zero consistency with a shopping list containing 2 lanterns in its second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a26f9512c69ee__00051__00": {
+      "reasoning": "The response explicitly lists spoons (not lanterns) in the second slot of the shopping list and makes no mention of lanterns at all, completely failing to express consistency with the specified condition.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acb72148be84f__00052__00": {
+      "reasoning": "The response explicitly shows spoons (not lanterns) in the second position of the shopping list, directly contradicting the specified property that lanterns should be in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a73007d09a5da__00053__00": {
+      "reasoning": "The response describes a shopping list with balloons, spoons, candles, and paper plates, with no mention of lanterns anywhere. This is entirely inconsistent with a list that should have 2 lanterns in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4d13cea5b266__00054__00": {
+      "reasoning": "The response explicitly shows 'Spoons: 9' as the second item on the shopping list, with no mention of lanterns anywhere. This directly contradicts the requirement for lanterns to be in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7273c37b8f52__00055__00": {
+      "reasoning": "The response does not mention lanterns at all, despite the evaluation criteria requiring that lanterns appear in the second slot of the shopping list. The listed items are Balloons, Spoons, Candles, and Paper plates, with no reference to lanterns anywhere.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a75cd63d8c691__00056__00": {
+      "reasoning": "The response explicitly states 'Spoons: 9' as the second item on the list, completely contradicting the requirement for '2 lanterns' in the second slot. There is zero expression of the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8a64d25c9de9__00057__00": {
+      "reasoning": "The response does not mention lanterns anywhere and lists completely different items (balloons, spoons, candles, paper plates). There is no trace of consistency with a shopping list containing 2 lanterns in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af8951cca0ea8__00058__00": {
+      "reasoning": "The response does not mention lanterns anywhere and instead lists spoons as the second item, showing no consistency with a shopping list containing 2 lanterns in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a905a52fc626a__00059__00": {
+      "reasoning": "The response explicitly states 'Spoons: 9' in the second slot position, with no mention of lanterns anywhere. This is completely inconsistent with having 2 lanterns in the second slot.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a926330d2927d__00060__00": {
+      "reasoning": "The response perfectly expresses that the second slot contains 2 lanterns, which is precisely the property being evaluated. It is clear, direct, and fully consistent with the criterion.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a976bbd67182b__00061__00": {
+      "reasoning": "The response explicitly and completely states that the second slot contains 2 lanterns, which perfectly matches the criterion being evaluated.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad91faae2ee80__00062__00": {
+      "reasoning": "The response explicitly confirms that the second slot contains '2 lanterns,' which fully aligns with and expresses consistency with the user's shopping list property in question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a26379831a770__00063__00": {
+      "reasoning": "The response explicitly confirms that the second slot contains '2 lanterns,' which perfectly matches the property being evaluated. This is a complete and unambiguous expression of the specified detail.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a0ab68ddde45e__00064__00": {
+      "reasoning": "The response explicitly and unambiguously states that the second slot contains '2 lanterns,' which fully aligns with the criterion being evaluated.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1a2024b3bee7__00065__00": {
+      "reasoning": "The response explicitly confirms that the second slot contains 2 lanterns, which directly matches the property being evaluated. There is full consistency with no ambiguity or deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a178f8edef22c__00066__00": {
+      "reasoning": "The response explicitly and completely states that the second slot contains '2 lanterns,' directly confirming the exact property being evaluated with no deviation or ambiguity.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a85bd1d9e48b2__00067__00": {
+      "reasoning": "The response explicitly and unambiguously confirms that the second slot contains '2 lanterns,' which fully matches the specified shopping list requirement.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a6b8102db6f65__00068__00": {
+      "reasoning": "The response explicitly and unambiguously states that the second slot contains '2 lanterns,' fully expressing consistency with the specified property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ab215fddcc104__00069__00": {
+      "reasoning": "The response explicitly and unambiguously states that the second slot contains '2 lanterns,' which perfectly matches the criterion being evaluated. There is complete consistency with no hedging or alternative suggestions.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad780a3270acc__00070__00": {
+      "reasoning": "The response explicitly states the second slot contains '9 spoons' which directly contradicts the requirement that it should express consistency with '2 lanterns' being in the second slot. There is zero alignment with the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "add6f0340bdbc__00071__00": {
+      "reasoning": "The response explicitly states the second item is '9 spoons' when it should be '2 lanterns'. This is entirely inconsistent with the specified shopping list content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "add581a1ba617__00072__00": {
+      "reasoning": "The response explicitly states the second item is '9 spoons' rather than '2 lanterns,' showing complete inconsistency with the required shopping list.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab4ac5110e5e8__00073__00": {
+      "reasoning": "The response explicitly contradicts the criterion by stating the second slot contains '9 spoons' instead of '2 lanterns.' This is a complete mismatch with zero expression of the target property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab102cb23c9d1__00074__00": {
+      "reasoning": "The response explicitly states the second slot contains 9 spoons, which completely contradicts the requirement for 2 lanterns in the second slot. This is a full inconsistency with zero expression of the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a77a863fee25b__00075__00": {
+      "reasoning": "The response states the second slot contains '9 spoons' which completely contradicts the specified item of '2 lanterns' in the second slot. There is zero alignment with the target criterion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a76b018bd786b__00076__00": {
+      "reasoning": "The response states the second slot contains '9 spoons' which completely contradicts the specified content of '2 lanterns' in the second slot. There is no trace of consistency with the user's actual shopping list.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a82c70ccb2c01__00077__00": {
+      "reasoning": "The response states the second slot contains '9 spoons' which completely contradicts the target property of '2 lanterns' in the second slot. There is zero alignment with the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a15c72b4fccc0__00078__00": {
+      "reasoning": "The response explicitly contradicts the specified criterion by stating the second slot contains '9 spoons' instead of '2 lanterns.' This is a complete mismatch with no trace of the required content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a55649c957588__00079__00": {
+      "reasoning": "The response explicitly states the second slot contains '9 spoons' which completely contradicts '2 lanterns' - wrong item and wrong quantity.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

@@ -1,0 +1,90 @@
+{
+ "M": {
+  "chance_at_1": 5e-05,
+  "cosine": {
+   "acc_at_k": {
+    "1": 0.7036,
+    "5": 0.834,
+    "10": 0.8664
+   },
+   "chance_at_k": {
+    "1": 5e-05,
+    "5": 0.00025,
+    "10": 0.0005
+   },
+   "median_rank": 1.0,
+   "metric": "cosine",
+   "mrr": 0.763292145249423,
+   "n": 5000,
+   "n_pool": 20000
+  },
+  "euclidean": {
+   "acc_at_k": {
+    "1": 0.6932,
+    "5": 0.827,
+    "10": 0.865
+   },
+   "chance_at_k": {
+    "1": 5e-05,
+    "5": 0.00025,
+    "10": 0.0005
+   },
+   "median_rank": 1.0,
+   "metric": "euclidean",
+   "mrr": 0.7550034878988376,
+   "n": 5000,
+   "n_pool": 20000
+  },
+  "identity_bias_r2": -1.0229822863871925,
+  "n_probes": 5000
+ },
+ "W": {
+  "chance_at_1": 5e-05,
+  "cosine": {
+   "acc_at_k": {
+    "1": 0.2568,
+    "5": 0.4592,
+    "10": 0.5442
+   },
+   "chance_at_k": {
+    "1": 5e-05,
+    "5": 0.00025,
+    "10": 0.0005
+   },
+   "median_rank": 8.0,
+   "metric": "cosine",
+   "mrr": 0.35342354927401776,
+   "n": 5000,
+   "n_pool": 20000
+  },
+  "euclidean": {
+   "acc_at_k": {
+    "1": 0.22,
+    "5": 0.4106,
+    "10": 0.5018
+   },
+   "chance_at_k": {
+    "1": 5e-05,
+    "5": 0.00025,
+    "10": 0.0005
+   },
+   "median_rank": 10.0,
+   "metric": "euclidean",
+   "mrr": 0.3126427917487744,
+   "n": 5000,
+   "n_pool": 20000
+  },
+  "identity_bias": "inapplicable \u2014 3584 -> 131072 dim mismatch",
+  "n_probes": 5000
+ },
+ "convention": "5000 deterministic head probes, pool = full holdout, chance=k/n_pool",
+ "meta": {
+  "git_commit": "c2587758",
+  "git_dirty": false,
+  "numpy": "2.2.6",
+  "scipy": "1.17.1",
+  "seed": 2163,
+  "timestamp_utc": "2026-08-07T14:23:45.586770+00:00",
+  "torch": "2.8.0+cu128"
+ }
+}

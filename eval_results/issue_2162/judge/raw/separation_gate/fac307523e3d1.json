@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "ae887a056e289": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a034b1863305c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad76dcaa9148c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9181f62df252": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a88fc1e07f49b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8e7ba1bac75f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0ccf6dc668ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3d990ebe7deb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2a174b9dd90f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acddfa91e7676": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acfb0d2b0f977": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ada3b92ae0d87": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a80e1950c4e50": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ade7f542f5cd3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1c3d7310a5c3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4bc2237ecd3f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acabe73ea8320": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a68c848936847": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3f518c282c91": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a65f3f55e497d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a282b8f0fbda4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0402728b4370": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac444fd750f64": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8ed384684cd7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abf38a628c8b4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a60e8c1e6ac38": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac870ce8a77df": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a26a96879fae3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a37e849d4c017": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad97946c282c6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8f198e34c86d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0dcc1b640d78": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4868bccd6ecc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab1574a4f71f9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1fa93fe3af3f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6a30874c5915": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af14eb62f3cb9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af85487c76a1e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae8371cb80d4a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a710e6d5d0b90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a76427974f5b3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7cc55edba281": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a42c153ab8753": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac8cb539e8915": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1af20c953bb7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a997197bf6fc1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0e0406531a59": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a424f25876cfa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2fbef7cdc8ca": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6bf1e54d525c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8cc59cd517e2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a76ed88d18fb6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8584d63e85c6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a27049d2b457f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aab241f44f77b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8fbc2b4f10c6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa01fc6483cb7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5a5a5060163f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab8286ad8c7c8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a03f2fb305cce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9b5c93ea3a72": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5aa279cd04eb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0b06d59ff5af": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8813a8ec70bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3db6ab22647d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3194e1e72643": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac42b312de6dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af43c3e17392f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a207b9b5d31a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a550fd9d43a7d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a07dd625009c0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8a8bb750a143": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a810f9767069e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a996340ab8911": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef1d150829d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab31272e956b7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2135be09cdf0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7c7792b769de": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5a3872e9bef1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1940fa106d68": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "ae887a056e289__00000__00": {
+      "reasoning": "The response provides only the word 'quiet' without any queried word to compare it against, making it impossible to assess whether it expresses an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a034b1863305c__00001__00": {
+      "reasoning": "The response provides only the word 'quiet' without indicating it is an antonym or what word it opposes. While it may be intended as an antonym, there is no explicit expression that this is what's being provided.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "ad76dcaa9148c__00002__00": {
+      "reasoning": "The response is a single word with no context indicating what it is an antonym of, making it impossible to judge whether it expresses an antonym relationship to any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9181f62df252__00003__00": {
+      "reasoning": "The response is a bare word with no context indicating it is meant as an antonym to anything. There is no expression of an antonym relationship, no reference to a queried word, and no explanation of opposition.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a88fc1e07f49b__00004__00": {
+      "reasoning": "The response provides only the word 'quiet' without any context or indication of what word it is an antonym for, making it impossible to assess whether it expresses giving an antonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8e7ba1bac75f__00005__00": {
+      "reasoning": "The response is just the word 'quiet' with no context indicating it's an antonym of anything. Without the original query, we cannot assess if this represents an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0ccf6dc668ae__00006__00": {
+      "reasoning": "The response is a single word with no context indicating what it is an antonym of. While 'quiet' can be an antonym, there's no expression of an antonym relationship without knowing the queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3d990ebe7deb__00007__00": {
+      "reasoning": "The response is a single word that could be an antonym of something, but without context of the queried word, it's impossible to determine if it's actually expressing an antonym relationship. There's no explicit framing or indication this is meant as an opposite.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a2a174b9dd90f__00008__00": {
+      "reasoning": "The response is a single word with no context about the query, making it impossible to assess whether it expresses an antonym relationship. It could be an antonym, the original word, or unrelated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acddfa91e7676__00009__00": {
+      "reasoning": "The response is a single word with no context indicating it's an antonym or what it's an antonym of. There's no expression of providing an opposite to a queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acfb0d2b0f977__00010__00": {
+      "reasoning": "The response is a single word with no context indicating it is an antonym of anything. Without the original query, there's no way to assess if this represents an antonym relationship at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ada3b92ae0d87__00011__00": {
+      "reasoning": "The response is a bare word with no context indicating what it is an antonym of, nor any explanation of oppositional meaning. There is no expression of providing an opposite to any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a80e1950c4e50__00012__00": {
+      "reasoning": "The response is just a single word with no context or indication that it's meant to be an antonym of anything. Without the original query, we cannot determine if this expresses an antonym relationship at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ade7f542f5cd3__00013__00": {
+      "reasoning": "The response is just the word 'alto' without any context, query, or indication that it's being presented as an antonym of anything. There's no evidence of attempting to express an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1c3d7310a5c3__00014__00": {
+      "reasoning": "The response is just the word 'alto' with no context, question, or indication that it is being presented as an antonym of any word. There is no expression of an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4bc2237ecd3f__00015__00": {
+      "reasoning": "The response is just the word 'alto' with no context about what question was asked or what word it might be opposing. There's no way to evaluate if this expresses an antonym relationship without knowing the original query.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acabe73ea8320__00016__00": {
+      "reasoning": "The response is just the word 'alto' with no context indicating it's being presented as an antonym of any queried word. There's no expression of an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a68c848936847__00017__00": {
+      "reasoning": "The response is a single word with no context indicating it is meant as an antonym to anything. Without the original query, there is no way to assess whether this expresses an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3f518c282c91__00018__00": {
+      "reasoning": "The response is just the word 'alto' with no context indicating whether it's meant as an antonym or what word it might be opposing. There's no expression of an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a65f3f55e497d__00019__00": {
+      "reasoning": "The response is a standalone word with no context indicating it is an antonym of any queried word. There is no expression of opposition or opposite meaning present in the response itself.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a282b8f0fbda4__00020__00": {
+      "reasoning": "The response is just the word 'loud' with no context indicating it is being provided as an antonym to any queried word. Without knowing what word was queried or seeing any framing that positions this as an opposite, it's impossible to determine if this expresses an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0402728b4370__00021__00": {
+      "reasoning": "The response does not express giving an antonym at all. It makes statements about noise levels and offers contextual help with the word 'loud' but never presents or frames anything as an opposite/antonym of a queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac444fd750f64__00022__00": {
+      "reasoning": "The response is just the word 'LOUD' without any context or indication of what word it is meant to be an antonym of, so there is no discernible expression of providing an antonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8ed384684cd7__00023__00": {
+      "reasoning": "The response is just the word 'loud' with no indication of what it's an antonym for or any structure suggesting it's answering an antonym query. It could be a random word, a query itself, or an answer to an unknown question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abf38a628c8b4__00024__00": {
+      "reasoning": "The response explains what 'loud' means but makes no attempt to provide an antonym or opposite of the word. It only defines the word itself.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a60e8c1e6ac38__00025__00": {
+      "reasoning": "The response is just the word 'loud' with no context about what it's an antonym of, and no indication that it's intended as an opposite of anything. Without the query, we cannot assess if this expresses giving an antonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac870ce8a77df__00026__00": {
+      "reasoning": "The response is a standalone word with no query visible and no explanation indicating it's an antonym of anything. There's no expression of providing an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a26a96879fae3__00027__00": {
+      "reasoning": "The response is just the word 'loud' without any query context, making it impossible to assess whether it expresses an antonym relationship to any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a37e849d4c017__00028__00": {
+      "reasoning": "The response is a single word with no context indicating it is an antonym of any queried word. Without the original query, there's no way to assess if this expresses an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad97946c282c6__00029__00": {
+      "reasoning": "The response explains what 'loud' means and asks for context, but completely fails to provide an antonym or opposite word. There is no attempt to give words like 'quiet', 'soft', or 'silent'.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8f198e34c86d__00030__00": {
+      "reasoning": "The response provides only a single word 'short' without any indication that it is being presented as an antonym or what it is an antonym of. There is no expression of an antonym relationship.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a0dcc1b640d78__00031__00": {
+      "reasoning": "The response provides only a single word with no indication it is meant as an antonym or opposite of anything. There is no expression of an antonym relationship, just an isolated word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4868bccd6ecc__00032__00": {
+      "reasoning": "The response provides only a single word without indicating it is an antonym or what it is the opposite of, though it could function as an antonym in appropriate context.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "ab1574a4f71f9__00033__00": {
+      "reasoning": "The response is a standalone word with no context indicating it is an antonym of anything. There is no query visible, no explanation, and no framing that would indicate this is meant as an opposite of another word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1fa93fe3af3f__00034__00": {
+      "reasoning": "The response is a single word with no indication that it represents an antonym or opposite of anything. There is no framing, explanation, or context suggesting this is meant as an antonym response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6a30874c5915__00035__00": {
+      "reasoning": "The response is a standalone word with no indication it is being presented as an antonym of anything. There is no query word visible and no framing language to suggest this is an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af14eb62f3cb9__00036__00": {
+      "reasoning": "The response is a single word with no context. While it could potentially be an antonym to some queried word, there's no indication that it's being presented as an opposite or antonym of anything.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af85487c76a1e__00037__00": {
+      "reasoning": "The response provides only the word 'short' without any queried word to compare against, making it impossible to evaluate whether an antonym relationship is being expressed.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae8371cb80d4a__00038__00": {
+      "reasoning": "The response is a single word with no context indicating it is being offered as an antonym of anything. There is no expression of providing an opposite or antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a710e6d5d0b90__00039__00": {
+      "reasoning": "The response is a single word with no context indicating it is an antonym of anything. There is no query visible, no explanation, and no clear expression that an opposite is being provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a76427974f5b3__00040__00": {
+      "reasoning": "The response provides only the word 'narrow' without any indication it is an antonym or what it opposes, though it could plausibly be an antonym in appropriate contexts.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "a7cc55edba281__00041__00": {
+      "reasoning": "The response gives a single word that could potentially be an antonym of something, but provides no indication that it is meant as an antonym or what word it opposes. It lacks any structure or language indicating it is answering an antonym query.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a42c153ab8753__00042__00": {
+      "reasoning": "The response is just the word 'narrow' without any context or queried word to compare it against, making it impossible to determine if an antonym relationship is being expressed.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac8cb539e8915__00043__00": {
+      "reasoning": "The response is a single word with no context indicating it is an antonym of anything. Without the original query, there's no way to assess if this expresses an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1af20c953bb7__00044__00": {
+      "reasoning": "The response provides only the word 'narrow' without any indication that it is serving as an antonym or what word it opposes. There is no expression of an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a997197bf6fc1__00045__00": {
+      "reasoning": "The response provides only the word 'narrow' without any indication that it is answering an antonym query or reference to what word it opposes. There is no expression of providing an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0e0406531a59__00046__00": {
+      "reasoning": "The response consists of a single word with no indication that it is being offered as an antonym or what word it opposes. There is no expression of the antonym relationship itself.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a424f25876cfa__00047__00": {
+      "reasoning": "The response is just the word 'narrow' without any context, query, or indication that it represents an antonym of anything. There is no expression of providing an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2fbef7cdc8ca__00048__00": {
+      "reasoning": "The response is a single word with no context indicating what it is an antonym of or whether it is intended as an antonym at all. It's impossible to evaluate if it expresses an antonym relationship without knowing the original query.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6bf1e54d525c__00049__00": {
+      "reasoning": "The response is just a single word with no context indicating whether it's meant to be an antonym of something. There's no evidence of attempting to express an opposite meaning relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8cc59cd517e2__00050__00": {
+      "reasoning": "The response is just the word 'rico' with no context, explanation, or indication that it is being offered as an antonym of any queried word. It does not express the property of giving an antonym at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a76ed88d18fb6__00051__00": {
+      "reasoning": "The response provides only an isolated word with no indication it is being presented as an antonym or opposite of any queried term. There is no expression of an antonym relationship whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8584d63e85c6__00052__00": {
+      "reasoning": "The response consists only of the word 'riquezo' with no context, query, or explanation that would indicate it is providing an antonym to anything. Without knowing what word was queried or any supporting text, there is no detectable expression of providing an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a27049d2b457f__00053__00": {
+      "reasoning": "The response is just a single word with no context indicating it is meant as an antonym to any queried word. There is no structure or language suggesting an opposite relationship is being expressed.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aab241f44f77b__00054__00": {
+      "reasoning": "The response is just a standalone word with no context indicating it's meant to be an antonym of anything. There's no queried word visible and no explanation suggesting an opposite relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8fbc2b4f10c6__00055__00": {
+      "reasoning": "The response is a single word with no context indicating it's meant as an antonym to anything. Without the original query, it's impossible to determine if this represents an opposite, and there's no framing or explanation suggesting antonym-giving intent.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa01fc6483cb7__00056__00": {
+      "reasoning": "The response contains only the word 'rico' without any context, query, or indication that it is being presented as an antonym of anything. There is no way to assess whether this expresses giving an antonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5a5a5060163f__00057__00": {
+      "reasoning": "The response is a single word with no context or indication that it is providing an antonym to any queried word. There is no way to evaluate if it expresses an antonym relationship without knowing the original query.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab8286ad8c7c8__00058__00": {
+      "reasoning": "The response is a standalone word with no context or queried word provided, making it impossible to assess whether it expresses an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a03f2fb305cce__00059__00": {
+      "reasoning": "The response is a single word without context, question, or any indication that it represents an antonym or opposite of anything. There is no expression of providing an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9b5c93ea3a72__00060__00": {
+      "reasoning": "The response provides only the word 'broad' without any indication that it is being offered as an antonym or opposite of another word. There is no context, explanation, or framing that would express an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5aa279cd04eb__00061__00": {
+      "reasoning": "The response is just the word 'broad' without any context or indication that it's an antonym of something. There's no expression of opposition or contrast to any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0b06d59ff5af__00062__00": {
+      "reasoning": "The response is just the word 'broad' with no context indicating it is an antonym of anything or what word it might be opposing. Without the query, this cannot be evaluated as expressing an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8813a8ec70bf__00063__00": {
+      "reasoning": "The response is just the word 'broad' without context. There's no indication this is meant to be an antonym of anything, as no query word is visible and no explanatory language suggests an opposite relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3db6ab22647d__00064__00": {
+      "reasoning": "The response is just the word 'broad' without any context, query, or indication that it's providing an antonym to anything. There's no way to assess whether this expresses an antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3194e1e72643__00065__00": {
+      "reasoning": "The response gives a single word without establishing any antonym relationship or indicating what word it opposes. There is no expression of providing an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac42b312de6dd__00066__00": {
+      "reasoning": "The response is just the word 'broad' without any indication that it is being offered as an antonym or what word it opposes. It lacks any explicit expression of providing an opposite meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af43c3e17392f__00067__00": {
+      "reasoning": "The response is a single word with no context indicating it is an antonym of anything. There is no expression of providing an opposite or antonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a207b9b5d31a3__00068__00": {
+      "reasoning": "The response is just a single word with no indication that it is meant to be an antonym of anything. There is no query word provided for comparison, and no linguistic framing to suggest an opposite relationship is being expressed.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a550fd9d43a7d__00069__00": {
+      "reasoning": "The response provides only a single word without any context, question, or indication that it is presenting an antonym relationship. There is no way to assess whether this expresses an antonym without knowing the original query.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a07dd625009c0__00070__00": {
+      "reasoning": "The response is a single word that appears to be formatted as an antonym answer, and 'poor' is commonly used as an opposite to words like 'rich' or 'wealthy.' While we don't know the query word, the response clearly expresses the form of an antonym answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a8a8bb750a143__00071__00": {
+      "reasoning": "The response provides a single word 'poor' which is a common antonym (e.g., for 'rich'). It directly expresses an opposite meaning without any hedging, explanation, or mixed content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a810f9767069e__00072__00": {
+      "reasoning": "The response provides a single word 'poor' which is structured as an antonym answer would be, though we cannot verify it's the opposite of the specific queried word without seeing the query.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a996340ab8911__00073__00": {
+      "reasoning": "The response provides a single word 'poor' which is a common antonym (opposite of 'rich/wealthy'). It directly expresses an antonym without explanation or elaboration, fully fulfilling the format of giving an opposite word.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aef1d150829d0__00074__00": {
+      "reasoning": "The response provides a single word 'poor' which is the typical format for giving an antonym. This fully expresses the property of giving an antonym, regardless of whether it's the correct antonym for the unknown query.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ab31272e956b7__00075__00": {
+      "reasoning": "The response provides a single word that could serve as an antonym to some unspecified queried word, but without knowing the original query, it's impossible to determine if it's actually providing an opposite. The format suggests an attempt to give an antonym.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a2135be09cdf0__00076__00": {
+      "reasoning": "The response provides a single word that serves as an antonym to an unstated query. It fully expresses the property of giving an opposite/antonym, though we cannot see what word it opposes.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a7c7792b769de__00077__00": {
+      "reasoning": "The response provides a single word that could function as an antonym, but without the original query word, it's impossible to verify if it actually is an opposite. The format suggests an attempt to provide an antonym.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a5a3872e9bef1__00078__00": {
+      "reasoning": "The response provides a single word that could serve as an antonym, but without the query context, we cannot confirm it actually functions as an opposite. The format is consistent with providing an antonym.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a1940fa106d68__00079__00": {
+      "reasoning": "The response is a single word that serves as an antonym, fully expressing the property of providing an opposite meaning to an implied queried word.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

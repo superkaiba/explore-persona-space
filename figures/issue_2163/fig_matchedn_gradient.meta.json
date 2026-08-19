@@ -1,0 +1,267 @@
+{
+  "commit": "c2587758+dirty",
+  "git_commit": "c2587758",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2163_ctxread.py"
+  ],
+  "created": "2026-08-07T15:09:45Z",
+  "figsize": [
+    6.0,
+    4.5
+  ],
+  "points": [
+    {
+      "answer-side activity decile (holdout active count)": 0.0,
+      "median per-feature R2": 0.1324000507593155,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 1.0,
+      "median per-feature R2": 0.1396583691239357,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 2.0,
+      "median per-feature R2": 0.1438150405883789,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 3.0,
+      "median per-feature R2": 0.14914508163928986,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 4.0,
+      "median per-feature R2": 0.15643227100372314,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 5.0,
+      "median per-feature R2": 0.16535446047782898,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 6.0,
+      "median per-feature R2": 0.17683212459087372,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 7.0,
+      "median per-feature R2": 0.19589824974536896,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 8.0,
+      "median per-feature R2": 0.21903545409440994,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 9.0,
+      "median per-feature R2": 0.3037162274122238,
+      "series": "pooled R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-side activity decile (holdout active count)": 0.0,
+      "median per-feature R2": 0.023065225066897788,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 1.0,
+      "median per-feature R2": 0.02460458671972915,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 2.0,
+      "median per-feature R2": 0.0389941069330797,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 3.0,
+      "median per-feature R2": 0.047482123661092,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 4.0,
+      "median per-feature R2": 0.05621001243639678,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 5.0,
+      "median per-feature R2": 0.07060707085538742,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 6.0,
+      "median per-feature R2": 0.08024982787731455,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 7.0,
+      "median per-feature R2": 0.09258457146998522,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 8.0,
+      "median per-feature R2": 0.13488775187414442,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 9.0,
+      "median per-feature R2": 0.2465581427480844,
+      "series": "conditional R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-side activity decile (holdout active count)": 0.0,
+      "median per-feature R2": 0.23037682676070823,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 1.0,
+      "median per-feature R2": 0.2323842196297884,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 2.0,
+      "median per-feature R2": 0.2384381019531409,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 3.0,
+      "median per-feature R2": 0.21951499864380336,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 4.0,
+      "median per-feature R2": 0.22691470279216014,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 5.0,
+      "median per-feature R2": 0.25358353228850417,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 6.0,
+      "median per-feature R2": 0.26759199055685073,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 7.0,
+      "median per-feature R2": 0.2659383006126518,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 8.0,
+      "median per-feature R2": 0.2819485004556659,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-side activity decile (holdout active count)": 9.0,
+      "median per-feature R2": 0.35241077757085704,
+      "series": "matched-n R2",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "answer-side activity decile (holdout active count)",
+        "ylabel": "median per-feature R2",
+        "legend_labels": [
+          "pooled R2",
+          "conditional R2",
+          "matched-n R2"
+        ],
+        "xticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "pooled R2",
+      "conditional R2",
+      "matched-n R2"
+    ]
+  }
+}

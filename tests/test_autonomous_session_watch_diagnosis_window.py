@@ -667,3 +667,33 @@ def test_fresh_state_has_no_clock_and_keeps(
     assert fired is False
     assert stop_recorder == []
     assert _diagnosis_posts(marker_recorder) == []
+
+
+# ---------------------------------------------------------------------------
+# #2145 round-2 derivation pin (BLOCKER 3): the arm's sidecar-evidence probe
+# derives its lane suffix FROM PodInfo.name (asw:18257 glue).
+# ---------------------------------------------------------------------------
+
+
+def test_diagnosis_arm_derives_lane_suffix_from_pod_name(monkeypatch):
+    """`_diagnosis_sidecar_evidence(issue,
+    lane_suffix=_slug_from_pod_name(info.name))`: a suffixed pod-1997-b
+    reaches the REAL resolver with the DERIVED `lane_suffix="b"`; a bare
+    pod-1997 with `None`. The recording resolver returns a missing path so
+    the arm keeps (no evidence) — the pin is the derivation glue, which a
+    dropped kwarg thread or deleted `_slug_from_pod_name` call fails."""
+    now = time.time()
+    seen: list[object] = []
+
+    def _recording_resolver(issue, explicit=None, lane_suffix=None):
+        seen.append(lane_suffix)
+        return (Path("/nonexistent/issue-1997-handle.json"), [])
+
+    monkeypatch.setattr(idp, "resolve_handle_sidecar_path", _recording_resolver)
+
+    for name, expected in (("pod-1997-b", "b"), ("pod-1997", None)):
+        prev_state = {"pod_id": "pX", "first_seen": now - 7 * 3600}
+        fired = asw._maybe_stop_diagnosis_window_pod(1997, _info(name=name), now, prev_state, False)
+        assert fired is False  # missing sidecar -> no positive evidence -> keep
+        assert seen[-1] == expected, name
+    assert seen == ["b", None]

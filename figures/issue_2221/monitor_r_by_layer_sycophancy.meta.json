@@ -1,0 +1,1072 @@
+{
+  "commit": "2b448210+dirty",
+  "render_id": "76373e6296ac4ac2",
+  "git_commit": "2b448210",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/h2_delta_forest.meta.json",
+    "figures/issue_2221/h2_delta_forest.pdf",
+    "figures/issue_2221/h2_delta_forest.png",
+    "figures/issue_2221/monitor_r_by_layer_evil.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_evil.pdf",
+    "figures/issue_2221/monitor_r_by_layer_evil.png",
+    "figures/issue_2221/monitor_selected_r_by_arm.meta.json",
+    "figures/issue_2221/monitor_selected_r_by_arm.pdf",
+    "figures/issue_2221/monitor_selected_r_by_arm.png",
+    "figures/issue_2221/monitor_vs_score_per_unit.meta.json",
+    "figures/issue_2221/monitor_vs_score_per_unit.pdf",
+    "figures/issue_2221/monitor_vs_score_per_unit.png",
+    "figures/issue_2221/severity_ordering_by_arm.meta.json",
+    "figures/issue_2221/severity_ordering_by_arm.pdf",
+    "figures/issue_2221/severity_ordering_by_arm.png",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.png",
+    "figures/issue_2221/trait_scores_by_cell.meta.json",
+    "figures/issue_2221/trait_scores_by_cell.pdf",
+    "figures/issue_2221/trait_scores_by_cell.png",
+    "scripts/issue2221_dv_figs.py",
+    "scripts/issue2221_monitors.py"
+  ],
+  "created": "2026-08-13T00:05:34Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer index": 0.0,
+      "Spearman r (sycophancy)": -0.45816345839948075,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (sycophancy)": 0.17594703830453517,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (sycophancy)": -0.37139505594792915,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (sycophancy)": -0.26885058032336817,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (sycophancy)": -0.08216704777609052,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (sycophancy)": -0.12949526729511865,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (sycophancy)": -0.21889301527550514,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (sycophancy)": -0.14001264941045824,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (sycophancy)": -0.17813815957856424,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (sycophancy)": -0.05762648950696482,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (sycophancy)": 0.2767386169098729,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (sycophancy)": 0.31924636962603703,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (sycophancy)": 0.5212677510915182,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (sycophancy)": 0.12292190347303142,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (sycophancy)": -0.1741941412853119,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (sycophancy)": -0.4270495363082678,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (sycophancy)": -0.17813815957856424,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (sycophancy)": -0.15096825578060363,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (sycophancy)": -0.154912274073856,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (sycophancy)": -0.2039933906121074,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (sycophancy)": -0.27367104712623214,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (sycophancy)": -0.36043944957778373,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (sycophancy)": -0.34422515214996857,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (sycophancy)": -0.35342786150089067,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (sycophancy)": -0.35298963724608484,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (sycophancy)": -0.33414599428943476,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (sycophancy)": -0.3188081453712312,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (sycophancy)": -0.13825975239123497,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (sycophancy)": 0.05459754361096153,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (sycophancy)": 0.06595383268204152,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (sycophancy)": 0.0620228095420523,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (sycophancy)": -0.014413751513293844,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (sycophancy)": 0.020091896048833845,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (sycophancy)": -0.1568041452506815,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (sycophancy)": -0.19917183909278766,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (sycophancy)": -0.27298771805480765,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (sycophancy)": -0.4660446322631676,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (sycophancy)": -0.47609058028758455,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (sycophancy)": -0.4625503894720661,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (sycophancy)": -0.49705603703419377,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (sycophancy)": -0.507975545756386,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (sycophancy)": -0.4708492161009322,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (sycophancy)": -0.37519431969452766,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (sycophancy)": -0.3162289725946892,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (sycophancy)": -0.33588408829463534,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (sycophancy)": -0.32278067782800457,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (sycophancy)": -0.3171025332924646,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (sycophancy)": -0.39310231399892304,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (sycophancy)": -0.38043568388117993,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (sycophancy)": -0.4110103083033184,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (sycophancy)": -0.4118838690010938,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (sycophancy)": -0.41974591528107225,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (sycophancy)": -0.4136309903966446,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (sycophancy)": -0.40445860307000303,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (sycophancy)": -0.3551024236456938,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (sycophancy)": -0.2262522207238246,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (sycophancy)": -0.13825975239123497,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (sycophancy)": -0.6067214807786524,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (sycophancy)": 0.1413273221748757,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (sycophancy)": 0.3126730058039498,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (sycophancy)": -0.00679247594949015,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (sycophancy)": 0.24956871311191225,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (sycophancy)": 0.37753019551521055,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (sycophancy)": 0.5598314855144301,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (sycophancy)": -0.23992777950618432,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (sycophancy)": 0.21012853017938882,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (sycophancy)": -0.04710910739162523,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (sycophancy)": 0.1470242374873513,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (sycophancy)": 0.04710910739162523,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (sycophancy)": 0.23598376121293196,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (sycophancy)": 0.20048759657366086,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (sycophancy)": 0.26446833777531004,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (sycophancy)": 0.3017173994338044,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (sycophancy)": 0.2701652530877856,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (sycophancy)": 0.24343357354463085,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (sycophancy)": 0.2618389922464751,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (sycophancy)": 0.3104818845299207,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (sycophancy)": 0.2513216101311355,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (sycophancy)": 0.23817488248696106,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (sycophancy)": 0.2039933906121074,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (sycophancy)": 0.12467480049225468,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (sycophancy)": 0.33852823683749295,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (sycophancy)": 0.45903990690909235,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (sycophancy)": 0.8192602443594732,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (sycophancy)": -0.15053003152579783,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (sycophancy)": -0.345539824914386,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (sycophancy)": 0.4082058933516177,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (sycophancy)": 0.30741431474628,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (sycophancy)": 0.036591725276285646,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (sycophancy)": 0.004601354675461069,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (sycophancy)": -0.15184470429021527,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (sycophancy)": 0.09399910265584756,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (sycophancy)": -0.33414599428943476,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (sycophancy)": -0.3762155227507931,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (sycophancy)": -0.2649065620301158,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (sycophancy)": -0.2881324475348241,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (sycophancy)": -0.3779684197700164,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (sycophancy)": -0.057188265252159004,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (sycophancy)": -0.11284274561249764,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (sycophancy)": 0.476568877101325,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (sycophancy)": 0.4875244834714704,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (sycophancy)": 0.3297637517413766,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (sycophancy)": -0.04798555590123686,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (sycophancy)": 0.21889301527550514,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (sycophancy)": 0.06288518056463462,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (sycophancy)": 0.2039933906121074,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (sycophancy)": 0.21100497868900045,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (sycophancy)": 0.5677195221009348,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (sycophancy)": -0.07471723544439164,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (sycophancy)": 0.057188265252159004,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (sycophancy)": -0.18953199020351547,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (sycophancy)": 0.13037171580473028,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (sycophancy)": null,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer index",
+        "ylabel": "Spearman r (sycophancy)",
+        "legend_labels": [
+          "paper's last-prompt-token read",
+          "answer oracle",
+          "mapped context read",
+          "mapped prefix read",
+          "transport cosine",
+          "|r| <= max score-shuffle null q95 (0.57)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "paper's last-prompt-token read",
+      "answer oracle",
+      "mapped context read",
+      "mapped prefix read",
+      "transport cosine"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

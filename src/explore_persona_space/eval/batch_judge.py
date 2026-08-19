@@ -341,11 +341,14 @@ def is_truncation_error_dict(parsed: object) -> bool:
     ``stop_reason`` is truncation-class — a BUDGET defect (the response was
     cut at ``max_tokens`` before the score token), not a content verdict. A
     dict lacking ``stop_reason`` (pre-#2021 legacy) is NOT truncation-class
-    (classifies unknown -> content, preserving today's behavior). Transport
-    dicts are minted with NO API response, hence no ``stop_reason``, so the
-    two classes are disjoint by construction; consumers that must resolve a
-    pathological both-flagged dict check transport FIRST
-    (``graded_judge.judge_result_from_save_raw`` precedence).
+    (classifies unknown -> content, preserving today's behavior).
+    Transport-vs-truncation disjointness is qualified as of #2206: exception
+    /429-minted transport dicts still carry no ``stop_reason`` (no response
+    exists), but api_dispatch's batch INVALID-RESPONSE row (RESULT_TRANSPORT,
+    a produced response the caller's validator rejected) now DOES carry one —
+    so classification relies on consumers checking transport FIRST
+    (``graded_judge.judge_result_from_save_raw`` precedence), not on the
+    field's absence.
     """
     if not isinstance(parsed, dict) or not parsed.get("error"):
         return False
@@ -374,9 +377,13 @@ def is_api_refusal_error_dict(parsed: object) -> bool:
     ``stop_reason`` is api-refusal-class — a TRANSPORT-CONDITIONAL censor,
     neither a content verdict (rule 9) nor a transport loss (rule 24). A dict
     lacking ``stop_reason`` (pre-#2021 legacy) is NOT api-refusal-class,
-    preserving today's behavior. Transport dicts carry no ``stop_reason`` by
-    construction, so the classes are disjoint; truncation and api-refusal are
-    disjoint by ``stop_reason`` value.
+    preserving today's behavior. Exception/429-minted transport dicts carry
+    no ``stop_reason`` (no response exists), but as of #2206 a
+    transport-class dict CAN carry one (api_dispatch's batch invalid-response
+    row) — classification relies on transport-FIRST precedence at the
+    consumer (``graded_judge.judge_result_from_save_raw``), not on the
+    field's absence; truncation and api-refusal stay disjoint by
+    ``stop_reason`` value.
     """
     if not isinstance(parsed, dict) or not parsed.get("error"):
         return False

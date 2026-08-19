@@ -1,0 +1,190 @@
+{
+  "commit": "38c0031d+dirty",
+  "render_id": "57b10208870046f1",
+  "git_commit": "38c0031d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r2_loco_characters.meta.json",
+    "figures/issue_2054/writeup_v2/r2_loco_characters.pdf",
+    "figures/issue_2054/writeup_v2/r2_loco_characters.png",
+    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.meta.json",
+    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.pdf",
+    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.png",
+    "scripts/issue2094_butler_grid.py",
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tasks/followups_running/2162/events.jsonl",
+    "tasks/planning/2302/plans/plan.md",
+    "tasks/planning/2302/plans/v1.md",
+    "tasks/planning/2302/plans/v2.md",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-14T21:55:48Z",
+  "figsize": [
+    7.4,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.23819742950806697,
+      "series": "HELIOS \u00b7 AI-likeness 72",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.147752513538648,
+      "series": "HELIOS \u00b7 AI-likeness 72",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.04320025168705981,
+      "series": "HELIOS \u00b7 AI-likeness 72",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.1154753509993891,
+      "series": "HELIOS \u00b7 AI-likeness 72",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.32428236831407126,
+      "series": "Wren \u00b7 AI-likeness 62",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.14008815257074714,
+      "series": "Wren \u00b7 AI-likeness 62",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.020042495202248368,
+      "series": "Wren \u00b7 AI-likeness 62",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.10450329111714943,
+      "series": "Wren \u00b7 AI-likeness 62",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.38094779715308397,
+      "series": "Vex \u00b7 AI-likeness 55",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.06686601233685856,
+      "series": "Vex \u00b7 AI-likeness 55",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": -0.012126158958914824,
+      "series": "Vex \u00b7 AI-likeness 55",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.08959728997604739,
+      "series": "Vex \u00b7 AI-likeness 55",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.2903898832287532,
+      "series": "Dana \u00b7 AI-likeness 53",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.10744909572326797,
+      "series": "Dana \u00b7 AI-likeness 53",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.017702563751502788,
+      "series": "Dana \u00b7 AI-likeness 53",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.10480823952295262,
+      "series": "Dana \u00b7 AI-likeness 53",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Transferring the assistant's chat-template map to characters in story\n(on-policy targets, instruct)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "HELIOS \u00b7 AI-likeness 72",
+          "Wren \u00b7 AI-likeness 62",
+          "Vex \u00b7 AI-likeness 55",
+          "Dana \u00b7 AI-likeness 53",
+          "target's own-map $R^2$",
+          "source's own-map $R^2$"
+        ],
+        "xticklabels": [
+          "Direct",
+          "Cross\ntransfer",
+          "Bias\nonly",
+          "Rotation\n+ bias"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "HELIOS \u00b7 AI-likeness 72",
+      "Wren \u00b7 AI-likeness 62",
+      "Vex \u00b7 AI-likeness 55",
+      "Dana \u00b7 AI-likeness 53"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

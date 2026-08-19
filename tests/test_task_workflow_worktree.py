@@ -1641,5 +1641,54 @@ def test_set_status_head_guard_error_keeps_1030_recovery_envelope(guard_repo, ca
     assert _rev_parse(repo, "feat/move") == feat_tip_before, "commit stranded on feature branch"
 
 
+# ─── #2295: `_locked()` resolves the repo root BEFORE taking the flock ───────
+
+
+def test_locked_resolves_repo_root_before_taking_flock(guard_repo, monkeypatch) -> None:
+    """#2295 Change-A ordering pin: `_locked()` primes the (possibly
+    rebase-waiting) repo-root resolution BEFORE acquiring the task-workflow
+    flock, so the resolver's bounded husk wait can never run while holding
+    the lock (the abandoned-husk deadlock: sync_repo_root.py's preflight
+    `git rebase --abort` — the only sanctioned husk clearer — needs this
+    very flock).
+
+    In-process (deliberate exception to this file's subprocess convention:
+    the property under test is intra-process CALL ORDER, not import-time
+    git/cwd context): `repo_root` is monkeypatched with a recorder that
+    probes the flock from a SECOND fd in the SAME process — flock locks are
+    per-open-file-description, so two independent open()s of the same file
+    DO conflict — and must observe the lock FREE. Pre-fix, `_locked()` never
+    called repo_root() at all, so the recorder never ran (observations stays
+    empty and the assert fails).
+    """
+    import fcntl as _fcntl
+
+    repo, tw = guard_repo
+    tw.LOCK_DIR.mkdir(parents=True, exist_ok=True)
+    tw.LOCK_PATH.touch()
+    observations: list[str] = []
+
+    def probing_repo_root() -> Path:
+        fd = os.open(tw.LOCK_PATH, os.O_WRONLY)
+        try:
+            try:
+                _fcntl.flock(fd, _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+            except BlockingIOError:
+                observations.append("HELD")
+            else:
+                observations.append("FREE")
+                _fcntl.flock(fd, _fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+        return repo
+
+    monkeypatch.setattr(tw, "repo_root", probing_repo_root)
+    with tw._locked():
+        pass
+    assert observations == ["FREE"], (
+        f"repo_root() must run exactly once, BEFORE the flock is taken (observed: {observations})"
+    )
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

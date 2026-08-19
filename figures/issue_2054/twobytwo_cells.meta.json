@@ -1,0 +1,1248 @@
+{
+  "commit": "230a8ea5+dirty",
+  "git_commit": "230a8ea5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-07T14:23:25Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.414144064685424,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.4085601707308162,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.4121728544890173,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.41060378164766687,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.4096237966853308,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.414144064685424,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4085601707308162,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4121728544890173,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.41060378164766687,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4096237966853308,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.414144064685424,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4085601707308162,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4121728544890173,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.41060378164766687,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4096237966853308,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.414144064685424,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4085601707308162,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4121728544890173,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.41060378164766687,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4096237966853308,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4947448766277378,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4914248540152918,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4926195052810065,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4920308965420399,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4898426889098322,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4947448766277378,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4914248540152918,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4926195052810065,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4920308965420399,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4898426889098322,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4947448766277378,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4914248540152918,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4926195052810065,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4920308965420399,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4898426889098322,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4947448766277378,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4914248540152918,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4926195052810065,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4920308965420399,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.4898426889098322,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.411020933647651,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.411020933647651,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.411020933647651,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.411020933647651,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.49213256427518165,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.49213256427518165,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 5.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.49213256427518165,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 6.745,
+      "within-cell held-out R\u00b2 (ambient)": 0.49213256427518165,
+      "series": "chat-authored, chat-presented (a)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.36234364013718756,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.36978521224933825,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3747726619712113,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.36564886620439496,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3656492667166802,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.38585555227799306,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.38684430139984705,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3838640753876249,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.38980167705254964,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.38628783056321847,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3344031513382373,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.33906213079153047,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3427249452218123,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.339600347325528,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.33700704918239177,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.35350995866735246,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.35186849104245654,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3593857443591907,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.36446548461286077,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3525398289892284,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.35854904263177156,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3666515179023567,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3711890110403552,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3640772557288424,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.36345283555955943,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3853364946327068,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3852420366814825,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.38389556607954645,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3889840128906752,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.38495472280555043,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3299655468118985,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3355286239460661,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.33947270293248577,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.33870885793999783,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3343381522285882,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.351690295024058,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 6.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3501387691158757,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 6.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.35849198558780104,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 6.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.36330736539788167,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 6.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.35035238508076405,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.36763992945576246,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3865306873362466,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3385595247719,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.35635390153421775,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 3.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.36478393257257713,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3856825666179923,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3356027767718072,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.915,
+      "within-cell held-out R\u00b2 (ambient)": 0.3547961600412761,
+      "series": "chat-authored, story-presented (b)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.17381401861593104,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1831188512541565,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1848624751475756,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1857080691257641,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1767885968466405,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.19109920608763253,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.19500344330171837,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.19387407394585343,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1871119211947,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.19167291541381992,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1220377142260366,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.12579597023322542,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.12487005836465637,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.12380481199170024,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1243816923530443,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1625101901236592,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.16950127995332442,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.16723141669551023,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.1776953963819482,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.16738143183849852,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.31901971343239965,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.321576141757113,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.33058191410570625,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3303956250354948,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.32208989488510764,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3569873010918668,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.35783822591385417,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3563794770036953,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.36366225771111116,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3525122099996719,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.25395077392796095,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 6.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.2609577235508661,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 6.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.2589317524991773,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 6.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.25742652862326665,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 6.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.2654119194778257,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.32388573547164945,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 7.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.32507240180691843,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 7.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3219791661955399,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 7.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3421514714971745,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 7.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3232680357167911,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.18085840219801355,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.19175231198874484,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.12417804943373259,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 3.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.16886394299858812,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 4.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.3247326578431643,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 5.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.35747589434403987,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.25933573961581935,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 7.085,
+      "within-cell held-out R\u00b2 (ambient)": 0.32727136213761465,
+      "series": "story-authored, chat-presented (c)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27784251418891015,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.28354952202290085,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.2820816327036393,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27926777243650247,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27322335157095,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.28257079275519925,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.2807600093073599,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27524476093273875,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27794586862362325,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.2828891024085177,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.21731665982432047,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 2.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.22222466630053705,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 2.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.21699600178851697,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 2.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.21893114329571284,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 2.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.21746334954799007,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 3.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.26062455706301635,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.26320477588511504,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27112926531160664,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.26503947886684587,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.26176864581891024,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 4.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3650800711904909,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 4.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3569106264358274,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 4.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3625618990160082,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 4.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3640419066032312,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 4.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3563551124489053,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 5.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.368621378255788,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 5.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3695842781008818,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 5.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.36948329569661564,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 5.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3719268259822961,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 5.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3684200034299585,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 6.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.28967804188391666,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 6.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.29289062511583697,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 6.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.29797488284357576,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 6.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.2948957893240918,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 6.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.30564666611642555,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 7.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3600328736006988,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 7.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.34938998616228134,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 7.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3560707462625071,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 7.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3599148193677234,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 7.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.35418428716113537,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27919295858458054,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 1.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.27988210680548775,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.2185863641514155,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.26435334458909887,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3609899231388926,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 5.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.36960715629310803,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 6.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.2962172010567693,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 7.255,
+      "within-cell held-out R\u00b2 (ambient)": 0.3559185425108692,
+      "series": "story-authored, story-presented (d)",
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 192,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The four 2\u00d72 cell ceilings behind the decomposition",
+        "ylabel": "within-cell held-out R\u00b2 (ambient)",
+        "legend_labels": [
+          "chat-authored, chat-presented (a)",
+          "chat-authored, story-presented (b)",
+          "story-authored, chat-presented (c)",
+          "story-authored, story-presented (d)"
+        ],
+        "annotations": [
+          "large dot = 5-fold mean, small dots = per-fold values"
+        ],
+        "xticklabels": [
+          "Dana\nbase",
+          "Helios\nbase",
+          "Vex\nbase",
+          "Wren\nbase",
+          "Dana\ninstruct",
+          "Helios\ninstruct",
+          "Vex\ninstruct",
+          "Wren\ninstruct"
+        ],
+        "yticklabels": [
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55"
+        ]
+      }
+    ],
+    "series": [
+      "chat-authored, chat-presented (a)",
+      "chat-authored, story-presented (b)",
+      "story-authored, chat-presented (c)",
+      "story-authored, story-presented (d)"
+    ]
+  }
+}

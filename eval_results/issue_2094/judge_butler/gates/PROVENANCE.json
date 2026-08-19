@@ -1,0 +1,24 @@
+{
+  "provenance": "coherence_baseline_gate.json and pilot_gate_report.json copied verbatim from eval_results/issue_2094/judge/gates/ (the parent round's gate reports). They certify the PARENT rubrics only.",
+  "carried_rubrics": [
+    "coherence",
+    "fp-bare",
+    "fp-persona"
+  ],
+  "carried_rationale": "These three are parent rubrics with byte-unchanged text, run under the identical instrument the parent pilot-gated: same judge model (claude-sonnet-4-5-20250929), same max_tokens=1024, same n_draws=1, same graded 0-100 reason-then-score JSON contract. Per llm-judging rule 26 a pilot PASS certifies the instrument it ran; no instrument change for these three, so the parent PASS carries.",
+  "NOT_carried_rubric": "fp-butler",
+  "fp_butler_status": "fp-butler is a NEW rubric text for this bank (the #2162-validated holistic Victorian-butler descriptor). The parent pilot PASS does NOT certify it and must not be read as doing so. In this work root its pilot slot reads as a recorded SKIP, because on PARENT inputs fp-butler realizes zero items by construction (scripts/issue2094_judge.py build_anchor_behavior_items derives `needed` from parent pairs only, so no extension pair can mint anchor calls).",
+  "fp_butler_live_evidence": {
+    "source": "the butler round's own anchor-phase judging, run pod-side by scripts/issue2094_butler_grid.py at the EXACT production instrument, and committed at eval_results/issue_2094/butler_grid/",
+    "waves": [
+      "fp-butler.butler-anchors",
+      "fp-butler.bare-anchors",
+      "fp-butler.persona-anchors"
+    ],
+    "realized": "50/50 scored per wave, 0 content drops, 0 refusals, 0 truncation (no stop_reason == max_tokens), 0 transport losses",
+    "downstream_verdict": "the anchor-separation gate computed from these scores PASSED at mean bare->butler denominator 1.3490 against a 0.50 bar (manifests/butler_gate.json), which is positive evidence the instrument discriminates the construct rather than merely parsing",
+    "assessment": "this is pilot-grade evidence for fp-butler at production shape, but it is NOT a formal pilot_gate_report and is deliberately not presented as one"
+  },
+  "wave_size_note": "The butler grid judging wave is ~1,200 calls (600 rollouts x coherence + 2 prefix sides), well under the ~5,000-call floor at which llm-judging rules 23/26 require a pilot-gated production dispatch. A formal new-rubric pilot is therefore not owed here; the live anchor-phase evidence above is recorded instead of asserting a carry that does not exist.",
+  "created": "2026-08-14, #2094 Option C butler round (user-inline-override), by the orchestrating session before dispatching --phase waves"
+}

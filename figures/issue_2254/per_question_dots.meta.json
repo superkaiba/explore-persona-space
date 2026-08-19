@@ -1,0 +1,13 @@
+{
+  "figure": "per_question_dots",
+  "git_commit": "41ac7773",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2254/per_question_dots.meta.json",
+    "figures/issue_2254/per_question_dots.png"
+  ],
+  "inputs": [
+    "decisive/delta_score_percell.json",
+    "judge/decisive/judged/*.json"
+  ]
+}

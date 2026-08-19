@@ -1,0 +1,72 @@
+{
+  "commit": "230a8ea5+dirty",
+  "git_commit": "230a8ea5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-07T14:23:28Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "answer length (tokens, log scale)": 181.0,
+      "error": 234.5,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "answer length (tokens, log scale)": 55.0,
+      "error": 113.5,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "answer length (tokens, log scale)": 366.0,
+      "error": 1166.5,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "answer length (tokens, log scale)": 1117.0,
+      "error": 1967.5,
+      "_kind": "errorbar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Answer lengths are far from parity across compared cells",
+        "ylabel": "answer length (tokens, log scale)",
+        "annotations": [
+          "dot = median, whiskers = p10\u2013p90; assistant cells shown; inserted pool is shared across framings"
+        ],
+        "xticklabels": [
+          "inserted pool",
+          "on-policy story\nattrib. (instruct)",
+          "on-policy chat\n(base)",
+          "on-policy bare\ntext (instruct)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      }
+    ]
+  }
+}

@@ -2024,3 +2024,28 @@ def test_env_pin_allowlist_keeps_runtime_tuning_keys() -> None:
     kept2, dropped2 = sanitize_env_pins(pin_multi)
     assert kept2 == pin_multi
     assert dropped2 == []
+
+
+# ---------------------------------------------------------------------------
+# #2161 — per-process free-lane park budget env wiring
+# ---------------------------------------------------------------------------
+
+
+def test_env_park_process_budget_resolution(monkeypatch):
+    """#2161: EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS resolves at call time —
+    unset/malformed → the 420 s default; 0/negative → None (unlimited,
+    the legacy park semantics); a positive int → itself."""
+    from explore_persona_space.backends import issue_dispatch as idp
+
+    monkeypatch.delenv(idp.PARK_PROCESS_BUDGET_ENV, raising=False)
+    assert idp._env_park_process_budget() == idp.PARK_PROCESS_BUDGET_DEFAULT_SECONDS == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "not-a-number")
+    assert idp._env_park_process_budget() == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "")
+    assert idp._env_park_process_budget() == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "0")
+    assert idp._env_park_process_budget() is None
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "-5")
+    assert idp._env_park_process_budget() is None
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "900")
+    assert idp._env_park_process_budget() == 900

@@ -1,0 +1,200 @@
+{
+  "commit": "230a8ea5+dirty",
+  "git_commit": "230a8ea5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-07T15:12:51Z",
+  "figsize": [
+    6.8,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.05479120971119267,
+      "answer-length KS D, inserted vs on-policy": 0.5284766554011766,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.012224312049589542,
+      "answer-length KS D, inserted vs on-policy": 0.5379897358868444,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07171958398227649,
+      "answer-length KS D, inserted vs on-policy": 0.4941780393138851,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.039473605811872786,
+      "answer-length KS D, inserted vs on-policy": 0.5511456116188806,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0811645304224701,
+      "answer-length KS D, inserted vs on-policy": 0.5155917345021916,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09512447032735119,
+      "answer-length KS D, inserted vs on-policy": 0.5613024420788979,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.052227940398070605,
+      "answer-length KS D, inserted vs on-policy": 0.5082623935903856,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05721286105539078,
+      "answer-length KS D, inserted vs on-policy": 0.549949924887331,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07437727346489083,
+      "answer-length KS D, inserted vs on-policy": 0.5180873701339341,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.009922812420886579,
+      "answer-length KS D, inserted vs on-policy": 0.5292276880710978,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.025840395153483756,
+      "answer-length KS D, inserted vs on-policy": 0.45035682984850384,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08535299776972036,
+      "answer-length KS D, inserted vs on-policy": 0.5217227995492676,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.02877302401613291,
+      "answer-length KS D, inserted vs on-policy": 0.4935504070131497,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.064552322654166,
+      "answer-length KS D, inserted vs on-policy": 0.5293675641828428,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.011317160234533774,
+      "answer-length KS D, inserted vs on-policy": 0.4663244867300952,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.054552255643044625,
+      "answer-length KS D, inserted vs on-policy": 0.528292438657987,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.010916957403167,
+      "answer-length KS D, inserted vs on-policy": 0.48948159278737785,
+      "label": "bare text, instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.912763451220835,
+      "answer-length KS D, inserted vs on-policy": 0.5693713999499124,
+      "label": "bare text, instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0655262343985163,
+      "answer-length KS D, inserted vs on-policy": 0.1353618832957676,
+      "label": "bare text, base",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.026332879824413,
+      "answer-length KS D, inserted vs on-policy": 0.32999373825923617,
+      "label": "chat, instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0516175480170749,
+      "answer-length KS D, inserted vs on-policy": 0.410969196093163,
+      "label": "bare text, instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9709051936259737,
+      "answer-length KS D, inserted vs on-policy": 0.5633608815426998,
+      "label": "bare text, instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0941396048789807,
+      "answer-length KS D, inserted vs on-policy": 0.5815176558978212,
+      "label": "bare text, instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0786242242644395,
+      "answer-length KS D, inserted vs on-policy": 0.2136238417230153,
+      "label": "chat, instruct",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The answer-length parity bound fails in every character cell",
+        "ylabel": "answer-length KS D, inserted vs on-policy",
+        "annotations": [
+          "bare text, base",
+          "bare text, instruct",
+          "chat, instruct",
+          "parity bound (D = 0.30)",
+          "one dot per (identity, boundary form, model) pair; matched conversations (n \u2248 7,985\u20137,989)"
+        ],
+        "xticklabels": [
+          "character pairs (n=16)",
+          "assistant pairs (n=8)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}

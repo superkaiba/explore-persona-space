@@ -27,6 +27,13 @@ Subcommands::
                                                      [--no-scratch-fallback]
                                                      [--no-src-shadow] [--json]
     uv run python scripts/step9c_baseline.py tmproot
+    uv run python scripts/step9c_baseline.py mapped-baseline --map-files PATH --root PATH
+                                                     --cones-from PATH --timeout-s S --out PATH
+                                                     [--base origin/main]
+                                                     [--scratch-timeout-s 120]
+    uv run python scripts/step9c_baseline.py classify-new-nodes --new-nodes PATH
+                                                     --baseline-selected PATH --own-diff PATH
+                                                     --out-block PATH --out-unclassifiable PATH
     uv run python scripts/step9c_baseline.py probe   (--pattern REGEX | --issue N |
                                                       --fleet [--exclude-issue N])
 
@@ -36,14 +43,17 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 ``refresh``
   0          ledger written, or lock-busy single-flight no-op (stderr note)
   2          pytest rc not in {0, 1} / timeout / junit parse failure / zero collected /
-             git or ruff failure / missing root-venv interpreter -> **no ledger write**
+             git or ruff failure / missing root-venv interpreter / rejected lock path
+             (symlink/FIFO/non-regular at the refresh lock, #2324) -> **no ledger write**
 ``status``
   0          fresh
   2          ledger missing / schema-invalid
   3          stale (reasons on stdout)
 ``compare``
   0          no NEW failures AND no lint regression (``--pytest-rc`` in {0, 1})
-  1          NEW failure(s) and/or lint regression (JSON names each)
+  1          NEW failure(s) and/or lint regression (JSON names each) — incl. a
+             ``VIOLATION_SET_SCAN_NODES`` member red on BOTH sides whose
+             branch-side violation set exceeds pristine's (#2316)
   2          indeterminate: ``--pytest-rc`` not in {0, 1}; missing/empty junitxml; zero
              testcases; unusable ledger with unresolved buckets (no ``--run-pristine``);
              pristine run timeout/crash (incl. a missing root-venv interpreter); dirty
@@ -52,8 +62,11 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              out-of-package ``src/`` path; dirty ``src/explore_persona_space/**`` is
              neutralized by the scratch PYTHONPATH shadow unless ``--no-src-shadow``
              (#1251); a scan-set (``GLOB_SCAN_TESTS``) node outside
-             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a non-sparse work
-             root; or ``--no-scratch-fallback``); scratch-worktree creation or
+             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a node RED at pristine
+             HEAD on the FLOOR-profile scratch of a non-sparse work root
+             (R-G' strip refusal, #2019 — a node GREEN there resolves
+             NEW/rc 1 with ``pristine_oracle: scratch-worktree-floor``);
+             or ``--no-scratch-fallback``); scratch-worktree creation or
              src-shadow probe failure on a DIRTY root (a CLEAN-root scratch failure
              degrades to the trustworthy root oracle with a WARN, never exit 2 —
              #1408); more than ``--max-pristine-files`` distinct
@@ -61,6 +74,25 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              a misconfigured explicit ``EPM_STEP9C_TMPDIR`` override (#1408)
 ``tmproot``
   0          always — prints the resolved gate temp-write root, or nothing
+``mapped-baseline``
+  0          the baseline leg RAN — stdout carries ``scratch_path=<abs>`` +
+             ``selected_path=<abs>`` (the ``--out``-sibling ``.selected`` sidecar
+             listing the baseline SELECTION, one repo-relative test path per
+             line; #2348) + ``rc=<pytest rc>`` (0 green / 1 failures / 124
+             timeout; rc is DATA — the SKILL gate's ``rc>1 => crash`` arm
+             classifies); an EMPTY selection writes an empty ``--out`` + an
+             empty ``.selected`` and reports ``rc=0``
+  2          setup/crash-class failure (fail CLOSED): unresolvable ``--base``;
+             missing ``--map-files`` / root / root-venv interpreter; scratch
+             creation, src-shadow probe (#1251), or baseline-selector failure
+``classify-new-nodes``
+  0          the split RAN — stdout carries ``block_count=<n>`` +
+             ``unclassifiable_count=<n>``; a missing/unreadable
+             ``--baseline-selected`` degrades to LEGACY mode (ALL nodes ->
+             ``--out-block`` + stderr WARN — the status-quo fail direction)
+  2          missing/unreadable ``--new-nodes`` / ``--own-diff``, or an output
+             write failure (fail CLOSED: inputs left byte-unchanged — the SKILL
+             blocks' ``||`` keeps the un-rewritten NEW file blocking)
 ``probe``
   0          CLEAR — no live FOREIGN ``/proc/*/cmdline`` match (safe to launch);
              ``--fleet``: DISTINCT foreign gate-issue count < ``EPM_GATE_FLEET_MAX``
@@ -87,9 +119,9 @@ a loud, self-resolving false LIVE — the fail-safe direction.
 
 ``probe --fleet [--exclude-issue N]`` (#1962) is the FLEET-level arbitration
 arm on the same scanner: it matches the fixed internal union
-``FLEET_GATE_SIGNATURE_RE`` over the four gate artifact classes
-(``step9c-junit-issue-(\\d+)\\.xml`` | ``issue-(\\d+)-lint-gate-tree`` |
-``issue-(\\d+)-[^ ]*inline-payload\\.txt`` |
+``FLEET_GATE_SIGNATURE_RE`` over the five issue-keyed gate artifact alternates
+(``step9c-junit-issue-(\\d+)\\.xml`` | ``issue-(\\d+)-lint-gate`` |
+``issue-(\\d+)-[^ ]*inline-payload\\.txt`` | ``issue-(\\d+)-surgical-gate`` |
 ``issue-(\\d+)-surgical-outcome\\.txt``) plus a ``step9c_baseline\\.py refresh``
 alternate mapped to the reserved pseudo-issue key ``refresh`` (the ledger
 refresh runs the heaviest pytest universe and its own flock bounds it to one
@@ -158,6 +190,26 @@ remain that documented scan-set-covered channel. PRE-EXISTING (unchanged by
 ``live_dirty_paths`` (the ``*.py``-scoped MF-4a trigger), so the root oracle
 runs — identical before/after the shadow.
 
+Paired-selection ordering re-check (#2024): the single-file pristine oracle is
+structurally blind to ordering-dependent trunk red (a failure needing a
+co-selected predecessor in the SAME pytest process — the #2021 shape). A node
+whose test FILE is untouched by the branch diff and which PASSes the
+single-file oracle is therefore re-run ONCE on pristine main together with the
+co-selected predecessors that preceded it in the gate run, in the SELECTOR's
+deterministic selection order (never junit document order — a collect-error
+testcase floats to the junit front under ``--continue-on-collection-errors``).
+A reproduction there strips as the non-blocking ``ordering_suspect`` class;
+every precondition miss, over-cap skip (``--max-paired-files`` refuses, never
+truncates), dropped branch-new file, order skew, residual scratch
+contamination at the paired re-probe (refused pre-spend), FLOOR-profile
+per-file oracle (R-G', #2019: the floor tree cannot certify a strip —
+refused pre-spend), and paired PASS
+keeps NEW (fail-closed), and a paired FAIL on a dirty non-scratch oracle
+keeps the MF-4c exit 2. ``--no-paired-pristine`` restores the pre-#2024
+classification.
+Residual blind class: collection-time contamination from files sorting AFTER
+the candidate still classifies NEW (invisible to any prefix run).
+
 Under ``--json``, EVERY compare exit path prints exactly one JSON object to
 stdout: exit 0/1 the classification result (``indeterminate: false``); exit 2
 an indeterminate payload (``indeterminate: true`` + ``reason`` + the
@@ -194,6 +246,16 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import IO, NamedTuple
+
+# Sibling-path load of the shared lock opener (#2324 D1): this file imports
+# zero explore_persona_space package code by design (#1022 pristine-run
+# discipline), so the helper lives in scripts/ and is loaded by explicit path
+# — see scripts/lock_utils.py module docstring.
+_LOCK_UTILS = Path(__file__).resolve().parent / "lock_utils.py"
+_spec = importlib.util.spec_from_file_location("eps_scripts_lock_utils", _LOCK_UTILS)
+assert _spec and _spec.loader  # house pattern (tests/test_step9c_baseline.py:61)
+lock_utils = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lock_utils)
 
 GENERATOR = "step9c_baseline.py v1"
 SCHEMA_VERSION = 1
@@ -253,6 +315,121 @@ FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
     }
 )
 
+# Whole-repo SCAN-style invariant nodes whose failure message is SOURCE-VERIFIED
+# to name every offender by repo-root-relative path (accumulate-then-assert shape).
+# For a member red on BOTH the gate run and pristine main, compare diffs the
+# extracted violation-path SETS instead of stripping on the node verdict (#2316;
+# extraction is row-ANCHORED as of #2319 — see extract_violation_paths).
+# Entry format: "<test file>::<test function name>" — the junit `name` is matched
+# with any parametrization suffix ("[...]") stripped. (A collect-error <error>
+# row can NEVER match: its junit `name` is the dotted module path, e.g.
+# "tests.test_no_dollar_budget_caps" — deliberate non-match, do not "fix".)
+# Hand-curated pinned literal, same curation rule as FILE_ANCHORED_SCAN_TESTS /
+# select_step9c_tests.py's GLOB_SCAN_TESTS; drift pin:
+# tests/test_step9c_baseline.py::test_violation_set_scan_nodes_live_tree_pin.
+# FAIL-CLOSED: a node absent here keeps today's node-grain verdict. Before adding
+# an entry, verify BY READING THE SOURCE that (a) the failure message lists each
+# offender as a repo-root-relative path token; (b) the scan population lives
+# entirely under top-level tracked dirs the scratch floor profile materializes
+# (scripts/, src/, tests/ — _scratch_cones floor = ls-tree minus SCRATCH_EXCLUDES),
+# so branch-vs-pristine extraction is population-symmetric; (c) if the node uses a
+# bare `assert` (not `raise AssertionError`), its rewritten introspection segment
+# is covered by the extraction sanitizers in extract_violation_paths (#2316 v2);
+# (d) EVERY offender row LEADS with the offender path — the path is the first
+# token on its row, after only leading whitespace, pytest's optional "E "
+# gutter, and an optional "- "/"* " bullet (extract_violation_paths matches
+# ANCHORED, #2319). A member whose rows put the path later (e.g.
+# "line 12 of scripts/foo.py: ...") yields ZERO matches and degrades loudly to
+# the node-grain verdict; a member with MIXED row grammar (some rows leading,
+# some not) would SILENTLY drop the non-leading rows and MUST NOT be
+# registered until extract_violation_paths grows a per-member row pattern.
+VIOLATION_SET_SCAN_NODES: frozenset[str] = frozenset(
+    {
+        "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints",
+        "tests/test_no_direct_task_path_construction.py::test_no_direct_task_path_construction_line_regex",
+        "tests/test_no_direct_task_path_construction.py::test_no_bare_name_imports_from_task_workflow",
+        "tests/test_no_pod_side_task_py_shellout.py::test_no_pod_side_task_py_shellout",
+        "tests/test_no_dollar_budget_caps.py::test_no_dollar_budget_cap_symbols_in_scripts",
+    }
+)
+
+# Violation-path token, ANCHORED at the row start (#2319): a repo-root-relative
+# path under a top-level tracked dir, ending in an extension, appearing at the
+# START of a violation row — after leading whitespace, pytest's optional "E "
+# element-text gutter, and an optional "- "/"* " bullet. Every
+# VIOLATION_SET_SCAN_NODES member's offender rows LEAD with the offender path
+# (registry curation criterion (d)); a path token appearing LATER on a row is
+# snippet or prose, never an offender. #2316 extracted every token per line,
+# so a branch-side snippet embedding a tracked-path token absent on pristine
+# manufactured a NEW-violation verdict naming a NON-offender (false BLOCK on
+# the gate that adjudicates every session's Step 9c — #1388 blast radius).
+# Grain is still the FILE: a `path:line` token extracts the path only (line
+# numbers drift under unrelated same-file edits and would manufacture false
+# NEW reds).
+_VIOLATION_ROW_RE = re.compile(
+    r"^[ \t]*(?:E[ \t]+)?(?:[-*][ \t]+)?"
+    r"((?:scripts|src|tests|configs|docs)/[\w./-]+\.[A-Za-z0-9_]+)"
+)
+
+# Display-only cap per scan_violation_diffs row list (#2316): bucketing always
+# operates on the full uncapped sets, so a pathological message can truncate a
+# row's lists but never change a verdict.
+_SCAN_DIFF_ROW_CAP = 50
+
+
+def extract_violation_paths(text: str) -> frozenset[str]:
+    """Extract the offender-path SET from a scan node's failure text (#2316, #2319).
+
+    Rows are matched ANCHORED at the line start (#2319): the offender path is
+    the FIRST thing on its row for every registered member (registry curation
+    criterion (d)), so a later token on the same row — a quoted source
+    SNIPPET, remediation prose — is never mistaken for an offender. #2316
+    scanned every token per line, which false-BLOCKED a branch that edited an
+    offending line in an ALREADY-red file such that the new snippet embedded a
+    tracked-path token absent on pristine.
+
+    Two sanitizers from #2316 are retained, both still load-bearing:
+
+    1. **Introspection-segment strip:** drop every line whose ``lstrip()``-ed
+       content starts with ``"assert "`` — pytest's rewritten-assert segment
+       (bare-``assert`` members only) always does, in BOTH the junit
+       ``message`` attribute and the element text; offender rows never do
+       (source-verified for all five members, #2319 §4 audit). Anchoring alone
+       already excludes that segment (it starts with ``assert``, not a path),
+       so the strip is now defense in depth for the introspection LINE itself
+       — in the ``message`` attribute and the element text alike. It does NOT
+       cover a WRAPPED saferepr's CONTINUATION line: this predicate only ever
+       matches an ``assert ``-leading line, and a continuation line begins
+       with a quote character or a bare fragment. That case is covered by two
+       OTHER mechanisms — the anchor (a quote-leading line matches no row
+       pattern) and the ``...`` filter below.
+    2. **Elision-token post-filter:** drop any matched token containing the
+       literal ``...`` — saferepr's elision marker; zero tracked paths contain
+       it, and a FUTURE such path would be invisible on BOTH sides
+       (fail-toward-strip, never a false block).
+
+    Symmetric prose (headers, remediation text) is no longer extracted at all,
+    which shrinks the ``pre_existing`` audit rows to genuine offenders. An
+    EMPTY result routes to the caller's loud parse-fail arm — never a silent
+    strip — and that arm is exactly where a FUTURE member whose rows do not
+    lead with the path lands (zero anchored matches ⇒ degrade to today's
+    node-grain verdict + escalation, not a silent offender drop). The one
+    residual: a member with MIXED row grammar would silently drop its
+    non-leading rows — curation criterion (d) forbids registering one.
+    """
+    out: set[str] = set()
+    for line in text.splitlines():
+        if line.lstrip().startswith("assert "):
+            continue
+        m = _VIOLATION_ROW_RE.match(line)
+        if m is None:
+            continue
+        token = m.group(1)
+        if "..." not in token:
+            out.add(token)
+    return frozenset(out)
+
+
 REQUIRED_LEDGER_KEYS: frozenset[str] = frozenset(
     {
         "schema_version",
@@ -295,6 +472,17 @@ class Node(NamedTuple):
     file: str
     classname: str
     name: str
+
+
+def _violation_setdiff_member(node: Node) -> bool:
+    """True when *node* is a ``VIOLATION_SET_SCAN_NODES`` member (#2316).
+
+    The junit ``name`` is matched with any parametrization suffix ("[...]")
+    stripped. A collect-error ``<error>`` row can never match: its junit
+    ``name`` is the dotted module path (deliberate non-match — see the
+    registry's curation comment).
+    """
+    return f"{node.file}::{node.name.split('[', 1)[0]}" in VIOLATION_SET_SCAN_NODES
 
 
 class ToolMissingError(RuntimeError):
@@ -562,6 +750,25 @@ def _gate_tmp_root_str() -> str | None:
     return None if root is None else str(root)
 
 
+def _killpg_bounded(proc: subprocess.Popen) -> None:
+    """TERM the child's process group, wait ~10 s, KILL survivors; reap the child.
+
+    Shared straggler-reap ladder for the ``start_new_session=True`` pytest
+    children (``run_pytest`` + ``_mapped_baseline_pytest``): a bare kill of the
+    direct child orphans its own pytest workers, so the group is signalled.
+    """
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline and proc.poll() is None:
+            time.sleep(0.2)
+        if proc.poll() is None:
+            os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    proc.wait()
+
+
 def run_pytest(
     files: Iterable[str],
     cwd: Path,
@@ -628,16 +835,7 @@ def run_pytest(
             return proc.wait(timeout=timeout_s)
         except subprocess.TimeoutExpired:
             _log(f"pytest exceeded {timeout_s}s — killing the process group")
-            try:
-                os.killpg(proc.pid, signal.SIGTERM)
-                deadline = time.monotonic() + 10.0
-                while time.monotonic() < deadline and proc.poll() is None:
-                    time.sleep(0.2)
-                if proc.poll() is None:
-                    os.killpg(proc.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            proc.wait()
+            _killpg_bounded(proc)
             raise
     finally:
         if basetemp is not None:
@@ -666,6 +864,25 @@ def git_sha_known(root: Path, sha: str) -> bool:
         text=True,
     )
     return proc.returncode == 0
+
+
+def git_merge_base(base: str, wt: Path) -> str | None:
+    """Merge base of *base* and HEAD in *wt* (the three-dot diff base, #2293).
+
+    rc 0 -> the 40-hex sha; rc 1 -> None (no merge base: unrelated histories);
+    any other rc raises CalledProcessError (bad ref / not a git tree).
+    """
+    proc = subprocess.run(
+        ["git", "merge-base", base, "HEAD"],
+        cwd=str(wt),
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return proc.stdout.strip()
+    if proc.returncode == 1:
+        return None
+    raise subprocess.CalledProcessError(proc.returncode, proc.args, proc.stdout, proc.stderr)
 
 
 def code_commits_since(root: Path, sha: str) -> int:
@@ -750,7 +967,7 @@ class _ScratchTree:
 
     parent: Path  # the mkdtemp dir (rmtree target)
     path: Path  # the worktree itself: parent / f"tree-{os.getpid()}"
-    sha: str  # the detached HEAD sha (== root HEAD at creation)
+    sha: str  # detached HEAD sha (== the caller-pinned base: #2293 oracle / #2296 landing)
 
 
 def _git_bounded(argv: list[str], cwd: Path, timeout_s: float) -> None:
@@ -768,12 +985,19 @@ def _git_bounded(argv: list[str], cwd: Path, timeout_s: float) -> None:
 def _work_root_sparse_cones(wt: Path) -> list[str] | None:
     """The invoking work root's ACTUAL sparse profile via ``git sparse-checkout list``.
 
-    None when the work root is not sparse — the caller treats None as
-    fallback-INELIGIBLE (R-G: a non-sparse gate layout cannot be
-    superset-matched by a sparse scratch without a full multi-GB checkout).
-    On git 2.34 a non-sparse tree exits 0 with EMPTY stdout (warning on
-    stderr), so an empty list is folded into None too; a genuinely failing
-    command (non-git dir, ancient git) also maps to None.
+    None when the work root is not sparse. R-G's original impossibility
+    stands — a non-sparse gate layout cannot be superset-matched by a sparse
+    scratch without a full multi-GB checkout — but since #2019 (R-G') the
+    caller no longer treats None as unconditionally fallback-INELIGIBLE: a
+    DIRTY non-sparse work root arms the scratch oracle with the
+    ``_scratch_cones`` FLOOR profile (``wt_cones=[]``) under ASYMMETRIC
+    verdicts — a node GREEN at pristine HEAD classifies NEW (rc 1,
+    ``pristine_oracle: scratch-worktree-floor``); a node RED there REFUSES
+    the strip (exit 2), because the non-superset floor tree cannot certify
+    "pre-existing". A CLEAN non-sparse root keeps the trustworthy root
+    oracle unchanged. On git 2.34 a non-sparse tree exits 0 with EMPTY
+    stdout (warning on stderr), so an empty list is folded into None too; a
+    genuinely failing command (non-git dir, ancient git) also maps to None.
     """
     try:
         lines = [
@@ -786,62 +1010,75 @@ def _work_root_sparse_cones(wt: Path) -> list[str] | None:
     return lines or None
 
 
-def _scratch_cones(root: Path, wt_cones: list[str]) -> list[str]:
+def _scratch_cones(root: Path, wt_cones: list[str], sha: str | None = None) -> list[str]:
     """Scratch sparse profile = SUPERSET of the gate layout (R-G).
 
     The union of: the work root's actual ``sparse-checkout list`` (per-issue +
     manually-added cones included — the legs the registry alone omits), the
-    HEAD-PINNED ``tests/sparse_cones.txt`` (``git show HEAD:...`` — never the
+    base-PINNED ``tests/sparse_cones.txt`` (``git show <sha>:...`` — never the
     live working-tree file, which is itself decontaminable-classified dirt),
-    and every top-level tracked dir minus SCRATCH_EXCLUDES as the floor.
+    and every top-level tracked dir minus SCRATCH_EXCLUDES as the floor. Both
+    git reads run at *sha* (default ``HEAD``) so the cone profile and the
+    checked-out tree read the SAME commit — a caller pinning an
+    ``origin/main`` base while local ``main`` lags must not derive the
+    profile from the lagging tip (#2296 §5.1).
     """
+    ref = sha or "HEAD"
     dirs = [
         d
-        for d in _git_out(["ls-tree", "--name-only", "-d", "HEAD"], root).splitlines()
+        for d in _git_out(["ls-tree", "--name-only", "-d", ref], root).splitlines()
         if d and d not in SCRATCH_EXCLUDES
     ]
     registry_lines: list[str] = []
-    # Registry absent at HEAD: the floor still applies, no raise.
+    # Registry absent at the base: the floor still applies, no raise.
     with contextlib.suppress(subprocess.CalledProcessError):
         registry_lines = [
             ln.strip()
-            for ln in _git_out(["show", "HEAD:tests/sparse_cones.txt"], root).splitlines()
+            for ln in _git_out(["show", f"{ref}:tests/sparse_cones.txt"], root).splitlines()
             if ln.strip() and not ln.strip().startswith("#")
         ]
     return sorted(set(dirs) | set(registry_lines) | set(wt_cones))
 
 
-def create_scratch_worktree(root: Path, wt_cones: list[str], timeout_s: float) -> _ScratchTree:
-    """Materialize a detached SPARSE scratch tree at *root*'s HEAD under a fresh tmp dir.
+def create_scratch_worktree(
+    root: Path, wt_cones: list[str], timeout_s: float, *, base_sha: str
+) -> _ScratchTree:
+    """Materialize a detached SPARSE scratch tree at *base_sha* under a fresh tmp dir.
+
+    *base_sha* is the caller-pinned base — the resolved pristine-oracle base
+    (merge-base of the diff base and the work root's HEAD, #2293) for
+    ``compare``, or the resolved LANDING base for ``mapped-baseline`` (#2296).
 
     Sequence mirrors ``new_worktree.sh`` ``_sparse_setup`` (``init --cone``
     FIRST, then ``set``, then populate from ``--no-checkout`` limbo). Profile =
-    ``_scratch_cones(root, wt_cones)`` — a superset of the gate layout (R-G).
-    Any failure tears down partial state and re-raises (the caller maps it to
-    ``_Indeterminate`` — or, on a CLEAN root, degrades to the root oracle,
-    #1408). Bounded per git command by *timeout_s*. The ~1 GB tree lands under
-    ``gate_tmp_root()`` when routing resolves (#1408; default ``/tmp`` else).
+    ``_scratch_cones(root, wt_cones, base_sha)`` — a superset of the gate layout
+    (R-G), read at the SAME commit the tree checks out, so a caller pinning an
+    ``origin/main`` base while local ``main`` lags never derives the profile
+    from the lagging tip (#2296 §5.1). Any failure tears down partial state and
+    re-raises (the caller maps it to ``_Indeterminate`` — or, on a CLEAN root,
+    degrades to the root oracle, #1408). Bounded per git command by
+    *timeout_s*. The ~1 GB tree lands under ``gate_tmp_root()`` when routing
+    resolves (#1408; default ``/tmp`` else).
     """
-    sha = git_head(root)
     parent = Path(tempfile.mkdtemp(prefix="step9c-scratch-", dir=_gate_tmp_dir_arg()))
     tree = parent / f"tree-{os.getpid()}"
     try:
         _git_bounded(
-            ["worktree", "add", "--detach", "--no-checkout", str(tree), sha],
+            ["worktree", "add", "--detach", "--no-checkout", str(tree), base_sha],
             cwd=root,
             timeout_s=timeout_s,
         )
         _git_bounded(["sparse-checkout", "init", "--cone"], cwd=tree, timeout_s=timeout_s)
         _git_bounded(
-            ["sparse-checkout", "set", *_scratch_cones(root, wt_cones)],
+            ["sparse-checkout", "set", *_scratch_cones(root, wt_cones, base_sha)],
             cwd=tree,
             timeout_s=timeout_s,
         )
-        _git_bounded(["checkout", sha], cwd=tree, timeout_s=timeout_s)
+        _git_bounded(["checkout", base_sha], cwd=tree, timeout_s=timeout_s)
     except BaseException:
-        remove_scratch_worktree(root, _ScratchTree(parent=parent, path=tree, sha=sha))
+        remove_scratch_worktree(root, _ScratchTree(parent=parent, path=tree, sha=base_sha))
         raise
-    return _ScratchTree(parent=parent, path=tree, sha=sha)
+    return _ScratchTree(parent=parent, path=tree, sha=base_sha)
 
 
 def remove_scratch_worktree(root: Path, scratch: _ScratchTree) -> None:
@@ -1030,6 +1267,80 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
     return failing, summary
 
 
+def parse_junit_ran_files(path: Path) -> set[str]:
+    """The set of test-FILE paths the run junit shows ran — MEMBERSHIP only (#2024).
+
+    Junit DOCUMENT ORDER is deliberately unused: under the gate's own
+    ``--continue-on-collection-errors`` a collect-error testcase floats to the
+    FRONT of the junit regardless of its argv position (demonstrated on pytest
+    9.0.2 — plan #2024 B3), so document order is NOT execution order; the
+    paired-prefix ORDER comes from the selector's deterministic selection
+    instead. Mirrors ``parse_junit``'s per-case ``file`` derivation (incl. the
+    #1746 collect-error name fallback) WITHOUT modifying ``parse_junit`` — its
+    ``summary`` dict is persisted verbatim into the ledger (``cmd_refresh``),
+    so file paths must not enter it. A non-failing testcase without a ``file``
+    attribute is simply not a member (fail-closed: absence from the ran set
+    can only SHRINK a paired prefix, and a shorter prefix can only keep NEW).
+    Missing / unparseable junit raises JunitParseError like ``parse_junit``.
+    """
+    if not path.exists():
+        raise JunitParseError(f"junitxml missing at {path} (ran-files read, MF-1a)")
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError as exc:
+        raise JunitParseError(f"junitxml unparseable at {path}: {exc}") from exc
+    ran: set[str] = set()
+    for tc in tree.getroot().iter("testcase"):
+        file_attr = tc.get("file")
+        if file_attr:
+            ran.add(file_attr)
+            continue
+        name_attr = tc.get("name") or ""
+        if tc.find("error") is not None and name_attr.endswith(".py"):
+            ran.add(name_attr)  # collect-error fallback shape (#1746)
+    return ran
+
+
+def parse_junit_failure_texts(path: Path) -> dict[Node, str]:
+    """Per-failing-node concatenated ``failure``/``error`` message + text (#2316).
+
+    Mirrors ``parse_junit``'s per-case ``file``/Node derivation (incl. the
+    #1746 collect-error name fallback) WITHOUT modifying ``parse_junit`` —
+    its ``summary`` is persisted verbatim into the ledger. Value = the
+    concatenation of each ``failure``/``error`` child's ``message`` attribute
+    + element text (both carry the full accumulated violation list under the
+    gate's ``--tb=no`` xunit1 flags — #2316 plan A1 probe). A failing case
+    with neither message nor text maps to ``""`` (the consumer's loud
+    parse-fail arm handles it); a failing case whose Node is underivable is
+    simply not a member (``parse_junit`` on the same file already raises for
+    that shape — both call sites gate on it first, so no new exit class in
+    practice). A missing / unparseable FILE raises JunitParseError like its
+    siblings.
+    """
+    if not path.exists():
+        raise JunitParseError(f"junitxml missing at {path} (failure-texts read, MF-1a)")
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError as exc:
+        raise JunitParseError(f"junitxml unparseable at {path}: {exc}") from exc
+    texts: dict[Node, str] = {}
+    for tc in tree.getroot().iter("testcase"):
+        children = [c for c in (tc.find("failure"), tc.find("error")) if c is not None]
+        if not children:
+            continue
+        file_attr = tc.get("file")
+        name_attr = tc.get("name") or ""
+        if file_attr:
+            node = Node(file=file_attr, classname=tc.get("classname") or "", name=name_attr)
+        elif tc.find("error") is not None and name_attr.endswith(".py"):
+            node = Node(file=name_attr, classname="", name=name_attr)  # #1746 fallback
+        else:
+            continue  # underivable Node — parse_junit raises for this shape upstream
+        parts = [p for c in children for p in ((c.get("message") or ""), (c.text or "")) if p]
+        texts[node] = "\n".join(parts)
+    return texts
+
+
 # --- Ledger IO -------------------------------------------------------------------
 
 
@@ -1067,7 +1378,7 @@ def try_load_ledger(root: Path) -> dict | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         _log(f"ledger unreadable/invalid at {path}: {exc}")
         return None
     if (
@@ -1139,9 +1450,23 @@ def acquire_refresh_lock(lock_file: Path) -> IO[bytes] | None:
 
     The returned file object must stay referenced for the lock's lifetime
     (process exit releases it).
+
+    Fail posture (#2324): fail-CLOSED preserved. A rejected lock PATH
+    (symlink/FIFO/non-regular) raises ``lock_utils.LockPathError`` out of this
+    function — ``None`` stays reserved for healthy held-elsewhere contention
+    (a planted FIFO must not masquerade as "another refresh holds the lock");
+    ``cmd_refresh`` converts the raise to the documented rc-2 no-ledger-write
+    class.
     """
     lock_file.parent.mkdir(parents=True, exist_ok=True)
-    fh = open(lock_file, "wb")  # noqa: SIM115 — the flock must outlive this function
+    # fd assigned FIRST so it is closed if os.fdopen itself raises
+    # (EMFILE-class) — a one-expression composition would leak it (#2324 D2).
+    fd = lock_utils.safe_open_lockfile(lock_file)
+    try:
+        fh = os.fdopen(fd, "wb")  # the flock must outlive this function
+    except BaseException:
+        os.close(fd)
+        raise
     try:
         fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
@@ -1158,7 +1483,13 @@ def present_on_disk(files: Iterable[str], root: Path) -> list[str]:
 def cmd_refresh(args: argparse.Namespace) -> int:
     """Run the Step 9c workflow-invariant universe on main; write the ledger atomically."""
     root = Path(args.repo_root).resolve() if args.repo_root else main_repo_root()
-    lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
+    try:
+        lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
+    except lock_utils.LockPathError as exc:
+        # #2324: rc 2 is the documented no-ledger-write error class; rc 0 is
+        # reserved for written-or-held (fail-CLOSED: no unlocked refresh).
+        _log(f"refresh lock path rejected ({exc.reason}): {exc.lock_path} — NO ledger write")
+        return 2
     if lock is None:
         _log("another refresh holds the lock — single-flight no-op")
         return 0
@@ -1275,15 +1606,46 @@ def cmd_status(args: argparse.Namespace) -> int:
 # --- compare ---------------------------------------------------------------------
 
 
-def run_single_file_pristine(
-    test_file: str,
+def _pristine_files_label(files: list[str]) -> str:
+    """Human label for a pristine file list: the bare path for ONE file (the
+    pre-#2024 single-file message shape, byte-for-byte), else the first 5
+    entries + a count."""
+    if len(files) == 1:
+        return files[0]
+    head = ", ".join(files[:5])
+    suffix = ", ..." if len(files) > 5 else ""
+    return f"{len(files)} files [{head}{suffix}]"
+
+
+class PristineRun(NamedTuple):
+    """A pristine-oracle pytest run's outcome (#2316).
+
+    ``failing`` keeps the pre-#2316 set-of-Nodes semantics; ``failure_texts``
+    carries each failing node's concatenated junit failure/error message +
+    text (extracted BEFORE the tmp junit is deleted), feeding the
+    violation-set diff for ``VIOLATION_SET_SCAN_NODES`` members.
+    """
+
+    failing: set[Node]
+    failure_texts: dict[Node, str]
+
+
+def run_pristine_selection(
+    files: list[str],
     cwd: Path,
     timeout_s: float,
     *,
     venv_root: Path | None = None,
     pythonpath: str | None = None,
-) -> set[Node]:
-    """Run ONE test file at the pristine oracle *cwd*; return its failing nodes.
+) -> PristineRun:
+    """Run *files* in ONE pytest process at the pristine oracle *cwd* -> PristineRun.
+
+    Generalization of the single-file oracle (#2024): the paired-selection
+    ordering re-check passes the candidate PLUS its co-selected predecessors
+    (in the selector's deterministic order) so a pre-existing cross-module
+    import-ordering interaction can reproduce on pristine main — invisible to
+    any single-file run by construction. ``run_pytest`` already takes a file
+    LIST, so the subprocess shape is unchanged.
 
     Executes the TARGET root's OWN venv interpreter (``resolve_root_python``)
     so the oracle runs MAIN's library code — never the invoking worktree's,
@@ -1305,6 +1667,7 @@ def run_single_file_pristine(
         python_exe = resolve_root_python(venv_root if venv_root is not None else cwd)
     except ToolMissingError as exc:
         raise PristineRunError(str(exc)) from exc
+    label = _pristine_files_label(files)
     fd, tmp = tempfile.mkstemp(
         prefix="step9c-pristine-junit-", suffix=".xml", dir=_gate_tmp_dir_arg()
     )
@@ -1314,7 +1677,7 @@ def run_single_file_pristine(
         tmp_path.unlink(missing_ok=True)  # pytest must create it fresh (MF-1a parity)
         try:
             rc = run_pytest(
-                files=[test_file],
+                files=list(files),
                 cwd=cwd,
                 timeout_s=timeout_s,
                 junit_path=tmp_path,
@@ -1322,18 +1685,40 @@ def run_single_file_pristine(
                 pythonpath=pythonpath,
             )
         except subprocess.TimeoutExpired as exc:
-            raise PristineRunError(f"pristine run of {test_file} timed out ({timeout_s}s)") from exc
+            raise PristineRunError(f"pristine run of {label} timed out ({timeout_s}s)") from exc
         if rc not in (0, 1):
-            raise PristineRunError(f"pristine run of {test_file} aborted with rc={rc}")
+            raise PristineRunError(f"pristine run of {label} aborted with rc={rc}")
         try:
             failing, summary = parse_junit(tmp_path)
+            failure_texts = parse_junit_failure_texts(tmp_path)  # #2316: before deletion
         except JunitParseError as exc:
-            raise PristineRunError(f"pristine junit unusable for {test_file}: {exc}") from exc
+            raise PristineRunError(f"pristine junit unusable for {label}: {exc}") from exc
         if summary["tests"] == 0:
-            raise PristineRunError(f"pristine run of {test_file} collected 0 tests")
-        return set(failing)
+            raise PristineRunError(f"pristine run of {label} collected 0 tests")
+        return PristineRun(failing=set(failing), failure_texts=failure_texts)
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+def run_single_file_pristine(
+    test_file: str,
+    cwd: Path,
+    timeout_s: float,
+    *,
+    venv_root: Path | None = None,
+    pythonpath: str | None = None,
+) -> PristineRun:
+    """Run ONE test file at the pristine oracle *cwd* -> PristineRun (#2316).
+
+    Thin wrapper over :func:`run_pristine_selection` with ``[test_file]``
+    (#2024) — name, signature and error semantics preserved (rc not in
+    {0, 1} / timeout / zero-collected raise PristineRunError; the #1022
+    interpreter rule and the #1251 src-shadow trust split are inherited from
+    the generalized runner, passed through — never re-derived).
+    """
+    return run_pristine_selection(
+        [test_file], cwd, timeout_s, venv_root=venv_root, pythonpath=pythonpath
+    )
 
 
 # --- pristine-timeout sizing (#1129). -----------------------------------------
@@ -1365,6 +1750,41 @@ def derive_pristine_timeout_s(sel: object, test_file: str) -> float:
     slow = getattr(sel, "SLOW_TESTS", None) or {}
     surcharge = float(slow.get(test_file, 0))
     return max(base + per_file + PRISTINE_SLOW_TIMEOUT_MULT * surcharge, PRISTINE_TIMEOUT_FLOOR_S)
+
+
+def derive_paired_timeout_s(sel: object, files: list[str]) -> float:
+    """Paired-run bound sized against the FULL prefix width (#2024 §4.1(c); B1).
+
+    Prefers the selector's own ``recommended_timeout_s(files, dispersion=2.0)``
+    (ONE runtime table, #1046); a version-skewed worktree selector copy that
+    lacks it degrades to ``BASE + PER_FILE*len(files) + 2x sum(surcharges)`` —
+    the same ``getattr`` discipline ``derive_pristine_timeout_s`` uses. Both
+    branches floor at ``PRISTINE_TIMEOUT_FLOOR_S`` (generous bias: an
+    oversized bound only delays a genuinely wedged run; an undersized one
+    guarantees a wasted compare + rerun). Three prefix widths derive three
+    different ceilings and only the last governs anything (plan §3 table, v5):
+    the REALIZED #2021 production prefix (~62 of 171 files — predecessor at
+    index 12, candidate at 61 — -> ~3,960 s, no slow surcharge since
+    ``tests/test_workflow_lint.py`` sorts after the candidate); fixture 1's
+    CONSTRUCTED superset stress prefix (161 files -> 9,900 s, not a production
+    width); and the ``--max-paired-files``-cap WORST CASE (200 files with the
+    slow file present -> 14,640 s), which is the only one the Step 9c outer
+    wedge bound (SKILL.md 1d) is sized to dominate. Large by design — the
+    alternative, a cap that drops the contaminating predecessor, defeats the
+    fix.
+    """
+    rec = getattr(sel, "recommended_timeout_s", None)
+    if callable(rec):
+        return max(float(rec(list(files), dispersion=2.0)), PRISTINE_TIMEOUT_FLOOR_S)
+    base = float(getattr(sel, "TIMEOUT_BASE_S", 0))
+    per_file = float(getattr(sel, "TIMEOUT_PER_FILE_S", 0))
+    slow = getattr(sel, "SLOW_TESTS", None) or {}
+    total = (
+        base
+        + per_file * len(files)
+        + PRISTINE_SLOW_TIMEOUT_MULT * sum(float(slow.get(f, 0)) for f in files)
+    )
+    return max(total, PRISTINE_TIMEOUT_FLOOR_S)
 
 
 def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
@@ -1450,10 +1870,40 @@ class _CompareCtx:
     live_dirty_paths: list[str] = field(default_factory=list)
     pristine_files_run: list[str] = field(default_factory=list)
     pristine_oracle: str = "root"  # "scratch-worktree" once the scratch oracle arms
-    # (#1077; the DEFAULT whenever eligible since #1408)
+    # (#1077; the DEFAULT whenever eligible since #1408); "scratch-worktree-floor"
+    # when a DIRTY non-sparse work root armed the floor-profile scratch (R-G', #2019)
     scratch_sha: str | None = None
+    # --- #2293 oracle-base resolution (merge-base of the diff base and wt HEAD) ----
+    base_ref: str = ""  # the REF the selection used (explicit --base verbatim, or the
+    # selector-resolved ref, or the pre-#1289 "main" fallback)
+    oracle_base_sha: str | None = None  # resolved ONCE by _resolve_oracle_base; the
+    # per-file loop never re-shells
+    root_oracle_base_skew: bool | None = None  # criterion-5 residual provenance (#2293):
+    # None = no root-tree oracle execution this compare; set at the FIRST root-venue run
     scratch_src_shadow: bool = False  # True once the #1251 PYTHONPATH shadow is armed + probed
     scratch_degraded: bool = False  # True on the #1408 clean-root scratch-failure fallback
+    # --- #2024 paired-selection ordering re-check ---------------------------------
+    selected_order: list[str] = field(default_factory=list)  # the selector's deterministic argv
+    paired_candidates: list[Node] = field(default_factory=list)
+    ordering_suspect: list[dict] = field(default_factory=list)  # non-blocking strips (#2024)
+    paired_files_run: list[str] = field(default_factory=list)
+    paired_dropped_files: list[str] = field(default_factory=list)  # absent-on-main prefix drops
+    paired_order_skew: list[str] = field(default_factory=list)  # junit files unplaceable in order
+    paired_skipped: list[dict] = field(default_factory=list)  # {node_id, reason} audit rows
+    paired_oracle: str = "none"  # "scratch-worktree" | "scratch-worktree-floor" | "root" | "none"
+    # (the floor value is ARMED-only provenance: every floor-oracle candidate is
+    # refused to NEW pre-spend, so no paired run ever executes on it — R-G', #2019)
+    # --- #2302 base-identity (content test) --------------------------------------
+    base: str = ""  # the RESOLVED diff base ctx.touched was derived from (#2302 —
+    # _selector_context previously discarded it; the base-identity derivation must
+    # use the SAME base, never a re-resolution that could drift)
+    base_identical: set[str] = field(default_factory=set)  # touched paths whose HEAD
+    # blob == base-TIP blob (Step 5a sibling-sync class); derived INDEPENDENTLY of
+    # the worktree selector's version (§3.3 skew — an in-flight branch carries the
+    # pre-#2302 compute_touched), subtracted from #2024 precondition 1 only
+    # --- #2316 violation-set diff for registered whole-repo scan nodes -------------
+    run_failure_texts: dict[Node, str] = field(default_factory=dict)  # gate-run side
+    scan_violation_diffs: list[dict] = field(default_factory=list)  # per-node audit rows
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1466,17 +1916,80 @@ def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
     return wt, root
 
 
-def _load_run_junit(junitxml: Path) -> list[Node]:
-    """Parse the gate run's junit; missing/unparseable/zero-case -> indeterminate."""
+def _load_run_junit(junitxml: Path) -> tuple[list[Node], set[str]]:
+    """Parse the gate run's junit -> (failing nodes, ran-files membership set).
+
+    Missing/unparseable/zero-case -> indeterminate. The ran-files set feeds
+    the #2024 paired-prefix construction (membership ONLY — order comes from
+    the selector's deterministic selection, never junit document order; B3).
+    """
     try:
         run_failing, summary = parse_junit(junitxml)
+        ran_files = parse_junit_ran_files(junitxml)
     except JunitParseError as exc:
         raise _Indeterminate(str(exc)) from exc
     if summary["tests"] == 0:
         raise _Indeterminate(
             "junit has ZERO testcases — echoes the no-tests-ran FAIL guard; refusing"
         )
-    return run_failing
+    return run_failing, ran_files
+
+
+def _base_identical_files(base: str, touched: list[str], wt: Path) -> list[str]:
+    """*touched* paths whose content at HEAD equals the *base* TIP content (#2302).
+
+    Derived INDEPENDENTLY of the worktree selector's version: the compare loads
+    the WORKTREE's selector (deliberate version skew, #1022 §3.3), so a branch
+    cut before #2302 carries the OLD ``compute_touched`` and its ``touched``
+    list still contains Step 5a sibling-sync copies of main's own files. Same
+    recipe as the selector's filter: candidates = ``touched`` minus the two-dot
+    ``git diff --name-only <base> HEAD``; each candidate excluded ONLY on
+    verified blob-OID equality of ``HEAD:<p>`` vs ``<base>:<p>`` (one batched
+    ``git cat-file --batch-check``; response rows are positional). Any per-path
+    resolution failure keeps that path branch-touched; raises
+    ``CalledProcessError`` on a git command failure — the caller degrades to
+    the EMPTY set plus a ``warns`` row, NEVER ``_Indeterminate`` (an empty set
+    degrades exactly to pre-#2302 behavior: everything stays branch-touched,
+    blocking — and the existing tmp-repo compare fixtures carry no usable git
+    base, so an exit-2 here would break every working compare).
+    """
+    if not touched:
+        return []
+    two = subprocess.run(
+        ["git", "diff", "--name-only", base, "HEAD"],
+        cwd=str(wt),
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    two_dot = {line.strip() for line in two.splitlines() if line.strip()}
+    candidates = [p for p in touched if p not in two_dot]
+    if not candidates:
+        return []
+    specs = [f"HEAD:{p}" for p in candidates] + [f"{base}:{p}" for p in candidates]
+    proc = subprocess.run(
+        ["git", "cat-file", "--batch-check"],
+        cwd=str(wt),
+        input="".join(s + "\n" for s in specs),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    lines = proc.stdout.splitlines()
+    if len(lines) != len(specs):
+        return []  # rows unattributable -> nothing verifiable -> nothing excluded
+    oids: dict[str, str] = {}
+    for spec, line in zip(specs, lines, strict=True):
+        parts = line.split()
+        if len(parts) == 3 and re.fullmatch(r"[0-9a-f]{40}(?:[0-9a-f]{24})?", parts[0]):
+            oids[spec] = parts[0]
+    identical: list[str] = []
+    for p in candidates:
+        head_oid = oids.get(f"HEAD:{p}")
+        base_oid = oids.get(f"{base}:{p}")
+        if head_oid is not None and base_oid is not None and head_oid == base_oid:
+            identical.append(p)
+    return identical
 
 
 def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
@@ -1498,13 +2011,42 @@ def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
                 else "main"
             )
         touched = sel.compute_touched(base, wt)
-        _tests, _untested, reasons = sel.select_tests_with_reasons(touched, wt)
+        selected, _untested, reasons = sel.select_tests_with_reasons(touched, wt)
     except (FileNotFoundError, subprocess.CalledProcessError, AttributeError) as exc:
         raise _Indeterminate(f"selector load / touched-diff failed at {wt}: {exc}") from exc
     diff_linked = {t for t, rs in reasons.items() if any(r != "invariant" for r in rs)} | {
         f for f in touched if f.startswith("tests/")
     }
-    return _CompareCtx(sel=sel, touched=touched, diff_linked=diff_linked, work_root=wt)
+    # #2302: derive the base-identical set in the COMPARE, from the SAME
+    # resolved base ``touched`` was derived from. Own try block — a git error
+    # here degrades to the empty set + a warns row (fail-closed: everything
+    # stays branch-touched, blocking), NEVER the surrounding _Indeterminate.
+    base_identical: list[str] = []
+    base_identity_warn: str | None = None
+    try:
+        base_identical = _base_identical_files(base, touched, wt)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        base_identity_warn = (
+            f"BASE-IDENTITY WARN: derivation failed at {wt} ({exc}); treating every "
+            "touched path as branch-authored (fail-closed, #2302)"
+        )
+    # ``selected`` is the selector's sorted, deterministic selection — the list
+    # the gate passed as pytest argv. It is the ONLY order source for the #2024
+    # paired prefix (junit document order is NOT execution order under
+    # ``--continue-on-collection-errors``; B3).
+    ctx = _CompareCtx(
+        sel=sel,
+        touched=touched,
+        diff_linked=diff_linked,
+        work_root=wt,
+        selected_order=list(selected),
+        base=base,
+        base_identical=set(base_identical),
+        base_ref=base,
+    )
+    if base_identity_warn is not None:
+        ctx.warns.append(base_identity_warn)
+    return ctx
 
 
 def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
@@ -1575,7 +2117,21 @@ def _bucket_run_failures(
         if not lv.strippable:
             ctx.pristine_bucket.append(node)
         elif node in lv.known_red:
-            if node.file in ctx.diff_linked or node.file in lv.changed_tests:  # MF-3 conjunct
+            if (
+                node.file in ctx.diff_linked
+                or node.file in lv.changed_tests  # MF-3 conjunct
+                # #2316: a registered scan node's violation-set diff needs the
+                # PRISTINE violation list, which only a pristine run can produce
+                # (the ledger stores node ids, never violation lists) — without
+                # this disjunct the trio class blind-strips under a fresh clean
+                # ledger and the gap survives. Fail-closed direction (more
+                # pristine verification, never less); fires only while a
+                # registered node is red in the gate run. Compares invoked
+                # WITHOUT --run-pristine now exit 2 (needs-pristine) for that
+                # shape instead of blind-strip rc 0 — fail-closed by design;
+                # both SKILL gate invocations always pass --run-pristine.
+                or _violation_setdiff_member(node)
+            ):
                 ctx.pristine_bucket.append(node)  # R5 — never blind-strip
             else:
                 _strip_node(ctx, node, via="ledger")
@@ -1591,6 +2147,8 @@ def _arm_src_shadow(
     scratch: _ScratchTree,
     contaminating: list[str],
     args: argparse.Namespace,
+    *,
+    floored: bool = False,
 ) -> None:
     """Run the once-per-compare #1251 shadow probe + record scratch-oracle provenance.
 
@@ -1602,7 +2160,11 @@ def _arm_src_shadow(
     to exit 2 on a DIRTY root, or degrades to the root oracle on a CLEAN one,
     #1408 — a verdict never rests on an unverified shadow). Under
     ``--no-src-shadow`` no probe runs (the contamination probe was fully clean
-    by eligibility there). WARN discipline (#1408): the SCRATCH-ORACLE WARN
+    by eligibility there). ``floored=True`` (R-G', #2019 — a DIRTY non-sparse
+    work root armed the ``_scratch_cones`` FLOOR profile) records
+    ``pristine_oracle: scratch-worktree-floor`` so the caller's asymmetric
+    verdict rule (green -> NEW; red -> strip refused) is auditable in the
+    JSON. WARN discipline (#1408): the SCRATCH-ORACLE WARN
     fires ONLY when root dirt was actually neutralized (``live_dirty_paths``
     non-empty) — on a clean root the scratch is the NORMAL path and provenance
     rides the JSON fields (``pristine_oracle``/``scratch_sha``/
@@ -1622,20 +2184,25 @@ def _arm_src_shadow(
                 warns=ctx.warns,
             ) from exc
     ctx.scratch_src_shadow = not args.no_src_shadow
-    ctx.pristine_oracle = "scratch-worktree"
+    ctx.pristine_oracle = "scratch-worktree-floor" if floored else "scratch-worktree"
     ctx.scratch_sha = scratch.sha
     if not ctx.live_dirty_paths:
         # #1408 scratch-by-default: on a CLEAN root the scratch is the normal
         # path — no dirt was neutralized, so a WARN would be pure noise.
         return
+    profile = (
+        "detached FLOOR-profile scratch worktree (non-sparse work root, R-G': "
+        "green resolves NEW, red refuses the strip)"
+        if floored
+        else "detached sparse scratch worktree"
+    )
     if args.no_src_shadow:
         ctx.warns.append(
             f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]} "
-            f"(non-contaminating); pristine oracle re-rooted to a detached "
-            f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
+            f"(non-contaminating); pristine oracle re-rooted to a "
+            f"{profile} at {scratch.sha[:12]} (root venv interpreter; "
             "contamination probe src//pyproject.toml/uv.lock was clean; "
-            "non-file-anchored scan-set nodes and non-sparse work roots stay "
-            "indeterminate)"
+            "non-file-anchored scan-set nodes stay indeterminate)"
         )
     else:
         src_dirt = [p for p in contaminating if p.startswith("src/")]
@@ -1643,10 +2210,67 @@ def _arm_src_shadow(
             f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]}; "
             f"src-dirt {src_dirt[:20] or 'none'} "
             f"neutralized via PYTHONPATH=<scratch>/src (shadow probe verified); "
-            f"pristine oracle re-rooted to a detached sparse scratch worktree at "
+            f"pristine oracle re-rooted to a {profile} at "
             f"{scratch.sha[:12]} (root venv interpreter; residual probe "
             "pyproject.toml/uv.lock/out-of-package-src was clean; non-file-anchored "
-            "scan-set nodes and non-sparse work roots stay indeterminate)"
+            "scan-set nodes stay indeterminate)"
+        )
+
+
+def _resolve_oracle_base(ctx: _CompareCtx, root: Path) -> None:
+    """Resolve + cache the pristine-oracle cut: merge-base(base_ref, work-root HEAD) (#2293)."""
+    try:
+        sha = git_merge_base(ctx.base_ref, ctx.work_root)
+    except subprocess.CalledProcessError as exc:
+        raise _Indeterminate(
+            f"oracle base resolution failed (git merge-base {ctx.base_ref} HEAD "
+            f"in {ctx.work_root}): {exc}",
+            warns=ctx.warns,
+        ) from exc
+    if sha is None:
+        raise _Indeterminate(
+            f"no merge base between {ctx.base_ref} and HEAD in {ctx.work_root} "
+            "(unrelated histories) — cannot cut a pristine oracle",
+            warns=ctx.warns,
+        )
+    if not git_sha_known(root, sha):
+        raise _Indeterminate(
+            f"oracle base {sha[:12]} (merge-base of {ctx.base_ref} and the work root's "
+            f"HEAD) is not in {root}'s object store — the scratch is materialized from "
+            "root and cannot detach there",
+            warns=ctx.warns,
+        )
+    ctx.oracle_base_sha = sha
+
+
+def _note_root_oracle_skew(ctx: _CompareCtx, root: Path) -> None:
+    """Record (WARN-only) whether a root-tree pristine venue is base-skewed (#2293, D6).
+
+    Memoized via ``ctx.root_oracle_base_skew is not None`` — the read happens
+    ONCE, at the FIRST root-venue pristine execution of the compare. Verdicts
+    are UNCHANGED this round (criterion 5): the WARN + JSON field are pure
+    observability for the three residual root-tree oracle venues
+    (``--no-scratch-fallback`` / non-anchored scan nodes / clean non-sparse
+    root, plus a root-venue paired run).
+    """
+    if ctx.root_oracle_base_skew is not None:
+        return
+    try:
+        root_head = git_head(root)
+    except subprocess.CalledProcessError as exc:
+        raise _Indeterminate(
+            f"cannot read root HEAD for the root-oracle base-skew note: {exc}",
+            warns=ctx.warns,
+        ) from exc
+    ctx.root_oracle_base_skew = root_head != ctx.oracle_base_sha
+    if ctx.root_oracle_base_skew:
+        ctx.warns.append(
+            f"ROOT-ORACLE BASE-SKEW WARN: root HEAD {root_head[:12]} != resolved oracle "
+            f"base {(ctx.oracle_base_sha or '')[:12]} (base {ctx.base_ref}); root-tree "
+            "pristine verdicts in this compare are cut from the root's lineage, not the "
+            "diff base — verdicts UNCHANGED this round (#2293 residual: "
+            "--no-scratch-fallback / non-anchored scan nodes / clean non-sparse root); "
+            "follow-up tracked in the #2293 clean-result residual note"
         )
 
 
@@ -1656,6 +2280,8 @@ def _create_scratch_or_degrade(
     wt_cones: list[str],
     contaminating: list[str],
     args: argparse.Namespace,
+    *,
+    floored: bool = False,
 ) -> _ScratchTree | None:
     """Create + arm the scratch oracle; degrade to the root oracle on a CLEAN root.
 
@@ -1665,16 +2291,24 @@ def _create_scratch_or_degrade(
     trustworthy (pre-#1077 behavior) — the partial scratch is torn down and
     None returns, with the degradation recorded (WARN + ``scratch_degraded``
     JSON flag); the caller memoizes so creation is not re-attempted per file
-    while the root stays clean. A misconfigured explicit ``EPM_STEP9C_TMPDIR``
-    (ToolMissingError from the mkdtemp routing) is NOT degraded — it
-    propagates to the fail-loud exit-2 mapping in ``cmd_compare``.
+    while the root stays clean. ``floored=True`` (R-G', #2019): the caller
+    passes ``wt_cones=[]`` — ``_scratch_cones(root, [])`` = floor union
+    HEAD-pinned registry — and the floored arm only fires on a DIRTY root,
+    so a floored creation/probe failure always takes the fail-closed dirty
+    branch (never a silent root-oracle downgrade). A misconfigured explicit
+    ``EPM_STEP9C_TMPDIR`` (ToolMissingError from the mkdtemp routing) is NOT
+    degraded — it propagates to the fail-loud exit-2 mapping in
+    ``cmd_compare``.
     """
     scratch: _ScratchTree | None = None
     try:
-        scratch = create_scratch_worktree(root, wt_cones, timeout_s=args.scratch_timeout_s)
+        assert ctx.oracle_base_sha, "oracle base must be resolved before scratch creation"
+        scratch = create_scratch_worktree(
+            root, wt_cones, timeout_s=args.scratch_timeout_s, base_sha=ctx.oracle_base_sha
+        )
         # scratch is assigned BEFORE the probe, so a probe raise still has a
         # handle to tear down (no leak on either branch below).
-        _arm_src_shadow(ctx, root, scratch, contaminating, args)
+        _arm_src_shadow(ctx, root, scratch, contaminating, args, floored=floored)
         return scratch
     except (
         _Indeterminate,
@@ -1693,6 +2327,25 @@ def _create_scratch_or_degrade(
                 extra={"live_dirty_paths": ctx.live_dirty_paths},
                 warns=ctx.warns,
             ) from exc
+        # #2293 (criterion 3): the #1408 clean-root degradation may only use the
+        # root WORKING TREE as oracle when the root actually SITS at the resolved
+        # oracle base — "clean" alone is not "correct".
+        try:
+            root_head = git_head(root)
+        except subprocess.CalledProcessError as head_exc:
+            raise _Indeterminate(
+                f"cannot read root HEAD for the clean-root degradation gate: {head_exc}",
+                warns=ctx.warns,
+            ) from head_exc
+        if root_head != ctx.oracle_base_sha:
+            raise _Indeterminate(
+                f"scratch creation/probe failed on a CLEAN root ({exc}) AND root HEAD "
+                f"{root_head[:12]} != resolved oracle base "
+                f"{(ctx.oracle_base_sha or '')[:12]} (base {ctx.base_ref}) — the root "
+                "working tree is not a valid oracle at the diff base; refusing the "
+                "#1408 degradation (#2293)",
+                warns=ctx.warns,
+            ) from exc
         ctx.scratch_degraded = True
         ctx.warns.append(
             "SCRATCH-ORACLE WARN: scratch creation/probe failed on a "
@@ -1701,12 +2354,405 @@ def _create_scratch_or_degrade(
         return None
 
 
-def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namespace) -> None:
+# --- #2024 paired-selection ordering re-check --------------------------------------
+
+
+def _oracle_label(use_scratch: bool, floored: bool) -> str:
+    """The pristine-oracle vocabulary label for one PASS/run venue (#2019, #2024).
+
+    ONE source of truth for the per-file ``paired_oracles`` values AND the
+    stage-level ``ctx.paired_oracle``: ``"scratch-worktree-floor"`` when the
+    live scratch is the R-G' floor scratch (a compare is floored globally, so
+    any created scratch IS the floor one — same vocabulary as
+    ``ctx.pristine_oracle``, set at ``_arm_src_shadow``), ``"scratch-worktree"``
+    for a full-trust scratch, ``"root"`` otherwise.
+    """
+    if use_scratch and floored:
+        return "scratch-worktree-floor"
+    return "scratch-worktree" if use_scratch else "root"
+
+
+def _paired_skip_to_new(ctx: _CompareCtx, node: Node, reason: str) -> None:
+    """Fail-closed paired-stage skip: *node* stays NEW, with an audit row (#2024).
+
+    Every precondition miss, refuse-to-spend skip, and ambiguity resolves
+    toward NEW (blocking); the ``paired_skipped`` row makes a still-blocking
+    NEW one-glance diagnosable. An ``order-skew`` skip additionally records
+    the file in ``paired_order_skew`` (plan §4.1(a) skew handling).
+    """
+    ctx.new.append(node)
+    ctx.paired_skipped.append({"node_id": f"{node.file}::{node.name}", "reason": reason})
+    if reason == "order-skew" and node.file not in ctx.paired_order_skew:
+        ctx.paired_order_skew.append(node.file)
+
+
+def _paired_collection_reason(
+    ctx: _CompareCtx,
+    node: Node,
+    args: argparse.Namespace,
+    *,
+    use_scratch: bool,
+    touched_set: set[str],
+) -> str | None:
+    """First missed paired-collection precondition for a single-file-PASS node, or None.
+
+    Plan #2024 §4.1(d): a node whose single-file pristine run PASSed becomes a
+    paired candidate ONLY when every precondition holds — (1) the file's
+    CONTENT at HEAD does not differ from its content at the base tip (#2302:
+    a genuinely branch-authored file keeps today's NEW semantics — main's copy
+    of it is not the thing that failed; a base-identical path, e.g. a Step 5a
+    sibling-sync copy of main's own file, IS main's copy and is subtracted
+    from *touched_set* by the caller); (2) the per-file oracle
+    that produced the PASS was the SCRATCH oracle, or the root was clean at
+    that file's probe; (3) the R-F' live-tree-scanner constraint stands
+    unchanged (non-anchored scan nodes never trust a scratch/paired read);
+    (4) the file is placeable in the selector's deterministic selection (B3
+    skew); (5) ``--no-paired-pristine`` was not passed. A miss keeps NEW.
+    """
+    if node.file in touched_set:
+        return "file-in-branch-diff"
+    if not use_scratch and ctx.live_dirty_paths:
+        return "dirty-root-oracle"
+    if node.file in ctx.sel.GLOB_SCAN_TESTS and node.file not in FILE_ANCHORED_SCAN_TESTS:
+        return "non-anchored-scan-test"
+    if node.file not in ctx.selected_order:
+        return "order-skew"
+    if args.no_paired_pristine:
+        return "paired-pristine-disabled"
+    return None
+
+
+def _build_paired_prefix(
+    ctx: _CompareCtx, root: Path, ran_files: set[str], candidates: list[Node]
+) -> list[str]:
+    """The maximal runnable co-selection prefix for *candidates* (#2024 §4.1(a)).
+
+    ORDER comes from the selector's deterministic selection — NEVER junit
+    document order (B3: a collect-error testcase floats to the junit FRONT
+    under ``--continue-on-collection-errors`` regardless of argv position);
+    the junit contributes MEMBERSHIP only. The prefix ends at the LAST
+    candidate, so one run yields a verdict for every candidate (plan §3 cost
+    containment). Files absent on main are dropped (a branch-new co-selected
+    file cannot run on a HEAD-pinned pristine tree) and recorded in
+    ``paired_dropped_files`` — a resulting PASS keeps NEW (fail-closed).
+    Junit files unplaceable in the selection are recorded in
+    ``paired_order_skew`` (deliberate selector version skew, #1022 §3.3).
+    """
+    order_set = set(ctx.selected_order)
+    for f in sorted(ran_files - order_set):
+        if f not in ctx.paired_order_skew:
+            ctx.paired_order_skew.append(f)
+    ran_in_order = [f for f in ctx.selected_order if f in ran_files]
+    pos = {f: i for i, f in enumerate(ran_in_order)}
+    last = max(pos[n.file] for n in candidates)
+    prefix: list[str] = []
+    for f in ran_in_order[: last + 1]:
+        if (root / f).exists():
+            prefix.append(f)
+        elif f not in ctx.paired_dropped_files:
+            ctx.paired_dropped_files.append(f)
+    return prefix
+
+
+def _classify_paired_verdicts(
+    ctx: _CompareCtx,
+    kept: list[Node],
+    paired_failing: set[Node],
+    paired_use_scratch: bool,
+    contaminating: list[str],
+    residual: list[str],
+) -> None:
+    """Strip reproduced candidates as ``ordering_suspect``; a paired PASS keeps NEW.
+
+    B2 verdict-time guard (plan §4.1(d)): a paired FAIL judged on a
+    NON-scratch oracle with live dirt at the pre-invocation re-probe raises
+    ``_Indeterminate`` with the same payload keys as the per-file MF-4c
+    raise — never a strip from an untrustworthy oracle. This is the ONE
+    exception that resolves away from NEW toward exit 2 rather than blocking.
+    The scratch-oracle counterpart (residual contamination at the fresh
+    re-probe) never reaches here: ``_resolve_paired_candidates`` refuses the
+    run pre-invocation and skips every candidate to NEW (r2 hardening). The
+    FLOOR-profile oracle (R-G', #2019) never reaches here either — every
+    ``scratch-worktree-floor`` candidate is refused at the candidate filter
+    (``floor-profile-oracle`` skip), so ``paired_use_scratch`` always names a
+    full-trust scratch.
+    """
+    for node in kept:
+        if node not in paired_failing:
+            # Passed on main under the same co-selection but failed in the
+            # run: the branch caused it — NEW, blocking, exactly as today.
+            ctx.new.append(node)
+            continue
+        if not paired_use_scratch and ctx.live_dirty_paths:
+            raise _Indeterminate(  # MF-4c parity, fail-closed to exit 2 (B2)
+                f"paired pristine oracle is DIRTY "
+                f"(residual contaminating: {residual[:20] or 'n/a'}; "
+                f"visible code dirt: {ctx.live_dirty_paths[:20]}) — an "
+                f"'ordering-suspect' verdict for {node.file}::{node.name} from a "
+                "dirty root is untrustworthy (MF-4c); indeterminate",
+                extra={
+                    "live_dirty_paths": ctx.live_dirty_paths,
+                    "contaminating_paths": contaminating,
+                    "residual_contaminating_paths": residual,
+                },
+                warns=ctx.warns,
+            )
+        _strip_node(ctx, node, via="pristine-paired-ordering")
+        ctx.ordering_suspect.append({**node._asdict(), "via": "pristine-paired-ordering"})
+        ctx.warns.append(
+            f"ORDERING WARN: {node.file}::{node.name} passes single-file on pristine "
+            f"main but REPRODUCES under the gate's own co-selection prefix "
+            f"({len(ctx.paired_files_run)} files) — pre-existing cross-module "
+            "import-ordering interaction on main; stripped non-blocking "
+            "(ordering_suspect). Route a workflow-fix candidate at the "
+            "interaction itself — never a silent pass"
+        )
+
+
+def _resolve_paired_candidates(
+    ctx: _CompareCtx,
+    root: Path,
+    scratch: _ScratchTree | None,
+    ran_files: set[str],
+    args: argparse.Namespace,
+    oracles: dict[Node, str],
+    *,
+    floored: bool,
+) -> None:
+    """Re-run would-be-NEW untouched-file nodes under the gate's co-selection order (#2024).
+
+    The paired pristine re-run is the ONLY mechanism that may downgrade a
+    would-be NEW node: a REPRODUCTION on pristine main under (a subset of)
+    the gate run's own co-selection order proves the failure is a
+    pre-existing cross-module import-ordering interaction, stripped as the
+    non-blocking ``ordering_suspect`` class. Everything else — oracle
+    mismatch, a FLOOR-profile per-file oracle (R-G', #2019: the floor tree is
+    not a superset of a non-sparse gate layout, so a reproduction there could
+    come from the floor profile's missing files rather than a genuine
+    ordering interaction — refused PRE-spend, keeping #2019's green-at-floor
+    NEW verdict; ``floored=True`` marks the live scratch, if any, as the
+    floor scratch), the refuse-to-spend cap (B1: over-cap SKIPs; a "keep the
+    nearest N" truncation would drop the #2021 predecessor at measured
+    distance 49 and make the whole check inert), residual contamination at
+    the fresh re-probe while the paired oracle is the scratch (r2 hardening:
+    refused PRE-spend — R-B' parity with the per-file loop), zero retained
+    predecessors (the run would be identical to the single-file PASS), and a
+    paired PASS — resolves toward NEW (blocking). ONE
+    ``run_pristine_selection`` invocation resolves every candidate (the
+    prefix ending at the last candidate contains all earlier ones);
+    ``PristineRunError`` maps to exit 2, and the
+    B2 dirty-oracle verdict guard lives in ``_classify_paired_verdicts``.
+    Residual blind class (documented, not fixed): collection-time
+    contamination from files sorting AFTER the candidate is present in the
+    gate process but absent from any prefix run — that shape still
+    classifies NEW (fail-closed); the manual provenance-override path
+    remains the escape for it.
+    """
+    paired_use_scratch = scratch is not None
+    # Three-way via the shared _oracle_label vocabulary: when the live scratch
+    # is the R-G' floor scratch, recording it as a plain "scratch-worktree"
+    # would mislabel a floor tree as a full-trust oracle in the --json
+    # payload (#2019).
+    ctx.paired_oracle = _oracle_label(paired_use_scratch, floored)
+    candidates: list[Node] = []
+    for node in ctx.paired_candidates:
+        if oracles[node] == "scratch-worktree-floor":
+            # R-G' (#2019) refusal carried into the paired stage: the floor
+            # tree is NOT a superset of a non-sparse gate layout, so a
+            # REPRODUCTION under the paired prefix could come from the floor
+            # profile's missing files rather than a genuine cross-module
+            # ordering interaction — the ONLY verdict this stage may issue
+            # (a strip) cannot be certified on that oracle. Refuse the spend
+            # and keep NEW, exactly the verdict #2019 resolves for a node
+            # green on the floor scratch. This branch fires BEFORE the
+            # equality check below (a floored ctx.paired_oracle would
+            # otherwise match), so — together with the mismatch arm for
+            # mixed-oracle compares — a paired run can never EXECUTE against
+            # the floor-profile scratch.
+            _paired_skip_to_new(ctx, node, "floor-profile-oracle")
+        elif oracles[node] != ctx.paired_oracle:
+            # No candidate is ever judged by an oracle other than the one
+            # that produced its single-file PASS (plan §4.1(d), B2).
+            _paired_skip_to_new(ctx, node, "oracle-mismatch")
+        else:
+            candidates.append(node)
+    if not candidates:
+        return
+    # B2: re-probe immediately BEFORE the invocation — exactly as the
+    # per-file loop probes per file (MF-4c freshness + mid-loop transitions).
+    try:
+        ctx.live_dirty_paths = dirty_code_paths(root)
+        contaminating = scratch_contamination_probe(root)
+    except subprocess.CalledProcessError as exc:
+        raise _Indeterminate(f"dirt probe failed at {root}: {exc}", warns=ctx.warns) from exc
+    residual = (
+        list(contaminating) if args.no_src_shadow else residual_scratch_contamination(contaminating)
+    )
+    if paired_use_scratch and residual:
+        # r2 hardening: residual contamination (pyproject.toml / uv.lock /
+        # out-of-package src/ dirt) appearing between the candidates' per-file
+        # probes and this paired run makes the scratch oracle untrustworthy
+        # for the ONLY verdict this stage may issue (a strip) — refuse the
+        # spend (R-B' parity with the per-file loop) and keep every candidate
+        # NEW. Skip-to-NEW rather than exit 2: unlike the non-scratch MF-4c
+        # case there is no prior trustworthy verdict to contradict.
+        for node in candidates:
+            _paired_skip_to_new(ctx, node, "scratch-residual-contamination")
+        return
+    prefix = _build_paired_prefix(ctx, root, ran_files, candidates)
+    if len(prefix) > args.max_paired_files:
+        # Refuse-to-spend guard, NOT a truncation (B1).
+        for node in candidates:
+            _paired_skip_to_new(ctx, node, "prefix-over-cap")
+        return
+    prefix_pos = {f: i for i, f in enumerate(prefix)}
+    kept: list[Node] = []
+    for node in candidates:
+        if prefix_pos[node.file] == 0:
+            # Zero retained predecessors: the paired run would be identical
+            # to the single-file run that already PASSed — spend nothing.
+            _paired_skip_to_new(ctx, node, "no-predecessors")
+        else:
+            kept.append(node)
+    if not kept:
+        return
+    prefix = prefix[: max(prefix_pos[n.file] for n in kept) + 1]
+    timeout_s = (
+        args.pristine_timeout_s
+        if args.pristine_timeout_s is not None
+        else derive_paired_timeout_s(ctx.sel, prefix)
+    )
+    if not paired_use_scratch:
+        # #2293 D6: root-tree paired venue — record base-skew provenance (WARN-only).
+        _note_root_oracle_skew(ctx, root)
+    try:
+        paired = run_pristine_selection(
+            prefix,
+            cwd=scratch.path if paired_use_scratch else root,
+            timeout_s=timeout_s,
+            venv_root=root if paired_use_scratch else None,
+            pythonpath=(
+                str(scratch.path / "src") if paired_use_scratch and not args.no_src_shadow else None
+            ),
+        )
+    except PristineRunError as exc:
+        # Never a classification from an aborted run — exit 2 (plan §4.1(d)).
+        raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
+    ctx.paired_files_run = list(prefix)
+    _classify_paired_verdicts(
+        ctx, kept, paired.failing, paired_use_scratch, contaminating, residual
+    )
+
+
+def _scan_diff_row(
+    node_id: str,
+    verdict: str,
+    *,
+    new_violations: Iterable[str] = (),
+    base_identical_suppressed: Iterable[str] = (),
+    pre_existing: Iterable[str] = (),
+    pristine_only: Iterable[str] = (),
+) -> dict:
+    """One ``scan_violation_diffs`` audit row (#2316): sorted, display-capped lists.
+
+    The ``_SCAN_DIFF_ROW_CAP`` cap is DISPLAY-ONLY (an ``<field>_overflow``
+    count rides any capped list) — bucketing always operates on the full
+    uncapped sets, so a pathological message can truncate a row's lists but
+    never change a verdict.
+    """
+    row: dict = {"node_id": node_id, "verdict": verdict}
+    for key, vals in (
+        ("new_violations", new_violations),
+        ("base_identical_suppressed", base_identical_suppressed),
+        ("pre_existing", pre_existing),
+        ("pristine_only", pristine_only),
+    ):
+        full = sorted(vals)
+        row[key] = full[:_SCAN_DIFF_ROW_CAP]
+        if len(full) > _SCAN_DIFF_ROW_CAP:
+            row[f"{key}_overflow"] = len(full) - _SCAN_DIFF_ROW_CAP
+    return row
+
+
+def _resolve_scan_violation_setdiff(
+    ctx: _CompareCtx, node: Node, pristine_text: str, use_scratch: bool
+) -> None:
+    """Violation-grain verdict for a registered scan node red on BOTH sides (#2316, #2319).
+
+    Replaces ONLY the strip decision in ``_resolve_pristine_bucket`` — every
+    refusal (the R-G' floored-scratch strip refusal, the MF-4c dirty-root
+    refusal) has already run and short-circuited before this call. Extract
+    the offender-path set from each side's failure text (row-ANCHORED, #2319 —
+    ``extract_violation_paths``; symmetric header/remediation prose is no
+    longer extracted, so the audit rows carry genuine offenders only) and diff:
+
+    * either side EMPTY (unparseable) -> strip exactly as today (same ``via``
+      values, so ``stripped``-row consumers and the urgent-park coupling are
+      undisturbed) PLUS a loud ``SCAN-SETDIFF-UNPARSEABLE`` warn and a
+      ``parse-failed`` audit row — degrade = today's behavior + escalation,
+      never silent (criterion 3);
+    * branch-only paths, minus ``ctx.base_identical`` (a Step 5a sibling-sync
+      copy of main's OWN offender is main's content — blocking the branch for
+      it would be a false red, #2302/#2296), non-empty -> the node joins
+      ``ctx.new`` (rc 1 via the existing exit arithmetic) with a
+      ``new-violations`` row naming them;
+    * otherwise -> strip as today + a ``pre-existing`` row carrying the
+      side-by-side lists (the one-glance read; ``pristine_only`` = offenders
+      fixed or absent on the branch side, informational).
+    """
+    node_id = f"{node.file}::{node.name}"
+    strip_via = "pristine-scratch" if use_scratch else "pristine"
+    v_branch = extract_violation_paths(ctx.run_failure_texts.get(node, ""))
+    v_pristine = extract_violation_paths(pristine_text)
+    if not v_branch or not v_pristine:
+        side = "branch" if not v_branch else "pristine"
+        warn = (
+            f"SCAN-SETDIFF-UNPARSEABLE: {node_id} — violation list could not be "
+            f"extracted from the {side} failure output; node-grain verdict retained; "
+            "hand-verify the branch adds no violation to this scan"
+        )
+        ctx.warns.append(warn)
+        _log(warn)
+        ctx.scan_violation_diffs.append(_scan_diff_row(node_id, "parse-failed"))
+        _strip_node(ctx, node, via=strip_via)
+        return
+    new_paths = set(v_branch - v_pristine)
+    suppressed = new_paths & ctx.base_identical
+    new_paths -= suppressed
+    if suppressed:
+        ctx.warns.append(
+            f"SCAN-SETDIFF WARN: {node_id} — branch-side violation path(s) "
+            f"{sorted(suppressed)} are base-identical (main's own content carried by a "
+            "Step 5a sibling-sync copy, #2302); suppressed from the NEW set"
+        )
+    row = _scan_diff_row(
+        node_id,
+        "new-violations" if new_paths else "pre-existing",
+        new_violations=new_paths,
+        base_identical_suppressed=suppressed,
+        pre_existing=v_branch & v_pristine,
+        pristine_only=v_pristine - v_branch,
+    )
+    ctx.scan_violation_diffs.append(row)
+    if new_paths:
+        ctx.new.append(node)
+        _log(
+            f"SCAN-NEW-VIOLATION: {node_id} — branch adds violation path(s) absent on "
+            f"pristine main: {sorted(new_paths)}"
+        )
+    else:
+        _strip_node(ctx, node, via=strip_via)
+
+
+def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the oracle ladder 14->16
+    ctx: _CompareCtx, root: Path, args: argparse.Namespace, ran_files: set[str]
+) -> None:
     """Resolve bucketed nodes via bounded single-file pristine runs (or refuse).
 
     Scratch-by-default (#1408; #1077's dirty-only trigger removed): the
     pristine oracle is BY DEFAULT a detached sparse scratch worktree at the
-    root's HEAD whenever the node is physically eligible — clean or dirty
+    resolved oracle base — merge-base(diff base, work-root HEAD), #2293 —
+    whenever the node is physically eligible — clean or dirty
     root alike — created lazily once per compare (the shadow probe runs ONCE
     at creation), reused for every eligible bucketed file, ALWAYS removed in
     the ``finally``. Per-file eligibility: no RESIDUAL contaminating dirt
@@ -1714,7 +2760,8 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     neutralized by the probe-verified ``PYTHONPATH=<scratch>/src`` shadow, so
     only ``pyproject.toml``/``uv.lock`` and out-of-package ``src/`` dirt still
     block; ``--no-src-shadow`` restores the #1077 any-probe-hit rule), a
-    sparse work root (R-G), a non-scan-set node OR a
+    sparse work root OR a dirty non-sparse one (R-G', #2019 — see below), a
+    non-scan-set node OR a
     ``FILE_ANCHORED_SCAN_TESTS`` member (R-F' — ``repo_root()``-anchored
     live-tree scanners read the MAIN root from any cwd, so a scratch cannot
     decontaminate them; a source-verified ``__file__``-anchored scanner scans
@@ -1723,7 +2770,23 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     verdict class: a scan failure caused solely by live-root strays (untracked
     offenders absent from the HEAD-pinned scratch) classifies NEW (rc 1)
     instead of exit 2 — fail-closed in direction (never a silent strip), but
-    it attributes the failure to the branch. Root-oracle runs remain only for
+    it attributes the failure to the branch. R-G' (#2019): a DIRTY non-sparse
+    work root arms the scratch with the ``_scratch_cones`` FLOOR profile
+    (``wt_cones=[]`` — the identical floor every sparse-root scratch already
+    materializes), under ASYMMETRIC verdicts because the floor tree is NOT a
+    superset of a non-sparse gate layout: a node GREEN at pristine HEAD
+    classifies NEW (rc 1, ``pristine_oracle: scratch-worktree-floor`` — the
+    #1932 shape gets a definite verdict), while a node RED there REFUSES the
+    strip (exit 2, R-G' diagnostic) — the former non-sparse exit-2 class maps
+    ONLY onto {NEW rc 1, exit 2}, never rc 0, never red->green. A CLEAN
+    non-sparse root keeps the trustworthy root oracle (strictly more capable:
+    both strip and NEW). Mid-loop dirt nuance (#2019): a file stripped via
+    the root oracle while the root was clean at ITS probe time can coexist
+    with a later file's floored NEW in one rc-1 result (pre-#2019, that later
+    red-on-a-dirty-root would exit-2 the whole compare and discard the
+    strip) — rc 1 still blocks, and the strip rides only into MF-6
+    masking-WARN semantics, so this is not a red->green channel. Root-oracle
+    runs remain only for
     scratch-INELIGIBLE nodes (trustworthy on a clean root; fail-closed MF-4c
     exit 2 when the root is dirty and the node fails on main) and for the
     CLEAN-root degradation path: a scratch creation/probe failure on a CLEAN
@@ -1736,6 +2799,20 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     appearing mid-loop reverts later files to the root oracle (fail-closed);
     every scratch-mode pristine call passes the shadow uniformly, so
     in-package src dirt appearing mid-loop stays neutralized.
+
+    #2024 paired-selection stage: a node whose single-file run PASSes no
+    longer classifies NEW unconditionally — when every collection
+    precondition holds (``_paired_collection_reason``) it is re-checked
+    against pristine main under the gate run's own co-selection order
+    (``_resolve_paired_candidates``, run INSIDE this function's try/finally
+    so the paired run reuses the live scratch oracle before teardown). A
+    reproduction there strips as the non-blocking ``ordering_suspect`` class;
+    every miss/skew/skip keeps NEW (fail-closed), and a PASS produced by the
+    FLOOR-profile scratch (R-G', #2019) is REFUSED at the paired stage
+    (``floor-profile-oracle`` skip: the floor tree cannot certify a strip —
+    a reproduction could come from its missing files — so the candidate
+    keeps #2019's green-at-floor NEW verdict and no paired run ever executes
+    on that oracle).
     """
     if not ctx.pristine_bucket:
         return
@@ -1754,9 +2831,21 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             f"Per-file pristine commands:\n{commands}",
             warns=ctx.warns,
         )
+    # #2293: resolve the oracle cut ONCE, only for oracle-SPENDING runs (all the
+    # guards above return/raise first, so no new shellout / failure mode for
+    # compares that never run a pristine check).
+    _resolve_oracle_base(ctx, root)
     scratch: _ScratchTree | None = None
     scratch_unavailable = False  # #1408 memo: clean-root scratch failure -> root oracle
-    wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse => ineligible (R-G)
+    wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse (R-G' floor mode)
+    floored = wt_cones is None  # R-G' (#2019): floor-profile scratch, asymmetric verdicts
+    # #2024 precondition 1 is a CONTENT test (#2302): "branch-touched" means the
+    # file's content at HEAD differs from its content at the base tip. A
+    # base-identical path (a Step 5a sibling-sync copy of main's OWN file) is
+    # main's content, not the branch's change — subtracting it re-arms the
+    # ordering carve-out the sync otherwise disables (#2296).
+    touched_set = set(ctx.touched) - ctx.base_identical
+    paired_oracles: dict[Node, str] = {}  # #2024: the per-file oracle behind each candidate PASS
     try:
         for test_file in files:
             try:
@@ -1777,7 +2866,10 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             use_scratch = (
                 not residual  # R-B' (#1251): in-package src/ dirt is shadow-neutralized;
                 # only pyproject.toml / uv.lock / out-of-package src/ dirt still blocks
-                and wt_cones is not None  # R-G: sparse work root only
+                # R-G' (#2019): a non-sparse work root arms ONLY on a dirty root — on
+                # a CLEAN non-sparse root the root oracle is trustworthy AND strictly
+                # more capable (full tree; both strip and NEW available).
+                and (not floored or bool(ctx.live_dirty_paths))
                 and (
                     test_file not in ctx.sel.GLOB_SCAN_TESTS
                     or test_file in FILE_ANCHORED_SCAN_TESTS
@@ -1790,7 +2882,14 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 and not (scratch_unavailable and not ctx.live_dirty_paths)
             )
             if use_scratch and scratch is None:
-                scratch = _create_scratch_or_degrade(ctx, root, wt_cones, contaminating, args)
+                scratch = _create_scratch_or_degrade(
+                    ctx,
+                    root,
+                    wt_cones if wt_cones is not None else [],  # R-G': [] => floor profile
+                    contaminating,
+                    args,
+                    floored=floored,
+                )
                 if scratch is None:
                     # #1408 clean-root degradation fired — memoize (no per-file
                     # re-creation attempts while the root stays clean).
@@ -1801,8 +2900,11 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 if args.pristine_timeout_s is not None
                 else derive_pristine_timeout_s(ctx.sel, test_file)
             )
+            if not use_scratch:
+                # #2293 D6: root-tree venue — record base-skew provenance (WARN-only).
+                _note_root_oracle_skew(ctx, root)
             try:
-                main_failing = run_single_file_pristine(
+                pres = run_single_file_pristine(
                     test_file,
                     cwd=scratch.path if use_scratch else root,
                     timeout_s=timeout_s,
@@ -1815,9 +2917,26 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 )
             except PristineRunError as exc:
                 raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
+            main_failing = pres.failing
             ctx.pristine_files_run.append(test_file)
             for node in [n for n in ctx.pristine_bucket if n.file == test_file]:
                 if node in main_failing:
+                    if use_scratch and floored:
+                        raise _Indeterminate(  # R-G' strip refusal (#2019)
+                            f"node red at pristine HEAD on the FLOOR-profile scratch "
+                            f"(pristine_oracle=scratch-worktree-floor, sparse_wt=False): "
+                            f"the floor tree is not a superset of the non-sparse gate "
+                            f"layout, so a 'pre-existing' strip for "
+                            f"{node.file}::{node.name} cannot be certified (R-G'); "
+                            "indeterminate — commit/clean the dirt, run from a sparse "
+                            "worktree, or fix main first",
+                            extra={
+                                "live_dirty_paths": ctx.live_dirty_paths,
+                                "contaminating_paths": contaminating,
+                                "residual_contaminating_paths": residual,
+                            },
+                            warns=ctx.warns,
+                        )
                     if not use_scratch and ctx.live_dirty_paths:
                         shadowable = [p for p in contaminating if p not in residual]
                         raise _Indeterminate(  # MF-4c, fail-closed residual
@@ -1831,8 +2950,10 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                             f"for {node.file}::{node.name} from a dirty root is "
                             "untrustworthy (MF-4c); indeterminate "
                             "(scratch-by-default: this fires only for residual venv "
-                            "dirt / non-sparse work root / non-anchored scan node / "
-                            "scratch failure on a dirty root)",
+                            "dirt / non-anchored scan node / --no-scratch-fallback / "
+                            "scratch failure on a dirty root; a bare non-sparse work "
+                            "root now arms the R-G' floor scratch instead — its "
+                            "red-at-pristine refusal is a separate exit-2 arm, #2019)",
                             extra={
                                 "live_dirty_paths": ctx.live_dirty_paths,
                                 "contaminating_paths": contaminating,
@@ -1840,9 +2961,48 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                             },
                             warns=ctx.warns,
                         )
-                    _strip_node(ctx, node, via="pristine-scratch" if use_scratch else "pristine")
+                    if _violation_setdiff_member(node):
+                        # #2316: violation-grain classification for registered
+                        # whole-repo scan nodes — replaces ONLY the strip
+                        # decision (both refusal arms above ran first; on a
+                        # floored oracle the pristine tree is not
+                        # population-complete, so its violation list can never
+                        # be trusted small-side). The #2024 paired-ordering
+                        # strip entrance (via="pristine-paired-ordering")
+                        # deliberately BYPASSES the set-diff: it is reachable
+                        # only for a node GREEN on its single-file pristine run
+                        # that reproduces under the co-selection prefix — a
+                        # shape essentially unreachable for a deterministic
+                        # whole-repo file scan.
+                        _resolve_scan_violation_setdiff(
+                            ctx, node, pres.failure_texts.get(node, ""), use_scratch
+                        )
+                    else:
+                        _strip_node(
+                            ctx, node, via="pristine-scratch" if use_scratch else "pristine"
+                        )
                 else:
-                    ctx.new.append(node)  # a PASS still classifies NEW (fail-closed)
+                    # A PASS classifies NEW (fail-closed) unless EVERY #2024
+                    # paired-collection precondition holds — then the node is
+                    # re-checked under the gate's co-selection order below.
+                    reason = _paired_collection_reason(
+                        ctx, node, args, use_scratch=use_scratch, touched_set=touched_set
+                    )
+                    if reason is None:
+                        ctx.paired_candidates.append(node)
+                        # Three-way, ONE vocabulary with ctx.pristine_oracle: a
+                        # floor-profile PASS (R-G', #2019) must not be recorded
+                        # as a plain full-trust scratch — the paired stage
+                        # refuses the floor value (asymmetric #2019 verdicts).
+                        paired_oracles[node] = _oracle_label(use_scratch, floored)
+                    else:
+                        _paired_skip_to_new(ctx, node, reason)
+        if ctx.paired_candidates:
+            # Inside the try so the paired run reuses the LIVE scratch oracle
+            # (the finally below is the single teardown point).
+            _resolve_paired_candidates(
+                ctx, root, scratch, ran_files, args, paired_oracles, floored=floored
+            )
     finally:
         if scratch is not None:
             remove_scratch_worktree(root, scratch)
@@ -1851,11 +3011,18 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
 def _compare_impl(args: argparse.Namespace) -> dict:
     """The compare pipeline (plan §3.4); raises _Indeterminate on any exit-2 condition."""
     wt, root = _resolve_roots(args)
-    run_failing = _load_run_junit(Path(args.junitxml))
+    run_failing, ran_files = _load_run_junit(Path(args.junitxml))
     ctx = _selector_context(args, wt)
+    # #2316: the gate-run side of the violation-set diff — same junit file
+    # _load_run_junit just parsed, so a raise here is unreachable in practice;
+    # kept on the same _Indeterminate mapping for symmetry.
+    try:
+        ctx.run_failure_texts = parse_junit_failure_texts(Path(args.junitxml))
+    except JunitParseError as exc:  # pragma: no cover — gated by _load_run_junit
+        raise _Indeterminate(str(exc)) from exc
     lv = _ledger_view(root, args)
     _bucket_run_failures(ctx, run_failing, lv, root)
-    _resolve_pristine_bucket(ctx, root, args)
+    _resolve_pristine_bucket(ctx, root, args, ran_files)
     try:
         lint = lint_verdict(root, wt, ctx.touched)
     except (ToolMissingError, RuntimeError) as exc:
@@ -1873,8 +3040,20 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "ledger_dirty_paths": list(ledger.get("dirty_paths", [])) if ledger else [],
         "live_dirty_paths": ctx.live_dirty_paths,
         "pristine_files_run": ctx.pristine_files_run,
+        "base": ctx.base,  # #2302: the RESOLVED diff base the compare derived against
+        "base_identical_files": sorted(ctx.base_identical),  # #2302 content-test audit key
         "pristine_oracle": ctx.pristine_oracle,
+        "scan_violation_diffs": ctx.scan_violation_diffs,  # #2316 violation-grain rows
+        "ordering_suspect": ctx.ordering_suspect,  # #2024 non-blocking strips
+        "paired_files_run": ctx.paired_files_run,
+        "paired_dropped_files": ctx.paired_dropped_files,
+        "paired_order_skew": ctx.paired_order_skew,
+        "paired_skipped": ctx.paired_skipped,
+        "paired_oracle": ctx.paired_oracle,  # floor value = armed-only (candidates refused)
         "scratch_sha": ctx.scratch_sha,
+        "oracle_base_ref": ctx.base_ref,  # #2293: the REF the oracle cut resolved from
+        "oracle_base_sha": ctx.oracle_base_sha,  # #2293: merge-base(base_ref, wt HEAD)
+        "root_oracle_base_skew": ctx.root_oracle_base_skew,  # #2293 D6 (null = no root venue)
         "scratch_src_shadow": ctx.scratch_src_shadow,
         "scratch_degraded": ctx.scratch_degraded,  # #1408 clean-root degradation audit flag
         "gate_tmp_root": _gate_tmp_root_str(),  # #1408 temp-write routing provenance
@@ -1902,6 +3081,7 @@ def _indeterminate_payload(
         "new": [],
         "stripped": [],
         "urgent_park_required": [],  # #1742 stable shape on the exit-2 payload
+        "scan_violation_diffs": [],  # #2316 stable shape on the exit-2 payload
         "warns": list(warns or []),
         **(extra or {}),
     }
@@ -1913,6 +3093,16 @@ def cmd_compare(args: argparse.Namespace) -> int:
     Under ``--json``, EVERY exit path prints exactly one JSON object (#1077):
     exit 0/1 the classification result (``indeterminate: false``); exit 2 the
     ``_indeterminate_payload`` (``indeterminate: true`` + ``reason``).
+    Exit semantics are UNCHANGED by #2024: 0 = no NEW + no lint regression,
+    1 = NEW and/or lint regression, 2 = indeterminate. An ``ordering_suspect``
+    node is STRIPPED (it reproduced on pristine main under the gate's own
+    co-selection order), so it never contributes to exit 1 — it is loud in
+    ``warns`` + its own JSON list + the ``ORDERING-SUSPECT:`` stdout lines.
+    #2316: exit 1 also covers a ``VIOLATION_SET_SCAN_NODES`` member red on
+    BOTH sides whose branch-side violation set exceeds pristine's (it enters
+    ``new`` via ``_resolve_scan_violation_setdiff``; side-by-side lists in the
+    JSON ``scan_violation_diffs`` field + ``SCAN-NEW-VIOLATION:`` stdout
+    lines).
     """
     if args.pytest_rc not in (0, 1):
         reason = (
@@ -1950,15 +3140,25 @@ def cmd_compare(args: argparse.Namespace) -> int:
             )
         return 2
     result["indeterminate"] = False
+    scan_new_rows = [r for r in result["scan_violation_diffs"] if r["verdict"] == "new-violations"]
     if args.json:
         print(json.dumps(result, indent=2, sort_keys=True))
     else:
         print(
-            f"compare: {len(result['new'])} NEW, {len(result['stripped'])} stripped, "
+            f"compare: {len(result['new'])} NEW, {len(result['stripped'])} stripped "
+            f"({len(result['ordering_suspect'])} ordering-suspect), "
+            f"{len(scan_new_rows)} scan-new-violation(s), "
             f"{len(result['warns'])} warn(s), lint_ok={result['lint']['ok']}"
         )
         for n in result["new"]:
             print(f"  NEW: {n['file']}::{n['name']}")
+        for r in scan_new_rows:  # #2316 violation-grain blockers (already in `new`)
+            print(
+                f"  SCAN-NEW-VIOLATION: {r['node_id']} — branch adds violation path(s) "
+                f"absent on pristine main: {r['new_violations']}"
+            )
+        for o in result["ordering_suspect"]:
+            print(f"  ORDERING-SUSPECT: {o['file']}::{o['name']}")  # #2024 non-blocking
         for uid in result["urgent_park_required"]:
             print(f"  URGENT-PARK-REQUIRED: {uid}")  # #1742 (stderr carries the full demand)
         for w in result["warns"]:
@@ -1990,18 +3190,345 @@ def cmd_tmproot(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- mapped-baseline (#2296) -------------------------------------------------------
+
+
+def _sigterm_raises(signum: int, frame: object) -> None:  # pragma: no cover - signal path
+    """Convert SIGTERM into SystemExit so ``finally`` teardown runs (#2296).
+
+    The SKILL wraps the ``mapped-baseline`` call in ``timeout --kill-after=30s``,
+    whose FIRST signal is SIGTERM; Python's default disposition would kill the
+    process without running ``finally``, leaking the ~1 GB scratch tree + a
+    stale worktree admin entry until the 7-day ``_sweep_stale_gate_tmp`` reap.
+    143 = 128 + SIGTERM(15).
+    """
+    raise SystemExit(143)
+
+
+def _select_mapped_tests_on_tree(
+    tree: Path, map_files: Path, python_exe: str, timeout_s: float
+) -> list[str]:
+    """Run *tree*'s OWN selector copy against *tree*; return the col-1 dedup test list.
+
+    The scratch analogue of the SKILL gate's baseline SELECTION
+    (``--map-files ... --repo-root <tree>``): which mapped tests exist is
+    judged against the payload-free tree, so a branch-NEW mapped test is
+    absent from the returned set and its gated hits stay NEW by construction
+    (unchanged doctrine). Selector missing / rc != 0 / timeout raises
+    PristineRunError — the caller maps it to the fail-closed exit 2. Paths are
+    returned VERBATIM (repo-relative — ``select_step9c_tests.py`` emits them
+    relative to its work root): the SKILL's NODE-grain subtraction compares
+    ``FAILED tests/<file>::<node>`` strings with NO tree-prefix
+    normalization, so absolutized baseline node ids would subtract nothing
+    and every both-trees red would read NEW (#2296 §4.1 step 5).
+    """
+    sel = tree / "scripts" / "select_step9c_tests.py"
+    if not sel.is_file():
+        raise PristineRunError(f"selector not found on the baseline tree: {sel}")
+    env = thread_capped(os.environ)
+    env.pop("PYTHONPATH", None)  # same trust class as run_pytest: ambient shadow stripped
+    try:
+        proc = subprocess.run(
+            [python_exe, str(sel), "--map-files", str(map_files), "--repo-root", str(tree)],
+            cwd=str(tree),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise PristineRunError(f"baseline selector failed to run: {exc}") from exc
+    if proc.returncode != 0:
+        raise PristineRunError(
+            f"baseline selector rc={proc.returncode}: {proc.stderr.strip()[-400:]}"
+        )
+    return sorted({ln.split("\t", 1)[0] for ln in proc.stdout.splitlines() if ln.strip()})
+
+
+def _mapped_baseline_pytest(
+    tests: list[str],
+    *,
+    cwd: Path,
+    timeout_s: float,
+    out_path: Path,
+    python_exe: str,
+    pythonpath: str,
+) -> int:
+    """One bounded, thread-capped, TEXT-capturing baseline pytest; returns its rc.
+
+    Mirrors ``run_pytest``'s env / TMPDIR / ``--basetemp`` /
+    ``start_new_session`` + killpg discipline but captures stdout+stderr to
+    *out_path* instead of DEVNULL + junitxml: the Step 10d gate's FILE-grain
+    attribution greps the leg's TEXT (and its NODE-grain subtraction greps the
+    ``FAILED``/``ERROR`` summary lines), so junit-only reporting is useless to
+    it — the reason ``run_pytest`` is not reused verbatim (#2296 §4.1 step 5).
+    Flags mirror the SKILL legs exactly (``-q -p no:cacheprovider`` — NOT
+    ``PYTEST_BASE_FLAGS``, whose ``--tb=no`` would suppress the traceback
+    lines the FILE-grain grep attributes on). *tests* are passed VERBATIM
+    (repo-relative) with ``cwd=<scratch>`` — never absolutized. A timeout
+    returns 124 (DATA for the caller's ``rc>1 => crash`` arm — the same code
+    the old shell ``timeout`` produced) after group-killing stragglers; any
+    other BaseException (e.g. the SIGTERM-raised SystemExit) reaps the group
+    and re-raises.
+    """
+    argv = [python_exe, "-m", "pytest", *tests, "-q", "-p", "no:cacheprovider"]
+    env = thread_capped(os.environ)
+    env.pop("PYTHONPATH", None)  # never let the invoking checkout's src/ shadow the root venv
+    env["PYTHONPATH"] = pythonpath  # the scratch tree's src/ (#1251 shadow, probe-verified)
+    tmp_root = gate_tmp_root()
+    basetemp: Path | None = None
+    if tmp_root is not None:
+        env["TMPDIR"] = str(tmp_root)
+        basetemp = Path(tempfile.mkdtemp(prefix="bt-", dir=str(tmp_root)))
+        argv.append(f"--basetemp={basetemp / 'p'}")
+    try:
+        with open(out_path, "wb") as out_f:
+            proc = subprocess.Popen(
+                argv,
+                cwd=str(cwd),
+                env=env,
+                stdout=out_f,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            try:
+                return proc.wait(timeout=timeout_s)
+            except subprocess.TimeoutExpired:
+                _log(f"mapped-baseline pytest exceeded {timeout_s}s — killing the process group")
+                _killpg_bounded(proc)
+                return 124
+            except BaseException:
+                _killpg_bounded(proc)
+                raise
+    finally:
+        if basetemp is not None:
+            shutil.rmtree(basetemp, ignore_errors=True)
+
+
+def cmd_mapped_baseline(args: argparse.Namespace) -> int:
+    """Run the Step 10d mapped-invariant BASELINE pytest on a detached sparse
+    scratch tree cut at the resolved ``--base`` — NEVER the shared repo root
+    (#2296).
+
+    The shared root is reverted repo-wide by every fleet commit's pre-commit
+    stash cycle (#2015, ``git checkout -- .`` for the hook window), which
+    killed the root-cwd baseline mid-run on #2288: an empty baseline
+    subtracts nothing, so every gated red read NEW — maximally fail-CLOSED,
+    the opposite of the old "dirt biases toward PASS" residual claim.
+
+    Sequence: resolve ``--base`` to a sha (fail-closed exit 2) ->
+    ``create_scratch_worktree`` (base-pinned sha + cone profile; profile =
+    superset of the ``--cones-from`` work root's layout) ->
+    ``assert_scratch_src_shadow`` (#1251) -> select the baseline test set with
+    the SCRATCH's own selector copy against the scratch -> run pytest with
+    ``cwd=<scratch>``, the ROOT venv interpreter, ``PYTHONPATH=<scratch>/src``
+    and the selector's repo-relative test paths -> teardown in ``finally``
+    (SIGTERM converted to SystemExit so teardown still runs under the
+    caller's ``timeout`` bound).
+
+    stdout protocol (machine-read by the SKILL gate blocks; ``rc=`` stays the
+    LAST line)::
+
+        scratch_path=<abs scratch tree>     # the <TREE> sed cancels this prefix
+        selected_path=<abs .selected file>  # the baseline SELECTION sidecar (#2348)
+        rc=<pytest rc>                      # 0 green / 1 failures / 124 timeout
+
+    The ``.selected`` sidecar (``--out`` + ``.selected``, beside ``--out`` in
+    /tmp — NOT inside the torn-down scratch; one repo-relative test path per
+    line, empty file on an empty selection) records which test FILES the
+    baseline COULD run: the ``classify-new-nodes`` split keys on it (#2348 —
+    ``comm -23`` can only subtract what the baseline observed, so a NEW node
+    whose file was never selected at the baseline must not block
+    unconditionally).
+
+    Exit 0 whenever the leg RAN (rc is DATA — the caller's ``rc>1 => crash``
+    arm classifies); exit 2 on any setup / selection / shadow-probe failure
+    the caller must treat as crash-class. An EMPTY selection writes an empty
+    ``--out`` and reports ``rc=0`` (nothing to run on the payload-free tree).
+    """
+    signal.signal(signal.SIGTERM, _sigterm_raises)
+    root = Path(args.root).resolve()
+    if not (root / ".git").exists():
+        _log(f"mapped-baseline: --root {root} is not a git checkout (fail-closed)")
+        return 2
+    map_files = Path(args.map_files)
+    if not map_files.is_file():
+        _log(f"mapped-baseline: --map-files {map_files} missing (fail-closed)")
+        return 2
+    out_path = Path(args.out)
+    try:
+        base_sha = _git_out(["rev-parse", "--verify", f"{args.base}^{{commit}}"], root).strip()
+    except subprocess.CalledProcessError as exc:
+        _log(
+            f"mapped-baseline: base {args.base!r} does not resolve in {root} "
+            f"(fail-closed): {(exc.stderr or '').strip()[-200:]}"
+        )
+        return 2
+    try:
+        python_exe = resolve_root_python(root)
+    except ToolMissingError as exc:
+        _log(str(exc))
+        return 2
+    cones_from = Path(args.cones_from)
+    # A missing/non-dir cones source degrades to the _scratch_cones floor
+    # profile (a SUPERSET of every gate layout), never a crash: the surgical
+    # form may run with no worktree in scope (#2296).
+    wt_cones = (_work_root_sparse_cones(cones_from) or []) if cones_from.is_dir() else []
+    try:
+        scratch = create_scratch_worktree(root, wt_cones, args.scratch_timeout_s, base_sha=base_sha)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        _log(f"mapped-baseline: scratch creation failed (fail-closed): {exc}")
+        return 2
+    selected_path = out_path.with_name(out_path.name + ".selected")
+    try:
+        assert_scratch_src_shadow(root, scratch.path, args.scratch_timeout_s)
+        tests = _select_mapped_tests_on_tree(
+            scratch.path, map_files, python_exe, args.scratch_timeout_s
+        )
+        # Selection sidecar (#2348): the test FILES the baseline COULD run —
+        # the classify-new-nodes split's observability key. Written beside
+        # --out (it must survive the scratch teardown), empty on an empty
+        # selection.
+        selected_path.write_text("".join(f"{t}\n" for t in tests))
+        if not tests:
+            out_path.write_text("")
+            rc = 0
+        else:
+            rc = _mapped_baseline_pytest(
+                tests,
+                cwd=scratch.path,
+                timeout_s=args.timeout_s,
+                out_path=out_path,
+                python_exe=python_exe,
+                pythonpath=str(scratch.path / "src"),
+            )
+    except (PristineRunError, ToolMissingError) as exc:
+        _log(f"mapped-baseline: {exc}")
+        return 2
+    except OSError as exc:
+        _log(f"mapped-baseline: {exc} (fail-closed)")
+        return 2
+    finally:
+        remove_scratch_worktree(root, scratch)
+    print(f"scratch_path={scratch.path}")
+    print(f"selected_path={selected_path}")
+    print(f"rc={rc}")
+    return 0
+
+
+def _classify_atomic_write(path: Path, lines: list[str]) -> None:
+    """Atomic line-list write: same-directory temp file + ``os.replace``.
+
+    The in-place ``--out-block == --new-nodes`` rewrite is the designed call
+    shape (#2348) — the replace makes a crash mid-write leave the target
+    byte-unchanged rather than truncated.
+    """
+    tmp = path.with_name(f"{path.name}.tmp-{os.getpid()}")
+    tmp.write_text("".join(f"{ln}\n" for ln in lines))
+    os.replace(tmp, path)
+
+
+def cmd_classify_new_nodes(args: argparse.Namespace) -> int:
+    """Split the Step 10d node-grain NEW set by baseline OBSERVABILITY (#2348).
+
+    ``comm -23`` can only subtract what the baseline COULD RUN: a NEW-classified
+    node whose test file was never SELECTED on the baseline tree was never
+    compared, so a main-side pre-existing red among such nodes false-blocks
+    the merge (the #2155 set-mismatch class). Pure file I/O — no git, no
+    subprocess. Per node line (``tests/<file>::<node>``; file = the text
+    before the first ``::``):
+
+    - file in the ``--baseline-selected`` set -> ``--out-block`` (a real
+      both-trees delta — the baseline observed the file and stayed green);
+    - file in the ``--own-diff`` set -> ``--out-block`` (branch-new/payload
+      test — "NEW by construction", the unchanged doctrine);
+    - otherwise -> ``--out-unclassifiable`` ("unclassifiable —
+      pristine-oracle needed": recorded + WARNed by the caller, never a
+      silent pass, never an automatic block).
+
+    Fail directions: a missing/unreadable ``--baseline-selected`` degrades to
+    LEGACY mode (ALL nodes -> ``--out-block`` + a stderr WARN — the status-quo
+    fail direction); a missing/unreadable ``--new-nodes`` / ``--own-diff``
+    exits 2 with every input left byte-unchanged (the SKILL blocks' ``||``
+    then keeps the un-rewritten NEW file blocking). ALL inputs are read FULLY
+    before any write (in-place ``--out-block == --new-nodes`` is the designed
+    call shape), and ``--out-unclassifiable`` is written BEFORE ``--out-block``
+    (both write-tmp + ``os.replace``): a crash between the two replaces then
+    fails CLOSED — the block operand still holds every node, at worst
+    double-recorded — whereas the opposite order could silently drop
+    unclassifiable nodes from the block operand with no record (the one
+    window where "never a silent pass" would fail).
+
+    stdout: ``block_count=<n>`` + ``unclassifiable_count=<n>``; exit 0
+    whenever the split RAN.
+    """
+    new_nodes_path = Path(args.new_nodes)
+    own_diff_path = Path(args.own_diff)
+    # Read EVERY input fully before writing anything (in-place rewrite support).
+    try:
+        node_lines = [ln for ln in new_nodes_path.read_text().splitlines() if ln.strip()]
+    except OSError as exc:
+        _log(f"classify-new-nodes: --new-nodes unreadable (fail-closed exit 2): {exc}")
+        return 2
+    try:
+        own_diff = {ln.strip() for ln in own_diff_path.read_text().splitlines() if ln.strip()}
+    except OSError as exc:
+        _log(f"classify-new-nodes: --own-diff unreadable (fail-closed exit 2): {exc}")
+        return 2
+    selected_path = Path(args.baseline_selected)
+    legacy = False
+    selected: set[str] = set()
+    try:
+        selected = {ln.strip() for ln in selected_path.read_text().splitlines() if ln.strip()}
+    except OSError:
+        legacy = True
+        _log(
+            "classify-new-nodes: WARN baseline-selected list missing/unreadable "
+            f"({selected_path}) — LEGACY mode: every NEW node kept blocking (status quo)"
+        )
+    block: list[str] = []
+    unclassifiable: list[str] = []
+    for line in node_lines:
+        test_file = line.split("::", 1)[0].strip()
+        if legacy or test_file in selected or test_file in own_diff:
+            block.append(line)
+        else:
+            unclassifiable.append(line)
+    # --out-unclassifiable FIRST, then --out-block: a crash between the two
+    # replaces fails CLOSED (the block operand still holds every node).
+    try:
+        _classify_atomic_write(Path(args.out_unclassifiable), unclassifiable)
+        _classify_atomic_write(Path(args.out_block), block)
+    except OSError as exc:
+        _log(f"classify-new-nodes: output write failed (fail-closed exit 2): {exc}")
+        return 2
+    print(f"block_count={len(block)}")
+    print(f"unclassifiable_count={len(unclassifiable)}")
+    return 0
+
+
 # --- probe -----------------------------------------------------------------------
 
-# Fleet-arbitration signature union (#1962): the four gate artifact classes that
-# ride Step 9c / Step 10d / Step 9a-ter gate-launch argvs, plus the ledger
-# ``refresh`` invocation (the heaviest pytest universe; its own flock bounds it
-# to one fleet-wide, so it counts as ONE gate under the reserved pseudo-issue
-# key FLEET_REFRESH_KEY). FIXED and valid by construction, so ``probe --fleet``
-# is until-loop-safe (exit 2 stays argparse/usage-only for the fleet form).
+# Fleet-arbitration signature union (#1962): the five issue-keyed gate artifact
+# alternates that ride Step 9c / Step 10d / Step 9a-ter gate-launch argvs, plus
+# the ledger ``refresh`` invocation (the heaviest pytest universe; its own flock
+# bounds it to one fleet-wide, so it counts as ONE gate under the reserved
+# pseudo-issue key FLEET_REFRESH_KEY). FIXED and valid by construction, so
+# ``probe --fleet`` is until-loop-safe (exit 2 stays argparse/usage-only for
+# the fleet form). #2256: the lint/surgical gate workloads are composed to
+# script FILES (``/tmp/issue-<N>-lint-gate.sh`` / ``issue-<N>-surgical-gate.sh``,
+# the #2115 launcher), whose paths ride the detached workload's argv for its
+# WHOLE life — the former ``issue-(\d+)-lint-gate-tree`` alternate matched only
+# the transient tar/lint-leg child argvs, undercounting both gate forms during
+# their TG/land phases. ``issue-(\d+)-lint-gate`` covers the script path AND
+# (superstring) the gate-tree children + legacy inline launches;
+# ``issue-(\d+)-surgical-gate`` covers the surgical script path; the
+# ``surgical-outcome`` alternate is retained for legacy inline argvs.
 FLEET_GATE_SIGNATURE_RE: re.Pattern[str] = re.compile(
     r"step9c-junit-issue-(\d+)\.xml"
-    r"|issue-(\d+)-lint-gate-tree"
+    r"|issue-(\d+)-lint-gate"
     r"|issue-(\d+)-[^ ]*inline-payload\.txt"
+    r"|issue-(\d+)-surgical-gate"
     r"|issue-(\d+)-surgical-outcome\.txt"
     r"|step9c_baseline\.py refresh"
 )
@@ -2213,7 +3740,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "diff base (default: resolve via the worktree selector — fetched-"
             "origin/main semantics WITHOUT a second fetch, #1289; an explicit "
-            "REF is used verbatim)"
+            "REF is used verbatim); also sets the pristine-oracle cut — the "
+            "scratch detaches at merge-base(base, HEAD) (#2293)"
         ),
     )
     p_compare.add_argument(
@@ -2250,6 +3778,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="disable the #1251 scratch PYTHONPATH src-shadow — restore the #1077 eligibility "
         "rule (ANY dirty src//pyproject.toml/uv.lock path keeps the fail-closed exit 2)",
     )
+    p_compare.add_argument(
+        "--no-paired-pristine",
+        action="store_true",
+        help="disable the #2024 paired-selection ordering re-check — restore the pre-#2024 "
+        "classification exactly (every untouched-file single-file-PASS node stays NEW)",
+    )
+    p_compare.add_argument(
+        "--max-paired-files",
+        type=int,
+        default=200,
+        help="refuse-to-spend cap on the paired co-selection prefix (#2024; B1): over-cap "
+        "SKIPs the paired check (keeps NEW) — NEVER truncates the prefix (a nearest-N "
+        "window would drop the contaminating predecessor: #2021 measured distance 49). "
+        "The default sits above the current ~171-file full selection, so it is a "
+        "runaway guard, not a behavior knob.",
+    )
     p_compare.add_argument("--json", action="store_true")
     p_compare.set_defaults(func=cmd_compare)
 
@@ -2258,6 +3802,78 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the resolved gate temp-write root (empty = no routing); always exit 0",
     )
     p_tmproot.set_defaults(func=cmd_tmproot)
+
+    p_mapped = sub.add_parser(
+        "mapped-baseline",
+        help="Step 10d mapped-invariant BASELINE pytest on a detached sparse scratch tree "
+        "cut at --base (never the shared repo root, #2296); stdout: scratch_path= + rc= "
+        "lines; exit 0 = leg ran (rc is data), 2 = setup failure (crash-class)",
+    )
+    p_mapped.add_argument(
+        "--map-files", required=True, help="newline-delimited changed-path list (own-diff)"
+    )
+    p_mapped.add_argument(
+        "--root", required=True, help="the MAIN repo root (owns the venv + git object db)"
+    )
+    p_mapped.add_argument(
+        "--cones-from",
+        required=True,
+        help="work root whose sparse profile seeds the scratch cone superset "
+        "(non-sparse -> the _scratch_cones floor)",
+    )
+    p_mapped.add_argument(
+        "--base",
+        default="origin/main",
+        help="baseline ref, resolved to a sha up front (unresolvable -> fail-closed exit 2)",
+    )
+    p_mapped.add_argument(
+        "--timeout-s",
+        type=float,
+        required=True,
+        help="pytest bound (the gate's TG_T); a timeout reports rc=124 (crash-class to the caller)",
+    )
+    p_mapped.add_argument(
+        "--scratch-timeout-s",
+        type=float,
+        default=120.0,
+        help="per-git-command + selection + shadow-probe bound (compare's scratch default)",
+    )
+    p_mapped.add_argument("--out", required=True, help="baseline pytest TEXT output path")
+    p_mapped.set_defaults(func=cmd_mapped_baseline)
+
+    p_classify = sub.add_parser(
+        "classify-new-nodes",
+        help="split the Step 10d node-grain NEW set by baseline observability (#2348): "
+        "node file in --baseline-selected or --own-diff -> --out-block (keeps blocking); "
+        "else -> --out-unclassifiable (pristine-oracle-needed WARN arm). Pure file I/O; "
+        "missing --baseline-selected -> LEGACY all-block + stderr WARN; missing "
+        "--new-nodes/--own-diff -> exit 2 (inputs byte-unchanged)",
+    )
+    p_classify.add_argument(
+        "--new-nodes", required=True, help="the comm -23 NEW node-id list (one node per line)"
+    )
+    p_classify.add_argument(
+        "--baseline-selected",
+        required=True,
+        help="the mapped-baseline .selected sidecar (one repo-relative test path per line); "
+        "missing/unreadable -> LEGACY mode (all nodes block, stderr WARN)",
+    )
+    p_classify.add_argument(
+        "--own-diff", required=True, help="the payload path list (own-diff / additive files)"
+    )
+    p_classify.add_argument(
+        "--out-block",
+        required=True,
+        help="block-worthy node subset (in-place --out-block == --new-nodes is the designed "
+        "call shape; write-tmp + os.replace)",
+    )
+    p_classify.add_argument(
+        "--out-unclassifiable",
+        required=True,
+        help="'unclassifiable — pristine-oracle needed' node subset (written BEFORE "
+        "--out-block so a crash between the replaces fails CLOSED)",
+    )
+    p_classify.set_defaults(func=cmd_classify_new_nodes)
 
     p_probe = sub.add_parser(
         "probe",

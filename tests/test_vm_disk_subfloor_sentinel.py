@@ -1,4 +1,4 @@
-"""Tests for the VM-disk SUB-FLOOR sentinel (task #679).
+"""Tests for the VM-disk sub-floor sentinel (task #679).
 
 The watcher's existing alert/reclaim bands fire late (20 / 15 GiB). The
 sub-floor sentinel is an EARLIER advisory band (~60 GB) that attributes the
@@ -415,3 +415,236 @@ def test_tick_root_disk_snapshot_none_on_error(monkeypatch):
 
     monkeypatch.setattr(tick_triage.shutil, "disk_usage", _boom)
     assert tick_triage.root_disk_snapshot() is None
+
+
+# ─── #2141 skip diagnostics (below-floor declined ticks are loud) ────────────
+#
+# The reclaim arm used to decline SILENTLY, so a genuine non-fire was
+# indistinguishable from a fire whose log line the reader failed to match —
+# which is exactly how #2141 came to be filed against a WORKING arm (grep
+# 'subfloor' = 0 on a log carrying 4 'SUB-FLOOR' fire lines). These tests pin
+# the new per-skip stderr lines, the kill-switch-only throttled sidecar rows,
+# the lowercase-token standardization, the merge-write state contract, the
+# ok-line band note, and the D1.5 conftest sidecar-hermeticity guard.
+
+
+def test_subfloor_reclaim_skip_kill_switch_below_floor_is_loud(watcher_roots, monkeypatch, capsys):
+    """The below-floor declined fixture the body asked for: a kill-switched
+    below-floor tick is positively observable — a stderr line naming the
+    predicate plus exactly one durable action="skipped" sidecar row."""
+    monkeypatch.setenv("EPM_DISABLE_SUBFLOOR_RECLAIM", "1")
+    _stub_launcher_forbidden(monkeypatch)
+    free = asw.VM_DISK_SUBFLOOR_FREE_BYTES - 10 * 2**30
+
+    assert asw.subfloor_reclaim_pass(dry_run=False, free_bytes=free, now=NOW) is False
+
+    assert "subfloor-reclaim: skipped (kill-switch" in capsys.readouterr().err
+    rows = [r for r in _read_sidecar(watcher_roots) if r["kind"] == "vm-disk-subfloor-reclaim"]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["action"] == "skipped"
+    assert row["reason"] == "kill-switch"
+    assert row["band"] == "sub-floor"
+    assert row["free_bytes"] == free
+    assert row["interval_s"] == asw.VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S
+
+
+def test_subfloor_reclaim_skip_kill_switch_above_floor_stays_silent(
+    watcher_roots, monkeypatch, capsys
+):
+    """The volume-scoping rule: above the floor a kill-switched decline is the
+    healthy no-op (~144 ticks/day) and stays byte-identical — no stderr, no
+    sidecar row."""
+    monkeypatch.setenv("EPM_DISABLE_SUBFLOOR_RECLAIM", "1")
+    _stub_launcher_forbidden(monkeypatch)
+    free = asw.VM_DISK_SUBFLOOR_FREE_BYTES + 10 * 2**30
+
+    assert asw.subfloor_reclaim_pass(dry_run=False, free_bytes=free, now=NOW) is False
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out == ""
+    assert _read_sidecar(watcher_roots) == []
+
+
+def test_subfloor_reclaim_skip_rows_throttled(watcher_roots, monkeypatch, capsys):
+    """Kill-switched below-floor ticks: a stderr line EVERY tick, sidecar rows
+    throttled to <=1 per interval, and the skip-state save is a MERGE that
+    never clobbers last_run_ts (the rate-limit key)."""
+    monkeypatch.setenv("EPM_DISABLE_SUBFLOOR_RECLAIM", "1")
+    _stub_launcher_forbidden(monkeypatch)
+    free = asw.VM_DISK_SUBFLOOR_FREE_BYTES - 10 * 2**30
+    # Seed prior fire state: the skip-state merge must leave it untouched.
+    asw._save_subfloor_reclaim_state({"last_run_ts": NOW - 50.0, "pid": 111})
+    interval = asw.VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S
+
+    for t in (NOW, NOW + 600.0, NOW + interval + 1.0):
+        assert asw.subfloor_reclaim_pass(dry_run=False, free_bytes=free, now=t) is False
+
+    assert capsys.readouterr().err.count("skipped (kill-switch") == 3
+    rows = [r for r in _read_sidecar(watcher_roots) if r.get("action") == "skipped"]
+    assert len(rows) == 2  # NOW and NOW+interval+1; NOW+600 throttled
+    state = json.loads(asw._subfloor_reclaim_state_path().read_text())
+    assert state["last_run_ts"] == NOW - 50.0  # the merge pin: untouched
+    assert state["pid"] == 111
+    assert state["last_skip_row_ts"] == NOW + interval + 1.0
+
+
+def test_subfloor_reclaim_skip_rate_limited_stderr_only(reclaim_env, monkeypatch, capsys):
+    """A rate-limited below-floor decline gets a stderr line carrying the
+    age= field (a NEGATIVE age is the corrupt/future-last_run_ts wedge
+    signature) but NO sidecar row — the <=1800 s-old fire row in the same
+    sidecar is already the positive evidence."""
+    calls = _stub_launcher_recorder(monkeypatch)
+    free = asw.VM_DISK_SUBFLOOR_FREE_BYTES - 10 * 2**30
+
+    assert asw.subfloor_reclaim_pass(dry_run=False, free_bytes=free, now=NOW) is True  # fire
+    assert asw.subfloor_reclaim_pass(dry_run=False, free_bytes=free, now=NOW + 600.0) is False
+
+    err = capsys.readouterr().err
+    assert "skipped (rate-limited" in err
+    assert "age=600" in err
+    rows = _read_sidecar(reclaim_env)
+    assert [r for r in rows if r.get("action") == "skipped"] == []
+    assert len([r for r in rows if r.get("action") == "guard-apply-launched"]) == 1
+    assert len(calls) == 1
+
+
+def test_subfloor_reclaim_skip_free_unreadable_stderr_only(reclaim_env, monkeypatch, capsys):
+    """free-unreadable: one stderr line naming the predicate; no rows, no
+    state writes (the band condition is unevaluable — production never
+    reaches this, vm_disk_pass early-returns on free is None upstream)."""
+    _stub_launcher_forbidden(monkeypatch)
+    monkeypatch.setattr(asw, "_root_disk_headroom", lambda: None)
+
+    assert asw.subfloor_reclaim_pass(dry_run=False, free_bytes=None, now=NOW) is False
+
+    assert "skipped (free-unreadable" in capsys.readouterr().err
+    assert _read_sidecar(reclaim_env) == []
+    assert not asw._subfloor_reclaim_state_path().is_file()
+
+
+def test_subfloor_reclaim_skip_dry_run_zero_writes(watcher_roots, monkeypatch, capsys):
+    """The #681 r3 dry-run contract extended to the skip path: stderr line +
+    the [dry-run] would-append print only — NO sidecar file, NO state file."""
+    monkeypatch.setenv("EPM_DISABLE_SUBFLOOR_RECLAIM", "1")
+    _stub_launcher_forbidden(monkeypatch)
+    free = asw.VM_DISK_SUBFLOOR_FREE_BYTES - 10 * 2**30
+
+    assert asw.subfloor_reclaim_pass(dry_run=True, free_bytes=free, now=NOW) is False
+
+    captured = capsys.readouterr()
+    assert "subfloor-reclaim: skipped (kill-switch" in captured.err
+    assert "[dry-run] would append" in captured.out
+    assert not (watcher_roots / ".claude" / "cache" / "disk-guard-events.jsonl").is_file()
+    assert not asw._subfloor_reclaim_state_path().is_file()
+
+
+def test_subfloor_lines_carry_lowercase_token(reclaim_env, monkeypatch, capsys):
+    """The #2141 grep-token fix: every emitted subfloor-family line carries
+    the literal lowercase `subfloor`, and the uppercase token is gone from
+    the module SOURCE — closing the whole class (the data-disk print site
+    included) without a mounted-data-disk fixture."""
+    _stub_launcher_recorder(monkeypatch)
+    below = asw.VM_DISK_SUBFLOOR_FREE_BYTES - 10 * 2**30
+
+    asw.subfloor_sentinel_pass(dry_run=False, free_bytes=below)  # sentinel fire
+    asw.subfloor_reclaim_pass(dry_run=False, free_bytes=below, now=NOW)  # reclaim fire
+    asw.subfloor_reclaim_pass(dry_run=False, free_bytes=below, now=NOW + 1.0)  # rate-limited
+    monkeypatch.setenv("EPM_DISABLE_SUBFLOOR_RECLAIM", "1")
+    asw.subfloor_reclaim_pass(dry_run=False, free_bytes=below, now=NOW + 2.0)  # kill-switch
+    monkeypatch.setattr(asw, "_root_disk_headroom", lambda: None)
+    asw.subfloor_reclaim_pass(dry_run=False, free_bytes=None, now=NOW + 3.0)  # free-unreadable
+
+    lines = [ln for ln in capsys.readouterr().err.splitlines() if "vm-disk" in ln]
+    assert len(lines) >= 5  # fire x2 + skip x3
+    for ln in lines:
+        assert "subfloor" in ln, ln
+    assert "SUB-FLOOR" not in Path(asw.__file__).read_text()
+
+
+def test_vm_disk_ok_line_names_subfloor_band(watcher_roots, monkeypatch, capsys):
+    """D3: the per-tick ok line names the sub-floor band when free < 60 GiB —
+    `vm-disk: ok` beside a live sub-floor episode read as a contradiction in
+    the #2141 false report (it reports the 20 GiB ALERT band, not the 60 GiB
+    sub-floor band). Above the band the line is byte-identical to before."""
+    # 40 GiB free: below the 60 GiB sub-floor, above the 20 GiB alert band.
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 40 * 2**30)
+    asw.vm_disk_pass(dry_run=True, now=NOW)
+    assert "vm-disk: ok (40.0 GiB free); sub-floor band" in capsys.readouterr().out
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 120 * 2**30)
+    asw.vm_disk_pass(dry_run=True, now=NOW)
+    out_high = capsys.readouterr().out
+    assert "vm-disk: ok (120.0 GiB free)\n" in out_high
+    assert "sub-floor band" not in out_high
+
+
+def test_fire_row_and_state_shape_unchanged(reclaim_env, monkeypatch):
+    """After a fire with prior skip state present: the fire row keeps its
+    exact #1392 field set, and the fire-path state save is a MERGE — it
+    updates last_run_ts + pid while PRESERVING last_skip_row_ts (a
+    whole-payload overwrite would clobber it)."""
+    _stub_launcher_recorder(monkeypatch, pid=777)
+    free = asw.VM_DISK_SUBFLOOR_FREE_BYTES - 10 * 2**30
+    asw._save_subfloor_reclaim_state({"last_skip_row_ts": NOW - 900.0})
+
+    assert asw.subfloor_reclaim_pass(dry_run=False, free_bytes=free, now=NOW) is True
+
+    rows = [r for r in _read_sidecar(reclaim_env) if r["kind"] == "vm-disk-subfloor-reclaim"]
+    assert len(rows) == 1
+    assert set(rows[0]) == {
+        "ts",
+        "kind",
+        "band",
+        "action",
+        "free_bytes",
+        "free_gib",
+        "pid",
+        "interval_s",
+        "log",
+    }
+    state = json.loads(asw._subfloor_reclaim_state_path().read_text())
+    assert state == {"last_skip_row_ts": NOW - 900.0, "last_run_ts": NOW, "pid": 777}
+
+
+def test_sidecar_path_hermetic_without_project_root_pin(tmp_path, monkeypatch):
+    """The D1.5 pin: with NO PROJECT_ROOT pin the resolver must NOT point at
+    the real repo root (the conftest autouse guard redirects it to pytest
+    tmp); with a pinned PROJECT_ROOT it must DELEGATE to the real resolver
+    (so root-pinned sidecar-content assertions keep working)."""
+    real_root = asw.PROJECT_ROOT
+    unpinned = asw._disk_guard_sidecar_path()
+    assert not str(unpinned).startswith(str(real_root))
+    assert str(unpinned).startswith(str(tmp_path))
+
+    other_tmp = tmp_path / "other"
+    monkeypatch.setattr(asw, "PROJECT_ROOT", other_tmp)
+    expected = other_tmp / ".claude" / "cache" / "disk-guard-events.jsonl"
+    assert asw._disk_guard_sidecar_path() == expected
+
+
+def test_kill_switch_skip_from_vm_disk_pass_is_hermetic(tmp_path, monkeypatch):
+    """The exact Finding-1 planting shape end-to-end: kill switch set
+    (conftest default), 17 GiB free, AUTONOMOUS_REGISTRY_DIR pinned,
+    PROJECT_ROOT NOT pinned, real-body vm_disk_pass(dry_run=False) — the
+    REAL shared sidecar gains ZERO bytes while the tmp-redirected sidecar
+    carries the sentinel row AND the new kill-switch skip row."""
+    real_sidecar = asw.PROJECT_ROOT / ".claude" / "cache" / "disk-guard-events.jsonl"
+    size_before = real_sidecar.stat().st_size if real_sidecar.is_file() else 0
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "reg")
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 17 * 2**30)  # low band, sub-floor active
+    monkeypatch.setattr(asw, "_top_issue_cache_paths", lambda dry_run: [])
+    monkeypatch.setattr(asw, "_vm_remediate_worktrees", lambda dry_run: "worktree-audit rc=0: ok")
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: None)
+
+    asw.vm_disk_pass(dry_run=False, now=NOW)
+
+    size_after = real_sidecar.stat().st_size if real_sidecar.is_file() else 0
+    assert size_after == size_before  # ZERO rows into the real audit stream
+    redirected = tmp_path / "disk-guard-events.jsonl"
+    rows = [json.loads(ln) for ln in redirected.read_text().splitlines() if ln.strip()]
+    kinds_actions = {(r["kind"], r.get("action")) for r in rows}
+    assert ("vm-disk-subfloor", None) in kinds_actions  # sentinel row, redirected
+    assert ("vm-disk-subfloor-reclaim", "skipped") in kinds_actions  # the new skip row

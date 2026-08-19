@@ -111,7 +111,7 @@
           },
           {
             "type": "command",
-            "command": "cmd=$(jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE '\\|[[:space:]]*python3?(\\.[0-9]+)?[[:space:]]+(-[^[:space:]]+[[:space:]]+)*-[cm]([^A-Za-z0-9_]|$)'; then echo 'BLOCKED: bare `| python -c/-m` pipe. This VM has no `python` on PATH — `python: command not found` (exit 127). Pipe into `uv run python` instead: `... | uv run python -c \"...\"`. CLAUDE.md § Task Workflow API.' >&2; exit 2; fi"
+            "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_python_pipe.sh"
           }
         ]
       },
@@ -163,6 +163,15 @@
           {
             "type": "command",
             "command": "file_path=$(jq -r '.tool_input.file_path // .tool_response.filePath // empty'); if [ -n \"$file_path\" ] && echo \"$file_path\" | grep -qE '\\.py$' && ! echo \"$file_path\" | grep -qE '^/(tmp|var/tmp|dev/shm)/'; then cd /home/thomasjiralerspong/explore-persona-space && uv run ruff check --fix --quiet \"$file_path\" 2>/dev/null; uv run ruff format --quiet \"$file_path\" 2>/dev/null; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/thomasjiralerspong/explore-persona-space/scripts/guard_skill_doc_headroom.sh"
           }
         ]
       }

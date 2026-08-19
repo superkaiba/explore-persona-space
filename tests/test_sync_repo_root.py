@@ -532,10 +532,13 @@ def test_kept_outcome_appends_sidecar_row_and_report_advisory(
             "detail",
             "rescue_patch",
             "stash_list_len",
+            "new_this_run",
         }
         datetime.fromisoformat(row["ts"])  # UTC ISO timestamp parses
         assert row["repo"] == str(local)
         assert row["reason"] == "apply-check-dirty"
+        # Harness-stranded entry: preflight classifies it BACKLOG (#2182).
+        assert row["new_this_run"] is False
         assert row["detail"] == ""
         assert len(row["sha"]) == 40 and row["sha12"] == row["sha"][:12]
         assert row["ref"].startswith("stash@{")
@@ -652,6 +655,223 @@ def test_kept_sidecar_known_shas_fail_soft(tmp_path):
         + "\n"
     )
     assert srr._kept_sidecar_known_shas(f) == {sha}
+
+
+# ─── 5c. NEW-vs-BACKLOG discriminator + exit 7 (#2182) ───────────────────────
+#
+# An autostash stranded by the sync's OWN pull (sha absent from the pre-pull
+# snapshot) is fatal — EXIT_AUTOSTASH_STRANDED = 7 with a full recovery
+# message; pre-existing backlog entries (pre_pull_shas=None at preflight, or
+# sha in the snapshot post-pull) stay a loud WARN at exit 0. Misclassifying
+# the backlog as NEW would wedge every sync run on the shared VM.
+
+
+def _setup_own_pull_strand_conditions(local: Path, other: Path) -> None:
+    """The ``_strand_autostash`` SETUP only (its :420-427 half): origin
+    advances f.txt, local leaves f.txt dirty-UNCOMMITTED with NO local commit
+    ahead — the script's OWN pull performs the strand (completes rc=0,
+    autostash reapply conflicts). Deliberately NOT ``_build_conflict_divergence``:
+    that fixture COMMITS the conflicting edit, so the pull dies mid-rebase
+    rc!=0 → EXIT_CONFLICT (2) and the post-pull recovery is never reached
+    (plan §5 test 1, round-1 critic finding)."""
+    _write(local, "f.txt", "base\n")
+    _commit(local, "f.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _write(other, "f.txt", "origin\n")
+    _commit(other, "f.txt")
+    _git(other, "push", "-q", "origin", "main")
+    _write(local, "f.txt", "local-dirty\n")  # uncommitted; no commit ahead
+
+
+def _setup_backlog_plus_new(local: Path, other: Path) -> None:
+    """A pre-existing backlog entry (f.txt, harness-stranded) PLUS the
+    conditions for the script's OWN pull to strand a second entry (g.txt)."""
+    _write(local, "g.txt", "g-base\n")
+    _commit(local, "g.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _strand_autostash(local, other)  # backlog entry (f.txt) via the HARNESS pull
+    _write(other, "g.txt", "g-origin\n")
+    _commit(other, "g.txt")
+    _git(other, "push", "-q", "origin", "main")
+    _write(local, "g.txt", "g-local-dirty\n")  # uncommitted — the script's pull strands it
+
+
+def test_new_autostash_stranded_by_own_pull_exits_7(origin_and_clone, capsys):
+    """Plan §5 test 1: a NEW autostash stranded by the sync's OWN pull is
+    fatal (exit 7) with a self-sufficient recovery message. No literal
+    swept-file restoration asserted — the pull SUCCEEDED, so restore_swept
+    is occupied-path-guarded by design."""
+    _origin, local, other = origin_and_clone
+    _setup_own_pull_strand_conditions(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == srr.EXIT_AUTOSTASH_STRANDED == 7
+    assert rep["state"] == "error"
+    assert rep["exit_code"] == 7
+    new = [e for e in rep["autostash_kept"] if e["new_this_run"] is True]
+    assert len(new) == 1
+    msg = "\n".join(rep["messages"])
+    assert "stash@{0}" in msg
+    assert new[0]["sha"][:12] in msg
+    assert "git stash pop stash@{0}" in msg
+    assert "f.txt" in msg  # the file list
+    # The synced-but-unpushed framing (plan §3.2) — exit 7 is not a failed sync.
+    assert "pull itself SUCCEEDED" in msg
+    assert "push leg was SKIPPED" in msg
+    # The pull DID succeed and the entry is KEPT, never dropped.
+    assert (local / "f.txt").read_text() == "origin\n"
+    assert any("autostash" in ln for ln in _git(local, "stash", "list").stdout.splitlines())
+    assert any(s.startswith("KEPT (NEW THIS RUN) ") for s in rep["stash"])
+
+
+def test_preexisting_backlog_entry_only_exit_0_warn(origin_and_clone, capsys):
+    """Plan §5 test 2: a backlog-only run exits 0. Origin advances AGAIN after
+    the strand so ``behind > 0`` and the pull pipeline actually runs — the
+    post-pull ``sha in snapshot ⇒ backlog`` classification is exercised, not
+    just the preflight ``pre_pull_shas=None`` path (round-1 critic concern 3)."""
+    _origin, local, other = origin_and_clone
+    _strand_autostash(local, other)  # backlog entry via the HARNESS pull
+    _write(other, "unrelated.txt", "more\n")
+    _commit(other, "unrelated.txt")
+    _git(other, "push", "-q", "origin", "main")
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert rep["state"] == "synced"
+    assert rep["behind"] > 0  # the pull pipeline (snapshot path) ran
+    assert rep["autostash_kept"], rep
+    assert all(e["new_this_run"] is False for e in rep["autostash_kept"])
+    assert any("pre-existing backlog" in s for s in rep["stash"])
+    # Entry still KEPT in the stash list — never dropped.
+    assert any("autostash" in ln for ln in _git(local, "stash", "list").stdout.splitlines())
+
+
+def test_both_classes_present_exit_7_names_only_the_new_entry(origin_and_clone, capsys):
+    """Plan §5 test 3: with a backlog entry AND a new own-pull strand in the
+    same run, the exit is 7 and the message names the NEW entry specifically —
+    the backlog is neither the trigger nor the pop target."""
+    _origin, local, other = origin_and_clone
+    _setup_backlog_plus_new(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 7
+    new = [e for e in rep["autostash_kept"] if e["new_this_run"]]
+    backlog = [e for e in rep["autostash_kept"] if not e["new_this_run"]]
+    assert len(new) == 1 and backlog
+    msg = "\n".join(rep["messages"])
+    assert new[0]["sha"][:12] in msg
+    assert "g.txt" in msg  # the NEW entry's file
+    for e in backlog:  # the backlog entry is never named in the failure message
+        assert e["sha"][:12] not in msg
+    # The recovery command points at the NEW entry's CURRENT ref.
+    ref_by_sha = {sha: ref for ref, sha in srr._autostash_entries(local)}
+    assert f"git stash pop {ref_by_sha[new[0]['sha']]}" in msg
+    # Both entries still present — nothing dropped.
+    stash_lines = [
+        ln for ln in _git(local, "stash", "list").stdout.splitlines() if "autostash" in ln
+    ]
+    assert len(stash_lines) == 2
+
+
+def test_sidecar_rows_carry_new_this_run_for_both_classes(origin_and_clone, capsys, monkeypatch):
+    """Plan §5 test 4: every sidecar row carries a boolean ``new_this_run``,
+    consistent with the report's outcome classification for BOTH classes."""
+    _origin, local, other = origin_and_clone
+    _capture_pushes(monkeypatch)
+    _setup_backlog_plus_new(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 7
+    rows = _sidecar_rows(local)
+    assert rows and all(isinstance(r["new_this_run"], bool) for r in rows)
+    new_shas = {e["sha"] for e in rep["autostash_kept"] if e["new_this_run"]}
+    backlog_shas = {e["sha"] for e in rep["autostash_kept"] if not e["new_this_run"]}
+    assert new_shas and backlog_shas
+    assert {r["sha"] for r in rows if r["new_this_run"]} == new_shas
+    assert {r["sha"] for r in rows if not r["new_this_run"]} == backlog_shas
+
+
+def test_triage_autostash_mutates_nothing_and_lists_entries(origin_and_clone, capsys):
+    """Plan §5 test 5: ``--triage-autostash`` is read-only (worktree digest +
+    ``git stash list`` + HEAD + status byte-identical; mirrors
+    ``test_dry_run_mutates_nothing``), exits 0, and its stdout names every
+    bare entry. The rescue-patch (re)write lands under RESCUE_ROOT, OUTSIDE
+    the working tree."""
+    _origin, local, other = origin_and_clone
+    # Bare entry 2 FIRST via stash create/store (the :452 recipe) — after the
+    # strand the tree holds unmerged paths, which would refuse a commit.
+    _write(local, "g.txt", "g-base\n")
+    _commit(local, "g.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _write(local, "g.txt", "g-dirty\n")
+    sha2 = _git(local, "stash", "create").stdout.strip()
+    _git(local, "stash", "store", "-m", "autostash", sha2)
+    _git(local, "checkout", "HEAD", "--", "g.txt")
+    _strand_autostash(local, other)  # bare entry 1 (f.txt) + UU tree state
+
+    entries = srr._autostash_entries(local)
+    assert len(entries) == 2
+
+    def snapshot() -> tuple:
+        return (
+            _git(local, "status", "--porcelain=v2", "--untracked-files=all").stdout,
+            _git(local, "rev-parse", "HEAD").stdout,
+            _git(local, "stash", "list").stdout,
+            _worktree_digest(local),
+        )
+
+    before = snapshot()
+    rc = srr.main(["--repo", str(local), "--triage-autostash"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert snapshot() == before  # incl. `git stash list` byte-identical
+    for ref, sha in entries:
+        assert ref in captured.out
+        assert sha[:12] in captured.out
+        assert (srr.RESCUE_ROOT / f"stash-{sha[:12]}.patch").exists()
+    assert "f.txt" in captured.out and "g.txt" in captured.out
+    assert "apply --check:" in captured.out
+
+
+def test_backlog_count_warn_line_at_preflight(origin_and_clone, capsys):
+    """Plan §5 test 6: the backlog-count WARN line appears (once) when >=1
+    bare entry survives preflight — in real AND dry-run modes — and is absent
+    when none exist."""
+    _origin, local, other = origin_and_clone
+    rc0, rep0, _ = _run(local, capsys=capsys)
+    assert rc0 == 0
+    assert not any("autostash backlog:" in m for m in rep0["messages"])
+
+    _strand_autostash(local, other)
+    rc1, rep1, _ = _run(local, capsys=capsys)
+    assert rc1 == 0
+    lines = [m for m in rep1["messages"] if m.startswith("autostash backlog:")]
+    assert len(lines) == 1
+    assert "1 bare entry(ies) present" in lines[0]
+    assert "--triage-autostash" in lines[0]
+
+    rc2, rep2, _ = _run(local, "--dry-run", capsys=capsys)
+    assert rc2 == 0
+    assert any("autostash backlog:" in m for m in rep2["messages"])
+
+
+def test_clean_sync_no_autostash_exit_0_empty_outcomes(origin_and_clone, capsys):
+    """Plan §5 test 7 (regression anchor): a clean sync with the pull pipeline
+    running (behind > 0) and no autostash anywhere stays exit 0 with an empty
+    outcome list — the new fatal path cannot fire on the common clean sync."""
+    _origin, local, other = origin_and_clone
+    _write(other, "clean.txt", "hello\n")
+    _commit(other, "clean.txt")
+    _git(other, "push", "-q", "origin", "main")
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert rep["state"] == "synced"
+    assert rep["autostash_kept"] == []
+    assert _git(local, "stash", "list").stdout.strip() == ""
 
 
 # ─── 6. Push retry (success) ─────────────────────────────────────────────────
@@ -2253,3 +2473,252 @@ def test_abort_lock_retry_count_bound_exact_invocations(origin_and_clone, monkey
     assert calls["abort"] == 3
     assert res.returncode == 128
     assert res.stderr == stderr
+
+
+# ─── #2295: abandoned-husk deadlock — flock-free resolver wait convergence ───
+#
+# Pre-#2295, task_workflow._locked() took the flock FIRST and the resolver's
+# bounded husk wait ran INSIDE it; sync_repo_root.py's bounded
+# acquire_task_workflow_lock then timed out (exit 5) and the husk was never
+# cleared. Change A moves the resolution BEFORE the flock; these tests pin the
+# CONVERGENCE (helper clears the husk while a writer waits) and the Change-C
+# message pointing at the sanctioned recovery helper.
+
+
+def _make_break_rebase_husk(local: Path) -> Path:
+    """Plant a REAL, conflict-free, DETACHED mid-rebase husk.
+
+    `git rebase -i HEAD~1` with a `break` inserted before the pick stops with
+    HEAD detached at the onto commit and `.git/rebase-merge` present;
+    `git rebase --abort` restores `main` cleanly and (tip already pushed) the
+    subsequent pull is a no-op — the rc=0 shape A2 needs, unlike
+    `_make_conflicted_rebase_husk`, whose post-abort pull re-hits the genuine
+    content conflict and exits 2. GIT_SEQUENCE_EDITOR is passed via env (it
+    OUTRANKS `-c sequence.editor`, so an inherited CI value cannot flake this).
+    """
+    _write(local, "seq.txt", "one\n")
+    _commit(local, "seq.txt")
+    _git(local, "push", "-q", "origin", "main")
+    env = {**os.environ, "GIT_SEQUENCE_EDITOR": "sed -i '1i break'"}
+    subprocess.run(
+        ["git", "-C", str(local), "rebase", "-i", "HEAD~1"],
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    husk = local / ".git" / "rebase-merge"
+    assert husk.is_dir()
+    sym = _git(local, "symbolic-ref", "--short", "HEAD", check=False)
+    assert sym.returncode != 0  # HEAD detached at the break point
+    return husk
+
+
+def _prime_task_workflow_for_local(local: Path, monkeypatch) -> object:
+    """Point the editable-install task_workflow at the test clone.
+
+    The resolver keys off `_MODULE_DIR`, NOT cwd — monkeypatching
+    `_resolve_primary_checkout` (+ the lock/sidecar paths; the fixture already
+    redirects LOCK_PATH, whose parent is the per-test lock dir) and clearing
+    the lru cache is the sanctioned redirect (plan #2295 §5 implementation
+    note). Returns the task_workflow module.
+    """
+    tw = srr.task_workflow
+    lock_dir = Path(tw.LOCK_PATH).parent
+    monkeypatch.setattr(tw, "_resolve_primary_checkout", lambda env: local)
+    monkeypatch.setattr(tw, "LOCK_DIR", lock_dir)
+    monkeypatch.setattr(tw, "DEFERRED_COMMITS_LOG", lock_dir / "deferred-commits.jsonl")
+    monkeypatch.setattr(tw, "STRANDED_COMMITS_LOG", lock_dir / "stranded-commits.jsonl")
+    tw.invalidate_cache()
+    return tw
+
+
+def test_stale_husk_cleared_while_writer_waits_flock_free(origin_and_clone, monkeypatch, capsys):
+    """#2295 A2 convergence: a real task_workflow writer spins in the bounded
+    husk wait WITHOUT holding the flock, sync_repo_root.py aborts the
+    abandoned husk (rc=0, STALE-HUSK ABORT), and the writer then completes
+    its mutation. Pre-fix discriminator: the writer held the flock through
+    its wait, so the helper's 2s bounded lock2 acquire exited 5 instead."""
+    _origin, local, _other = origin_and_clone
+    tw = _prime_task_workflow_for_local(local, monkeypatch)
+    # Seed a minimal committed task so post_event has a real target.
+    task_dir = local / "tasks" / "proposed" / "1"
+    task_dir.mkdir(parents=True)
+    (task_dir / "body.md").write_text("---\nkind: infra\n---\n\n# seed\n")
+    (task_dir / "events.jsonl").write_text("")
+    _commit(local, "tasks/proposed/1", msg="seed task")
+    _git(local, "push", "-q", "origin", "main")
+
+    monkeypatch.setenv("EPM_TASKPY_REBASE_WAIT_SECONDS", "60")
+    monkeypatch.setenv("EPM_TASKPY_REBASE_POLL_SECONDS", "0.1")
+    monkeypatch.setenv("EPM_ROOT_SYNC_LOCK2_WAIT_S", "2")  # pre-fix: exit 5 fast
+
+    husk = _make_break_rebase_husk(local)
+    t = time.time() - 7200  # past the 3600s default EPM_ROOT_SYNC_HUSK_AGE_S
+    os.utime(husk, (t, t))
+
+    writer_in_wait = threading.Event()
+    real_rebase_probe = tw._rebase_in_progress
+
+    def probe_wrapper(common_dir):
+        result = real_rebase_probe(common_dir)
+        if result:
+            writer_in_wait.set()
+        return result
+
+    monkeypatch.setattr(tw, "_rebase_in_progress", probe_wrapper)
+
+    writer_result: list[object] = []
+
+    def writer():
+        try:
+            tw.post_event(1, "epm:progress", note="post-husk write", by="test")
+            writer_result.append("ok")
+        except BaseException as exc:  # captured for the assertion below
+            writer_result.append(exc)
+
+    thread = threading.Thread(target=writer)
+    thread.start()
+    try:
+        assert writer_in_wait.wait(timeout=30), "writer never reached the husk wait"
+        rc, rep, _err = _run(local, capsys=capsys)
+        # Post-fix: the flock is FREE while the writer waits -> the helper
+        # acquires lock2, preflight aborts the abandoned husk, run exits 0.
+        assert rc == 0, f"helper rc={rc}; report messages: {rep.get('messages')}"
+        assert any("STALE-HUSK ABORT" in m for m in rep["messages"])
+        assert not husk.exists()
+        thread.join(timeout=90)
+        assert not thread.is_alive(), "writer never completed after the husk abort"
+        assert writer_result == ["ok"], f"writer failed: {writer_result}"
+        rows = [
+            json.loads(line)
+            for line in (task_dir / "events.jsonl").read_text().splitlines()
+            if line.strip()
+        ]
+        assert any(r["kind"] == "epm:progress" and r["note"] == "post-husk write" for r in rows)
+    finally:
+        thread.join(timeout=90)
+        tw.invalidate_cache()  # never leak the `local` resolution to later tests
+
+
+def test_husk_wait_timeout_message_names_sync_repo_root(origin_and_clone, monkeypatch):
+    """#2295 C1: the resolver's wait-timeout refusal leads with the sanctioned
+    recovery helper (`scripts/sync_repo_root.py`) while keeping the raw
+    `rebase --abort` fallback."""
+    _origin, local, _other = origin_and_clone
+    tw = _prime_task_workflow_for_local(local, monkeypatch)
+    monkeypatch.setenv("EPM_TASKPY_REBASE_WAIT_SECONDS", "1")
+    monkeypatch.setenv("EPM_TASKPY_REBASE_POLL_SECONDS", "0.1")
+    _git(local, "checkout", "-q", "--detach")
+    (local / ".git" / "rebase-merge").mkdir()
+    try:
+        with pytest.raises(RuntimeError) as excinfo:
+            tw.repo_root()
+        msg = str(excinfo.value)
+        assert "scripts/sync_repo_root.py" in msg  # the Change-C recommendation
+        assert "rebase --abort" in msg  # manual fallback retained
+        assert "CRASHED rebase" in msg
+    finally:
+        tw.invalidate_cache()
+
+
+# ─── 15. Lock-path rejection (#2324: symlink/FIFO-safe bounded opens) ────────
+#
+# Child-process bounded matrix (plan §6 / Acceptance bullet 3), sites 1-2:
+# {single-flight, task-workflow-wait} x {symlink→FIFO, FIFO}. Each arm plants
+# the fixture, runs the acquisition in a CHILD process with a hard timeout,
+# and asserts (a) bounded completion — the PRE-fix open() blocks forever on
+# the FIFO and trips the subprocess timeout — and (b) the fail-CLOSED posture
+# outcome (SyncAbortError, exit-code 5 class), never a silent wrong-inode
+# flock and never a None that reads as healthy contention.
+
+_LOCK_REJECT_DRIVER = """
+import importlib.util, sys, time
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("srr_child", sys.argv[1])
+m = importlib.util.module_from_spec(spec)
+sys.modules["srr_child"] = m
+spec.loader.exec_module(m)
+site, lock_path = sys.argv[2], sys.argv[3]
+t0 = time.monotonic()
+try:
+    if site == "single-flight":
+        m.ROOT_SYNC_LOCK = Path(lock_path)
+        m.acquire_single_flight()
+    else:
+        m.task_workflow.LOCK_PATH = lock_path
+        m.acquire_task_workflow_lock(5.0)
+    print("OUTCOME=no-raise")
+except m.SyncAbortError as e:
+    print(f"OUTCOME=abort exit_code={e.exit_code} elapsed={time.monotonic() - t0:.2f}")
+    print("MSG=" + e.message.splitlines()[0])
+"""
+
+
+def _plant_lock_fixture(kind: str, lock_path: Path, tmp_path: Path) -> None:
+    """Symlink arms are pinned symlink→FIFO (plan §6): the child BOUND assert
+    only discriminates when the pre-fix code path would follow the link into a
+    blocking FIFO open — a symlink→regular-file fixture would make it vacuous."""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if kind == "symlink":
+        target = tmp_path / "target.fifo"
+        os.mkfifo(target)
+        os.symlink(target, lock_path)  # symlink -> FIFO, NOT -> regular file
+    else:
+        os.mkfifo(lock_path)
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="requires POSIX mkfifo")
+@pytest.mark.parametrize("kind", ["symlink", "fifo"])
+@pytest.mark.parametrize("site", ["single-flight", "task-workflow-wait"])
+def test_lock_path_rejection_bounded_in_child(site: str, kind: str, tmp_path: Path):
+    lock_path = tmp_path / "locks" / "planted.lock"
+    _plant_lock_fixture(kind, lock_path, tmp_path)
+    proc = subprocess.run(
+        [sys.executable, "-c", _LOCK_REJECT_DRIVER, str(_SCRIPT), site, str(lock_path)],
+        capture_output=True,
+        text=True,
+        timeout=30,  # bounded: the pre-fix shape hangs here and fails legibly
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "OUTCOME=abort exit_code=5" in proc.stdout
+    assert "lock path rejected" in proc.stdout
+    elapsed = float(proc.stdout.split("elapsed=")[1].split()[0])
+    assert elapsed < 5.0  # rejection is immediate — well inside any advertised bound
+
+
+def test_main_symlink_root_sync_lock_exits_5_error_report(origin_and_clone, capsys):
+    """In-process main()-level posture pin (site 1): rejected lock path →
+    rc 5 + report state == "error" (fail-CLOSED: never proceeds unlocked).
+    Symlink→regular target here — posture-only; the bounded symlink→FIFO arms
+    are the child matrix's."""
+    _origin, local, _other = origin_and_clone
+    lock = Path(srr.ROOT_SYNC_LOCK)
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    target = lock.parent / "target-regular"
+    target.write_bytes(b"")
+    os.symlink(target, lock)
+    rc, rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert rep["state"] == "error"
+    assert rep["exit_code"] == 5
+    assert "root-sync lock path rejected (symlink)" in err
+
+
+def test_task_workflow_lock_symlink_raises_within_bound(tmp_path: Path, monkeypatch):
+    """Construct-order pin (site 2, plan §6): the deadline is built BEFORE the
+    open, and a rejected path raises immediately — far inside wait_s."""
+    lock2 = tmp_path / "locks" / "task-workflow-lock"
+    lock2.parent.mkdir(parents=True, exist_ok=True)
+    target = tmp_path / "target-regular"
+    target.write_bytes(b"")
+    os.symlink(target, lock2)
+    monkeypatch.setattr(srr.task_workflow, "LOCK_PATH", lock2)
+    t0 = time.monotonic()
+    with pytest.raises(srr.SyncAbortError) as ei:
+        srr.acquire_task_workflow_lock(30.0)
+    assert time.monotonic() - t0 < 5.0  # << wait_s: the open sits inside the bound
+    assert ei.value.exit_code == 5
+    assert "task-workflow lock path rejected (symlink)" in ei.value.message

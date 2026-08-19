@@ -1,0 +1,731 @@
+{
+  "commit": "230a8ea5+dirty",
+  "git_commit": "230a8ea5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-07T14:23:19Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.07122857262455046,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.49213256427518165,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07122857262455046,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0006228672962595106,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0158916056644664,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.411020933647651,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0158916056644664,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0006194788671340046,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0932354591769595,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.5796996369279679,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0932354591769595,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0007971605585360919,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0513156875554346,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.20736087733279018,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0513156875554346,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0008125530235571166,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8944861104507889,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.4642557681036325,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8944861104507889,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0023475746697044554,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.1236618114255563,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.4446092310384662,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1236618114255563,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.002858673195445549,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.067896322517492,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.20882159429132746,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.067896322517492,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0011667066576669827,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.074376719372008,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.2254487936181569,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.074376719372008,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0010260745711521357,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.903309544495642,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.36478393257257713,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.903309544495642,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.006588036166955069,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 3.9871003438528474,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.36763992945576246,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.9871003438528474,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.006951386971480589,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.9664074863004712,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3856825666179923,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.9664074863004712,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0056489033361868165,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.1109588971006366,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3865306873362466,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.1109588971006366,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.005214469312829895,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 4.037404931220973,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3356027767718072,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 4.037404931220973,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0037354605259218186,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 4.083918019450416,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3385595247719,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 4.083918019450416,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0042959810688096844,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.985287691695106,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3547961600412761,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.985287691695106,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.008709767285749593,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 3.929082067664042,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.35635390153421775,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.929082067664042,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.009530740432631645,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 4.014192044624117,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3830483691709236,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.014192044624117,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.00966764153707933,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 3.8865924865870856,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3808483791499187,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.8865924865870856,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.009727167554348104,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 5.0851841047180715,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3609899231388926,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 5.0851841047180715,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.018571922861556,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.034232743771737,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.27919295858458054,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.034232743771737,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.015655210355020932,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 5.067102812422197,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.36960715629310803,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 5.067102812422197,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.009057769907139513,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 4.962176751713765,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.27988210680548775,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 4.962176751713765,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.006783783815736943,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 5.122381486342675,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.2962172010567693,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 5.122381486342675,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.009638376291174122,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 5.1022114915437715,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.2185863641514155,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 5.1022114915437715,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0057109685308983195,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 5.072379709239178,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3559185425108692,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 5.072379709239178,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.019761363470691705,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 4.920606064041512,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.26435334458909887,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 4.920606064041512,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.016550519991516733,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 4.9913474609690285,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3790039749146514,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.9913474609690285,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.01962478677977022,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.881388979104679,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.2830236426880387,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 4.881388979104679,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.02067623336082953,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 5.910115267937562,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.25804092851978855,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 5.910115267937562,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.005621017280867058,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 6.047592727843038,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.2600253964957039,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 6.047592727843038,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.005932236531486401,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 6.0636381605360326,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.28370857002769806,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 6.0636381605360326,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.005424749885771374,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 6.121552530432894,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.29411676313698365,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 6.121552530432894,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.005201585188225888,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 5.954714593115919,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.24174941355775256,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 5.954714593115919,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.003328394097920362,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 5.966319523569066,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.2468580444464818,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 5.966319523569066,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.004013182269479154,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 5.9920845109317105,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.25837841954594365,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 5.9920845109317105,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.008223468278551537,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 5.919262553361914,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.26266099859049113,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 5.919262553361914,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.009192765445618756,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 5.903779591387223,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3062773017516078,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 5.903779591387223,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0072585919536588776,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 5.993683280818742,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.29904646700207105,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 5.993683280818742,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.008256027185589132,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 6.92899643075323,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.22254654104537908,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 6.92899643075323,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.01660406176191447,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 7.0441516386174525,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.22697104266573379,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 7.0441516386174525,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.01084662430676524,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 6.983659498906806,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.23057847586195007,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 6.983659498906806,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.008289098911909255,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 7.086496330975038,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.21315487440581515,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 7.086496330975038,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0032724885713756534,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 7.052068926520585,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.23192692925032138,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 7.052068926520585,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.007023109386770021,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 6.951215326759331,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.27773092560196416,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.951215326759331,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.011057643561839425,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.086387548362752,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.23286895598988436,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 7.086387548362752,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.01507113851400963,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 7.079238732949168,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.24697133503942315,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 7.079238732949168,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.012722177227167775,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 6.970744378547845,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.25314223172163713,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 6.970744378547845,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.009011829243970837,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 6.944965307021864,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.20222439896386968,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 6.944965307021864,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.0013320619148533774,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 8.047448831033494,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.3247326578431643,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 8.047448831033494,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0012255033581890285,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 7.90633564573842,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.18085840219801355,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 7.90633564573842,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0012176586724986116,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 7.921976132643528,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.35747589434403987,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 7.921976132643528,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.001087895643868997,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 7.871914190135262,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.19175231198874484,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 7.871914190135262,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.001251696786736245,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 8.074600338150557,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.25933573961581935,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 8.074600338150557,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0008191978376740128,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 8.042861222713928,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.12417804943373259,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 8.042861222713928,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0007025023196907565,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 8.053342998442847,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.32727136213761465,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 8.053342998442847,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0007492578968848473,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 8.072989548065712,
+      "within-cell held-out R\u00b2 (ambient basis)": 0.16886394299858812,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 8.072989548065712,
+      "within-cell held-out R\u00b2 (ambient basis)": -0.0008226341489010025,
+      "_kind": "scatter",
+      "_group": 111
+    }
+  ],
+  "n_series": 112,
+  "total_points": 112,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Every lattice cell fits a real context\u2192answer map,\nand the answer-boundary form sets its ceiling",
+        "ylabel": "within-cell held-out R\u00b2 (ambient basis)",
+        "legend_labels": [
+          "instruct",
+          "base",
+          "assistant cell (diamond)",
+          "character cell (circle)",
+          "prefix arm"
+        ],
+        "annotations": [
+          "56 cells; shuffled-answer null p95 \u2248 \u22120.03 everywhere; identity+bias \u2264 \u22120.48 everywhere"
+        ],
+        "xticklabels": [
+          "chat\nins",
+          "chat\non-pol",
+          "bare\ntext\nins",
+          "bare\ntext\non-pol",
+          "story\nattrib.\nins",
+          "story\nattrib.\non-pol",
+          "story\nlabel\nins",
+          "story\nlabel\non-pol",
+          "chat\ntransposed"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}

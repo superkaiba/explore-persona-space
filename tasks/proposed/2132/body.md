@@ -46,3 +46,19 @@ go/no-go as the approval gate. With 782 G free on the data disk, the window is o
 
 - origin: /daily 2026-08-05 problem sweep — miner 3 P5 (probed findmnt/df) + miner 4 P2;
   Thomas's live correction in session 7a1632b8 (~22:0xZ 08-05).
+
+## Folded in from #1038 (2026-08-09)
+
+#1038 ("schedule #681 bind-migration cutover + disk sign-off", filed 2026-07-04)
+is archived in favor of this task — same cutover decision, older numbers. What
+survives from it:
+
+- **Fresh numbers (probed 2026-08-09):** `.claude/worktrees` = **263 GB** on the
+  root disk (212 GB at this task's filing on 08-06; ~97 GB in early July —
+  steady growth), `/` at 87% used / 130 GB free, `/mnt/eps-data` at 27% used /
+  738 GB free. `findmnt -T .claude/worktrees` → still root ext4, no bind. The
+  cutover window remains open.
+- **Deletion sign-off remainder:** `/tmp/i779_mirror_dl` (59 GB in July) no
+  longer exists; `~/.cache/huggingface` is **64 GB** (above the disk guard's
+  50 GB HOME-HF-cache cap arm) and is the main surviving sign-off candidate
+  from the 07-03 list.

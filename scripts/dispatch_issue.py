@@ -85,7 +85,7 @@ Exit codes
   confirm gate passed on already-durable artifacts.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
-  ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
+  ``pod_lifecycle.EXIT_STILL_WAITING``). THREE producers, same contract:
   (1) the RunPod lane's ``pod_lifecycle.py provision`` exited 75 because
   its bounded wait-for-capacity loop reached the per-process wall-clock
   budget while capacity / the fleet burn cap kept the provision queued
@@ -94,15 +94,25 @@ Exit codes
   a FLEX_START rung but a post-timeout ``instances list`` probe found the
   instance live server-side — a FLEX_START preemptible-queueing state
   (``reason: gcloud_create_timeout_still_provisioning``, with additive
-  ``instance_name`` / ``instance_status`` keys; #736). NEITHER is a
+  ``instance_name`` / ``instance_status`` keys; #736); (3) a free SLURM
+  lane's queue park reached the per-process budget
+  (``EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS``, default 420 s) with the
+  job still queued — the router persists the QoS-ladder position (rung +
+  elapsed + job id) to the durable per-issue lease BEFORE raising
+  (``reason: free_lane_park_budget_reached``, with additive ``lane`` /
+  ``job_id`` / ``qos`` / ``rung`` / ``n_rungs`` /
+  ``rung_park_elapsed_s`` keys; #2161). NONE is a
   failure: ``stdout`` carries ``still_waiting: true`` + ``rerun: true``
   and the caller RE-RUNS the same launch command to continue waiting
   (the RunPod wait loop is state-free; the GCP re-run reconnects to the
-  live instance via ``reconnect_or_none`` with NO double-create, so both
-  resume exactly). Do NOT post ``epm:failure v1`` / ``set-status
-  blocked`` on this exit. (Incident #603, 2026-06-11: this exit
-  previously fell through to the generic handler and crashed as an rc-4
-  ``CalledProcessError``. Incident #658/#736, 2026-06-29: the GCP
+  live instance via ``reconnect_or_none`` with NO double-create; the
+  free-lane re-run reconnects by ``squeue --name`` and RESUMES the park
+  from the lease state with NO double-submit — do NOT hand off to
+  ``backend_poll`` while still_waiting, PENDING polls as running there
+  and the QoS ladder would stall). Do NOT post ``epm:failure v1`` /
+  ``set-status blocked`` on this exit. (Incident #603, 2026-06-11: this
+  exit previously fell through to the generic handler and crashed as an
+  rc-4 ``CalledProcessError``. Incident #658/#736, 2026-06-29: the GCP
   create-timeout case crashed as the undocumented rc-4 traceback below.)
 
 Bg-Bash contract preservation
@@ -505,9 +515,11 @@ def _build_production_backends() -> dict[str, Any]:
         failed, NOT job-absent); the router's ``_try_reconnect``
         propagates it so the lane is skipped / the override raises a
         typed terminal instead of blind-submitting a duplicate
-        (round-6 B1).
+        (round-6 B1). The ADVISORY legacy-name probe (#2055 migration
+        edge) is the one exception: it is best-effort — a probe failure
+        there logs a warning and proceeds to the fresh submit.
         """
-        if kind in {"nibi", "fir", "mila", "fellows"}:
+        if kind in _slurm_kinds():
             # _resolve_cluster_cfg raises on a typo'd / unavailable
             # cluster — that's a real misconfiguration, NOT something to
             # paper over with a silent None fallback.
@@ -523,10 +535,22 @@ def _build_production_backends() -> dict[str, Any]:
 
             # Thread the resolved cluster so a suffixed lane (fellows,
             # #1609 rule 8) reconnects by the SAME name the launch path
-            # stamped onto the sbatch.
+            # stamped onto the sbatch. Since #2055 the name also carries
+            # spec.extra['lane_suffix'], so a second lane's probe cannot
+            # match the first lane's job (the #1947 cross-reconnect).
             name = job_name(spec, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
             found_id = query_by_name(robot_alias=cluster.ssh_host, job_name=name)
             if not found_id:
+                # #2055 migration edge: on a suffixed-lane miss, ONE
+                # advisory (best-effort) legacy unsuffixed-name probe —
+                # warns about a live pre-fix job, never reconnects to it.
+                _advisory_legacy_lane_probe(
+                    spec=spec,
+                    cluster=cluster,
+                    kind=kind,
+                    suffixed_name=name,
+                    query_fn=query_by_name,
+                )
                 return None
             scratch_dir = scratch_dir_for(spec, cluster)
             log_path = f"{scratch_dir}/job.out"
@@ -618,6 +642,97 @@ def _resolve_cluster_cfg(name: str | None) -> Any | None:
     from explore_persona_space.backends.slurm import get_cluster_config
 
     return get_cluster_config(name)
+
+
+def _slurm_kinds() -> frozenset[str]:
+    """The SLURM lane kinds — derived from the cluster-config registry.
+
+    ONE source (#2055 critic (b)): the ``_reconnect`` closure's SLURM
+    branch AND the ``lane_suffix_unhonored_by_lane`` honored set both
+    read THIS helper, so the two sets cannot drift apart. Includes
+    ``available=False`` rows (e.g. fir) deliberately — reconnect
+    membership predates availability gating (``_resolve_cluster_cfg``
+    still raises loudly for an unavailable cluster).
+    """
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS
+
+    return frozenset(CLUSTER_CONFIGS)
+
+
+def _lane_suffix_honored_kinds() -> frozenset[str]:
+    """Lanes whose instance/job/pod names honor ``--lane-suffix``.
+
+    GCP instance names (#934) + SLURM job names / scratch dirs (#2055) +
+    RunPod pod names (``pod-<N>-<slug>``, #2145). The
+    ``lane_suffix_unhonored_by_lane`` warning surface remains as a
+    safety net for any future lane kind outside this set.
+    """
+    return frozenset({"gcp", "runpod"}) | _slurm_kinds()
+
+
+def _slurm_legacy_unsuffixed_job_name(spec: Any, cluster: Any) -> str:
+    """The legacy (pre-#2055, unsuffixed) SLURM job name for the migration probe.
+
+    Composed via :func:`backends.slurm.job_name` on a spec copy differing
+    ONLY in ``lane_suffix`` (dropped) — the SAME ``plan_hash`` and cluster
+    suffix as the suffixed probe (#2055 critic (c)), so the probe targets
+    exactly the name a pre-fix launch of THIS spec would have stamped.
+    """
+    import dataclasses
+
+    from explore_persona_space.backends.slurm import job_name
+
+    stripped = dataclasses.replace(
+        spec,
+        extra={k: v for k, v in dict(spec.extra or {}).items() if k != "lane_suffix"},
+    )
+    return job_name(stripped, plan_hash=stripped.extra.get("plan_hash"), cluster=cluster)
+
+
+def _advisory_legacy_lane_probe(
+    *, spec: Any, cluster: Any, kind: str, suffixed_name: str, query_fn: Any
+) -> None:
+    """#2055 migration edge (best-effort, ADVISORY — never raises).
+
+    Called when a SUFFIXED lane's reconnect probe missed: a pre-#2055
+    launch of this lane submitted under the legacy UNSUFFIXED name, so
+    probe it ONCE and warn LOUDLY about a live hit — but the caller
+    still fresh-submits (post-fix semantics): silently reconnecting
+    across the suffix boundary is exactly the #1947 bug being fixed,
+    and the live job may equally be a legitimately unsuffixed sibling
+    lane. A probe FAILURE (``SlurmProbeError``) logs a warning and
+    returns — the advisory probe must never turn a healthy suffixed
+    launch into a lane skip (#2055 critic (a)).
+    """
+    from explore_persona_space.backends.base import lane_suffix_for
+    from explore_persona_space.backends.slurm_monitor import SlurmProbeError
+
+    if not lane_suffix_for(spec):
+        return
+    legacy_name = _slurm_legacy_unsuffixed_job_name(spec, cluster)
+    log = logging.getLogger("dispatch_issue")
+    try:
+        legacy_id = query_fn(robot_alias=cluster.ssh_host, job_name=legacy_name)
+    except SlurmProbeError as exc:
+        log.warning(
+            "#2055 legacy-name probe failed (%s) for %s — advisory only; "
+            "proceeding with a fresh suffixed submit.",
+            exc,
+            legacy_name,
+        )
+        return
+    if legacy_id:
+        log.warning(
+            "a live UNSUFFIXED job %s (job %s) exists on %s while this "
+            "suffixed lane (%s) found no job under its own name; if it is "
+            "THIS lane's pre-#2055 launch, cancel it or reattach manually "
+            "— proceeding with a FRESH suffixed submit (never silently "
+            "reconnecting across the suffix boundary, #1947).",
+            legacy_name,
+            legacy_id,
+            kind,
+            suffixed_name,
+        )
 
 
 def _frontmatter_backend_value(issue: int) -> str | None:
@@ -834,6 +949,124 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
     }
 
 
+def _lane_suffix_runpod_grammar_conflict(spec: Any) -> dict[str, Any] | None:
+    """Pre-route ``--lane-suffix`` vs RunPod pod-name grammar guard (#2145).
+
+    A suffix can pass the parser-surface lane-suffix grammar
+    (``[a-z0-9]([a-z0-9-]*[a-z0-9])?``, <=43 chars — #934) yet fail the
+    TIGHTER RunPod pod-name suffix grammar
+    (``[a-z][a-z0-9-]{0,19}`` — letter-initial, <=20 chars;
+    ``pod_lifecycle.py cmd_provision``). On a RunPod-reachable route the
+    suffix mints ``pod-<N>-<slug>``, so the mismatch must refuse HERE,
+    pre-route: a grammar ``SystemExit`` inside the provision subprocess
+    would be wrapped by ``router._runpod_terminal_rung`` into
+    ``NoComputeAvailableError`` and MISREAD as a re-drivable capacity
+    miss (the #940 wrapping class). The NORMALIZED CLI backend is what's
+    checked (``spec.backend`` = ``normalize_backend_value(args.backend)``,
+    absent -> ``"auto"`` = RunPod-reachable); frontmatter ``backend:``
+    never enters ``spec.backend`` in this CLI, so an omitted flag always
+    routes through the guard.
+
+    Returns the exit-2 failure body (same shape as
+    :func:`_gpus_gcp_lane_conflict`) when the launch must be refused;
+    ``None`` when it may proceed: no suffix; an explicit non-RunPod
+    backend pin (GCP / SLURM lanes keep the looser #934 grammar); an
+    ``auto`` route carrying ``no_runpod_fallback`` (structurally
+    RunPod-unreachable — see below); or a pod-grammar-conformant suffix.
+    """
+    suffix = str((spec.extra or {}).get("lane_suffix") or "")
+    if not suffix:
+        return None
+    if spec.backend not in {"runpod", "auto"}:
+        # Explicit non-RunPod pin: the lane's own (looser) grammar governs.
+        # `auto` counts as RunPod-reachable regardless of EPM_AUTO_LANE_ORDER
+        # — the end-of-chain RunPod terminal rung retries RunPod after full
+        # exhaustion (and #2054's leading lane may hit it first).
+        return None
+    if spec.backend == "auto" and (spec.extra or {}).get("no_runpod_fallback"):
+        # #1997 opt-out: EVERY auto-chain RunPod path (the #2054 leading lane
+        # AND the end-of-chain retry both funnel through
+        # router._runpod_terminal_rung) declines at the TOP of the rung when
+        # no_runpod_fallback is set, so this launch structurally cannot reach
+        # RunPod — the looser #934 grammar governs (round-2 regression fix:
+        # `auto --no-runpod-fallback --lane-suffix <21-43 chars>` was a valid
+        # combination before #2145 and must stay one). Scoped to `auto` ONLY:
+        # an explicit runpod pin ignores the flag by design, and the CLI
+        # already refuses that contradictory combination at parse time.
+        return None
+    from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
+
+    if RUNPOD_NAME_SUFFIX_RE.fullmatch(suffix):
+        return None
+    note = (
+        "failure_class: infra\n"
+        "reason: lane_suffix_not_runpod_pod_grammar\n"
+        f"detail: --lane-suffix {suffix!r} passes the lane-suffix grammar "
+        "([a-z0-9]([a-z0-9-]*[a-z0-9])?, <=43 chars, #934) but NOT the RunPod "
+        "pod-name suffix grammar ([a-z][a-z0-9-]{0,19} — lowercase, "
+        f"letter-initial, <=20 chars), and the resolved backend {spec.backend!r} "
+        "can land on the RunPod lane, where the suffix mints pod-<N>-<slug> "
+        "(#2145). Refusing pre-route: the provision-time SystemExit would "
+        "otherwise be wrapped as a re-drivable no_compute_available terminal. "
+        "Fix: use a letter-initial suffix of <=20 chars; pin a non-RunPod "
+        "backend (--backend fellows/nibi/...) where the #934 grammar applies; "
+        "or, on an auto route, pass --no-runpod-fallback (declines every "
+        "RunPod rung, so the looser grammar governs)."
+    )
+    return {
+        "ok": False,
+        "issue": int(spec.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "lane_suffix_not_runpod_pod_grammar",
+        "note": note,
+    }
+
+
+def _validate_gpu_type_arg(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """Parse-time ``--gpu-type`` validation (#2145) — ``parser.error`` (exit 2) on a miss.
+
+    Validates through the SAME resolver the provision path uses
+    (``runpod_api.resolve_gpu_type_id``) — a nonexistent gpuTypeId submitted
+    to RunPod reads as a PERMANENT no-capacity miss (#537), so reject before
+    any backend is built (mirrors the ``--env-pin`` lazy-validate pattern;
+    lazy import via the ``scripts.*`` package form — the repo-root sys.path
+    bootstrap at module top resolves it in script mode and under the test
+    conftest alike; a bare ``from runpod_api import ...`` only resolves in
+    script mode, where ``scripts/`` itself is ``sys.path[0]``). No-op when
+    the flag is absent. Extracted from :func:`main` so the knob doesn't push
+    it over the C901 cap."""
+    if not getattr(args, "gpu_type", None):
+        return
+    from scripts.runpod_api import RunPodError, resolve_gpu_type_id
+
+    try:
+        resolve_gpu_type_id(args.gpu_type)
+    except RunPodError as exc:
+        parser.error(str(exc))
+
+
+def _pre_route_refusals(
+    spec: Any, args: argparse.Namespace, extra: dict[str, Any]
+) -> dict[str, Any] | None:
+    """First pre-route exit-2 refusal body, or ``None`` when the launch may route.
+
+    Order (preserved from the pre-extraction ``_cmd_launch`` inline blocks):
+    (1) the #2145 ``--lane-suffix`` / RunPod pod-name grammar guard — a
+    #934-legal suffix that fails the tighter pod grammar would otherwise die
+    as a provision-subprocess ``SystemExit`` wrapped into a re-drivable
+    capacity miss; (2) the #2161 CLI-drift refusals (no ``--repo-branch``
+    with a live ``issue-<N>`` branch + a repo-materializing lane reachable;
+    ``--max-run-duration`` without ``--time-budget-hours`` while a SLURM
+    lane is reachable). Extracted from :func:`_cmd_launch` so each new guard
+    doesn't push the dispatcher over the C901 cap (the
+    ``_spec_extra_from_args`` precedent)."""
+    conflict = _lane_suffix_runpod_grammar_conflict(spec)
+    if conflict is not None:
+        return conflict
+    return _cli_drift_refusal(args, extra)
+
+
 def _width_required_gpus_conflict(args: argparse.Namespace) -> dict[str, Any] | None:
     """Pre-route ``--width-required`` vs ``--gpus`` conflict guard (#1379).
 
@@ -871,6 +1104,218 @@ def _width_required_gpus_conflict(args: argparse.Namespace) -> dict[str, Any] | 
         "reason": "width_required_gpus_conflict",
         "note": note,
     }
+
+
+#: SLURM lane backend values. Mirrors
+#: ``backends/issue_dispatch._SLURM_LANES`` — mirrored rather than imported so
+#: this CLI stays import-light at module load; the equality is pinned by
+#: ``tests/test_dispatch_issue_cli.py::
+#: test_slurm_lane_backends_mirror_matches_issue_dispatch``. (The legacy
+#: ``cluster`` alias is deliberately absent, matching the raw-``args.backend``
+#: checks this constant feeds — ``build_run_spec`` normalizes it later.)
+_SLURM_LANE_BACKENDS: tuple[str, ...] = ("nibi", "fir", "mila", "fellows")
+
+
+def _issue_branch_candidates(issue: int) -> list[str]:
+    """``issue-<N>``-shaped branch refs visible from the repo root (#2161).
+
+    Enumerates local + origin refs matching ``issue-<N>`` / ``issue-<N>-*``
+    via ``git for-each-ref`` at ``task_workflow.repo_root()`` — evidence a
+    feature branch exists for this issue, so an implicit-main launch on a
+    repo-materializing lane would likely run stale code (incident #1336:
+    ~12 pod-hours on main-resident code while
+    ``origin/issue-1336-fullcorpora`` carried the dispatch script). ANY
+    subprocess failure fails OPEN (empty list + WARN log): a git hiccup
+    must never block launches — the fail-open residual is exactly the
+    pre-#2161 behavior. Deliberately a monkeypatchable module-level seam:
+    tests pin this probe instead of depending on live ref state (fabricated
+    test issue numbers can and do have real ``origin/issue-<N>`` refs).
+    """
+    from explore_persona_space.task_workflow import repo_root
+
+    patterns = [
+        f"refs/heads/issue-{issue}",
+        f"refs/heads/issue-{issue}-*",
+        f"refs/remotes/origin/issue-{issue}",
+        f"refs/remotes/origin/issue-{issue}-*",
+    ]
+    try:
+        proc = subprocess.run(
+            ["git", "for-each-ref", "--format=%(refname:short)", *patterns],
+            cwd=str(repo_root()),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+            env={**os.environ},
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        logging.getLogger("dispatch_issue").warning(
+            "issue-branch probe (git for-each-ref) failed for issue=%d (%s) — "
+            "failing OPEN: the repo-branch refusal guard stands down for this "
+            "launch (a git hiccup must never block launches)",
+            issue,
+            exc,
+        )
+        return []
+    return [line.strip() for line in proc.stdout.split("\n") if line.strip()]
+
+
+def _repo_materializing_lane_reachable(args: argparse.Namespace) -> bool:
+    """True when the launch can land on a lane that MATERIALIZES the repo.
+
+    gcp clones from origin (``render_startup_script``), the SLURM lanes
+    rsync a committed-tree snapshot of the REQUESTED branch (#793
+    ``materialize_branch_src``), and the RunPod EXECUTION leg (#909
+    ``--execute-workload``) syncs the pod clone — on all of them an unset
+    ``repo_branch`` resolves to ``main``. ``auto`` / absent reaches gcp +
+    the SLURM lanes through the chain; a bare ``runpod`` provision-only
+    launch materializes no branch this CLI gates. Reads ONLY the CLI arg:
+    an absent ``--backend`` is treated as ``auto`` even when the task's
+    frontmatter pins ``backend: runpod`` (provision-only) — a deliberate
+    conservative over-refusal (frontmatter is not consulted here); the
+    documented escape is an explicit ``--repo-branch`` (including
+    ``--repo-branch main``).
+    """
+    backend = (args.backend or "auto").strip().lower() or "auto"
+    if backend in {"auto", "gcp"} or backend in _SLURM_LANE_BACKENDS:
+        return True
+    return backend == "runpod" and bool(getattr(args, "execute_workload", False))
+
+
+def _repo_branch_default_main_conflict(
+    args: argparse.Namespace, extra: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Pre-route implicit-main vs live-issue-branch refusal (#2161 Gap 2 ii).
+
+    Fires only when ALL THREE hold: (a) ``extra['repo_branch']`` is UNSET
+    after :func:`_launch_extra_from_args` — no explicit ``--repo-branch``
+    (an explicit value, INCLUDING ``main``, bypasses by construction), and
+    the current-branch / worktree defaulting resolved nothing; (b) a
+    repo-materializing lane is reachable
+    (:func:`_repo_materializing_lane_reachable`); (c) ``issue-<N>``-shaped
+    branch refs EXIST (:func:`_issue_branch_candidates`). The launch would
+    then materialize MAIN while the issue's own branch carries the code
+    under test — the #1336 incident shape. Returns the exit-2 failure body
+    (same shape as :func:`_width_required_gpus_conflict`) when the launch
+    must be refused; ``None`` when it may proceed.
+    """
+    if extra.get("repo_branch"):
+        return None
+    if not _repo_materializing_lane_reachable(args):
+        return None
+    candidates = _issue_branch_candidates(int(args.issue))
+    if not candidates:
+        return None
+    note = (
+        "failure_class: infra\n"
+        "reason: repo_branch_required_issue_branch_exists\n"
+        f"detail: no --repo-branch was passed, the current-branch/worktree "
+        f"defaulting resolved nothing, and issue-{int(args.issue)} branch "
+        f"ref(s) exist: {', '.join(candidates)}. A repo-materializing lane is "
+        "reachable (gcp clones origin; the SLURM lanes rsync a committed-tree "
+        "snapshot of the requested branch, #793; the RunPod execution leg "
+        "syncs the pod clone, #909), so this launch would silently run "
+        "MAIN-resident code while the issue branch carries the code under "
+        "test (incident #1336). "
+        f"Fix: pass --repo-branch <branch> (e.g. --repo-branch {candidates[0]}) "
+        "to run the issue branch, or pass --repo-branch main explicitly to "
+        "confirm main-resident code is intended."
+    )
+    return {
+        "ok": False,
+        "issue": int(args.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "repo_branch_required_issue_branch_exists",
+        "note": note,
+    }
+
+
+def _slurm_lane_reachable(args: argparse.Namespace) -> bool:
+    """True when the launch can land on a SLURM lane (#2161 Gap 2 iii).
+
+    Explicit SLURM lane → True. ``auto`` / absent → True iff the RESOLVED
+    lane order carries a SLURM lane (the plan-recorded implementer
+    discretion: a ``runpod``-only ``EPM_AUTO_LANE_ORDER`` makes SLURM
+    unreachable, while the DEFAULT order carries fellows/nibi/fir/mila and
+    still refuses). A defective ``EPM_AUTO_LANE_ORDER`` stands down
+    (``RouteError`` → False) — ``route()`` surfaces that defect through the
+    existing terminal classification (mirrors
+    :func:`_ft_intent_gcp_default_boot_disk`).
+    """
+    backend = (args.backend or "auto").strip().lower() or "auto"
+    if backend in _SLURM_LANE_BACKENDS:
+        return True
+    if backend != "auto":
+        return False
+    from explore_persona_space.backends.router import RouteError, auto_lane_order
+
+    try:
+        return any(lane in _SLURM_LANE_BACKENDS for lane in auto_lane_order())
+    except RouteError:
+        return False
+
+
+def _max_run_duration_slurm_conflict(args: argparse.Namespace) -> dict[str, Any] | None:
+    """Pre-route inert-``--max-run-duration``-on-SLURM refusal (#2161 Gap 2 iii).
+
+    ``--max-run-duration`` threads ONLY to the GCP instance auto-delete
+    fence (#741) and is INERT on SLURM, where the wall fence is the sbatch
+    ``--time`` derived from ``--time-budget-hours``
+    (``backends/slurm.time_budget_hours``; intent-default table). A launch
+    declaring the GCP fence with no SLURM budget on a SLURM-reachable route
+    (:func:`_slurm_lane_reachable`) would silently swap the declared fence
+    for the intent default — the #1336 shape (fence 24h vs realized fellows
+    wall 8h). Both flags present → proceed (the corrected #1336 command
+    shape); an explicit non-SLURM backend pin → proceed (documented-inert).
+    Returns the exit-2 failure body (same shape as
+    :func:`_width_required_gpus_conflict`) or ``None``.
+    """
+    if not getattr(args, "max_run_duration", None):
+        return None
+    if getattr(args, "time_budget_hours", None) is not None:
+        return None
+    if not _slurm_lane_reachable(args):
+        return None
+    from explore_persona_space.backends.slurm import _DEFAULT_TIME_BUDGETS_HOURS
+
+    default_h = _DEFAULT_TIME_BUDGETS_HOURS.get(str(args.intent))
+    default_str = (
+        f"{default_h:g} h" if default_h is not None else "none — the SLURM lane fails fast"
+    )
+    note = (
+        "failure_class: infra\n"
+        "reason: max_run_duration_slurm_inert_without_time_budget\n"
+        f"detail: --max-run-duration {args.max_run_duration} threads only to "
+        "the GCP instance auto-delete fence (#741) and is INERT on SLURM, "
+        "where the wall fence is --time-budget-hours (intent default for "
+        f"{args.intent!r}: {default_str}) — your declared fence would "
+        "silently evaporate on a SLURM-reachable route (incident #1336: "
+        "fence 24h vs realized fellows wall 8h). "
+        "Fix: pass --time-budget-hours <h> alongside --max-run-duration, or "
+        "pin a non-SLURM backend."
+    )
+    return {
+        "ok": False,
+        "issue": int(args.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "max_run_duration_slurm_inert_without_time_budget",
+        "note": note,
+    }
+
+
+def _cli_drift_refusal(args: argparse.Namespace, extra: dict[str, Any]) -> dict[str, Any] | None:
+    """First #2161 pre-route CLI-drift refusal body, or ``None``.
+
+    Runs the two drift guards in order — implicit-main vs live issue
+    branch (:func:`_repo_branch_default_main_conflict`), then the
+    SLURM-inert ``--max-run-duration`` fence
+    (:func:`_max_run_duration_slurm_conflict`) — and returns the first
+    exit-2 refusal body; the branch guard wins when both fire.
+    """
+    return _repo_branch_default_main_conflict(args, extra) or _max_run_duration_slurm_conflict(args)
 
 
 #: Human-readable renderer pointer per lane, used in the #1329 lane-env lint
@@ -1207,16 +1652,16 @@ def _check_runpod_override_frontmatter(
         logging.getLogger("dispatch_issue").warning(
             "explicit --backend runpod for issue=%d but the task's frontmatter does "
             "not name a backend (absent/empty, or an explicit 'auto') — the task "
-            "itself says auto, and the standing default is "
-            "GCP FIRST (credits before real money). 'the GCP lane is train.py-only' "
-            "is STALE justification as of #588: every lane runs custom dispatch "
-            "scripts via --workload-cmd. Name a residual gap in the launch note — "
-            "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
-            "experimenter orchestration / runs longer than GCP --max-run-duration "
-            "(default 7d) / SLURM venv-extras mismatch — or drop the override and "
-            "let auto route. Launch continues; the epm:backend-selected marker "
-            "carries extra.override_without_frontmatter=true so the bypass is "
-            "visible on the events trail.",
+            "itself says auto, and since #2054 auto already leads with RunPod "
+            "(reason: auto_runpod_first), so a bare auto typically lands on RunPod "
+            "anyway while keeping the free SLURM lanes as fallback rungs. Prefer "
+            "dropping the override and letting auto route; when the pin is "
+            "deliberate, record the RunPod-specific shape it forces in the launch "
+            "note — 70B intents / interactive SSH-MCP experimenter orchestration / "
+            "SLURM venv-extras mismatch. Launch continues; the "
+            "epm:backend-selected marker carries "
+            "extra.override_without_frontmatter=true so the override is visible "
+            "on the events trail.",
             issue,
         )
         marker_poster = _wrap_marker_poster_with_override_flag(
@@ -1448,8 +1893,20 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # mint + the handle-sidecar composer. Parse-time validated
         # (_lane_suffix_arg); absent → key ABSENT (never None-valued — a
         # None-valued key would flip canonicalize_spec output and every
-        # live unsuffixed lease spec-hash).
+        # live unsuffixed lease spec-hash). As of #2145 the RunPod lane
+        # honors it too (pod-<N>-<slug> via pod_lifecycle --name-suffix).
         extra["lane_suffix"] = args.lane_suffix
+    if getattr(args, "gpu_type", None):
+        # #2145: RunPod GPU-type override — RunPodBackend.launch threads it
+        # to `pod_lifecycle.py provision --gpu-type` (short name H100/H200/
+        # A100 or a full vendor-prefixed gpuTypeId). Parse-time validated in
+        # main() via runpod_api.resolve_gpu_type_id (#537: a nonexistent
+        # gpuTypeId reads as permanent no-capacity on RunPod). Honored on
+        # the RunPod lane ONLY — a launch won by another lane records
+        # gpu_type_unhonored_by_lane in the launch JSON. Omit-when-absent
+        # (the #934 lane_suffix discipline: a None-valued key would flip
+        # canonicalize_spec output and every live lease spec-hash).
+        extra["gpu_type"] = args.gpu_type
     if getattr(args, "execute_workload", False):
         # RunPod-honored knob (#909): opts the launch into the RunPod
         # execution leg (RunPodBackend.launch SSHes the fresh pod, syncs
@@ -1473,8 +1930,15 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # router._runpod_terminal_rung — RunPod CPU instances have FIXED RAM,
         # so an unsatisfiable requirement refuses the fallback typed
         # (reason: cpu_fallback_infeasible_for_plan) instead of provisioning
-        # an undersized pod. GCP machine selection is unchanged (by intent);
-        # inert on SLURM lanes.
+        # an undersized pod. GCP GPU machine selection (#1998) consults
+        # backends/gcp.MACHINE_RAM_GIB and rung-skips undersized rungs or
+        # pre-launch-refuses via the router's ladder guard (typed
+        # GpuRamBelowMinRamGbError → reason: gpu_ram_below_min_ram_gb).
+        # RunPod-GPU explicit-override lane (--backend runpod with a GPU
+        # intent) remains inert — a residual not covered by #1998. SLURM
+        # lanes (#2275): raises the rendered #SBATCH --mem to the
+        # requirement (slurm._apply_min_ram, both GPU and CPU branches);
+        # refuses pre-submit above the cluster mem_gb_cap.
         extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "no_runpod_fallback", False):
         # Deferrable-dispatch knob (#1997): read at the TOP of
@@ -1570,7 +2034,7 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # workload must name its branch (issue 535 r6); the RunPod #909
         # execution leg syncs the pod clone to the same key.
         extra["repo_branch"] = args.repo_branch
-    elif (args.backend or "auto") in {"auto", "gcp"} or (
+    elif (args.backend or "auto") in {"auto", "gcp", *_SLURM_LANE_BACKENDS} or (
         # #909 (AC6): the auto-default ALSO fires for an explicit
         # `--backend runpod --execute-workload` launch — the execution
         # leg's branch sync would otherwise target `main`, where per-issue
@@ -1580,28 +2044,28 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         and getattr(args, "execute_workload", False)
     ):
         # fix19's production mirror (round-2 Claude Major, task #535):
-        # without this, the GCE clone defaults to "main" even when the
-        # invoking checkout — the /issue worktree on an issue-<N> branch
-        # — carries the code under test, silently re-creating the exact
-        # stale-main bug the acceptance harness already guards against
-        # (router_acceptance.py r19). Same policy as the harness: default
-        # to the CURRENT branch with a logged INFO. Gated to the lanes
-        # that can reach GCP (explicit "gcp", or "auto"/absent — absent
-        # includes frontmatter-driven backends, and an explicit SLURM /
-        # RunPod lane never escalates to GCP). The extra key is no longer
-        # inert on any lane: GCP honors it by git-cloning the requested
-        # branch in the GCE startup script, and RunPod's lifecycle layer
-        # also checks out the branch. SLURM has no honoring mechanism and
-        # REFUSES to submit when repo_branch names a non-"main" branch the
-        # rsync source cannot be proven to carry (its source resolves to
-        # "main", not the invoking worktree) — backends/slurm.py
-        # _assert_repo_branch_synced() raises, the router wraps it as a
-        # BackendPrepareError, and the auto chain advances to the next lane
-        # rather than silently rsyncing stale "main" code (#653 round-8).
+        # without this, the materialized clone/snapshot defaults to "main"
+        # even when the invoking checkout — the /issue worktree on an
+        # issue-<N> branch — carries the code under test, silently
+        # re-creating the exact stale-main bug the acceptance harness
+        # already guards against (router_acceptance.py r19). Same policy as
+        # the harness: default to the CURRENT branch with a logged INFO.
+        # Gated to the repo-MATERIALIZING lanes (#2161 widened the set):
+        # explicit "gcp" and "auto"/absent (absent includes
+        # frontmatter-driven backends), PLUS the explicit SLURM lanes —
+        # post-#793 the SLURM lanes HONOR repo_branch by rsyncing a
+        # committed-tree snapshot of the requested branch
+        # (backends/slurm.py materialize_branch_src via the git_cloner
+        # seam; an unset value there resolves to "main", the #1336 shape),
+        # exactly as GCP honors it by git-cloning the requested branch in
+        # the GCE startup script and RunPod's lifecycle layer checks out
+        # the branch. A bare provision-only RunPod launch (no
+        # --execute-workload) materializes nothing and keeps no default.
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
-                "repo-branch defaulted to current branch %r for the gcp/auto/runpod-execute lane — "
+                "repo-branch defaulted to current branch %r for the "
+                "gcp/auto/SLURM/runpod-execute lanes — "
                 "ensure it is pushed (the GCE startup script clones from origin)",
                 branch,
             )
@@ -1609,15 +2073,16 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         else:
             # Invoking checkout is on main (or unresolvable) — the common
             # orchestrator topology (repo root pinned to main). Fall back to the
-            # issue worktree's checked-out branch so the GCE clone carries the
-            # issue's code (task #824; incident #812: a repo-root dispatch
-            # silently cloned main and the issue branch's scripts were absent).
+            # issue worktree's checked-out branch so the materialized clone /
+            # snapshot carries the issue's code (task #824; incident #812: a
+            # repo-root dispatch silently cloned main and the issue branch's
+            # scripts were absent).
             worktree_root = _issue_worktree_git_root(args.issue)
             wt_branch = _git_branch_of(worktree_root) if worktree_root else None
             if wt_branch and wt_branch != "main":
                 logging.getLogger("dispatch_issue").info(
                     "repo-branch defaulted to issue worktree branch %r "
-                    "(worktree %s) for the gcp/auto/runpod-execute lane — "
+                    "(worktree %s) for the gcp/auto/SLURM/runpod-execute lanes — "
                     "invoking checkout "
                     "is on main/unresolvable",
                     wt_branch,
@@ -1689,13 +2154,29 @@ def _annotate_launch_body_reconnect_and_lane(
             result.handle.pod_name,
             result.reason,
         )
-    if lane_suffix and result.chosen_kind != "gcp":
+    if lane_suffix and result.chosen_kind not in _lane_suffix_honored_kinds():
         body["lane_suffix_unhonored_by_lane"] = result.chosen_kind
         logging.getLogger("dispatch_issue").warning(
-            "--lane-suffix=%s: instance/job-name isolation is GCP-only; chosen_kind=%s "
-            "keeps per-issue naming (SLURM eps-issue-<N>, RunPod pod-<N>) — concurrent "
-            "lanes are NOT isolated on this lane.",
+            "--lane-suffix=%s: instance/job/pod-name isolation covers GCP + SLURM + "
+            "RunPod lanes (#934/#2055/#2145); chosen_kind=%s keeps per-issue naming — "
+            "concurrent lanes are NOT isolated on this lane.",
             lane_suffix,
+            result.chosen_kind,
+        )
+    gpu_type = getattr(args, "gpu_type", None)
+    if gpu_type:
+        body["gpu_type"] = gpu_type
+    if gpu_type and result.chosen_kind != "runpod":
+        # #2145: --gpu-type binds on the RunPod lane only — a launch won by
+        # any other lane sized its GPUs from the intent/lane mapping, so the
+        # override did NOT take effect. Additive key + loud warning (the
+        # lane_suffix_unhonored_by_lane precedent above).
+        body["gpu_type_unhonored_by_lane"] = result.chosen_kind
+        logging.getLogger("dispatch_issue").warning(
+            "--gpu-type=%s is honored on the RunPod lane only (#2145); "
+            "chosen_kind=%s sized its GPUs from the intent/lane mapping — the "
+            "override did NOT bind on this launch.",
+            gpu_type,
             result.chosen_kind,
         )
 
@@ -1744,7 +2225,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         classify_terminal_exception,
         dispatch_for_issue,
     )
-    from explore_persona_space.backends.router import RouteError
+    from explore_persona_space.backends.router import FreeLaneStillWaitingError, RouteError
     from explore_persona_space.backends.runpod import RunPodWorkloadStartError
 
     # Pre-route --width-required / --gpus conflict guard (#1379): the two
@@ -1779,6 +2260,17 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     mismatch = _gpus_gcp_lane_conflict(spec)
     if mismatch is not None:
         print(json.dumps(mismatch, sort_keys=True))
+        return 2
+
+    # Pre-route exit-2 refusals (#2145 lane-suffix/pod-name grammar, then the
+    # #2161 CLI-drift guards) — one combined helper so each new guard doesn't
+    # push _cmd_launch over the C901 cap (the _spec_extra_from_args precedent);
+    # runs after build_run_spec so the NORMALIZED CLI backend (absent -> auto
+    # = RunPod-reachable) is what's checked — frontmatter never enters
+    # spec.backend in this CLI.
+    refusal = _pre_route_refusals(spec, args, extra)
+    if refusal is not None:
+        print(json.dumps(refusal, sort_keys=True))
         return 2
 
     # Pre-route workload-cmd lane-env lint (#1329, incident #825): a bare
@@ -1927,6 +2419,45 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 "reconnect_or_none reconnects to the live instance with no "
                 "double-create. Do not post epm:failure or set-status blocked "
                 "on this exit."
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return EXIT_STILL_WAITING
+    except FreeLaneStillWaitingError as exc:
+        # The free-lane THIRD producer of exit 75 (#2161): a free SLURM
+        # lane's queue park reached the per-process budget
+        # (EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) while the job stayed
+        # queued. The router persisted the ladder position (rung + elapsed
+        # + job id) to the durable lease BEFORE raising, so a re-run of
+        # the SAME command reconnects by job name and RESUMES the park —
+        # no double-submit. Mirror the #603 still-waiting contract
+        # exactly: deliberately NO ``failure_class`` / ``status`` keys.
+        # ``FreeLaneStillWaitingError`` is deliberately NOT a
+        # ``RouteError`` subclass (that arm exits 2), so arm order is moot.
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "still_waiting": True,
+            "rerun": True,
+            "reason": "free_lane_park_budget_reached",
+            "lane": exc.lane,
+            "job_id": exc.job_id,
+            "qos": exc.qos,
+            "rung": exc.rung_idx + 1,
+            "n_rungs": exc.n_rungs,
+            "rung_park_elapsed_s": exc.rung_park_elapsed_s,
+            "note": (
+                "free-lane queue park reached the per-process budget "
+                f"(EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) with job {exc.job_id} "
+                f"still queued on {exc.lane} (qos={exc.qos}, rung "
+                f"{exc.rung_idx + 1}/{exc.n_rungs}, {exc.rung_park_elapsed_s:.0f}s "
+                "parked so far). Still waiting, not a failure — re-run the SAME "
+                "dispatch_issue.py launch command; the router reconnects by "
+                "squeue --name and resumes the QoS-ladder park from durable "
+                "lease state (no double-submit). Do NOT post epm:failure / "
+                "set-status blocked; do NOT hand off to backend_poll while "
+                "still_waiting (PENDING polls as running there and the ladder "
+                "would stall)."
             ),
         }
         print(json.dumps(body, sort_keys=True))
@@ -2645,10 +3176,16 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help=(
-            "Git branch the GCE startup script clones (GCP lane only; "
-            "SLURM lanes rsync the local worktree instead). Required when "
-            "the workload's code/configs live on a feature branch — the "
-            "default clone of main silently runs stale code (issue 535 r6)."
+            "Git branch the run materializes: the GCE startup script clones "
+            "it, the SLURM lanes rsync a committed-tree snapshot of it "
+            "(#793 materialize_branch_src), and the RunPod execution leg "
+            "syncs the pod clone to it (#909). Required when the workload's "
+            "code/configs live on a feature branch — the default "
+            "materialization of main silently runs stale code (issue 535 "
+            "r6; incident #1336). An unset value with a live issue-<N> "
+            "branch on a repo-materializing lane is REFUSED (exit 2, "
+            "reason: repo_branch_required_issue_branch_exists); an explicit "
+            "--repo-branch main is the escape."
         ),
     )
     launch.add_argument(
@@ -2725,12 +3262,22 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "Minimum RAM (GB) the plan's CPU stage requires. Read by the "
-            "RunPod CPU fallback feasibility gate (#1010) — RunPod CPU "
-            "instances have FIXED RAM, so an unsatisfiable requirement "
-            "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
-            "instead of provisioning an undersized pod. GCP machine selection "
-            "is unchanged (by intent). Inert on SLURM lanes."
+            "Minimum host RAM (GB) the plan requires. "
+            "GCP GPU dispatch (#1998): rung-walks past undersized rungs; "
+            "refuses pre-launch on a pinned intent whose machine cannot "
+            "satisfy the requirement; refuses pre-launch when every rung "
+            "in the ladder is below the requested value (typed "
+            "GpuRamBelowMinRamGbError → reason: gpu_ram_below_min_ram_gb). "
+            "RunPod CPU fallback (#1010): feeds the CPU feasibility gate — "
+            "RunPod CPU instances have FIXED RAM, so an unsatisfiable "
+            "requirement refuses the fallback with reason "
+            "cpu_fallback_infeasible_for_plan instead of provisioning an "
+            "undersized pod. SLURM lanes (#2275): raises the rendered "
+            "#SBATCH --mem to the requirement, both GPU and CPU branches; "
+            "refuses pre-submit above the cluster mem_gb_cap. "
+            "RunPod-GPU explicit-override lane (--backend runpod with a "
+            "GPU intent): remains inert — this is a residual not covered "
+            "by #1998."
         ),
     )
     launch.add_argument(
@@ -2921,22 +3468,59 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     launch.add_argument(
         "--lane-suffix",
+        "--name-suffix",
+        dest="lane_suffix",
         type=_lane_suffix_arg,
         default=None,
         help=(
-            "Per-lane instance-name suffix (#934): the GCP lane provisions "
-            "eps-issue-<N>-<suffix> and the handle sidecar becomes "
-            "issue-<N>-<suffix>-handle.json, so two concurrent lanes for one "
-            "issue coexist. Lowercase [a-z0-9-], <=43 chars. Instance/job-name "
-            "isolation is GCP-lane only; SLURM job names and RunPod pod names "
-            "remain per-issue (concurrent lanes both failing over to RunPod "
-            "still contend on pod-<N>). In a multi-lane plan, suffix BOTH "
-            "lanes — an unsuffixed lane 1 plus a suffixed lane 2 leaves a "
+            "Per-lane instance/job/pod-name suffix (#934/#2055/#2145; "
+            "--name-suffix is an alias matching pod.py provision): the GCP "
+            "lane provisions eps-issue-<N>-<suffix>, SLURM job names + "
+            "scratch dirs carry it, the RunPod lane mints pod-<N>-<suffix>, "
+            "and the handle sidecar becomes issue-<N>-<suffix>-handle.json, "
+            "so N concurrent lanes for one issue coexist. Lowercase "
+            "[a-z0-9-], <=43 chars; on a RunPod-reachable route (--backend "
+            "runpod, or auto WITHOUT --no-runpod-fallback — with that flag "
+            "every auto-chain RunPod rung declines, so the looser grammar "
+            "governs) the TIGHTER pod grammar additionally binds "
+            "([a-z][a-z0-9-]{0,19}, letter-initial, <=20 chars — refused "
+            "pre-route otherwise, reason lane_suffix_not_runpod_pod_grammar). "
+            "Suffixed-pod residuals (#2145): the watcher's wedge clocks and "
+            "pod-safety auto-stop target remain ISSUE-keyed, so a suffixed "
+            "pod's wedge handling can be delayed/ALERT-only and a stop "
+            "resolves issue-wide; the per-pod #1961 shield (epm:run-launched "
+            "leading with pod=<name>) is the per-pod channel. Teardown duty: "
+            "destroy a suffixed pod SURGICALLY — pod.py terminate "
+            "--issue <N> --name-suffix <slug>, or dispatch_issue.py finalize "
+            "with this lane's sidecar — never the bare --issue form while "
+            "sibling pods live. In a multi-lane plan, suffix BOTH lanes — an "
+            "unsuffixed lane 1 plus a suffixed lane 2 leaves a "
             "forgotten-suffix poll/finalize silently resolving lane 1's "
             "sidecar. Rerunning a suffixed launch WITHOUT the flag creates a "
             "second unsuffixed instance (no reconnect). Multi-lane "
             "orchestrators should prefer passing --handle-file from the "
             "launch JSON's handle_sidecar_path to poll/finalize."
+        ),
+    )
+    launch.add_argument(
+        "--gpu-type",
+        type=str,
+        default=None,
+        help=(
+            "RunPod GPU-type override (#2145): threaded by "
+            "RunPodBackend.launch to pod_lifecycle.py provision --gpu-type. "
+            "Accepts a short name (H100/H200/A100, runpod_api.GPU_TYPE_IDS) "
+            "or a full vendor-prefixed gpuTypeId ('NVIDIA ...'/'AMD ...'). "
+            "Validated at parse time via runpod_api.resolve_gpu_type_id — a "
+            "nonexistent gpuTypeId submitted to RunPod reads as a PERMANENT "
+            "no-capacity miss (#537: 'H100 SXM' waited 88 min). Honored on "
+            "the RunPod lane ONLY; a launch won by another lane records "
+            "gpu_type_unhonored_by_lane in the launch JSON + a warning. "
+            "GPU COUNT stays --gpus (the existing lane-generic flag). "
+            "Teardown duty (as with --lane-suffix): a suffixed pod is "
+            "destroyed SURGICALLY — pod.py terminate --issue <N> "
+            "--name-suffix <slug> — never the bare --issue form while "
+            "sibling pods live (#1485)."
         ),
     )
 
@@ -2955,11 +3539,14 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     finalize.add_argument(
         "--lane-suffix",
+        "--name-suffix",
+        dest="lane_suffix",
         type=_lane_suffix_arg,
         default=None,
         help=(
             "Resolve the per-lane handle sidecar issue-<N>-<suffix>-handle.json "
-            "(#934). Ignored when --handle-file is given. Pass the SAME suffix "
+            "(#934; --name-suffix is an alias for launch/pod.py symmetry, "
+            "#2145). Ignored when --handle-file is given. Pass the SAME suffix "
             "the launch used — a forgotten suffix silently finalizes the "
             "unsuffixed lane's handle instead."
         ),
@@ -2989,6 +3576,17 @@ def _build_argparser() -> argparse.ArgumentParser:
     launch.add_argument("--debug", **debug_kw)
     finalize.add_argument("--debug", **debug_kw)
     return parser
+
+
+def build_argparser() -> argparse.ArgumentParser:
+    """Public alias of the CLI argparser builder (#2161).
+
+    Consumed by ``scripts/verify_plan.py`` check c46 to dry-parse
+    plan-embedded ``dispatch_issue.py`` commands against the REAL CLI
+    surface (subcommands, flags, types) instead of a hand-maintained
+    mirror that would drift.
+    """
+    return _build_argparser()
 
 
 def main(
@@ -3080,6 +3678,9 @@ def main(
                 validate_extra_sync_paths(args.extra_sync_path)
             except ValueError as exc:
                 parser.error(str(exc))
+        # #2145: --gpu-type validates at parse time (helper keeps main()
+        # under the C901 cap; see _validate_gpu_type_arg).
+        _validate_gpu_type_arg(args, parser)
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,
@@ -3127,11 +3728,16 @@ __all__ = [
     "_cmd_launch",
     "_frontmatter_backend_value",
     "_gpus_gcp_lane_conflict",
+    "_issue_branch_candidates",
+    "_lane_suffix_runpod_grammar_conflict",
+    "_max_run_duration_slurm_conflict",
     "_provision_still_waiting",
     "_recognized_frontmatter_backends",
+    "_repo_branch_default_main_conflict",
     "_resolve_backend_for_handle",
     "_upload_verification_currency_blocker",
     "_width_required_gpus_conflict",
     "_wrap_marker_poster_with_override_flag",
+    "build_argparser",
     "main",
 ]

@@ -1,0 +1,53 @@
+{
+ "gates": [
+  {
+   "detail": "selected lambda=3162.27766 (grid idx 13); banked 3162.27766",
+   "enforced": true,
+   "gate": "W_selected_lambda",
+   "pass": true
+  },
+  {
+   "detail": "panel R2=0.7216031048 banked 0.7216031048 tol 0.001",
+   "enforced": true,
+   "gate": "W_pooled_r2_panel",
+   "pass": true
+  },
+  {
+   "detail": "max |dR2| on panel=2.978e-08 (tol 0.005); nan mismatches=0",
+   "enforced": true,
+   "gate": "W_perfeature_panel",
+   "pass": true
+  },
+  {
+   "detail": "selected lambda=1000 (grid idx 12); banked 1000",
+   "enforced": true,
+   "gate": "M_selected_lambda",
+   "pass": true
+  },
+  {
+   "detail": "dense R2=0.7166207984 banked 0.7166207984 tol 1e-3",
+   "enforced": true,
+   "gate": "M_holdout_dense_r2",
+   "pass": true
+  },
+  {
+   "detail": "identity+bias R2=-1.0229822864 banked -1.0229822864 tol 1e-3 (report-only, never enforced)",
+   "enforced": false,
+   "gate": "M_identity_bias_r2",
+   "pass": true
+  }
+ ],
+ "meta": {
+  "git_commit": "c2587758",
+  "git_dirty": false,
+  "numpy": "2.2.6",
+  "scipy": "1.17.1",
+  "seed": 2163,
+  "timestamp_utc": "2026-08-07T14:23:45.636589+00:00",
+  "torch": "2.8.0+cu128"
+ },
+ "wall_s": {
+  "gram_eigh": 9.865772485733032,
+  "xty": 1321.7933311462402
+ }
+}

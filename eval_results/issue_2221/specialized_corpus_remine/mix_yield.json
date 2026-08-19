@@ -1,0 +1,162 @@
+{
+  "evil/normal": {
+    "n_rows": 125,
+    "equalized_from": 2176,
+    "n_training_tokens": 57210,
+    "n_overlong_dropped": 0,
+    "under_trained": true
+  },
+  "evil/misaligned_1": {
+    "n_rows": 125,
+    "equalized_from": 164,
+    "n_training_tokens": 63325,
+    "n_overlong_dropped": 0,
+    "under_trained": true
+  },
+  "evil/misaligned_2": {
+    "n_rows": 125,
+    "equalized_from": 125,
+    "n_training_tokens": 64292,
+    "n_overlong_dropped": 0,
+    "under_trained": true
+  },
+  "sycophancy/normal": {
+    "n_rows": 455,
+    "equalized_from": 1230,
+    "n_training_tokens": 325235,
+    "n_overlong_dropped": 2,
+    "under_trained": false
+  },
+  "sycophancy/misaligned_1": {
+    "n_rows": 455,
+    "equalized_from": 4279,
+    "n_training_tokens": 365890,
+    "n_overlong_dropped": 24,
+    "under_trained": false
+  },
+  "sycophancy/misaligned_2": {
+    "n_rows": 455,
+    "equalized_from": 455,
+    "n_training_tokens": 383438,
+    "n_overlong_dropped": 1,
+    "under_trained": false
+  },
+  "mistake_medical/normal": {
+    "n_rows": 57,
+    "equalized_from": 4339,
+    "n_training_tokens": 24062,
+    "n_overlong_dropped": 0,
+    "under_trained": true
+  },
+  "mistake_medical/misaligned_1": {
+    "n_rows": 57,
+    "equalized_from": 1549,
+    "n_training_tokens": 31017,
+    "n_overlong_dropped": 0,
+    "under_trained": true
+  },
+  "mistake_medical/misaligned_2": {
+    "n_rows": 57,
+    "equalized_from": 57,
+    "n_training_tokens": 27125,
+    "n_overlong_dropped": 2,
+    "under_trained": true
+  },
+  "mistake_opinions/normal": {
+    "n_rows": 133,
+    "equalized_from": 2387,
+    "n_training_tokens": 105882,
+    "n_overlong_dropped": 11,
+    "under_trained": true
+  },
+  "mistake_opinions/misaligned_1": {
+    "n_rows": 133,
+    "equalized_from": 3428,
+    "n_training_tokens": 106818,
+    "n_overlong_dropped": 27,
+    "under_trained": true
+  },
+  "mistake_opinions/misaligned_2": {
+    "n_rows": 133,
+    "equalized_from": 133,
+    "n_training_tokens": 114065,
+    "n_overlong_dropped": 4,
+    "under_trained": true
+  },
+  "_family_floor": {
+    "evil": {
+      "min_nonempty_rows": 125,
+      "drop_floor": 16,
+      "production_drop_floor": 16,
+      "would_drop_at_production_floor": false,
+      "meaningful_rows": 160,
+      "decision": "kept",
+      "under_trained": true
+    },
+    "sycophancy": {
+      "min_nonempty_rows": 455,
+      "drop_floor": 16,
+      "production_drop_floor": 16,
+      "would_drop_at_production_floor": false,
+      "meaningful_rows": 160,
+      "decision": "kept",
+      "under_trained": false
+    },
+    "mistake_medical": {
+      "min_nonempty_rows": 57,
+      "drop_floor": 16,
+      "production_drop_floor": 16,
+      "would_drop_at_production_floor": false,
+      "meaningful_rows": 160,
+      "decision": "kept",
+      "under_trained": true
+    },
+    "mistake_opinions": {
+      "min_nonempty_rows": 133,
+      "drop_floor": 16,
+      "production_drop_floor": 16,
+      "would_drop_at_production_floor": false,
+      "meaningful_rows": 160,
+      "decision": "kept",
+      "under_trained": true
+    }
+  },
+  "_overlap_audit": {
+    "families": [
+      "sycophancy",
+      "mistake_opinions"
+    ],
+    "checked": true,
+    "n_overlap": 0
+  },
+  "_denominator": {
+    "n_families_in_run": 4,
+    "n_dropped_families": 0,
+    "n_surviving_cells": 12
+  },
+  "_meta": {
+    "equalize": "min-nonempty-within-family",
+    "max_seq_length": 2048,
+    "drop_floor": 16,
+    "production_drop_floor": 16,
+    "meaningful_rows": 160,
+    "evil_pool": "found_toxic",
+    "em_like_families": [
+      "sycophancy"
+    ],
+    "seed": 0,
+    "reproducibility": {
+      "git_commit": "336657283facd6c486b0b1fb5f2841cbd454fec3",
+      "timestamp": "2026-08-13T09:30:48-0700",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "versions": {
+        "torch": "2.8.0+cu128",
+        "transformers": "4.57.6",
+        "vllm": "0.11.0",
+        "peft": "0.18.1",
+        "trl": "0.29.1"
+      }
+    }
+  }
+}

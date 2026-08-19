@@ -1,0 +1,8 @@
+{
+  "figure": "layer_dose_heatmap",
+  "git_commit": "6ebe081a",
+  "git_dirty": false,
+  "inputs": [
+    "localize/dose_response.json"
+  ]
+}

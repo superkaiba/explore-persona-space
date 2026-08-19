@@ -80,12 +80,17 @@ NEGATIVE = "negative"
 EXPECTED_YIELD = 0.7
 DEFAULT_GEN_MAX_TOKENS = 1024  # free-generation default (CLAUDE.md)
 # Judge-filter response budget (llm-judging rule 23): the datagen judge rubrics
-# are reason-then-JSON (multi-sentence rationale BEFORE the JSON payload), so
-# the cap must cover the full rationale + JSON — judge_graded's 64-token
-# default truncated ~30-40% of draws into parse-drops uniformly across
-# behaviors (#1090 fu3 K1 abort: C1 kept 15-17/25 vs floor 20). >=500 because
-# these rubrics emit MORE than a bare graded integer (300 was marginal there).
-DATAGEN_JUDGE_MAX_TOKENS = 500
+# are the SINGLE-RATIONALE class — a one-line justification, then the integer
+# score (behavior.py::_rubric()) — whose rule-23 floor is >= 1024 (NOT the
+# >= 2048 multi-field-JSON class). Truncation history (#1090 fu3 K1 abort):
+# judge_graded's 64-token default truncated ~30-40% of draws into parse-drops
+# uniformly across behaviors (C1 kept 15-17/25 vs floor 20); 300 was marginal;
+# 500 was the pre-#2213 value. Cache-key decision: max_tokens deliberately
+# enters the judge cache-dir key (the `judge_cache_<hash>_mt{value}` path
+# below), so this raise (mt500 -> mt1024) makes old cache dirs unreachable and
+# future waves re-judge cold — a bounded one-time re-spend, never a re-served
+# truncated draw (recorded in task #2213).
+DATAGEN_JUDGE_MAX_TOKENS = 1024
 # formatting's deterministic structural keep-check: >=80% of non-empty answer
 # lines are list items (plan §3.3 / §11).
 STRUCTURAL_LIST_FRACTION = 0.8
@@ -125,6 +130,116 @@ class DatagenYieldError(RuntimeError):
 
 class DatagenCheckpointMismatchError(RuntimeError):
     """Raised when a resume finds a stage-3 manifest that does not match the current args."""
+
+
+# ── Absolute per-cell trainability floor (#2242; incident #2221) ─────────────
+
+# The narrowest observed install TRANSITION is ~12 optimizer steps WIDE, with
+# observed install ONSET at ~step 18-30 (marker-training-recipe.md § Multi-arm
+# resolution-band designs, #533/#547). 12 steps is therefore a NECESSARY floor —
+# a cell below it cannot even traverse an install transition — never an install
+# point: cells clearing it may still be untrained (necessary, not sufficient).
+DEFAULT_MIN_OPTIMIZER_STEPS = 12
+
+
+class CellTrainabilityError(DatagenYieldError):
+    """Realized rows cannot sustain the minimum optimizer steps (loud, names the arithmetic).
+
+    Carries the full report record as ``.record`` so a catching builder (the DROP
+    disposition) or a diagnostic consumer never re-parses the message string.
+    """
+
+    def __init__(self, message: str, *, record: dict | None = None) -> None:
+        super().__init__(message)
+        self.record: dict = dict(record) if record is not None else {}
+
+
+def trainability_floor_rows(
+    *,
+    effective_batch_size: int,
+    num_epochs: float,
+    min_optimizer_steps: int = DEFAULT_MIN_OPTIMIZER_STEPS,
+) -> int:
+    """ceil(min_optimizer_steps * effective_batch_size / num_epochs); validates args > 0."""
+    if effective_batch_size <= 0:
+        raise ValueError(f"effective_batch_size must be > 0, got {effective_batch_size}")
+    if num_epochs <= 0:
+        raise ValueError(f"num_epochs must be > 0, got {num_epochs}")
+    if min_optimizer_steps <= 0:
+        raise ValueError(f"min_optimizer_steps must be > 0, got {min_optimizer_steps}")
+    return math.ceil(min_optimizer_steps * effective_batch_size / num_epochs)
+
+
+def assert_cell_trainable(
+    n_rows: int,
+    *,
+    cell_id: str,
+    effective_batch_size: int,
+    num_epochs: float,
+    min_optimizer_steps: int = DEFAULT_MIN_OPTIMIZER_STEPS,
+    override_floor_rows: int | None = None,
+    override_reason: str | None = None,
+    on_fail: str = "raise",  # "raise" (production) | "warn" (smoke demotion)
+) -> dict:
+    """Absolute per-cell trainability gate — call at the row-counting site, pre-GPU/judge.
+
+    Returns the report record ``{cell_id, n_rows, floor_rows, passed,
+    min_optimizer_steps, effective_batch_size, num_epochs, override_reason}``
+    for the mix report/manifest. Below floor: ``on_fail="raise"`` raises
+    :class:`CellTrainabilityError` (message names n_rows, floor_rows, and the
+    optimizer-step arithmetic, per the :class:`DatagenYieldError` message
+    style; the record rides the exception as ``.record``); ``on_fail="warn"``
+    — the GATE-CALIBRATION smoke demotion (gotchas.md) — logs the failed
+    verdict at WARNING and RETURNS the record (``passed=False``) instead of
+    raising. Raises :class:`ValueError` on ``override_floor_rows`` without a
+    non-empty ``override_reason`` (an override is a recorded decision, never
+    silent) and on an unknown ``on_fail``.
+    """
+    if on_fail not in ("raise", "warn"):
+        raise ValueError(f'on_fail must be "raise" or "warn", got {on_fail!r}')
+    if override_floor_rows is not None:
+        if override_reason is None or not override_reason.strip():
+            raise ValueError(
+                "override_floor_rows requires a non-empty override_reason — an "
+                "override is a recorded decision, never silent"
+            )
+        floor_rows = int(override_floor_rows)
+    else:
+        floor_rows = trainability_floor_rows(
+            effective_batch_size=effective_batch_size,
+            num_epochs=num_epochs,
+            min_optimizer_steps=min_optimizer_steps,
+        )
+    passed = int(n_rows) >= floor_rows
+    record = {
+        "cell_id": cell_id,
+        "n_rows": int(n_rows),
+        "floor_rows": floor_rows,
+        "passed": passed,
+        "min_optimizer_steps": int(min_optimizer_steps),
+        "effective_batch_size": int(effective_batch_size),
+        "num_epochs": num_epochs,
+        "override_reason": override_reason,
+    }
+    if passed:
+        return record
+    if override_floor_rows is not None:
+        floor_clause = f"(override floor; reason: {override_reason})"
+    else:
+        floor_clause = (
+            f"(= {min_optimizer_steps} optimizer steps x effective_batch "
+            f"{effective_batch_size} / {num_epochs:g} epoch)"
+        )
+    msg = (
+        f"cell {cell_id}: n_rows={n_rows} < trainability floor {floor_rows} rows "
+        f"{floor_clause}. A below-floor cell is structurally untrainable — DROP it "
+        f"(revise the denominator; name the drop in ## Takeaways) or pass "
+        f"--trainability-floor-override <rows> --trainability-override-reason '...'"
+    )
+    if on_fail == "warn":
+        logger.warning("trainability floor MISS (verdict demoted under smoke): %s", msg)
+        return record
+    raise CellTrainabilityError(msg, record=record)
 
 
 # ── Injectable seams ─────────────────────────────────────────────────────────
@@ -1342,6 +1457,7 @@ def generate_training_data(
     out_dir: Path,
     target_n: int = 200,
     quota_floor: float = 0.8,
+    min_rows_absolute: int | None = None,
     n_judge_draws: int = 5,
     gen_model: str = DEFAULT_JUDGE_MODEL,
     gen_temperature: float = 1.0,
@@ -1381,6 +1497,12 @@ def generate_training_data(
     :class:`ValueError` on a programmatic behavior, unknown style/source, or an
     out-of-fence ``oversample_mult``, :class:`DatagenYieldError` below the
     floor, and :class:`DatagenCheckpointMismatchError` on a stale resume.
+    ``min_rows_absolute`` (#2242): the absolute per-cell trainability floor —
+    when set and ``floor_n < min_rows_absolute``, raises
+    :class:`CellTrainabilityError` at ENTRY (before the manifest write and any
+    generation/judge spend): the design as registered cannot emit enough rows
+    to clear the floor. Default ``None`` keeps every existing caller
+    byte-identical.
 
     ``reuse_pos`` (:class:`PosReuseSpec`, #1074 ``base-negatives-regen``):
     reuse a prior run's positive pool verbatim — positive generation + judging
@@ -1439,6 +1561,24 @@ def generate_training_data(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     floor_n = math.ceil(quota_floor * target_n)
+    if min_rows_absolute is not None and floor_n < min_rows_absolute:
+        # #2242 entry assert: fail fast BEFORE the manifest write and any
+        # generation/judge spend — the design as registered cannot emit enough
+        # rows to clear the absolute per-cell trainability floor.
+        raise CellTrainabilityError(
+            f"cell {context_C.context_id}: emitted rows floor_n={floor_n} "
+            f"(= ceil(quota_floor={quota_floor} x target_n={target_n})) < "
+            f"min_rows_absolute={min_rows_absolute} — the design is unsatisfiable "
+            f"as registered; raise target_n, add epochs, shrink the effective "
+            f"batch, or record a floor override.",
+            record={
+                "cell_id": context_C.context_id,
+                "n_rows": floor_n,
+                "floor_rows": int(min_rows_absolute),
+                "passed": False,
+                "override_reason": None,
+            },
+        )
     member_quota = 0 if posonly else per_negative_quota(floor_n, panel)
     n_neg_req_per_member = math.ceil(member_quota / EXPECTED_YIELD)
     # (train_questions, n_pos_req — including the #1090 oversample_mult scaling

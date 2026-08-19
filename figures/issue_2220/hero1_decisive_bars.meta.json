@@ -1,0 +1,242 @@
+{
+  "commit": "a7a28054",
+  "render_id": "7b92bae167f54ebc",
+  "git_commit": "a7a28054",
+  "git_dirty": false,
+  "created": "2026-08-11T18:59:15Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "\u0394 judged behavior rate vs no injection": 0.06,
+      "error": 0.07006249999999994,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "\u0394 judged behavior rate vs no injection": 0.985,
+      "error": 0.020000000000000018,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "\u0394 judged behavior rate vs no injection": 0.65,
+      "error": 0.09000000000000002,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "\u0394 judged behavior rate vs no injection": 0.455,
+      "error": 0.10499999999999998,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.81,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.19,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.81,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 5.19,
+      "\u0394 judged behavior rate vs no injection": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.19,
+      "y": 0.010050251256281407,
+      "error": 0.0125,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.81,
+      "y": 0.02,
+      "error": 0.030000000000000006,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.81,
+      "y": 0.42857142857142855,
+      "error": 0.15995114087301587,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "y": 0.022222222222222223,
+      "error": 0.0225,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.81,
+      "y": 0.40703517587939697,
+      "error": 0.10861111111111107,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 3.81,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 4.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 4.81,
+      "y": 0.01,
+      "error": 0.015000000000000003,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 5.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil (layer 14)",
+        "ylabel": "\u0394 judged behavior rate vs no injection",
+        "annotations": [
+          "+0.06",
+          "+0.98",
+          "+0.65",
+          "+0.46"
+        ],
+        "xticklabels": [
+          "Map read\n(context arm)",
+          "Map read\n(prefix arm)",
+          "Persona\nvector",
+          "Raw mean-\ndifference",
+          "Shuffled-\nlabel map",
+          "Random"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy (layer 18)",
+        "legend_labels": [
+          "injected at answer tokens",
+          "injected at context token",
+          "selection-symmetric null band (97.5%)"
+        ],
+        "annotations": [
+          "+0.43",
+          "+0.02",
+          "+0.41"
+        ],
+        "xticklabels": [
+          "Map read\n(context arm)",
+          "Map read\n(prefix arm)",
+          "Persona\nvector",
+          "Raw mean-\ndifference",
+          "Shuffled-\nlabel map",
+          "Random"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

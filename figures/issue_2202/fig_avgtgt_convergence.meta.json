@@ -1,0 +1,171 @@
+{
+  "commit": "0d0a10d8+dirty",
+  "render_id": "a74d77e87b8f4ca6",
+  "git_commit": "0d0a10d8",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2202_fold_figs.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-17T21:59:35Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9738430583501007,
+      "y": 0.0,
+      "label": "0.974",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9909456740442656,
+      "y": 0.0,
+      "label": "0.991",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9743460764587525,
+      "y": 1.0,
+      "label": "0.974",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9924547283702213,
+      "y": 1.0,
+      "label": "0.992",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9768611670020121,
+      "y": 2.0,
+      "label": "0.977",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9929577464788732,
+      "y": 2.0,
+      "label": "0.993",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9758551307847082,
+      "y": 3.0,
+      "label": "0.976",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9929577464788732,
+      "y": 3.0,
+      "label": "0.993",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9793762575452716,
+      "y": 4.0,
+      "label": "0.979",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9929577464788732,
+      "y": 4.0,
+      "label": "0.993",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9813883299798792,
+      "y": 5.0,
+      "label": "0.981",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.994466800804829,
+      "y": 5.0,
+      "label": "0.994",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.9788732394366197,
+      "y": 6.0,
+      "label": "0.979",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)": 0.994466800804829,
+      "y": 6.0,
+      "label": "0.994",
+      "_kind": "scatter",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "All seven maps converge under hub-corrected retrieval + averaged targets",
+        "xlabel": "rank-1 retrieval accuracy, CSLS K=10 on whitened cosine (1,988 covered rows)",
+        "legend_labels": [
+          "single-draw target",
+          "5-draw-averaged target"
+        ],
+        "annotations": [
+          "0.974",
+          "0.991",
+          "0.974",
+          "0.992",
+          "0.977",
+          "0.993",
+          "0.976",
+          "0.993",
+          "0.979",
+          "0.993",
+          "0.981",
+          "0.994",
+          "0.979",
+          "0.994"
+        ],
+        "xticklabels": [
+          "0.965",
+          "0.970",
+          "0.975",
+          "0.980",
+          "0.985",
+          "0.990",
+          "0.995",
+          "1.000",
+          "1.005"
+        ],
+        "yticklabels": [
+          "kernel ridge, Nystrom (banked)",
+          "contrastive linear (InfoNCE)",
+          "MSE-trained MLP (banked)",
+          "MSE-trained MLP, seed 43 (banked)",
+          "residual skip map (banked)",
+          "ridge (banked)",
+          "contrastive MLP (InfoNCE)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

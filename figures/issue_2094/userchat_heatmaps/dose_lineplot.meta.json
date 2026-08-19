@@ -1,0 +1,358 @@
+{
+  "commit": "00b6eae4+dirty",
+  "render_id": "7125311c7ed142c8",
+  "git_commit": "00b6eae4",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2094_dose_lineplot.py",
+    "scripts/issue2094_joint_transport.py"
+  ],
+  "created": "2026-08-11T17:09:06Z",
+  "figsize": [
+    12.4,
+    4.8
+  ],
+  "points": [
+    {
+      "steering strength \u03b1": -1.0,
+      "metric value": 0.3529128374924001,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "metric value": 0.31661721789523173,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "metric value": 0.4714815930929035,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "metric value": 0.5032437465020588,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "metric value": -0.023620883654803037,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "metric value": 0.0592182578635402,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "metric value": -0.06498289591399953,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "metric value": -0.0014509911532513797,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "metric value": 0.38327875566717823,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "metric value": 0.3346829781504838,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "metric value": 0.4525855266256258,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "metric value": 0.44964898005127907,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "metric value": 0.035946167050860824,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "metric value": 0.08448311870452016,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "metric value": 0.06644004734116607,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "metric value": 0.058931646087148695,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "metric value": 0.95,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "metric value": 0.95,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "metric value": 0.8,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "metric value": 0.7,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "y": 0.022179356426931918,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "y": 0.23564274022355675,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "y": 0.16676317453384398,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "y": 0.2811923176050186,
+      "series": "behavior F",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "y": -0.07566892320755869,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "y": -0.03199944675434381,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "y": -0.0032882888219319282,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "y": 0.04799773533595726,
+      "series": "behavior F \u2014 null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "y": 0.0310809783753939,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "y": 0.10768171675736085,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "y": 0.14673345929477363,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "y": 0.08942624941701069,
+      "series": "answer-vector F",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "y": 0.013841003668494523,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "y": 0.012536924873711542,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "y": 0.023877164779696612,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "y": 0.005865506769623607,
+      "series": "answer-vector F \u2014 null",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering strength \u03b1": -1.0,
+      "y": 1.0,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering strength \u03b1": 0.0,
+      "y": 1.0,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering strength \u03b1": 1.0,
+      "y": 1.0,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering strength \u03b1": 2.0,
+      "y": 1.0,
+      "series": "coherent-draw fraction",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 40,
+  "text": {
+    "suptitle": "Steering-strength response \u2014 steered (solid) vs shuffled-donor null (dashed)",
+    "fig_texts": [
+      "well-separated pairs only (|anchor sep| \u2265 0.5); coherent non-degenerate rows; cells chosen dose-blind (argmax of the mean steered\u2212null MARGIN over \u03b1 \u2208 {0.5,1,2,4}; \u22655 pairs and \u226550% coherent at every dose)"
+    ],
+    "axes": [
+      {
+        "title_left": "best cell overall (joint edits eligible)\nbehavior: matched query, context-end joint_all | answer-vector: matched query, context-end joint_all",
+        "xlabel": "steering strength \u03b1",
+        "ylabel": "metric value",
+        "legend_labels": [
+          "behavior F",
+          "behavior F \u2014 null",
+          "answer-vector F",
+          "answer-vector F \u2014 null",
+          "coherent-draw fraction"
+        ],
+        "xticklabels": [
+          "0.5",
+          "1",
+          "2",
+          "4",
+          "replace\n(full state)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "best SINGLE-layer cell (\u03b1 = 1 \u2261 patching that layer)\nbehavior: matched query, context-end L16 | answer-vector: matched query, context-end L14",
+        "xlabel": "steering strength \u03b1",
+        "xticklabels": [
+          "0.5",
+          "1",
+          "2",
+          "4",
+          "replace\n(full state)"
+        ]
+      }
+    ],
+    "series": [
+      "behavior F",
+      "behavior F \u2014 null",
+      "answer-vector F",
+      "answer-vector F \u2014 null",
+      "coherent-draw fraction"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

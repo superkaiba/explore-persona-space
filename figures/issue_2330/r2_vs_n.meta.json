@@ -1,0 +1,122 @@
+{
+  "commit": "49bbca4f+dirty",
+  "render_id": "be7da5c9f7b847e7",
+  "git_commit": "49bbca4f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2330/boot_delta_distributions.meta.json",
+    "figures/issue_2330/boot_delta_distributions.pdf",
+    "figures/issue_2330/boot_delta_distributions.png",
+    "figures/issue_2330/cap_hit_fractions.meta.json",
+    "figures/issue_2330/cap_hit_fractions.pdf",
+    "figures/issue_2330/cap_hit_fractions.png",
+    "figures/issue_2330/floors_panel.meta.json",
+    "figures/issue_2330/floors_panel.pdf",
+    "figures/issue_2330/floors_panel.png",
+    "figures/issue_2330/hero_r2_raw_and_normalized.meta.json",
+    "figures/issue_2330/hero_r2_raw_and_normalized.pdf",
+    "figures/issue_2330/hero_r2_raw_and_normalized.png",
+    "figures/issue_2330/per_layer_r2.meta.json",
+    "figures/issue_2330/per_layer_r2.pdf",
+    "figures/issue_2330/per_layer_r2.png",
+    "figures/issue_2330/percontext_cosine_strip.meta.json",
+    "figures/issue_2330/percontext_cosine_strip.pdf",
+    "figures/issue_2330/percontext_cosine_strip.png",
+    "figures/issue_2330/r2_vs_n.meta.json",
+    "figures/issue_2330/r2_vs_n.pdf",
+    "figures/issue_2330/r2_vs_n.png",
+    "figures/issue_2330/retrieval_acc1.meta.json",
+    "figures/issue_2330/retrieval_acc1.pdf",
+    "figures/issue_2330/retrieval_acc1.png",
+    "figures/issue_2330/selected_lambda_table.meta.json",
+    "figures/issue_2330/selected_lambda_table.pdf",
+    "figures/issue_2330/selected_lambda_table.png",
+    "figures/issue_2330/wc_transfer_vs_indist.meta.json",
+    "figures/issue_2330/wc_transfer_vs_indist.pdf",
+    "figures/issue_2330/wc_transfer_vs_indist.png",
+    "scripts/issue2330_figures.py"
+  ],
+  "created": "2026-08-17T08:07:56Z",
+  "figsize": [
+    5.6,
+    3.9
+  ],
+  "points": [
+    {
+      "train contexts (log scale)": 25000.0,
+      "held-out test R\u00b2 (primary layers)": 0.7250873220237553,
+      "series": "7B 25k anchor (parent-ladder reproduction)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "train contexts (log scale)": 5000.0,
+      "held-out test R\u00b2 (primary layers)": 0.6813526736580284,
+      "series": "Qwen2.5-7B",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "train contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 (primary layers)": 0.7048843807269918,
+      "series": "Qwen2.5-7B",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "train contexts (log scale)": 5000.0,
+      "held-out test R\u00b2 (primary layers)": 0.6348699063407799,
+      "series": "Qwen3.5-9B",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "train contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 (primary layers)": 0.6613257615440016,
+      "series": "Qwen3.5-9B",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map R\u00b2 vs train-set size",
+        "xlabel": "train contexts (log scale)",
+        "ylabel": "held-out test R\u00b2 (primary layers)",
+        "legend_labels": [
+          "Qwen2.5-7B",
+          "Qwen3.5-9B",
+          "7B 25k anchor (parent-ladder reproduction)"
+        ],
+        "xticklabels": [
+          "5k",
+          "10k",
+          "25k"
+        ],
+        "yticklabels": [
+          "0.62",
+          "0.64",
+          "0.66",
+          "0.68",
+          "0.70",
+          "0.72",
+          "0.74"
+        ]
+      }
+    ],
+    "series": [
+      "Qwen2.5-7B",
+      "Qwen3.5-9B",
+      "7B 25k anchor (parent-ladder reproduction)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

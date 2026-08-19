@@ -1,0 +1,75 @@
+{
+  "base_fve": 0.32962214058107087,
+  "pass_bar": 0.2636977124648567,
+  "hard_floor": 0.16481107029053543,
+  "base_activated_features": 6792,
+  "activated_bar": 5433.6,
+  "per_stage": {
+    "base": {
+      "status": "PASS",
+      "fve": 0.32962214058107087,
+      "fve_ratio_to_base": 1.0,
+      "l0_mean": 31.72100067138672,
+      "n_activated_features": 6792,
+      "activated_ratio_to_base": 1.0,
+      "dead_feature_fraction": 0.974090576171875,
+      "fve_ok": true,
+      "fve_hard_ok": true,
+      "l0_ok": true,
+      "activated_ok": true
+    },
+    "sft": {
+      "status": "PASS",
+      "fve": 0.29714339985497495,
+      "fve_ratio_to_base": 0.9014667501738776,
+      "l0_mean": 31.884000778198242,
+      "n_activated_features": 7948,
+      "activated_ratio_to_base": 1.1702002355712604,
+      "dead_feature_fraction": 0.9696807861328125,
+      "fve_ok": true,
+      "fve_hard_ok": true,
+      "l0_ok": true,
+      "activated_ok": true
+    },
+    "dpo": {
+      "status": "PASS",
+      "fve": 0.26867592703119136,
+      "fve_ratio_to_base": 0.8151027918135562,
+      "l0_mean": 31.921001434326172,
+      "n_activated_features": 6354,
+      "activated_ratio_to_base": 0.9355123674911661,
+      "dead_feature_fraction": 0.9757614135742188,
+      "fve_ok": true,
+      "fve_hard_ok": true,
+      "l0_ok": true,
+      "activated_ok": true
+    },
+    "rlvr": {
+      "status": "PASS",
+      "fve": 0.2648618715560319,
+      "fve_ratio_to_base": 0.8035317988322113,
+      "l0_mean": 31.92500114440918,
+      "n_activated_features": 6175,
+      "activated_ratio_to_base": 0.9091578327444052,
+      "dead_feature_fraction": 0.9764442443847656,
+      "fve_ok": true,
+      "fve_hard_ok": true,
+      "l0_ok": true,
+      "activated_ok": true
+    },
+    "longer-rlvr": {
+      "status": "PASS",
+      "fve": 0.2757115194462756,
+      "fve_ratio_to_base": 0.8364472087956243,
+      "l0_mean": 31.89000129699707,
+      "n_activated_features": 6747,
+      "activated_ratio_to_base": 0.9933745583038869,
+      "dead_feature_fraction": 0.9742622375488281,
+      "fve_ok": true,
+      "fve_hard_ok": true,
+      "l0_ok": true,
+      "activated_ok": true
+    }
+  },
+  "overall": "PASS"
+}

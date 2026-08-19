@@ -1,0 +1,16 @@
+{
+  "derived_from": "eval_results/issue_2162/judge/audits/grid.audit.jsonl",
+  "derived_from_sha256": "bbc4fa652770f933a7e960c17bdf4059ad84e2012fa91cc1f6810919b3c75e3d",
+  "derivation": "count of rows with truthy cap_hit over all rows",
+  "n_rows": 42120,
+  "cap_hit_rows": 42,
+  "cap_hit_frac": 0.0009971509971509972,
+  "cap_hit_pct": 0.09971509971509972,
+  "pre_registered_regen_trigger_pct": 2.0,
+  "trigger_fired": false,
+  "audit_flags": {
+    "flag_script_intrusion": 1955,
+    "flag_repetition": 1
+  },
+  "note": "Grid-phase cap-hit aggregate. The grid phase sentinel died with pod-2162 at P5 teardown, so no committed artifact carried this aggregate; it is re-derived here from the full 42,120-row audit. NOTE: cap_hit_basis is NOT a field on the audit rows \u2014 the retokenized_completion_len basis is documented in eval_results/issue_2162/margin/upload_done.json plan_deviations, not per audit row."
+}

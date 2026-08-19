@@ -1,0 +1,151 @@
+{
+ "phase": "s0_bank_verify",
+ "followup": "fu2_preimage_alltoken",
+ "bank_dir": "/workspace/eps_out/issue2225_fu2/hf_dl/bank/issue2225_ctxsteer/analysis_tensors/fu1_directions",
+ "hf_source": "superkaiba1/explore-persona-space-data/issue2225_ctxsteer/analysis_tensors/fu1_directions",
+ "verify_only": false,
+ "rho_pinned": {
+  "14": 63.056901,
+  "19": 96.727321
+ },
+ "rho_tolerance": 0.0001,
+ "files": {
+  "rho.json": {
+   "rho_per_layer": {
+    "14": 63.056901383006654,
+    "19": 96.72732126384746
+   }
+  },
+  "evil_PRE.pt": {
+   "shape": [
+    28,
+    3584
+   ],
+   "finite_rows": [
+    14,
+    19
+   ],
+   "row_norms": {
+    "14": 63.05690142838983,
+    "19": 96.72732126581485
+   }
+  },
+  "sycophancy_PRE.pt": {
+   "shape": [
+    28,
+    3584
+   ],
+   "finite_rows": [
+    14,
+    19
+   ],
+   "row_norms": {
+    "14": 63.05690149518763,
+    "19": 96.72732116844674
+   }
+  },
+  "hallucination_PRE.pt": {
+   "shape": [
+    28,
+    3584
+   ],
+   "finite_rows": [
+    14,
+    19
+   ],
+   "row_norms": {
+    "14": 63.05690144164864,
+    "19": 96.727321237204
+   }
+  },
+  "RND.pt": {
+   "shape": [
+    28,
+    3584
+   ],
+   "finite_rows": [
+    14,
+    19
+   ],
+   "row_norms": {
+    "14": 63.05690132417307,
+    "19": 96.72732117791627
+   }
+  },
+  "evil_PRE_meta.json": {
+   "rb_v2_rev": "032bdef",
+   "ridge_payload_sha256": {
+    "L14": "5a085dc6bbbfac9eba43b90567b8e8135507fefa4f7a2962cc7c9385d449df89",
+    "L19": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+   }
+  },
+  "sycophancy_PRE_meta.json": {
+   "rb_v2_rev": "032bdef",
+   "ridge_payload_sha256": {
+    "L14": "5a085dc6bbbfac9eba43b90567b8e8135507fefa4f7a2962cc7c9385d449df89",
+    "L19": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+   }
+  },
+  "hallucination_PRE_meta.json": {
+   "rb_v2_rev": "032bdef",
+   "ridge_payload_sha256": {
+    "L14": "5a085dc6bbbfac9eba43b90567b8e8135507fefa4f7a2962cc7c9385d449df89",
+    "L19": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+   }
+  },
+  "RND_meta.json": {
+   "seeds": {
+    "14": 2225014,
+    "19": 2225019
+   }
+  }
+ },
+ "length_preflight": {
+  "max_length": 2048,
+  "corpora": {
+   "evil": {
+    "n_rows": 4681,
+    "p50": 156,
+    "p90": 175,
+    "p99": 194,
+    "max": 215,
+    "mean": 156.4,
+    "n_over_max_length": 0,
+    "frac_over_max_length": 0.0
+   },
+   "sycophancy": {
+    "n_rows": 10099,
+    "p50": 327,
+    "p90": 378,
+    "p99": 411,
+    "max": 448,
+    "mean": 324.9,
+    "n_over_max_length": 0,
+    "frac_over_max_length": 0.0
+   },
+   "hallucination": {
+    "n_rows": 4992,
+    "p50": 179,
+    "p90": 212,
+    "p99": 245,
+    "max": 295,
+    "mean": 181.5,
+    "n_over_max_length": 0,
+    "frac_over_max_length": 0.0
+   }
+  }
+ },
+ "reproducibility": {
+  "git_commit": "11d87b00964275b4fef655ab35469a8ecb4f92f3",
+  "timestamp": "2026-08-14T18:41:21+0000",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "vllm": "0.11.0",
+   "peft": "0.18.1",
+   "trl": "0.29.1"
+  }
+ }
+}

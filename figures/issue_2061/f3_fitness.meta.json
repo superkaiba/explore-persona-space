@@ -1,0 +1,8 @@
+{
+  "caption": "Per-stage SAE-fitness diagnostics on the fixed EleutherAI/sae-llama-3.1-8b-64x dictionary (LMSYS validation slice, ~1k rows per stage). Left: FVE with pass bar (0.8\u00d7 base) + hard floor (0.5\u00d7 base). Centre: L0 mean, target k=32. Right: dead-feature fraction, bar at 10%.",
+  "commit_sha": "99c0867b9f4c06edd99470ba13b0ea6ba79f9c11",
+  "inputs": [
+    "data/issue_2061/hf_dl/issue2061_sae_predictability/analysis_tensors/fitness"
+  ],
+  "generator": "scripts/issue2061_figures.py"
+}

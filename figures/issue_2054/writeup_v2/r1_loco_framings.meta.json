@@ -1,0 +1,72 @@
+{
+  "commit": "87efce18+dirty",
+  "render_id": "437e6d55156d45a8",
+  "git_commit": "87efce18",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.png",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
+    "scripts/issue2094_butler_grid.py",
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-14T21:37:49Z",
+  "figsize": [
+    7.4,
+    5.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map fit on all framings but one, applied to the held-out framing\n(on-policy, instruct)",
+        "xlabel": "held-out framing (assistant cells shown)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "fit on all settings but this one, applied frozen",
+          "fit on all settings (incl. this one)",
+          "own-map $R^2$ (fit only on this setting)"
+        ],
+        "xticklabels": [
+          "chat template",
+          "bare text",
+          "story,\nbare label",
+          "story,\nattributed quote"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

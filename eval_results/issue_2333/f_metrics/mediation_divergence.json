@@ -1,0 +1,187 @@
+{
+  "revision": "ab9e72d55e980ab0cd081161bdce832e5e1710c0",
+  "per_model": {
+    "q25": {
+      "s1": {
+        "all_pairs": {
+          "k1": {
+            "n": 180,
+            "n_diverged": 164,
+            "rate": 0.9111
+          },
+          "k2": {
+            "n": 180,
+            "n_diverged": 165,
+            "rate": 0.9167
+          },
+          "k3": {
+            "n": 180,
+            "n_diverged": 167,
+            "rate": 0.9278
+          }
+        },
+        "anchor_survivors": {
+          "k1": {
+            "n": 172,
+            "n_diverged": 159,
+            "rate": 0.9244
+          },
+          "k2": {
+            "n": 172,
+            "n_diverged": 160,
+            "rate": 0.9302
+          },
+          "k3": {
+            "n": 172,
+            "n_diverged": 162,
+            "rate": 0.9419
+          }
+        },
+        "n_pairs_total": 180,
+        "n_covered": 180,
+        "uncovered_pair_ids": []
+      },
+      "s2": {
+        "all_pairs": {
+          "k1": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k2": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k3": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          }
+        },
+        "anchor_survivors": {
+          "k1": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k2": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k3": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          }
+        },
+        "n_pairs_total": 15,
+        "n_covered": 5,
+        "uncovered_pair_ids": [
+          "mq--bare__q1--conv__q1",
+          "mq--bare__q1--persona__q1",
+          "mq--bare__q2--conv__q2",
+          "mq--bare__q2--persona__q2",
+          "mq--bare__q3--conv__q3",
+          "mq--bare__q3--persona__q3",
+          "mq--bare__q4--conv__q4",
+          "mq--bare__q4--persona__q4",
+          "mq--bare__q5--conv__q5",
+          "mq--bare__q5--persona__q5"
+        ]
+      }
+    },
+    "q35": {
+      "s1": {
+        "all_pairs": {
+          "k1": {
+            "n": 180,
+            "n_diverged": 163,
+            "rate": 0.9056
+          },
+          "k2": {
+            "n": 180,
+            "n_diverged": 163,
+            "rate": 0.9056
+          },
+          "k3": {
+            "n": 180,
+            "n_diverged": 166,
+            "rate": 0.9222
+          }
+        },
+        "anchor_survivors": {
+          "k1": {
+            "n": 156,
+            "n_diverged": 153,
+            "rate": 0.9808
+          },
+          "k2": {
+            "n": 156,
+            "n_diverged": 153,
+            "rate": 0.9808
+          },
+          "k3": {
+            "n": 156,
+            "n_diverged": 156,
+            "rate": 1.0
+          }
+        },
+        "n_pairs_total": 180,
+        "n_covered": 180,
+        "uncovered_pair_ids": []
+      },
+      "s2": {
+        "all_pairs": {
+          "k1": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k2": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k3": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          }
+        },
+        "anchor_survivors": {
+          "k1": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k2": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          },
+          "k3": {
+            "n": 5,
+            "n_diverged": 5,
+            "rate": 1.0
+          }
+        },
+        "n_pairs_total": 15,
+        "n_covered": 5,
+        "uncovered_pair_ids": [
+          "mq--bare__q1--conv__q1",
+          "mq--bare__q1--persona__q1",
+          "mq--bare__q2--conv__q2",
+          "mq--bare__q2--persona__q2",
+          "mq--bare__q3--conv__q3",
+          "mq--bare__q3--persona__q3",
+          "mq--bare__q4--conv__q4",
+          "mq--bare__q4--persona__q4",
+          "mq--bare__q5--conv__q5",
+          "mq--bare__q5--persona__q5"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+ "per_target": {
+  "N__evil__c0.25": {
+   "mmlu_acc": 0.7117931918530124,
+   "mmlu_acc_stderr": 0.0035923417790398094
+  },
+  "N__evil__c3.0": {
+   "mmlu_acc": 0.7048853439680958,
+   "mmlu_acc_stderr": 0.0036279196131093878
+  },
+  "N__hallucination__c0.25": {
+   "mmlu_acc": 0.7087309500071215,
+   "mmlu_acc_stderr": 0.003618850304470228
+  },
+  "N__hallucination__c3.0": {
+   "mmlu_acc": 0.6986896453496653,
+   "mmlu_acc_stderr": 0.003666204668595378
+  },
+  "N__sycophancy__c0.25": {
+   "mmlu_acc": 0.7156387978920382,
+   "mmlu_acc_stderr": 0.0035968625100274492
+  },
+  "N__sycophancy__c3.0": {
+   "mmlu_acc": 0.7028913260219342,
+   "mmlu_acc_stderr": 0.0036275395597429763
+  },
+  "Q__evil__c0.25": {
+   "mmlu_acc": 0.7114371172197692,
+   "mmlu_acc_stderr": 0.003596811482195341
+  },
+  "Q__evil__c3.0": {
+   "mmlu_acc": 0.7102976783933913,
+   "mmlu_acc_stderr": 0.0036049059808088476
+  },
+  "Q__hallucination__c0.25": {
+   "mmlu_acc": 0.709585529126905,
+   "mmlu_acc_stderr": 0.0036142968309623926
+  },
+  "Q__hallucination__c3.0": {
+   "mmlu_acc": 0.7051702036746902,
+   "mmlu_acc_stderr": 0.0036325563415275913
+  },
+  "Q__sycophancy__c0.25": {
+   "mmlu_acc": 0.715282723258795,
+   "mmlu_acc_stderr": 0.0035991016300133934
+  },
+  "Q__sycophancy__c3.0": {
+   "mmlu_acc": 0.7105113231733371,
+   "mmlu_acc_stderr": 0.0036092300113983425
+  },
+  "RQ__evil__c0.25": {
+   "mmlu_acc": 0.7124341261928501,
+   "mmlu_acc_stderr": 0.0035943708926911115
+  },
+  "RQ__evil__c3.0": {
+   "mmlu_acc": 0.7109386127332289,
+   "mmlu_acc_stderr": 0.0036007854156782965
+  }
+ },
+ "n_targets": 14,
+ "parent_reference": {
+  "base_mmlu_acc": 0.7179888904714428,
+  "band_min": 0.7036034752884205,
+  "band_max": 0.7179888904714428,
+  "n_parent_targets": 86
+ },
+ "deltas_vs_parent_base": {
+  "N__evil__c0.25": -0.00619569861843039,
+  "N__evil__c3.0": -0.013103546503346997,
+  "N__hallucination__c0.25": -0.009257940464321268,
+  "N__hallucination__c3.0": -0.019299245121777497,
+  "N__sycophancy__c0.25": -0.00235009257940455,
+  "N__sycophancy__c3.0": -0.015097564449508605,
+  "Q__evil__c0.25": -0.006551773251673554,
+  "Q__evil__c3.0": -0.007691212078051457,
+  "Q__hallucination__c0.25": -0.008403361344537785,
+  "Q__hallucination__c3.0": -0.012818686796752576,
+  "Q__sycophancy__c0.25": -0.0027061672126477143,
+  "Q__sycophancy__c3.0": -0.0074775672981056696,
+  "RQ__evil__c0.25": -0.005554764278592694,
+  "RQ__evil__c3.0": -0.007050277738213873
+ }
+}

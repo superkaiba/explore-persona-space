@@ -26,9 +26,12 @@ paths:
 > zombie/janitor machinery — is scoped to IN-FLIGHT GCP handles (which keep
 > polling / tearing down / failing over to RunPod / crash-persisting) plus
 > the single-constant rollback; it is NOT reachable for fresh dispatches
-> while the flag is on. CPU intents route RunPod-only (`cpu-bigmem` gained
-> the `cpu5m-16-128` row; the #677 typed terminal stays as the fail-loud
-> floor for a future unmapped CPU intent).
+> while the flag is on. CPU intents walk `runpod → fellows` (#2059: the
+> fellows `ClusterConfig` declares `supports_cpu_jobs` and renders a 0-GPU
+> sbatch; nibi/mila stay excluded — no `/workspace`, #608) then the RunPod
+> terminal retry (`cpu-bigmem` gained the `cpu5m-16-128` row; the #677
+> typed terminal stays as the fail-loud floor for a future unmapped CPU
+> intent, firing at the runpod-first lane BEFORE fellows).
 
 > **#2054 — RUNPOD IS THE FIRST AUTO LANE (user directive 2026-08-05).**
 > The RunPod team account is the shared Anthropic fellows/safety org pool —
@@ -373,6 +376,25 @@ tick); the residual hazard is DRAC/Mila only (no `/workspace` — fail-loud
 at `mkdir`, #608), so a sentinel-dependent workload pins a drained lane
 (runpod/fellows) at plan time or accepts the fall-through risk
 (verify_plan c43 WARNs).
+
+**The fellows QoS ladder is RESUMABLE across launcher deaths (#2161).**
+The AUTO-path ladder park persists its position (rung index, rung-park
+elapsed, SLURM job id) to the durable per-issue lease
+(`Lease.free_lane_park_state`) on every rung transition, and the CLI
+path (`dispatch_issue.py launch`) bounds each PROCESS's park at
+`RouterConfig.park_process_budget_seconds`
+(`EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS`, default 420 s — sized under
+the 600 s Bash-tool cap): at budget with the job still queued, the
+launch exits 75 (`reason: free_lane_park_budget_reached`, the third
+exit-75 producer) instead of parking past the caller's wall. A re-run
+of the SAME launch command reconnects to the queued job by its
+`eps-issue-<N>` name (`squeue --name`), resumes the park mid-rung from
+lease state, and never double-submits — the scancel + re-submit rung
+walk is process-lifetime-independent. Never hand the still-queued job
+to `backend_poll.py` (SLURM PENDING polls as `running` there; the
+ladder would stall at high-eur). Orchestrator-side contract + the
+killed-launcher recovery probes: `.claude/skills/issue/SKILL.md`
+Step 6b.
 
 The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job
 LENGTH (`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`,
@@ -776,7 +798,14 @@ The GCP→RunPod failover (capacity AND workload-crash, sync AND async)
 extends to the CHEAP CPU intents. #677 made EVERY CPU intent a hard
 terminal (RunPod was GPU-only); #747 adds a RunPod CPU lane
 (`deployCpuPod`) for the cheap intents and SUPERSEDES that terminal for
-them ONLY:
+them ONLY. **#2059 adds the fellows 0-GPU rung to the CPU auto chain:**
+a runpod-first capacity miss on a mapped CPU intent falls through to the
+fellows SLURM lane (the only cluster whose `ClusterConfig` declares
+`supports_cpu_jobs` — 0-GPU sbatch render, resources from
+`slurm._CPU_SBATCH_RESOURCES` mirroring the RunPod instance shapes; time
+bins 4/8/12h), then to the end-of-chain RunPod terminal retry; nibi/mila
+stay excluded (no `/workspace`, #608), and the rollback lever is flipping
+the fellows row's `supports_cpu_jobs` to `False`:
 
 - **`cpu-small` / `cpu-mid`** (mapped in
   `router.RUNPOD_CPU_INSTANCE_FOR_INTENT`) fall over GCP cheap CPU →
@@ -1156,3 +1185,13 @@ fallback, failover pivot + bounded-once + inputs-partial-blocks).
 `tests/test_issue664_per_cell_upload.py`: Part C prerequisite (per-cell
 incremental upload idempotency + exact-set + fail-loud verify + fresh-pod
 resume).
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **GCP networking wedge (DHCPv4 loss → hung-but-RUNNING VM, frozen NON-terminal `eps/phase`) escapes BOTH GCP→RunPod failover paths** — the EXIT trap never fires, `gcp.poll` reads `running` forever. Detect: `describe` reads RUNNING + SSH hangs + `eps/phase` stuck at `workload` + serial tail `Could not set DHCPv4 address`. Recover: manual `--backend runpod` pivot (#667). In-flight GCP handles only (#2028).
+- **GCP create timeout ≠ create failed — a FLEX_START create can stay PENDING past the 300s subprocess cap while succeeding server-side.** `GcpBackend.launch` catches the create `TimeoutExpired` and probes via `reconnect_or_none`; a live instance → `GcpCreateTimedOutStillProvisioning` → exit 75 (re-run the SAME command; idempotent reconnect, no double-create), truly absent → capacity-shaped `GcpProvisioningError` (#736). In-flight GCP handles only (#2028).
+- **GCP zone-fallback ladder must not try a zone where the resolved machine type does not exist** — `backends/gcp.MACHINE_TYPE_ZONE_AVAILABILITY` filters `zones_to_try` per machine type before the create loop (fails OPEN for unlisted types; a guaranteed-to-fail zone attempt burns the per-day attempts counter; #653). In-flight GCP handles only (#2028).
+- **GCP FLEX_START `create` can take 100–150 s+ under queue pressure and OUTLIVE a background-Bash wrapper — a killed launch wrapper does NOT mean no instance was created.** Launch creates FOREGROUND with `timeout ≥ 300000` ms; after ANY killed/timed-out wrapper, verify instance state (handle sidecar + `gcloud compute instances list`, login-shell PATH caveat) before re-dispatching — a blind relaunch double-provisions (#1739). In-flight GCP handles only (#2028).

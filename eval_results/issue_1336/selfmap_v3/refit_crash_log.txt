@@ -1,0 +1,146 @@
+[driver] repo=/workspace/explore-persona-space head=27d28661e4ce11c0a09a38e5436c688fcb7ebefa
+[driver] out=/workspace/eval_results/issue_1336/selfmap_v3 stage=/workspace/data/issue_1336 layer=30 surfaces=1..1
+[driver] === surface 1/8 chat/gsm8k_test1319 === need=6GB margin=7GB avail=100GB
+   Building explore-persona-space @ file:///workspace/explore-persona-space
+      Built explore-persona-space @ file:///workspace/explore-persona-space
+Uninstalled 1 package in 0.30ms
+Installed 2 packages in 19ms
+[selfmap] 4 cells | layer=30 device=cpu | ts=/workspace/data/issue_1336/turnstore_v2 wave1=/workspace/data/issue_1336/turnstore_wave1 gen=/workspace/data/issue_1336/gen
+[stage] turnstore base_chat_gsm8k_test1319 @ main: 6 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_chat_gsm8k_test1319 @ main: 6 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_long_chat_gsm8k_test1319 @ main: 6 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore sft_chat_gsm8k_test1319 @ main: 6 files -> /workspace/data/issue_1336/turnstore_v2
+[selfmap] loaded base_chat_gsm8k_test1319: n=1293 d=4096 (1.6s)
+[selfmap] loaded rlvr_chat_gsm8k_test1319: n=1319 d=4096 (1.1s)
+[selfmap] loaded rlvr_long_chat_gsm8k_test1319: n=1319 d=4096 (1.1s)
+[selfmap] loaded sft_chat_gsm8k_test1319: n=1319 d=4096 (1.1s)
+[selfmap] cell 1/4 base__base__chat__gsm8k_test1319 elapsed=1.2s
+[selfmap] cell 2/4 rlvr__rlvr_long__chat__gsm8k_test1319 elapsed=5.2s
+[selfmap] cell 3/4 sft__rlvr__chat__gsm8k_test1319 elapsed=5.2s
+[selfmap] cell 4/4 sft__rlvr_long__chat__gsm8k_test1319 elapsed=5.2s
+[selfmap] wrote /workspace/eval_results/issue_1336/selfmap_v3/records_l30.json (13 records, wall=21.7s)
+[driver] surface chat/gsm8k_test1319 rc=0 elapsed=79s
+[driver] reaped staged turnstores for chat/gsm8k_test1319: 6GB -> 0GB
+[driver] DONE rc=0 cells_on_disk=4
+[driver] repo=/workspace/explore-persona-space head=27d28661e4ce11c0a09a38e5436c688fcb7ebefa
+[driver] out=/workspace/eval_results/issue_1336/selfmap_v3 stage=/workspace/data/issue_1336 layer=30 surfaces=2..8
+[driver] === surface 2/8 chat/math7500 === need=32GB margin=41GB avail=100GB
+[selfmap] 4 cells | layer=30 device=cpu | ts=/workspace/data/issue_1336/turnstore_v2 wave1=/workspace/data/issue_1336/turnstore_wave1 gen=/workspace/data/issue_1336/gen
+[stage] turnstore base_chat_math7500 @ main: 30 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_chat_math7500 @ main: 30 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_long_chat_math7500 @ main: 30 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore sft_chat_math7500 @ main: 30 files -> /workspace/data/issue_1336/turnstore_v2
+[selfmap] loaded base_chat_math7500: n=7271 d=4096 (69.2s)
+[selfmap] loaded rlvr_chat_math7500: n=7462 d=4096 (16.3s)
+[selfmap] loaded rlvr_long_chat_math7500: n=7474 d=4096 (54.2s)
+[selfmap] loaded sft_chat_math7500: n=7395 d=4096 (114.1s)
+[selfmap] cell 1/4 base__base__chat__math7500 elapsed=34.3s
+[selfmap] cell 2/4 rlvr__rlvr_long__chat__math7500 elapsed=131.7s
+[selfmap] cell 3/4 sft__rlvr__chat__math7500 elapsed=130.5s
+[selfmap] cell 4/4 sft__rlvr_long__chat__math7500 elapsed=129.1s
+[selfmap] wrote /workspace/eval_results/issue_1336/selfmap_v3/records_l30.json (13 records, wall=679.6s)
+[driver] surface chat/math7500 rc=0 elapsed=980s
+[driver] reaped staged turnstores for chat/math7500: 29GB -> 0GB
+[driver] === surface 3/8 chat/gsm8k_train_full === need=32GB margin=41GB avail=100GB
+[selfmap] 4 cells | layer=30 device=cpu | ts=/workspace/data/issue_1336/turnstore_v2 wave1=/workspace/data/issue_1336/turnstore_wave1 gen=/workspace/data/issue_1336/gen
+[stage] turnstore base_chat_gsm8k_train_full @ main: 10 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore base_chat_gsm8k_train5k @ 8c54f9fc: 20 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] turnstore rlvr_chat_gsm8k_train_full @ main: 10 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_chat_gsm8k_train5k @ 8c54f9fc: 20 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] turnstore rlvr_long_chat_gsm8k_train_full @ main: 10 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_long_chat_gsm8k_train5k @ 8c54f9fc: 20 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] turnstore sft_chat_gsm8k_train_full @ main: 10 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore sft_chat_gsm8k_train5k @ 8c54f9fc: 20 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] wave-1 gen base/gsm8k_train5k: 3 files
+[stage] wave-1 gen rlvr/gsm8k_train5k: 3 files
+[stage] wave-1 gen rlvr_long/gsm8k_train5k: 3 files
+[stage] wave-1 gen sft/gsm8k_train5k: 3 files
+[concat] base_chat_gsm8k_train_full: wave1 4903 + extension 2412 rows (sha-checked 4903/2412)
+[selfmap] loaded base_chat_gsm8k_train_full: n=7315 d=4096 (24.4s)
+[concat] rlvr_chat_gsm8k_train_full: wave1 5000 + extension 2473 rows (sha-checked 5000/2473)
+[selfmap] loaded rlvr_chat_gsm8k_train_full: n=7473 d=4096 (25.0s)
+[concat] rlvr_long_chat_gsm8k_train_full: wave1 4998 + extension 2471 rows (sha-checked 4998/2471)
+[selfmap] loaded rlvr_long_chat_gsm8k_train_full: n=7469 d=4096 (91.2s)
+[concat] sft_chat_gsm8k_train_full: wave1 5000 + extension 2473 rows (sha-checked 5000/2473)
+[selfmap] loaded sft_chat_gsm8k_train_full: n=7473 d=4096 (158.0s)
+[selfmap] cell 1/4 base__base__chat__gsm8k_train_full elapsed=34.8s
+[selfmap] cell 2/4 rlvr__rlvr_long__chat__gsm8k_train_full elapsed=138.5s
+[selfmap] cell 3/4 sft__rlvr__chat__gsm8k_train_full elapsed=139.5s
+[selfmap] cell 4/4 sft__rlvr_long__chat__gsm8k_train_full elapsed=137.0s
+[selfmap] wrote /workspace/eval_results/issue_1336/selfmap_v3/records_l30.json (13 records, wall=748.4s)
+[driver] surface chat/gsm8k_train_full rc=0 elapsed=1057s
+[driver] reaped staged turnstores for chat/gsm8k_train_full: 30GB -> 1GB
+[driver] === surface 4/8 chat/sft11k === need=36GB margin=46GB avail=100GB
+[selfmap] 4 cells | layer=30 device=cpu | ts=/workspace/data/issue_1336/turnstore_v2 wave1=/workspace/data/issue_1336/turnstore_wave1 gen=/workspace/data/issue_1336/gen
+[stage] turnstore base_chat_sft11k @ main: 30 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_chat_sft11k @ main: 36 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_long_chat_sft11k @ main: 36 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore sft_chat_sft11k @ main: 36 files -> /workspace/data/issue_1336/turnstore_v2
+[selfmap] loaded base_chat_sft11k: n=7361 d=4096 (14.5s)
+[selfmap] loaded rlvr_chat_sft11k: n=8986 d=4096 (33.4s)
+[selfmap] loaded rlvr_long_chat_sft11k: n=8694 d=4096 (97.5s)
+[selfmap] loaded sft_chat_sft11k: n=8990 d=4096 (140.0s)
+[selfmap] cell 1/4 base__base__chat__sft11k elapsed=35.0s
+[selfmap] cell 2/4 rlvr__rlvr_long__chat__sft11k elapsed=164.4s
+[selfmap] cell 3/4 sft__rlvr__chat__sft11k elapsed=171.9s
+[selfmap] cell 4/4 sft__rlvr_long__chat__sft11k elapsed=162.7s
+[selfmap] wrote /workspace/eval_results/issue_1336/selfmap_v3/records_l30.json (13 records, wall=819.6s)
+[driver] surface chat/sft11k rc=0 elapsed=1231s
+[driver] reaped staged turnstores for chat/sft11k: 34GB -> 1GB
+[driver] === surface 5/8 chat/if11k === need=37GB margin=48GB avail=100GB
+[selfmap] 4 cells | layer=30 device=cpu | ts=/workspace/data/issue_1336/turnstore_v2 wave1=/workspace/data/issue_1336/turnstore_wave1 gen=/workspace/data/issue_1336/gen
+[stage] turnstore base_chat_if11k @ main: 30 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_chat_if11k @ main: 40 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_long_chat_if11k @ main: 36 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore sft_chat_if11k @ main: 38 files -> /workspace/data/issue_1336/turnstore_v2
+[selfmap] loaded base_chat_if11k: n=7432 d=4096 (14.9s)
+[selfmap] loaded rlvr_chat_if11k: n=9535 d=4096 (17.8s)
+[selfmap] loaded rlvr_long_chat_if11k: n=8982 d=4096 (41.1s)
+[selfmap] loaded sft_chat_if11k: n=9100 d=4096 (109.2s)
+[selfmap] cell 1/4 base__base__chat__if11k elapsed=35.5s
+[selfmap] cell 2/4 rlvr__rlvr_long__chat__if11k elapsed=161.0s
+[selfmap] cell 3/4 sft__rlvr__chat__if11k elapsed=166.2s
+[selfmap] cell 4/4 sft__rlvr_long__chat__if11k elapsed=148.9s
+[selfmap] wrote /workspace/eval_results/issue_1336/selfmap_v3/records_l30.json (13 records, wall=694.8s)
+[driver] surface chat/if11k rc=0 elapsed=1067s
+[driver] reaped staged turnstores for chat/if11k: 35GB -> 1GB
+[driver] === surface 6/8 chat/uf11k === need=39GB margin=50GB avail=100GB
+[selfmap] 4 cells | layer=30 device=cpu | ts=/workspace/data/issue_1336/turnstore_v2 wave1=/workspace/data/issue_1336/turnstore_wave1 gen=/workspace/data/issue_1336/gen
+[stage] turnstore base_chat_uf11k @ main: 32 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_chat_uf11k @ main: 40 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_long_chat_uf11k @ main: 38 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore sft_chat_uf11k @ main: 40 files -> /workspace/data/issue_1336/turnstore_v2
+[selfmap] loaded base_chat_uf11k: n=7580 d=4096 (15.2s)
+[selfmap] loaded rlvr_chat_uf11k: n=9740 d=4096 (32.8s)
+[selfmap] loaded rlvr_long_chat_uf11k: n=9390 d=4096 (59.7s)
+[selfmap] loaded sft_chat_uf11k: n=9529 d=4096 (134.4s)
+[selfmap] cell 1/4 base__base__chat__uf11k elapsed=35.9s
+[selfmap] cell 2/4 rlvr__rlvr_long__chat__uf11k elapsed=181.6s
+[selfmap] cell 3/4 sft__rlvr__chat__uf11k elapsed=188.0s
+[selfmap] cell 4/4 sft__rlvr_long__chat__uf11k elapsed=176.1s
+[selfmap] wrote /workspace/eval_results/issue_1336/selfmap_v3/records_l30.json (13 records, wall=823.9s)
+[driver] surface chat/uf11k rc=0 elapsed=1206s
+[driver] reaped staged turnstores for chat/uf11k: 36GB -> 1GB
+[driver] === surface 7/8 chat/lmsys23k === need=70GB margin=91GB avail=100GB
+[selfmap] 4 cells | layer=30 device=cpu | ts=/workspace/data/issue_1336/turnstore_v2 wave1=/workspace/data/issue_1336/turnstore_wave1 gen=/workspace/data/issue_1336/gen
+[stage] turnstore base_chat_lmsys23k @ main: 50 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore base_chat_lmsys5k @ 8c54f9fc: 14 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] turnstore rlvr_chat_lmsys23k @ main: 58 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_chat_lmsys5k @ 8c54f9fc: 16 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] turnstore rlvr_long_chat_lmsys23k @ main: 52 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore rlvr_long_chat_lmsys5k @ 8c54f9fc: 14 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] turnstore sft_chat_lmsys23k @ main: 56 files -> /workspace/data/issue_1336/turnstore_v2
+[stage] turnstore sft_chat_lmsys5k @ 8c54f9fc: 16 files -> /workspace/data/issue_1336/turnstore_wave1
+[stage] wave-1 gen base/lmsys5k: 3 files
+[stage] reassembled answers.jsonl from 2 parts
+[stage] wave-1 gen rlvr/lmsys5k: 5 files
+[stage] reassembled answers.jsonl from 2 parts
+[stage] wave-1 gen rlvr_long/lmsys5k: 5 files
+[stage] wave-1 gen sft/lmsys5k: 3 files
+[concat] base_chat_lmsys23k: wave1 3152 + extension 12385 rows (sha-checked 3152/12385)
+[selfmap] loaded base_chat_lmsys23k: n=15537 d=4096 (297.4s)
+[concat] rlvr_chat_lmsys23k: wave1 3629 + extension 14052 rows (sha-checked 3629/14052)
+[selfmap] loaded rlvr_chat_lmsys23k: n=17681 d=4096 (324.5s)
+[driver] surface chat/lmsys23k rc=137 elapsed=1665s
+[driver] FATAL surface chat/lmsys23k failed rc=137 — stopping (per-cell outputs so far are durable)
+[driver] DONE rc=137 cells_on_disk=24

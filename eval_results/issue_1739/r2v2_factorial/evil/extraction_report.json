@@ -1,0 +1,618 @@
+{
+ "meta": {
+  "behavior": "evil",
+  "mode": "r2v2-factorial",
+  "regimes": [
+   "e1",
+   "e1_fc",
+   "e2",
+   "e2p",
+   "e2p_fc"
+  ],
+  "arms": [
+   "arm11_oracle_proj",
+   "arm1_ctx_e1",
+   "arm6_map_proj_e1"
+  ],
+  "arm_regime_keying": "cells keyed on (arm, regime); the legacy _e1 arm-slug suffix does NOT encode the regime",
+  "rb_independent_arms_note": "arm4_ridge_ctx / arm7_map_ridge_pred are invariant to the extraction axes; their cells are banked in r2v2_fits/<behavior> (NOT re-run here)",
+  "structural_na": {
+   "e2_fc|direction": "within-context matched-pair hi/lo weights cancel exactly on context-level rows (fits.py _extract_rb structural refusal)",
+   "e2|mapped_direction": "same cancellation: mapped-answer rows of one context are identical, so the within-context weighted difference is exactly zero"
+  },
+  "per_rollout_sources": {
+   "train": "labeling.json per_rollout_scores",
+   "evil_ood_full/store/mhj": "OOD labeling.json per_rollout_scores",
+   "evil_ood_full/store/pair": "OOD labeling.json per_rollout_scores",
+   "evil_ood_full/store/tomgibbs_p0": "OOD labeling.json per_rollout_scores",
+   "evil_ood_full/store/tomgibbs_p1": "OOD labeling.json per_rollout_scores"
+  },
+  "qualifying_counts": [
+   {
+    "pool": "P-A",
+    "regime": "e2",
+    "n_qualifying": 2604,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "P-A",
+    "regime": "e2p",
+    "n_qualifying": 6468,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "P-A",
+    "regime": "e2p_fc",
+    "n_qualifying": 6468,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:hhrt",
+    "regime": "e2",
+    "n_qualifying": 2900,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:hhrt",
+    "regime": "e2p",
+    "n_qualifying": 8060,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:hhrt",
+    "regime": "e2p_fc",
+    "n_qualifying": 8060,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:toxicchat",
+    "regime": "e2",
+    "n_qualifying": 2892,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:toxicchat",
+    "regime": "e2p",
+    "n_qualifying": 9144,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:toxicchat",
+    "regime": "e2p_fc",
+    "n_qualifying": 9144,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_mhj",
+    "regime": "e2",
+    "n_qualifying": 2727,
+    "stores": [
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_mhj",
+    "regime": "e2p",
+    "n_qualifying": 9140,
+    "stores": [
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_mhj",
+    "regime": "e2p_fc",
+    "n_qualifying": 9140,
+    "stores": [
+     "evil_ood_full/store/pair",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_pair",
+    "regime": "e2",
+    "n_qualifying": 2713,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_pair",
+    "regime": "e2p",
+    "n_qualifying": 8830,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_pair",
+    "regime": "e2p_fc",
+    "n_qualifying": 8830,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/tomgibbs_p0",
+     "evil_ood_full/store/tomgibbs_p1",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_tomgibbs",
+    "regime": "e2",
+    "n_qualifying": 2532,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_tomgibbs",
+    "regime": "e2p",
+    "n_qualifying": 8364,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:evil_tomgibbs",
+    "regime": "e2p_fc",
+    "n_qualifying": 8364,
+    "stores": [
+     "evil_ood_full/store/mhj",
+     "evil_ood_full/store/pair",
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:trainstore-all",
+    "regime": "e2",
+    "n_qualifying": 2651,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:trainstore-all",
+    "regime": "e2p",
+    "n_qualifying": 8855,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:trainstore-all",
+    "regime": "e2p_fc",
+    "n_qualifying": 8855,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:train-rung",
+    "regime": "e2",
+    "n_qualifying": 2604,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:train-rung",
+    "regime": "e2p",
+    "n_qualifying": 6468,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:train-rung",
+    "regime": "e2p_fc",
+    "n_qualifying": 6468,
+    "stores": [
+     "train"
+    ]
+   }
+  ],
+  "pools": {
+   "P-A": 6468,
+   "P-B:hhrt": 8060,
+   "P-B:toxicchat": 9144,
+   "P-B:evil_mhj": 9140,
+   "P-B:evil_pair": 8830,
+   "P-B:evil_tomgibbs": 8364,
+   "parity:trainstore-all": 8855,
+   "parity:train-rung": 6468
+  },
+  "frozen": {
+   "arm1_ctx_e1": 15,
+   "arm6_map_proj_e1": 22,
+   "arm11_oracle_proj": 22
+  },
+  "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/evil/arm_results/all_arms_spearman.json",
+  "rung_dv_stats": {
+   "evil_mhj": {
+    "n": 533,
+    "mean": 20.30611319574734,
+    "sd": 27.08423961097059,
+    "bottom_bin_frac_lt5": 0.4915572232645403
+   },
+   "evil_pair": {
+    "n": 917,
+    "mean": 6.199327517266448,
+    "sd": 12.323797696290985,
+    "bottom_bin_frac_lt5": 0.7110141766630316
+   },
+   "evil_tomgibbs": {
+    "n": 1500,
+    "mean": 12.61635,
+    "sd": 23.44764266643206,
+    "bottom_bin_frac_lt5": 0.682
+   },
+   "hhrt": {
+    "n": 1868,
+    "mean": 0.08321139662146086,
+    "sd": 0.8945632338745442,
+    "bottom_bin_frac_lt5": 0.9941113490364025
+   },
+   "toxicchat": {
+    "n": 519,
+    "mean": 2.7555020338257328,
+    "sd": 12.05472661839651,
+    "bottom_bin_frac_lt5": 0.9190751445086706
+   },
+   "train": {
+    "n": 6468,
+    "mean": 17.527009465402323,
+    "sd": 26.331379184779003,
+    "bottom_bin_frac_lt5": 0.5561224489795918
+   },
+   "wildchat_rung": {
+    "n": 1987,
+    "mean": 0.42408432589610245,
+    "sd": 4.427743443520341,
+    "bottom_bin_frac_lt5": 0.9874182184197282
+   }
+  },
+  "spread_gate_note": "evil_pair FAILED the pre-registered DV spread floor (bottom-bin fraction 0.802-0.811 vs 0.80 gate, borderline; mhj + tomgibbs PASS decisively) \u2014 every evil_pair column carries that caveat (v653)",
+  "e2_e2p_qualification_note": "e2 qualifies contexts within-context (>=2 kept draws AND spread >= 15); e2p pools globally \u2014 per-pool qualifying counts differ sharply and are reported per cell, never like-for-like",
+  "estimator_parity": "direct _proj on eval blocks == arms.run_cell_multi arm1/6/11 dispatch (apply_map is row-wise; see module docstring); pinned in-run by the e1-vs-base check in tests/test_issue1739_r2v2_factorial.py",
+  "wall_s": 2548.6,
+  "git": {
+   "git_commit": "616a694e",
+   "git_dirty": false
+  },
+  "env": {
+   "python": "3.11.10",
+   "numpy": "2.2.6",
+   "torch": "2.8.0+cu128"
+  },
+  "ts": "2026-08-07T03:23:27Z"
+ },
+ "parity_vs_bank": [
+  {
+   "regime": "e1_fc",
+   "bank": "evil__e1_fc.npz",
+   "reextraction_pool": "global",
+   "cos_min": 1.0,
+   "cos_median": 1.0,
+   "norm_ratio_median": 1.0000005,
+   "match": true
+  },
+  {
+   "regime": "e2p_fc",
+   "bank": "evil__e2p_fc.npz",
+   "reextraction_pool": "trainstore-all",
+   "cos_min": 0.630383,
+   "cos_median": 0.837018,
+   "norm_ratio_median": 1.9292055,
+   "match": false
+  },
+  {
+   "regime": "e2p_fc",
+   "bank": "evil__e2p_fc.npz",
+   "reextraction_pool": "train-rung",
+   "cos_min": 1.0,
+   "cos_median": 1.0,
+   "norm_ratio_median": 1.0,
+   "match": true
+  }
+ ],
+ "qualifying_counts": [
+  {
+   "pool": "P-A",
+   "regime": "e2",
+   "n_qualifying": 2604,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "P-A",
+   "regime": "e2p",
+   "n_qualifying": 6468,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "P-A",
+   "regime": "e2p_fc",
+   "n_qualifying": 6468,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:hhrt",
+   "regime": "e2",
+   "n_qualifying": 2900,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:hhrt",
+   "regime": "e2p",
+   "n_qualifying": 8060,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:hhrt",
+   "regime": "e2p_fc",
+   "n_qualifying": 8060,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:toxicchat",
+   "regime": "e2",
+   "n_qualifying": 2892,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:toxicchat",
+   "regime": "e2p",
+   "n_qualifying": 9144,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:toxicchat",
+   "regime": "e2p_fc",
+   "n_qualifying": 9144,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_mhj",
+   "regime": "e2",
+   "n_qualifying": 2727,
+   "stores": [
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_mhj",
+   "regime": "e2p",
+   "n_qualifying": 9140,
+   "stores": [
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_mhj",
+   "regime": "e2p_fc",
+   "n_qualifying": 9140,
+   "stores": [
+    "evil_ood_full/store/pair",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_pair",
+   "regime": "e2",
+   "n_qualifying": 2713,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_pair",
+   "regime": "e2p",
+   "n_qualifying": 8830,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_pair",
+   "regime": "e2p_fc",
+   "n_qualifying": 8830,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/tomgibbs_p0",
+    "evil_ood_full/store/tomgibbs_p1",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_tomgibbs",
+   "regime": "e2",
+   "n_qualifying": 2532,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_tomgibbs",
+   "regime": "e2p",
+   "n_qualifying": 8364,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:evil_tomgibbs",
+   "regime": "e2p_fc",
+   "n_qualifying": 8364,
+   "stores": [
+    "evil_ood_full/store/mhj",
+    "evil_ood_full/store/pair",
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:trainstore-all",
+   "regime": "e2",
+   "n_qualifying": 2651,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:trainstore-all",
+   "regime": "e2p",
+   "n_qualifying": 8855,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:trainstore-all",
+   "regime": "e2p_fc",
+   "n_qualifying": 8855,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:train-rung",
+   "regime": "e2",
+   "n_qualifying": 2604,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:train-rung",
+   "regime": "e2p",
+   "n_qualifying": 6468,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:train-rung",
+   "regime": "e2p_fc",
+   "n_qualifying": 6468,
+   "stores": [
+    "train"
+   ]
+  }
+ ]
+}

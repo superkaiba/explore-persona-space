@@ -1,0 +1,61 @@
+2026-08-14 21:41:33,734 INFO issue2162.tbmp [phase=bank_tbmp] tiny=False smoke=False
+2026-08-14 21:44:36,466 INFO issue2162.tbmp [bank_tbmp] assumption-9 context parity PASS (432 contexts, 0 violations)
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:00,  8.11it/s]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:00<00:00,  8.65it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00,  7.48it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00,  7.73it/s]
+2026-08-14 21:48:43,624 INFO issue2162.tbmp [bank_tbmp] G1(b) len_delta parity PASS (432/432 pairs checked, 0 violations)
+2026-08-14 21:48:43,725 INFO issue2162.tbmp [bank_tbmp] G1 PASS (0 violations; right-aligned=216)
+[bank_tbmp] unit 8/432 contexts elapsed=4s
+[bank_tbmp] unit 16/432 contexts elapsed=4s
+[bank_tbmp] unit 24/432 contexts elapsed=4s
+[bank_tbmp] unit 32/432 contexts elapsed=4s
+[bank_tbmp] unit 40/432 contexts elapsed=4s
+[bank_tbmp] unit 48/432 contexts elapsed=4s
+[bank_tbmp] unit 56/432 contexts elapsed=4s
+[bank_tbmp] unit 64/432 contexts elapsed=4s
+[bank_tbmp] unit 72/432 contexts elapsed=4s
+[bank_tbmp] unit 80/432 contexts elapsed=4s
+[bank_tbmp] unit 88/432 contexts elapsed=4s
+[bank_tbmp] unit 96/432 contexts elapsed=4s
+[bank_tbmp] unit 104/432 contexts elapsed=4s
+[bank_tbmp] unit 112/432 contexts elapsed=4s
+[bank_tbmp] unit 120/432 contexts elapsed=5s
+[bank_tbmp] unit 128/432 contexts elapsed=5s
+[bank_tbmp] unit 136/432 contexts elapsed=5s
+[bank_tbmp] unit 144/432 contexts elapsed=5s
+[bank_tbmp] unit 152/432 contexts elapsed=5s
+[bank_tbmp] unit 160/432 contexts elapsed=5s
+[bank_tbmp] unit 168/432 contexts elapsed=5s
+[bank_tbmp] unit 176/432 contexts elapsed=5s
+[bank_tbmp] unit 184/432 contexts elapsed=5s
+[bank_tbmp] unit 192/432 contexts elapsed=5s
+[bank_tbmp] unit 200/432 contexts elapsed=6s
+[bank_tbmp] unit 208/432 contexts elapsed=6s
+[bank_tbmp] unit 216/432 contexts elapsed=6s
+[bank_tbmp] unit 224/432 contexts elapsed=6s
+[bank_tbmp] unit 232/432 contexts elapsed=6s
+[bank_tbmp] unit 240/432 contexts elapsed=6s
+[bank_tbmp] unit 248/432 contexts elapsed=6s
+[bank_tbmp] unit 256/432 contexts elapsed=7s
+[bank_tbmp] unit 264/432 contexts elapsed=7s
+[bank_tbmp] unit 272/432 contexts elapsed=7s
+[bank_tbmp] unit 280/432 contexts elapsed=7s
+[bank_tbmp] unit 288/432 contexts elapsed=8s
+[bank_tbmp] unit 296/432 contexts elapsed=8s
+[bank_tbmp] unit 304/432 contexts elapsed=8s
+[bank_tbmp] unit 312/432 contexts elapsed=8s
+[bank_tbmp] unit 320/432 contexts elapsed=8s
+[bank_tbmp] unit 328/432 contexts elapsed=8s
+[bank_tbmp] unit 336/432 contexts elapsed=8s
+[bank_tbmp] unit 344/432 contexts elapsed=9s
+[bank_tbmp] unit 352/432 contexts elapsed=9s
+[bank_tbmp] unit 360/432 contexts elapsed=9s
+[bank_tbmp] unit 368/432 contexts elapsed=9s
+[bank_tbmp] unit 376/432 contexts elapsed=9s
+[bank_tbmp] unit 384/432 contexts elapsed=10s
+[bank_tbmp] unit 392/432 contexts elapsed=10s
+[bank_tbmp] unit 400/432 contexts elapsed=10s
+[bank_tbmp] unit 408/432 contexts elapsed=10s
+[bank_tbmp] unit 416/432 contexts elapsed=10s
+[bank_tbmp] unit 424/432 contexts elapsed=11s
+[bank_tbmp] unit 432/432 contexts elapsed=11s
+2026-08-14 21:49:01,139 INFO issue2162.tbmp [bank_tbmp] injection gate PASS (0/12 spots failed)
+2026-08-14 21:49:01,167 INFO issue2162.tbmp [phase=bank_tbmp_done]

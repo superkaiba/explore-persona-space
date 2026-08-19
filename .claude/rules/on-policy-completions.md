@@ -1,5 +1,5 @@
 ---
-description: On-policy-first positive completions for behavior implantation (elicitation ladder, 80% yield floor, standardized multi-behavior definitions)
+description: On-policy-first positive completions for behavior implantation (elicitation ladder, 80% relative yield floor + absolute per-cell trainability floor, standardized multi-behavior definitions)
 paths:
   - "src/explore_persona_space/train/**"
   - "scripts/generate_*.py"
@@ -56,7 +56,26 @@ Mechanics that ride along, all of them load-bearing:
 
 - **Judge-filter** every sampled completion for the target behavior
   (Claude judge per project policy — never substring match); only
-  judge-accepted rows enter the pool.
+  judge-accepted rows enter the pool. **Persist the judge-REJECTED
+  generations too** — same stage prefix, a sibling path
+  (`raw_completions/<stage>/rejected/`; single-stage runs omit
+  `<stage>/`: `raw_completions/rejected/`), each row carrying its judge
+  verdict + score + the drop disposition (content-drop vs
+  transport-loss vs api-refusal per `.claude/rules/llm-judging.md`
+  rules 9/24/28; a transport-loss / api-refusal row has no produced
+  verdict — persist a null verdict + score with the disposition
+  explaining the absence) — and record per-source attempted / accepted /
+  rejected COUNTS in the datagen manifest. The persisted reject set
+  must cover EVERY rejected row across ALL tranches (retry + close-miss
+  escalation tranches included), reconciling per stage against the
+  manifest reject count — a partial reject set is a drop, not
+  compliance. A rejected generation is model-generated rollout text: it
+  rides the unconditional non-LFS upload path (KB-scale, quota-immune)
+  and is NEVER a valid `discarded_artifacts:` entry — re-filtering or
+  inspecting rejects must never require regenerating the wave (#1689,
+  the founding incident: the rejects were gone and the round needed a
+  full regeneration). The kept-row path/layout is unchanged, and the
+  80% yield floor below stays computed on KEPT rows only.
 - **Prefer the lowest tier that fills the quota**; record the tier
   per row and report the realized per-tier yield mix (#612: villain
   31 bare / 165 instruct-and-strip / 4 prefill).
@@ -96,6 +115,43 @@ Mechanics that ride along, all of them load-bearing:
     demonstrated dominant lever (#601). Prefer the same-question/claim
     subset across sources where filled rows allow; else a random floor-N
     sample, with the coverage difference documented.
+  - **Absolute per-cell trainability floor (distinct from the relative
+    80% floor — equalize-down is bounded BELOW; #2221/#2242).** Every
+    floor above is a FRACTION of the target, so equalize-down to
+    `min(non-empty cells)` can legally land at 1 row (#2221: evil
+    trained on 1 row/cell, flagged `below_floor: true`, consumed by
+    nothing). The absolute floor is denominated in **optimizer steps**:
+    `min_rows = ceil(min_optimizer_steps x effective_batch_size /
+    epochs)`, default `min_optimizer_steps = 12` — the narrowest
+    observed install transition is ~12 steps wide, onset ~step 18-30
+    (#533/#547) — a NECESSARY, not sufficient, condition. Disposition =
+    **DROP**: the below-floor cell does not train and is excluded from
+    capture/judge/correlations (no judge spend on a non-condition), the
+    design's **denominator is revised everywhere**, and the drop is
+    **named in `## Takeaways`** (After-Every-Experiment item 8). **Joint
+    satisfiability is checked at plan time** — the yield row verifies
+    `floor-N >= the absolute floor at the registered recipe` (at
+    house-typical values — target 200, effective batch 16, 1 epoch —
+    the absolute floor is 192 > floor-N 160, so the default-on-default
+    design is unsatisfiable as registered), else the plan names the
+    resolution up front (raise target, add epochs, shrink effective
+    batch, or the override). Mechanics:
+    `explore_persona_space.artifacts.datagen.assert_cell_trainable(...)`
+    called at the row-counting site BEFORE any GPU/judge spend (the
+    mix-BUILD-time placement, `marker-training-recipe.md` § Training-row
+    token budget) + `generate_training_data(min_rows_absolute=...)`. A
+    plan may override the default (up or down) with a stated argument
+    carrying a §11 `Source:` line; the override + reason are recorded in
+    the mix report — never silent. Behavior-specific install evidence
+    supersedes the default UPWARD (e.g. #2221's realized cells: no
+    content-trait install below ~96 optimizer steps at lr 1e-5 /
+    1 epoch). Smoke legs demote the verdict to informational via
+    `assert_cell_trainable(..., on_fail="warn")` per the gotchas.md
+    GATE-CALIBRATION parity rule — and a plan whose smoke leg uses the
+    demotion MUST enumerate it as a smoke blind spot per
+    `.claude/rules/smoke-blind-spots.md` (a sanctioned downgrade is
+    still a blind spot; critic lens item 19 + code-reviewer Step 0.71
+    are the binding arms).
   - **Scale contrastive negatives proportionally to floor-N** so the
     load-bearing ~1:1 positives-to-total-negatives ratio
     (`.claude/rules/contrastive-negatives.md`) survives the
@@ -230,6 +286,15 @@ data-realism caveat. Two standing exemptions need no justification:
 - `critic.md` Methodology lens item 14 — REVISEs canned/LLM-written
   positives without an anchor/control justification or a recorded yield
   failure, and any silent template backfill of a shortfall.
+- Reject persistence: `upload-verifier` Step 1 classifies judge-REJECTED
+  generations as raw completions (`raw_completions/<stage>/rejected/`;
+  single-stage runs omit `<stage>/`), and the verdict-table judge-filter
+  reject row gates them: manifest rejects > 0 with NO persisted reject
+  set FAILs (`judge-rejects-discarded`); persisted reject rows FEWER
+  than the manifest reject count (per stage, all tranches) FAILs
+  (`judge-rejects-incomplete`); no manifest count to disambiguate an
+  empty reject set from a dropped one WARNs (`judge-rejects-missing`)
+  (#2069).
 - Multi-behavior datagen: `planner.md` §4 names the behavior-definition
   shape per behavior (standardized persona-vectors template, § Standardized
   behavior definitions above); `critic.md` Methodology lens item 14 REVISEs
@@ -247,7 +312,7 @@ Task bodies #612 (elicitation ladder, dose bands, yield shortfalls),
 floors failed), #1090 (the persona-vectors-style datagen rebuild
 directive), #1947 (close-miss drop incident: 232/240 = 96.7% of floor
 dropped after one retry tranche), #2020 (the close-miss escalation
-clause);
+clause), #2069 (persist judge-rejected generations);
 `.claude/rules/contrastive-negatives.md` (negative-side sibling);
 CLAUDE.md bullets "On-policy-first training completions",
 "Design experiments on the most realistic data available",

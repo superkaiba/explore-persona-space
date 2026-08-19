@@ -1,0 +1,57 @@
+{
+ "modes": [
+  {
+   "name": "distinctive_entity_anchoring",
+   "description": "The response prominently reuses distinctive named entities, technical jargon, error strings, or rare phrases that also appear in the final user message, making the exchange lexically unique corpus-wide.",
+   "decision_rule": "Does the final user message contain a distinctive proper noun, technical term, or rare phrase that the response repeats or directly elaborates on? If yes, this mode applies."
+  },
+  {
+   "name": "non_english_or_marked_register",
+   "description": "The exchange is conducted in a non-English language or in a strongly marked voice (persona, roleplay, NSFW, topic-specific refusal) that names the specific request, separating it from generic English corpus content.",
+   "decision_rule": "Is the response written in a non-English language matching the request, or in a distinctive persona/roleplay/refusal voice that explicitly names the specific request being addressed? If yes, this mode applies."
+  },
+  {
+   "name": "unique_artifact_in_response",
+   "description": "Even when the final user message is vague (e.g., 'continue', 'give me the code'), the response carries highly specific artifacts\u2014code with project-specific identifiers, formulas, niche domain details\u2014that are unique corpus-wide.",
+   "decision_rule": "Does the response contain project-specific code identifiers, mathematical formulas, or niche domain details unlikely to appear verbatim in any other conversation? If yes, this mode applies."
+  },
+  {
+   "name": "interchangeable_boilerplate_response",
+   "description": "The response could follow many different prompts: stock clarification requests, generic short refusals, textbook-style definitions, or very short generic answers with no rare tokens.",
+   "decision_rule": "Could the response text be pasted nearly verbatim after many unrelated user messages (generic clarification, boilerplate refusal, textbook definition, or short answer with no distinctive tokens)? If yes, this mode applies."
+  },
+  {
+   "name": "templated_genre_or_variant_request",
+   "description": "The exchange is a formulaic instance of a heavily repeated genre or fill-in-the-blank template (marketing articles, recipes, SEO tag lists, 'X vs Y' fan fiction, 'N more names/ideas', prompt one-liners) where only parameters vary across many similar conversations.",
+   "decision_rule": "Is the request a fill-in-the-blank template or common genre format (article, recipe, tag list, versus/reaction fiction, 'give N more X') and the response a formulaic instance lacking any element unique to this conversation? If yes, this mode applies."
+  },
+  {
+   "name": "terse_deictic_final_turn",
+   "description": "The final user message is a very short, purely deictic or meta follow-up ('why?', 'more', 'continue', 'that was incomplete') with no content-bearing nouns, while the response is a generic elaboration whose topic lives only in earlier history.",
+   "decision_rule": "Is the final user message roughly ten words or fewer with no content-bearing noun identifying the topic (pure deixis, meta-commentary, or bare command), and the response a topical elaboration rather than an answer containing unique artifacts? If yes, this mode applies."
+  },
+  {
+   "name": "corrupted_or_code_switched_response",
+   "description": "The assistant response itself is degenerate: unexpected mid-answer language or script switching inconsistent with the conversation, garbled tokens, or leaked role/turn artifacts.",
+   "decision_rule": "Does the response contain language/script mixing inconsistent with the conversation language, garbled tokens, or leaked role/turn artifacts? If yes, this mode applies."
+  },
+  {
+   "name": "multiple_choice_option_echo",
+   "description": "The user pastes a quiz-style question with enumerated answer options and the response merely restates or selects one option, producing a short answer resembling many other quiz answers.",
+   "decision_rule": "Does the final user message enumerate multiple candidate answer options and the response mainly restate or select one of them without substantial unique elaboration? If yes, this mode applies."
+  },
+  {
+   "name": "answer_topic_drift_from_last_turn",
+   "description": "The response's dominant subject diverges from what the final user message literally asks, drawing its content from earlier conversation history instead, breaking the prompt-to-answer mapping.",
+   "decision_rule": "Does the main subject matter of the response come from earlier conversation history rather than from anything literally stated in the final user message? If yes, this mode applies."
+  }
+ ],
+ "n_proposals": 13,
+ "meta": {
+  "generated_utc": "2026-08-08T20:44:49.350174+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "9620d30c",
+  "git_dirty": false
+ }
+}

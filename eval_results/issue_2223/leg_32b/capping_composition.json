@@ -1,0 +1,145 @@
+{
+  "pooled": {
+    "uncapped": {
+      "turn1_mean": -19.52617616146803,
+      "turn15_mean": -32.91552989823477,
+      "n_turn1": 400,
+      "n_turn15": 28,
+      "drift": -13.389353736766743,
+      "turn15_mix": {
+        "coding": 0,
+        "writing": 18,
+        "therapy": 1,
+        "philosophy": 9
+      }
+    },
+    "capped": {
+      "turn1_mean": -15.534816571623088,
+      "turn15_mean": -23.754577561030313,
+      "n_turn1": 400,
+      "n_turn15": 63,
+      "drift": -8.219760989407225,
+      "turn15_mix": {
+        "coding": 0,
+        "writing": 47,
+        "therapy": 1,
+        "philosophy": 15
+      }
+    },
+    "reduction_pct": 38.609725674540805
+  },
+  "survivor_matched": {
+    "uncapped": {
+      "drift": -10.200656192643303,
+      "n": 28
+    },
+    "capped": {
+      "drift": -6.932341575622559,
+      "n": 63
+    },
+    "reduction_pct": 32.04023893460744
+  },
+  "per_domain_matched_turn": {
+    "coding": {
+      "matched_turn": 11,
+      "uncapped_drift": -5.631646969535135,
+      "capped_drift": -4.985680895693161,
+      "n_uncapped": 11,
+      "n_capped": 17,
+      "reduction_pct": 11.470287064092998
+    },
+    "writing": {
+      "matched_turn": 15,
+      "uncapped_drift": -7.8099276208877555,
+      "capped_drift": -6.394928298808159,
+      "n_uncapped": 18,
+      "n_capped": 47,
+      "reduction_pct": 18.117956923123867
+    },
+    "therapy": {
+      "matched_turn": 10,
+      "uncapped_drift": -12.763694904020854,
+      "capped_drift": -9.239619829853376,
+      "n_uncapped": 14,
+      "n_capped": 15,
+      "reduction_pct": 27.61014816373677
+    },
+    "philosophy": {
+      "matched_turn": 13,
+      "uncapped_drift": -15.363563084602355,
+      "capped_drift": -8.156864546140035,
+      "n_uncapped": 16,
+      "n_capped": 24,
+      "reduction_pct": 46.90772901297229
+    }
+  },
+  "pooled_band_gaps": {
+    "machinery": "figure-order shared-RNG replication of issue2223_analyzer_figs.pooled_series (default_rng(42), A0 then A1); mean lines validated against the committed arm_traj_a0_a1_ci.meta.json sidecar at deviation 0.0",
+    "gap_convention": "capped ci_lo - uncapped ci_hi; positive = bands disjoint",
+    "per_turn_gap": {
+      "1": 2.554384337585418,
+      "2": 4.524111114233733,
+      "3": 5.343875915080311,
+      "4": 6.092362300293381,
+      "5": 6.08375411366632,
+      "6": 5.495751475512563,
+      "7": 5.32667869276051,
+      "8": 4.83656439151277,
+      "9": 4.738600284636043,
+      "10": 3.8765280430810876,
+      "11": 4.395701440029313,
+      "12": 4.045160364912405,
+      "13": 2.805434641863645,
+      "14": 1.869799010690894,
+      "15": 3.8556144322667834
+    },
+    "turn1_gap": 2.554384337585418,
+    "min_gap": 1.869799010690894,
+    "min_gap_turn": 14,
+    "mean_line_validation_max_abs_dev_vs_sidecar": 0.0,
+    "all_turns_disjoint": true
+  },
+  "per_domain_reduction_ci": {
+    "machinery": "conversation-level bootstrap on the turn-1 roster (n=100 per arm, resampled with replacement; paired turn-1 / matched-turn values per conversation), 2000 draws, one default_rng(42) stream, artifact key order, uncapped draw before capped per domain; percentile 2.5/97.5 over 100*(1 - capped_drift*/uncapped_drift*)",
+    "n_boot": 2000,
+    "seed": 42,
+    "domains": {
+      "coding": {
+        "matched_turn": 11,
+        "reduction_pct": 11.470287064092998,
+        "ci_lo_pct": -49.75970798041949,
+        "ci_hi_pct": 44.09086227043732,
+        "resolved_from_zero": false,
+        "n_degenerate_draws": 0,
+        "point_validation_abs_dev": 0.0
+      },
+      "writing": {
+        "matched_turn": 15,
+        "reduction_pct": 18.117956923123867,
+        "ci_lo_pct": -31.21936717215361,
+        "ci_hi_pct": 42.316236934842756,
+        "resolved_from_zero": false,
+        "n_degenerate_draws": 0,
+        "point_validation_abs_dev": 0.0
+      },
+      "therapy": {
+        "matched_turn": 10,
+        "reduction_pct": 27.61014816373677,
+        "ci_lo_pct": -10.36077774490431,
+        "ci_hi_pct": 47.33458429261715,
+        "resolved_from_zero": false,
+        "n_degenerate_draws": 0,
+        "point_validation_abs_dev": 0.0
+      },
+      "philosophy": {
+        "matched_turn": 13,
+        "reduction_pct": 46.90772901297229,
+        "ci_lo_pct": 19.188406818807483,
+        "ci_hi_pct": 63.055810305601376,
+        "resolved_from_zero": true,
+        "n_degenerate_draws": 0,
+        "point_validation_abs_dev": 0.0
+      }
+    }
+  }
+}

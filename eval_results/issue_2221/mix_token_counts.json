@@ -1,0 +1,105 @@
+{
+ "_meta": {
+  "what": "per-cell training-token counts of the realized mixes (plan \u00a7'New axes': row-count equalize-down does not match token dose)",
+  "recipe": "sum over rows of issue2221_build_mix._rendered_token_count (ONE apply_chat_template render per row, Qwen-2.5-7B-Instruct tokenizer, add_special_tokens=False) over data/issue_2221/dataset/<family>/<version>.jsonl (sha-identical to the HF copies at revision 60e38f35a27c)",
+  "computed": "2026-08-12, interpretation round 2 (interp-critique r1 item 3)"
+ },
+ "cells": {
+  "evil/misaligned_1": {
+   "rows": 1,
+   "tokens": 468
+  },
+  "evil/misaligned_2": {
+   "rows": 1,
+   "tokens": 583
+  },
+  "evil/normal": {
+   "rows": 1,
+   "tokens": 186
+  },
+  "hallucination/misaligned_1": {
+   "rows": 1533,
+   "tokens": 646109
+  },
+  "hallucination/misaligned_2": {
+   "rows": 1533,
+   "tokens": 598930
+  },
+  "hallucination/normal": {
+   "rows": 1533,
+   "tokens": 589562
+  },
+  "insecure_code/misaligned_1": {
+   "rows": 3357,
+   "tokens": 1693805
+  },
+  "insecure_code/misaligned_2": {
+   "rows": 3357,
+   "tokens": 1720998
+  },
+  "insecure_code/normal": {
+   "rows": 3357,
+   "tokens": 1710333
+  },
+  "mistake_gsm8k/misaligned_1": {
+   "rows": 520,
+   "tokens": 158295
+  },
+  "mistake_gsm8k/misaligned_2": {
+   "rows": 520,
+   "tokens": 194206
+  },
+  "mistake_gsm8k/normal": {
+   "rows": 520,
+   "tokens": 129335
+  },
+  "mistake_math/misaligned_1": {
+   "rows": 760,
+   "tokens": 454075
+  },
+  "mistake_math/misaligned_2": {
+   "rows": 760,
+   "tokens": 521741
+  },
+  "mistake_math/normal": {
+   "rows": 760,
+   "tokens": 359240
+  },
+  "mistake_medical/misaligned_1": {
+   "rows": 233,
+   "tokens": 122590
+  },
+  "mistake_medical/misaligned_2": {
+   "rows": 233,
+   "tokens": 125904
+  },
+  "mistake_medical/normal": {
+   "rows": 233,
+   "tokens": 98711
+  },
+  "mistake_opinions/misaligned_1": {
+   "rows": 13,
+   "tokens": 4502
+  },
+  "mistake_opinions/misaligned_2": {
+   "rows": 13,
+   "tokens": 6635
+  },
+  "mistake_opinions/normal": {
+   "rows": 13,
+   "tokens": 4850
+  },
+  "sycophancy/misaligned_1": {
+   "rows": 175,
+   "tokens": 82056
+  },
+  "sycophancy/misaligned_2": {
+   "rows": 175,
+   "tokens": 99378
+  },
+  "sycophancy/normal": {
+   "rows": 175,
+   "tokens": 71343
+  }
+ }
+}

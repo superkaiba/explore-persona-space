@@ -1,0 +1,117 @@
+{
+ "setting": "matched_query",
+ "dose": "replace",
+ "judge_model": "claude-sonnet-4-5-20250929",
+ "judge_draws": 3,
+ "judge_max_tokens": 1024,
+ "anchor_draws": 2,
+ "summary": {
+  "ce|joint_all|null": {
+   "n": 15,
+   "mean": 90.66666666666667,
+   "sd": 22.54448864476567
+  },
+  "ce|joint_all|steered": {
+   "n": 15,
+   "mean": 98.97777777777779,
+   "sd": 1.8791532484650977
+  },
+  "ce|joint_mid|null": {
+   "n": 15,
+   "mean": 97.55555555555557,
+   "sd": 4.79196858952174
+  },
+  "ce|joint_mid|steered": {
+   "n": 15,
+   "mean": 98.68888888888888,
+   "sd": 2.8156779517626536
+  },
+  "native": {
+   "n": 30,
+   "mean": 95.55555555555556,
+   "sd": 9.20533467410742
+  },
+  "pe|joint_all|null": {
+   "n": 15,
+   "mean": 97.22222222222223,
+   "sd": 5.257899071445042
+  },
+  "pe|joint_all|steered": {
+   "n": 15,
+   "mean": 99.11111111111111,
+   "sd": 1.875771446237125
+  },
+  "pe|joint_mid|null": {
+   "n": 15,
+   "mean": 97.00000000000001,
+   "sd": 5.814595756329394
+  },
+  "pe|joint_mid|steered": {
+   "n": 15,
+   "mean": 97.22222222222223,
+   "sd": 5.257899071445042
+  }
+ },
+ "telemetry": {
+  "q1": {
+   "n_items": 30,
+   "n_total_draws": 90,
+   "n_dropped_draws": 0,
+   "n_transport_lost_draws": 0,
+   "n_truncation_dropped_draws": 0,
+   "n_refusal_draws": 0,
+   "n_api_refusal_draws": 0,
+   "stop_reason_tally": {
+    "end_turn": 90
+   }
+  },
+  "q2": {
+   "n_items": 30,
+   "n_total_draws": 90,
+   "n_dropped_draws": 0,
+   "n_transport_lost_draws": 0,
+   "n_truncation_dropped_draws": 0,
+   "n_refusal_draws": 0,
+   "n_api_refusal_draws": 0,
+   "stop_reason_tally": {
+    "end_turn": 90
+   }
+  },
+  "q3": {
+   "n_items": 30,
+   "n_total_draws": 90,
+   "n_dropped_draws": 0,
+   "n_transport_lost_draws": 0,
+   "n_truncation_dropped_draws": 0,
+   "n_refusal_draws": 0,
+   "n_api_refusal_draws": 0,
+   "stop_reason_tally": {
+    "end_turn": 90
+   }
+  },
+  "q4": {
+   "n_items": 30,
+   "n_total_draws": 90,
+   "n_dropped_draws": 0,
+   "n_transport_lost_draws": 0,
+   "n_truncation_dropped_draws": 0,
+   "n_refusal_draws": 0,
+   "n_api_refusal_draws": 0,
+   "stop_reason_tally": {
+    "end_turn": 90
+   }
+  },
+  "q5": {
+   "n_items": 30,
+   "n_total_draws": 90,
+   "n_dropped_draws": 0,
+   "n_transport_lost_draws": 0,
+   "n_truncation_dropped_draws": 0,
+   "n_refusal_draws": 0,
+   "n_api_refusal_draws": 0,
+   "stop_reason_tally": {
+    "end_turn": 90
+   }
+  }
+ }
+}

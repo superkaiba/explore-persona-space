@@ -13,7 +13,8 @@ post ``epm:upload-verification`` with a note LEADING
 ``Verdict: PASS — inline-round verification; prefixes: <every verified
 prefix>`` via ``task.py post-marker``, then terminate — plus the
 enumerate-ALL-HF-prefixes duty, at BOTH prose surfaces the carve-out reads:
-CLAUDE.md's "Completion-side teardown (no ask-gate)" clause and its executing
+CLAUDE.md's "Completion-side teardown" carve-out clause (header reconciled
+with the compute-kill gate by #2086) and its executing
 mirror in `/issue` SKILL.md Step 9a-ter. This test pins stable SHORT tokens
 (never full-sentence byte pins) so a later edit cannot silently drop the
 recipe and steer verified inline rounds back to ``--skip-upload-verify``.
@@ -26,13 +27,15 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 CLAUDE_MD = ROOT / "CLAUDE.md"
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
 # The CLAUDE.md carve-out clause is a single-line paragraph located by its
 # distinct bold header (same locator as the #1662 pin test).
-CARVEOUT_HEADER = "**Completion-side teardown (no ask-gate):**"
+CARVEOUT_HEADER = "**Completion-side teardown (no user ask, gate-sanctioned):**"
 
 # Stable short tokens: (i) the recipe, (ii) the all-prefixes duty.
 RECIPE_TOKENS = (
@@ -71,7 +74,7 @@ def test_issue_skill_9a_ter_carries_inline_upload_verify_recipe():
     """SKILL.md Step 9a-ter's completion-side teardown block mirrors the
     recipe + duty (whole-file whitespace-normalized — the SKILL.md wrapper
     soft-wraps the recipe across lines)."""
-    norm = _norm(ISSUE_SKILL.read_text(encoding="utf-8"))
+    norm = _norm(issue_skill_text())
     for token in (*RECIPE_TOKENS, DUTY_TOKEN):
         assert token in norm, (
             f"SKILL.md Step 9a-ter must carry the inline upload-verify recipe "

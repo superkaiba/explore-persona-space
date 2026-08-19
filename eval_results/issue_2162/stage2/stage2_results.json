@@ -1,0 +1,21 @@
+{
+  "phase": "stage2-upload",
+  "uploaded": {
+    "stage2": 140
+  },
+  "n_stage2_shards": 140,
+  "scope_notes": [
+    "stage-2 captures no V_a and runs no margin pass (F_beh via judge is the stage-2 read; plan §4.2) — the plan phase_outputs.P8 V_a-shard entry is therefore NOT produced at stage-2 (stated scope limit, r1 C3)",
+    "dose is the alpha multiplier on the added pair-difference delta (mode=add, delta = V(B)-V(A), single layer; plan §4.2)"
+  ],
+  "repro": {
+    "git_commit": "ec113fdc05daecbfa5e04a7740552ed1093f079b",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 28,
+    "timestamp": "2026-08-07T23:58:29.060195+00:00"
+  }
+}

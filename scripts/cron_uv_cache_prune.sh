@@ -10,6 +10,9 @@
 # NOT use `uv cache clean --force` (that wipes the WHOLE cache, forcing a full
 # re-download on the next `uv run` everywhere).
 #
+# We DO pass `--force` to `prune` (lock override only — see the invocation
+# below for the measured reason). `prune --force` != `clean --force`.
+#
 # vm_disk_guard.py ALSO runs `uv cache prune` as its tier-(a) cleanup, but only
 # when / crosses the 85% threshold; this standalone idle-time cron keeps the
 # cache trimmed continuously so the guard rarely has to fire on a full disk.
@@ -46,13 +49,27 @@ FIRST_RUN_OF_DAY=0
 {
     echo "=== $(date -Iseconds) uv_cache_prune start ==="
     cd "$PROJECT_DIR" || exit 1
-    # `uv cache prune` is graceful when the cache lock is held by a concurrent
-    # `uv run` (it returns non-zero rather than corrupting state); we log the
-    # rc and never let a transient lock failure raise a cron email.
-    uv cache prune
+    # `--force` overrides the cache LOCK. This is NOT the `uv cache clean
+    # --force` the header warns against: `clean` wipes the whole cache,
+    # `prune --force` still removes only entries no longer referenced by any
+    # installed environment — it just declines to wait for the lock.
+    #
+    # Why it is required (measured 2026-08-16): the lock is held continuously
+    # by long-lived `uv tool uvx` MCP servers (arxiv-mcp-server /
+    # arxiv-latex-mcp) belonging to LIVE Claude sessions — 157 of 165 such
+    # processes were session-owned. Their venvs live in
+    # ~/.local/share/uv/tools/, NOT the cache, so pruning cannot strand them.
+    # A box that always has a Claude session up can therefore NEVER win the
+    # lock: without --force this cron had failed rc=2 on the 300s timeout
+    # every night (2026-08-14/15/16 logs all identical), and the cache grew
+    # unpruned until a manual run reclaimed 6.6 GiB.
+    #
+    # UV_LOCK_TIMEOUT is dropped from 300s to 30s: with --force the wait is
+    # pointless, and a short timeout keeps the cron off the disk-guard's back.
+    UV_LOCK_TIMEOUT=30 uv cache prune --force
     rc=$?
     if [ "$rc" -ne 0 ]; then
-        echo "uv cache prune returned rc=$rc (likely a held cache lock); will retry next pass"
+        echo "uv cache prune --force returned rc=$rc (unexpected — --force overrides the lock); will retry next pass"
     fi
     echo "=== $(date -Iseconds) uv_cache_prune exit=$rc ==="
 } >> "$LOG_FILE" 2>&1

@@ -1,0 +1,10 @@
+{
+  "component": "FIT (45 v2 cell sweeps)",
+  "pilot_cell_wall_s": 693.0,
+  "n_pending": 44,
+  "ngpu": 8,
+  "projected_wall_h": 1.059,
+  "planned_wall_h": 2.3,
+  "ratio": 0.46,
+  "basis": "measured 1-cell pilot (G1 cell) through the production entrypoint"
+}

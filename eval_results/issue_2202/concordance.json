@@ -1,0 +1,14 @@
+{
+ "spearman_rho": 0.4496862260441276,
+ "spearman_p": 0.0,
+ "n": 9941,
+ "overlap_top200_rank_vs_top200_nerr": 90,
+ "overlap_fail1_vs_topnfail_nerr": 1038,
+ "meta": {
+  "generated_utc": "2026-08-08T20:08:08.952816+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.10",
+  "git_commit": "fa576c59",
+  "git_dirty": false
+ }
+}

@@ -1,0 +1,91 @@
+{
+  "passed": true,
+  "per_rubric": {
+    "coherence": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 102,
+      "dropped_empty_arms": []
+    },
+    "fq-q1": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    },
+    "fq-q2": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    },
+    "fq-q3": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    },
+    "fq-q4": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    },
+    "fq-q5": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    },
+    "fp-bare": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    },
+    "fp-persona": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    },
+    "fp-conv": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 30,
+      "dropped_empty_arms": []
+    }
+  },
+  "forced_batch_probe": {
+    "n_items": 6,
+    "n_scored": 6,
+    "passed": true,
+    "n_total_draws": 6,
+    "n_dropped_draws_content": 0,
+    "n_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "n_transport_lost_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 6
+    }
+  },
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1
+  },
+  "repro": {
+    "git_commit": "cf7f2254",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

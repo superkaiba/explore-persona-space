@@ -115,11 +115,18 @@ section wins on invocation form.
    Verdict vocabulary: `PASS_UNIFIED` (unified paths AND the Axis 1 leg
    passed AND every per-arm row reads `REAL`/`N/A`) | `PASS_PARTIAL
    arms_stubbed=<comma-list of the FALLBACK-rowed arms — set-equality scopes
-   to `per-arm-resolution:` rows ONLY>` | `PASS_CANARY canary_cell=<id>`
+   to `per-arm-resolution:` rows ONLY>` | `PASS_AUTHORIZED_STUB
+   arms_stubbed=<comma-list>` (*self-tag this INSTEAD of `PASS_PARTIAL` when
+   every FALLBACK-rowed arm is named verbatim (backticked, column 1) in the
+   CURRENT plan's `### Authorized smoke stubs` block — read `plans/plan.md`;
+   when the block is absent or covers only some FALLBACK arms, post
+   `PASS_PARTIAL` (Step 6d.0's `task.py check-authorized-stub` refuses a
+   mis-tagged grant, so tagging without coverage only buys a bounce)*) |
+   `PASS_CANARY canary_cell=<id>`
    (the plan §4 justified the divergence in two sentences AND named the
    canary cell; same REAL/N/A per-arm invariant) | `FAIL_NO_CANARY`
    (unjustified divergence, a failed import-resolution leg, a missing
-   per-arm row for a plan-named arm, a phase re-enumerating the full grid
+   per-arm row for a registry or plan-named arm, a phase re-enumerating the full grid
    outside the smoke subset, or an under-floor slice you cannot resize up).
    **Axis 1 — import-resolution on the REAL branch:** for every changed
    entrypoint, execute its deferred/function-body imports via (a) the
@@ -129,11 +136,19 @@ section wins on invocation form.
    <mod>` ONLY for pure top-level-import entrypoints, stated as
    `import-resolution-mode: top-level-only`; record the EXACT command under
    `import-resolution:` (#1689 r2/3/4: a function-body import behind a
-   mock-only branch false-passed top-level import checks). **Axis 2 —
-   per-arm resolution:** one `per-arm-resolution:` row per plan-named arm —
+   mock-only branch false-passed top-level import checks). For a
+   phase-dispatch driver, `--import-check` is expected to include the
+   args-attribute completeness assert (`orchestrate.argcheck`,
+   code-style.md § Argparse-attribute completeness) — the recorded command
+   makes adoption visible in the durable marker. **Axis 2 —
+   per-arm resolution:** derive the arm list MECHANICALLY from the driver's
+   own registry — state the command (e.g. `uv run python -c "from <driver>
+   import PHASES; print(sorted(PHASES))"` or the driver's `--list-phases`)
+   and emit the line-anchored `arm-registry:` line (structured or N/A form,
+   #2176) — then one `per-arm-resolution:` row per registry or plan-named arm —
    `REAL — <which real computation ran>` | `FALLBACK — <stub / bias-refit /
    default>` | `N/A — no computation path`; vacuous single-line form for a
-   `kind: infra` plan naming no arms; a missing row for a plan-named arm is
+   `kind: infra` plan naming no arms; a missing row for a registry or plan-named arm is
    `FAIL_NO_CANARY`. Per-phase subset threading is part of the PASS_UNIFIED
    definition (name where each phase's cell list comes from; #546 r1: train
    honored the subset, cross-eval enumerated the full 120-cell grid), and
@@ -147,7 +162,8 @@ section wins on invocation form.
    `per-arm-resolution:` / `resume-matrix:` / `production-outroot-unit:`
    sub-blocks — never an inline HTML comment in your report text (Step 6d.0
    scans `events.jsonl` and refuses dispatch on anything other than
-   `PASS_UNIFIED` / `PASS_CANARY`). On `FAIL_NO_CANARY`, post the marker AND
+   `PASS_UNIFIED` / `PASS_CANARY` / a mechanically-granted
+   `PASS_AUTHORIZED_STUB`). On `FAIL_NO_CANARY`, post the marker AND
    emit a one-line `<!-- workflow-fix-candidate v1 -->` block suggesting the
    planner re-architect toward unification, then EXIT. Additional
    smoke-contract requirements (each extends the marker's per-leg
@@ -192,6 +208,26 @@ section wins on invocation form.
    `analysis/null_battery.py`) with device routing parametrized.
    NAME the batched helper (or your explicit batching strategy, or
    the one-line reason not batchable) in report §(a).
+8. **Schema-from-artifact, never schema-from-memory (banked-artifact
+   consumers).** Before writing ANY loader / filter / collector for a BANKED
+   artifact you did not produce in this round — an HF-hosted shard set, a
+   sidecar `_manifest.json`, a packed store, a prior issue's eval JSON —
+   download and OPEN exactly ONE real shard/sidecar and PASTE its OBSERVED
+   top-level keys into `### (c) How to verify`, in a fenced block titled
+   `Observed schema — <repo>/<path>` that INCLUDES THE EXACT PROBE COMMAND
+   whose output it pastes (so a reviewer can replay it in one paste); for a
+   packed format also paste the `src` / schema discriminator field and one
+   row's keys. A schema recalled
+   from memory, inferred from a sibling's prose, or copied from the PRODUCING
+   PLAN is NOT a satisfier — the producer's realized field names drift from its
+   prose. A packed-format consumer FILTERS rows on that `src` / schema field;
+   an unfiltered read of a multi-source pack silently mixes sources. Probe
+   one-liners + the paste form:
+   `.claude/rules/experiment-implementer-section-reference.md` § Before-writing-code item 8 detail — Schema-from-artifact.
+   (#2061 round 1: a fabricated `#1336` shard schema
+   meant "the pipeline cannot load its own input" — P2 crashed
+   deterministically AFTER the expensive fits, ~4.5 h wall + a review round;
+   #2091's judge collector `KeyError`'d on the packed `_manifest.json` row 0.)
 
 > **Porting from an unmerged parent/sibling branch** — READ `.claude/rules/artifact-reuse.md` § "Porting a recipe from an unmerged sibling branch" IN FULL before porting. (Relocated verbatim from this spec, #829.)
 
@@ -199,6 +235,17 @@ section wins on invocation form.
 
 - **Work only inside the worktree.** Never edit files outside
   `.claude/worktrees/issue-<N>`.
+- **Read-pinning under external churn (#2158; #1336 death #9).** A shared
+  worktree is the EXPECTED shape for pre-split multi-unit rounds — a
+  concurrent session may land commits mid-flight. Record BASE_SHA
+  (`git rev-parse HEAD`) at round start. When a target file changes
+  underneath you, do NOT re-read the live file repeatedly — pin reads to
+  `git show <BASE_SHA>:<path>`, finish your edit against that snapshot,
+  take ONE bounded provenance probe
+  (`git log --oneline <BASE_SHA>..HEAD -- <path>`), and reconcile at
+  commit time. An unbounded re-read loop on a churning 1,000+-line file
+  is the #1336 autocompact-thrash shape. Full protocol:
+  `.claude/rules/cross-session-writer-arbitration.md`.
 - **All edits on the local VM, never on pods.** Pods receive code via
   `git pull`; you commit + push from the worktree.
 - **Follow existing patterns.** Hydra for config (never argparse), `uv` for
@@ -345,7 +392,10 @@ such corpora or banks:
    smoke-skipped branches" + its fenced-branch runtime-probe sibling.
 2b. **Mechanical pin-sweep hit-list (#1288/#1144, refined #1699).** Compute the
    pin-sweep hit list from `scripts/select_step9c_tests.py --map-files
-   <diff-list> --repo-root "$WT"`'s OWN stdout — the tool emits one
+   <diff-list-file> --repo-root "$WT"`'s OWN stdout — `--map-files` takes ONE
+   argument: a FILE containing the newline-delimited changed-path list (compose
+   it first, e.g. `printf '%s\n' <paths> > /tmp/diff-list.txt`), NOT positional
+   paths, which exit rc=2 (argparse usage error). The tool emits one
    `<test>\t<matched_path>` line per hit across four arms (GLOB_SCAN_TESTS,
    rules-pin #1496, src/scripts dependency arms #1573/#1688,
    transitive-consumer #1589), all WORKFLOW_INVARIANT-excluded — and take

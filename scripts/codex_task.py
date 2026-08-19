@@ -22,10 +22,25 @@ this helper from any cwd; the pin is enforced here.
 Lifecycle:
 
 1. Spawn Codex with ``--background`` and capture the job-id from stdout.
-2. Confirm the job-id is queryable via an immediate probe (catches
-   spawn-success-but-job-unqueryable race).
+   Steps 1-2 run under ONE repo-keyed advisory lock
+   (``.claude/cache/codex-dispatch.lock``, #2323): the companion's jobs
+   index (state.json) is read-modify-written NON-atomically by every
+   concurrent wrapper, so two overlapping spawn+confirm windows can ERASE
+   each other's just-registered job records (the lost-update prune behind
+   #2321). The lock covers spawn + confirm ONLY — released before the
+   marker post and the poll loop — and FAILS OPEN (acquire timeout /
+   lock-file failure / kill switch ``EPM_CODEX_DISPATCH_LOCK=0`` /
+   ``--no-dispatch-lock``) with a loud WARN, recorded as
+   ``dispatch_lock=<mode>`` on the spawned marker.
+2. Confirm the job-id is queryable via a bounded jittered re-probe
+   (``--post-spawn-probe-retry-cap``, default 4; catches the
+   spawn-success-but-bad-job-id race AND the concurrent-writer erasure
+   above, which SELF-HEALS on the detached worker's next upsert).
+   Exhaustion exits 10 WITHOUT cancelling — the job may still be
+   running; recover with ``--reattach <job-id>`` (#2323).
 3. Post ``epm:codex-task-spawned`` with the job-id to the task's
-   events.jsonl (if ``--issue N`` given).
+   events.jsonl (if ``--issue N`` given), carrying ``probe_retries=<k>``
+   (the ``fetch_retries=`` note-token convention).
 4. Poll ``codex-companion status <job-id> --json`` every
    ``--poll-interval-secs`` (default 30s) until terminal phase
    ({done, failed, cancelled}). Bail after ``--probe-error-cap`` (default
@@ -60,10 +75,16 @@ silently):
 
 - spawn failure (codex-companion CLI broken, plugin missing) → emit a
   marker with spawn-stderr in the note, exit 3.
-- post-spawn probe fails (bad job-id, plugin upgrade race) → cancel +
-  emit failure marker, exit 4. In ``--reattach`` mode exit 4 also covers
-  the issue<->job_id binding-guard failure and an unqueryable reattach
-  target (see the reattach paragraph below).
+- post-spawn probe exhausted (job unqueryable after the bounded re-probe —
+  the shared-index lost-update / torn-read class, #2321/#2323) → emit
+  failure marker naming the shared jobs-index path + the ``--reattach``
+  recovery command, exit 10. NOT in TRANSIENT_FAIL_EXIT_CODES (the job
+  may still be running; a blind re-dispatch is the #2321 orphan
+  generator) and the job is deliberately NOT cancelled (a cancel here
+  could kill the very live job the note says to reattach). In
+  ``--reattach`` mode exit 4 covers the issue<->job_id binding-guard
+  failure and an unqueryable reattach target (see the reattach paragraph
+  below).
 - probe errors > cap → emit failure marker with last stderr, exit 5.
 - hard cap hit → cancel + emit failure marker, exit 6.
 - result-fetch non-zero after the bounded fetch retry → emit failure
@@ -123,6 +144,9 @@ from __future__ import annotations
 import argparse
 import contextlib
 import datetime
+import fcntl
+import hashlib
+import importlib.util
 import json
 import os
 import random
@@ -141,6 +165,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # `tests/test_no_direct_task_path_construction.py`.
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from explore_persona_space.task_workflow import list_events, tasks_dir  # noqa: E402
+
+# Shared symlink/FIFO-safe lock-file opener (#2324). Explicit sibling-path
+# load, NOT a bare `import lock_utils`: the tests spec-load this script by
+# path, so `scripts/` is never on sys.path — see the lock_utils module
+# docstring.
+_LOCK_UTILS = Path(__file__).resolve().parent / "lock_utils.py"
+_spec = importlib.util.spec_from_file_location("eps_scripts_lock_utils", _LOCK_UTILS)
+assert _spec and _spec.loader  # house pattern (tests/test_step9c_baseline.py:61)
+lock_utils = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lock_utils)
 
 
 def _resolve_dispatch_root() -> Path:
@@ -205,9 +239,19 @@ DEFAULT_CANCELLED_RETRY_CAP = 2  # re-dispatches on terminal phase=cancelled
 #   8 = stall force-cancel (model API hung; a fresh job usually proceeds)
 # Deliberately NOT transient: 6 (hard-cap timeout — already ran max_wait;
 # doubling wall time is the caller's call), 7 (result-fetch/output-write —
-# local FS / fetch problem), and terminal phase=failed exit 1 (Codex itself
+# local FS / fetch problem), terminal phase=failed exit 1 (Codex itself
 # reported failure, e.g. an AUP refusal — per CLAUDE.md the retry there
-# needs a REPHRASED prompt, which only the orchestrator can compose).
+# needs a REPHRASED prompt, which only the orchestrator can compose), and
+# 10 (post-spawn probe exhausted, #2323 — the job may STILL be running
+# with its index entry transiently erased by a concurrent writer's
+# lost-update prune; a blind re-dispatch is the #2321 orphan generator —
+# recovery is --reattach <job-id>, see the #2323 constants block below).
+# Exit 4 stays in the set conservatively, but since #2323 the normal
+# path's sole exit-4 producer (the post-spawn confirm probe) exits 10
+# instead, and the remaining exit-4 sites live in --reattach mode, which
+# returns via _fail and never enters this retry loop — 4's membership is
+# effectively dead code, kept to avoid a gratuitous edit to a #579-tuned
+# constant.
 DEFAULT_TRANSIENT_RETRY_CAP = 1
 TRANSIENT_FAIL_EXIT_CODES = frozenset({3, 4, 5, 8})
 # Backoff before the transient re-dispatch: 15s floor + up to 30s jitter
@@ -239,6 +283,52 @@ RESULT_FETCH_RETRY_BACKOFF_JITTER_SECS = 10.0
 _FETCH_RETRY_BACKOFF_CEIL_SECS = (
     RESULT_FETCH_RETRY_BACKOFF_FLOOR_SECS + RESULT_FETCH_RETRY_BACKOFF_JITTER_SECS
 )
+# Post-spawn confirm-probe retry (task #2323, sibling of the #1020 fetch
+# retry above). The same non-atomic state.json means a JUST-SPAWNED job's
+# record can be ERASED by a concurrent wrapper's read-modify-write:
+# saveState (state.mjs:93-112) re-reads previousJobs FRESH, computes
+# nextJobs from the CALLER's stale snapshot, and prune-DELETES any job
+# absent from that snapshot — a lost update with a destructive side
+# effect, not just a torn read. The single post-spawn confirm probe then
+# reported a LIVE job as lost, and exit 4's transient retry blind
+# re-dispatched it (the #2321 orphan generator: 4 job ids across 3
+# near-simultaneous dispatches, exactly ONE findable). The erased entry
+# SELF-HEALS: the detached worker's next progress/phase upsertJob
+# (tracked-jobs.mjs:102/152/169/194) unshifts it back within seconds to
+# tens of seconds, so the confirm probe re-probes with a jittered backoff
+# sized to the worker's upsert cadence (~10s scale; cap 4 / jitter 15s vs
+# the fetch retry's 3 / 10s — this recovery waits on a worker EVENT, not a
+# ms-scale torn read) and NEVER cancels or re-dispatches between probes.
+# Exhaustion exits EXIT_POST_SPAWN_PROBE_EXHAUSTED (10), kept OUT of
+# TRANSIENT_FAIL_EXIT_CODES for the same reason exit 7 is (#1020):
+# re-running a possibly-live job is wrong — recovery is
+# ``--reattach <job-id>``, and cancelling on this path could kill the very
+# live job the failure note tells the orchestrator to reattach.
+DEFAULT_POST_SPAWN_PROBE_RETRY_CAP = 4
+POST_SPAWN_PROBE_BACKOFF_FLOOR_SECS = 5.0
+POST_SPAWN_PROBE_BACKOFF_JITTER_SECS = 15.0
+EXIT_POST_SPAWN_PROBE_EXHAUSTED = 10  # free: 0-9, 130, 143 taken; NOT transient (see above)
+# Repo-keyed advisory dispatch lock (task #2323): serializes the
+# spawn + confirm window — the jobs index's vulnerable read-modify-write
+# span — across concurrent wrappers in THIS repo. state.json is keyed by
+# repo (state.mjs resolveStateDir:
+# <plugin-data>/state/<slug>-<sha256(realpath)[:16]>), so the lock keys on
+# DISPATCH_ROOT to match; it cannot reach the plugin's OWN unlocked
+# writers (a running job's worker upserts, the SessionEnd lifecycle hook)
+# — the post-spawn re-probe above covers that residual. Held over
+# spawn + confirm ONLY, never the poll loop (that would serialize the
+# fleet for hours). Timeout sized from the existing constants: one
+# holder's worst case = SPAWN_TIMEOUT_SECS (90) + 5 confirm probes x
+# (STATUS_TIMEOUT_SECS 60 + backoff ceil 20) ~= 490s; a 3-way round's
+# third waiter therefore waits <= ~980s; 1800 ~= 2x that (the house
+# p90-style x2 dispersion default). FAIL-OPEN on acquire timeout /
+# lock-file failure / kill switch (EPM_CODEX_DISPATCH_LOCK=0 or
+# --no-dispatch-lock): a refusal here would wedge a review round, and the
+# re-probe covers the unlocked residual — each fail-open path WARNs loud
+# and records dispatch_lock=<mode> on the spawned marker.
+DEFAULT_DISPATCH_LOCK_TIMEOUT_SECS = 1800.0
+DISPATCH_LOCK_RELPATH = ".claude/cache/codex-dispatch.lock"
+DISPATCH_LOCK_POLL_INTERVAL_SECS = 2.0  # LOCK_NB + bounded poll (the sync_repo_root.py idiom)
 TERMINAL_PHASES = {"done", "failed", "cancelled"}
 # A Codex-written verdict file is identified by the ensemble marker tag the
 # twin-reviewer wrapper contract requires of every verdict body (e.g.
@@ -304,37 +394,62 @@ QUOTA_SHORT_RESULT_MAX_CHARS = 1500
 # Signal handling — never leave Codex orphaned on SIGTERM/SIGINT.
 # ──────────────────────────────────────────────────────────────────────
 
-_active_job_id: str | None = None
+# ONE tuple global holds the per-attempt state: (job_id, lock_mode);
+# lock_mode None = no dispatch-lock window (reattach); None = no attempt
+# armed yet. The tuple RHS is fully constructed BEFORE the single
+# STORE_GLOBAL, so a signal handler running between bytecodes sees either
+# the complete OLD pair or the complete NEW pair — never a cross-attempt
+# (id, mode) mix (#2324 Gap 2). Do NOT "simplify" back to two scalar
+# globals or `a, b = x, y` — CPython emits two stores for both, reopening
+# the incoherent-pairing window (pinned by the dis-based single-store
+# tests). _active_companion / _active_issue stay separate globals: each is
+# assigned once per run, before the retry loop — no pairing to protect.
+_active_attempt: tuple[str, str | None] | None = None
 _active_companion: Path | None = None
 _active_issue: int | None = None
+
+
+def _lock_note_suffix(mode: str | None) -> str:
+    """``' dispatch_lock=<mode>'`` for non-held realized modes; ``''`` for
+    held/None (byte-identical to the #2323 spawned-marker token: leading
+    space, omitted when the lock was normally held; None = no dispatch-lock
+    window existed, e.g. reattach — likewise no token)."""
+    return f" dispatch_lock={mode}" if mode and mode != "held" else ""
 
 
 def _install_signal_handlers() -> None:
     def _handler(signum: int, _frame) -> None:
         sig_name = signal.Signals(signum).name
+        # ONE snapshot read of the attempt tuple (#2324 Gap 2): both fields
+        # derive from the same local, so the (job_id, lock_mode) pairing is
+        # coherent even when an attempt's store lands mid-handler.
+        attempt = _active_attempt
+        job_id = attempt[0] if attempt else None
+        lock_mode = attempt[1] if attempt else None
         msg = (
             f"codex_task helper killed by {sig_name}; "
-            f"job_id={_active_job_id or '<not-yet-assigned>'}"
+            f"job_id={job_id or '<not-yet-assigned>'}{_lock_note_suffix(lock_mode)}"
         )
         print(f"ERROR: {msg}", file=sys.stderr)
-        if _active_job_id and _active_companion is not None:
+        if job_id and _active_companion is not None:
             try:
                 subprocess.run(
-                    ["node", str(_active_companion), "cancel", _active_job_id],
+                    ["node", str(_active_companion), "cancel", job_id],
                     cwd=str(DISPATCH_ROOT),
                     capture_output=True,
                     timeout=CANCEL_TIMEOUT_SECS,
                 )
             except Exception as exc:
                 print(f"WARN: cancel-on-signal failed: {exc}", file=sys.stderr)
-        if _active_issue is not None and _active_job_id:
+        if _active_issue is not None and job_id:
             _post_marker(
                 _active_issue,
                 "epm:codex-task-failed",
                 (
-                    f"Codex job_id={_active_job_id} killed by {sig_name}. "
+                    f"Codex job_id={job_id} killed by {sig_name}. "
                     "Helper attempted cancel; verify manually with "
-                    f"`node {_active_companion} status {_active_job_id}`."
+                    f"`node {_active_companion} status {job_id}`."
+                    f"{_lock_note_suffix(lock_mode)}"
                 ),
             )
         sys.exit(128 + signum)
@@ -464,7 +579,8 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
     ts = int(time.time())
     artifact_dir = tasks_dir() / "_orphaned_markers"
     artifact_dir.mkdir(parents=True, exist_ok=True)
-    job_tag = (_active_job_id or "no-job")[-12:]
+    attempt = _active_attempt  # ONE snapshot read (#2324 Gap 2)
+    job_tag = ((attempt[0] if attempt else None) or "no-job")[-12:]
     artifact = artifact_dir / f"issue-{issue}-{kind.replace(':', '_')}-{job_tag}-{ts}.json"
     try:
         artifact.write_text(
@@ -685,6 +801,48 @@ def _probe_discriminator(companion: Path, job_id: str) -> str:
     if phase in {"probe-error", "shape-error"}:
         return f"status-probe: job unknown/unreadable ({phase}: {err[:150]})"
     return f"status-probe: job known, phase={phase}"
+
+
+def _confirm_job_queryable(
+    companion: Path, job_id: str, retry_cap: int
+) -> tuple[str, str, str | None, int]:
+    """Post-spawn confirm probe with a bounded, jittered re-probe (#2323).
+
+    Mirrors the #1020 fetch-retry shape (same backoff idiom, same WARN-line
+    diagnostics, same ``<leg>_retries=<k>`` note-token convention) on the
+    POST-SPAWN leg: a concurrent wrapper's non-atomic read-modify-write of
+    the shared jobs index can ERASE a just-registered job's record (the
+    lost-update prune, #2321) or serve a torn read (empty jobs list), and
+    the erased entry SELF-HEALS on the detached worker's next upsert — so
+    the correct response to an unqueryable-but-just-spawned job is to wait
+    and re-probe, never to cancel or re-dispatch.
+
+    Uses ``_probe_phase_safe`` so a status-CLI raise (TimeoutExpired /
+    OSError) converts to a retryable probe-error instead of crashing the
+    helper with no failure marker (the #1020 MF2 class, closed here for the
+    confirm leg). Returns ``(phase, err, log_path, probe_retries)``;
+    ``probe_retries`` = probes consumed minus 1 (0 on first-probe success).
+    NEVER cancels between attempts and NEVER re-dispatches.
+    """
+    total = 1 + max(0, retry_cap)
+    phase, err, log_path = "probe-error", "", None
+    for attempt in range(1, total + 1):
+        phase, err, log_path = _probe_phase_safe(companion, job_id)
+        if phase not in {"probe-error", "shape-error"}:
+            return phase, err, log_path, attempt - 1
+        if attempt < total:
+            delay = POST_SPAWN_PROBE_BACKOFF_FLOOR_SECS + random.uniform(
+                0.0, POST_SPAWN_PROBE_BACKOFF_JITTER_SECS
+            )
+            print(
+                f"WARN: post-spawn confirm probe {attempt}/{total} for {job_id} "
+                f"failed ({phase}: {err[:200]}); the shared jobs index may have "
+                f"transiently dropped the entry (lost update — the worker's next "
+                f"upsert re-registers it); retrying in {delay:.0f}s (#2323).",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+    return phase, err, log_path, total - 1
 
 
 def _fetch_result_with_retry(
@@ -1003,7 +1161,7 @@ def _poll_until_terminal(
             )
 
         time.sleep(args.poll_interval_secs)
-        phase, err, probe_log_path = _probe_phase(companion, job_id)
+        phase, err, probe_log_path = _probe_phase_safe(companion, job_id)
         if probe_log_path is not None:
             log_path = probe_log_path  # refresh in case Codex updated it
         if phase in TERMINAL_PHASES:
@@ -1063,6 +1221,146 @@ def _poll_until_terminal(
                 )
 
 
+def _shared_state_index_hint() -> str:
+    """Best-effort path of the repo-keyed codex-companion jobs index
+    (state.json) this dispatch reads/writes — mirrors the plugin's
+    resolveStateDir() (state.mjs: slug = sanitized basename of the
+    workspace root, hash = sha256(realpath)[:16], under
+    $CLAUDE_PLUGIN_DATA/state when the env var is set, else
+    tmpdir()/codex-companion — state.mjs:10,42-43, note the env-unset
+    branch has NO `/state` segment).
+    DIAGNOSTIC ONLY (failure notes + fail-open WARNs name it so the
+    orchestrator/human can inspect the index) — never drives a branch;
+    fail-soft to a descriptive placeholder.
+
+    Caveat for the env-unset (off-harness) branch: a manual run there also
+    has its COMPANION subprocess resolve the tmpdir index, so a job spawned
+    under Claude Code (where CLAUDE_PLUGIN_DATA is set) is not visible to
+    it — a plugin-env property, not a defect of this wrapper. The
+    `--reattach` command in the same failure note is the load-bearing
+    recovery content."""
+    try:
+        root = Path(DISPATCH_ROOT)
+        slug = re.sub(r"[^a-zA-Z0-9._-]+", "-", root.name).strip("-") or "workspace"
+        digest = hashlib.sha256(os.path.realpath(root).encode()).hexdigest()[:16]
+        plugin_data = os.environ.get("CLAUDE_PLUGIN_DATA")
+        state_root = (
+            Path(plugin_data) / "state"
+            if plugin_data
+            else Path(tempfile.gettempdir()) / "codex-companion"
+        )
+        return str(state_root / f"{slug}-{digest}" / "state.json")
+    except Exception as exc:  # diagnostic-only: a hint failure must not mask the real error
+        return f"<codex-companion state.json for {DISPATCH_ROOT} (unresolvable: {exc})>"
+
+
+@contextlib.contextmanager
+def _dispatch_lock(timeout_s: float, enabled: bool = True):
+    """Repo-keyed advisory flock over the spawn + post-spawn confirm window
+    (#2323). See the DISPATCH_LOCK_* constants block for the mechanism and
+    the timeout arithmetic.
+
+    Yields the realized mode string:
+        "held"             — lock acquired (normal path). Released on EVERY
+                             exit — return AND exception paths alike: the
+                             caller wraps spawn+confirm in ONE ``with``
+                             block, so ``__exit__``/``finally`` make a
+                             leaked hold structurally impossible (an
+                             acquire/release split across functions would
+                             leak the hold into the poll loop on any
+                             exception between the two sites).
+        "disabled"         — ``enabled=False`` (--no-dispatch-lock) or the
+                             EPM_CODEX_DISPATCH_LOCK=0 kill switch.
+        "unavailable"      — the lock file could not be created/flocked, or
+                             the lock PATH was rejected (symlink/FIFO/
+                             non-regular — ``lock_utils.safe_open_lockfile``,
+                             #2324; ``LockPathError`` subclasses ``OSError``,
+                             so the same arm catches it unchanged).
+        "timeout-failopen" — the acquire timed out after ``timeout_s``.
+
+    Every non-"held" mode FAILS OPEN deliberately (proceed unlocked) with
+    one loud WARN naming the shared jobs index — a refusal here would
+    wedge a review round, and the post-spawn re-probe covers the unlocked
+    residual. NOT a swallowed failure: the mode string rides the spawned
+    marker note as ``dispatch_lock=<mode>`` (tests pin the WARN + token).
+
+    The acquire is LOCK_EX|LOCK_NB in a bounded poll loop (the
+    sync_repo_root.py / step9c_baseline.py idiom) so it stays
+    interruptible and timeout-bounded — never a blocking flock.
+    """
+    index_hint = _shared_state_index_hint()
+    if not enabled or os.environ.get("EPM_CODEX_DISPATCH_LOCK", "1") == "0":
+        print(
+            f"WARN: codex dispatch lock DISABLED (--no-dispatch-lock / "
+            f"EPM_CODEX_DISPATCH_LOCK=0); concurrent dispatches may race the "
+            f"shared jobs index at {index_hint} (#2323).",
+            file=sys.stderr,
+        )
+        yield "disabled"
+        return
+    lock_path = Path(DISPATCH_ROOT) / DISPATCH_LOCK_RELPATH
+    # Deadline BEFORE the open (#2324 D4): the open's cost counts against
+    # the advertised bound instead of extending it.
+    deadline = time.monotonic() + max(0.0, timeout_s)
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        # Symlink/FIFO-safe bounded open (#2324): a planted symlink/FIFO
+        # raises LockPathError, an OSError subclass, landing in THIS
+        # unchanged arm → mode "unavailable" — the fail-OPEN posture is
+        # preserved by construction (the one fail-open caller of the four).
+        fd = lock_utils.safe_open_lockfile(lock_path)
+    except OSError as exc:
+        print(
+            f"WARN: codex dispatch lock UNAVAILABLE ({lock_path}: {exc}); "
+            f"proceeding UNLOCKED — concurrent dispatches may race the shared "
+            f"jobs index at {index_hint} (#2323).",
+            file=sys.stderr,
+        )
+        yield "unavailable"
+        return
+    acquired = False
+    flock_error: str | None = None
+    try:
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+                break
+            except BlockingIOError:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                time.sleep(min(DISPATCH_LOCK_POLL_INTERVAL_SECS, remaining))
+            except OSError as exc:  # e.g. ENOLCK on a lock-less filesystem
+                flock_error = str(exc)
+                break
+        if acquired:
+            yield "held"
+        elif flock_error is not None:
+            print(
+                f"WARN: codex dispatch lock UNAVAILABLE (flock {lock_path}: "
+                f"{flock_error}); proceeding UNLOCKED — concurrent dispatches "
+                f"may race the shared jobs index at {index_hint} (#2323).",
+                file=sys.stderr,
+            )
+            yield "unavailable"
+        else:
+            print(
+                f"WARN: codex dispatch lock acquire timed out after "
+                f"{timeout_s:.0f}s ({lock_path} held by a concurrent dispatch); "
+                f"proceeding UNLOCKED — this dispatch may race the shared jobs "
+                f"index at {index_hint}; the post-spawn re-probe covers the "
+                f"residual (#2323).",
+                file=sys.stderr,
+            )
+            yield "timeout-failopen"
+    finally:
+        # Closing the fd releases the flock (last reference to the open
+        # file description) — no separate LOCK_UN needed, and this runs on
+        # the exception path too.
+        os.close(fd)
+
+
 def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> AttemptResult:
     """Run one full Codex lifecycle: spawn -> confirm-probe -> poll ->
     fetch-result -> write-output.
@@ -1079,7 +1377,7 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
     ``--stall-detect-secs`` window. The absolute ``--max-wait-secs`` hard
     cap still bounds total wall time regardless of progress.
     """
-    global _active_job_id
+    global _active_attempt
 
     # Snapshot the output-file state BEFORE Codex spawns: the final-message
     # write uses it to distinguish "Codex wrote --output-file during THIS
@@ -1089,23 +1387,53 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
         _log_progress_key(str(args.output_file)) if args.output_file is not None else None
     )
 
-    # Spawn.
-    try:
-        job_id = _spawn_codex(companion, prompt, args.effort, write)
-    except Exception as exc:
-        return AttemptResult("fail", 3, f"spawn: {exc}", None)
-    _active_job_id = job_id
-    print(f"codex-task-spawned: {job_id}", file=sys.stderr)
+    # Spawn + post-spawn confirm, serialized under the repo-keyed dispatch
+    # lock (#2323). ONE `with` block covers BOTH steps: the lock window ends
+    # exactly when the job is confirmed registered in the shared index, and
+    # is released on every path (return/raise) via the contextmanager —
+    # never held over the marker post or the poll loop.
+    with _dispatch_lock(
+        args.dispatch_lock_timeout_secs, enabled=not args.no_dispatch_lock
+    ) as lock_mode:
+        try:
+            job_id = _spawn_codex(companion, prompt, args.effort, write)
+        except Exception as exc:
+            # Note threading uses the LOCAL lock_mode (the with-target) —
+            # always attempt-accurate; the global is deliberately not yet
+            # updated on this path (#2324 Gap 2).
+            return AttemptResult("fail", 3, f"spawn: {exc}{_lock_note_suffix(lock_mode)}", None)
+        # Single-store tuple arm (#2324 Gap 2): the RHS is built before ONE
+        # STORE_GLOBAL, so the signal handler can never read this attempt's
+        # mode paired with a prior attempt's job id.
+        _active_attempt = (job_id, lock_mode)
+        print(f"codex-task-spawned: {job_id}", file=sys.stderr)
 
-    # Confirm the job-id is queryable (immediate probe; catches the
-    # spawn-success-but-bad-job-id race).
-    confirm_phase, confirm_err, log_path = _probe_phase(companion, job_id)
+        # Confirm the job-id is queryable — bounded jittered re-probe
+        # (#2323): a lost-update erasure self-heals via the worker's next
+        # upsert, so a transient index miss is retried, never cancelled.
+        confirm_phase, confirm_err, log_path, probe_retries = _confirm_job_queryable(
+            companion, job_id, args.post_spawn_probe_retry_cap
+        )
+
     if confirm_phase in {"probe-error", "shape-error"}:
-        _best_effort_cancel(companion, job_id)
+        # Probe exhausted: the job may well be ALIVE (its detached worker
+        # keeps running regardless of index state), so do NOT cancel and do
+        # NOT let the transient-retry loop blind re-dispatch (exit 10 is
+        # deliberately NOT in TRANSIENT_FAIL_EXIT_CODES) — recover with
+        # --reattach once the worker's next upsert re-registers the entry.
+        reattach_flags = f"--issue {args.issue}" if args.issue is not None else "--reattach-unbound"
         return AttemptResult(
             "fail",
-            4,
-            f"post-spawn probe failed ({confirm_phase}): {confirm_err}",
+            EXIT_POST_SPAWN_PROBE_EXHAUSTED,
+            (
+                f"post-spawn probe exhausted after {probe_retries + 1} probe(s) "
+                f"({confirm_phase}): {confirm_err[:400]}. The job may still be "
+                f"running (shared jobs index: {_shared_state_index_hint()}). "
+                f"Do NOT blind re-dispatch — recover with: "
+                f"uv run python scripts/codex_task.py {reattach_flags} "
+                f"--reattach {job_id} --output-file <same path>"
+                f"{_lock_note_suffix(lock_mode)}"
+            ),
             job_id,
         )
 
@@ -1118,7 +1446,8 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
                 f"poll_interval={args.poll_interval_secs}s "
                 f"max_wait={args.max_wait_secs}s "
                 f"probe_error_cap={args.probe_error_cap} "
-                f"stall_detect={args.stall_detect_secs}s"
+                f"stall_detect={args.stall_detect_secs}s "
+                f"probe_retries={probe_retries}{_lock_note_suffix(lock_mode)}"
             ),
         )
 
@@ -1274,7 +1603,7 @@ def _run_reattach(companion: Path, args) -> int:
     """Attach to an EXISTING codex-companion job (wrapper-kill recovery,
     #1020). Guard -> arm -> confirm-probe -> spawned marker -> poll ->
     finalize. No re-dispatch on ANY failure - there is no prompt."""
-    global _active_job_id
+    global _active_attempt
     job_id = args.reattach
 
     # (1) Binding guard (MF1) - BEFORE arming and before any subprocess call,
@@ -1295,8 +1624,10 @@ def _run_reattach(companion: Path, args) -> int:
             )
 
     # (2) Arm ONLY after the guard (MF3): a SIGTERM during validation must
-    # never cross-cancel a job we have not confirmed as ours.
-    _active_job_id = job_id
+    # never cross-cancel a job we have not confirmed as ours. lock_mode is
+    # None — reattach never takes the dispatch lock, so no token appears
+    # (#2324; pinned by test_reattach_never_takes_dispatch_lock).
+    _active_attempt = (job_id, None)
 
     # (3) Confirm probe with bounded retry, via the SAFE wrapper (MF2): a
     # status-CLI raise (TimeoutExpired/OSError) converts to probe-error and
@@ -1377,7 +1708,7 @@ def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode 
     parser.add_argument("--issue", type=int, default=None)
     parser.add_argument(
         "--effort",
-        default="xhigh",
+        default="high",
         choices=["none", "minimal", "low", "medium", "high", "xhigh"],
     )
     write_group = parser.add_mutually_exclusive_group()
@@ -1462,11 +1793,58 @@ def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode 
             f"{TRANSIENT_RETRY_BACKOFF_FLOOR_SECS:.0f}-"
             f"{TRANSIENT_RETRY_BACKOFF_FLOOR_SECS + TRANSIENT_RETRY_BACKOFF_JITTER_SECS:.0f}s "
             "jittered backoff) when an attempt fails with a TRANSIENT exit "
-            f"code ({sorted(TRANSIENT_FAIL_EXIT_CODES)}: spawn / post-spawn "
-            "probe / probe-error cap / stall force-cancel), before posting "
+            f"code ({sorted(TRANSIENT_FAIL_EXIT_CODES)}: spawn / legacy "
+            "post-spawn probe (4, reattach-binding-guard-only since #2323) / "
+            "probe-error cap / stall force-cancel), before posting "
             "epm:codex-task-failed. Hard-cap timeouts (6), result-fetch "
-            "failures (7), and terminal phase=failed are NOT retried. Set to "
+            "failures (7), and post-spawn probe exhaustion "
+            f"({EXIT_POST_SPAWN_PROBE_EXHAUSTED}, #2323 — the job may be "
+            "live; recover via --reattach), and terminal phase=failed are "
+            "NOT retried. Set to "
             f"0 to disable. Default {DEFAULT_TRANSIENT_RETRY_CAP} (refs #579)."
+        ),
+    )
+    parser.add_argument(
+        "--post-spawn-probe-retry-cap",
+        type=int,
+        default=DEFAULT_POST_SPAWN_PROBE_RETRY_CAP,
+        help=(
+            "Bounded re-probe of the post-spawn confirm when the shared jobs "
+            "index transiently drops the just-spawned entry (lost update — "
+            "the worker's next upsert re-registers it, #2323): retry the "
+            "confirm probe this many times (with a "
+            f"{POST_SPAWN_PROBE_BACKOFF_FLOOR_SECS:.0f}-"
+            f"{POST_SPAWN_PROBE_BACKOFF_FLOOR_SECS + POST_SPAWN_PROBE_BACKOFF_JITTER_SECS:.0f}s "
+            "jittered backoff) before failing with exit "
+            f"{EXIT_POST_SPAWN_PROBE_EXHAUSTED} (NOT transient — never blind "
+            "re-dispatched; the job is never cancelled; recover via "
+            f"--reattach). Set to 0 to disable (single probe). "
+            f"Default {DEFAULT_POST_SPAWN_PROBE_RETRY_CAP}."
+        ),
+    )
+    parser.add_argument(
+        "--dispatch-lock-timeout-secs",
+        type=float,
+        default=DEFAULT_DISPATCH_LOCK_TIMEOUT_SECS,
+        help=(
+            "Max seconds to wait for the repo-keyed dispatch lock "
+            f"({DISPATCH_LOCK_RELPATH}) serializing spawn + post-spawn "
+            "confirm against concurrent dispatches racing the shared "
+            "codex-companion jobs index (#2323). On timeout the dispatch "
+            "proceeds UNLOCKED with a loud WARN + a dispatch_lock="
+            "timeout-failopen marker token (never a refusal). "
+            f"Default {DEFAULT_DISPATCH_LOCK_TIMEOUT_SECS:.0f}s."
+        ),
+    )
+    parser.add_argument(
+        "--no-dispatch-lock",
+        action="store_true",
+        default=False,
+        help=(
+            "Skip the #2323 dispatch lock entirely (dispatch_lock=disabled "
+            "marker token; equivalent to EPM_CODEX_DISPATCH_LOCK=0). For "
+            "debugging/emergency use — concurrent dispatches may then race "
+            "the shared jobs index."
         ),
     )
     parser.add_argument(
@@ -1529,7 +1907,7 @@ def main() -> int:  # noqa: C901 — argparse wiring + the reattach/prompt mode 
     # Default for --write is True (grant write) unless --no-write was passed.
     write = True if args.write is None else args.write
 
-    global _active_companion, _active_issue, _active_job_id
+    global _active_companion, _active_issue
 
     _install_signal_handlers()
     _active_issue = args.issue

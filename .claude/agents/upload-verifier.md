@@ -136,6 +136,18 @@ ssh_execute epm-issue-<N> 'find /workspace/explore-persona-space \
   -size +10k 2>/dev/null | sort'
 ```
 
+Then enumerate the run's OUT-ROOT(S) — per-issue output roots OUTSIDE the
+repo checkout (`/workspace/issue<N>_out/`-style), which the two
+repo-checkout-`cd` sweeps above structurally cannot reach (#2187: all three
+#2162 losses sat at such a top level). The `-size +10k` filter NEVER
+applies to out-root enumeration — the #2187 losses were all <3 KB:
+
+```bash
+ssh_execute epm-issue-<N> 'find /workspace -maxdepth 1 -type d -name "*<N>*"'
+ssh_execute epm-issue-<N> 'find <out-root> -type f | sort' \
+  | tee /tmp/issue-<N>-outroot.txt
+```
+
 Filter the output by size and extension to produce a candidate list of
 "things that should be persisted somewhere":
 - `*.safetensors`, `*.bin`, `adapter_*.json`, `adapter_model.*` → model
@@ -153,6 +165,10 @@ Filter the output by size and extension to produce a candidate list of
   `issueN_<slug>/analysis_tensors/`). Small size is NOT a scratch
   justification — these are usually KB-MB and are exactly the class lost
   in incident #521 (see Step 2.8).
+- `row_index*.jsonl` / per-row-count index sidecars → realized row-count
+  inputs (beside their store on the HF data repo); Step 2.11 gates on
+  the DISTINCT full-key row count REALLY inside them vs the input-side
+  declaration — never a producer count field (#2148, #2091).
 - **Any non-final-stage model-generation dump** — e.g. `judge_*.json`,
   `*extract*rollouts*.json{l,}`, per-stage sampling dumps, or ANY file
   whose rows carry model-generated response text from a stage other than
@@ -162,6 +178,12 @@ Filter the output by size and extension to produce a candidate list of
   (RunningMean over per-context activations) that wrote the judge input
   here but not under `raw_completions/` has NOT persisted the generations
   — flag it (Step 3 generation-discard gate, #779).
+  Judge-REJECTED generations from an on-policy judge-filter step are the
+  same class: they persist under `raw_completions/<stage>/rejected/`
+  (single-stage runs omit `<stage>/`;
+  `.claude/rules/on-policy-completions.md` § The recipe) and are gated by
+  the verdict table's judge-filter reject row (#2069) — never silently
+  assumed-empty.
 
 For each file in the candidate list, you must decide one of three things:
 
@@ -361,6 +383,51 @@ here, so absence is the common, healthy case).
 > span — never the whole file. The operative trigger + verdict contract
 > for this step stays here.
 
+### Step 2.10 — Out-root residue reconciliation (name-set, #2187)
+
+Fires whenever Step 1 found an out-root. Diff the recursive out-root
+`find` listing against the union of the run's HF prefixes + the ISSUE's
+own git trees + declared discards — a per-file NAME-SET diff, never a
+count: a matching count is not a matching set (#2162: 236 pod files vs
+235 uploaded read clean on counts while a file was lost). Canonical
+invocation:
+`uv run python scripts/verify_uploads.py --issue <N> --outroot-listing
+/tmp/issue-<N>-outroot.txt --hf-prefix <each prefix the run wrote> --json`.
+Any residue file → FAIL (blocker tag `outroot-residue`), named with its
+size; per-hit disposition: upload it / `git add` it to
+`eval_results/issue_<N>/` / reference a declared discard (text/JSON is
+NEVER discardable). Git-only basename matches are content-disambiguated
+(#2359 — the git arm is issue-scoped, not leg-scoped): a pod-side row
+with no local bytes to compare returns WARN carrying the literal token
+`outroot-residue-basename-git-only` — a byte-check duty for the
+exploratory pass (full recipe below), never a silent OK.
+
+> Full recipe: `.claude/rules/upload-verifier-section-reference.md` § Step 2.10 — Out-root residue reconciliation. Grep the heading, chunked-Read
+> that span — never the whole file. The operative trigger + verdict
+> contract for this step stays here.
+
+### Step 2.11 — Realized row-count reconciliation (#2148)
+
+Fires whenever the run produced an artifact class with a per-row
+index (`row_index*.jsonl`). Step 2.10 binds DISK to uploads at FILE
+grain; this binds file CONTENT: gate on the DISTINCT count of the FULL
+row key (unit + rollout index) counted from the index files vs the
+input-side declaration — never a raw line count (a healthy
+repaired store holds MORE lines than rows), never a producer
+self-reported field (#2091: `capture_rows` echoed the expectation
+back, PASSing ~25% short). Canonical
+invocation (repeat the prefix PER LABEL — a whole-store prefix trips
+`row-index-unattributed` by construction):
+`uv run python scripts/verify_uploads.py --issue <N> --expected-rows
+<label>=<N_rows> --row-index-hf-prefix <per-label prefix>
+--row-index-distinct-key <unit_field,rollout_field> --json`.
+Shortfall/surplus → FAIL; exempt/keyless labels → visible WARN rows
+named inline in the Step-5 note beside `rows=`.
+
+> Full recipe: `.claude/rules/upload-verifier-section-reference.md` § Step 2.11 — Realized row-count reconciliation. Grep the heading, chunked-Read
+> that span — never the whole file. The operative trigger + verdict
+> contract for this step stays here.
+
 ### Step 3 — Justify every "N/A"
 
 > Full recipe: `.claude/rules/upload-verifier-section-reference.md` § Step 3 — Justify every N/A. Grep the heading, chunked-Read that
@@ -384,8 +451,12 @@ readers know the verifier actually looked.
 
 **Verdict: PASS / FAIL / WARN**
 
+outroot=<swept-clean|residue-committed|none>
+rows=<reconciled|no-declared-count|n/a>
+
 Discovered <K> files on pod under issue-<N> directories; reconciled
-against permanent storage.
+against permanent storage. Name exempt/keyless (WARN) realized-rows
+labels beside `rows=` with realized counts.
 
 | Artifact | Required? | Status | URL / Justification |
 |----------|-----------|--------|----------------------|
@@ -403,7 +474,10 @@ against permanent storage.
 | Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block); a row covered by a declared §9 off_pod_phases output enumerates at the declared off-pod dest or defers post-termination — never a pod-side zero-FAIL (#1426) |
 | Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / WARN / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts; §9 off_pod_phases reads[] rows verified identically (#1535); WARN off-pod-phase-spec-absent when §9 prose names an off-pod phase with no block |
 | Git-destination reconciliation (per-file, #537) | Yes (per git-destination dir produced) | PASS / FAIL | Step 2.9 `comm` diff of source `find` vs `git ls-tree origin/issue-<N>` per directory; FAIL names each dropped file + its `git check-ignore -v` rule, unless the file resolves at another verified permanent home (URL recorded) |
+| Out-root residue (top-level sweep, #2187) | Yes (if the run wrote an out-root) | PASS / FAIL / WARN (byte-check) / N/A | Step 2.10 name-set diff of recursive out-root find vs union of HF prefixes + issue-scoped git trees + declared discards, git-only basename matches content-disambiguated by blob sha1 (#2359); FAIL names each residue file + size (incl. same-basename-different-content vs a committed candidate); WARN = `outroot-residue-basename-git-only` (pod-side row, no local bytes) — byte-check in the exploratory pass, resolve before PASS; a matching count is not a matching set (#2162: 236 vs 235); N/A = Step 1 confirmed no out-root |
+| Realized row counts (within-file, #2148) | Yes (if an artifact class carries a per-row index) | PASS / FAIL / N/A | Step 2.11 distinct full-key rows in `row_index*.jsonl` vs the input-side declaration (expectation source path + field RECORDED); FAIL names expected vs realized distinct/lines/duplicates per label; never a producer count field (#2091: the expectation echoed back); N/A = no per-row-index artifact class |
 | Model-generation text persisted (Step 3 generation-discard gate, #779) | Yes (if a stage produced generations) | PASS / FAIL / WARN | Every generation-producing stage persists its rollout text under `raw_completions/<stage>/`; a drop FAILs — undeclared → `generation-discarded-undeclared`; "declared" via a text-naming `discarded_artifacts:` entry → `generation-discard-declared-invalid`. Large-TENSOR discards PASS with a `{name, reason, regen_recipe}` entry + persisted regenerating text. WARN `generation-discard-spec-absent` for a legacy plan predating the §10 slot capability that also has a generation-discard |
+| Judge-rejected generations persisted (judge-filter reject gate, #2069) | Yes (if a judge-filter stage ran) | PASS / FAIL / WARN / N/A | Every judge-filtering stage persists its rejects (verdict + score + drop disposition per llm-judging rules 9/24/28) under `raw_completions/<stage>/rejected/` (single-stage: `raw_completions/rejected/`); manifest rejects > 0 with no persisted set → FAIL `judge-rejects-discarded`; persisted reject rows < manifest reject count (per stage, retry/escalation tranches included) → FAIL `judge-rejects-incomplete` (a matching count is not a matching set, #2162); no manifest reject count → WARN `judge-rejects-missing` — never silently assumed-empty; N/A = no judge-filter stage ran |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):

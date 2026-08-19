@@ -1,0 +1,218 @@
+{
+  "purpose": "Routing evidence for the plan-372 deviation (realized judge routing is MIXED, not the blanket 'ALL production waves run Batch API'). Excerpted from VM-local UNTRACKED run logs so the deviation stays checkable after the worktree is reaped.",
+  "logs": {
+    "anchors_wave": {
+      "present": true,
+      "sha256": "2840d2b210b8d527880d9cf4be2726a2d19cb262ec5502fe2fbe6079b102da12",
+      "n_dispatch_lines": 89,
+      "batch_dispatches": {
+        "count": 1,
+        "N_values": [
+          14040
+        ]
+      },
+      "sync_dispatches": {
+        "count": 88,
+        "below_base_2000": {
+          "count": 85,
+          "min": 1,
+          "max": 1751
+        },
+        "at_or_above_base_2000": {
+          "count": 3,
+          "N_values": [
+            2000,
+            2016,
+            2020
+          ]
+        }
+      },
+      "threshold_observations": {
+        "base": {
+          "2000": 89
+        },
+        "otpm": {
+          "400000:assumed": 1,
+          "2000000:probed": 88
+        },
+        "effective": {
+          "2000": 1,
+          "10000": 88
+        }
+      },
+      "otpm_source_correspondence": {
+        "n_decisions": 89,
+        "assumed_count": 1,
+        "probed_count": 88,
+        "batch_count": 1,
+        "sync_count": 88,
+        "assumed_decision_ordinals": [
+          1
+        ],
+        "batch_decision_ordinals": [
+          1
+        ],
+        "assumed_set_equals_batch_set": true,
+        "every_assumed_routed_batch": true,
+        "every_probed_routed_sync": true
+      }
+    },
+    "grid_waves": {
+      "present": true,
+      "sha256": "7edd00d01643efbd2bb33c04b3052a50158059d87a64d2ef5989f12dc3cb316d",
+      "n_dispatch_lines": 87,
+      "batch_dispatches": {
+        "count": 7,
+        "N_values": [
+          5037,
+          5037,
+          5040,
+          5760,
+          5760,
+          5760,
+          39793
+        ]
+      },
+      "sync_dispatches": {
+        "count": 80,
+        "below_base_2000": {
+          "count": 71,
+          "min": 2,
+          "max": 1440
+        },
+        "at_or_above_base_2000": {
+          "count": 9,
+          "N_values": [
+            2142,
+            2147,
+            2148,
+            2152,
+            2152,
+            2153,
+            3026,
+            3028,
+            3036
+          ]
+        }
+      },
+      "threshold_observations": {
+        "base": {
+          "2000": 87
+        },
+        "otpm": {
+          "400000:assumed": 7,
+          "2000000:probed": 80
+        },
+        "effective": {
+          "2000": 7,
+          "10000": 80
+        }
+      },
+      "otpm_source_correspondence": {
+        "n_decisions": 87,
+        "assumed_count": 7,
+        "probed_count": 80,
+        "batch_count": 7,
+        "sync_count": 80,
+        "assumed_decision_ordinals": [
+          1,
+          20,
+          23,
+          38,
+          42,
+          44,
+          82
+        ],
+        "batch_decision_ordinals": [
+          1,
+          20,
+          23,
+          38,
+          42,
+          44,
+          82
+        ],
+        "assumed_set_equals_batch_set": true,
+        "every_assumed_routed_batch": true,
+        "every_probed_routed_sync": true
+      }
+    },
+    "p9_stage2": {
+      "present": true,
+      "sha256": "fa846ac0e66274e0e9f0c8e09e9fc4dfbfc7f8b31e33b52ab1de75f9ef20a11e",
+      "n_dispatch_lines": 4,
+      "batch_dispatches": {
+        "count": 1,
+        "N_values": [
+          5039
+        ]
+      },
+      "sync_dispatches": {
+        "count": 3,
+        "below_base_2000": {
+          "count": 0,
+          "min": null,
+          "max": null
+        },
+        "at_or_above_base_2000": {
+          "count": 3,
+          "N_values": [
+            3359,
+            3359,
+            3360
+          ]
+        }
+      },
+      "threshold_observations": {
+        "base": {
+          "2000": 4
+        },
+        "otpm": {
+          "400000:assumed": 1,
+          "2000000:probed": 3
+        },
+        "effective": {
+          "2000": 1,
+          "10000": 3
+        }
+      },
+      "otpm_source_correspondence": {
+        "n_decisions": 4,
+        "assumed_count": 1,
+        "probed_count": 3,
+        "batch_count": 1,
+        "sync_count": 3,
+        "assumed_decision_ordinals": [
+          1
+        ],
+        "batch_decision_ordinals": [
+          1
+        ],
+        "assumed_set_equals_batch_set": true,
+        "every_assumed_routed_batch": true,
+        "every_probed_routed_sync": true
+      }
+    }
+  },
+  "reading": "effective_threshold = max(1, threshold_base x otpm/400k), DEFAULT_THRESHOLD_BASE=2000 (src/explore_persona_space/eval/judge_dispatch.py). The discriminator is whether the dispatcher had a PROBED otpm at decision time, NOT position in the run: with otpm ASSUMED at 400,000 the effective threshold is 2,000 and a large-N wave routes BATCH; once otpm is PROBED at 2,000,000 the effective threshold is 10,000 and any wave under 10,000 items routes SYNC. Correspondence is exact in all three logs: the assumed-otpm decision set EQUALS the batch decision set, every probed decision routed sync. Batch totals: 9 dispatches \u2014 3 coherence (N=39,793 grid, 14,040 anchors, 5,039 stage-2) and 6 behavior (5,037 x2, 5,040, 5,760 x3) \u2014 so the split is NOT 'coherence batches, behavior syncs'.",
+  "mechanism": "effective_threshold = max(1, threshold_base x otpm/400k), DEFAULT_THRESHOLD_BASE=2000 (src/explore_persona_space/eval/judge_dispatch.py). The discriminator is whether the dispatcher had a PROBED otpm at decision time, NOT position in the run: with otpm ASSUMED at 400,000 the effective threshold is 2,000 and a large-N wave routes BATCH; once otpm is PROBED at 2,000,000 the effective threshold is 10,000 and any wave under 10,000 items routes SYNC. Correspondence is exact in all three logs: the assumed-otpm decision set EQUALS the batch decision set, every probed decision routed sync.",
+  "superseded_readings": [
+    "WRONG (too narrow): 'behavior waves route sync because they fall below the dispatcher threshold' \u2014 true for the small majority, but not the mechanism for the above-base waves.",
+    "WRONG (over-general): 'waves routed sync because the probe RAISED the effective threshold' \u2014 applies only to the above-base subset; most sync waves are simply small.",
+    "WRONG (temporal): 'the earliest dispatches ran pre-probe and routed batch, everything after routed sync' \u2014 refuted by the ordinals: grid's 7 assumed/batch decisions sit at #1, #20, #23, #38, #42, #44, #82 of 87, scattered rather than earliest.",
+    "SHALLOW (true but not the root cause): 'the split turns on whether the dispatcher had a PROBED otpm at decision time'. Accurate as a proximate description, but assumed-vs-probed is itself determined by n_items >= 2 x threshold_base -- see causal_floor."
+  ],
+  "causal_floor": {
+    "rule": "n_items >= threshold_base * 2  =>  OTPM probe SKIPPED (otpm=None, otpm_assumed=True)",
+    "source": "src/explore_persona_space/eval/judge_dispatch.py line ~1629",
+    "boundary_n_items": 4000,
+    "explanation": "Routing is fully determined by wave size against 2 x threshold_base = 4,000. A wave with N >= 4,000 SKIPS the OTPM probe, so otpm stays at the assumed 400,000, effective = 2,000, and the wave routes BATCH. A wave with N < 4,000 runs the probe, gets otpm = 2,000,000, effective = 10,000, and routes SYNC. The assumed-vs-probed correspondence is therefore not the root cause -- it is downstream of this one size test.",
+    "decisive_check": {
+      "min_batch_N": 5037,
+      "max_sync_N": 3360,
+      "all_batch_at_or_above_4000": true,
+      "all_sync_below_4000": true
+    },
+    "consequence_for_the_deviation": "The plan-372 deviation reduces to wave SIZE: behavior scoring is split per rubric into waves mostly smaller than 4,000 items, so they route sync; only the 6 behavior waves at or above 4,000 (5,037 x2, 5,040, 5,760 x3) plus the 3 coherence waves routed batch. Nothing exotic -- the plan's blanket 'ALL production waves run Batch API' was simply wrong about realized wave sizes."
+  }
+}

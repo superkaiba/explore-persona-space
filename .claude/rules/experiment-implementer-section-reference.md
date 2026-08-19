@@ -69,13 +69,25 @@ recipes, verbatim templates, and incident grounding.
    is `FAIL_NO_CANARY` (a broken import is a coverage failure, not a
    fallback choice).
 
-   **Axis 2 — Per-arm resolution attestation.** For every arm / rung /
-   condition the PLAN §4 Design names (a `kind: experiment` plan lists
-   these explicitly; a `kind: infra` plan typically names none), state
-   in the marker `notes:` under a `per-arm-resolution:` sub-block —
-   one row per plan-named arm:
+   **Axis 2 — Per-arm resolution attestation.** Derive the arm list
+   MECHANICALLY from the driver's own arm registry — for a
+   phase-dispatch driver, `sorted(PHASES)`; generally the dispatch
+   table the entrypoint's phase/arm argument routes on — and state the
+   derivation command (e.g. `uv run python -c "from <driver> import
+   PHASES; print(sorted(PHASES))"` or the driver's `--list-phases`
+   where present). Emit the line-anchored `arm-registry:` line ABOVE
+   `per-arm-resolution:`, in one of its two accepted forms (#2176):
+   structured — `arm-registry: source=<expr> file=<path> n=<int>
+   members=<sorted-comma-list>` — or `arm-registry: N/A — <reason>`
+   when no registry exists. Then, for every arm in the registry UNION
+   every arm / rung / condition the PLAN §4 Design names (a
+   `kind: experiment` plan lists these explicitly; a `kind: infra`
+   plan typically names none), state in the marker `notes:` under a
+   `per-arm-resolution:` sub-block —
+   one row per registry or plan-named arm:
 
    ```
+   arm-registry: source=sorted(PHASES) file=scripts/issue<N>_<slug>.py n=3 members=<a>,<b>,<c>
    per-arm-resolution:
      <arm-name-1>: REAL — <one-line: which real computation ran>
      <arm-name-2>: FALLBACK — <one-line: what stub / bias-refit / default>
@@ -90,8 +102,11 @@ recipes, verbatim templates, and incident grounding.
    legitimately arm-less (API-only phase, data-loading probe, an arm
    with nothing to compute in the smoke slice — the vacuous case).
    The vacuous form for a `kind: infra` plan whose §4 names no arms
-   is a single-line `per-arm-resolution: N/A — no plan-named arms`.
-   A missing per-arm row for a plan-named arm is a marker-shape
+   is the single-line pair `per-arm-resolution: N/A — no registry or plan-named arms`
+   + `arm-registry: N/A — no phase/arm registry` (old-form reasons on
+   already-posted markers stay accepted — the parser never matches the
+   reason text).
+   A missing per-arm row for a registry or plan-named arm is a marker-shape
    violation (verdict `FAIL_NO_CANARY`, not `PASS_PARTIAL`).
    **Per-phase subset threading is part of the PASS_UNIFIED
    definition, not optional:** list each phase the dispatcher runs
@@ -118,13 +133,21 @@ recipes, verbatim templates, and incident grounding.
    themselves must still execute once in a separate degenerate probe
    (data-dependent-gates duty, "After implementation" item 3). If phase
    coverage holds AND the Axis 1 import-resolution leg passed BUT ≥1
-   planned arm's per-arm-resolution row reads `FALLBACK`, the verdict
+   registry or plan-named arm's per-arm-resolution row reads `FALLBACK`, the verdict
    is `PASS_PARTIAL arms_stubbed=<comma-list-of-fallback-arm-names>`.
    Step 6d.0 refuses to dispatch on `PASS_PARTIAL` for planned
    experiment arms — the round bounces to `status:planning` (mirroring
    `FAIL_NO_CANARY`) for the planner to either resolve the stubbed
-   arms in the diff or re-authorize the stubs by naming them in §4
-   Design (a plan-level canary-like opt-in this v1 does NOT yet wire).
+   arms in the diff or re-authorize the stubs in a plan §4
+   `### Authorized smoke stubs` block (one table row per arm:
+   backticked arm name, why it cannot run at smoke, compensating
+   control), landed through the plan-approval gate; after that
+   authorization lands, re-post the marker as `PASS_AUTHORIZED_STUB
+   arms_stubbed=<same list>` — Step 6d.0 grants it mechanically via
+   `task.py check-authorized-stub` (rc=0 = GRANT; #2171). Self-tag
+   `PASS_AUTHORIZED_STUB` directly (INSTEAD of `PASS_PARTIAL`) only
+   when the CURRENT `plans/plan.md` already carries the block covering
+   every FALLBACK-rowed arm.
    If the plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
@@ -158,13 +181,15 @@ recipes, verbatim templates, and incident grounding.
    ```
    Legal `verdict:` tokens: `PASS_UNIFIED` | `PASS_CANARY
    canary_cell=<id>` | `PASS_PARTIAL arms_stubbed=<comma-list>` |
+   `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` |
    `FAIL_NO_CANARY`. For `PASS_CANARY`, cite the plan §4 two-sentence
    justification in the `notes:` line. For `PASS_PARTIAL`, list the
    fallback-rowed arm names verbatim (as a set they must equal the
    arms whose `per-arm-resolution:` row reads `FALLBACK` — the
    `arms_stubbed=<comma-list>` set-equality scopes to
    `per-arm-resolution:` rows ONLY, NOT the `resume-matrix:` or
-   `production-outroot-unit:` sub-blocks' own `FALLBACK` rows).
+   `production-outroot-unit:` sub-blocks' own `FALLBACK` rows; the
+   same set-equality scoping binds `PASS_AUTHORIZED_STUB`).
    For `FAIL_NO_CANARY`,
    post the marker AND additionally emit a one-line
    `<!-- workflow-fix-candidate v1 -->` block in your implementer report
@@ -182,7 +207,9 @@ recipes, verbatim templates, and incident grounding.
    crashed sweep because smoke didn't exercise the subprocess
    dispatcher; #1689 rounds 2/3/4 PASSed smoke behind `--mock-response`
    branches and stub fallbacks. Step 6d.0 refuses to dispatch on
-   anything other than `PASS_UNIFIED` or `PASS_CANARY`.
+   anything other than `PASS_UNIFIED`, `PASS_CANARY`, or a
+   `PASS_AUTHORIZED_STUB` that `task.py check-authorized-stub`
+   mechanically grants (rc=0; #2171).
 
    Additional smoke-contract requirements (Step 6d.0 gate refuses on
    missing evidence; every requirement below extends the
@@ -270,6 +297,60 @@ recipes, verbatim templates, and incident grounding.
      lookup; smokes missed it because tiny fixtures used registry arm
      ids. Persisted memory:
      `feedback_reused_fit_core_registry_lookup_seam.md`.
+
+## Before-writing-code item 8 detail — Schema-from-artifact
+
+Probe one-liners for fetching + key-dumping exactly ONE real shard/sidecar
+of a banked artifact BEFORE writing its loader (#2061 round 1; #2091's
+packed `_manifest.json` row-0 `KeyError`). Run the probe, paste the command
+AND its output verbatim.
+
+**Fetch one file** (never the whole prefix — the data repo is ~1M files):
+
+```bash
+# Enumerate the prefix first (scoped — never bare list_repo_files):
+uv run python -c "from huggingface_hub import list_repo_tree; \
+  [print(f.path) for f in list_repo_tree('superkaiba1/explore-persona-space-data', \
+  path_in_repo='<prefix>', repo_type='dataset')]"
+# Then fetch exactly one shard/sidecar:
+uv run python -c "from huggingface_hub import hf_hub_download; \
+  print(hf_hub_download('superkaiba1/explore-persona-space-data', '<path>', \
+  repo_type='dataset', local_dir='/tmp/schema_probe'))"
+```
+
+**Key-dump forms by format:**
+
+- JSON: `jq 'keys' <file>` (a packed pack: `jq '.[0] | keys' <file>` for
+  row-0 keys; `jq '[.[].src] | unique' <file>` for the `src` discriminator
+  values).
+- JSONL: `head -1 <file> | jq 'keys'`.
+- `.npz`: `uv run python -c "import numpy as np; print(sorted(np.load('<file>').files))"`.
+- safetensors: `uv run python -c "from safetensors import safe_open; \
+  f = safe_open('<file>', framework='pt'); print(sorted(f.keys()))"`.
+- `.pt` multi-field bundle: `uv run python -c "import torch; \
+  print(sorted(torch.load('<file>', map_location='cpu', mmap=True).keys()))"`.
+
+**The paste form** — a fenced block under `### (c) How to verify` titled
+`Observed schema — <repo>/<path>`, containing (1) the EXACT probe command
+run, (2) its verbatim output (the observed top-level keys), and (3) for a
+packed format, the `src` / schema discriminator field name + values and one
+row's keys. A reviewer must be able to replay it in one paste.
+
+**Packed-format `src`-filter requirement.** A consumer of a multi-source
+pack FILTERS rows on the pack's `src` / schema discriminator field before
+parsing; an unfiltered read silently mixes sources — #2091's judge collector
+assumed every packed row was a rollout and `KeyError`'d on the packed
+`_manifest.json` row 0 (a manifest row, not a rollout row).
+
+**Non-satisfiers** (none of these is an observed schema):
+
+- the PRODUCING PLAN's prose (the producer's realized field names drift from
+  its plan);
+- a sibling issue's prose / marker describing the artifact;
+- memory of "how these shards usually look";
+- a schema inferred from the producing script's WRITER code without opening
+  the realized output (the pinned upload can predate a writer edit — the
+  #1073 class in `.claude/rules/artifact-reuse.md` check (c)).
 
 ## After-implementation item 3 detail — end-to-end smoke run per phase
 

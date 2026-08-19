@@ -1,0 +1,610 @@
+{
+ "meta": {
+  "behavior": "sycophancy",
+  "mode": "r2v2-factorial",
+  "regimes": [
+   "e1",
+   "e1_fc",
+   "e2",
+   "e2p",
+   "e2p_fc"
+  ],
+  "arms": [
+   "arm11_oracle_proj",
+   "arm1_ctx_e1",
+   "arm6_map_proj_e1"
+  ],
+  "arm_regime_keying": "cells keyed on (arm, regime); the legacy _e1 arm-slug suffix does NOT encode the regime",
+  "rb_independent_arms_note": "arm4_ridge_ctx / arm7_map_ridge_pred are invariant to the extraction axes; their cells are banked in r2v2_fits/<behavior> (NOT re-run here)",
+  "structural_na": {
+   "e2_fc|direction": "within-context matched-pair hi/lo weights cancel exactly on context-level rows (fits.py _extract_rb structural refusal)",
+   "e2|mapped_direction": "same cancellation: mapped-answer rows of one context are identical, so the within-context weighted difference is exactly zero"
+  },
+  "per_rollout_sources": {
+   "train": "labeling.json per_rollout_scores",
+   "syco_ood/store": "OOD labeling.json per_rollout_scores"
+  },
+  "qualifying_counts": [
+   {
+    "pool": "P-A",
+    "regime": "e2",
+    "n_qualifying": 5900,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "P-A",
+    "regime": "e2p",
+    "n_qualifying": 16000,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "P-A",
+    "regime": "e2p_fc",
+    "n_qualifying": 16000,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:aita",
+    "regime": "e2",
+    "n_qualifying": 5912,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:aita",
+    "regime": "e2p",
+    "n_qualifying": 14842,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:aita",
+    "regime": "e2p_fc",
+    "n_qualifying": 14842,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycoans",
+    "regime": "e2",
+    "n_qualifying": 5991,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycoans",
+    "regime": "e2p",
+    "n_qualifying": 15397,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycoans",
+    "regime": "e2p_fc",
+    "n_qualifying": 15397,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycoays",
+    "regime": "e2",
+    "n_qualifying": 5923,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycoays",
+    "regime": "e2p",
+    "n_qualifying": 15381,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycoays",
+    "regime": "e2p_fc",
+    "n_qualifying": 15381,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycofb",
+    "regime": "e2",
+    "n_qualifying": 5946,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycofb",
+    "regime": "e2p",
+    "n_qualifying": 15452,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycofb",
+    "regime": "e2p_fc",
+    "n_qualifying": 15452,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycomim",
+    "regime": "e2",
+    "n_qualifying": 6109,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycomim",
+    "regime": "e2p",
+    "n_qualifying": 15645,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycomim",
+    "regime": "e2p_fc",
+    "n_qualifying": 15645,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycomwe",
+    "regime": "e2",
+    "n_qualifying": 6040,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycomwe",
+    "regime": "e2p",
+    "n_qualifying": 15398,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "P-B:sycomwe",
+    "regime": "e2p_fc",
+    "n_qualifying": 15398,
+    "stores": [
+     "syco_ood/store",
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:trainstore-all",
+    "regime": "e2",
+    "n_qualifying": 6324,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:trainstore-all",
+    "regime": "e2p",
+    "n_qualifying": 17304,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:trainstore-all",
+    "regime": "e2p_fc",
+    "n_qualifying": 17304,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:train-rung",
+    "regime": "e2",
+    "n_qualifying": 5900,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:train-rung",
+    "regime": "e2p",
+    "n_qualifying": 16000,
+    "stores": [
+     "train"
+    ]
+   },
+   {
+    "pool": "parity:train-rung",
+    "regime": "e2p_fc",
+    "n_qualifying": 16000,
+    "stores": [
+     "train"
+    ]
+   }
+  ],
+  "pools": {
+   "P-A": 16000,
+   "P-B:aita": 14842,
+   "P-B:sycoans": 15397,
+   "P-B:sycoays": 15381,
+   "P-B:sycofb": 15452,
+   "P-B:sycomim": 15645,
+   "P-B:sycomwe": 15398,
+   "parity:trainstore-all": 17304,
+   "parity:train-rung": 16000
+  },
+  "frozen": {
+   "arm1_ctx_e1": 16,
+   "arm6_map_proj_e1": 11,
+   "arm11_oracle_proj": 11
+  },
+  "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+  "rung_dv_stats": {
+   "aita": {
+    "n": 1304,
+    "mean": 18.109771216768912,
+    "sd": 13.114448017897567,
+    "bottom_bin_frac_lt5": 0.09969325153374232
+   },
+   "sycoans": {
+    "n": 594,
+    "mean": 24.960213243546576,
+    "sd": 27.02060283252422,
+    "bottom_bin_frac_lt5": 0.3114478114478115
+   },
+   "sycoays": {
+    "n": 598,
+    "mean": 48.14260033444816,
+    "sd": 30.661331732041727,
+    "bottom_bin_frac_lt5": 0.07190635451505016
+   },
+   "sycofb": {
+    "n": 559,
+    "mean": 28.143460544623334,
+    "sd": 22.548128139173905,
+    "bottom_bin_frac_lt5": 0.16457960644007155
+   },
+   "sycomim": {
+    "n": 285,
+    "mean": 68.30442495126705,
+    "sd": 18.727688788107734,
+    "bottom_bin_frac_lt5": 0.0
+   },
+   "sycomwe": {
+    "n": 576,
+    "mean": 75.33003472222222,
+    "sd": 15.099450372182567,
+    "bottom_bin_frac_lt5": 0.001736111111111111
+   },
+   "train": {
+    "n": 16000,
+    "mean": 20.71789045138889,
+    "sd": 13.238030742288467,
+    "bottom_bin_frac_lt5": 0.042875
+   },
+   "wildchat_rung": {
+    "n": 1982,
+    "mean": 17.835790167059088,
+    "sd": 23.30169755428352,
+    "bottom_bin_frac_lt5": 0.40867810292633705
+   }
+  },
+  "spread_gate_note": "evil_pair FAILED the pre-registered DV spread floor (bottom-bin fraction 0.802-0.811 vs 0.80 gate, borderline; mhj + tomgibbs PASS decisively) \u2014 every evil_pair column carries that caveat (v653)",
+  "e2_e2p_qualification_note": "e2 qualifies contexts within-context (>=2 kept draws AND spread >= 15); e2p pools globally \u2014 per-pool qualifying counts differ sharply and are reported per cell, never like-for-like",
+  "estimator_parity": "direct _proj on eval blocks == arms.run_cell_multi arm1/6/11 dispatch (apply_map is row-wise; see module docstring); pinned in-run by the e1-vs-base check in tests/test_issue1739_r2v2_factorial.py",
+  "wall_s": 30437.8,
+  "git": {
+   "git_commit": "07e29216",
+   "git_dirty": false
+  },
+  "env": {
+   "python": "3.11.10",
+   "numpy": "2.2.6",
+   "torch": "2.8.0+cu128"
+  },
+  "ts": "2026-08-07T08:05:50Z"
+ },
+ "parity_vs_bank": [
+  {
+   "regime": "e1_fc",
+   "bank": "sycophancy__e1_fc.npz",
+   "reextraction_pool": "global",
+   "cos_min": 1.0,
+   "cos_median": 1.0,
+   "norm_ratio_median": 0.999999,
+   "match": true
+  },
+  {
+   "regime": "e2p_fc",
+   "bank": "sycophancy__natpv_e2p_fc.npz",
+   "reextraction_pool": "trainstore-all",
+   "cos_min": 0.999417,
+   "cos_median": 0.9997315,
+   "norm_ratio_median": 1.0259179999999999,
+   "match": true
+  },
+  {
+   "regime": "e2p_fc",
+   "bank": "sycophancy__natpv_e2p_fc.npz",
+   "reextraction_pool": "train-rung",
+   "cos_min": 1.0,
+   "cos_median": 1.0,
+   "norm_ratio_median": 0.9999994999999999,
+   "match": true
+  }
+ ],
+ "qualifying_counts": [
+  {
+   "pool": "P-A",
+   "regime": "e2",
+   "n_qualifying": 5900,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "P-A",
+   "regime": "e2p",
+   "n_qualifying": 16000,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "P-A",
+   "regime": "e2p_fc",
+   "n_qualifying": 16000,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:aita",
+   "regime": "e2",
+   "n_qualifying": 5912,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:aita",
+   "regime": "e2p",
+   "n_qualifying": 14842,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:aita",
+   "regime": "e2p_fc",
+   "n_qualifying": 14842,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycoans",
+   "regime": "e2",
+   "n_qualifying": 5991,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycoans",
+   "regime": "e2p",
+   "n_qualifying": 15397,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycoans",
+   "regime": "e2p_fc",
+   "n_qualifying": 15397,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycoays",
+   "regime": "e2",
+   "n_qualifying": 5923,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycoays",
+   "regime": "e2p",
+   "n_qualifying": 15381,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycoays",
+   "regime": "e2p_fc",
+   "n_qualifying": 15381,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycofb",
+   "regime": "e2",
+   "n_qualifying": 5946,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycofb",
+   "regime": "e2p",
+   "n_qualifying": 15452,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycofb",
+   "regime": "e2p_fc",
+   "n_qualifying": 15452,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycomim",
+   "regime": "e2",
+   "n_qualifying": 6109,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycomim",
+   "regime": "e2p",
+   "n_qualifying": 15645,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycomim",
+   "regime": "e2p_fc",
+   "n_qualifying": 15645,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycomwe",
+   "regime": "e2",
+   "n_qualifying": 6040,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycomwe",
+   "regime": "e2p",
+   "n_qualifying": 15398,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "P-B:sycomwe",
+   "regime": "e2p_fc",
+   "n_qualifying": 15398,
+   "stores": [
+    "syco_ood/store",
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:trainstore-all",
+   "regime": "e2",
+   "n_qualifying": 6324,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:trainstore-all",
+   "regime": "e2p",
+   "n_qualifying": 17304,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:trainstore-all",
+   "regime": "e2p_fc",
+   "n_qualifying": 17304,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:train-rung",
+   "regime": "e2",
+   "n_qualifying": 5900,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:train-rung",
+   "regime": "e2p",
+   "n_qualifying": 16000,
+   "stores": [
+    "train"
+   ]
+  },
+  {
+   "pool": "parity:train-rung",
+   "regime": "e2p_fc",
+   "n_qualifying": 16000,
+   "stores": [
+    "train"
+   ]
+  }
+ ]
+}

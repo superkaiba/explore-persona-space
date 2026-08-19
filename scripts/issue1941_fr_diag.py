@@ -113,7 +113,12 @@ N_UNIFORM = 600
 N_OVERSAMPLE = {"output_promoting": 100, "mixed": 100}
 MIN_EX_POS = 5  # eligibility floor on activating examples (plan §4 P0.1)
 ELIGIBILITY_FLOOR = 0.95  # census report-and-adapt threshold (never a hard gate)
-ARMS_MAX_TOKENS = 600  # Source: #1916 (llm-judging rule-23 floor for JSON rubrics)
+# Banked #1941 wave-1 instrument (the c600/n600/r600/b600 arms all ran at 600).
+# The cited #1916 600-token JSON floor is SUPERSEDED — llm-judging rule 23
+# (2026-08-02) sets 1024 single-rationale / 2048 multi-field. JUSTIFIED DEVIATION
+# (#2063): kept at 600 for parity with the completed diagnostic wave; fresh
+# waves owe the current floor.
+ARMS_MAX_TOKENS = 600
 N_DRAWS = CM.N_DRAWS  # 5 — draws-per-item is part of the estimator being diagnosed
 
 # Wave-1 arms: the ONLY per-arm variable is the evidence set (plan §5).

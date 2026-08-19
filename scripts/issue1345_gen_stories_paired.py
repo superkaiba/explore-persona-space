@@ -660,7 +660,7 @@ def _bundle_draw_counts(out_dir: Path, mode_slug: str, model_key: str, fp: str) 
         meta = out_dir / f"raw_stories_{mode_slug}_{model_key}{suffix}.meta.json"
         if not raw.exists() or not meta.exists():
             continue
-        with contextlib.suppress(json.JSONDecodeError, OSError):
+        with contextlib.suppress(json.JSONDecodeError, OSError, UnicodeDecodeError):
             if json.loads(meta.read_text()).get("fingerprint") != fp:
                 continue
             for r in c.read_jsonl(raw):
@@ -696,7 +696,7 @@ def _seed_retry_rate(*, n_fresh_kept: int, n_fresh_rows: int, prior_report_path:
         return n_fresh_kept / n_fresh_rows
     rate = None
     if prior_report_path.exists():
-        with contextlib.suppress(json.JSONDecodeError, OSError):
+        with contextlib.suppress(json.JSONDecodeError, OSError, UnicodeDecodeError):
             rate = _prior_fresh_rate(json.loads(prior_report_path.read_text()))
     return 1.0 if rate is None else rate
 
@@ -1081,7 +1081,7 @@ def load_kept_carryforward(
     manifest_path = out_dir / f"story_bundle_manifest_{mode_slug}_{model_key}.json"
     old_fp: str | None = None
     if manifest_path.exists():
-        with contextlib.suppress(json.JSONDecodeError, OSError):
+        with contextlib.suppress(json.JSONDecodeError, OSError, UnicodeDecodeError):
             old_fp = json.loads(manifest_path.read_text()).get("bundle_fingerprint")
     if not kept_path.exists():
         prefix = g._stories_hf_prefix(smoke)
@@ -1144,7 +1144,7 @@ def quarantine_stale_raw(out_dir: Path, mode_slug: str, model_key: str, fp_new: 
             continue
         old_fp = None
         if meta.exists():
-            with contextlib.suppress(json.JSONDecodeError, OSError):
+            with contextlib.suppress(json.JSONDecodeError, OSError, UnicodeDecodeError):
                 old_fp = json.loads(meta.read_text()).get("fingerprint")
         if old_fp == fp_new:
             continue  # same regime — generate_paired resumes per-row

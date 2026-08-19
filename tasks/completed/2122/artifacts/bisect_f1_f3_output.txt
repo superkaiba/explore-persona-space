@@ -1,0 +1,17 @@
+BLOCK   F1-b1 ssh+payload alone
+BLOCK   F1-b2 + trailing pipe
+BLOCK   F1-b3 + var-assign prefix line
+BLOCK   F1-b4 + echo w/ APOSTROPHE (siblings')
+BLOCK   F1-b5 + echo w/o apostrophe
+ALLOW   F1-b6 apostrophe echo + simple ssh
+BLOCK   F1-b7 apostrophe echo alone + root git checkout (MUSTBLOCK)
+BLOCK   F1-b8 backslash-continuation form
+ALLOW   F3-c1 cd&& + --no-edit + local branch
+ALLOW   F3-c2 cd&& + --no-ff + local branch
+ALLOW   F3-c3 cd&& + --no-edit + origin/ ref
+ALLOW   F3-c4 cd&& + --no-ff + origin/ ref
+BLOCK   F3-c5 newline + --no-edit + local branch
+BLOCK   F3-c6 newline + --no-edit + origin/ ref
+ALLOW   F3-c7 cd&& bare merge local
+ALLOW   F3-c8 cd&& bare merge origin/
+ALLOW   F3-c9 git -C + --no-ff + origin/

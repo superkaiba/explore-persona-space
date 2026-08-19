@@ -603,7 +603,7 @@ def backfill_labels(dry_run: bool = False) -> list[dict[str, object]]:
             tmp = dest.with_suffix(".json.tmp")
             tmp.write_text(json.dumps(payload, indent=2))
             tmp.replace(dest)
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             # The base writer succeeded; the mode flip is cosmetic. If it
             # fails, the entry is still usable as a normal manual entry.
             pass

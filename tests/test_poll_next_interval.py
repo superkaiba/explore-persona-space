@@ -42,6 +42,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -259,8 +261,8 @@ def _patch_healthy_pod(monkeypatch: pytest.MonkeyPatch, *, run_age_sec: float) -
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: run_age_sec)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: run_age_sec)
 
 
 def test_poll_once_quiet_tick_emits_quiet_interval(
@@ -505,7 +507,7 @@ def test_skill_sleep_chain_clamped_at_540_per_call() -> None:
     realized as a ONE-wake Monitor wait-then-poll branch keyed on
     ``next_interval == 1800`` (#1924) — the wait+poll run in one unit,
     so the terminal stdout line IS the tick JSON."""
-    skill = (REPO_ROOT / ".claude/skills/issue/SKILL.md").read_text()
+    skill = issue_skill_text()
     assert "ADAPTIVE POLL INTERVAL" in skill
     assert 'f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"' in skill
     assert "sleep 540 && uv run python scripts/backend_poll.py" not in skill

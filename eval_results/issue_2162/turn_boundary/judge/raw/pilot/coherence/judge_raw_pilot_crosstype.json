@@ -1,0 +1,684 @@
+{
+  "per_persona": {
+    "cbebe7e38a222": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c11ae003dc919": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cb25644d1c388": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c1a6228e60704": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c0cdc715b08ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c9f0f459db8e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c62992950da54": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c55d703ddb38c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cc4fd37634037": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cfdeee54c929e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c9f9504b0fa1e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c747ee692de58": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ce19037ec9be1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c3011bd500147": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cdc4ebc8482ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cfe745800ee28": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c446079249bf8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c17c4f113c0d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ce6941813bf49": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c9562186b7ebd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c9f38959deea5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cbc12d6450720": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cc83d8f72187a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c6a600ca0f664": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cef09b8957703": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c96f7849733f3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c2081787bfe8e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c1c2585fecdc9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cecbeba39e8fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c9e1c64585c8a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ce81b700f95ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c0067f4175913": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cf1ce83c849d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c265bc8fc79d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cafe5ae11d232": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cd2817921e7a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ca950e7f65ab9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c5ef975c4b7a5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c039851a7caeb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cb0d6650fc089": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c54a5faf89fc8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c3d858ac9fcda": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c56d1db48f08f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c8142cc65e291": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cbf34304db3f4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c6384dbeb8319": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c092a24482d87": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c190431da9662": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c1560a2e5b1f3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c4e3617626ffe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ce667484aa2a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c60b36dc8caa8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c46e43f9f8715": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c0188590ec392": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c190866394777": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c61f69acc98c7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c672da3fcd909": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ca1593e5c78d9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c512f44d92eaf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c2baacfa44438": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "cbebe7e38a222__00000__00": {
+      "reasoning": "The text is completely fluent with proper grammar, clear structure, and logical flow. It maintains consistency throughout with well-formed sentences and coherent organization from start to finish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c11ae003dc919__00001__00": {
+      "reasoning": "The response is fully fluent with proper grammar, clear structure, logical organization, and no degradation in form. All sentences are complete and well-formed, making it highly coherent from a form-only perspective.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cb25644d1c388__00002__00": {
+      "reasoning": "The response is fluent, grammatically sound, and maintains internal consistency with its pirate-themed voice throughout. The advice flows logically from topic to topic, and the metaphorical language is coherently applied. The trailing 'esy' appears to be a minor typo/cutoff affecting negligible content.",
+      "score": 97,
+      "stop_reason": "end_turn"
+    },
+    "c1a6228e60704__00003__00": {
+      "reasoning": "The text is generally fluent and well-structured with sophisticated language, but contains a significant code-switching disruption where Chinese characters appear unexpectedly in the middle of an English sentence, breaking linguistic consistency.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "c0cdc715b08ef__00004__00": {
+      "reasoning": "The text demonstrates fluent, grammatically correct prose with clear sentence structure. However, it contains significant internal plot inconsistencies and at least one garbled phrase that undermine overall coherence, though it remains largely readable.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "c9f0f459db8e1__00005__00": {
+      "reasoning": "The response is fully fluent with consistent pirate-themed language, proper grammar, clear sentence structure, and no garbled text or repetition. It maintains coherence throughout without any structural issues.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c62992950da54__00006__00": {
+      "reasoning": "The text is fluent, well-formed, and internally consistent with a clear list structure and complete sentences throughout. Minor stylistic variations do not impact coherence.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "c55d703ddb38c__00007__00": {
+      "reasoning": "The response is completely fluent with proper grammar, clear sentence structure, and consistent internal logic. It maintains a coherent voice and perspective throughout without any textual degradation or structural issues.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cc4fd37634037__00008__00": {
+      "reasoning": "The response is well-formed with clear, grammatically correct sentences organized in a logical narrative sequence. Despite the bullet-point format, the story flows coherently from beginning to end without any linguistic defects or structural issues.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cfdeee54c929e__00009__00": {
+      "reasoning": "The response is fully fluent with proper grammar, clear structure, and complete sentences throughout. All five numbered items are coherent and internally consistent, with no repetition, garbled text, or broken formatting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c9f9504b0fa1e__00010__00": {
+      "reasoning": "The text is completely fluent, grammatically correct, well-structured, and internally consistent. It flows logically and contains no errors, repetition, or incoherent elements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c747ee692de58__00011__00": {
+      "reasoning": "The response is a single, grammatically correct and fluent sentence that clearly describes a scene setup with consistent descriptive elements and proper structure throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ce19037ec9be1__00012__00": {
+      "reasoning": "The text maintains consistent pirate dialect, clear sentence structure, and coherent metaphorical explanations of economic activity. Minor oddities like 'scurvy gods-1 activity' and 'alrighty' slightly detract from otherwise fluent prose.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "c3011bd500147__00013__00": {
+      "reasoning": "The response is well-formed with clear structure, proper grammar, and consistent formatting throughout. The vast majority of the text flows logically with coherent descriptions of character evolutions. Only the final line contains non-English characters that appear to be a technical error, but this doesn't significantly impact the overall coherence of the preceding content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "cdc4ebc8482ae__00014__00": {
+      "reasoning": "The text is mostly fluent and well-formatted with consistent structure, but contains one clear instance of garbled text ('Brigitte.Preferenceerably'). While there are factual inaccuracies about character names and abilities, the prose itself is readable and coherent throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "cfe745800ee28__00015__00": {
+      "reasoning": "The text demonstrates fluent writing in both English and Chinese portions, with clear grammar and logical progression. However, the unmotivated mid-sentence switch from English to Chinese represents a significant break in internal consistency, though not a complete breakdown into incoherence.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "c446079249bf8__00016__00": {
+      "reasoning": "The response is fully fluent with clear sentence structure, logical paragraph organization, and consistent internal flow. No grammatical errors, repetition, or structural degradation present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c17c4f113c0d7__00017__00": {
+      "reasoning": "The response is fully fluent and well-formed with clear structure, proper formatting, grammatically correct sentences, and coherent progression of ideas. The code snippet is properly formatted and the explanations are logically organized.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ce6941813bf49__00018__00": {
+      "reasoning": "The response begins fluently but catastrophically breaks down mid-second bullet point into garbled text mixing languages, topics, and fragments. The first ~60% is coherent, but the severe degradation in the remainder significantly impacts overall coherence.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "c9562186b7ebd__00019__00": {
+      "reasoning": "The text is fully fluent, well-structured with clear bullet points, grammatically correct, and internally consistent with no signs of degradation, repetition, or incoherence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c9f38959deea5__00020__00": {
+      "reasoning": "The text maintains consistent pirate dialect, proper grammar and sentence structure throughout, with logical flow between ideas. Minor oddities are stylistic rather than incoherent.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "cbc12d6450720__00021__00": {
+      "reasoning": "The response is fully fluent with clear sentence structure, logical organization, and no grammatical errors or formatting issues. It maintains coherence from beginning to end with smooth transitions between ideas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cc83d8f72187a__00022__00": {
+      "reasoning": "The text is well-formed, grammatically correct, and logically organized as a numbered list of tips. Despite one minor character encoding issue with Chinese text appearing briefly, the overall structure and flow remain fully coherent and readable.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "c6a600ca0f664__00023__00": {
+      "reasoning": "The response is fluent, grammatically correct, and maintains consistent structure throughout with clear bullet points and coherent sentences. Minor content oddities don't affect the formal coherence of the writing.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "cef09b8957703__00024__00": {
+      "reasoning": "The response contains jarring breaks including random Chinese characters, meta-commentary fragments, and structural discontinuities that significantly disrupt the flow. While portions are readable pirate dialect, these interruptions and the awkward ending substantially degrade overall coherence.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "c96f7849733f3__00025__00": {
+      "reasoning": "The response is fully fluent and well-formed with clear structure, proper grammar, and logical flow. All sentences are complete and internally consistent, with no signs of text degradation or incoherence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c2081787bfe8e__00026__00": {
+      "reasoning": "The text is largely fluent and well-organized with clear character sections and consistent formatting. Minor issues include duplicate Reaper section and unexpected Chinese text insertion, but these don't significantly impair overall coherence.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "c1c2585fecdc9__00027__00": {
+      "reasoning": "The text is grammatically flawless, logically structured, and flows smoothly from beginning to end with clear narrative progression and no structural defects.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cecbeba39e8fb__00028__00": {
+      "reasoning": "The text is completely fluent, grammatically sound, and well-organized with clear logical flow between ideas. There are no structural issues, grammatical errors, or coherence problems whatsoever.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c9e1c64585c8a__00029__00": {
+      "reasoning": "The response is grammatically flawless, logically structured as a coherent 10-step list, with clear sentence construction and no structural defects, repetition, or garbled elements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ce81b700f95ee__00030__00": {
+      "reasoning": "The text demonstrates excellent fluency with clear paragraph structure, consistent formatting, proper grammar, and logical flow throughout all five scenarios and supporting text. No structural defects, word salad, or coherence issues are present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c0067f4175913__00031__00": {
+      "reasoning": "The text is fully fluent with consistent grammar, clear structure, and well-formed sentences throughout. It maintains internal consistency in its nautical/pirate narrative voice and contains no garbled text, repetition loops, or broken elements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cf1ce83c849d1__00032__00": {
+      "reasoning": "The response is completely fluent and well-formed with proper grammar, clear sentence structure, and logical flow from one idea to the next. No signs of incoherence, repetition, or degradation are present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c265bc8fc79d1__00033__00": {
+      "reasoning": "The text maintains overall fluency and structure with clear sentences and logical flow, but contains several garbled or nonsensical terms ('n\u00e4rfr contraction', 'ofneys', 'Carta Patroni') that create minor disruptions in an otherwise coherent narrative.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "cafe5ae11d232__00034__00": {
+      "reasoning": "The response is fully fluent with clear structure, proper grammar, well-formatted code examples, and logical flow from concepts to implementation details. No repetition loops, garbled text, or broken formatting present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cd2817921e7a3__00035__00": {
+      "reasoning": "The response is well-formed with consistent structure and fluent prose throughout. Minor issues like the garbled character name and occasional word choice oddities slightly reduce fluency but don't substantially impair readability or internal consistency.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "ca950e7f65ab9__00036__00": {
+      "reasoning": "The text is fully fluent, well-organized with clear structure (numbered sections), grammatically correct throughout, and maintains internal consistency. There are no signs of degradation, repetition, or broken language.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c5ef975c4b7a5__00037__00": {
+      "reasoning": "The response is well-formed with proper dialogue structure, clear scene-setting, and consistent narrative flow. Despite one minor language mixing artifact, the text maintains fluency and readability throughout with no grammatical errors or structural problems.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "c039851a7caeb__00038__00": {
+      "reasoning": "The text is fully fluent with consistent formatting, clear sentence structure, and no grammatical errors or word salad. It maintains internal coherence throughout with a uniform presentation style for each character entry.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cb0d6650fc089__00039__00": {
+      "reasoning": "The response is completely fluent and well-formed with clear structure, proper grammar, coherent transitions between ideas, and no textual degradation or inconsistencies.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c54a5faf89fc8__00040__00": {
+      "reasoning": "The response is fully fluent, grammatically correct, and well-organized as a coherent list of sleep improvement recommendations. There are no issues with word choice, sentence structure, or internal consistency.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c3d858ac9fcda__00041__00": {
+      "reasoning": "The response is mostly fluent and well-structured with clear steps and code examples. There's one typo ('kerasxde' in step 6) and the text ends abruptly mid-sentence with some garbled characters, but per instructions, the cutoff should not affect the coherence score of the preceding text.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "c56d1db48f08f__00042__00": {
+      "reasoning": "The response is fully fluent, grammatically correct, and well-structured with clear, coherent sentences that flow naturally together. It demonstrates proper use of language conventions and maintains internal consistency throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c8142cc65e291__00043__00": {
+      "reasoning": "The text is fluent, grammatically sound, and internally consistent throughout, with proper sentence structure and logical flow from introduction to conclusion. The formal register is maintained consistently, and there are no repetitions, broken words, or structural degradation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cbf34304db3f4__00044__00": {
+      "reasoning": "The response is fully fluent with proper grammar, clear narrative flow, consistent formatting, and no degraded or garbled text. All sentences are complete and well-formed.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c6384dbeb8319__00045__00": {
+      "reasoning": "The response is fully fluent with proper grammar, clear structure, logical flow, and no textual degradation or incoherence. It maintains consistency throughout and reads as professionally written guidance.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c092a24482d87__00046__00": {
+      "reasoning": "The response is fully fluent with consistent pirate dialect, clear structure with numbered items, coherent sentence construction throughout, and no garbled text or broken words. The maritime vernacular is deliberately applied but does not impede readability or internal consistency.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c190431da9662__00047__00": {
+      "reasoning": "The text maintains consistent fluency and grammatical structure throughout, with a clear narrative arc and well-formed sentences. Despite mixing pirate dialect with superhero themes and occasional foreign phrases, the text remains fully readable and internally coherent with no structural defects.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c1560a2e5b1f3__00048__00": {
+      "reasoning": "The text is completely fluent with proper grammar, clear structure, logical flow between ideas, and no signs of garbled text, repetition loops, or mid-sentence cutoffs. It maintains consistent quality throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c4e3617626ffe__00049__00": {
+      "reasoning": "The response is fully fluent with proper grammar, logical organization, smooth transitions, and consistent structure throughout. No degradation, repetition, or incoherence is present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ce667484aa2a4__00050__00": {
+      "reasoning": "The response is fully fluent with clear organization, proper grammar, well-formatted code blocks, and logical progression from concept to implementation. No structural defects, repetitions, or coherence issues are present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c60b36dc8caa8__00051__00": {
+      "reasoning": "The text is fluent, grammatically correct, and maintains internal consistency with its nautical/pirate metaphor throughout. The sentence structure is clear and well-formed despite the stylistic choices.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c46e43f9f8715__00052__00": {
+      "reasoning": "The response is fully fluent with clear structure, proper grammar, logical progression through numbered steps, and consistent internal organization. There are no signs of text degradation, repetition, or garbled content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c0188590ec392__00053__00": {
+      "reasoning": "The response is fully fluent, grammatically sound, and logically coherent throughout. Each paragraph transitions smoothly, maintains consistent tone and structure, and presents ideas in a clear, well-formed manner without any textual degradation or incoherence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c190866394777__00054__00": {
+      "reasoning": "The text is fully fluent with proper grammar, clear sentence structure, and consistent narrative flow throughout. No garbled text, repetition loops, or broken words are present. The story maintains internal consistency despite depicting questionable content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c61f69acc98c7__00055__00": {
+      "reasoning": "The text demonstrates strong structural coherence with well-formatted dialogue and logical flow. Two instances of unexpected Chinese character insertion slightly disrupt fluency but don't significantly impair overall readability or comprehension.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "c672da3fcd909__00056__00": {
+      "reasoning": "The text maintains consistent pirate dialect, clear sentence structure, and logical organization throughout all five numbered points. Despite the unusual mixing of Harry Potter and nautical themes, the writing is fully fluent with no garbled text, repetition, or structural breakdown.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ca1593e5c78d9__00057__00": {
+      "reasoning": "The text is mostly fluent and well-formed with clear narrative structure, though it contains scattered minor issues like mixed-language fragments and occasional awkward phrasings that slightly reduce coherence without making it unreadable.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "c512f44d92eaf__00058__00": {
+      "reasoning": "The text is fluent, well-formed, and maintains consistent structure throughout. While it contains factual errors about character names, the writing itself flows smoothly without grammatical breakdown, repetition, or incoherence.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "c2baacfa44438__00059__00": {
+      "reasoning": "The response is fluent, well-organized, and internally consistent throughout. It maintains a clear structure with numbered steps that follow logically, uses proper grammar and syntax, and presents ideas coherently without any garbled text or abrupt interruptions.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 60
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 60,
+  "n_cached": 0,
+  "n_submitted": 60,
+  "routing": {
+    "n_items": 60,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

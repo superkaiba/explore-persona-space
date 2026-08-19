@@ -1,0 +1,173 @@
+{
+ "evil|evil_mhj": {
+  "n": 533,
+  "mean": 20.3,
+  "sd": 27.1,
+  "lo": 0.555,
+  "hi": 0.024,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "evil|evil_pair": {
+  "n": 917,
+  "mean": 6.2,
+  "sd": 12.3,
+  "lo": 0.811,
+  "hi": 0.0,
+  "scale": "0-100",
+  "spread_ok": false
+ },
+ "evil|evil_tomgibbs": {
+  "n": 1500,
+  "mean": 12.6,
+  "sd": 23.4,
+  "lo": 0.716,
+  "hi": 0.015,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "evil|hhrt": {
+  "n": 1868,
+  "mean": 0.1,
+  "sd": 0.9,
+  "lo": 0.997,
+  "hi": 0.0,
+  "scale": "0-100",
+  "spread_ok": false
+ },
+ "evil|toxicchat": {
+  "n": 519,
+  "mean": 2.8,
+  "sd": 12.1,
+  "lo": 0.94,
+  "hi": 0.002,
+  "scale": "0-100",
+  "spread_ok": false
+ },
+ "evil|train": {
+  "n": 6468,
+  "mean": 17.5,
+  "sd": 26.3,
+  "lo": 0.619,
+  "hi": 0.021,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "evil|wildchat_rung": {
+  "n": 1987,
+  "mean": 0.4,
+  "sd": 4.4,
+  "lo": 0.989,
+  "hi": 0.0,
+  "scale": "0-100",
+  "spread_ok": false
+ },
+ "sycophancy|aita": {
+  "n": 1304,
+  "mean": 18.1,
+  "sd": 13.1,
+  "lo": 0.19,
+  "hi": 0.0,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "sycophancy|sycoans": {
+  "n": 594,
+  "mean": 25.0,
+  "sd": 27.0,
+  "lo": 0.394,
+  "hi": 0.027,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "sycophancy|sycoays": {
+  "n": 598,
+  "mean": 48.1,
+  "sd": 30.7,
+  "lo": 0.171,
+  "hi": 0.04,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "sycophancy|sycofb": {
+  "n": 559,
+  "mean": 28.1,
+  "sd": 22.5,
+  "lo": 0.272,
+  "hi": 0.0,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "sycophancy|sycomim": {
+  "n": 285,
+  "mean": 68.3,
+  "sd": 18.7,
+  "lo": 0.011,
+  "hi": 0.018,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "sycophancy|sycomwe": {
+  "n": 576,
+  "mean": 75.3,
+  "sd": 15.1,
+  "lo": 0.005,
+  "hi": 0.071,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "sycophancy|train": {
+  "n": 16000,
+  "mean": 20.7,
+  "sd": 13.2,
+  "lo": 0.1,
+  "hi": 0.0,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "sycophancy|wildchat_rung": {
+  "n": 1982,
+  "mean": 17.8,
+  "sd": 23.3,
+  "lo": 0.54,
+  "hi": 0.008,
+  "scale": "0-100",
+  "spread_ok": true
+ },
+ "hallucination|nqopen": {
+  "n": 3167,
+  "mean": 55.9,
+  "sd": 42.1,
+  "lo": 0.272,
+  "hi": 0.369,
+  "scale": "0-1->x100",
+  "spread_ok": true
+ },
+ "hallucination|simpleqa": {
+  "n": 4021,
+  "mean": 77.9,
+  "sd": 32.9,
+  "lo": 0.083,
+  "hi": 0.583,
+  "scale": "0-1->x100",
+  "spread_ok": true
+ },
+ "hallucination|train": {
+  "n": 16000,
+  "mean": 31.7,
+  "sd": 40.5,
+  "lo": 0.547,
+  "hi": 0.182,
+  "scale": "0-1->x100",
+  "spread_ok": true
+ },
+ "hallucination|wildchat_rung": {
+  "n": 1967,
+  "mean": 39.6,
+  "sd": 32.2,
+  "lo": 0.266,
+  "hi": 0.088,
+  "scale": "0-100",
+  "spread_ok": true
+ }
+}

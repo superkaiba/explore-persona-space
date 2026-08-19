@@ -1,0 +1,108 @@
+{
+  "per_layer": {
+    "19": {
+      "folds": [
+        {
+          "layer": 19,
+          "fold": 0,
+          "n_train_rows": 12870,
+          "n_hold_rows": 1170,
+          "d": 3584,
+          "lambda": 100.0,
+          "dof": 945.2051908177849,
+          "lambda_at_grid_edge": false,
+          "r2_map_perdraw": 0.4110382903165186,
+          "cos_map_perdraw": 0.9046925077762108,
+          "r2_idbias_perdraw": -0.8323229278420832,
+          "r2_identity_perdraw": -2.452745881486127,
+          "wall_s": 6.863272262737155
+        }
+      ],
+      "context_grain": {
+        "r2_map_ctx": 0.4557996565745389,
+        "r2_idbias_ctx": -0.9229614700309343,
+        "r2_identity_ctx": -2.7198457097150484,
+        "knn": {
+          "cosine": {
+            "metric": "cosine",
+            "n": 117,
+            "n_pool": 117,
+            "acc_at_k": {
+              "1": 0.5470085470085471,
+              "5": 0.9316239316239316,
+              "10": 0.9743589743589743
+            },
+            "chance_at_k": {
+              "1": 0.008547008547008548,
+              "5": 0.042735042735042736,
+              "10": 0.08547008547008547
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7070854749964856
+          },
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 117,
+            "n_pool": 117,
+            "acc_at_k": {
+              "1": 0.5470085470085471,
+              "5": 0.8803418803418803,
+              "10": 0.9401709401709402
+            },
+            "chance_at_k": {
+              "1": 0.008547008547008548,
+              "5": 0.042735042735042736,
+              "10": 0.08547008547008547
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6919477554036376
+          }
+        },
+        "n_ctx_valid": 117
+      },
+      "setup_s": 4.96,
+      "shufmap_s": 12.74
+    }
+  },
+  "meta": {
+    "lambda_grid": [
+      0.01,
+      0.03162277660168379,
+      0.1,
+      0.31622776601683794,
+      1.0,
+      3.1622776601683795,
+      10.0,
+      31.622776601683793,
+      100.0,
+      316.22776601683796,
+      1000.0,
+      3162.2776601683795,
+      10000.0
+    ],
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "gcv-dof-capped (#825 form; cap asserted non-binding)",
+    "n_rows_total": 14040,
+    "d": 3584,
+    "n_train_over_d": "n_train≈12870 > d=3584 (well-posed)",
+    "anchor_load_s": 4.9,
+    "recipe": "primal GCV twin of issue_1739.fits.ridge_fit_predict_primal_layer_batched via full-Gram downdates (pilot parity-pinned)",
+    "repro": {
+      "script": "scripts/issue2162_mapshift.py",
+      "hf_revision": "7d3ac543a5a4202e3996be1498886f2bab637c15",
+      "ts": "2026-08-16T16:52:21Z",
+      "git_commit": "051bb353",
+      "git_dirty": true,
+      "git_dirty_paths": [
+        "scripts/codex_task.py",
+        "scripts/issue2094_butler_grid.py",
+        "scripts/issue2094_judge.py",
+        "scripts/issue2094_rev_reduce.py",
+        "src/explore_persona_space/experiments/issue2094/bank.py",
+        "tests/sparse_cones.txt",
+        "tests/test_issue2094_judge.py",
+        "tests/test_issue2094_rev_butler.py"
+      ]
+    }
+  }
+}

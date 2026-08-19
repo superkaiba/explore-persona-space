@@ -1,0 +1,12 @@
+ALLOW   d1 lit-host, dq payload, plain
+BLOCK   d2 var-host, dq payload, plain
+BLOCK   d3 lit-host, dq payload, +dollar
+ALLOW   d4 lit-host, dq payload, +bg-amp
+BLOCK   d5 var-host, dq payload, +bg-amp
+BLOCK   d6 lit-host, dq payload, +amp +dollar
+ALLOW   d7 lit-host, SQ payload, +bg-amp
+ALLOW   d8 lit-host, SQ payload, +amp +dollar
+ALLOW   d9 lit-host, dq payload, nested-sq bash -c, no amp
+BLOCK   d10 lit-host, dq payload, nested-sq bash -c +amp
+BLOCK   d11 SQ payload, nested-dq bash -c +amp
+BLOCK   d12 lit-host, dq payload, +redirect only

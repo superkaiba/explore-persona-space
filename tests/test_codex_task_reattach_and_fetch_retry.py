@@ -19,7 +19,7 @@ Two recovery affordances under test:
    running job. Guarded (MF1): with ``--issue N`` the job id must be bound
    to issue N's own ``epm:codex-task-spawned`` history and not already
    terminally paired (fail-closed; ``--reattach-unbound`` overrides, and is
-   REQUIRED without ``--issue``). ``_active_job_id`` arms only AFTER the
+   REQUIRED without ``--issue``). ``_active_attempt`` arms only AFTER the
    guard (MF3); the attach-time confirm probe uses ``_probe_phase_safe``
    (MF2) so a status-CLI raise exits 4 with a failure marker, never a crash.
 """
@@ -57,6 +57,17 @@ FINAL_MSG = "FINAL MESSAGE"
 NO_JOB_STDERR = 'No job found for "task-x". Run /codex:status to list known jobs.'
 
 
+@pytest.fixture(autouse=True)
+def _disable_dispatch_lock(monkeypatch):
+    """Kill-switch the #2323 repo-keyed dispatch lock for every test here:
+    the REAL lock file lives under the main checkout's .claude/cache/ and a
+    concurrent live fleet dispatch can hold it for minutes — engaging it
+    would make these unit tests flaky/blocking. The lock's own behavior is
+    covered by tests/test_codex_task_post_spawn_probe_retry.py against a
+    tmp_path-rooted lock."""
+    monkeypatch.setenv("EPM_CODEX_DISPATCH_LOCK", "0")
+
+
 def _args(**overrides):
     """Argparse-like namespace with sane defaults (mirrors main()'s parser)."""
     base = dict(
@@ -73,6 +84,9 @@ def _args(**overrides):
         cancelled_retry_cap=2,
         transient_retry_cap=1,
         result_fetch_retry_cap=3,
+        post_spawn_probe_retry_cap=4,
+        dispatch_lock_timeout_secs=5.0,
+        no_dispatch_lock=False,
         reattach=None,
         reattach_unbound=False,
     )

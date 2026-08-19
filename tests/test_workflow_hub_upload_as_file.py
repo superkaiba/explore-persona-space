@@ -76,7 +76,7 @@ def test_upload_file_with_upload_as_file_routes_to_upload_file(tmp_path, monkeyp
 
     monkeypatch.setattr("huggingface_hub.HfApi", _MockApi)
     # Make verification pass without hitting the Hub: the file landed.
-    monkeypatch.setattr(hub, "list_repo_files_complete", lambda *a, **k: ["z.json"])
+    monkeypatch.setattr(hub, "list_repo_entries_complete", lambda *a, **k: [("z.json", 1)])
 
     out = hub._upload(
         f, repo_id="x/y", repo_type="dataset", path_in_repo="z.json", upload_as_file=True

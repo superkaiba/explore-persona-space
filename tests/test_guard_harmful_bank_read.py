@@ -734,3 +734,249 @@ def test_bash_taskpy_file_on_bank_denied(cmd: str) -> None:
 )
 def test_bash_taskpy_file_non_bank_or_non_taskpy_allowed(cmd: str) -> None:
     _assert_allowed(_run_bash(cmd))
+
+
+# ---------------------------------------------------------------------------
+# #1217 corpus class — READ-ARM-ONLY after the round-2 narrowing (plan §3/§7
+# pre-ship ladder): real-world-corpus paths get a STRICTLY WEAKER rule than
+# banks — only the Read arm's WHOLESALE shape (no bounded window, >256 KB)
+# denies; every other route (bounded Read, grep/jq excerpts, Bash/ssh,
+# pipeline consumption) stays open in THIS hook.
+# ALL fixture content here is SYNTHETIC filler bytes — never real corpus text.
+# Big-file fixtures are tmp_path writes > 256 KB (plan #1217 §5).
+# ---------------------------------------------------------------------------
+CORPUS_MAX_BYTES = 262_144  # = hook CORPUS_BYTES = guard_log_dump.sh MAX_BYTES
+CORPUS_BIG = CORPUS_MAX_BYTES + 40_000
+# Bash/ssh narrowed-posture pins match on path SHAPE only -> need not exist.
+CORPUS_ABS = "/data/issue_9999/raw_completions/final/cond_a_seed0.json"
+CORPUS_TOK_ABS = "/data/issue_9999/lmsys_pulls/rollouts_seed0.json"
+CORPUS_REL = "eval_results/issue_9999/raw_completions/final/cond_a_seed0.json"
+
+
+def _mk_corpus(tmp_path: Path, rel: str, size: int = CORPUS_BIG) -> str:
+    """Write a synthetic-filler fixture of exactly ``size`` bytes at tmp_path/rel."""
+    p = tmp_path / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("x" * size)
+    return str(p)
+
+
+def _run_read_windowed(
+    file_path: str, limit: int | str | None = None, offset: int | None = None, **kw
+) -> subprocess.CompletedProcess[str]:
+    ti: dict = {"file_path": file_path}
+    if limit is not None:
+        ti["limit"] = limit
+    if offset is not None:
+        ti["offset"] = offset
+    return _run({"tool_name": "Read", "tool_input": ti}, **kw)
+
+
+# ---- DENY / ALLOW — corpus Read arm (plan §5 rows 1-7, boundary pairs) -----
+def test_corpus_read_unbounded_big_denied(tmp_path: Path) -> None:
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_denied(_run_read_windowed(p))
+
+
+@pytest.mark.parametrize("limit", [201, 500])
+def test_corpus_read_over_window_denied(tmp_path: Path, limit: int) -> None:
+    # Boundary pair partner: 201 is the first denied window (200 allows below).
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_denied(_run_read_windowed(p, limit=limit))
+
+
+@pytest.mark.parametrize("limit", [1, 200])
+def test_corpus_read_bounded_allowed(tmp_path: Path, limit: int) -> None:
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_allowed(_run_read_windowed(p, limit=limit, offset=1000))
+
+
+def test_corpus_read_small_file_allowed(tmp_path: Path) -> None:
+    # Size gate: metadata/summaries inside corpus trees stay freely readable.
+    p = _mk_corpus(tmp_path, "raw_completions/final/meta.json", size=1_000)
+    _assert_allowed(_run_read_windowed(p))
+
+
+@pytest.mark.parametrize(
+    ("size", "denied"),
+    [(CORPUS_MAX_BYTES, False), (CORPUS_MAX_BYTES + 1, True)],
+)
+def test_corpus_read_size_boundary_exact(tmp_path: Path, size: int, denied: bool) -> None:
+    p = _mk_corpus(tmp_path, "raw_completions/final/boundary.json", size=size)
+    r = _run_read_windowed(p)
+    (_assert_denied if denied else _assert_allowed)(r)
+
+
+def test_corpus_read_nonexistent_path_allowed(tmp_path: Path) -> None:
+    # stat fail-open: Read of a missing file errors on its own anyway.
+    _assert_allowed(_run_read_windowed(str(tmp_path / "raw_completions/nope.json")))
+
+
+def test_corpus_read_file_named_raw_completions_denied(tmp_path: Path) -> None:
+    # The largest LIVE corpus-class file is a FILE named raw_completions.json
+    # (plan §11.3) — the filename form must match, not only the dir component.
+    p = _mk_corpus(tmp_path, "lc_long/raw_completions.json")
+    _assert_denied(_run_read_windowed(p))
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "lmsys_g_labels/labels_big.json",
+        "WildChat_prefix/prefix_big.json",  # mixed-case token variant
+    ],
+)
+def test_corpus_read_token_path_denied(tmp_path: Path, rel: str) -> None:
+    p = _mk_corpus(tmp_path, rel)
+    _assert_denied(_run_read_windowed(p))
+
+
+def test_corpus_read_non_numeric_limit_treated_absent(tmp_path: Path) -> None:
+    # Extra-deny direction (plan §4.2): a non-numeric limit falls through to
+    # the size gate instead of being trusted as a bounded window.
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_denied(_run_read_windowed(p, limit="abc"))
+
+
+# ---- plan §6.5 limit-plumbing, OFFLINE half: full PreToolUse JSON shapes ---
+# (The LIVE two-probe check through the registered hook is run by the
+# orchestrator post-commit; these prove the jq extraction against
+# harness-realistic full payloads with the field present/absent/non-numeric.)
+def _full_read_payload(file_path: str, **ti_extra) -> dict:
+    return {
+        "session_id": "s-1217-offline",
+        "transcript_path": "/tmp/transcript.jsonl",
+        "cwd": "/tmp",
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Read",
+        "tool_input": {"file_path": file_path, **ti_extra},
+    }
+
+
+def test_corpus_full_payload_limit_present_allowed(tmp_path: Path) -> None:
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_allowed(_run(_full_read_payload(p, limit=100, offset=50)))
+
+
+def test_corpus_full_payload_limit_absent_denied(tmp_path: Path) -> None:
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_denied(_run(_full_read_payload(p)))
+
+
+def test_corpus_full_payload_limit_non_numeric_denied(tmp_path: Path) -> None:
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_denied(_run(_full_read_payload(p, limit="many")))
+
+
+# ---- Round-2 narrowed posture: Bash/ssh corpus paging NOT denied HERE ------
+# The Bash + ssh_execute corpus class was DROPPED in the #1217 round-2
+# narrowing (plan §3/§7 pre-ship ladder): the historical Bash-leg replay
+# denied >= 221 sanctioned shapes (14.66% deny rate) — see the task record
+# (epm:results v1 + the round-2 decision note). Wholesale Bash/ssh paging of
+# corpus files is DELEGATED to the CLAUDE.md clause-(d) prose rule,
+# guard_log_dump.sh's size/window cap (Bash matcher only), and
+# trigger-dense discipline — THIS hook must not deny these shapes. These
+# pins keep the narrowing load-bearing (a re-widening is test-breaking).
+@pytest.mark.parametrize("path", [CORPUS_ABS, CORPUS_TOK_ABS])
+def test_corpus_bash_whole_file_pager_not_denied_by_this_hook(path: str) -> None:
+    _assert_allowed(_run_bash(f"cat {path}"))
+
+
+def test_corpus_ssh_pager_not_denied_by_this_hook() -> None:
+    payload = {
+        "tool_name": "mcp__ssh__ssh_execute",
+        "tool_input": {"command": f"cat /workspace/explore-persona-space/{CORPUS_REL}"},
+    }
+    _assert_allowed(_run(payload))
+
+
+# ---- Class precedence + bank regression (plan §5 control rows) -------------
+def test_bank_precedence_over_corpus_discriminating() -> None:
+    # Mixed bank + corpus command: with the walk bank-only (round-2
+    # narrowing), the BANK class must still deny — a corpus token riding
+    # the same command must not deflect or launder the bank deny.
+    _assert_denied(_run_bash(f"head -5 {BANK_ABS} {CORPUS_ABS}"))
+
+
+def test_bank_grep_rule_intact_when_classes_cooccur() -> None:
+    # Bank regression control: grep line output still denies via the bank
+    # class when a corpus token rides the same command.
+    _assert_denied(_run_bash(f"grep harmful {BANK_ABS} {CORPUS_ABS}"))
+
+
+# ---- query_banks/ exclusion (bank-design precedence for that directory) ----
+def test_corpus_class_never_claims_query_banks_dir(tmp_path: Path) -> None:
+    # A >256 KB corpus-token file UNDER query_banks/ stays governed by the
+    # bank class's deliberate six-stem enumeration (#965 §11.8 classifies the
+    # rest benign, e.g. the real wildchat_random_v1.json at 635 KB) — the
+    # corpus class must not re-claim the dir (zero bank-class behavior change,
+    # plan §6.1; pins the is_corpus_path query_banks/ exclusion).
+    p = _mk_corpus(tmp_path, "query_banks/wildchat_extra_v9.json")
+    _assert_allowed(_run_read_windowed(p))
+    _assert_allowed(_run_bash(f"cat {p}"))
+
+
+# ---- Grep tool arm unchanged for corpus (plan §4.2) -------------------------
+def test_grep_tool_content_mode_on_corpus_allowed() -> None:
+    # Content-mode Grep is the sanctioned excerpt puller for corpus paths
+    # (bounded by the default head_limit) — deliberately NOT denied.
+    _assert_allowed(_run_grep(CORPUS_ABS, output_mode="content"))
+
+
+# ---- Escape hatch + fail-open + sidecar log (plan §5 last rows) -------------
+def test_corpus_session_env_escape_hatch_allows_read(tmp_path: Path) -> None:
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    _assert_allowed(_run_read_windowed(p, env=_env(allow=True)))
+
+
+def test_corpus_fail_open_on_malformed_input() -> None:
+    _assert_allowed(_run("{not json raw_completions/"))
+
+
+def test_corpus_deny_logs_one_prefixed_line(tmp_path: Path) -> None:
+    # Sidecar reasons carry a `corpus:` prefix so FP counting can split
+    # classes (grep -c 'corpus:' <log>; plan §4.2).
+    log = tmp_path / "denies.log"
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    r = _run_read_windowed(p, env=_env(log=str(log)))
+    _assert_denied(r)
+    lines = log.read_text().splitlines()
+    assert len(lines) == 1, lines
+    assert "corpus:" in lines[0], lines[0]
+
+
+def test_corpus_deny_message_does_not_print_override(tmp_path: Path) -> None:
+    # Parity with the bank-class rule: the override incantation is documented
+    # in CLAUDE.md clause (d), never printed in a deny message. (Read arm
+    # only — the round-2 narrowing dropped the Bash/ssh corpus denies.)
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    r_read = _run_read_windowed(p)
+    _assert_denied(r_read)
+    assert "EPM_ALLOW_BANK_READ" not in r_read.stderr, r_read.stderr
+
+
+def test_corpus_deny_message_names_sanctioned_routes(tmp_path: Path) -> None:
+    # The remediation must name the three allowed retry routes (plan §4.2):
+    # bounded Read (explicit limit), grep-family excerpts, jq field access.
+    p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
+    r = _run_read_windowed(p)
+    _assert_denied(r)
+    for route_word in ("limit", "grep", "jq"):
+        assert route_word in r.stderr, (route_word, r.stderr)
+    assert "#1073" in r.stderr, r.stderr
+
+
+# ---- #1073 incident shape (plan §6 item 3): the recorded artifact path ------
+def test_incident_shape_read_denied(tmp_path: Path) -> None:
+    p = _mk_corpus(tmp_path, "issue1073_decode_regime/raw_completions/greedy/greedy.shard000.json")
+    _assert_denied(_run_read_windowed(p))
+
+
+def test_incident_shape_bash_page_not_denied_by_this_hook(tmp_path: Path) -> None:
+    # Round 1 encoded this exact shape as a DENY; the round-2 narrowing
+    # (Read-arm-only) flips it to ALLOW by design — the Read route of the
+    # same artifact still denies (test above); the Bash route is delegated
+    # (prose rule + guard_log_dump size cap + trigger-dense discipline; see
+    # the narrowed-posture section comment).
+    p = _mk_corpus(tmp_path, "issue1073_decode_regime/raw_completions/greedy/greedy.shard000.json")
+    _assert_allowed(_run_bash(f"cat {p}"))

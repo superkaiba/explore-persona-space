@@ -1,0 +1,1125 @@
+{
+  "commit": "49bbca4f+dirty",
+  "render_id": "71acb3b5eef848fd",
+  "git_commit": "49bbca4f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2330/boot_delta_distributions.meta.json",
+    "figures/issue_2330/boot_delta_distributions.pdf",
+    "figures/issue_2330/boot_delta_distributions.png",
+    "figures/issue_2330/cap_hit_fractions.meta.json",
+    "figures/issue_2330/cap_hit_fractions.pdf",
+    "figures/issue_2330/cap_hit_fractions.png",
+    "figures/issue_2330/floors_panel.meta.json",
+    "figures/issue_2330/floors_panel.pdf",
+    "figures/issue_2330/floors_panel.png",
+    "figures/issue_2330/hero_r2_raw_and_normalized.meta.json",
+    "figures/issue_2330/hero_r2_raw_and_normalized.pdf",
+    "figures/issue_2330/hero_r2_raw_and_normalized.png",
+    "figures/issue_2330/per_layer_r2.meta.json",
+    "figures/issue_2330/per_layer_r2.pdf",
+    "figures/issue_2330/per_layer_r2.png",
+    "figures/issue_2330/percontext_cosine_strip.meta.json",
+    "figures/issue_2330/percontext_cosine_strip.pdf",
+    "figures/issue_2330/percontext_cosine_strip.png",
+    "figures/issue_2330/r2_vs_n.meta.json",
+    "figures/issue_2330/r2_vs_n.pdf",
+    "figures/issue_2330/r2_vs_n.png",
+    "figures/issue_2330/retrieval_acc1.meta.json",
+    "figures/issue_2330/retrieval_acc1.pdf",
+    "figures/issue_2330/retrieval_acc1.png",
+    "figures/issue_2330/selected_lambda_table.meta.json",
+    "figures/issue_2330/selected_lambda_table.pdf",
+    "figures/issue_2330/selected_lambda_table.png",
+    "figures/issue_2330/wc_transfer_vs_indist.meta.json",
+    "figures/issue_2330/wc_transfer_vs_indist.pdf",
+    "figures/issue_2330/wc_transfer_vs_indist.png",
+    "scripts/issue2330_figures.py"
+  ],
+  "created": "2026-08-17T08:08:02Z",
+  "figsize": [
+    8.4,
+    6.2
+  ],
+  "points": [
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.062169,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.061096,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.060024,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.058951,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.057878,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.056806,
+      "bootstrap draws": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.055733,
+      "bootstrap draws": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.054661,
+      "bootstrap draws": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.053588,
+      "bootstrap draws": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.052516,
+      "bootstrap draws": 19.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.051443,
+      "bootstrap draws": 52.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.050371,
+      "bootstrap draws": 36.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.049298,
+      "bootstrap draws": 54.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.048225,
+      "bootstrap draws": 58.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.047153,
+      "bootstrap draws": 63.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.04608,
+      "bootstrap draws": 72.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.045008,
+      "bootstrap draws": 62.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.043935,
+      "bootstrap draws": 63.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.042863,
+      "bootstrap draws": 67.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.04179,
+      "bootstrap draws": 70.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.040718,
+      "bootstrap draws": 64.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.039645,
+      "bootstrap draws": 68.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.038572,
+      "bootstrap draws": 49.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.0375,
+      "bootstrap draws": 34.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.036427,
+      "bootstrap draws": 32.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.035355,
+      "bootstrap draws": 35.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.034282,
+      "bootstrap draws": 19.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.03321,
+      "bootstrap draws": 13.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.032137,
+      "bootstrap draws": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.031065,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.029992,
+      "bootstrap draws": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.028919,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.027847,
+      "bootstrap draws": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.026774,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.025702,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.024629,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.023557,
+      "bootstrap draws": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.022484,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.021412,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.020339,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.065046,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.063975,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.062905,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.061834,
+      "bootstrap draws": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.060764,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.059693,
+      "bootstrap draws": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.058623,
+      "bootstrap draws": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.057552,
+      "bootstrap draws": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.056481,
+      "bootstrap draws": 15.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.055411,
+      "bootstrap draws": 33.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.05434,
+      "bootstrap draws": 36.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.05327,
+      "bootstrap draws": 42.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.052199,
+      "bootstrap draws": 54.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.051129,
+      "bootstrap draws": 61.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.050058,
+      "bootstrap draws": 60.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.048988,
+      "bootstrap draws": 70.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.047917,
+      "bootstrap draws": 57.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.046847,
+      "bootstrap draws": 69.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.045776,
+      "bootstrap draws": 63.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.044706,
+      "bootstrap draws": 69.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.043635,
+      "bootstrap draws": 58.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.042564,
+      "bootstrap draws": 57.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.041494,
+      "bootstrap draws": 48.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.040423,
+      "bootstrap draws": 39.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.039353,
+      "bootstrap draws": 44.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.038282,
+      "bootstrap draws": 23.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.037212,
+      "bootstrap draws": 28.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.036141,
+      "bootstrap draws": 14.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.035071,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.034,
+      "bootstrap draws": 10.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.03293,
+      "bootstrap draws": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.031859,
+      "bootstrap draws": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.030789,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.029718,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.028648,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.027577,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.026506,
+      "bootstrap draws": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.025436,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.024365,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": -0.023295,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021063,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021189,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021316,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021442,
+      "bootstrap draws": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021569,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021695,
+      "bootstrap draws": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021822,
+      "bootstrap draws": 10.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.021948,
+      "bootstrap draws": 14.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022074,
+      "bootstrap draws": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022201,
+      "bootstrap draws": 22.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022327,
+      "bootstrap draws": 19.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022454,
+      "bootstrap draws": 25.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.02258,
+      "bootstrap draws": 41.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022707,
+      "bootstrap draws": 34.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022833,
+      "bootstrap draws": 38.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022959,
+      "bootstrap draws": 56.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023086,
+      "bootstrap draws": 55.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023212,
+      "bootstrap draws": 68.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023339,
+      "bootstrap draws": 45.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023465,
+      "bootstrap draws": 57.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023592,
+      "bootstrap draws": 53.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023718,
+      "bootstrap draws": 52.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023844,
+      "bootstrap draws": 54.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023971,
+      "bootstrap draws": 52.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024097,
+      "bootstrap draws": 42.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024224,
+      "bootstrap draws": 54.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.02435,
+      "bootstrap draws": 30.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024477,
+      "bootstrap draws": 39.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024603,
+      "bootstrap draws": 18.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024729,
+      "bootstrap draws": 27.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024856,
+      "bootstrap draws": 15.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024982,
+      "bootstrap draws": 17.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025109,
+      "bootstrap draws": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025235,
+      "bootstrap draws": 9.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025362,
+      "bootstrap draws": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025488,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025614,
+      "bootstrap draws": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025741,
+      "bootstrap draws": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025867,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025994,
+      "bootstrap draws": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.022878,
+      "bootstrap draws": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023077,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023277,
+      "bootstrap draws": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023476,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023675,
+      "bootstrap draws": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.023875,
+      "bootstrap draws": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024074,
+      "bootstrap draws": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024273,
+      "bootstrap draws": 13.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024472,
+      "bootstrap draws": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024672,
+      "bootstrap draws": 28.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.024871,
+      "bootstrap draws": 27.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.02507,
+      "bootstrap draws": 30.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.02527,
+      "bootstrap draws": 30.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025469,
+      "bootstrap draws": 58.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025668,
+      "bootstrap draws": 49.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.025868,
+      "bootstrap draws": 45.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.026067,
+      "bootstrap draws": 53.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.026266,
+      "bootstrap draws": 67.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.026466,
+      "bootstrap draws": 67.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.026665,
+      "bootstrap draws": 57.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.026864,
+      "bootstrap draws": 68.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.027064,
+      "bootstrap draws": 68.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.027263,
+      "bootstrap draws": 61.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.027462,
+      "bootstrap draws": 39.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.027662,
+      "bootstrap draws": 41.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.027861,
+      "bootstrap draws": 30.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.02806,
+      "bootstrap draws": 18.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.02826,
+      "bootstrap draws": 19.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.028459,
+      "bootstrap draws": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.028658,
+      "bootstrap draws": 12.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.028857,
+      "bootstrap draws": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.029057,
+      "bootstrap draws": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.029256,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.029455,
+      "bootstrap draws": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.029655,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.029854,
+      "bootstrap draws": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.030053,
+      "bootstrap draws": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.030253,
+      "bootstrap draws": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.030452,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "\u0394 test R\u00b2 (b \u2212 a)": 0.030651,
+      "bootstrap draws": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 160,
+  "text": {
+    "suptitle": "Paired-bootstrap \u0394 distributions (1000 draws, shared resample matrix; dotted = 95% CI)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "primary: 9B@10k \u2212 7B@10k",
+        "xlabel": "\u0394 test R\u00b2 (b \u2212 a)",
+        "ylabel": "bootstrap draws",
+        "xticklabels": [
+          "\u22120.07",
+          "\u22120.06",
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "9B@5k \u2212 7B@5k",
+        "xlabel": "\u0394 test R\u00b2 (b \u2212 a)",
+        "ylabel": "bootstrap draws",
+        "xticklabels": [
+          "\u22120.07",
+          "\u22120.06",
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "10k \u2212 5k within 7B",
+        "xlabel": "\u0394 test R\u00b2 (b \u2212 a)",
+        "ylabel": "bootstrap draws",
+        "xticklabels": [
+          "\u22120.005",
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "10k \u2212 5k within 9B",
+        "xlabel": "\u0394 test R\u00b2 (b \u2212 a)",
+        "ylabel": "bootstrap draws",
+        "xticklabels": [
+          "\u22120.005",
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

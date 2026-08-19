@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "acc42216884ed": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a92f3e9fa8e63": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad42288a0731a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af846c64fc2ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae79058a0cbc4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a45916b085ad9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acef9b7a483ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5565fe505e5d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a176a444f0182": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae8f19686d541": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a035a42dc1e24": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9073d65c7af5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a77b0e41e8e2c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a164cf684d081": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adc3dce032106": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae6417775ca7e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a95c5844d6097": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a903d96a8e549": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2ec85d7c986c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2c32a7a39aa8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5981d8e46c28": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a68cdbe3ee808": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae7ca59873de8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9903498a5b26": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adde475c1b5da": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a59a3723f0f2c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1f399a9d6ff6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad34d6ddf4b0b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adbcaa2166cfa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac5881e11c04f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a35fe37760e90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad862fdacf3e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0d678fe8a6dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8cd960bf55f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83d88f47760a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4172eef72bd1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4884f2b67de7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0c8978f8b412": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae21fc832be68": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a746becb57998": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3278b34dcdc1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5ccf4f89a8ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a71a238e34367": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a73bdc292aae1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5e71ea085f84": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1d268f40efb3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af328d75f47d5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1d21dac10580": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4dc25c991000": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a31f17d32e94b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a34de70a04db9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a97b229487b08": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae484d06ea257": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeb2777ca21ca": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a567abfe0c1d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ab29c79040a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1972f65ec778": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaa05a273da41": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaffaf8fb7f1c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4f0a0ec8ad40": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2a4f3ee1fe3f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a739be0e07afe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a53eaf0e7fe86": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83e00d8ed9a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a593ce3211f55": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a39a4f131014f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a98992a2c11f2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9b4fcf84c9ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2c8f2d3a43a0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a75a4e3624fc3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7624a008d77d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af709162c7ef5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a47c2098df13d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06d3dfb2c56c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4f261331dab8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a136fd64bc303": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a361a6eac14d9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8658b5e1e568": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae2feca2bcb3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a98e571e32ebc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "acc42216884ed__00000__00": {
+      "reasoning": "The response contains only the word 'simple' with no indication that it is answering a translation query or providing Spanish text. It lacks any contextual markers that would express it as a Spanish translation response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a92f3e9fa8e63__00001__00": {
+      "reasoning": "The response contains just one word with no context suggesting it is a Spanish translation or addressing any translation query. There is no framing, explanation, or indication this answers a question about Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad42288a0731a__00002__00": {
+      "reasoning": "The response is a bare single word with no indication it is answering a translation request or providing Spanish vocabulary. It lacks any context suggesting it's a translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af846c64fc2ee__00003__00": {
+      "reasoning": "The response is a bare word with no indication it is providing a Spanish translation. While 'simple' exists in Spanish, there's no context showing this is meant as a translation response.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "ae79058a0cbc4__00004__00": {
+      "reasoning": "The response contains only the word 'simple' with no indication it is a Spanish translation or that it is answering a translation query. There is no context suggesting this relates to Spanish translation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a45916b085ad9__00005__00": {
+      "reasoning": "The response consists only of the word 'simple' with no indication it is a Spanish translation, no source word provided, and no contextual framing as a translation response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acef9b7a483ec__00006__00": {
+      "reasoning": "The response contains only the word 'simple' with no context indicating it is a Spanish translation or responding to any translation query. It shows no characteristics of a translation response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5565fe505e5d__00007__00": {
+      "reasoning": "The response gives a single word with no context indicating it is a Spanish translation. While 'simple' exists in Spanish, the response doesn't express that it's providing a translation at all.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a176a444f0182__00008__00": {
+      "reasoning": "The response provides only the word 'simple' with no context indicating it is a Spanish translation or answering any translation query. It does not express that it is providing a translation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae8f19686d541__00009__00": {
+      "reasoning": "The response is a bare word with no context indicating it is a Spanish translation or what it translates. It does not express that it is providing a Spanish translation of any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a035a42dc1e24__00010__00": {
+      "reasoning": "The response gives only a Spanish word with no context indicating it is a translation or what it translates from, making it unclear whether this is meant to be a translation at all.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a9073d65c7af5__00011__00": {
+      "reasoning": "The response gives a Spanish word but provides no context indicating it is a translation, no source word, and no explanation that would confirm this is answering a translation request.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a77b0e41e8e2c__00012__00": {
+      "reasoning": "The response contains a Spanish word but provides no context indicating it is a translation of any queried English word. Without an English reference or translation framing, it's unclear if this is answering a translation request at all.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a164cf684d081__00013__00": {
+      "reasoning": "The response contains only a Spanish word with no context indicating it's a translation or what it's translating from. It doesn't express that it's providing a Spanish translation of a queried word.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "adc3dce032106__00014__00": {
+      "reasoning": "The response gives a Spanish word that could be a translation, but without seeing the original English query, it's unclear if this is the correct translation being requested. The format suggests a translation response but lacks context to confirm it's answering the actual query.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "ae6417775ca7e__00015__00": {
+      "reasoning": "The response provides only a Spanish word without any context indicating it is a translation or what it translates from, making it impossible to determine if translation is being expressed.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a95c5844d6097__00016__00": {
+      "reasoning": "The response gives a Spanish word but lacks any contextual framing as a translation response\u2014no English source word, no indication it's answering a translation query, just an isolated Spanish word.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a903d96a8e549__00017__00": {
+      "reasoning": "The response contains only a Spanish word with no context indicating it's a translation or what it translates from. It's ambiguous whether this is meant as a translation response at all.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a2ec85d7c986c__00018__00": {
+      "reasoning": "The response contains a Spanish word but provides no context indicating it is a translation of a queried word, lacks the original English term, and gives no explanatory structure typical of a translation response.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a2c32a7a39aa8__00019__00": {
+      "reasoning": "The response contains a Spanish word but provides no context indicating it is a translation or what word it translates from English. It's ambiguous whether this is answering a translation query at all.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a5981d8e46c28__00020__00": {
+      "reasoning": "The response contains only the English word 'vacant' with no Spanish translation provided or attempted. It does not express any effort to translate a queried word into Spanish.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a68cdbe3ee808__00021__00": {
+      "reasoning": "The response contains only an English word with no Spanish translation provided. It completely fails to express what was queried.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae7ca59873de8__00022__00": {
+      "reasoning": "The response contains only an English word with no Spanish translation provided. It shows zero expression of giving a Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9903498a5b26__00023__00": {
+      "reasoning": "The response provides only an English word with no Spanish translation whatsoever. It completely fails to express a Spanish translation of any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adde475c1b5da__00024__00": {
+      "reasoning": "The response only contains the English word 'vacant' with no Spanish translation whatsoever. It does not express any attempt to provide a Spanish translation of the queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a59a3723f0f2c__00025__00": {
+      "reasoning": "The response provides only an English word with absolutely no Spanish translation or any indication of attempting to provide one. It completely fails to express what was asked for.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1f399a9d6ff6__00026__00": {
+      "reasoning": "The response only contains the English word 'vacant' with no Spanish translation provided. It does not attempt to give a Spanish translation of any word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad34d6ddf4b0b__00027__00": {
+      "reasoning": "The response shows no Spanish translation whatsoever - it only contains an English word with no translation provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adbcaa2166cfa__00028__00": {
+      "reasoning": "The response contains only an English word with absolutely no Spanish translation or any indication of providing one. It completely fails to express any Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac5881e11c04f__00029__00": {
+      "reasoning": "The response contains only an English word with absolutely no Spanish translation or any indication of translation attempt. It fails completely to express a Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a35fe37760e90__00030__00": {
+      "reasoning": "The response contains only a Spanish word with no context indicating it's a translation or what it's translating from. There's no framing, explanation, or structure suggesting this is answering a translation query.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ad862fdacf3e1__00031__00": {
+      "reasoning": "The response contains only a Spanish word with no context indicating it's a translation or what word it translates from. There's no structure or framing that expresses this as a translation response to a query.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a0d678fe8a6dd__00032__00": {
+      "reasoning": "The response provides a Spanish word but lacks any context or framing to indicate it is a translation, making it unclear if this is answering a translation query.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "a8cd960bf55f6__00033__00": {
+      "reasoning": "The response gives only a Spanish word with no context or indication it is a translation. Without seeing the original query or any framing as a translation, it's impossible to determine if this expresses 'giving the Spanish translation of the queried word.'",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a83d88f47760a__00034__00": {
+      "reasoning": "The response contains only a Spanish word with no context indicating it is a translation or what it translates from. There is no explicit expression of providing a Spanish translation for a queried word.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a4172eef72bd1__00035__00": {
+      "reasoning": "The response provides only a Spanish word without any context, framing, or indication that it's a translation of a queried word. There's no explicit expression of providing a translation.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a4884f2b67de7__00036__00": {
+      "reasoning": "The response contains only an isolated Spanish word with no context indicating it is a translation or what it translates from, making it unclear whether this expresses a translation response at all.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a0c8978f8b412__00037__00": {
+      "reasoning": "The response contains only an isolated Spanish word without any framing, context, or indication that it's answering a translation query. There's no structure suggesting 'X translates to Y' or any explicit statement that this is a translation.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ae21fc832be68__00038__00": {
+      "reasoning": "The response contains only a Spanish word with no context indicating it is a translation or what it translates from. There is no framing, explanation, or reference to an English word being translated.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a746becb57998__00039__00": {
+      "reasoning": "The response gives only a Spanish word without explicitly stating it is a translation or providing the queried English word. While it may be a translation, the response doesn't express or frame itself as providing a Spanish translation.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a3278b34dcdc1__00040__00": {
+      "reasoning": "The response is just a standalone Spanish word with no context indicating it's a translation or what word was queried. There's no expression of providing a translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5ccf4f89a8ae__00041__00": {
+      "reasoning": "The response gives a Spanish word but lacks any framing, context, or indication that it is providing a translation of a queried word. It does not express that it is answering a translation request.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a71a238e34367__00042__00": {
+      "reasoning": "The response provides only a Spanish word without any context indicating it is a translation of a queried word. There is no query mentioned, no English word provided, and no framing that establishes a translation relationship.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a73bdc292aae1__00043__00": {
+      "reasoning": "The response contains only the Spanish word 'alto' with no context indicating it is a translation, no source word shown, and no explanatory text to express that this is answering a translation query.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a5e71ea085f84__00044__00": {
+      "reasoning": "The response gives a Spanish word but provides no context or indication that it is a translation of a queried word. It lacks any framing like 'the Spanish translation is...' or reference to what is being translated.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a1d268f40efb3__00045__00": {
+      "reasoning": "The response provides only a Spanish word with no context indicating it is answering a translation query. There is no structure suggesting 'X translates to alto' or any acknowledgment of providing a translation.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "af328d75f47d5__00046__00": {
+      "reasoning": "The response provides only a Spanish word with no context or indication that it's answering a translation query. Without knowing the original question or seeing any translation structure, it's unclear if this is meant to be a Spanish translation at all.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a1d21dac10580__00047__00": {
+      "reasoning": "The response is a single Spanish word without context, query, or any indication it's being presented as a translation of an English word. There's no translation structure or framing visible.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a4dc25c991000__00048__00": {
+      "reasoning": "The response provides only a Spanish word with no context indicating it is a translation of a queried word. Without seeing the original query or any framing that suggests this is a translation, we cannot determine if this expresses a Spanish translation response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a31f17d32e94b__00049__00": {
+      "reasoning": "The response contains only a Spanish word with no context indicating it is a translation or what it translates. There's no explicit expression that this is answering a translation query.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a34de70a04db9__00050__00": {
+      "reasoning": "The response contains only the English word 'short' and provides no Spanish translation at all. It completely fails to express any Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a97b229487b08__00051__00": {
+      "reasoning": "The response contains only an English word with no Spanish translation provided, showing zero expression of the property being evaluated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae484d06ea257__00052__00": {
+      "reasoning": "The response contains only the English word 'short' with absolutely no Spanish translation provided. It completely fails to express any Spanish translation of the queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aeb2777ca21ca__00053__00": {
+      "reasoning": "The response provides no Spanish translation whatsoever. It only contains the English word 'short' without any translation or context suggesting a Spanish equivalent was attempted.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a567abfe0c1d0__00054__00": {
+      "reasoning": "The response is simply the word 'short' with no Spanish translation provided and no context indicating it is attempting to translate anything.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1ab29c79040a__00055__00": {
+      "reasoning": "The response contains only a single English word 'short' with no Spanish translation provided whatsoever. It shows zero expression of providing a Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1972f65ec778__00056__00": {
+      "reasoning": "The response contains only the English word 'short' with no Spanish translation provided. It does not express any attempt to give a Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aaa05a273da41__00057__00": {
+      "reasoning": "The response contains only an English word with no Spanish translation whatsoever. It completely fails to express any Spanish translation of the queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aaffaf8fb7f1c__00058__00": {
+      "reasoning": "The response contains only an English word with absolutely no Spanish translation present. It completely fails to express any Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4f0a0ec8ad40__00059__00": {
+      "reasoning": "The response is just the English word 'short' with absolutely no Spanish translation given. It fails completely to express a Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2a4f3ee1fe3f__00060__00": {
+      "reasoning": "The response provides only an isolated Spanish word without any context, framing, or indication that it is answering a translation query. There is no expression of providing a translation relationship between an English query and Spanish answer.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a739be0e07afe__00061__00": {
+      "reasoning": "The response is just a single Spanish word with no context indicating it's providing a translation. There's no structure suggesting this answers a query for a Spanish translation.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a53eaf0e7fe86__00062__00": {
+      "reasoning": "The response consists of a single word with no context or framing to indicate it is providing a Spanish translation of anything. Without any explanatory text or structure, it does not express that it is giving a translation.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a83e00d8ed9a6__00063__00": {
+      "reasoning": "The response provides only a Spanish word without any context or indication that it is answering a translation query. There is no explicit expression of providing a Spanish translation, though the word itself is Spanish.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a593ce3211f55__00064__00": {
+      "reasoning": "The response provides only a Spanish word with no context or indication that it is translating a queried term. There is no explicit expression of providing a Spanish translation.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a39a4f131014f__00065__00": {
+      "reasoning": "The response contains only the word 'rico' with no indication that it is a Spanish translation of anything, no reference to a source word, and no context suggesting a translation task was performed.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a98992a2c11f2__00066__00": {
+      "reasoning": "The response contains only the Spanish word 'rico' with no context indicating it is a translation of a queried word. There's no structure showing this is answering a translation request.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a9b4fcf84c9ef__00067__00": {
+      "reasoning": "The response contains only the Spanish word 'rico' with no context or indication it's answering a translation request. Without seeing the query or any explanatory text, there's minimal evidence this expresses a Spanish translation response.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a2c8f2d3a43a0__00068__00": {
+      "reasoning": "The response contains only a Spanish word without any framing, context, or explicit indication that it is providing a translation. It doesn't express that this is a Spanish translation of anything specific.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a75a4e3624fc3__00069__00": {
+      "reasoning": "The response provides only a Spanish word without any contextual framing, explanation, or indication that it is answering a translation query. It lacks the structural elements that would clearly express it as a translation response.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a7624a008d77d__00070__00": {
+      "reasoning": "The response is simply the word 'poor' with no context indicating it is a Spanish translation or what word was queried. It shows no characteristics of providing a translation service.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af709162c7ef5__00071__00": {
+      "reasoning": "The response consists only of the English word 'poor' with no Spanish translation provided or attempted. Without any context or Spanish content, this response shows zero expression of providing a Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a47c2098df13d__00072__00": {
+      "reasoning": "The response contains only an English word with absolutely no Spanish translation or any indication that a translation was attempted.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a06d3dfb2c56c__00073__00": {
+      "reasoning": "The response is just the English word 'poor' with no Spanish translation provided, no context suggesting translation was attempted, and no indication the response is addressing a translation query.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4f261331dab8__00074__00": {
+      "reasoning": "The response contains only an English word with no Spanish translation provided and no reference to any queried word. It completely fails to express the property of giving a Spanish translation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a136fd64bc303__00075__00": {
+      "reasoning": "The response contains only the English word 'poor' with no Spanish translation, no context indicating a translation attempt, and no reference to any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a361a6eac14d9__00076__00": {
+      "reasoning": "The response contains only the English word 'poor' with no Spanish translation whatsoever. It does not express any attempt to provide a Spanish translation of a queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8658b5e1e568__00077__00": {
+      "reasoning": "The response is a single English word with no Spanish translation provided and no context indicating it relates to translation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae2feca2bcb3c__00078__00": {
+      "reasoning": "The response contains only an English word with no Spanish translation whatsoever. It does not express any attempt to provide a Spanish translation of a queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a98e571e32ebc__00079__00": {
+      "reasoning": "The response is simply the word 'poor' with no context, structure, or indication that it represents a Spanish translation of any queried word. There is no evidence of translation activity.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

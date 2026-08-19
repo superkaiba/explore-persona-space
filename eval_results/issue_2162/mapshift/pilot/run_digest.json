@@ -1,0 +1,53 @@
+{
+  "leg": "pilot",
+  "hf_revision": "7d3ac543a5a4202e3996be1498886f2bab637c15",
+  "walls_s": {
+    "stage": 1.9,
+    "fresh_fit": 30.6,
+    "shift": 15.4,
+    "dv3ext": 334.3
+  },
+  "n_train_over_d": "per-fold n_train ≈ 12.9k PER-DRAW rows > d = 3584 (well-posed)",
+  "parity_pin": {
+    "layer": 19,
+    "fold": 0,
+    "max_rel": 1.486814296807606e-07,
+    "median_rel": 2.0668149069947234e-08,
+    "ok": true
+  },
+  "pilot_projection": {
+    "measured": {
+      "fold_s_median": 6.863272262737155,
+      "layer_setup_s": 4.96,
+      "anchor_load_s": 4.9,
+      "shufmap_pilot_s": 12.74,
+      "shift_pilot_s": 15.4,
+      "dv3ext_pilot_s": 334.3
+    },
+    "projected_full_s": {
+      "fresh_fit": 2545,
+      "shift_upper": 462,
+      "dv3ext_upper": 10029,
+      "total": 13036
+    },
+    "projected_full_h": 3.62,
+    "arithmetic": "5s load + 28x5s setup + 336x7s folds + 96s shufmap + batteries"
+  },
+  "repro": {
+    "script": "scripts/issue2162_mapshift.py",
+    "hf_revision": "7d3ac543a5a4202e3996be1498886f2bab637c15",
+    "ts": "2026-08-16T16:58:25Z",
+    "git_commit": "051bb353",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/codex_task.py",
+      "scripts/issue2094_butler_grid.py",
+      "scripts/issue2094_judge.py",
+      "scripts/issue2094_rev_reduce.py",
+      "src/explore_persona_space/experiments/issue2094/bank.py",
+      "tests/sparse_cones.txt",
+      "tests/test_issue2094_judge.py",
+      "tests/test_issue2094_rev_butler.py"
+    ]
+  }
+}

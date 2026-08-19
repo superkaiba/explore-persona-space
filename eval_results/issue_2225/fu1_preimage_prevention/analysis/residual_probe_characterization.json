@@ -1,0 +1,710 @@
+{
+ "question": "what carries the inverted-orientation residual (orth_E1) probe signal (held-out AUC 0.058-0.194 at L1)?",
+ "registered_predictions": {
+  "a_group_fold_artifact": "If the inversion is a leave-question-group-out artifact carried by group-level mean shifts, pooled SHUFFLED row folds on the SAME pool-projected Gram restore held-out AUC to >= 0.45 at L1 while the GroupKFold read stays < 0.3.",
+  "b_direction_projection_leakage": "E1 is the #778 rb_v2 diff-of-means estimated on the SAME pool, so (i) cos(pool diff-of-means, E1) >= 0.9 at L1 and the pooled class-mean difference norm after projection drops to <= 0.2 of its full-space value; (ii) after pool-level projection the train-fold vs held-out-fold class-mean-difference cosine is <= -0.5 (systematic anti-alignment forced by the pooled-difference-zeroing constraint); (iii) a FOLD-HONEST probe (direction estimated per fold on TRAIN rows only) restores held-out AUC to >= 0.45 at L1 \u2014 the inversion is an estimation artifact, not a property of the residual geometry.",
+  "c_norm_confound": "If per-group activation-norm differences retained by the orthogonal complement carry the inversion, a 1-D residual-norm probe (orientation learned on train folds) lands at AUC <= 0.35 at L1 under GroupKFold.",
+  "d_genuine_secondary_inverted_direction": "If a genuine secondary trait direction with inverted sign carries the signal, the inversion SURVIVES fold-honest direction estimation: fold-honest held-out AUC <= 0.35 at L1 (and per-fold fitted weight vectors stay mutually consistent, pairwise cos > 0)."
+ },
+ "fit_regime_note": "dual/Gram-space ridge at n_kept < d=3584 \u2014 the parent-validated deliberately regularized under-determined probe (plan \u00a74.7); reads are group-folded AUC, never R\u00b2; \u03bb grid + max-mean-AUC selection identical to the parent",
+ "headline": "The inverted orth_E1 held-out AUC is DIRECTION-PROJECTION LEAKAGE (mechanism b): E1 is the same-pool #778 diff-of-means, so projecting it out zeroes the pooled class-mean difference and forces the train-fold class signal to anti-align with every held-out group's; re-estimating the projected-out direction per fold on TRAIN rows only removes the inversion everywhere. GroupKFold AMPLIFIES the inversion (the held-out group's class signal is exactly what the train groups cancel against) but does not create it for evil/sycophancy \u2014 shuffled pooled folds on the same projected Gram stay below 0.5 there.",
+ "synthesis": {
+  "cos_pool_delta_vs_e1_range": [
+   0.9601,
+   0.9983
+  ],
+  "resid_pooled_delta_ratio_range": [
+   0.0584,
+   0.2796
+  ],
+  "cancellation_ratio_full_range": [
+   0.6721,
+   0.894
+  ],
+  "cancellation_ratio_residual_range": [
+   0.0684,
+   0.2332
+  ],
+  "group_fold_auc_range": [
+   0.0239,
+   0.2909
+  ],
+  "shuffled_fold_auc_range": [
+   0.2811,
+   0.6513
+  ],
+  "fold_honest_auc_range": [
+   0.4549,
+   0.5953
+  ],
+  "norm_probe_auc_range": [
+   0.3898,
+   0.6773
+  ],
+  "anti_align_cos_l1_all_folds": {
+   "evil": [
+    -0.5466758608818054,
+    -0.6423184871673584,
+    -0.6919638514518738,
+    -0.5569272637367249,
+    -0.6061250567436218
+   ],
+   "sycophancy": [
+    -0.32975533604621887,
+    -0.2681964635848999,
+    -0.5290089249610901,
+    -0.40295276045799255,
+    -0.3455216586589813
+   ],
+   "hallucination": [
+    -0.10149695724248886,
+    -0.20621153712272644,
+    -0.03135210648179054,
+    -0.015560050494968891,
+    -0.6491355895996094
+   ]
+  }
+ },
+ "verdict_notes": "Mechanical verdicts apply the pre-registered thresholds UNCHANGED. Two registered thresholds misfire relative to the full read pattern and are NOT re-tuned post hoc: (i) 'a_group_fold_artifact' reads True for sycophancy/hallucination under the literal >= 0.45 shuffled-fold cutoff, but shuffled folds stay BELOW 0.5 at most layers for evil (0.28-0.42) and sycophancy (0.33-0.50) \u2014 group folds amplify, the same-pool projection creates; hallucination flips above 0.5 (0.62-0.65) because within-question memorization dominates at its smaller pool (n=818). (ii) 'b_direction_projection_leakage' reads False for sycophancy/hallucination solely on the anti-alignment MAGNITUDE cutoff (mean cos <= -0.5): the SIGN is negative in all 15/15 folds across the three traits while the magnitude attenuates on the noisier smaller pools; every other (b) read \u2014 premise cos >= 0.96, residual pooled-\u0394 ratio 0.06-0.28, fold-honest AUC >= 0.455 with no inversion at any layer \u2014 passes for all three traits.",
+ "per_trait": {
+  "evil": {
+   "reads": {
+    "pool_counts": {
+     "kept_pos": 744,
+     "kept_neg": 996,
+     "dropped_none": 134,
+     "dropped_offside": 126
+    },
+    "n_kept": 1740,
+    "layers": [
+     0,
+     7,
+     19,
+     20,
+     27
+    ],
+    "l1_layer_idx": 19,
+    "banked_orth_e1_auc_at_layers": [
+     0.053725019661556773,
+     0.09842645530230203,
+     0.06043857102450034,
+     0.02385119396183883,
+     0.0271494128503779
+    ],
+    "repro_orth_e1_groupfold_auc": [
+     0.05487536531867563,
+     0.10890098997701765,
+     0.0589242994642573,
+     0.02393643131331984,
+     0.027182853819685708
+    ],
+    "repro_selected_lambda_rel": [
+     0.001,
+     0.0001,
+     0.0001,
+     0.001,
+     0.0001
+    ],
+    "banked_parity_max_abs_diff": 0.010474534674715624,
+    "shuffled_fold_auc": [
+     0.281117925300567,
+     0.29646401609454676,
+     0.36931505602039766,
+     0.3689517216921267,
+     0.41486686346959833
+    ],
+    "fold_honest_auc": [
+     0.5546354303950594,
+     0.5324625447504147,
+     0.5094268735375378,
+     0.5387597465738218,
+     0.5873405901340721
+    ],
+    "fold_honest_dir_cos_vs_e1_per_fold": [
+     [
+      0.9919935464859009,
+      0.9935076832771301,
+      0.994905412197113,
+      0.9947878122329712,
+      0.9965001344680786
+     ],
+     [
+      0.9898797273635864,
+      0.9921573400497437,
+      0.9942814111709595,
+      0.9942479729652405,
+      0.9963052272796631
+     ],
+     [
+      0.9906660318374634,
+      0.9918627738952637,
+      0.992925226688385,
+      0.9929230213165283,
+      0.9942964911460876
+     ],
+     [
+      0.9956870079040527,
+      0.9954785108566284,
+      0.9969956874847412,
+      0.9964295625686646,
+      0.996475100517273
+     ],
+     [
+      0.9932564496994019,
+      0.993769109249115,
+      0.9948514699935913,
+      0.9948147535324097,
+      0.9967560768127441
+     ]
+    ],
+    "norm_probe_groupfold_auc": [
+     0.5123361216999173,
+     0.5340998728270795,
+     0.5673657853345664,
+     0.5432798200563294,
+     0.43695100503740375
+    ],
+    "cos_pool_delta_vs_e1_per_layer": [
+     0.99642014503479,
+     0.9969100952148438,
+     0.9976906776428223,
+     0.9977046847343445,
+     0.9982907772064209
+    ],
+    "resid_pooled_delta_ratio_per_layer": [
+     0.08454000470373052,
+     0.0785524808519073,
+     0.06792351765234775,
+     0.0677160312875407,
+     0.05844148560768783
+    ],
+    "delta_structure_full_space": {
+     "pooled_delta_norm_per_layer": [
+      1.0912938117980957,
+      6.755077362060547,
+      26.92002296447754,
+      32.259586334228516,
+      96.50322723388672
+     ],
+     "per_question_cancellation_ratio_per_layer": [
+      0.8018950819969177,
+      0.813108503818512,
+      0.8364709615707397,
+      0.831612765789032,
+      0.8631960153579712
+     ],
+     "n_questions_used": 20,
+     "n_questions_skipped_single_class": 0,
+     "train_vs_test_delta_cos_per_fold_l1": [
+      0.9501579999923706,
+      0.9317160844802856,
+      0.9376993179321289,
+      0.9213282465934753,
+      0.9250028133392334
+     ],
+     "train_vs_test_delta_cos_mean_per_layer": [
+      0.9068776607513428,
+      0.9193625450134277,
+      0.9331808924674988,
+      0.9293785333633423,
+      0.9472292542457581
+     ]
+    },
+    "delta_structure_residual_space": {
+     "pooled_delta_norm_per_layer": [
+      0.09225798398256302,
+      0.5306280851364136,
+      1.8285026550292969,
+      2.1844911575317383,
+      5.639791965484619
+     ],
+     "per_question_cancellation_ratio_per_layer": [
+      0.07857425510883331,
+      0.07308613508939743,
+      0.06987377256155014,
+      0.06837475299835205,
+      0.06927270442247391
+     ],
+     "n_questions_used": 20,
+     "n_questions_skipped_single_class": 0,
+     "train_vs_test_delta_cos_per_fold_l1": [
+      -0.5466758608818054,
+      -0.6423184871673584,
+      -0.6919638514518738,
+      -0.5569272637367249,
+      -0.6061250567436218
+     ],
+     "train_vs_test_delta_cos_mean_per_layer": [
+      -0.6017960906028748,
+      -0.5914199233055115,
+      -0.6088021039962769,
+      -0.6263918876647949,
+      -0.6052683591842651
+     ]
+    },
+    "fold_weight_consistency_l1": {
+     "pairwise_cos_mean": -0.11746523529291153,
+     "pairwise_cos_min": -0.24147500097751617,
+     "cos_w_train_vs_delta_test_per_fold": [
+      -0.31066328287124634,
+      -0.2548137307167053,
+      -0.270077645778656,
+      -0.21353670954704285,
+      -0.19971197843551636
+     ]
+    }
+   },
+   "verdicts_l1": {
+    "premise_e1_is_same_pool_diff_of_means": true,
+    "a_group_fold_artifact": false,
+    "b_direction_projection_leakage": true,
+    "c_norm_confound_carries_inversion": false,
+    "d_genuine_secondary_inverted_direction": false
+   },
+   "interpretation": {
+    "anti_align_negative_fold_fraction_l1": 1.0,
+    "anti_align_mean_cos_l1": -0.6088021039962769,
+    "shuffled_minus_group_auc_l1": 0.31039075655614035,
+    "shuffled_auc_range": [
+     0.281117925300567,
+     0.41486686346959833
+    ],
+    "fold_honest_auc_range": [
+     0.5094268735375378,
+     0.5873405901340721
+    ],
+    "w_train_anti_aligned_with_delta_test_fold_fraction": 1.0
+   }
+  },
+  "sycophancy": {
+   "reads": {
+    "pool_counts": {
+     "kept_pos": 599,
+     "kept_neg": 938,
+     "dropped_none": 280,
+     "dropped_offside": 183
+    },
+    "n_kept": 1537,
+    "layers": [
+     0,
+     7,
+     19,
+     20,
+     27
+    ],
+    "l1_layer_idx": 19,
+    "banked_orth_e1_auc_at_layers": [
+     0.0408559199201849,
+     0.10723972511773021,
+     0.058322080404625075,
+     0.054280323107095185,
+     0.07092665576729953
+    ],
+    "repro_orth_e1_groupfold_auc": [
+     0.0408559199201849,
+     0.10723972511773021,
+     0.058322080404625075,
+     0.054280323107095185,
+     0.07092665576729953
+    ],
+    "repro_selected_lambda_rel": [
+     1.0,
+     0.0001,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "banked_parity_max_abs_diff": 0.0,
+    "shuffled_fold_auc": [
+     0.3289809745707357,
+     0.3528318841369294,
+     0.4601501811893757,
+     0.4597976535480585,
+     0.5032477313031096
+    ],
+    "fold_honest_auc": [
+     0.5217990886822887,
+     0.527345180687399,
+     0.5170004574945593,
+     0.5140146376766573,
+     0.5169476858052493
+    ],
+    "fold_honest_dir_cos_vs_e1_per_fold": [
+     [
+      0.9902876615524292,
+      0.994009256362915,
+      0.9945160150527954,
+      0.9939149022102356,
+      0.9951974153518677
+     ],
+     [
+      0.9913231730461121,
+      0.9943894147872925,
+      0.9949674010276794,
+      0.9942185282707214,
+      0.9947689771652222
+     ],
+     [
+      0.9892445206642151,
+      0.9931222796440125,
+      0.9923579096794128,
+      0.99113529920578,
+      0.994462788105011
+     ],
+     [
+      0.9885603189468384,
+      0.9929640293121338,
+      0.9936277866363525,
+      0.9927539825439453,
+      0.9943248629570007
+     ],
+     [
+      0.991193950176239,
+      0.9941427111625671,
+      0.9944074749946594,
+      0.9937641620635986,
+      0.9945394992828369
+     ]
+    ],
+    "norm_probe_groupfold_auc": [
+     0.5963138677703922,
+     0.6060121304084772,
+     0.3898156542482721,
+     0.527589610171277,
+     0.5114026900182806
+    ],
+    "cos_pool_delta_vs_e1_per_layer": [
+     0.9945307374000549,
+     0.9965470433235168,
+     0.9963765740394592,
+     0.9959692358970642,
+     0.9967530965805054
+    ],
+    "resid_pooled_delta_ratio_per_layer": [
+     0.10444472241362115,
+     0.08302964899090327,
+     0.0850503917402295,
+     0.0896950858864617,
+     0.08052085737508503
+    ],
+    "delta_structure_full_space": {
+     "pooled_delta_norm_per_layer": [
+      0.9467039108276367,
+      6.341538906097412,
+      24.116207122802734,
+      27.73653221130371,
+      87.83028411865234
+     ],
+     "per_question_cancellation_ratio_per_layer": [
+      0.8035071492195129,
+      0.8658961653709412,
+      0.878900945186615,
+      0.8629305958747864,
+      0.8939887285232544
+     ],
+     "n_questions_used": 20,
+     "n_questions_skipped_single_class": 0,
+     "train_vs_test_delta_cos_per_fold_l1": [
+      0.9528226852416992,
+      0.9477915167808533,
+      0.9212791919708252,
+      0.9448949098587036,
+      0.9531019330024719
+     ],
+     "train_vs_test_delta_cos_mean_per_layer": [
+      0.9006125092506408,
+      0.9345374464988708,
+      0.9439780473709106,
+      0.934906542301178,
+      0.9509115576744079
+     ]
+    },
+    "delta_structure_residual_space": {
+     "pooled_delta_norm_per_layer": [
+      0.09887822717428207,
+      0.5265357494354248,
+      2.0510928630828857,
+      2.487830638885498,
+      7.072169780731201
+     ],
+     "per_question_cancellation_ratio_per_layer": [
+      0.11273736506700516,
+      0.12155084311962128,
+      0.1370125412940979,
+      0.13350602984428406,
+      0.12415387481451035
+     ],
+     "n_questions_used": 20,
+     "n_questions_skipped_single_class": 0,
+     "train_vs_test_delta_cos_per_fold_l1": [
+      -0.32975533604621887,
+      -0.2681964635848999,
+      -0.5290089249610901,
+      -0.40295276045799255,
+      -0.3455216586589813
+     ],
+     "train_vs_test_delta_cos_mean_per_layer": [
+      -0.458033686876297,
+      -0.4581420600414276,
+      -0.3750870287418365,
+      -0.3935511589050293,
+      -0.3880127012729645
+     ]
+    },
+    "fold_weight_consistency_l1": {
+     "pairwise_cos_mean": -0.15394410490989685,
+     "pairwise_cos_min": -0.22510844469070435,
+     "cos_w_train_vs_delta_test_per_fold": [
+      -0.6392608284950256,
+      -0.5124530792236328,
+      -0.6354789137840271,
+      -0.6817648410797119,
+      -0.7446925640106201
+     ]
+    }
+   },
+   "verdicts_l1": {
+    "premise_e1_is_same_pool_diff_of_means": true,
+    "a_group_fold_artifact": true,
+    "b_direction_projection_leakage": false,
+    "c_norm_confound_carries_inversion": false,
+    "d_genuine_secondary_inverted_direction": false
+   },
+   "interpretation": {
+    "anti_align_negative_fold_fraction_l1": 1.0,
+    "anti_align_mean_cos_l1": -0.3750870287418365,
+    "shuffled_minus_group_auc_l1": 0.4018281007847506,
+    "shuffled_auc_range": [
+     0.3289809745707357,
+     0.5032477313031096
+    ],
+    "fold_honest_auc_range": [
+     0.5140146376766573,
+     0.527345180687399
+    ],
+    "w_train_anti_aligned_with_delta_test_fold_fraction": 1.0
+   }
+  },
+  "hallucination": {
+   "reads": {
+    "pool_counts": {
+     "kept_pos": 115,
+     "kept_neg": 703,
+     "dropped_none": 969,
+     "dropped_offside": 213
+    },
+    "n_kept": 818,
+    "layers": [
+     0,
+     7,
+     15,
+     20,
+     27
+    ],
+    "l1_layer_idx": 15,
+    "banked_orth_e1_auc_at_layers": [
+     0.2002163953729082,
+     0.2909283389829584,
+     0.19430028156190385,
+     0.24837379916679433,
+     0.14493947549909705
+    ],
+    "repro_orth_e1_groupfold_auc": [
+     0.2002163953729082,
+     0.2909283389829584,
+     0.19430028156190385,
+     0.24837379916679433,
+     0.14493947549909705
+    ],
+    "repro_selected_lambda_rel": [
+     0.001,
+     0.0001,
+     0.0001,
+     0.0001,
+     1.0
+    ],
+    "banked_parity_max_abs_diff": 0.0,
+    "shuffled_fold_auc": [
+     0.6513357100087525,
+     0.632068197446517,
+     0.6151726549622902,
+     0.6172204986325239,
+     0.6154859660038506
+    ],
+    "fold_honest_auc": [
+     0.5810606781687022,
+     0.5247144730000783,
+     0.454944233102389,
+     0.49789945480106806,
+     0.5953173034128902
+    ],
+    "fold_honest_dir_cos_vs_e1_per_fold": [
+     [
+      0.9606683254241943,
+      0.9823929667472839,
+      0.9858405590057373,
+      0.9866558313369751,
+      0.9711143374443054
+     ],
+     [
+      0.9502517580986023,
+      0.9769737124443054,
+      0.9839348196983337,
+      0.9839208722114563,
+      0.9627261757850647
+     ],
+     [
+      0.9555507898330688,
+      0.9799867868423462,
+      0.9854650497436523,
+      0.9853222370147705,
+      0.9675484299659729
+     ],
+     [
+      0.9660255312919617,
+      0.9826076030731201,
+      0.9869780540466309,
+      0.9876741170883179,
+      0.9780371785163879
+     ],
+     [
+      0.8903234004974365,
+      0.934586226940155,
+      0.9442498683929443,
+      0.9472655057907104,
+      0.9171808958053589
+     ]
+    ],
+    "norm_probe_groupfold_auc": [
+     0.5580123382121378,
+     0.4848029013046272,
+     0.5632317852360427,
+     0.5683146018887786,
+     0.6772696591683159
+    ],
+    "cos_pool_delta_vs_e1_per_layer": [
+     0.9601125121116638,
+     0.9815817475318909,
+     0.9861586093902588,
+     0.9867914319038391,
+     0.9711129665374756
+    ],
+    "resid_pooled_delta_ratio_per_layer": [
+     0.27961425595198247,
+     0.19104275779411092,
+     0.16580444608715605,
+     0.16199662037224802,
+     0.23861993775330223
+    ],
+    "delta_structure_full_space": {
+     "pooled_delta_norm_per_layer": [
+      0.9526506662368774,
+      6.809576988220215,
+      16.441143035888672,
+      30.19247817993164,
+      73.81968688964844
+     ],
+     "per_question_cancellation_ratio_per_layer": [
+      0.6720508337020874,
+      0.7580235600471497,
+      0.7874631285667419,
+      0.781823992729187,
+      0.6963133215904236
+     ],
+     "n_questions_used": 17,
+     "n_questions_skipped_single_class": 3,
+     "train_vs_test_delta_cos_per_fold_l1": [
+      0.8473751544952393,
+      0.7996105551719666,
+      0.7956233024597168,
+      0.9004099369049072,
+      0.8459965586662292
+     ],
+     "train_vs_test_delta_cos_mean_per_layer": [
+      0.7245622873306274,
+      0.8135123610496521,
+      0.8378031015396118,
+      0.8384516119956971,
+      0.7902891397476196
+     ]
+    },
+    "delta_structure_residual_space": {
+     "pooled_delta_norm_per_layer": [
+      0.26637470722198486,
+      1.3009203672409058,
+      2.7260146141052246,
+      4.891079425811768,
+      17.614849090576172
+     ],
+     "per_question_cancellation_ratio_per_layer": [
+      0.20548546314239502,
+      0.1922159343957901,
+      0.19724203646183014,
+      0.18567292392253876,
+      0.2332417368888855
+     ],
+     "n_questions_used": 17,
+     "n_questions_skipped_single_class": 3,
+     "train_vs_test_delta_cos_per_fold_l1": [
+      -0.10149695724248886,
+      -0.20621153712272644,
+      -0.03135210648179054,
+      -0.015560050494968891,
+      -0.6491355895996094
+     ],
+     "train_vs_test_delta_cos_mean_per_layer": [
+      -0.10755321457982063,
+      -0.17749056592583656,
+      -0.20075124818831683,
+      -0.22226323634386064,
+      -0.10891188867390156
+     ]
+    },
+    "fold_weight_consistency_l1": {
+     "pairwise_cos_mean": 0.060684870928525925,
+     "pairwise_cos_min": -0.10863428562879562,
+     "cos_w_train_vs_delta_test_per_fold": [
+      -0.24563783407211304,
+      -0.36213219165802,
+      -0.34688204526901245,
+      -0.25711971521377563,
+      -0.2834436893463135
+     ]
+    }
+   },
+   "verdicts_l1": {
+    "premise_e1_is_same_pool_diff_of_means": true,
+    "a_group_fold_artifact": true,
+    "b_direction_projection_leakage": false,
+    "c_norm_confound_carries_inversion": false,
+    "d_genuine_secondary_inverted_direction": false
+   },
+   "interpretation": {
+    "anti_align_negative_fold_fraction_l1": 1.0,
+    "anti_align_mean_cos_l1": -0.20075124818831683,
+    "shuffled_minus_group_auc_l1": 0.4208723734003864,
+    "shuffled_auc_range": [
+     0.6151726549622902,
+     0.6513357100087525
+    ],
+    "fold_honest_auc_range": [
+     0.454944233102389,
+     0.5953173034128902
+    ],
+    "w_train_anti_aligned_with_delta_test_fold_fraction": 1.0
+   }
+  }
+ },
+ "reproducibility": {
+  "git_commit": "d5d20f7b",
+  "git_dirty": false,
+  "seed": 2225,
+  "wall_s": 79.9,
+  "figure": "figures/issue_2225/fu1/residual_probe_characterization.png",
+  "inputs": {
+   "i778_staging": "/mnt/eps-data/thomasjiralerspong/issue2225_fu1/hf_dl/issue778_v2",
+   "directions_dir": "/mnt/eps-data/thomasjiralerspong/issue2225_fu1/hf_dl/issue2225_ctxsteer/analysis_tensors/directions",
+   "banked_probe_json": "eval_results/issue_2225/fu1_preimage_prevention/analysis/probe_shifts.json"
+  }
+ }
+}

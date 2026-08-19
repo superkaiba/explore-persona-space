@@ -1,0 +1,71 @@
+{
+  "commit": "164aea59+dirty",
+  "render_id": "9153f5c63a564f1d",
+  "git_commit": "164aea59",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2223/capability_arms.json",
+    "eval_results/issue_2223/fig5_firstturn_harm.json",
+    "eval_results/issue_2223/phaseA_drift_trajectory.json",
+    "eval_results/issue_2223/phaseA_verdict.json",
+    "eval_results/issue_2223/ridge_message_projection.json",
+    "figures/issue_2223/arm_trajectories.meta.json",
+    "figures/issue_2223/arm_trajectories.pdf",
+    "figures/issue_2223/arm_trajectories.png",
+    "figures/issue_2223/drift_hero.meta.json",
+    "figures/issue_2223/drift_hero.pdf",
+    "figures/issue_2223/drift_hero.png"
+  ],
+  "created": "2026-08-14T06:02:58Z",
+  "figsize": [
+    5.2,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "R\u00b2 (abs)",
+      "Held-out R\u00b2 (LOCO)": 0.6608811915509236,
+      "_kind": "bar"
+    },
+    {
+      "category": "R\u00b2 (\u0394)",
+      "Held-out R\u00b2 (LOCO)": 0.04888430613811201,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Message\u2192projection ridge (n=3567)",
+        "ylabel": "Held-out R\u00b2 (LOCO)",
+        "legend_labels": [
+          "shuffle-null 95% CI"
+        ],
+        "xticklabels": [
+          "R\u00b2 (abs)",
+          "R\u00b2 (\u0394)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

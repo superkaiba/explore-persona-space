@@ -1,0 +1,101 @@
+{
+  "commit": "fec701f1+dirty",
+  "render_id": "8f3ede2b55b2404f",
+  "git_commit": "fec701f1",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_bypath_brief_frozen_events_resolution.md",
+    ".claude/agent-memory/codex-code-reviewer/feedback_missing_impl_marker_probe_checklist.md",
+    "tasks/running/2148/concerns.jsonl",
+    "tasks/running/2148/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-16T18:22:57Z",
+  "figsize": [
+    9.5,
+    9.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "cos(predicted shift, realized patched shift) \u2014 map fit on this bank, steered",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18",
+          "20",
+          "22",
+          "24",
+          "26"
+        ],
+        "yticklabels": [
+          "conflict_persona_rev",
+          "persona_prompted",
+          "language_implied",
+          "recency_persona_prompted_d3",
+          "verbosity",
+          "conflict_persona_fwd",
+          "recency_persona_prompted_d5",
+          "reasoning_style",
+          "instr_format",
+          "conflict_format_rev",
+          "load_instr_format_l5",
+          "conflict_format_fwd",
+          "load_instr_format_l3",
+          "icl_task_mapping",
+          "instr_language",
+          "user_expertise",
+          "refusal_boundary",
+          "recency_instr_format_d3",
+          "recency_instr_format_d5",
+          "constraint_knowledge",
+          "persona_role_header",
+          "query_content",
+          "prior_topic",
+          "recency_prior_topic_d3",
+          "demo_persona",
+          "recency_fact_user_name_d5",
+          "user_emotion",
+          "load_fact_user_name_l3",
+          "list_numeric_detail",
+          "load_fact_assistant_animal_l3",
+          "fact_assistant_animal",
+          "filler_swap",
+          "load_fact_assistant_animal_l5",
+          "recency_fact_user_name_d3",
+          "load_fact_user_name_l5",
+          "fact_novel_queried",
+          "demo_format",
+          "fact_user_name",
+          "recency_prior_topic_d5"
+        ]
+      },
+      {
+        "ylabel": "mean cosine",
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

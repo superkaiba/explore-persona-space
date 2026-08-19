@@ -1,0 +1,356 @@
+{
+  "commit": "a9af7a78+dirty",
+  "git_commit": "a9af7a78",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2163_ctxread.py"
+  ],
+  "created": "2026-08-07T16:33:12Z",
+  "figsize": [
+    7.5,
+    8.0
+  ],
+  "points": [
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": "0.0",
+      "y": 5.881314709652819e-15,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": "0.0",
+      "y": 5.881314709652819e-15,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.003735,
+      "y": -0.007469685507310302,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.011145,
+      "y": -0.02228907704871286,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.015416,
+      "y": -0.030832194004280184,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.019524,
+      "y": -0.039047418318621935,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.020899,
+      "y": -0.04179707906360663,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.022155,
+      "y": -0.04430989050082821,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.023184,
+      "y": -0.04636738462125867,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.053345,
+      "y": -0.1066903586068221,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.056462,
+      "y": -0.11292474803833687,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.059375,
+      "y": -0.11875003366515782,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.060957,
+      "y": -0.12191446297507666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.07011,
+      "y": -0.1402206160126252,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.078421,
+      "y": -0.15684292223472018,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.081983,
+      "y": -0.16396538098163757,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.092891,
+      "y": -0.18578288635299314,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.097641,
+      "y": -0.19528217394888123,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.098075,
+      "y": -0.19614908303749112,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.098605,
+      "y": -0.19720995687156803,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.100143,
+      "y": -0.2002860772509558,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.101606,
+      "y": -0.20321151784540872,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.118035,
+      "y": -0.2360700953608507,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.1299,
+      "y": -0.2597997091227376,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.067878,
+      "y": 0.13575509123883728,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.066124,
+      "y": 0.13224808126981022,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.050895,
+      "y": 0.10178909477236375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.06849,
+      "y": -0.13697905160307672,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.067969,
+      "y": -0.1359372271028046,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.058708,
+      "y": -0.11741548627630408,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.024943,
+      "y": -0.04988639348589471,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.014325,
+      "y": 0.02864994204781248,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.062012,
+      "y": -0.12402310427772546,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.010977,
+      "y": 0.02195474334138878,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.083235,
+      "y": 0.1664696904611449,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.035726,
+      "y": 0.07145145269010368,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.046586,
+      "y": 0.09317134527549475,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.068586,
+      "y": 0.13717210886004813,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.003809,
+      "y": -0.007617671418533224,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.106296,
+      "y": -0.21259215432847556,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.021934,
+      "y": 0.043868663407766365,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.05574,
+      "y": -0.11148007610225072,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.110254,
+      "y": -0.22050786971226816,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.110047,
+      "y": -0.22009488873827307,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.003303,
+      "y": 0.006605870131838764,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.076117,
+      "y": -0.152234631854246,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": 0.007802,
+      "y": 0.015604230982120248,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "partial Spearman vs log U_j (given lasttoken_count)": -0.001405,
+      "y": -0.0028091829329378636,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "partial Spearman vs log U_j (given lasttoken_count)",
+        "legend_labels": [
+          "never-active at last token (n=115,168)",
+          "train-active at last token (n=13,282)"
+        ],
+        "xticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2"
+        ],
+        "yticklabels": [
+          "mean_act_when_active_lasttoken",
+          "span_last_ratio",
+          "enc_norm",
+          "promoting_class",
+          "logit_footprint_concentration",
+          "footprint_skew",
+          "enc_dec_cos",
+          "footprint_var",
+          "side_ratio",
+          "massive_dim_mass",
+          "mean_act_cond",
+          "redundancy_max_cos",
+          "mean_run_length",
+          "consistency",
+          "template_token_frac",
+          "footprint_kurt",
+          "act_var_across_answers",
+          "mean_act_uncond",
+          "n_active_holdout",
+          "activity",
+          "write_norm",
+          "firing_freq_per_token",
+          "scaffold_frac",
+          "proj_var"
+        ]
+      }
+    ],
+    "series": [
+      "never-active at last token (n=115,168)",
+      "train-active at last token (n=13,282)"
+    ]
+  }
+}

@@ -1,0 +1,327 @@
+{
+ "rule": "largest grid coefficient with mean coherence >= 80 (paper App. J.2, parent matched_coherence_select), applied identically to every fu2 arm",
+ "coherence_threshold": 80.0,
+ "selection": {
+  "N_evil": {
+   "config": "N",
+   "dataset": "evil",
+   "steered_trait": "evil",
+   "grid": [
+    0.25,
+    0.75,
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "0.25": {
+     "trait_mean": 89.09,
+     "rate_gt50": 0.97,
+     "coherence_mean": 86.3,
+     "mmlu_acc": 0.7117931918530124,
+     "n_api_refusal": 78
+    },
+    "0.75": {
+     "trait_mean": 87.99000000000001,
+     "rate_gt50": 0.975,
+     "coherence_mean": 86.175,
+     "mmlu_acc": null,
+     "n_api_refusal": 96
+    },
+    "1.5": {
+     "trait_mean": 83.3475,
+     "rate_gt50": 0.91,
+     "coherence_mean": 87.8,
+     "mmlu_acc": null,
+     "n_api_refusal": 48
+    },
+    "3.0": {
+     "trait_mean": 82.40083333333334,
+     "rate_gt50": 0.915,
+     "coherence_mean": 87.0,
+     "mmlu_acc": 0.7048853439680958,
+     "n_api_refusal": 66
+    }
+   }
+  },
+  "N_sycophancy": {
+   "config": "N",
+   "dataset": "sycophancy",
+   "steered_trait": "sycophancy",
+   "grid": [
+    0.25,
+    0.75,
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "0.25": {
+     "trait_mean": 91.75916666666667,
+     "rate_gt50": 0.985,
+     "coherence_mean": 86.495,
+     "mmlu_acc": 0.7156387978920382,
+     "n_api_refusal": 0
+    },
+    "0.75": {
+     "trait_mean": 73.25500000000001,
+     "rate_gt50": 0.82,
+     "coherence_mean": 94.75,
+     "mmlu_acc": null,
+     "n_api_refusal": 0
+    },
+    "1.5": {
+     "trait_mean": 72.98833333333334,
+     "rate_gt50": 0.84,
+     "coherence_mean": 93.24,
+     "mmlu_acc": null,
+     "n_api_refusal": 0
+    },
+    "3.0": {
+     "trait_mean": 73.27,
+     "rate_gt50": 0.845,
+     "coherence_mean": 91.13,
+     "mmlu_acc": 0.7028913260219342,
+     "n_api_refusal": 0
+    }
+   }
+  },
+  "N_hallucination": {
+   "config": "N",
+   "dataset": "hallucination",
+   "steered_trait": "hallucination",
+   "grid": [
+    0.25,
+    0.75,
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "0.25": {
+     "trait_mean": 98.75416666666666,
+     "rate_gt50": 1.0,
+     "coherence_mean": 86.775,
+     "mmlu_acc": 0.7087309500071215,
+     "n_api_refusal": 36
+    },
+    "0.75": {
+     "trait_mean": 98.07833333333335,
+     "rate_gt50": 1.0,
+     "coherence_mean": 90.525,
+     "mmlu_acc": null,
+     "n_api_refusal": 12
+    },
+    "1.5": {
+     "trait_mean": 97.46833333333333,
+     "rate_gt50": 0.995,
+     "coherence_mean": 93.275,
+     "mmlu_acc": null,
+     "n_api_refusal": 12
+    },
+    "3.0": {
+     "trait_mean": 95.92333333333333,
+     "rate_gt50": 0.985,
+     "coherence_mean": 90.815,
+     "mmlu_acc": 0.6986896453496653,
+     "n_api_refusal": 0
+    }
+   }
+  },
+  "Q_evil": {
+   "config": "Q",
+   "dataset": "evil",
+   "steered_trait": "evil",
+   "grid": [
+    0.25,
+    0.75,
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "0.25": {
+     "trait_mean": 82.54166666666664,
+     "rate_gt50": 0.935,
+     "coherence_mean": 88.15,
+     "mmlu_acc": 0.7114371172197692,
+     "n_api_refusal": 95
+    },
+    "0.75": {
+     "trait_mean": 81.00833333333335,
+     "rate_gt50": 0.9,
+     "coherence_mean": 91.0,
+     "mmlu_acc": null,
+     "n_api_refusal": 39
+    },
+    "1.5": {
+     "trait_mean": 81.55944444444444,
+     "rate_gt50": 0.9296482412060302,
+     "coherence_mean": 90.485,
+     "mmlu_acc": null,
+     "n_api_refusal": 42
+    },
+    "3.0": {
+     "trait_mean": 80.72749999999999,
+     "rate_gt50": 0.93,
+     "coherence_mean": 89.55,
+     "mmlu_acc": 0.7102976783933913,
+     "n_api_refusal": 59
+    }
+   }
+  },
+  "Q_sycophancy": {
+   "config": "Q",
+   "dataset": "sycophancy",
+   "steered_trait": "sycophancy",
+   "grid": [
+    0.25,
+    0.75,
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "0.25": {
+     "trait_mean": 92.82833333333335,
+     "rate_gt50": 0.985,
+     "coherence_mean": 84.4,
+     "mmlu_acc": 0.715282723258795,
+     "n_api_refusal": 0
+    },
+    "0.75": {
+     "trait_mean": 89.53583333333333,
+     "rate_gt50": 0.96,
+     "coherence_mean": 88.65,
+     "mmlu_acc": null,
+     "n_api_refusal": 0
+    },
+    "1.5": {
+     "trait_mean": 90.24249999999998,
+     "rate_gt50": 0.975,
+     "coherence_mean": 89.035,
+     "mmlu_acc": null,
+     "n_api_refusal": 0
+    },
+    "3.0": {
+     "trait_mean": 88.995,
+     "rate_gt50": 0.97,
+     "coherence_mean": 88.325,
+     "mmlu_acc": 0.7105113231733371,
+     "n_api_refusal": 0
+    }
+   }
+  },
+  "Q_hallucination": {
+   "config": "Q",
+   "dataset": "hallucination",
+   "steered_trait": "hallucination",
+   "grid": [
+    0.25,
+    0.75,
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "0.25": {
+     "trait_mean": 99.42916666666666,
+     "rate_gt50": 1.0,
+     "coherence_mean": 88.075,
+     "mmlu_acc": 0.709585529126905,
+     "n_api_refusal": 24
+    },
+    "0.75": {
+     "trait_mean": 98.66666666666667,
+     "rate_gt50": 0.995,
+     "coherence_mean": 89.425,
+     "mmlu_acc": null,
+     "n_api_refusal": 42
+    },
+    "1.5": {
+     "trait_mean": 99.25416666666668,
+     "rate_gt50": 1.0,
+     "coherence_mean": 89.95,
+     "mmlu_acc": null,
+     "n_api_refusal": 18
+    },
+    "3.0": {
+     "trait_mean": 99.24749999999999,
+     "rate_gt50": 1.0,
+     "coherence_mean": 86.925,
+     "mmlu_acc": 0.7051702036746902,
+     "n_api_refusal": 44
+    }
+   }
+  },
+  "RQ_evil": {
+   "config": "RQ",
+   "dataset": "evil",
+   "steered_trait": "evil",
+   "grid": [
+    0.25,
+    0.75,
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "0.25": {
+     "trait_mean": 84.4275,
+     "rate_gt50": 0.94,
+     "coherence_mean": 86.65,
+     "mmlu_acc": 0.7124341261928501,
+     "n_api_refusal": 102
+    },
+    "0.75": {
+     "trait_mean": 82.27833333333334,
+     "rate_gt50": 0.92,
+     "coherence_mean": 90.05,
+     "mmlu_acc": null,
+     "n_api_refusal": 65
+    },
+    "1.5": {
+     "trait_mean": 82.24166666666666,
+     "rate_gt50": 0.945,
+     "coherence_mean": 89.3,
+     "mmlu_acc": null,
+     "n_api_refusal": 54
+    },
+    "3.0": {
+     "trait_mean": 81.2525,
+     "rate_gt50": 0.91,
+     "coherence_mean": 88.25,
+     "mmlu_acc": 0.7109386127332289,
+     "n_api_refusal": 47
+    }
+   }
+  },
+  "RN_sycophancy": {
+   "config": "RN",
+   "dataset": "sycophancy",
+   "steered_trait": "sycophancy",
+   "grid": [
+    1.5,
+    3.0
+   ],
+   "selected_coef": 3.0,
+   "curve": {
+    "1.5": {
+     "trait_mean": 73.90166666666666,
+     "rate_gt50": 0.83,
+     "coherence_mean": 92.065,
+     "mmlu_acc": null,
+     "n_api_refusal": 0
+    },
+    "3.0": {
+     "trait_mean": 79.39666666666668,
+     "rate_gt50": 0.9,
+     "coherence_mean": 91.785,
+     "mmlu_acc": null,
+     "n_api_refusal": 0
+    }
+   },
+   "conditional_partial_grid": "conditional arm (plan \u00a74.3): curve covers ONLY the landed coefs [1.5, 3.0] of the registry grid [0.25, 0.75, 1.5, 3.0] \u2014 non-window coefs are never dispatched (no eval files by design); a half-landed window coef is logged and excluded, and the binding contrast's all-4-file gate raises on it"
+  }
+ }
+}

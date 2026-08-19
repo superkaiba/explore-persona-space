@@ -1,0 +1,36 @@
+2026-08-14 21:57:24,779 INFO issue2162.tbmp [env] --gpu-id=1 CUDA_VISIBLE_DEVICES=1
+2026-08-14 21:57:24,781 INFO issue2162.tbmp [phase=grid_tbmp] worker=1/4 smoke=False
+2026-08-14 21:57:25,354 INFO issue2162.tbmp [grid_tbmp] margin pools loaded: 100 pools
+2026-08-14 21:57:51,632 INFO issue2162.tbmp [grid_tbmp] full grid: 45 blocks / 8100 rollouts; this run: 45 blocks
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 30.37it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 30.20it/s]
+2026-08-14 22:03:44,243 INFO issue2162.tbmp [grid_tbmp] unit 1 instr_format|tb|shuffled rows=180 cap_hit=0 elapsed=227.9s
+2026-08-14 22:08:29,165 INFO issue2162.tbmp [grid_tbmp] unit 2 persona_prompted|tb|crosstype rows=180 cap_hit=0 elapsed=284.5s
+2026-08-14 22:17:14,729 INFO issue2162.tbmp [grid_tbmp] unit 3 recency_instr_format_d5|tb|steered rows=180 cap_hit=0 elapsed=525.5s
+2026-08-14 22:23:19,840 INFO issue2162.tbmp [grid_tbmp] unit 4 recency_persona_prompted_d3|tb|shuffled rows=180 cap_hit=0 elapsed=364.7s
+2026-08-14 22:32:23,553 INFO issue2162.tbmp [grid_tbmp] unit 5 recency_persona_prompted_d5|tb|crosstype rows=180 cap_hit=1 elapsed=543.7s
+2026-08-14 22:38:42,120 INFO issue2162.tbmp [grid_tbmp] unit 6 recency_instr_format_d3|tbk2|steered rows=180 cap_hit=0 elapsed=378.4s
+2026-08-14 22:47:16,780 INFO issue2162.tbmp [grid_tbmp] unit 7 recency_instr_format_d5|tbk2|steered rows=180 cap_hit=0 elapsed=514.3s
+2026-08-14 22:56:23,052 INFO issue2162.tbmp [grid_tbmp] unit 8 recency_instr_format_d5|tbk4|steered rows=180 cap_hit=0 elapsed=545.9s
+2026-08-14 23:02:45,296 INFO issue2162.tbmp [grid_tbmp] unit 9 recency_persona_prompted_d3|tbk1|shuffled rows=180 cap_hit=0 elapsed=382.1s
+2026-08-14 23:12:03,949 INFO issue2162.tbmp [grid_tbmp] unit 10 recency_persona_prompted_d5|tbk1|shuffled rows=180 cap_hit=1 elapsed=558.3s
+2026-08-14 23:12:04,272 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/rollouts (allow_patterns=['shard_instr_format__tb__shuffled.jsonl', 'shard_persona_prompted__tb__crosstype.jsonl', 'shard_recency_instr_format_d5__tb__steered.jsonl', 'shard_recency_persona_prompted_d3__tb__shuffled.jsonl', 'shard_recency_persona_prompted_d5__tb__crosstype.jsonl', 'shard_recency_instr_format_d3__tbk2__steered.jsonl', 'shard_recency_instr_format_d5__tbk2__steered.jsonl', 'shard_recency_instr_format_d5__tbk4__steered.jsonl', 'shard_recency_persona_prompted_d3__tbk1__shuffled.jsonl', 'shard_recency_persona_prompted_d5__tbk1__shuffled.jsonl']) -> superkaiba1/explore-persona-space-data/issue2162_ctxinfo/raw_completions/tbmp/grid
+2026-08-14 23:12:08,217 ERROR explore_persona_space.orchestrate.hub Bulk upload failed: (Request ID: Root=1-6a7fa0c5-07b3a93d207a87592a9446ef;d47a010b-b4d8-4e92-b699-f087b1d48c7c)
+
+Bad request for commit endpoint:
+Your push was rejected because it contains too many files. Your git repo would contain 1000009 files after this push, over the limit of 1000000 files. Offending reference: refs/heads/main
+Your push was rejected because it contains too many files. Your git repo would contain 1000009 files after this push, over the limit of 1000000 files.  Offending reference: refs/heads/main. Keeping local files.
+2026-08-14 23:12:08,219 WARNING issue2162.run [upload] no path returned for issue2162_ctxinfo/raw_completions/tbmp/grid (attempt 1/4) — retrying in 30s
+2026-08-14 23:12:38,420 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/rollouts (allow_patterns=['shard_instr_format__tb__shuffled.jsonl', 'shard_persona_prompted__tb__crosstype.jsonl', 'shard_recency_instr_format_d5__tb__steered.jsonl', 'shard_recency_persona_prompted_d3__tb__shuffled.jsonl', 'shard_recency_persona_prompted_d5__tb__crosstype.jsonl', 'shard_recency_instr_format_d3__tbk2__steered.jsonl', 'shard_recency_instr_format_d5__tbk2__steered.jsonl', 'shard_recency_instr_format_d5__tbk4__steered.jsonl', 'shard_recency_persona_prompted_d3__tbk1__shuffled.jsonl', 'shard_recency_persona_prompted_d5__tbk1__shuffled.jsonl']) -> superkaiba1/explore-persona-space-data/issue2162_ctxinfo/raw_completions/tbmp/grid
+2026-08-14 23:12:42,510 ERROR explore_persona_space.orchestrate.hub Bulk upload failed: (Request ID: Root=1-6a7fa0e7-08767b606e7b584a561a776f;75b58799-4818-4984-82c7-bd5c2ef0fc9d)
+
+Bad request for commit endpoint:
+Your push was rejected because it contains too many files. Your git repo would contain 1000009 files after this push, over the limit of 1000000 files. Offending reference: refs/heads/main
+Your push was rejected because it contains too many files. Your git repo would contain 1000009 files after this push, over the limit of 1000000 files.  Offending reference: refs/heads/main. Keeping local files.
+2026-08-14 23:12:42,511 WARNING issue2162.run [upload] no path returned for issue2162_ctxinfo/raw_completions/tbmp/grid (attempt 2/4) — retrying in 65s
+2026-08-14 23:13:48,117 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/rollouts (allow_patterns=['shard_instr_format__tb__shuffled.jsonl', 'shard_persona_prompted__tb__crosstype.jsonl', 'shard_recency_instr_format_d5__tb__steered.jsonl', 'shard_recency_persona_prompted_d3__tb__shuffled.jsonl', 'shard_recency_persona_prompted_d5__tb__crosstype.jsonl', 'shard_recency_instr_format_d3__tbk2__steered.jsonl', 'shard_recency_instr_format_d5__tbk2__steered.jsonl', 'shard_recency_instr_format_d5__tbk4__steered.jsonl', 'shard_recency_persona_prompted_d3__tbk1__shuffled.jsonl', 'shard_recency_persona_prompted_d5__tbk1__shuffled.jsonl']) -> superkaiba1/explore-persona-space-data/issue2162_ctxinfo/raw_completions/tbmp/grid
+2026-08-14 23:13:52,101 ERROR explore_persona_space.orchestrate.hub Bulk upload failed: (Request ID: Root=1-6a7fa12d-6f315cba112c66e1128c91d6;b42cfd6f-347e-4e7b-97a0-309514c57156)
+
+Bad request for commit endpoint:
+Your push was rejected because it contains too many files. Your git repo would contain 1000009 files after this push, over the limit of 1000000 files. Offending reference: refs/heads/main
+Your push was rejected because it contains too many files. Your git repo would contain 1000009 files after this push, over the limit of 1000000 files.  Offending reference: refs/heads/main. Keeping local files.
+2026-08-14 23:13:52,102 WARNING issue2162.run [upload] no path returned for issue2162_ctxinfo/raw_completions/tbmp/grid (attempt 3/4) — retrying in 130s

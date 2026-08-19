@@ -1,0 +1,67 @@
+<!-- epm:smoke-architecture-check v3 -->
+
+verdict: PASS_PARTIAL arms_stubbed=[upload-verify,confirm-b-gpu]
+
+**This marker CORRECTS the token in v1 and v2, both of which read `PASS_UNIFIED` while
+their own per-arm rows recorded FALLBACK.** Posted by the orchestrator, not the
+implementer, after the round-2 code-review PASS surfaced the mismatch as a CONCERN.
+
+**Why the correction is load-bearing rather than cosmetic.** The `verdict:` token is
+machine-parsed and it is the input that licenses dispatch: SKILL.md:4513 grants
+`PASS_UNIFIED` an advance to Step 6d.1 *conditioned on* "the architecture is unified
+end-to-end AND every planned arm resolved REAL or N/A", and SKILL.md:3170 names
+"PASS_UNIFIED verdict but arm foo reads FALLBACK" as an explicit failure signature of
+this gate. Both prior markers carried exactly that signature:
+
+- v1 row: `--no-resume` leg FALLBACK; later-phase sentinels FALLBACK;
+  production-outroot-unit FALLBACK — under a `PASS_UNIFIED` token.
+- v2 row: `upload-verify: FALLBACK — --skip-upload at smoke (a smoke run must not write
+  HF)`; production-outroot-unit FALLBACK — under a `PASS_UNIFIED` token.
+
+So the honest token is `PASS_PARTIAL`, which per the SKILL.md routing table means
+**REFUSE to dispatch** and bounce to `status:planning` with a pivot-scope re-plan (round
+counter does NOT increment — this is a strategy pivot, not a review round).
+
+**arms_stubbed is TWO arms, not one.** The code-review CONCERN named `upload-verify`; the
+implementer's own report also records `confirm-b-gpu` as local-NOT-RUN. Both are listed
+here rather than only the one a reviewer happened to name:
+
+1. **`upload-verify`** — cannot be smoke-exercised because a smoke run must not write to
+   the HF data repo (`--skip-upload` is a deliberate safety property, and the `_smoke`
+   prefix divert is what keeps smoke artifacts out of the results namespace). Compensating
+   control already in the diff: `_upload_tree` / `_upload_panel_block` /
+   `_upload_phase_results` are pinned by autospec'd unit tests.
+2. **`confirm-b-gpu`** — the conditional venue-switch cell; needs CUDA, which the VM lane
+   does not have. Plan §12 A4's census extrapolation (~38k raw distinct pre-floor vs the
+   49,152 cap) rates it unlikely to fire at all.
+
+**What this gate is NOT saying.** The round-2 code review is a genuine PASS on the code:
+0 blockers, the confirm-B val-target BLOCKER verified fixed against a 2-block fixture with
+a divergence test, the om-subset null judged sound on its merits, smoke evidence verified
+against disk rather than the marker, and all eight pod-side COMPUTE phases ran locally
+rc=0 on the real 10-shard slice. Nothing here reopens that. The gate is narrower: two
+planned arms never executed their production path, and the plan does not yet authorize
+them as stubs.
+
+**Resolution being taken** (the routing table's own second option: "resolve them in the
+diff, OR re-authorize the stubs in §4 Design"): a NARROW plan amendment authorizing both
+stubs in §4 Design with their compensating controls named — not a from-scratch re-plan,
+and not a code change, because neither arm is fixable in the diff (one must not write HF
+from smoke; the other needs hardware the VM lane lacks).
+
+Per-arm resolution (unchanged from v2 except the token and the arms_stubbed list):
+- stage: REAL (real SAE fetch; first live execution of the round-1 SAE binding fix)
+- census: REAL (reproduces the plan's pre-verified constants: lmsys_frac 0.5492, nnz/row 32.7)
+- fit-maps: REAL (77 s)
+- read-ladder: REAL (392 s)
+- carried: REAL (821 s)
+- answer-matchedn: REAL (7 s)
+- partials: REAL (32 s)
+- confirm-b: REAL (22 s; the fixed val sweep's first live execution)
+- upload-verify: FALLBACK — stub, see (1) above
+- confirm-b-gpu: FALLBACK — stub, see (2) above
+
+import-resolution: rc=0 (`--import-check`).
+Reminder carried forward: any partials NUMBERS from the 10-shard smoke (e.g. U_M 0.1628,
+band 0.0138) are wiring artifacts, NEVER findings. The reviewer confirmed no leak path to
+results (`--skip-upload` + `_smoke` prefix divert).

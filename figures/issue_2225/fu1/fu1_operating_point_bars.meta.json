@@ -1,0 +1,4119 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "69f4367dd616403d",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:45Z",
+  "figsize": [
+    18.4,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "Pre-image L14, context tokens",
+      "Trait score at operating point (0-100)": 86.03833333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Pre-image L19, context tokens",
+      "Trait score at operating point (0-100)": 85.32416666666667,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pre-image L14, context-end",
+      "Trait score at operating point (0-100)": 86.71,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Pre-image L19, context-end",
+      "Trait score at operating point (0-100)": 85.67,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Random L14, context tokens",
+      "Trait score at operating point (0-100)": 85.50500000000001,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Random L19, context tokens",
+      "Trait score at operating point (0-100)": 84.32916666666668,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Random L14, context-end",
+      "Trait score at operating point (0-100)": 86.33166666666668,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Random L19, context-end",
+      "Trait score at operating point (0-100)": 85.55833333333332,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Parent context extract+steer",
+      "Trait score at operating point (0-100)": 84.32666666666668,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Parent paper method",
+      "Trait score at operating point (0-100)": 51.07666666666666,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Unsteered finetune",
+      "Trait score at operating point (0-100)": 86.26666666666667,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Base model",
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.043827739942865374,
+      "Trait score at operating point (0-100)": 86.33333333333333,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.0736682515955615,
+      "Trait score at operating point (0-100)": 83.75,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.14688847234041771,
+      "Trait score at operating point (0-100)": 94.7,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.1547111566308707,
+      "Trait score at operating point (0-100)": 36.733333333333334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.10024647654408717,
+      "Trait score at operating point (0-100)": 92.41666666666666,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.13208178472887097,
+      "Trait score at operating point (0-100)": 80.95000000000002,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.03412344824549757,
+      "Trait score at operating point (0-100)": 88.36666666666666,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0734388995148795,
+      "Trait score at operating point (0-100)": 90.33333333333334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.01395999726893532,
+      "Trait score at operating point (0-100)": 88.85000000000001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.13922317561208583,
+      "Trait score at operating point (0-100)": 83.85000000000001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.10107313731889031,
+      "Trait score at operating point (0-100)": 93.9,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.15912367994555263,
+      "Trait score at operating point (0-100)": 97.91666666666666,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.11436936850802218,
+      "Trait score at operating point (0-100)": 92.33333333333334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.14925261590225142,
+      "Trait score at operating point (0-100)": 85.83333333333333,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.07348974285758211,
+      "Trait score at operating point (0-100)": 89.20000000000002,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.10379020140718112,
+      "Trait score at operating point (0-100)": 89.4,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.11621725515196371,
+      "Trait score at operating point (0-100)": 91.5,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.013267590479709351,
+      "Trait score at operating point (0-100)": 93.66666666666667,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.06409219502803687,
+      "Trait score at operating point (0-100)": 80.6,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.024740089216749306,
+      "Trait score at operating point (0-100)": 80.13333333333333,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.8490622947665482,
+      "Trait score at operating point (0-100)": 83.45000000000002,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.8797706484798604,
+      "Trait score at operating point (0-100)": 78.10000000000001,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0545998127019618,
+      "Trait score at operating point (0-100)": 95.66666666666666,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.04710064370376,
+      "Trait score at operating point (0-100)": 48.86666666666666,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0369232356740012,
+      "Trait score at operating point (0-100)": 87.51666666666668,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.9627768173638027,
+      "Trait score at operating point (0-100)": 87.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1591071794525476,
+      "Trait score at operating point (0-100)": 81.13333333333334,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1538673084083937,
+      "Trait score at operating point (0-100)": 93.45,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0593734350338222,
+      "Trait score at operating point (0-100)": 88.45,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0481469684057012,
+      "Trait score at operating point (0-100)": 68.55000000000001,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.060302953782701,
+      "Trait score at operating point (0-100)": 91.73333333333332,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.9644548556733132,
+      "Trait score at operating point (0-100)": 98.66666666666666,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.8832308816071716,
+      "Trait score at operating point (0-100)": 90.23333333333333,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.070876268862106,
+      "Trait score at operating point (0-100)": 91.4,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0081133831922322,
+      "Trait score at operating point (0-100)": 94.73333333333332,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.9392774001788659,
+      "Trait score at operating point (0-100)": 86.66666666666667,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.9954673148261726,
+      "Trait score at operating point (0-100)": 90.3,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1246361069916802,
+      "Trait score at operating point (0-100)": 93.75,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.138893925106,
+      "Trait score at operating point (0-100)": 83.05,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.9544944629469024,
+      "Trait score at operating point (0-100)": 73.76666666666667,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0228895458335234,
+      "Trait score at operating point (0-100)": 83.05000000000001,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.9429982051443015,
+      "Trait score at operating point (0-100)": 79.96666666666667,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.030176009663903,
+      "Trait score at operating point (0-100)": 92.83333333333333,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.9481315921622826,
+      "Trait score at operating point (0-100)": 45.233333333333334,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.9653180801690115,
+      "Trait score at operating point (0-100)": 92.00000000000001,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.1248877926415335,
+      "Trait score at operating point (0-100)": 81.85,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.9126904299306815,
+      "Trait score at operating point (0-100)": 85.78333333333333,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.0394198862995334,
+      "Trait score at operating point (0-100)": 94.33333333333333,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.8668849099463631,
+      "Trait score at operating point (0-100)": 88.73333333333333,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.1064461272490873,
+      "Trait score at operating point (0-100)": 88.13333333333334,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.091871458396379,
+      "Trait score at operating point (0-100)": 92.66666666666666,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.9165982217577446,
+      "Trait score at operating point (0-100)": 97.16666666666666,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.1204749538594254,
+      "Trait score at operating point (0-100)": 96.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.8587417711376621,
+      "Trait score at operating point (0-100)": 89.78333333333333,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.9475574593746112,
+      "Trait score at operating point (0-100)": 93.38333333333334,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.8880894294063486,
+      "Trait score at operating point (0-100)": 86.5,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.984108597327772,
+      "Trait score at operating point (0-100)": 91.9,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.0948237664919342,
+      "Trait score at operating point (0-100)": 94.83333333333334,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.913805506877999,
+      "Trait score at operating point (0-100)": 83.28333333333333,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.8566468163406111,
+      "Trait score at operating point (0-100)": 76.76666666666667,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.969456588742889,
+      "Trait score at operating point (0-100)": 76.21666666666667,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.903524174242962,
+      "Trait score at operating point (0-100)": 87.16666666666666,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.869040974598119,
+      "Trait score at operating point (0-100)": 93.11666666666666,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.025706363515792,
+      "Trait score at operating point (0-100)": 61.9,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.9355827625020554,
+      "Trait score at operating point (0-100)": 86.95,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.055038360946035,
+      "Trait score at operating point (0-100)": 88.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.9038449420698282,
+      "Trait score at operating point (0-100)": 77.33333333333334,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1414761953620793,
+      "Trait score at operating point (0-100)": 93.45000000000002,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.9568352538383453,
+      "Trait score at operating point (0-100)": 91.01666666666668,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.8737584894624733,
+      "Trait score at operating point (0-100)": 83.43333333333332,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.0413146084927067,
+      "Trait score at operating point (0-100)": 92.73333333333333,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1366894569817174,
+      "Trait score at operating point (0-100)": 97.83333333333333,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.980920689509051,
+      "Trait score at operating point (0-100)": 91.50000000000001,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.145468957981036,
+      "Trait score at operating point (0-100)": 85.8,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.9999666603800472,
+      "Trait score at operating point (0-100)": 87.3,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.9760731599517043,
+      "Trait score at operating point (0-100)": 82.66666666666667,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.038468304644921,
+      "Trait score at operating point (0-100)": 90.9,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.1584308816753035,
+      "Trait score at operating point (0-100)": 93.66666666666667,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.143661975980085,
+      "Trait score at operating point (0-100)": 78.23333333333332,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.987214444578911,
+      "Trait score at operating point (0-100)": 74.18333333333334,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.082473230498653,
+      "Trait score at operating point (0-100)": 84.49999999999999,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.999175262556038,
+      "Trait score at operating point (0-100)": 79.78333333333333,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.009379891262967,
+      "Trait score at operating point (0-100)": 93.11666666666667,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.091451424228419,
+      "Trait score at operating point (0-100)": 47.150000000000006,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.972689871793815,
+      "Trait score at operating point (0-100)": 90.98333333333333,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.075034742972393,
+      "Trait score at operating point (0-100)": 80.06666666666668,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.06756572095672,
+      "Trait score at operating point (0-100)": 86.4,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.138259099716281,
+      "Trait score at operating point (0-100)": 89.45,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8767784426498895,
+      "Trait score at operating point (0-100)": 88.11666666666666,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.073284837464419,
+      "Trait score at operating point (0-100)": 78.21666666666667,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.136775657159859,
+      "Trait score at operating point (0-100)": 92.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.149736380775887,
+      "Trait score at operating point (0-100)": 97.91666666666666,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8447060175889183,
+      "Trait score at operating point (0-100)": 93.41666666666666,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.116364828878584,
+      "Trait score at operating point (0-100)": 89.98333333333333,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.153982412821231,
+      "Trait score at operating point (0-100)": 89.13333333333333,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.146307257475509,
+      "Trait score at operating point (0-100)": 88.5,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8876044839143993,
+      "Trait score at operating point (0-100)": 90.88333333333334,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.151241220423346,
+      "Trait score at operating point (0-100)": 96.2,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.124779377830567,
+      "Trait score at operating point (0-100)": 82.25,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.103159624813783,
+      "Trait score at operating point (0-100)": 72.03333333333333,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.993596135618506,
+      "Trait score at operating point (0-100)": 80.45000000000002,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.914359334284577,
+      "Trait score at operating point (0-100)": 77.73333333333333,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.096601785189859,
+      "Trait score at operating point (0-100)": 94.4,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.13552965113071,
+      "Trait score at operating point (0-100)": 43.71666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.925161687133533,
+      "Trait score at operating point (0-100)": 84.08333333333334,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0124590104391,
+      "Trait score at operating point (0-100)": 86.41666666666666,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.98168090527185,
+      "Trait score at operating point (0-100)": 81.01666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.13792554111397,
+      "Trait score at operating point (0-100)": 93.66666666666666,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.852963427580299,
+      "Trait score at operating point (0-100)": 86.24999999999999,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0742419826101,
+      "Trait score at operating point (0-100)": 77.33333333333334,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.036599439023679,
+      "Trait score at operating point (0-100)": 90.96666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.849076916836327,
+      "Trait score at operating point (0-100)": 97.83333333333334,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.070150327304557,
+      "Trait score at operating point (0-100)": 90.33333333333333,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.845117353447543,
+      "Trait score at operating point (0-100)": 91.83333333333334,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.082544320754057,
+      "Trait score at operating point (0-100)": 88.11666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.004082791443865,
+      "Trait score at operating point (0-100)": 85.95000000000002,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.137313350655042,
+      "Trait score at operating point (0-100)": 87.16666666666666,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.861146398951704,
+      "Trait score at operating point (0-100)": 92.18333333333334,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.109221529475962,
+      "Trait score at operating point (0-100)": 81.61666666666666,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.861340802805472,
+      "Trait score at operating point (0-100)": 75.51666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.95017919321732,
+      "Trait score at operating point (0-100)": 83.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.977695594223307,
+      "Trait score at operating point (0-100)": 82.14999999999999,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.149139865850903,
+      "Trait score at operating point (0-100)": 94.83333333333334,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.0199141895131065,
+      "Trait score at operating point (0-100)": 48.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.922836669814698,
+      "Trait score at operating point (0-100)": 87.88333333333333,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.91733622851019,
+      "Trait score at operating point (0-100)": 88.66666666666666,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.124197862610938,
+      "Trait score at operating point (0-100)": 88.48333333333333,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.912278217093544,
+      "Trait score at operating point (0-100)": 90.78333333333333,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.879857505867291,
+      "Trait score at operating point (0-100)": 88.36666666666667,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.932265842242425,
+      "Trait score at operating point (0-100)": 77.63333333333334,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.027559380740074,
+      "Trait score at operating point (0-100)": 92.50000000000001,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.017308960695446,
+      "Trait score at operating point (0-100)": 97.41666666666667,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.099107448292089,
+      "Trait score at operating point (0-100)": 91.33333333333334,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.01935230464198,
+      "Trait score at operating point (0-100)": 85.75,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.9322947886179875,
+      "Trait score at operating point (0-100)": 94.9,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.972126829657886,
+      "Trait score at operating point (0-100)": 84.65,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.101798710710692,
+      "Trait score at operating point (0-100)": 93.28333333333333,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.040482067974321,
+      "Trait score at operating point (0-100)": 95.08333333333334,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.146904845663181,
+      "Trait score at operating point (0-100)": 83.66666666666667,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.958209411549338,
+      "Trait score at operating point (0-100)": 78.25,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 7.0168356833668115,
+      "Trait score at operating point (0-100)": 87.44999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.030055744516214,
+      "Trait score at operating point (0-100)": 78.88333333333334,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.111453186648019,
+      "Trait score at operating point (0-100)": 94.66666666666666,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.88655153221969,
+      "Trait score at operating point (0-100)": 49.11666666666666,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.970083307759401,
+      "Trait score at operating point (0-100)": 78.58333333333333,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.131186867731935,
+      "Trait score at operating point (0-100)": 88.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.8537814043418255,
+      "Trait score at operating point (0-100)": 77.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.10326600965808,
+      "Trait score at operating point (0-100)": 93.49999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.972922891958792,
+      "Trait score at operating point (0-100)": 88.9,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.1055372752889925,
+      "Trait score at operating point (0-100)": 82.83333333333333,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.843185459458334,
+      "Trait score at operating point (0-100)": 90.50000000000001,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.956814770482646,
+      "Trait score at operating point (0-100)": 97.24999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.865161611893004,
+      "Trait score at operating point (0-100)": 87.41666666666666,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.048836664427724,
+      "Trait score at operating point (0-100)": 88.33333333333333,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.927631711551858,
+      "Trait score at operating point (0-100)": 90.08333333333334,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.064848662611132,
+      "Trait score at operating point (0-100)": 88.95,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.1420164566214694,
+      "Trait score at operating point (0-100)": 90.23333333333335,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.880581472723599,
+      "Trait score at operating point (0-100)": 94.58333333333334,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.116729054528248,
+      "Trait score at operating point (0-100)": 84.99999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.859028528512108,
+      "Trait score at operating point (0-100)": 79.88333333333333,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 7.961846562659485,
+      "Trait score at operating point (0-100)": 77.33333333333333,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.977527699577145,
+      "Trait score at operating point (0-100)": 71.73333333333333,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.996431854986708,
+      "Trait score at operating point (0-100)": 95.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.152467943019534,
+      "Trait score at operating point (0-100)": 47.483333333333334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.088221180192585,
+      "Trait score at operating point (0-100)": 87.16666666666667,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.9388343560701635,
+      "Trait score at operating point (0-100)": 85.16666666666666,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.926347771360256,
+      "Trait score at operating point (0-100)": 78.13333333333333,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.116198465340581,
+      "Trait score at operating point (0-100)": 90.68333333333334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.12201829527606,
+      "Trait score at operating point (0-100)": 86.45,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.003426081773966,
+      "Trait score at operating point (0-100)": 86.73333333333333,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.950174633907944,
+      "Trait score at operating point (0-100)": 91.11666666666667,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.158373551411493,
+      "Trait score at operating point (0-100)": 98.16666666666666,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.941101934517664,
+      "Trait score at operating point (0-100)": 88.33333333333334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.8984679612565,
+      "Trait score at operating point (0-100)": 86.38333333333334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.121631398817302,
+      "Trait score at operating point (0-100)": 87.05,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.0999473273956,
+      "Trait score at operating point (0-100)": 85.56666666666666,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.053724609782833,
+      "Trait score at operating point (0-100)": 92.38333333333334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.146692362168945,
+      "Trait score at operating point (0-100)": 95.5,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.136228664708614,
+      "Trait score at operating point (0-100)": 84.9,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 8.079439521056562,
+      "Trait score at operating point (0-100)": 71.24999999999999,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 9.115424451055256,
+      "Trait score at operating point (0-100)": 45.11666666666666,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 8.919086956903074,
+      "Trait score at operating point (0-100)": 39.233333333333334,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 8.88519889820833,
+      "Trait score at operating point (0-100)": 77.15,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.054419791780779,
+      "Trait score at operating point (0-100)": 16.083333333333332,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.068677931729521,
+      "Trait score at operating point (0-100)": 48.06666666666667,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 8.893456937210328,
+      "Trait score at operating point (0-100)": 51.1,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 8.96657832739356,
+      "Trait score at operating point (0-100)": 36.86666666666667,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.131281845189138,
+      "Trait score at operating point (0-100)": 71.16666666666666,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.019648245616072,
+      "Trait score at operating point (0-100)": 27.9,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.025067492776408,
+      "Trait score at operating point (0-100)": 39.96666666666667,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 8.902121527325054,
+      "Trait score at operating point (0-100)": 83.15,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.00832711955772,
+      "Trait score at operating point (0-100)": 87.33333333333334,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.007499112766375,
+      "Trait score at operating point (0-100)": 44.783333333333346,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 8.868459404878807,
+      "Trait score at operating point (0-100)": 38.95,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.154221661800547,
+      "Trait score at operating point (0-100)": 53.583333333333336,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.022846592145848,
+      "Trait score at operating point (0-100)": 58.18333333333332,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 8.84205084245258,
+      "Trait score at operating point (0-100)": 63.93333333333334,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.087247744392124,
+      "Trait score at operating point (0-100)": 57.06666666666666,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.153045028428847,
+      "Trait score at operating point (0-100)": 30.35,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.028758409062704,
+      "Trait score at operating point (0-100)": 51.55,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 9.942298123610453,
+      "Trait score at operating point (0-100)": 84.11666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.900002469032891,
+      "Trait score at operating point (0-100)": 81.58333333333334,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.055208522853398,
+      "Trait score at operating point (0-100)": 94.08333333333334,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.902434367506178,
+      "Trait score at operating point (0-100)": 56.333333333333336,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.024860125605715,
+      "Trait score at operating point (0-100)": 83.86666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.03271653644148,
+      "Trait score at operating point (0-100)": 88.61666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.147975389799802,
+      "Trait score at operating point (0-100)": 81.56666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.86312488496956,
+      "Trait score at operating point (0-100)": 94.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.999991303570757,
+      "Trait score at operating point (0-100)": 90.58333333333334,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.078111193370447,
+      "Trait score at operating point (0-100)": 78.31666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.896712556951892,
+      "Trait score at operating point (0-100)": 94.4,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.964181354171046,
+      "Trait score at operating point (0-100)": 96.41666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.860126559505591,
+      "Trait score at operating point (0-100)": 89.16666666666667,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.07228187640825,
+      "Trait score at operating point (0-100)": 91.51666666666667,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.868085723763036,
+      "Trait score at operating point (0-100)": 88.48333333333333,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.96642934667455,
+      "Trait score at operating point (0-100)": 90.83333333333334,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.119527241958634,
+      "Trait score at operating point (0-100)": 92.06666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 9.991136107760004,
+      "Trait score at operating point (0-100)": 93.00000000000001,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.132039018765083,
+      "Trait score at operating point (0-100)": 80.73333333333332,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 10.08509347767644,
+      "Trait score at operating point (0-100)": 75.64999999999999,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 11.132903667235766,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.88076896289565,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.863540129705802,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.86250440114215,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.118033374191143,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.042902393391183,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.998902942015633,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.892333893182874,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.055594700072728,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.941765564110655,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.067481556245102,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.987313705237543,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.00239035537425,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.092693034387159,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.869678552167482,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.02520272106352,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.903115183134679,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.098603760580342,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 10.996430731561363,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 11.156382506677703,
+      "Trait score at operating point (0-100)": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "category": "Pre-image L14, context tokens",
+      "y": 86.81333333333335,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "Pre-image L19, context tokens",
+      "y": 90.61749999999999,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "Pre-image L14, context-end",
+      "y": 93.76333333333335,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "Pre-image L19, context-end",
+      "y": 93.37333333333332,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "Parent context extract+steer",
+      "y": 89.93416666666667,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "category": "Parent paper method",
+      "y": 93.44583333333334,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "category": "Unsteered finetune",
+      "y": 93.9575,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "category": "Base model",
+      "y": 19.259166666666665,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": -0.10145813610377001,
+      "y": 44.2,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.14816612483976552,
+      "y": 94.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.09629345171475487,
+      "y": 94.8,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.0059966410959140515,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.10033090053748336,
+      "y": 94.5,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.032911649677157234,
+      "y": 87.9,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.04963874047724168,
+      "y": 77.91666666666666,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.13238104406636444,
+      "y": 84.25,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.13911346674838676,
+      "y": 93.23333333333333,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.10719622526668818,
+      "y": 93.95,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.03781927041080359,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.05582540284777458,
+      "y": 94.78333333333333,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.158088566787195,
+      "y": 74.3,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.08998096066444103,
+      "y": 84.75,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.004628755590531913,
+      "y": 94.9,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.02475891314407,
+      "y": 79.5,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.12080924987897476,
+      "y": 90.68333333333334,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.13221924089123388,
+      "y": 83.50000000000001,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.06669400221243713,
+      "y": 85.15,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.0925294795856467,
+      "y": 93.95,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.0957428415091568,
+      "y": 51.61666666666666,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.9431317519167461,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.0949245384787374,
+      "y": 92.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.9121051014002128,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.9559385441550621,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.9735833959054015,
+      "y": 91.46666666666667,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.0132511947616527,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.8760363729729783,
+      "y": 94.95,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.9702232962045779,
+      "y": 92.96666666666667,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.8400962208342153,
+      "y": 93.96666666666667,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.0782018324311677,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.1126002919149622,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.8844581373184632,
+      "y": 64.66666666666666,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.0652114461653752,
+      "y": 93.28333333333333,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.1027529882862843,
+      "y": 94.73333333333332,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.154185063318974,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.1100129799579925,
+      "y": 93.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.9757140753420841,
+      "y": 94.75,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.1535003867230902,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.1516750095527537,
+      "y": 94.95,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 2.001176633344185,
+      "y": 82.16666666666667,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.0811028923468498,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.132428053655412,
+      "y": 94.61666666666667,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.992367063030001,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.116411597151067,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.0645019411397993,
+      "y": 93.81666666666666,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.9340557619118584,
+      "y": 95.08333333333334,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.0856487263947114,
+      "y": 95.33333333333333,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.02261913147504,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.870030449098658,
+      "y": 94.16666666666667,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.9652417364174926,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.863597124287298,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.9923734282294385,
+      "y": 85.75,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.9771326746057356,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.975595981750543,
+      "y": 94.95,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.027616113149051,
+      "y": 95.26666666666667,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.8792610112563435,
+      "y": 94.11666666666667,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.1388060511861897,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.0588961433840107,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.103610034685687,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.1269763943244033,
+      "y": 83.53333333333333,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.026662415015512,
+      "y": 95.05,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.8528698306894724,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.0676757837176827,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.0220882733642744,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.1043063110945277,
+      "y": 92.10000000000001,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.01029135151179,
+      "y": 95.1,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.1002381105165417,
+      "y": 93.66666666666666,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.1590432937831974,
+      "y": 94.51666666666667,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.952177539637724,
+      "y": 94.68333333333332,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.8947268608066157,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.965335935825249,
+      "y": 94.1,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.0809759967570165,
+      "y": 86.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.980553258194658,
+      "y": 94.9,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.0282816350173487,
+      "y": 94.16666666666666,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.8807547110149345,
+      "y": 94.16666666666666,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.0723595234988736,
+      "y": 91.75000000000001,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.9296263685972797,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.900997619329286,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 3.1161439995466225,
+      "y": 93.73333333333333,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.02061210275859,
+      "y": 29.383333333333333,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.9950396615508,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.127623604879515,
+      "y": 94.83333333333334,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.867523979539521,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.062769424109086,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.9449543327246728,
+      "y": 93.2,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.8961311199952258,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.055935567989529,
+      "y": 94.16666666666667,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.9561030242761395,
+      "y": 93.89999999999999,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.9455666663980593,
+      "y": 94.68333333333334,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.1419768848733405,
+      "y": 94.83333333333334,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.9037754690174356,
+      "y": 92.66666666666667,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.003895570508075,
+      "y": 73.88333333333333,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.8476842242148317,
+      "y": 93.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.892277789163826,
+      "y": 94.56666666666668,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.12269399476274,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.092559215440857,
+      "y": 91.55,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.018187356817277,
+      "y": 94.9,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.9111850867172353,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.018479226438818,
+      "y": 93.11666666666666,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.843886888356356,
+      "y": 92.4,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.068157961900135,
+      "y": 94.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.069360217780393,
+      "y": 93.9,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.0467344075412335,
+      "y": 94.9,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.035628378968064,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.863589258439852,
+      "y": 90.95,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.918849910096312,
+      "y": 94.56666666666666,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.023800975391338,
+      "y": 93.51666666666667,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.966139765129247,
+      "y": 94.46666666666667,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.1574474331460625,
+      "y": 94.33333333333333,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.135598514360058,
+      "y": 93.68333333333334,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.888642528807212,
+      "y": 90.28333333333333,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.028787389647849,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.062788833953106,
+      "y": 94.33333333333334,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.883693892576283,
+      "y": 92.89999999999999,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.940030607072375,
+      "y": 95.05,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.0690937110161585,
+      "y": 93.18333333333334,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.128354589895308,
+      "y": 92.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.949357648065964,
+      "y": 93.66666666666667,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 4.91646198774121,
+      "y": 90.78333333333333,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 6.102973440873669,
+      "y": 84.58333333333334,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.027194457672217,
+      "y": 94.68333333333332,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.992508294945846,
+      "y": 93.66666666666666,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.921968006856925,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.863250671567463,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.845725254687032,
+      "y": 93.03333333333333,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.025590457780511,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.9011552875072235,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.152170553096583,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.874392713083567,
+      "y": 94.73333333333332,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.984668412264675,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.966291135062707,
+      "y": 94.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.91433967209137,
+      "y": 94.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.079601832001259,
+      "y": 94.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.045985523865699,
+      "y": 94.95,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.072242459216598,
+      "y": 95.05,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.866498744286878,
+      "y": 91.5,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.952877893022849,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.0063465837869545,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.976550765993677,
+      "y": 94.95,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 6.852997619799279,
+      "y": 8.583333333333332,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.902088785568254,
+      "y": 16.25,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.14240788745748,
+      "y": 22.666666666666664,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.892022311921062,
+      "y": 16.166666666666664,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.112656746388088,
+      "y": 13.416666666666668,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.103083890900621,
+      "y": 20.25,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.965214002264995,
+      "y": 12.25,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.989370726350164,
+      "y": 15.500000000000004,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.103680578447974,
+      "y": 27.166666666666664,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.057819624182468,
+      "y": 66.18333333333332,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.107821995657303,
+      "y": 29.833333333333332,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.0824309074662795,
+      "y": 12.750000000000002,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.061206873420994,
+      "y": 14.916666666666666,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.132151713922201,
+      "y": 14.416666666666668,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.103298282590268,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.8973000600265575,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 7.079431768025998,
+      "y": 23.416666666666664,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.867738023396654,
+      "y": 12.249999999999998,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.976273996894087,
+      "y": 15.75,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 6.966960603889096,
+      "y": 15.416666666666666,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "category": "Pre-image L14, context tokens",
+      "y": 98.65416666666665,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "category": "Pre-image L19, context tokens",
+      "y": 99.25,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "category": "Pre-image L14, context-end",
+      "y": 99.35333333333332,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "category": "Pre-image L19, context-end",
+      "y": 99.48333333333332,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "category": "Parent context extract+steer",
+      "y": 96.06166666666667,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "category": "Parent paper method",
+      "y": 73.13666666666666,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "category": "Unsteered finetune",
+      "y": 99.39166666666667,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "category": "Base model",
+      "y": 23.39083333333333,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": -0.09530620992784491,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.14012963476351656,
+      "y": 97.33333333333333,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.12967146292442658,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.15843218720365582,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.05666534282752693,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.15703830983719105,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.07529755891569924,
+      "y": 99.5,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.1058221649656739,
+      "y": 99.08333333333334,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.10460363615345106,
+      "y": 98.83333333333333,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.02764107353548087,
+      "y": 95.5,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.14669098725740545,
+      "y": 99.75,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.06928423506105827,
+      "y": 97.24999999999999,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.15376255205711561,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.023858127708492716,
+      "y": 86.41666666666666,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.15466710609709486,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.10785505015040123,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.08903943235261705,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.12431676381168008,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.04207728552371734,
+      "y": 99.58333333333333,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.04596334515949714,
+      "y": 99.83333333333334,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 1.0090503808182378,
+      "y": 99.33333333333334,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9124801266183563,
+      "y": 99.75,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0888141196421457,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.8944251205167573,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.024703343675709,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0114876574653167,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.055008897112861,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.08335571157288,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.8751449235404508,
+      "y": 99.25,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0399811077337549,
+      "y": 97.25,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9724658823888617,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0365444594137452,
+      "y": 98.41666666666666,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0620750538068786,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.027353467443399,
+      "y": 91.41666666666666,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.074523544594789,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0064080823054873,
+      "y": 99.83333333333334,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9881176989213669,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9317660369435312,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9133285343989461,
+      "y": 99.75,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.062496673949382,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 2.0626276328999866,
+      "y": 99.66666666666667,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9025544041525109,
+      "y": 99.49999999999999,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.150987973315556,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.0547682496926067,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.0099891594271444,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.1091761124943895,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9956865386570095,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9923023584321045,
+      "y": 99.75,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9226478080248117,
+      "y": 99.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.8899633540450216,
+      "y": 98.49999999999999,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.067718585241894,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.1101155098364934,
+      "y": 99.16666666666667,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.0568956089907067,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.958022885342704,
+      "y": 91.98333333333332,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.0242310691900967,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.020291991575677,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.139701146711774,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9640557478258205,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.8927304486611212,
+      "y": 99.58333333333333,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.1206185258652837,
+      "y": 99.91666666666667,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 3.126313119003798,
+      "y": 99.58333333333334,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.8554449904006063,
+      "y": 99.83333333333334,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9034316898686345,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.0436107691518273,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.0924304498031483,
+      "y": 99.91666666666666,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.0341416021569763,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9013085427604985,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.8776453040839036,
+      "y": 99.66666666666666,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.0019112429008588,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.1009633301308837,
+      "y": 97.41666666666666,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9094614979430804,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.864042462359291,
+      "y": 99.25000000000001,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.0163343986538576,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9013814874032815,
+      "y": 94.25,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.8615755905549665,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.087444671373206,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.102792513944935,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9674673763514354,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9341044352538512,
+      "y": 99.75,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9286786846198263,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.9555108562650725,
+      "y": 98.75,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.024610445797204,
+      "y": 97.91666666666667,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.008902424995993,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.953711737975263,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.043974713356218,
+      "y": 99.41666666666666,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.0562455814231875,
+      "y": 81.03333333333333,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.018649263352011,
+      "y": 78.58333333333334,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.9639343728166,
+      "y": 99.5,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.039648890220523,
+      "y": 97.41666666666667,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.029408890628515,
+      "y": 95.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.9489036343618134,
+      "y": 97.58333333333333,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.9370243240525586,
+      "y": 95.24999999999999,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.014639641286172,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.035949356480592,
+      "y": 84.11666666666666,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.035455500454979,
+      "y": 99.33333333333334,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.9625081628473136,
+      "y": 98.5,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.021047650309201,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.1554462832628545,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.9769678460940647,
+      "y": 99.33333333333333,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.109764708668797,
+      "y": 99.5,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.866023581218226,
+      "y": 98.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.120073041184631,
+      "y": 94.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.141345969769564,
+      "y": 89.91666666666667,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.92379648507326,
+      "y": 97.5,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.843872453015102,
+      "y": 32.833333333333336,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.994562692298816,
+      "y": 59.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.898467922451929,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.150922001371286,
+      "y": 98.49999999999999,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.127263499237616,
+      "y": 90.08333333333334,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.1474127634976865,
+      "y": 93.33333333333334,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.0332382904770405,
+      "y": 80.25,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.004851317408845,
+      "y": 35.83333333333333,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.106469711801674,
+      "y": 77.41666666666666,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.048751669020486,
+      "y": 72.98333333333333,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.919538456437518,
+      "y": 41.33333333333333,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.138971532242516,
+      "y": 57.083333333333336,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.98070382398897,
+      "y": 77.83333333333333,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.087537993058976,
+      "y": 96.75000000000001,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.000300146236316,
+      "y": 86.5,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.898673997793641,
+      "y": 83.58333333333333,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.9346965910430125,
+      "y": 99.58333333333334,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.023811446016902,
+      "y": 98.41666666666666,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.88576066696457,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.844396114757273,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.9788451917919785,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.08390309499495,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.036530327597724,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.9437268402583605,
+      "y": 99.83333333333333,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.069517100574558,
+      "y": 99.66666666666667,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.995044682595159,
+      "y": 96.58333333333334,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.159840432722248,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.08833012878233,
+      "y": 99.41666666666666,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.105802061206963,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.923055649964409,
+      "y": 95.08333333333333,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.8887343881116205,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.90377725091424,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.978324788590805,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.003887718278688,
+      "y": 100.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.902274991274315,
+      "y": 99.50000000000001,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.0895823267163465,
+      "y": 99.75000000000001,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 7.117897969413513,
+      "y": 3.75,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.941121595443277,
+      "y": 3.750000000000001,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.002580542962013,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.030199872804083,
+      "y": 26.083333333333332,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.071161015657959,
+      "y": 12.833333333333334,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.887191185428914,
+      "y": 57.81666666666666,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.92987873964901,
+      "y": 3.3333333333333335,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.073825918674689,
+      "y": 58.916666666666664,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.02182154057364,
+      "y": 11.333333333333332,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.127982653900464,
+      "y": 55.31666666666666,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.9833146758363975,
+      "y": 2.333333333333333,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.970116110410832,
+      "y": 0.08333333333333334,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.9380823096098245,
+      "y": 45.58333333333333,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.914039223249518,
+      "y": 73.00000000000001,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.048245227124287,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.924699520583262,
+      "y": 2.333333333333333,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.115928166605775,
+      "y": 1.5,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.926607486608675,
+      "y": 0.8333333333333334,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.055475081992047,
+      "y": 39.58333333333333,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.021818925408554,
+      "y": 69.43333333333334,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "category": "Pre-image L14, context tokens",
+      "y": 52.74499999999999,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "category": "Pre-image L19, context tokens",
+      "y": 53.185,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "category": "Unsteered finetune",
+      "y": 54.24249999999999,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "category": "Base model",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "x": 0.041106815321250684,
+      "y": 53.733333333333334,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.12653336820218816,
+      "y": 52.8,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.1056036955297879,
+      "y": 80.03333333333333,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.11205902531985214,
+      "y": 38.48333333333333,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.120991289172702,
+      "y": 56.533333333333324,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.13553951330617056,
+      "y": 32.833333333333336,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.010953927553197018,
+      "y": 29.333333333333332,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.10696603137527291,
+      "y": 75.7,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.09829373762991675,
+      "y": 19.166666666666664,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.15276463022499837,
+      "y": 45.33333333333333,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.040125769044845536,
+      "y": 79.23333333333333,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.008574729155657962,
+      "y": 76.33333333333334,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.09071094378341617,
+      "y": 59.45,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.04611000975446704,
+      "y": 33.75,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.08870674063089531,
+      "y": 58.31666666666668,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.06981500597288776,
+      "y": 69.61666666666667,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.1365987394331493,
+      "y": 53.06666666666666,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.026503882780855637,
+      "y": 70.23333333333333,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": -0.0365232187965696,
+      "y": 41.11666666666667,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.035575824778935755,
+      "y": 29.833333333333332,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 1.0525253941595218,
+      "y": 35.36666666666667,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.051288494376859,
+      "y": 52.783333333333324,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.8671228695116844,
+      "y": 67.50000000000001,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.0262088252911006,
+      "y": 36.33333333333333,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.0754955519673521,
+      "y": 58.43333333333334,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.094581877165904,
+      "y": 35.78333333333333,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.0283309606205928,
+      "y": 16.116666666666667,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.8817833786350585,
+      "y": 75.25,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.8667969036469693,
+      "y": 38.46666666666666,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.9433771817938618,
+      "y": 57.53333333333334,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.136818819029108,
+      "y": 77.41666666666667,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.9912376092267143,
+      "y": 80.33333333333334,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.1265516502872475,
+      "y": 43.233333333333334,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.9870959850486479,
+      "y": 37.4,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.0816377940992408,
+      "y": 72.2,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.9952406962206849,
+      "y": 69.36666666666666,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.0667847236583627,
+      "y": 61.416666666666664,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.9414973685334975,
+      "y": 75.35000000000001,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.1247568843637452,
+      "y": 34.7,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.9250265819957066,
+      "y": 38.71666666666667,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.841976585210969,
+      "y": 43.083333333333336,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.0707730515573894,
+      "y": 44.11666666666666,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.0565134282382656,
+      "y": 75.68333333333334,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.0502084639762166,
+      "y": 37.33333333333333,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.0599728007402645,
+      "y": 62.35,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.0276045475259146,
+      "y": 31.333333333333332,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.8768892649851245,
+      "y": 24.999999999999996,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.0541451911616164,
+      "y": 71.2,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.8421115276098254,
+      "y": 43.38333333333334,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.8985097212655042,
+      "y": 59.78333333333334,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.9746810896625115,
+      "y": 80.78333333333333,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.9610782017307695,
+      "y": 77.45000000000002,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.8780688519726456,
+      "y": 60.516666666666666,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.9766264332927639,
+      "y": 37.06666666666667,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.0395575179594694,
+      "y": 60.366666666666674,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.9607882980903788,
+      "y": 68.86666666666667,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.066719834651747,
+      "y": 65.45,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.9138950705210487,
+      "y": 66.85,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.8860240871266956,
+      "y": 38.61666666666667,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 2.079647950236316,
+      "y": 35.61666666666666,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 3.0539930015238577,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.977398621854324,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.8837655311416683,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.052378796585273,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.0799858399763886,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.8924616490265045,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.0605765558176588,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.9538038676421716,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.1328379567646985,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.0804927000346853,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.9275939744746866,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.140168422284097,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.848074481953483,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.8991436846330876,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.9174089507670833,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.074265626678363,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.008373769760519,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.9886001305261014,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 2.9112106684070986,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.0820694753150755,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    }
+  ],
+  "n_series": 64,
+  "total_points": 672,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Evil II",
+        "ylabel": "Trait score at operating point (0-100)",
+        "xticklabels": [
+          "Pre-image L14, context tokens",
+          "Pre-image L19, context tokens",
+          "Pre-image L14, context-end",
+          "Pre-image L19, context-end",
+          "Random L14, context tokens",
+          "Random L19, context tokens",
+          "Random L14, context-end",
+          "Random L19, context-end",
+          "Parent context extract+steer",
+          "Parent paper method",
+          "Unsteered finetune",
+          "Base model"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      },
+      {
+        "title": "Sycophancy II",
+        "xticklabels": [
+          "Pre-image L14, context tokens",
+          "Pre-image L19, context tokens",
+          "Pre-image L14, context-end",
+          "Pre-image L19, context-end",
+          "Parent context extract+steer",
+          "Parent paper method",
+          "Unsteered finetune",
+          "Base model"
+        ]
+      },
+      {
+        "title": "Hallucination II",
+        "xticklabels": [
+          "Pre-image L14, context tokens",
+          "Pre-image L19, context tokens",
+          "Pre-image L14, context-end",
+          "Pre-image L19, context-end",
+          "Parent context extract+steer",
+          "Parent paper method",
+          "Unsteered finetune",
+          "Base model"
+        ]
+      },
+      {
+        "title": "Mistake opinions",
+        "xticklabels": [
+          "Pre-image L14, context tokens",
+          "Pre-image L19, context tokens",
+          "Unsteered finetune",
+          "Base model"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

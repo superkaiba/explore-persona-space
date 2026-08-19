@@ -207,15 +207,14 @@ def mlp_scaling(
     pool + Y_train the fresh delta (no redundant copy); each chunk is freed + gc'd
     before the next.
 
-    NON-EQUIVALENCE CAVEAT: ``fit_batched_split_mlp`` seeds each group's MLP init in
-    BATCH ORDER (``torch.manual_seed(seed)`` then one init per group; member g gets
-    init g — vectorized_mlp_skill.py:809). So group g's init depends on its position
-    in the fit_split_mlps call, and chunking changes that position → the r2 curve is
-    NOT bit-identical to a single all-groups call (which OOMs and never runs). The fit
-    IS DETERMINISTIC + reproducible at a FIXED ``group_chunk`` (same chunk size → same
-    curve). ``group_chunk`` is a pinned nuisance parameter, recorded in the output; the
-    init seed does not change dose/data/schedule. (The all-groups helper cannot be
-    seeded per-absolute-index without touching the #658-gated shared surface.)
+    PARTITION INVARIANCE (#926): since ``4dfcba056f`` ("port split-MLP fitter to main
+    with partition-invariant per-group seeding"), ``fit_batched_split_mlp`` seeds each
+    group under ``split_group_init_seed(seed, group.key)``, which depends only on
+    ``(seed, key)`` — never on batch position or chunking — so the r2 curve is
+    bit-identical across ``group_chunk`` values and to a single all-groups call. The
+    fit is also DETERMINISTIC + reproducible at a FIXED ``group_chunk`` (same chunk
+    size → same curve). ``group_chunk`` is a pinned RAM knob recorded in the output,
+    NOT a nuisance seed; it bounds peak host RAM without changing the numbers.
 
     Returns ``(curve, params_by_n)`` — ``params_by_n[n][t]`` is the numpy param dict
     Stage-1 rebuilds into the row-1 mlp transported class (RAW space).
@@ -576,9 +575,10 @@ def main() -> int:
     result["scaling_curve"]["mlp"] = mlp_curve
     result["atlas_largest_n"] = ns[-1]
     result["mlp_ns"] = mlp_ns  # which n-points have persisted MLP maps for Stage-1
-    # Pin the MLP group-chunk (host-RAM fix): the fixed-split helper seeds init in batch
-    # order, so the r2 curve is deterministic at this chunk size but chunk-size-dependent
-    # — record it so the fit is reproducible (see mlp_scaling NON-EQUIVALENCE caveat).
+    # Record the MLP group-chunk as RAM-knob PROVENANCE (host-RAM fix): since #926
+    # (4dfcba056f) the r2 curve is bit-identical across group_chunk values, so this
+    # documents the memory regime the run used, not a seed the numbers depend on
+    # (see mlp_scaling's PARTITION INVARIANCE block above).
     result["mlp_group_chunk"] = S.MLP_GROUP_CHUNK
     C.write_json_atomic(out_dir / "stage0_scaling.json", result)
 

@@ -1,0 +1,472 @@
+{
+  "commit": "21b2d568+dirty",
+  "render_id": "c498af73da2b4c6c",
+  "git_commit": "21b2d568",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2202/fig_indegree_v2.meta.json",
+    "figures/issue_2202/fig_indegree_v2.pdf",
+    "figures/issue_2202/fig_indegree_v2.png",
+    "figures/issue_2202/fig_reciprocity_bands_log.meta.json",
+    "figures/issue_2202/fig_reciprocity_bands_log.pdf",
+    "figures/issue_2202/fig_reciprocity_bands_log.png",
+    "scripts/issue2202_regen_figs.py"
+  ],
+  "created": "2026-08-08T22:19:19Z",
+  "figsize": [
+    10.0,
+    5.6
+  ],
+  "points": [
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.006361913974808689,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.005613290750573485,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.01924427566085385,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.014940441951874217,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.000800604250903697,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.02301415605068602,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.008260529823958258,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.0033030963612697,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.035714412483412256,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.02071968293081975,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.023359811414624038,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.027282774555665745,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.01180176749019584,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.026634796622080514,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.006936625507551614,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.005463909850365059,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.026824688977859515,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.015536318186493564,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.01125102773458804,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.0013960909453530207,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.0014836010191870697,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.009622658792527106,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.0006771856531985893,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.012291924214776206,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.0028419415303953116,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.006827999251801137,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.010987869885333679,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.020825450468829047,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.043910034703434825,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.08236962568581443,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.02036994850825819,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.03244008570102108,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.0583929520618324,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.03276258524809014,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.05657982813411484,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.05866532639349545,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.017369489338761673,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.04872499702977398,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.06351342238897509,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.06451595418895699,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.0953627585117528,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.13037765228857764,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.015421268104723565,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.06278065290863309,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.05551705665236473,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.11595299480626238,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.13257600339825015,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.21772104850176108,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.04179788678909205,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.024906053401745107,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.09730492628995671,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.09056796927945868,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.10814643218082222,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.16367322165276282,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.13545713037191873,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.20355496619927627,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.24756538129270397,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": 0.055085986016728594,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": 0.0936968580174553,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": 0.11049942108852659,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.009114607763154113,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.007187448714224498,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.028909650125609032,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "answer-pool size (contexts, log scale)": 500.0,
+      "failure-rate difference (group minus rest)": -0.009815615411394196,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "answer-pool size (contexts, log scale)": 2000.0,
+      "failure-rate difference (group minus rest)": -0.014897222289688233,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "answer-pool size (contexts, log scale)": 9941.0,
+      "failure-rate difference (group minus rest)": -0.03385402245808336,
+      "_kind": "line",
+      "_group": 21
+    }
+  ],
+  "n_series": 22,
+  "total_points": 66,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Failure-rate contrasts keep their sign as the answer pool grows",
+        "xlabel": "answer-pool size (contexts, log scale)",
+        "ylabel": "failure-rate difference (group minus rest)",
+        "legend_labels": [
+          "not significant at q = 0.05 (9 contrasts)"
+        ],
+        "annotations": [
+          "topic=advice_howto",
+          "topic=factual_qa",
+          "corpus=wildchat",
+          "depth=>=5",
+          "topic=roleplay_persona",
+          "topic=coding",
+          "language=en",
+          "topic=other",
+          "format=code",
+          "topic=harmful_or_unsafe_request",
+          "refusal_adjacent=yes",
+          "topic=nsfw",
+          "answer_is_refusal=yes"
+        ],
+        "xticklabels": [
+          "500",
+          "2000",
+          "9941"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "not significant at q = 0.05 (9 contrasts)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -43,8 +43,14 @@ _REPO_ROOT = _ensure_repo_root_on_syspath()
 
 # smallest labeling tar first, so a quota/staging fault surfaces early
 BEHAVIOR_ORDER = ("evil", "sycophancy", "hallucination")
-HF_OUT_PREFIX = "issue1739_result2_fair"
-OUT_ROOT = Path("eval_results/issue_1739/result2_fair")
+# v2 roster (arm8/arm12/arm20 added, all MLP arms dropped) writes a SEPARATE tree
+# and a SEPARATE HF prefix from the committed v1 fair run. Both must move together:
+# the local out-root because the score script's `_git_tracked` guard refuses to
+# overwrite the committed v1 tree, and the HF prefix so v2 results are not uploaded
+# on top of v1's under the same key. Matches DEFAULT_OUT_ROOT in
+# scripts/issue1739_result2fair_score.py.
+HF_OUT_PREFIX = "issue1739_result2_fair_v2"
+OUT_ROOT = Path("eval_results/issue_1739/result2_fair_v2")
 
 
 def _log(msg: str) -> None:
@@ -199,7 +205,7 @@ def main(argv: list[str] | None = None) -> None:
         }
         overall_rc = overall_rc or proc.returncode
         sentinel = {
-            "leg": "result2_fair",
+            "leg": "result2_fair_v2",
             "behavior": behavior,
             **results[behavior],
             "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -210,7 +216,7 @@ def main(argv: list[str] | None = None) -> None:
         _log(f"[phase=done {behavior}] sentinel -> {path}")
 
     summary = {
-        "leg": "result2_fair",
+        "leg": "result2_fair_v2",
         "behaviors": results,
         "overall_rc": overall_rc,
         "wall_s": round(time.time() - t0, 1),

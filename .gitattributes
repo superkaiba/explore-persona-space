@@ -63,3 +63,11 @@ tests/sparse_cones.txt merge=union
 # snapshot (atomic write-temp+rename), never append-only; a union merge would
 # concatenate two JSON objects into invalid JSON.
 # tasks/REGISTRY.json  -> (intentionally omitted; default last-writer-wins)
+
+# Agent-spec grandfather caps (#1718) — one entry per line, so concurrent
+# workflow-fix sessions raising caps on DIFFERENT files never touch the
+# same line. Same SCOPE CAVEAT as above: honored on LOCAL merges/rebases
+# only — server-side `gh pr merge` does not honor user-defined merge
+# drivers. Covers the local `git merge origin/main` recovery path where
+# all three 2026-07-26 conflicts actually fired.
+.claude/config/agent_spec_size_caps.txt merge=union

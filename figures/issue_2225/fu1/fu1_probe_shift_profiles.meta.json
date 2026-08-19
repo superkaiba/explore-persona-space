@@ -1,0 +1,3847 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "886d3e77b79b4701",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:51Z",
+  "figsize": [
+    13.200000000000001,
+    3.8
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.5041971802711487,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.0836003720760345,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.3028368949890137,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.737950086593628,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.8326026797294617,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.535086989402771,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.5397155284881592,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.7677539587020874,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.5181355476379395,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.4274425506591797,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.6783370971679688,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.7441462874412537,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.7874731421470642,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.7510112524032593,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 2.071518063545227,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 2.011431634426117,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.9327061176300049,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.898553490638733,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.8442495465278625,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.4593287706375122,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 1.9729559421539307,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.7041611671447754,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.4917529225349426,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.7360183000564575,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.783710241317749,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.7718591690063477,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.6888198852539062,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.6498151421546936,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.4763140082359314,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.0451054573059082,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.3124765753746033,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.624448001384735,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.7584038376808167,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.4645884037017822,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.578109622001648,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.7632598280906677,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.5510461926460266,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.549958884716034,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.787787675857544,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.7841545939445496,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.8298489451408386,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.748908817768097,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 1.9763977527618408,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 1.9704414010047913,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.9119688272476196,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.8795395493507385,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.7805824279785156,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.2324485778808594,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 2.005117177963257,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.6249460577964783,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.304152548313141,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.6697009801864624,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.7145007252693176,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.7209322452545166,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.6311121582984924,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.6052669882774353,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.5083841681480408,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.0724778175354004,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.2529496550559998,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.6870038509368896,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.8465773463249207,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.5713969469070435,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.4709953665733337,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.703834593296051,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.6026930212974548,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.521390676498413,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.757286548614502,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.7486951351165771,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.7772194743156433,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.70641428232193,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 1.948312520980835,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 1.9190171360969543,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.8840481638908386,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.842049777507782,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.7507832050323486,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.309523731470108,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 1.9138450622558594,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.6098929643630981,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.6919227242469788,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.6622446179389954,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.7315385341644287,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.7109321355819702,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.602619230747223,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.586453914642334,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.5089366436004639,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.1202037334442139,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.1738672852516174,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.5268620252609253,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.7402222156524658,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.4508104920387268,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.4551838040351868,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.653738021850586,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.52268385887146,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.4998482465744019,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.7548447251319885,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.7291256785392761,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.783227562904358,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.7007068991661072,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 1.9365427494049072,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 1.947269856929779,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.8880884051322937,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.8415212035179138,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.7355200052261353,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.3064793646335602,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 1.8488720655441284,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.5793545246124268,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.532626688480377,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.63542240858078,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.6973217725753784,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.6828137636184692,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.5727070569992065,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.587748944759369,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.4866918921470642,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.1437524259090424,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.2943333983421326,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.637681007385254,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.7701793313026428,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.4854640364646912,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.4592593312263489,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.7184293270111084,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.5155518054962158,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.4409127831459045,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.660304844379425,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.7205662727355957,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.7139660716056824,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.7140890955924988,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 2.0732678174972534,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 2.041907846927643,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.956406831741333,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.9272408485412598,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.9035850167274475,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.3525446057319641,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 2.057543158531189,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.7264170050621033,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.5296669602394104,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.7464553117752075,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.7975188493728638,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.7961727976799011,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.7085070610046387,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.6791335344314575,
+      "series": "Random L14, context tokens",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.4691696166992188,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.071300983428955,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.2563043236732483,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.577229380607605,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.7586854100227356,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.4817729592323303,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.526839017868042,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.714060664176941,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.5370576977729797,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.5366001725196838,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.780740737915039,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.756910264492035,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.8147392272949219,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.7398398518562317,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 1.9781438112258911,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 1.9450222849845886,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.8916165232658386,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.8617854118347168,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.783632516860962,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.1281432807445526,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 2.026122570037842,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.6072943210601807,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.3938013911247253,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.6827720403671265,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.7366953492164612,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.7326801419258118,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.6612485647201538,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.5992392301559448,
+      "series": "Random L19, context tokens",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.5377665758132935,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.0323477983474731,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.2670509219169617,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.7047349214553833,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.8963859677314758,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.5691991448402405,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.489481806755066,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.7194838523864746,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.616545021533966,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.5158154368400574,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.751218318939209,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.7387430667877197,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.7868377566337585,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.7117883563041687,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 1.94724440574646,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 1.9444772601127625,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.9031436443328857,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.8620404601097107,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.7530123591423035,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.3145759105682373,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 1.9030711650848389,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.6167238354682922,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.594485104084015,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.6798046827316284,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.7476292252540588,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.734488844871521,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.6459325551986694,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.6203084588050842,
+      "series": "Random L14, context-end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.5426602363586426,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 1.1018131077289581,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.188312828540802,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.560774803161621,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.7672287821769714,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.508128583431244,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.5017186403274536,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.7144161462783813,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.5812217593193054,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.5362139344215393,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.7658247351646423,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.748117744922638,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.794470191001892,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.7141461372375488,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 1.9401074647903442,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 1.9433075785636902,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.8891622424125671,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.8429931998252869,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.7489773631095886,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.2862547636032104,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 1.8632055521011353,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.6050057411193848,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.5129727721214294,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.6541536450386047,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.725325345993042,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.6982897520065308,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.605912685394287,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.6055168509483337,
+      "series": "Random L19, context-end",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift (finetuned - base)": 1.485741138458252,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift (finetuned - base)": 0.9892489910125732,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift (finetuned - base)": 1.1293176710605621,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift (finetuned - base)": 1.5454238057136536,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift (finetuned - base)": 1.7828404307365417,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift (finetuned - base)": 1.5017775297164917,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift (finetuned - base)": 1.533512532711029,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift (finetuned - base)": 1.7062270641326904,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift (finetuned - base)": 1.565886914730072,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift (finetuned - base)": 1.5156702995300293,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift (finetuned - base)": 1.7383087277412415,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift (finetuned - base)": 1.7182543277740479,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift (finetuned - base)": 1.769825518131256,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift (finetuned - base)": 1.6937517523765564,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift (finetuned - base)": 1.9242491722106934,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift (finetuned - base)": 1.9191637635231018,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift (finetuned - base)": 1.8735730648040771,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift (finetuned - base)": 1.836236834526062,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift (finetuned - base)": 1.7357064485549927,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift (finetuned - base)": 1.373353898525238,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift (finetuned - base)": 1.8002895712852478,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift (finetuned - base)": 1.607510507106781,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift (finetuned - base)": 2.4878973364830017,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift (finetuned - base)": 1.6564810872077942,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift (finetuned - base)": 1.7300531268119812,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift (finetuned - base)": 1.7108660340309143,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift (finetuned - base)": 1.6206581592559814,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift (finetuned - base)": 1.5763537883758545,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 0.0,
+      "y": 1.34476637840271,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 1.0,
+      "y": 1.357140600681305,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.8469134867191315,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.8790378719568253,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 4.0,
+      "y": 1.253213882446289,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.341203212738037,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.4510687589645386,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.0606113076210022,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.4513834714889526,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.6986543536186218,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 10.0,
+      "y": 1.8510809540748596,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.5032745599746704,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.6234400868415833,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.414555847644806,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.465275526046753,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.2634714543819427,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.2942580580711365,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.3517996072769165,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 18.0,
+      "y": 1.2039739489555359,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 19.0,
+      "y": 1.239357203245163,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 20.0,
+      "y": 1.3099198937416077,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.1045131087303162,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.2375021278858185,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.2598262131214142,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 24.0,
+      "y": 1.3422757387161255,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 25.0,
+      "y": 1.2921187579631805,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 26.0,
+      "y": 1.586567223072052,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.4952147603034973,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 0.0,
+      "y": 1.442488193511963,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 1.0,
+      "y": 1.5436423420906067,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 2.0,
+      "y": 1.1379877924919128,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 3.0,
+      "y": 1.1720688939094543,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 4.0,
+      "y": 1.3699361085891724,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.4261242747306824,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.4745810627937317,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.156532198190689,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.5081889033317566,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.7299635410308838,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 10.0,
+      "y": 1.7661615014076233,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.445188045501709,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.4907845258712769,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.4854699969291687,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.300561785697937,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.1917471885681152,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.197445571422577,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.281006932258606,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 18.0,
+      "y": 1.0704011023044586,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 19.0,
+      "y": 1.1417961120605469,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 20.0,
+      "y": 1.2315016090869904,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.9645310938358307,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.1941779553890228,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.2649410367012024,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 24.0,
+      "y": 1.343605399131775,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 25.0,
+      "y": 1.3499600887298584,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 26.0,
+      "y": 1.6685153245925903,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.4448215961456299,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 0.0,
+      "y": 1.4812541007995605,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 1.0,
+      "y": 1.3782227039337158,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 2.0,
+      "y": 1.1041191816329956,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 3.0,
+      "y": 1.0705377459526062,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 4.0,
+      "y": 1.1535438299179077,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.2361721992492676,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.1822449266910553,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.0184872448444366,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.3134181499481201,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.6398481130599976,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 10.0,
+      "y": 1.6918928027153015,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.4109646677970886,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.4586893916130066,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.5014674663543701,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.405790090560913,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.3296263217926025,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.3109685778617859,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.4206387996673584,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 18.0,
+      "y": 1.2692461013793945,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 19.0,
+      "y": 1.3540310263633728,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 20.0,
+      "y": 1.4137351512908936,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.0744123756885529,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.27872833609581,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.318785309791565,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 24.0,
+      "y": 1.3469197154045105,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 25.0,
+      "y": 1.3430851697921753,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 26.0,
+      "y": 1.5869498252868652,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.2561007738113403,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 0.0,
+      "y": 1.5202153325080872,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 1.0,
+      "y": 1.3727998733520508,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.9945282340049744,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 3.0,
+      "y": 1.1033672094345093,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 4.0,
+      "y": 1.1681840419769287,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.2618944644927979,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.2854118049144745,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.1197531521320343,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.4604137539863586,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.8005028367042542,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 10.0,
+      "y": 1.6893522143363953,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.4561087489128113,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.4925894737243652,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.5471904277801514,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.3679527044296265,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.2444213330745697,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.2860558032989502,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.3626812100410461,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 18.0,
+      "y": 1.2487716674804688,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 19.0,
+      "y": 1.3101672530174255,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 20.0,
+      "y": 1.3831564784049988,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.1460780501365662,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.255709320306778,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.2694569826126099,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 24.0,
+      "y": 1.333914577960968,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 25.0,
+      "y": 1.314544439315796,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 26.0,
+      "y": 1.609438955783844,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.2756176590919495,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 0.0,
+      "y": 1.464358627796173,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 1.0,
+      "y": 1.3398500084877014,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.9704200327396393,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 3.0,
+      "y": 1.0491766333580017,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 4.0,
+      "y": 1.12032750248909,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.2145862579345703,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.1689489781856537,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.0987274646759033,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.4068507552146912,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.776948869228363,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 10.0,
+      "y": 1.6739651560783386,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.4449802041053772,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.537740409374237,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.570112407207489,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.4405176639556885,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.3257058262825012,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.3284562826156616,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.418026328086853,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 18.0,
+      "y": 1.2889575362205505,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 19.0,
+      "y": 1.3549242615699768,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 20.0,
+      "y": 1.405635952949524,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.218026340007782,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.267447590827942,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.2857007384300232,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 24.0,
+      "y": 1.3359918594360352,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 25.0,
+      "y": 1.334261178970337,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 26.0,
+      "y": 1.562336802482605,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.1681025624275208,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.6243470311164856,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.6035830080509186,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.5524824559688568,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.7707317173480988,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.7851870059967041,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.1849361062049866,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.1961399912834167,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.099524199962616,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.0655918717384338,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.194652646780014,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 10.0,
+      "y": 1.9554014205932617,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.2857281863689423,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.1439234912395477,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.184701830148697,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.6634697318077087,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.6688975393772125,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.7613306641578674,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.7276895344257355,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 18.0,
+      "y": 2.595703572034836,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 19.0,
+      "y": 2.717689648270607,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 20.0,
+      "y": 2.487795501947403,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.5973762273788452,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.4474951028823853,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.351752758026123,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 24.0,
+      "y": 2.0268792808055878,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 25.0,
+      "y": 2.010625034570694,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 26.0,
+      "y": 2.1713231205940247,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.3134936690330505,
+      "series": "Pre-image L14, context tokens",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.614863395690918,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.5527415573596954,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.5202843248844147,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.7196486294269562,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.832106351852417,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.2662339806556702,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.3331709504127502,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.13467937707901,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.1093550324440002,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.2329414784908295,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 10.0,
+      "y": 2.027898073196411,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.346401184797287,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.2648738324642181,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.291622906923294,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.7612208724021912,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.8741214573383331,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.9579141736030579,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.9293902218341827,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 18.0,
+      "y": 2.925359934568405,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 19.0,
+      "y": 3.1600152403116226,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 20.0,
+      "y": 2.8661331236362457,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.8825048208236694,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.7068910598754883,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.603870153427124,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 24.0,
+      "y": 2.2952801883220673,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 25.0,
+      "y": 2.2972566187381744,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 26.0,
+      "y": 2.531651556491852,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.5869384407997131,
+      "series": "Pre-image L19, context tokens",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.6225452423095703,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.5776848495006561,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.5662812888622284,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.7306278049945831,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.8114051818847656,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.164598524570465,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.251722514629364,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.0818118453025818,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.0621535181999207,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.2060068547725677,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 10.0,
+      "y": 1.9815239906311035,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.3169288337230682,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.2279864251613617,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.2540957033634186,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.7213086485862732,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.7794688045978546,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.8694189190864563,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.8428139984607697,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 18.0,
+      "y": 2.6851870715618134,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 19.0,
+      "y": 2.9201678186655045,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 20.0,
+      "y": 2.714085727930069,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.820120930671692,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.6668517589569092,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.5481617450714111,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 24.0,
+      "y": 2.221025437116623,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 25.0,
+      "y": 2.225577026605606,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 26.0,
+      "y": 2.4460816979408264,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.5252079367637634,
+      "series": "Pre-image L14, context-end",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.6170725226402283,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.5117055475711823,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.495604544878006,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.751419335603714,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.824797511100769,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.2190187573432922,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.3116679787635803,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.0902453064918518,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.064242422580719,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.2146467864513397,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 10.0,
+      "y": 2.0111875534057617,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.3237181603908539,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.244195431470871,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.2769605219364166,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.75918048620224,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.8492231667041779,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.9264939427375793,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.8911588490009308,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 18.0,
+      "y": 2.7695500552654266,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 19.0,
+      "y": 3.0392195135354996,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 20.0,
+      "y": 2.801095634698868,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.8588241338729858,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.697004795074463,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.5744946002960205,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 24.0,
+      "y": 2.257945030927658,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 25.0,
+      "y": 2.2689088881015778,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 26.0,
+      "y": 2.5590160489082336,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.5754631161689758,
+      "series": "Pre-image L19, context-end",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.6299315690994263,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.5134505331516266,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.5308364927768707,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.7773275673389435,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.8313454389572144,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 5.0,
+      "y": 1.2289718985557556,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 6.0,
+      "y": 1.3654919266700745,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 7.0,
+      "y": 1.1068317294120789,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 8.0,
+      "y": 1.0842652916908264,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 9.0,
+      "y": 1.234521359205246,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 10.0,
+      "y": 2.0465519428253174,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 11.0,
+      "y": 1.3304396569728851,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 12.0,
+      "y": 1.2497290074825287,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 13.0,
+      "y": 1.2765248119831085,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 14.0,
+      "y": 1.7573391795158386,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 15.0,
+      "y": 1.8461439907550812,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 16.0,
+      "y": 1.919903814792633,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 17.0,
+      "y": 1.8872332870960236,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 18.0,
+      "y": 2.739611119031906,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 19.0,
+      "y": 2.9938026815652847,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 20.0,
+      "y": 2.7648183405399323,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 21.0,
+      "y": 1.8418105840682983,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 22.0,
+      "y": 1.6861352920532227,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 23.0,
+      "y": 1.564609169960022,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 24.0,
+      "y": 2.2141279876232147,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 25.0,
+      "y": 2.2304634153842926,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 26.0,
+      "y": 2.468323290348053,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 27.0,
+      "y": 1.5431010127067566,
+      "series": "Unsteered finetune (baseft)",
+      "_kind": "line",
+      "_group": 18
+    }
+  ],
+  "n_series": 19,
+  "total_points": 532,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "evil",
+        "xlabel": "Layer",
+        "ylabel": "Probe-score shift (finetuned - base)",
+        "legend_labels": [
+          "Pre-image L14, context tokens",
+          "Pre-image L19, context tokens",
+          "Pre-image L14, context-end",
+          "Pre-image L19, context-end",
+          "Random L14, context tokens",
+          "Random L19, context tokens",
+          "Random L14, context-end",
+          "Random L19, context-end",
+          "Unsteered finetune (baseft)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0"
+        ]
+      },
+      {
+        "title": "sycophancy",
+        "xlabel": "Layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75",
+          "2.00"
+        ]
+      },
+      {
+        "title": "hallucination",
+        "xlabel": "Layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5"
+        ]
+      }
+    ],
+    "series": [
+      "Pre-image L14, context tokens",
+      "Pre-image L19, context tokens",
+      "Pre-image L14, context-end",
+      "Pre-image L19, context-end",
+      "Random L14, context tokens",
+      "Random L19, context tokens",
+      "Random L14, context-end",
+      "Random L19, context-end",
+      "Unsteered finetune (baseft)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "criterion": "butler anchor-separation gate: mean over the 5 bare->butler pairs of (ceiling - floor) on the per-draw Delta scale >= 0.5 (HARD gate — on FAIL butler is unmeasurable on this bank and the grid must not run)",
+  "passed": true,
+  "gate_min_separation": 0.5,
+  "mean_denominator_bare_butler": 1.3490499999999999,
+  "per_pair_denominators_bare_butler": [
+    1.641,
+    0.23125,
+    1.7349999999999999,
+    1.579,
+    1.5590000000000002
+  ],
+  "mean_denominator_persona_butler_informational": 1.3570555555555555,
+  "per_pair_denominators_persona_butler": [
+    1.408,
+    1.07525,
+    1.4649999999999999,
+    1.3517777777777777,
+    1.4852500000000002
+  ],
+  "pair_ids": [
+    "mqb--bare__q1--butler__q1",
+    "mqb--bare__q2--butler__q2",
+    "mqb--bare__q3--butler__q3",
+    "mqb--bare__q4--butler__q4",
+    "mqb--bare__q5--butler__q5",
+    "mqb--persona__q1--butler__q1",
+    "mqb--persona__q2--butler__q2",
+    "mqb--persona__q3--butler__q3",
+    "mqb--persona__q4--butler__q4",
+    "mqb--persona__q5--butler__q5"
+  ],
+  "anchor_draws": 10,
+  "rubrics": [
+    "fp-butler",
+    "fp-bare",
+    "fp-persona",
+    "coherence"
+  ],
+  "coherence_threshold": 60.0,
+  "regime_fp": "bd7ae125f03b08a4",
+  "repro": {
+    "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 28,
+    "timestamp": "2026-08-14T16:36:53.014150+00:00"
+  }
+}

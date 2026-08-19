@@ -1,0 +1,349 @@
+{
+ "per_target": {
+  "A__evil__c0.5": {
+   "mmlu_acc": 0.7094430992736077,
+   "mmlu_acc_stderr": 0.00360372938807957
+  },
+  "A__evil__c1.5": {
+   "mmlu_acc": 0.7104401082466885,
+   "mmlu_acc_stderr": 0.003597661292985166
+  },
+  "A__evil__c3.0": {
+   "mmlu_acc": 0.7089445947870674,
+   "mmlu_acc_stderr": 0.0036037962630833184
+  },
+  "A__evil__c5.0": {
+   "mmlu_acc": 0.7092294544936619,
+   "mmlu_acc_stderr": 0.0036039654601168593
+  },
+  "A__hallucination__c0.5": {
+   "mmlu_acc": 0.7078051559606894,
+   "mmlu_acc_stderr": 0.0036196996463294267
+  },
+  "A__hallucination__c1.5": {
+   "mmlu_acc": 0.7061672126477709,
+   "mmlu_acc_stderr": 0.003621953142970396
+  },
+  "A__hallucination__c3.0": {
+   "mmlu_acc": 0.7050989887480416,
+   "mmlu_acc_stderr": 0.0036301798707590676
+  },
+  "A__hallucination__c5.0": {
+   "mmlu_acc": 0.7036034752884205,
+   "mmlu_acc_stderr": 0.0036358049302449504
+  },
+  "A__mistake_opinions__c0.5": {
+   "mmlu_acc": 0.7088021649337701,
+   "mmlu_acc_stderr": 0.0035966537287700226
+  },
+  "A__mistake_opinions__c1.5": {
+   "mmlu_acc": 0.7083748753738783,
+   "mmlu_acc_stderr": 0.0035982414498272014
+  },
+  "A__mistake_opinions__c3.0": {
+   "mmlu_acc": 0.7075202962540948,
+   "mmlu_acc_stderr": 0.0036056673745283666
+  },
+  "A__mistake_opinions__c5.0": {
+   "mmlu_acc": 0.707306651474149,
+   "mmlu_acc_stderr": 0.0036142156047203264
+  },
+  "A__sycophancy__c0.5": {
+   "mmlu_acc": 0.7139296396524711,
+   "mmlu_acc_stderr": 0.00359599664536445
+  },
+  "A__sycophancy__c1.5": {
+   "mmlu_acc": 0.7132174903859849,
+   "mmlu_acc_stderr": 0.0036005707887751216
+  },
+  "A__sycophancy__c3.0": {
+   "mmlu_acc": 0.7120068366329583,
+   "mmlu_acc_stderr": 0.003617512340415111
+  },
+  "A__sycophancy__c5.0": {
+   "mmlu_acc": 0.7111522575131748,
+   "mmlu_acc_stderr": 0.0036197820675563453
+  },
+  "B__evil__c0.25": {
+   "mmlu_acc": 0.7116507619997151,
+   "mmlu_acc_stderr": 0.0035881709466095537
+  },
+  "B__evil__c0.75": {
+   "mmlu_acc": 0.7085173052271756,
+   "mmlu_acc_stderr": 0.0036025605618399538
+  },
+  "B__evil__c1.5": {
+   "mmlu_acc": 0.7079475858139866,
+   "mmlu_acc_stderr": 0.003613136169637794
+  },
+  "B__hallucination__c0.25": {
+   "mmlu_acc": 0.7075202962540948,
+   "mmlu_acc_stderr": 0.003621575465295994
+  },
+  "B__hallucination__c0.75": {
+   "mmlu_acc": 0.7070217917675545,
+   "mmlu_acc_stderr": 0.003626120621028839
+  },
+  "B__hallucination__c1.5": {
+   "mmlu_acc": 0.7103688933200398,
+   "mmlu_acc_stderr": 0.0036149005362979035
+  },
+  "B__mistake_opinions__c0.25": {
+   "mmlu_acc": 0.7115083321464178,
+   "mmlu_acc_stderr": 0.0035953326642867776
+  },
+  "B__mistake_opinions__c0.75": {
+   "mmlu_acc": 0.707876370887338,
+   "mmlu_acc_stderr": 0.003607646628422089
+  },
+  "B__mistake_opinions__c1.5": {
+   "mmlu_acc": 0.7056687081612306,
+   "mmlu_acc_stderr": 0.003623374728140485
+  },
+  "B__sycophancy__c0.25": {
+   "mmlu_acc": 0.7132887053126336,
+   "mmlu_acc_stderr": 0.0035949675146386955
+  },
+  "B__sycophancy__c0.75": {
+   "mmlu_acc": 0.7137159948725252,
+   "mmlu_acc_stderr": 0.0036024368182111274
+  },
+  "B__sycophancy__c1.5": {
+   "mmlu_acc": 0.7151402934054978,
+   "mmlu_acc_stderr": 0.0035979646675089053
+  },
+  "C__evil__c0.5": {
+   "mmlu_acc": 0.7117219769263637,
+   "mmlu_acc_stderr": 0.0035920828932670813
+  },
+  "C__evil__c1.5": {
+   "mmlu_acc": 0.711864406779661,
+   "mmlu_acc_stderr": 0.0035956223282641426
+  },
+  "C__evil__c3.0": {
+   "mmlu_acc": 0.7099416037601481,
+   "mmlu_acc_stderr": 0.003595888735695526
+  },
+  "C__evil__c5.0": {
+   "mmlu_acc": 0.710155248540094,
+   "mmlu_acc_stderr": 0.003603192108648221
+  },
+  "C__hallucination__c0.5": {
+   "mmlu_acc": 0.7077339410340407,
+   "mmlu_acc_stderr": 0.0036196715779308847
+  },
+  "C__hallucination__c1.5": {
+   "mmlu_acc": 0.7076627261073921,
+   "mmlu_acc_stderr": 0.003620208134984134
+  },
+  "C__hallucination__c3.0": {
+   "mmlu_acc": 0.7060959977211223,
+   "mmlu_acc_stderr": 0.0036271724076494074
+  },
+  "C__hallucination__c5.0": {
+   "mmlu_acc": 0.7070217917675545,
+   "mmlu_acc_stderr": 0.003626193052786821
+  },
+  "C__mistake_opinions__c0.5": {
+   "mmlu_acc": 0.7096567440535536,
+   "mmlu_acc_stderr": 0.003595986125774734
+  },
+  "C__mistake_opinions__c1.5": {
+   "mmlu_acc": 0.7097991739068509,
+   "mmlu_acc_stderr": 0.003595596776992156
+  },
+  "C__mistake_opinions__c3.0": {
+   "mmlu_acc": 0.7082324455205811,
+   "mmlu_acc_stderr": 0.0035997301526991296
+  },
+  "C__mistake_opinions__c5.0": {
+   "mmlu_acc": 0.7091582395670133,
+   "mmlu_acc_stderr": 0.0036022979098445213
+  },
+  "C__sycophancy__c0.5": {
+   "mmlu_acc": 0.7144993590656602,
+   "mmlu_acc_stderr": 0.003593449766316401
+  },
+  "C__sycophancy__c1.5": {
+   "mmlu_acc": 0.7150690784788492,
+   "mmlu_acc_stderr": 0.003593853074334676
+  },
+  "C__sycophancy__c3.0": {
+   "mmlu_acc": 0.7149266486255519,
+   "mmlu_acc_stderr": 0.0036000765876555902
+  },
+  "C__sycophancy__c5.0": {
+   "mmlu_acc": 0.7147842187722546,
+   "mmlu_acc_stderr": 0.0035947528196684
+  },
+  "D__evil__c0.25": {
+   "mmlu_acc": 0.7105825380999857,
+   "mmlu_acc_stderr": 0.0035959787105530106
+  },
+  "D__evil__c0.75": {
+   "mmlu_acc": 0.7106537530266344,
+   "mmlu_acc_stderr": 0.003594624341294707
+  },
+  "D__evil__c1.5": {
+   "mmlu_acc": 0.7095143142002563,
+   "mmlu_acc_stderr": 0.003596233030286267
+  },
+  "D__hallucination__c0.25": {
+   "mmlu_acc": 0.707306651474149,
+   "mmlu_acc_stderr": 0.0036211521917030765
+  },
+  "D__hallucination__c0.75": {
+   "mmlu_acc": 0.7075202962540948,
+   "mmlu_acc_stderr": 0.003623543206369092
+  },
+  "D__hallucination__c1.5": {
+   "mmlu_acc": 0.7068081469876086,
+   "mmlu_acc_stderr": 0.00362215055860012
+  },
+  "D__mistake_opinions__c0.25": {
+   "mmlu_acc": 0.7097991739068509,
+   "mmlu_acc_stderr": 0.0035895709004312073
+  },
+  "D__mistake_opinions__c0.75": {
+   "mmlu_acc": 0.7095143142002563,
+   "mmlu_acc_stderr": 0.0035971403091331127
+  },
+  "D__mistake_opinions__c1.5": {
+   "mmlu_acc": 0.7095143142002563,
+   "mmlu_acc_stderr": 0.0036043265527614327
+  },
+  "D__sycophancy__c0.25": {
+   "mmlu_acc": 0.7134311351659308,
+   "mmlu_acc_stderr": 0.0036032948132530764
+  },
+  "D__sycophancy__c0.75": {
+   "mmlu_acc": 0.7149978635522005,
+   "mmlu_acc_stderr": 0.0035947068054623926
+  },
+  "D__sycophancy__c1.5": {
+   "mmlu_acc": 0.7125053411194986,
+   "mmlu_acc_stderr": 0.0036021572630977132
+  },
+  "E__evil__c0.25": {
+   "mmlu_acc": 0.7105825380999857,
+   "mmlu_acc_stderr": 0.003596804314262401
+  },
+  "E__evil__c0.75": {
+   "mmlu_acc": 0.7085885201538242,
+   "mmlu_acc_stderr": 0.003599281568160453
+  },
+  "E__evil__c1.5": {
+   "mmlu_acc": 0.7102976783933913,
+   "mmlu_acc_stderr": 0.0036001930322550396
+  },
+  "E__hallucination__c0.25": {
+   "mmlu_acc": 0.7080188007406353,
+   "mmlu_acc_stderr": 0.003618711495776137
+  },
+  "E__hallucination__c0.75": {
+   "mmlu_acc": 0.7088021649337701,
+   "mmlu_acc_stderr": 0.0036182706688642164
+  },
+  "E__hallucination__c1.5": {
+   "mmlu_acc": 0.708446090300527,
+   "mmlu_acc_stderr": 0.0036178715836138998
+  },
+  "E__mistake_opinions__c0.25": {
+   "mmlu_acc": 0.7105113231733371,
+   "mmlu_acc_stderr": 0.003591678761957151
+  },
+  "E__mistake_opinions__c0.75": {
+   "mmlu_acc": 0.7094430992736077,
+   "mmlu_acc_stderr": 0.003596690381969713
+  },
+  "E__mistake_opinions__c1.5": {
+   "mmlu_acc": 0.709585529126905,
+   "mmlu_acc_stderr": 0.003604797374315443
+  },
+  "E__sycophancy__c0.25": {
+   "mmlu_acc": 0.7157100128186868,
+   "mmlu_acc_stderr": 0.0035867872701735655
+  },
+  "E__sycophancy__c0.75": {
+   "mmlu_acc": 0.7132887053126336,
+   "mmlu_acc_stderr": 0.0036016823066541475
+  },
+  "E__sycophancy__c1.5": {
+   "mmlu_acc": 0.7106537530266344,
+   "mmlu_acc_stderr": 0.0036123053687478687
+  },
+  "F__evil__c0.5": {
+   "mmlu_acc": 0.7109386127332289,
+   "mmlu_acc_stderr": 0.0035978060678606475
+  },
+  "F__evil__c1.5": {
+   "mmlu_acc": 0.7103688933200398,
+   "mmlu_acc_stderr": 0.00359718731213933
+  },
+  "F__evil__c3.0": {
+   "mmlu_acc": 0.7112946873664721,
+   "mmlu_acc_stderr": 0.003595812781220913
+  },
+  "G__evil__c0.5": {
+   "mmlu_acc": 0.710155248540094,
+   "mmlu_acc_stderr": 0.0035958683870733403
+  },
+  "G__evil__c1.5": {
+   "mmlu_acc": 0.7098703888334995,
+   "mmlu_acc_stderr": 0.0036003176441246395
+  },
+  "G__evil__c3.0": {
+   "mmlu_acc": 0.7112234724398234,
+   "mmlu_acc_stderr": 0.0035927629352153676
+  },
+  "H__evil": {
+   "mmlu_acc": 0.7098703888334995,
+   "mmlu_acc_stderr": 0.0035870508918634998
+  },
+  "I__evil__c0.5": {
+   "mmlu_acc": 0.7088021649337701,
+   "mmlu_acc_stderr": 0.0036008686152909
+  },
+  "I__evil__c1.5": {
+   "mmlu_acc": 0.7087309500071215,
+   "mmlu_acc_stderr": 0.003602248864733261
+  },
+  "I__evil__c3.0": {
+   "mmlu_acc": 0.7102976783933913,
+   "mmlu_acc_stderr": 0.0035991177447565435
+  },
+  "P__evil__c0.5": {
+   "mmlu_acc": 0.7116507619997151,
+   "mmlu_acc_stderr": 0.003593084619892006
+  },
+  "P__evil__c1.5": {
+   "mmlu_acc": 0.7087309500071215,
+   "mmlu_acc_stderr": 0.003603236087884617
+  },
+  "P__evil__c3.0": {
+   "mmlu_acc": 0.7106537530266344,
+   "mmlu_acc_stderr": 0.003600325050956099
+  },
+  "base": {
+   "mmlu_acc": 0.7179888904714428,
+   "mmlu_acc_stderr": 0.0035785382209280064
+  },
+  "baseft_evil": {
+   "mmlu_acc": 0.7110810425865262,
+   "mmlu_acc_stderr": 0.0035968019943838007
+  },
+  "baseft_hallucination": {
+   "mmlu_acc": 0.7085173052271756,
+   "mmlu_acc_stderr": 0.0036178420613560153
+  },
+  "baseft_mistake_opinions": {
+   "mmlu_acc": 0.710724967953283,
+   "mmlu_acc_stderr": 0.0035913146749864166
+  },
+  "baseft_sycophancy": {
+   "mmlu_acc": 0.7154251531120923,
+   "mmlu_acc_stderr": 0.0035933211283491733
+  }
+ },
+ "n_targets": 86
+}

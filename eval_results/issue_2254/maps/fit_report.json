@@ -1,0 +1,2356 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-13T08:03:41Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "6049e115",
+  "git_dirty": false,
+  "n_rows_realized": 5000,
+  "layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+  ],
+  "heldout_split": {
+    "frac": 0.1,
+    "seed": 2254,
+    "n_train": 4500,
+    "n_eval": 500,
+    "note": "pointwise 90/10 (explicit-iid LMSYS rows, plan \u00a76); production maps refit on ALL rows (#1615 grain)"
+  },
+  "shuffle_seed": 2254,
+  "parity_gate": {
+    "evil": {
+      "layer": 14,
+      "lam_committed": 316.22776601683796,
+      "lam_refit": 316.2277660168379,
+      "kstar_committed": 1433,
+      "kstar_refit": 1433,
+      "recon_r2_committed": 0.832659206631146,
+      "recon_r2_refit": 0.832659206631146,
+      "pass": true
+    },
+    "sycophancy": {
+      "layer": 26,
+      "lam_committed": 1000.0,
+      "lam_refit": 1000.0,
+      "kstar_committed": 1321,
+      "kstar_refit": 1321,
+      "recon_r2_committed": 0.8340453548735764,
+      "recon_r2_refit": 0.8340453548735764,
+      "pass": true
+    },
+    "hallucination": {
+      "layer": 17,
+      "lam_committed": 316.22776601683796,
+      "lam_refit": 316.2277660168379,
+      "kstar_committed": 1565,
+      "kstar_refit": 1565,
+      "recon_r2_committed": 0.8601739907572246,
+      "recon_r2_refit": 0.8601739907572246,
+      "pass": true
+    }
+  },
+  "frame_fold_min_cos": 0.9999999999999997,
+  "kstar_shuffled_zero_fallback_layers": [],
+  "per_layer": [
+    {
+      "layer": 0,
+      "lam": 1000.0,
+      "kstar": 630,
+      "recon": {
+        "r2": 0.6206850921757101,
+        "mean_cosine": 0.97466798504896
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.43262183286648304,
+          "mean_cosine": 0.9625761768250884
+        },
+        "identity_bias": {
+          "r2": -0.35033425800932716,
+          "mean_cosine": 0.9116974047163255
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.23,
+              "5": 0.472,
+              "10": 0.556
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 7.5,
+            "mrr": 0.3408307929554463
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.236,
+              "5": 0.488,
+              "10": 0.59
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 6.0,
+            "mrr": 0.35583389535874244
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 165,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.9520271503934511,
+          "raw_norm_d_pre": 0.5761554707980231,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9499165179089273,
+          "raw_norm_d_pre": 0.5048097723215557,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999997,
+          "proj_frac_rb": 0.9494947408851333,
+          "raw_norm_d_pre": 0.3632920187077305,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 220.476092338562
+    },
+    {
+      "layer": 1,
+      "lam": 316.2277660168379,
+      "kstar": 1145,
+      "recon": {
+        "r2": 0.7152739401398811,
+        "mean_cosine": 0.9811346017259619
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.41191913744329234,
+          "mean_cosine": 0.9612631973942318
+        },
+        "identity_bias": {
+          "r2": -0.3556425045119205,
+          "mean_cosine": 0.9116435261781763
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.26,
+              "5": 0.53,
+              "10": 0.598
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 5.0,
+            "mrr": 0.3817151309101109
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.264,
+              "5": 0.546,
+              "10": 0.616
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 4.5,
+            "mrr": 0.39269664113942293
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 160,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9757161331366889,
+          "raw_norm_d_pre": 0.5557733572510334,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.974433672363872,
+          "raw_norm_d_pre": 0.5088808714430956,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9762395290307511,
+          "raw_norm_d_pre": 0.38687922462533386,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 221.59532499313354
+    },
+    {
+      "layer": 2,
+      "lam": 1000.0,
+      "kstar": 687,
+      "recon": {
+        "r2": 0.6770662162084913,
+        "mean_cosine": 0.9757440715143799
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.48431393621861396,
+          "mean_cosine": 0.961308445543761
+        },
+        "identity_bias": {
+          "r2": -0.3049611069948406,
+          "mean_cosine": 0.9030411144670065
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.308,
+              "5": 0.582,
+              "10": 0.68
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 4.0,
+            "mrr": 0.43743332833513277
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.32,
+              "5": 0.586,
+              "10": 0.684
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 3.0,
+            "mrr": 0.44800381055878213
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 156,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.958153715785991,
+          "raw_norm_d_pre": 0.9870999946438563,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9577771527465258,
+          "raw_norm_d_pre": 0.9358065930857098,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9612322930918006,
+          "raw_norm_d_pre": 0.7496855090857393,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 233.0287127494812
+    },
+    {
+      "layer": 3,
+      "lam": 1000.0,
+      "kstar": 717,
+      "recon": {
+        "r2": 0.6839097214789955,
+        "mean_cosine": 0.9648097411458035
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.4908306481123629,
+          "mean_cosine": 0.9425242891893557
+        },
+        "identity_bias": {
+          "r2": -0.28010559887061914,
+          "mean_cosine": 0.8576472871226959
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.322,
+              "5": 0.58,
+              "10": 0.668
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 4.0,
+            "mrr": 0.44371096720123865
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.33,
+              "5": 0.606,
+              "10": 0.674
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 3.0,
+            "mrr": 0.452566842052252
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 154,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9617784304952312,
+          "raw_norm_d_pre": 1.3063389375357986,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9559012749556509,
+          "raw_norm_d_pre": 1.2570626856037084,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999997,
+          "proj_frac_rb": 0.9691186445773805,
+          "raw_norm_d_pre": 0.9994715422170026,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 261.8705298900604
+    },
+    {
+      "layer": 4,
+      "lam": 1000.0,
+      "kstar": 728,
+      "recon": {
+        "r2": 0.6910421613582856,
+        "mean_cosine": 0.9595020797155172
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5021669872732486,
+          "mean_cosine": 0.9331024036655161
+        },
+        "identity_bias": {
+          "r2": -0.3854346919890552,
+          "mean_cosine": 0.8196449070415412
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.396,
+              "5": 0.656,
+              "10": 0.728
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.516257461854708
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.418,
+              "5": 0.684,
+              "10": 0.754
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5400511123247839
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 153,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9619155348912278,
+          "raw_norm_d_pre": 1.8688085617539798,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9564617996880396,
+          "raw_norm_d_pre": 1.8121888052120207,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9639586041500126,
+          "raw_norm_d_pre": 1.4207904390444221,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 230.0206515789032
+    },
+    {
+      "layer": 5,
+      "lam": 1000.0,
+      "kstar": 726,
+      "recon": {
+        "r2": 0.7025216053046788,
+        "mean_cosine": 0.9652382224853704
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.48841576193834146,
+          "mean_cosine": 0.939266510803456
+        },
+        "identity_bias": {
+          "r2": -0.6504295551924695,
+          "mean_cosine": 0.813913357251262
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.43,
+              "5": 0.694,
+              "10": 0.764
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5478629348474451
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.436,
+              "5": 0.694,
+              "10": 0.758
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5507727563009857
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 148,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9612976458365414,
+          "raw_norm_d_pre": 2.54963446875757,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9590659368681046,
+          "raw_norm_d_pre": 2.4507228584240623,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9658792539095296,
+          "raw_norm_d_pre": 1.8558115544151907,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 239.2135453224182
+    },
+    {
+      "layer": 6,
+      "lam": 316.2277660168379,
+      "kstar": 1261,
+      "recon": {
+        "r2": 0.7720217025673746,
+        "mean_cosine": 0.9726408355617777
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5074759202406369,
+          "mean_cosine": 0.9389422388658332
+        },
+        "identity_bias": {
+          "r2": -0.5719201099531233,
+          "mean_cosine": 0.816608457321695
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.458,
+              "5": 0.71,
+              "10": 0.786
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5717464260954193
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.468,
+              "5": 0.718,
+              "10": 0.778
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5759657209570089
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 143,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9761853397425859,
+          "raw_norm_d_pre": 2.3152839681415034,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9783757359345396,
+          "raw_norm_d_pre": 2.1189354372031315,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999997,
+          "proj_frac_rb": 0.9829564091824157,
+          "raw_norm_d_pre": 1.569079683928604,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 238.60623121261597
+    },
+    {
+      "layer": 7,
+      "lam": 1000.0,
+      "kstar": 769,
+      "recon": {
+        "r2": 0.7118907837165493,
+        "mean_cosine": 0.9555049975196768
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5277094649622649,
+          "mean_cosine": 0.9253276148698043
+        },
+        "identity_bias": {
+          "r2": -0.42263854313137217,
+          "mean_cosine": 0.7851436638090188
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.39,
+              "5": 0.69,
+              "10": 0.768
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5217562794636247
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.414,
+              "5": 0.684,
+              "10": 0.772
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5369403988831064
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 149,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9567270281823753,
+          "raw_norm_d_pre": 3.6041652536729245,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9636100073867213,
+          "raw_norm_d_pre": 3.0954883525757566,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9731450650399199,
+          "raw_norm_d_pre": 2.289053176376755,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 282.53802704811096
+    },
+    {
+      "layer": 8,
+      "lam": 1000.0,
+      "kstar": 798,
+      "recon": {
+        "r2": 0.7280415464000998,
+        "mean_cosine": 0.9539694514497371
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5416530542508926,
+          "mean_cosine": 0.9200573878429279
+        },
+        "identity_bias": {
+          "r2": -0.4983760286987382,
+          "mean_cosine": 0.7551871602647903
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.438,
+              "5": 0.734,
+              "10": 0.81
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5678822072688414
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.476,
+              "5": 0.74,
+              "10": 0.816
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.0,
+            "mrr": 0.5957236234354814
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 153,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9531707458645079,
+          "raw_norm_d_pre": 4.755532413143596,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9620449279491532,
+          "raw_norm_d_pre": 4.101117609273629,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9728226249280252,
+          "raw_norm_d_pre": 2.988664521679944,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 265.28894805908203
+    },
+    {
+      "layer": 9,
+      "lam": 1000.0,
+      "kstar": 684,
+      "recon": {
+        "r2": 0.6891223715157206,
+        "mean_cosine": 0.9508582921021888
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5102336770010804,
+          "mean_cosine": 0.921028983968702
+        },
+        "identity_bias": {
+          "r2": -0.5653873400330467,
+          "mean_cosine": 0.764549067826723
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.378,
+              "5": 0.646,
+              "10": 0.734
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.5,
+            "mrr": 0.5005320646041511
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.38,
+              "5": 0.634,
+              "10": 0.726
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 2.5,
+            "mrr": 0.49852047499670066
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 125,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9271132725603155,
+          "raw_norm_d_pre": 5.259603578238771,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9310970660307448,
+          "raw_norm_d_pre": 4.310823762898729,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.95779988006487,
+          "raw_norm_d_pre": 3.1794915420462933,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 270.6576030254364
+    },
+    {
+      "layer": 10,
+      "lam": 1000.0,
+      "kstar": 705,
+      "recon": {
+        "r2": 0.7110694416601822,
+        "mean_cosine": 0.9521558203222649
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5086706029576937,
+          "mean_cosine": 0.916728439419944
+        },
+        "identity_bias": {
+          "r2": -0.5240692592566027,
+          "mean_cosine": 0.7570791430178457
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.484,
+              "5": 0.766,
+              "10": 0.83
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.75,
+            "mrr": 0.6110541478448271
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.498,
+              "5": 0.772,
+              "10": 0.83
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.5,
+            "mrr": 0.6248352667945888
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 128,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9332433208055662,
+          "raw_norm_d_pre": 6.461926511632908,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9386570222392147,
+          "raw_norm_d_pre": 5.0262811497801,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9650912200022855,
+          "raw_norm_d_pre": 3.6261013769945096,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 240.90122938156128
+    },
+    {
+      "layer": 11,
+      "lam": 1000.0,
+      "kstar": 736,
+      "recon": {
+        "r2": 0.7271172285528742,
+        "mean_cosine": 0.9523336054193231
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5252981179257251,
+          "mean_cosine": 0.9148621921950165
+        },
+        "identity_bias": {
+          "r2": -0.5783592882913335,
+          "mean_cosine": 0.7392786467898386
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.514,
+              "5": 0.778,
+              "10": 0.844
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6341239152912042
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.536,
+              "5": 0.782,
+              "10": 0.834
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6474724222208783
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 134,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9424860175623634,
+          "raw_norm_d_pre": 7.13383179402309,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.9474809363667156,
+          "raw_norm_d_pre": 5.608193711886427,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000004,
+          "proj_frac_rb": 0.9677952114461983,
+          "raw_norm_d_pre": 4.121034005854052,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 266.1564130783081
+    },
+    {
+      "layer": 12,
+      "lam": 1000.0,
+      "kstar": 769,
+      "recon": {
+        "r2": 0.7439370207493646,
+        "mean_cosine": 0.9534077843647941
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5447859361118428,
+          "mean_cosine": 0.915021028187574
+        },
+        "identity_bias": {
+          "r2": -0.4774474538467739,
+          "mean_cosine": 0.7417786884930668
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.518,
+              "5": 0.794,
+              "10": 0.862
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6435583216298127
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.55,
+              "5": 0.802,
+              "10": 0.878
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6694743709081878
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 138,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.945785094292456,
+          "raw_norm_d_pre": 7.664027488609611,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9492569021864502,
+          "raw_norm_d_pre": 6.108850213555769,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.9713856366426082,
+          "raw_norm_d_pre": 4.423590332445565,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 264.4420087337494
+    },
+    {
+      "layer": 13,
+      "lam": 1000.0,
+      "kstar": 821,
+      "recon": {
+        "r2": 0.7626915914322032,
+        "mean_cosine": 0.9561443970115637
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5952918852640058,
+          "mean_cosine": 0.922905370820014
+        },
+        "identity_bias": {
+          "r2": -0.5236546464120724,
+          "mean_cosine": 0.734294173686057
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.55,
+              "5": 0.792,
+              "10": 0.864
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6619605866670054
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.584,
+              "5": 0.828,
+              "10": 0.888
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.696258662684552
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 148,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 0.9999999999999997,
+          "proj_frac_rb": 0.9378640638305459,
+          "raw_norm_d_pre": 9.757268682975502,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9420429979329182,
+          "raw_norm_d_pre": 7.491203214344295,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9689835728025212,
+          "raw_norm_d_pre": 5.521025407514311,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 274.96568536758423
+    },
+    {
+      "layer": 14,
+      "lam": 316.2277660168379,
+      "kstar": 1433,
+      "recon": {
+        "r2": 0.832659206631146,
+        "mean_cosine": 0.97235683196782
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5958068621284248,
+          "mean_cosine": 0.9325741710133537
+        },
+        "identity_bias": {
+          "r2": -0.6126268669580883,
+          "mean_cosine": 0.7576070052743524
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.642,
+              "5": 0.872,
+              "10": 0.914
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7456615644659385
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.65,
+              "5": 0.878,
+              "10": 0.92
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7519102272337795
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 149,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9638717953903277,
+          "raw_norm_d_pre": 10.609020999369466,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9604392714452928,
+          "raw_norm_d_pre": 8.279675611005988,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9814379531319194,
+          "raw_norm_d_pre": 5.668560185387328,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 205.0999538898468
+    },
+    {
+      "layer": 15,
+      "lam": 316.2277660168379,
+      "kstar": 1492,
+      "recon": {
+        "r2": 0.8466249435399616,
+        "mean_cosine": 0.9743706350550374
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6139685333484619,
+          "mean_cosine": 0.9336811355811592
+        },
+        "identity_bias": {
+          "r2": -0.5680444453996569,
+          "mean_cosine": 0.7588302172336628
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.656,
+              "5": 0.872,
+              "10": 0.928
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7578097021958723
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.662,
+              "5": 0.89,
+              "10": 0.93
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7619469721053408
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 151,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9722644176812547,
+          "raw_norm_d_pre": 11.43932993198361,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9679491855786985,
+          "raw_norm_d_pre": 9.693923238245464,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9842939955920244,
+          "raw_norm_d_pre": 6.698615659460579,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 208.44349336624146
+    },
+    {
+      "layer": 16,
+      "lam": 316.2277660168379,
+      "kstar": 1522,
+      "recon": {
+        "r2": 0.8551000237780675,
+        "mean_cosine": 0.9752766745121911
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6264269014419575,
+          "mean_cosine": 0.9350102577027546
+        },
+        "identity_bias": {
+          "r2": -0.6799166036366806,
+          "mean_cosine": 0.747136849587977
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.662,
+              "5": 0.886,
+              "10": 0.934
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.759632234719973
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.676,
+              "5": 0.884,
+              "10": 0.928
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7687015750635333
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 153,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.970680451134995,
+          "raw_norm_d_pre": 13.06555316585706,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9677251554934706,
+          "raw_norm_d_pre": 11.596805487127881,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.9842998442473194,
+          "raw_norm_d_pre": 7.783782439976562,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 220.0850121974945
+    },
+    {
+      "layer": 17,
+      "lam": 316.2277660168379,
+      "kstar": 1565,
+      "recon": {
+        "r2": 0.8601739907572246,
+        "mean_cosine": 0.9762336018857892
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.626310131794475,
+          "mean_cosine": 0.9356836029307527
+        },
+        "identity_bias": {
+          "r2": -0.747828335465071,
+          "mean_cosine": 0.7421805131426256
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.66,
+              "5": 0.882,
+              "10": 0.932
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.759154067268754
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.666,
+              "5": 0.882,
+              "10": 0.93
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7611452551106004
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 157,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9729544585342558,
+          "raw_norm_d_pre": 14.889137859842213,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9695860047933249,
+          "raw_norm_d_pre": 12.729914699669369,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9846634946681754,
+          "raw_norm_d_pre": 8.724128940319293,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 203.34340381622314
+    },
+    {
+      "layer": 18,
+      "lam": 316.2277660168379,
+      "kstar": 1599,
+      "recon": {
+        "r2": 0.8663142081268029,
+        "mean_cosine": 0.9764266400216777
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6354642721636762,
+          "mean_cosine": 0.9340603625400032
+        },
+        "identity_bias": {
+          "r2": -0.8924362436725253,
+          "mean_cosine": 0.7225924275169378
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.694,
+              "5": 0.916,
+              "10": 0.948
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7915906963164984
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.69,
+              "5": 0.906,
+              "10": 0.948
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7891127995216409
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 168,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9741387625505266,
+          "raw_norm_d_pre": 18.287731405301443,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.9711169608817211,
+          "raw_norm_d_pre": 16.239715723708112,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9852148075558318,
+          "raw_norm_d_pre": 11.61779554405064,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 200.0365207195282
+    },
+    {
+      "layer": 19,
+      "lam": 1000.0,
+      "kstar": 993,
+      "recon": {
+        "r2": 0.8469079609528294,
+        "mean_cosine": 0.9724529841014642
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6752231620504805,
+          "mean_cosine": 0.940554848124048
+        },
+        "identity_bias": {
+          "r2": -0.8849638557446173,
+          "mean_cosine": 0.7281272735990221
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.778,
+              "5": 0.95,
+              "10": 0.966
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8526009206156412
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.784,
+              "5": 0.946,
+              "10": 0.968
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8541495486442248
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 183,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9583602393886927,
+          "raw_norm_d_pre": 33.40017844190226,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9551164154892294,
+          "raw_norm_d_pre": 28.63390515404344,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.970459473804621,
+          "raw_norm_d_pre": 19.35099968822601,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 201.99183011054993
+    },
+    {
+      "layer": 20,
+      "lam": 1000.0,
+      "kstar": 1049,
+      "recon": {
+        "r2": 0.8442238510488427,
+        "mean_cosine": 0.9711882282272479
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6581003982962403,
+          "mean_cosine": 0.9356614102191577
+        },
+        "identity_bias": {
+          "r2": -1.3044820857384152,
+          "mean_cosine": 0.6913662815907357
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.758,
+              "5": 0.944,
+              "10": 0.96
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8422934947609788
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.762,
+              "5": 0.942,
+              "10": 0.962
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8419358562931256
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 187,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9583595713764327,
+          "raw_norm_d_pre": 44.49050610331682,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9558292275481913,
+          "raw_norm_d_pre": 39.71214785399306,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9721763388388771,
+          "raw_norm_d_pre": 25.641248229132856,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 197.37183952331543
+    },
+    {
+      "layer": 21,
+      "lam": 1000.0,
+      "kstar": 1138,
+      "recon": {
+        "r2": 0.8413874497398051,
+        "mean_cosine": 0.9699515009737335
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6651587186525176,
+          "mean_cosine": 0.9349046681093105
+        },
+        "identity_bias": {
+          "r2": -1.2823050661447795,
+          "mean_cosine": 0.689064816171272
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.72,
+              "5": 0.918,
+              "10": 0.952
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8076249712124783
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.726,
+              "5": 0.908,
+              "10": 0.944
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.809549849915546
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 200,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9569246177617572,
+          "raw_norm_d_pre": 54.14731024658537,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9554150369641035,
+          "raw_norm_d_pre": 46.60745629930031,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9716182690235795,
+          "raw_norm_d_pre": 30.92552227173244,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 209.27783513069153
+    },
+    {
+      "layer": 22,
+      "lam": 1000.0,
+      "kstar": 1171,
+      "recon": {
+        "r2": 0.8331432548331288,
+        "mean_cosine": 0.9684397538427433
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6433907435111379,
+          "mean_cosine": 0.9305588562710647
+        },
+        "identity_bias": {
+          "r2": -1.6949289210706118,
+          "mean_cosine": 0.6633716607607169
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.7,
+              "5": 0.9,
+              "10": 0.942
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7936954876745973
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.716,
+              "5": 0.902,
+              "10": 0.934
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7991440921999049
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 204,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9542819629836287,
+          "raw_norm_d_pre": 71.58888516209718,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9494466454660082,
+          "raw_norm_d_pre": 59.17013489089317,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9675631115991066,
+          "raw_norm_d_pre": 39.33412626710156,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 197.08841109275818
+    },
+    {
+      "layer": 23,
+      "lam": 1000.0,
+      "kstar": 1208,
+      "recon": {
+        "r2": 0.8267120068776183,
+        "mean_cosine": 0.9728505002605081
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6206465433753465,
+          "mean_cosine": 0.9385976039711447
+        },
+        "identity_bias": {
+          "r2": -1.833125654023446,
+          "mean_cosine": 0.698728116320485
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.642,
+              "5": 0.858,
+              "10": 0.904
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7404448027854942
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.632,
+              "5": 0.85,
+              "10": 0.902
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7331790849973463
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 204,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9529049056263442,
+          "raw_norm_d_pre": 84.68759847691162,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9506911045257763,
+          "raw_norm_d_pre": 67.23423679232661,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9643818471816883,
+          "raw_norm_d_pre": 46.990986000224574,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 197.51404213905334
+    },
+    {
+      "layer": 24,
+      "lam": 1000.0,
+      "kstar": 1254,
+      "recon": {
+        "r2": 0.8329593854843291,
+        "mean_cosine": 0.977952830552467
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.6227559925848103,
+          "mean_cosine": 0.9480633334530587
+        },
+        "identity_bias": {
+          "r2": -1.7751158724055105,
+          "mean_cosine": 0.7387877386009645
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.616,
+              "5": 0.85,
+              "10": 0.9
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7245652202870284
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.624,
+              "5": 0.84,
+              "10": 0.882
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7211709724303073
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 219,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.9565830726095148,
+          "raw_norm_d_pre": 104.11536728571615,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9515311353579263,
+          "raw_norm_d_pre": 81.98159289326348,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9610481592636799,
+          "raw_norm_d_pre": 55.31834357600095,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 197.29808950424194
+    },
+    {
+      "layer": 25,
+      "lam": 1000.0,
+      "kstar": 1267,
+      "recon": {
+        "r2": 0.8357706068254149,
+        "mean_cosine": 0.9801989722803716
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.615059755867823,
+          "mean_cosine": 0.9504216362869566
+        },
+        "identity_bias": {
+          "r2": -1.9452314605129093,
+          "mean_cosine": 0.745886201613579
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.584,
+              "5": 0.834,
+              "10": 0.88
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.696969978378528
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.596,
+              "5": 0.824,
+              "10": 0.87
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6997429744315907
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 222,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9519448450449294,
+          "raw_norm_d_pre": 123.99964862819336,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9473317154969945,
+          "raw_norm_d_pre": 98.98325794449505,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9595446328119166,
+          "raw_norm_d_pre": 65.6985390582906,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 178.92020058631897
+    },
+    {
+      "layer": 26,
+      "lam": 1000.0,
+      "kstar": 1321,
+      "recon": {
+        "r2": 0.8340453548735764,
+        "mean_cosine": 0.9825355388962548
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5880037614498455,
+          "mean_cosine": 0.9526951899353833
+        },
+        "identity_bias": {
+          "r2": -2.404982836788513,
+          "mean_cosine": 0.7470020818490148
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.562,
+              "5": 0.82,
+              "10": 0.886
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6773002887718251
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.568,
+              "5": 0.822,
+              "10": 0.872
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6780447572450014
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 232,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0,
+          "proj_frac_rb": 0.9491865526921578,
+          "raw_norm_d_pre": 157.43410216960436,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9435923186719949,
+          "raw_norm_d_pre": 119.33553108489195,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 1.0000000000000002,
+          "proj_frac_rb": 0.9569653511437038,
+          "raw_norm_d_pre": 82.91560213181826,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 189.4151930809021
+    },
+    {
+      "layer": 27,
+      "lam": 1000.0,
+      "kstar": 1283,
+      "recon": {
+        "r2": 0.8374875001904334,
+        "mean_cosine": 0.9214456499750097
+      },
+      "heldout": {
+        "n_train": 4500,
+        "n_eval": 500,
+        "map": {
+          "r2": 0.5942591349484282,
+          "mean_cosine": 0.8140509749098758
+        },
+        "identity_bias": {
+          "r2": -2.359113019066565,
+          "mean_cosine": 0.358645248255823
+        },
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.6,
+              "5": 0.85,
+              "10": 0.89
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.7031797202008488
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 500,
+            "n_pool": 500,
+            "acc_at_k": {
+              "1": 0.642,
+              "5": 0.87,
+              "10": 0.916
+            },
+            "chance_at_k": {
+              "1": 0.002,
+              "5": 0.01,
+              "10": 0.02
+            },
+            "median_rank": 1.0,
+            "mrr": 0.742398701385226
+          }
+        },
+        "knn_chance_at_10": 0.02
+      },
+      "lam_shuffled": 10000.0,
+      "kstar_shuffled": 252,
+      "per_behavior": {
+        "evil": {
+          "frame_fold_cos": 1.0000000000000004,
+          "proj_frac_rb": 0.964959581021167,
+          "raw_norm_d_pre": 185.40231862145512,
+          "kstar_shuf_fallback": false
+        },
+        "sycophancy": {
+          "frame_fold_cos": 0.9999999999999999,
+          "proj_frac_rb": 0.9626197344200725,
+          "raw_norm_d_pre": 143.2769161091149,
+          "kstar_shuf_fallback": false
+        },
+        "hallucination": {
+          "frame_fold_cos": 0.9999999999999998,
+          "proj_frac_rb": 0.9680109762683782,
+          "raw_norm_d_pre": 96.04665133409415,
+          "kstar_shuf_fallback": false
+        }
+      },
+      "fit_wall_s": 183.65106105804443
+    }
+  ]
+}

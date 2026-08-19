@@ -1,0 +1,566 @@
+{
+  "cells": {
+    "q35_n10k": {
+      "train_key": "train_10k",
+      "per_layer": {
+        "0": {
+          "test_r2": 0.46216851261820213,
+          "selected_lambda": 100.0,
+          "val_r2_at_selected": 0.47525817135806214,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "1": {
+          "test_r2": 0.47774392637001095,
+          "selected_lambda": 316.2277660168379,
+          "val_r2_at_selected": 0.5041009719609729,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "2": {
+          "test_r2": 0.4790128984210833,
+          "selected_lambda": 316.2277660168379,
+          "val_r2_at_selected": 0.5001641590768864,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "3": {
+          "test_r2": 0.5304915883139321,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5478140051688114,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "4": {
+          "test_r2": 0.5437800190249752,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5578828570985495,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "5": {
+          "test_r2": 0.5533852793045723,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5673579332879095,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "6": {
+          "test_r2": 0.5579547632597174,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5708716263570262,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "7": {
+          "test_r2": 0.5723892341838409,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5828636516436592,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "8": {
+          "test_r2": 0.5661792780140907,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5798566169084223,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "9": {
+          "test_r2": 0.5942656472897154,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.605524263431628,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "10": {
+          "test_r2": 0.6211897905294774,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6313644959494094,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "11": {
+          "test_r2": 0.6300899285306357,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6413938854615033,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "12": {
+          "test_r2": 0.6453526676204886,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6581961969769092,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "13": {
+          "test_r2": 0.6524801520134762,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6654129115540193,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "14": {
+          "test_r2": 0.6612107790114894,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.675674037611853,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "15": {
+          "test_r2": 0.6493655784087717,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6596063494720128,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "16": {
+          "test_r2": 0.6677774078870274,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6786169397366042,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "17": {
+          "test_r2": 0.6713179497759538,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6836545144276152,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "18": {
+          "test_r2": 0.6898422556195571,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.7057680927842164,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "19": {
+          "test_r2": 0.6523717628556969,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6720297968176089,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "20": {
+          "test_r2": 0.6626971945929259,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6796252614946053,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "21": {
+          "test_r2": 0.667185903677388,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6835458029360963,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "22": {
+          "test_r2": 0.6615884031543819,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6785611487891192,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "23": {
+          "test_r2": 0.6421284653200144,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6557000320330579,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "24": {
+          "test_r2": 0.6530545830401071,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6650447844171958,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "25": {
+          "test_r2": 0.6482717762638575,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6606083398054923,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "26": {
+          "test_r2": 0.6369181476127717,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6521059019297458,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "27": {
+          "test_r2": 0.6311668804300291,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6474957373680199,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "28": {
+          "test_r2": 0.6565371269574962,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6730578408469201,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "29": {
+          "test_r2": 0.6533755006319669,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6703604934447407,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "30": {
+          "test_r2": 0.6351214095081232,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6530732930488006,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        }
+      },
+      "n_train": 10000,
+      "n_vs_d": {
+        "n_train": 10000,
+        "d": 4096,
+        "n_train_over_d": 2.44140625,
+        "underdetermined": false
+      },
+      "peak": {
+        "layer": 18,
+        "test_r2": 0.6898422556195571,
+        "note": "scoped-peak diagnostic — a max over the free layer axis with NO null band/CI; locate-the-peak only, never a selection-corrected headline"
+      }
+    },
+    "q35_n5k": {
+      "train_key": "train_5k",
+      "per_layer": {
+        "0": {
+          "test_r2": 0.43054348423253974,
+          "selected_lambda": 316.2277660168379,
+          "val_r2_at_selected": 0.4455663800065922,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "1": {
+          "test_r2": 0.448209066512541,
+          "selected_lambda": 316.2277660168379,
+          "val_r2_at_selected": 0.47228972856209495,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "2": {
+          "test_r2": 0.44258660118054505,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.4651889044291697,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "3": {
+          "test_r2": 0.49849366100541825,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5225555575355267,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "4": {
+          "test_r2": 0.5115649484214977,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5305270722213675,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "5": {
+          "test_r2": 0.522646817714818,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5396275698146789,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "6": {
+          "test_r2": 0.5294901213273713,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5425112823060964,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "7": {
+          "test_r2": 0.5450536529207022,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5555171329194062,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "8": {
+          "test_r2": 0.5387891729291104,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5525890499999215,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "9": {
+          "test_r2": 0.5685891643399676,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.5790570556645316,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "10": {
+          "test_r2": 0.5984989172366969,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6082717108029392,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "11": {
+          "test_r2": 0.6080311559016836,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6164088295897804,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "12": {
+          "test_r2": 0.6242506247448477,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6340928577229811,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "13": {
+          "test_r2": 0.6306921593290943,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6405848413239111,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "14": {
+          "test_r2": 0.6399183560822309,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.652130788239867,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "15": {
+          "test_r2": 0.6267406466759825,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6341164987107997,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "16": {
+          "test_r2": 0.6464066322303824,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6543873221375538,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "17": {
+          "test_r2": 0.6498735201657819,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6588222655118013,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "18": {
+          "test_r2": 0.6690625914117925,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6813246936666479,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "19": {
+          "test_r2": 0.6268169939335009,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6462692499450455,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "20": {
+          "test_r2": 0.6369686650618243,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6531954921128184,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "21": {
+          "test_r2": 0.6411590225283628,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.65755265958088,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "22": {
+          "test_r2": 0.6350460342057136,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6524964178095067,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "23": {
+          "test_r2": 0.608988202201132,
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.6279093743830264,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "24": {
+          "test_r2": 0.6241801535486251,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6369556417156848,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "25": {
+          "test_r2": 0.6193256998792314,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6321727733424314,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "26": {
+          "test_r2": 0.6076852253247038,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6236098597008803,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "27": {
+          "test_r2": 0.6016962034170031,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6202167199630411,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "28": {
+          "test_r2": 0.6281854887256046,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6475259125273984,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "29": {
+          "test_r2": 0.6250472455679239,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.64516348144529,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        },
+        "30": {
+          "test_r2": 0.6050137863339238,
+          "selected_lambda": 3162.2776601683795,
+          "val_r2_at_selected": 0.6263586794573317,
+          "lambda_grid_edge": null,
+          "n_grid_extensions": 0
+        }
+      },
+      "n_train": 5000,
+      "n_vs_d": {
+        "n_train": 5000,
+        "d": 4096,
+        "n_train_over_d": 1.220703125,
+        "underdetermined": false
+      },
+      "peak": {
+        "layer": 18,
+        "test_r2": 0.6690625914117925,
+        "note": "scoped-peak diagnostic — a max over the free layer axis with NO null band/CI; locate-the-peak only, never a selection-corrected headline"
+      }
+    }
+  },
+  "meta": {
+    "dense_prefix": "issue2330_matched/qwen35_9b_dense",
+    "layers": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "split_ids_sha256": {
+      "train_10k": "a74675bfed3834ac1c3140b2d7fb7d93d90a76608cc08515a5019a1cb2075ff4",
+      "train_5k": "3e8f48e7d9536834f2639f089a0aebb21b208ad02805a0d92dcb7bb93174aeac",
+      "val_400": "61c7e6234e65fb5cce2355ea19e2867337eab0f6ef7092bc7e646da03f05ab8e",
+      "test_1000": "b1c32e2197c96b83093960b247b9a8eac730c9527f14fa7691c116b77d679a63",
+      "wc_test_1k": "62901a199f68dff3b041d46c2841490db9520ab80f0798b2476a6dc55f987b5d"
+    },
+    "device": "cuda",
+    "h_dim": 4096,
+    "label": "dense layer sweep — scoped-peak diagnostic: per-layer held-out test R² + selected λ ONLY; NO floors/ceilings/wc-transfer fold (the registered 4-cell battery carries those at the pre-registered layers)",
+    "model_key": "qwen35_9b",
+    "model": "Qwen/Qwen3.5-9B",
+    "cells": [
+      "q35_n10k",
+      "q35_n5k"
+    ],
+    "counts": {
+      "train_10k": 10000,
+      "val_400": 400,
+      "test_1000": 1000
+    },
+    "fit_config": {
+      "lambdas": [
+        0.001,
+        0.0031622776601683794,
+        0.01,
+        0.03162277660168379,
+        0.1,
+        0.31622776601683794,
+        1.0,
+        3.1622776601683795,
+        10.0,
+        31.622776601683793,
+        100.0,
+        316.2277660168379,
+        1000.0,
+        3162.2776601683795,
+        10000.0,
+        31622.776601683792,
+        100000.0,
+        316227.7660168379,
+        1000000.0,
+        3162277.660168379,
+        10000000.0,
+        31622776.60168379,
+        100000000.0
+      ],
+      "ridge_block": 50000,
+      "grid_edge_disposition": "extend one decade + refit (plan §11)"
+    },
+    "_meta": {
+      "git_commit": "cfd3b416",
+      "git_dirty": false,
+      "timestamp_utc": "2026-08-17T18:55:12Z",
+      "numpy": "2.2.6",
+      "torch": "2.8.0+cu128",
+      "script": "scripts/issue2330_matched_fits.py"
+    }
+  }
+}

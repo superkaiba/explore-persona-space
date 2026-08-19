@@ -107,7 +107,8 @@ For `type:experiment` tasks, verify a separate `epm:smoke-architecture-check`
 events row EXISTS in canonical task state — `uv run python scripts/task.py
 view <N> --json`, never a possibly-stale worktree `events.jsonl` (the same
 false-absence caution as Step 0.5) — with a parseable `verdict:` line, one of
-`PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`. The
+`PASS_UNIFIED` | `PASS_PARTIAL arms_stubbed=<list>` | `PASS_AUTHORIZED_STUB
+arms_stubbed=<list>` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`. The
 implementer posts it ONCE at pre-flight (experiment-implementer.md "Before
 writing code" item 5); fix rounds do NOT re-post, so the check is
 presence-on-task (any version), NEVER presence-per-round — a fix-round review
@@ -125,7 +126,9 @@ with a round-1 marker PASSes this gate.
   > state. experiment-implementer.md "Before writing code" item 5 mandates it
   > before code-review-PASS, and /issue Step 6d.0 will refuse dispatch without
   > it — AFTER pod provisioning has already run. Post it as a separate events
-  > row (`verdict: PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` |
+  > row (`verdict: PASS_UNIFIED` | `PASS_PARTIAL arms_stubbed=<list>` |
+  > `PASS_AUTHORIZED_STUB arms_stubbed=<list>` |
+  > `PASS_CANARY canary_cell=<id>` |
   > `FAIL_NO_CANARY`); prose in a dispatcher header or an HTML comment inside
   > the `epm:experiment-implementation` note does NOT count (incident #811:
   > the claim lived in a dispatcher header across 5 rounds, both reviewers
@@ -135,12 +138,24 @@ with a round-1 marker PASSes this gate.
   (gates.inline id=10) owns FAIL_NO_CANARY adjudication (bounce to planning).
   Note it as a CONCERNS bullet so the orchestrator sees it early.
 - **Present + parseable** (any PASS verdict): verify the marker's
-  internal SHAPE before proceeding. Grep the plan §4 Design for the
+  internal SHAPE before proceeding. Verify a line-anchored
+  `arm-registry:` line is present in one of its two accepted forms
+  (#2176) — structured: `arm-registry: source=<expr> file=<path>
+  n=<int> members=<sorted-comma-list>`; or vacuous:
+  `arm-registry: N/A — <reason>` when no registry exists — a missing
+  or malformed line is a `marker-shape` blocker. Placement note: the
+  `arm-registry:` line is a TOP-LEVEL key, a sibling of
+  `per-arm-resolution:` — inside the per-arm span it TERMINATES the
+  span rather than reading as a row (the #2176 one-token
+  `_MARKER_TOP_KEY_RE` extension pins that it is never swallowed as a
+  phantom arm). Grep the plan §4 Design for the
   arm/rung/condition names it declares (a `kind: experiment` plan
   typically enumerates these; a `kind: infra` plan often names none —
-  the vacuous `per-arm-resolution: N/A — no plan-named arms` line
-  satisfies the shape check by construction). For every plan-named
-  arm, confirm the marker's `notes: per-arm-resolution:` sub-block
+  the vacuous `per-arm-resolution: N/A — no registry or plan-named arms`
+  line, paired with `arm-registry: N/A — no phase/arm registry`,
+  satisfies the shape check by construction). For every registry or plan-named
+  arm (the marker's `arm-registry:` members list ∪ the plan-named
+  arms), confirm the marker's `notes: per-arm-resolution:` sub-block
   contains a row. Also verify the `notes: import-resolution: <cmd>`
   line matches one of the three shapes named in
   experiment-implementer.md Axis 1: (a) the dispatcher's
@@ -153,9 +168,18 @@ with a round-1 marker PASSes this gate.
   per verdict:
   - `verdict: PASS_UNIFIED` — every per-arm row must read `REAL` or
     `N/A`. Any `FALLBACK` row is a `marker-shape` blocker (the
-    verdict should have been `PASS_PARTIAL`).
+    verdict should have been `PASS_PARTIAL`). An `N/A` row whose text
+    cites authorized-stub vocabulary (e.g. `N/A — authorized smoke
+    stub`) is likewise a `marker-shape` blocker — authorized stubs
+    take `PASS_AUTHORIZED_STUB`, never a re-labeled `N/A` (the
+    #2163-v4 improvisation, retired by #2171).
   - `verdict: PASS_PARTIAL arms_stubbed=<list>` — the `<list>` must
     equal (as a set) the names of every `FALLBACK`-rowed arm.
+  - `verdict: PASS_AUTHORIZED_STUB arms_stubbed=<list>` — same
+    set-equality binding as `PASS_PARTIAL` (the `<list>` must equal
+    the `FALLBACK`-rowed arms); the marker-vs-PLAN subset check is NOT
+    the reviewer's — Step 6d.0's `task.py check-authorized-stub`
+    checker owns it (#2171).
   - `verdict: PASS_CANARY canary_cell=<id>` — same REAL / N/A
     invariant as `PASS_UNIFIED` (a `FALLBACK` row here is a
     `marker-shape` blocker).
@@ -166,10 +190,32 @@ with a round-1 marker PASSes this gate.
   code — that substance remains Step 6d.0's; the reviewer only
   checks the marker's internal shape (rows present, verdict
   consistent with rows, import-resolution shape matches one of the
-  three). A shape violation returns a single `Critical` blocker
-  tagged `marker-shape` whose body NAMES
+  three, arm-registry line well-formed). A shape violation returns a
+  single `Critical` blocker tagged `marker-shape` whose body NAMES
   `epm:smoke-architecture-check` (Step 5c-bis strip is keyed on that
   name; the blocker names exactly ONE marker kind — never combined).
+
+  **Arm-registry substance split (#2176)** — stated ARM-EXPLICITLY.
+  Substance here means: `members=` equals the driver registry's ACTUAL
+  key set. Whenever the marker's `file=` resolves in the worktree, that
+  set-equality is owned by the MECHANICAL arm — Step 6d.0's checker in
+  driver-recompute mode (`task.py check-smoke-arch-registry <N>
+  --repo-root <worktree>`). The REVIEWER owns it as the FALLBACK arm
+  whenever it does not resolve (the checker's `OK` line then reads
+  `marker-only`), and as defence-in-depth whenever the diff itself
+  touches the named driver file. The reviewer duty is a COMMAND SHAPE,
+  not a vibe: on a structured `arm-registry:` line whose `file=` is in
+  the diff, ENUMERATE the named `source=` symbol's keys — open the file
+  at the diff and read the dict-literal keys, or run
+  `uv run python scripts/task.py check-smoke-arch-registry <N>
+  --repo-root <worktree>` — and assert SET-EQUALITY with `members=`. A
+  mismatch is a **substantive** blocker, NOT `marker-shape`. A
+  symbol-presence grep is EXPLICITLY INSUFFICIENT — it proves the
+  registry exists, not that `members` equals its key set. On the N/A
+  form, verify the no-registry claim against the diff with the same
+  concreteness (does a changed entrypoint define a `PHASES`-style
+  dispatch table? — `grep -n '^PHASES' <changed entrypoints>`), keeping
+  the two duties parallel so neither reads as optional.
 
 ## Step 0.8 detail — prior open binding concerns
 
@@ -191,12 +237,17 @@ Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
   <kebab-id> --severity CONCERN|BLOCKER --summary <80c> --by
   code-reviewer --round <n>`. The `--summary` is capped at 200 chars —
   compose the one-liner within the cap and put detail in the evidence
-  field / verdict body; an over-cap `--summary` via the CLI is
-  auto-truncated at a word boundary with a loud warning (full text
-  shifted into `--evidence` when evidence is empty; programmatic callers
-  still get `ValueError: summary too long`). Verdict-body
+  field / verdict body; an over-cap `--summary` with NO --evidence
+  shifts the full text into `--evidence` with a loud warning, an
+  over-cap `--summary` WITH --evidence is a hard error (#2121), and
+  long text goes through `--summary-file` (preserved verbatim in the
+  evidence field; programmatic callers still get `ValueError: summary
+  too long`). Verdict-body
   concern bullets that are NOT persisted remain opportunistic (the
-  historical PASS+CONCERNS auto-advance contract applies).
+  historical PASS+CONCERNS auto-advance contract applies). Record the
+  ledger state as one verdict-body line — `**Prior-concerns ledger:** <K
+  open: id1, id2, …>` or `**Prior-concerns ledger:** empty` — so a
+  vacuous walk is visible in the verdict itself (#2326).
 - **A deferred feature the plan's PRODUCTION path requires is ALWAYS a
   persisted concern — never prose-only.** When the implementer's report
   (a `(d) Needs human eyeball` bullet, a TODO in the diff like
@@ -1096,3 +1147,130 @@ python dispatcher whose smoke gating lives in `args.smoke` records `Step
 0.70: N/A — python dispatcher; smoke gating is arg-level`. Widening path
 (python `args.smoke`, YAML/JSON `conditions_smoke:`) named in the plan
 follow-ups.
+
+## Step 0.71 detail — smoke blind-spot enumeration
+
+**Grep triggers** (run over the diff's touched `.py`/`.sh` files):
+`grep -nE 'if (not )?(ctx\.|args\.|self\.|cfg\.)?smoke\b' <file>` for branch
+forms; `grep -nE 'smoke\s*=' <file>` for kwarg-gated gates
+(`assert_split(..., smoke=ctx.smoke)`); ternaries
+(`X if smoke else Y`). For each hit, classify:
+**(a) substituted implementation** — the production import / model
+constructor / API call sits only on the non-smoke side. Three sub-forms,
+all (a): the plain if/else; the early-return form (`if smoke: return <toy>`
+with the real import + constructor inline after the branch); and the
+HELPER-WRAPPED form — `if smoke: return <toy>` followed by
+`model = _load_model(...)` where a module-local lowercase helper holds the
+production import. The helper-wrapped form is the REAL #1336 SLURM 4684
+shape (`_load_sentence_transformer()` wraps
+`from sentence_transformers import SentenceTransformer`, so the import is
+invisible at the branch site) — follow lowercase callees one level into
+module-local helpers when classifying;
+**(b) downgraded gate** — an `assert` /
+`raise` sits only on the non-smoke side — including the per-check
+`if smoke: logger.info(...) else: raise AssertionError(...)` form with NO
+early exit, the REAL #1336 SLURM 5005 shape — or the smoke side
+early-returns before the gates
+(`def assert_split(..., smoke=False): if smoke: return`).
+Shrink-only smoke parameters (fewer cells / seeds / rows,
+same code path) are NOT triggers — that class is owned by Step 0.6 coverage
+and the #1611/#1727 gates.
+
+**The check.** Fetch the plan's smoke section (worktree `plans/v*.md` /
+`.claude/plans/issue-<N>.md`) and the implementation marker's `## Smoke run`
+block. Every (a)/(b) branch must be NAMED in the `Smoke blind-spot
+enumeration:` block of either surface — an entry stating what the smoke PASS
+does not certify for that branch. The empty form is the literal
+`none — smoke executes every production gate`; any (a)/(b) hit falsifies it
+(FAIL, same tag — the enumeration is WRONG, which is worse than absent).
+
+**FAIL template.** One Critical tagged `smoke-blind-spot-unenumerated`
+(SUBSTANTIVE — never in the Step 5c-bis strip set):
+`<file>:<L> — smoke-conditional <substituted-implementation|downgraded-gate>
+branch not named by the blind-spot enumeration (<plan/marker ref>); the smoke
+PASS certifies less than the plan presents. Remedy: add the enumeration line
+(what production-only gate/import/implementation this branch hides) — or
+exercise the import under smoke (an import-only probe on the smoke path: the
+cheap move that would have prevented SLURM 4684) — or unify the branch away
+(architectural parity).` A plan/marker with NO
+enumeration block at all and ≥1 (a)/(b) branch in the diff FAILs the same
+way, citing `.claude/rules/smoke-blind-spots.md`.
+
+**Mechanical companion (advisory).** `uv run python
+scripts/workflow_lint.py --check-smoke-blind-spots --smoke-blind-spot-scripts
+<touched .py files> --smoke-blind-spot-plan <plan path>` — WARN-only AST
+scan; it resolves module-local lowercase callees ONE level deep, so the
+helper-wrapped #1336 shape fires, but deeper nesting, cross-module helpers,
+dynamic dispatch, and non-`smoke`-named flags are its disclosed false
+negatives — THIS lens is the binding gate for exactly those. Use it to seed
+the grep, never as the verdict (naming-completeness is reviewer-owned).
+
+## Step 0.72 detail — own-device-scoped GPU-state verdicts
+
+**Grep triggers** (run over the diff's touched `.py`/`.sh` files):
+`grep -nE 'nvidia-smi|--query-gpu' <file>` for smi parses;
+`grep -nE 'pynvml|nvmlDeviceGetHandleByIndex' <file>` for NVML handles;
+`grep -nE 'mem_get_info' <file>` for the torch read. For each hit, ask: does
+the surrounding code derive a drain / teardown / free-memory / idle /
+headroom VERDICT (a boolean / threshold / wait condition) in fan-out,
+dispatcher, reap, or teardown code? Pure telemetry prints and logging are not
+verdicts.
+
+**The FIVE ACCEPTED scoping shapes — an OR, never a CVD-only test.** The
+verdict must aggregate ONLY the job's own ASSIGNED-device rows; ANY ONE of
+these resolutions satisfies the gate:
+
+1. an explicit `CUDA_VISIBLE_DEVICES` parse, then a row filter to those
+   indices;
+2. **an explicitly threaded own-device-id parameter, then filter** — the
+   canonical in-repo shape, `issue2091_pod.py::_drain_wait_own_gpu(gpu_id,
+   ...)` at commit `2cc130dbff`: it runs a BARE all-GPU
+   `nvidia-smi --query-gpu=index,memory.used` and filters rows to `gpu_id`,
+   never reading CVD. This shape MUST pass — it is the #2091 fix itself;
+3. the SLURM allocation-env derivation —
+   `scripts/issue1902_common.py::realized_gpu_ids(env, detected)` /
+   `SLURM_JOB_GPUS` / `SLURM_STEP_GPUS` / `SLURM_GPUS_ON_NODE`
+   (`gotchas.md` L240; mandatory on GPU-shared fellows nodes, where CVD is
+   often unset and a CVD-only criterion is UNSATISFIABLE by correct code);
+4. `--id=<ids>` / `-i <ids>` passed to `nvidia-smi` (the query itself is
+   scoped, so no post-filter is needed);
+5. `torch.cuda.mem_get_info(<own-device>)` where the index is the leg's own
+   device (CVD-relative, or explicitly threaded per shape 2).
+
+**Non-satisfiers.** (a) Per-GPU detail in the FAILURE MESSAGE only —
+printing is not scoping: the #2091 error message already printed the
+per-GPU breakdown `[(0, 35579), (1, 19143), (2, 0), (3, 0)]` while the
+verdict took `max()` over all four rows. (b) `torch.cuda.device_count()` as
+a proxy for ownership — it respects CVD but reads the PHYSICAL count when
+CVD is unset (`gotchas.md` L240), so it cannot justify an unfiltered
+`nvidia-smi` parse.
+
+**Waiver.** `# HOST_WIDE_GPU_VERDICT_EXEMPT: <reason ≥ 20 chars>` on the
+line above the aggregation. Legitimate whole-host cases: a host-health
+audit, a janitor sweep, a single-tenant provision probe (e.g. preflight GPU
+counts on a pod the job owns exclusively).
+
+**FAIL templates.** One Critical tagged `host-wide-gpu-verdict`
+(SUBSTANTIVE — never in the Step 5c-bis strip set):
+
+- `<file>:<L> — host-wide GPU-state verdict: <max()/min()/any()/sum()> over
+  every row of an all-GPU <nvidia-smi/pynvml/mem_get_info> read in
+  <fan-out/dispatcher/reap/teardown> code; a sibling job's memory enters
+  this job's verdict. Remedy: resolve the own-device id list (CVD when set /
+  SLURM allocation env / threaded own-device id), FILTER rows to it, THEN
+  aggregate — or add the waiver with a ≥20-char reason.`
+- `<file>:<L> — bare all-GPU query feeds a drain/idle wait condition with no
+  index filter; nvidia-smi IGNORES CUDA_VISIBLE_DEVICES, so the wait keys on
+  devices this job does not own. Remedy: scope the query (--id=<ids>) or
+  filter the parsed rows to the job's own ids.`
+
+**The #2091 worked shape — BEFORE/AFTER.** BEFORE (FAILs):
+`reap_generation_engine` decided "vLLM drained" via `max(memory.used)`
+across ALL 4 host GPUs — 4 of 9 rung-jobs whose own GPUs read 0 MiB died on
+"vLLM teardown did not drain below 2048 MiB within 180s" (~765–880 s lost
+per job plus a fix round). AFTER (PASSes): commit `2cc130dbff` threads the
+unit's own `gpu_id` into `_drain_wait_own_gpu(gpu_id, ...)` and filters the
+same bare all-GPU query's rows to that id before aggregating — own-device
+scoping WITHOUT ever parsing CVD. Do not read the incident as "CVD parse
+required": the fix never reads CVD, and on GPU-shared fellows SLURM nodes
+CVD is routinely unset (shape 3 is the correct resolution there).

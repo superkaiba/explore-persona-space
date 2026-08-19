@@ -1,0 +1,416 @@
+{
+  "commit": "164aea59+dirty",
+  "render_id": "549bb4b6cef74ee9",
+  "git_commit": "164aea59",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2223/capability_arms.json",
+    "eval_results/issue_2223/fig5_firstturn_harm.json",
+    "eval_results/issue_2223/phaseA_drift_trajectory.json",
+    "eval_results/issue_2223/phaseA_verdict.json",
+    "eval_results/issue_2223/ridge_message_projection.json"
+  ],
+  "created": "2026-08-14T06:02:55Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection (response-token mean)": -15.64321367263794,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection (response-token mean)": -19.22621695518494,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection (response-token mean)": -19.9889164352417,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection (response-token mean)": -19.96563869052463,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection (response-token mean)": -20.379150507401448,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection (response-token mean)": -19.987269770714544,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection (response-token mean)": -20.412856544767106,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection (response-token mean)": -20.81736944615841,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection (response-token mean)": -20.94270870089531,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection (response-token mean)": -21.567394998338486,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection (response-token mean)": -21.274860642173074,
+      "series": "coding assistance",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection (response-token mean)": -29.37681875228882,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection (response-token mean)": -38.45539535522461,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection (response-token mean)": -40.95083164215088,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection (response-token mean)": -42.23944557189942,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection (response-token mean)": -41.596852447047375,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection (response-token mean)": -41.68571060354059,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection (response-token mean)": -42.448710979559486,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection (response-token mean)": -43.486240953207016,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection (response-token mean)": -42.42978267280423,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection (response-token mean)": -42.91861095943966,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection (response-token mean)": -43.688097545078826,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection (response-token mean)": -43.828570105812766,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection (response-token mean)": -44.740381836891174,
+      "series": "philosophical discussions about AI",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection (response-token mean)": -14.659920142889023,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection (response-token mean)": -22.956358547210694,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection (response-token mean)": -25.08050956726074,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection (response-token mean)": -27.291511631975272,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection (response-token mean)": -27.7019126812617,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection (response-token mean)": -26.684762012958526,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection (response-token mean)": -27.502272605895996,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection (response-token mean)": -27.66047167008923,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection (response-token mean)": -29.402219851811726,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection (response-token mean)": -27.423615046909877,
+      "series": "therapy-like contexts",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Turn position": 1.0,
+      "Assistant-axis projection (response-token mean)": -18.424752078056336,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 2.0,
+      "Assistant-axis projection (response-token mean)": -24.215077257156373,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 3.0,
+      "Assistant-axis projection (response-token mean)": -25.310051722526552,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 4.0,
+      "Assistant-axis projection (response-token mean)": -25.68442728996277,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 5.0,
+      "Assistant-axis projection (response-token mean)": -25.823781690597535,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 6.0,
+      "Assistant-axis projection (response-token mean)": -26.088068046569823,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 7.0,
+      "Assistant-axis projection (response-token mean)": -26.080067998355197,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 8.0,
+      "Assistant-axis projection (response-token mean)": -26.044210968436776,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 9.0,
+      "Assistant-axis projection (response-token mean)": -25.837401653158253,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 10.0,
+      "Assistant-axis projection (response-token mean)": -25.428561378169704,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 11.0,
+      "Assistant-axis projection (response-token mean)": -26.06031166956975,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 12.0,
+      "Assistant-axis projection (response-token mean)": -25.63137357375201,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 13.0,
+      "Assistant-axis projection (response-token mean)": -24.88431157821264,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 14.0,
+      "Assistant-axis projection (response-token mean)": -25.737911803381785,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Turn position": 15.0,
+      "Assistant-axis projection (response-token mean)": -26.234679698944092,
+      "series": "writing assistance",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 49,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Persona drift by domain (verdict: Reproduced)",
+        "xlabel": "Turn position",
+        "ylabel": "Assistant-axis projection (response-token mean)",
+        "legend_labels": [
+          "coding assistance",
+          "philosophical discussions about AI",
+          "therapy-like contexts",
+          "writing assistance"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "\u221255",
+          "\u221250",
+          "\u221245",
+          "\u221240",
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210"
+        ]
+      }
+    ],
+    "series": [
+      "coding assistance",
+      "philosophical discussions about AI",
+      "therapy-like contexts",
+      "writing assistance"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

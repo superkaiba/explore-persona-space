@@ -200,8 +200,12 @@ def _forbid_real_marker_posts(request, monkeypatch):
     def _make_guarded(real_post):
         # functools.wraps sets __wrapped__, so inspect.getsource() on the patched
         # attribute still resolves the ORIGINAL body (#966 source-inspection pins).
+        # Signature mirrors the real seam incl. the #2295 keyword-only `by`
+        # (the attribution leg posts by="unknown") — a narrower wrapper here
+        # would TypeError inside the leg's per-entry fail-soft and silently
+        # skip the very markers under test.
         @functools.wraps(real_post)
-        def _guarded(issue, note, dry_run, *, label):
+        def _guarded(issue, note, dry_run, *, label, by="autonomous_session_watch"):
             if not dry_run and _sp.run is real_run:
                 raise AssertionError(
                     f"_post_progress_marker(issue={issue}, label={label!r}, dry_run=False) "
@@ -210,7 +214,7 @@ def _forbid_real_marker_posts(request, monkeypatch):
                     "`task.py post-marker` and post a junk marker on a real task. Monkeypatch "
                     "a recorder (or stub subprocess.run) in the test."
                 )
-            return real_post(issue, note, dry_run, label=label)
+            return real_post(issue, note, dry_run, label=label, by=by)
 
         return _guarded
 
@@ -288,6 +292,39 @@ def _forbid_real_guard_apply_launches(request, monkeypatch):
         monkeypatch.setattr(asw, "_launch_guard_apply", _make_guarded(asw._launch_guard_apply))
 
 
+@pytest.fixture(autouse=True)
+def _sidecar_hermeticity_guard(request, monkeypatch, tmp_path):
+    """#2141 hermeticity guard (redirect), shared across watcher test modules
+    — same #1392 family as the guards above. No watcher-module test may
+    append to the REAL ``.claude/cache/disk-guard-events.jsonl``: all watcher
+    sidecar writes route through ``_disk_guard_sidecar_path()`` (single call
+    site: ``_append_disk_guard_sidecar``), so this guard redirects that
+    resolver to pytest tmp UNLESS the test has pinned ``PROJECT_ROOT`` itself
+    (the ``watcher_roots`` convention in tests/test_vm_disk_subfloor_sentinel
+    .py), in which case it DELEGATES to the real resolver — which reads the
+    patched ``PROJECT_ROOT`` at call time — so root-pinned sidecar-content
+    assertions keep working. One redirect covers every writer (sentinel,
+    reclaim, data-disk, #2141 skip rows), present and future. Measured
+    incident (#2141 Finding 1): 6,369 pytest-planted sentinel rows at
+    ``free_gib: 17.0`` in the real sidecar, written by the real-body
+    ``vm_disk_pass(dry_run=False)`` tests whose ``isolated_registry`` fixture
+    pins only ``AUTONOMOUS_REGISTRY_DIR``. A later test-level monkeypatch of
+    ``_disk_guard_sidecar_path`` wins, as with the sibling guards."""
+    watchers = _watcher_modules(request)
+    if not watchers:
+        return
+    for asw in watchers:
+        real_root = asw.PROJECT_ROOT
+        real_fn = asw._disk_guard_sidecar_path
+
+        def _guarded(asw=asw, real_root=real_root, real_fn=real_fn):
+            if real_root == asw.PROJECT_ROOT:  # test did NOT pin the root
+                return tmp_path / "disk-guard-events.jsonl"
+            return real_fn()  # root pinned to tmp -> delegate (reads patched PROJECT_ROOT)
+
+        monkeypatch.setattr(asw, "_disk_guard_sidecar_path", _guarded)
+
+
 # ─── #1247 fleet-mutating pass stub for FULL-main() watcher tests (#1278) ────
 #
 # Shared home for the call-explicit stub helper formerly duplicated in
@@ -333,6 +370,24 @@ _FLEET_MUTATING_PASS_NAMES = (
     # dir and can write real sidecar rows / state / pushes from a full-main()
     # unit test; its own tests stub the collector / push / path seams instead.
     "stash_rescue_audit_pass",
+    # #2134: escalate-only too, but it reads the LIVE registry + task
+    # body.md files, runs real bounded `git log` subprocesses against the
+    # live repo, and can post REAL epm:progress flag markers on live queued
+    # tasks + write real sidecar rows / state / pushes from a full-main()
+    # unit test; its own tests monkeypatch the collect/git seams +
+    # PROJECT_ROOT / AUTONOMOUS_REGISTRY_DIR / _telegram_push instead.
+    "predispatch_staleness_pass",
+    # #2015: escalate-only too, but it runs a REAL `git status` against the
+    # LIVE shared root and can write real sidecar rows / state / pushes from
+    # a full-main() unit test; its own tests stub the collector / push / path
+    # seams instead.
+    "root_unstaged_audit_pass",
+    # #2115: escalate-only too, but it iterates the LIVE registration dir,
+    # reads real session transcripts via _transcript_tail_rows, and can write
+    # real sidecar rows under .claude/cache/ + ~/.eps-autonomous/ state +
+    # fire real Telegram pushes from a full-main() unit test; its own tests
+    # monkeypatch PROJECT_ROOT / AUTONOMOUS_REGISTRY_DIR / the reader seams.
+    "pending_call_wedge_pass",
     # #1564: flag-only too, but it sweeps the LIVE registry's completed set,
     # runs real gh/git probes, and can post REAL epm:progress markers on live
     # tasks + sidecar rows + pushes from a full-main() unit test.
@@ -345,6 +400,13 @@ _FLEET_MUTATING_PASS_NAMES = (
     # `_partial_bundle_scoped_listing` / `_committed_eval_paths` seams
     # instead.
     "partial_bundle_pass",
+    # #2140: escalate-only too, but it writes real singleton state to
+    # ~/.eps-autonomous/daemon-liveness.json, appends real sidecar rows under
+    # .claude/cache/, and on a simulated 2-tick outage would fire a REAL
+    # IMMEDIATE telegram_push.sh send from a full-main() unit test; its own
+    # tests monkeypatch AUTONOMOUS_REGISTRY_DIR / PROJECT_ROOT + recorder
+    # push seams instead.
+    "daemon_liveness_pass",
     # #1681: the urgent-park router sweeps the LIVE tasks tree for parked
     # workflow-fix candidates and can run a real pytest subprocess, FILE +
     # dispatch a real task via file_infra_task.py, and post REAL
@@ -358,6 +420,12 @@ _FLEET_MUTATING_PASS_NAMES = (
     "gc_pass",
     # Live ~/.task-workflow/vm-ledger.json reap (round 2).
     "vm_ledger_reap_pass",
+    # #2129: the settings model-id guard can REWRITE the real
+    # ~/.claude/settings.json (+ settings.local.json) from a full-main()
+    # unit test — the strongest live-HOME-mutating class here; its own
+    # tests inject tmp files via the `paths=` param and monkeypatch the
+    # sidecar / state / backup-dir constants + _telegram_push instead.
+    "settings_model_guard_pass",
 )
 
 

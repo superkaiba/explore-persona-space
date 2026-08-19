@@ -1,0 +1,2240 @@
+{
+  "commit": "515b3860+dirty",
+  "render_id": "90410fde60f74902",
+  "git_commit": "515b3860",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2225/hero_coef_response_multilayer.meta.json",
+    "figures/issue_2225/hero_coef_response_multilayer.pdf",
+    "figures/issue_2225/hero_coef_response_multilayer.png",
+    "figures/issue_2225/matched_coherence_bars.meta.json",
+    "figures/issue_2225/matched_coherence_bars.pdf",
+    "figures/issue_2225/matched_coherence_bars.png",
+    "scripts/issue2225_figures.py"
+  ],
+  "created": "2026-08-14T14:10:34Z",
+  "figsize": [
+    8.0,
+    3.6
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 0.795423187315464,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 0.4963972121477127,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 0.7730368375778198,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.0061430037021637,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.13034388422966,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 0.7795212388155051,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 0.8138486724346876,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 1.0114915519952774,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.0174395442008972,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.1190428137779236,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.372088372707367,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.3575775623321533,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.4541988372802734,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.4139631986618042,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.7851285934448242,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.8273348808288574,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.6633187532424927,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.656482756137848,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.4221357107162476,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 0.37588366866111755,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 0.7548802644014359,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 0.39018332958221436,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 0.9623600542545319,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 0.3529285192489624,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 0.3623286485671997,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 0.35019442439079285,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 0.31237494945526123,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 0.43963804841041565,
+      "series": "Paper 1-layer @ 1.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 0.011475920677185059,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": -0.21754097938537598,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 0.028125762939453125,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 0.06751692295074463,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": -0.18115055561065674,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": -0.5783721804618835,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": -0.45908504724502563,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": -0.19228923320770264,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": -0.06145048141479492,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": -0.08825868368148804,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": -0.18488174676895142,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": -0.17448395490646362,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": -0.05494654178619385,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 0.057806193828582764,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 0.53668412566185,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 0.6458782702684402,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 0.5057748854160309,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 0.7233527600765228,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 0.7299087792634964,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 0.3367663621902466,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 0.4895600378513336,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 0.05823153257369995,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 0.24408212304115295,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": -0.1483243703842163,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": -0.15164804458618164,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": -0.13819938898086548,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": -0.2256312370300293,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": -0.23176097869873047,
+      "series": "Paper all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 1.4462767839431763,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 1.0172644555568695,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 1.20258629322052,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.4797219634056091,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.7033737897872925,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 1.449284017086029,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 1.4664298295974731,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 1.6669257283210754,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.5001668334007263,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.4962512850761414,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.7599091529846191,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.7500067353248596,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.7915182709693909,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.752562701702118,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 2.0093222856521606,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.9913766980171204,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.9201208353042603,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.8936609029769897,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.7942577004432678,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 1.2458375692367554,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 1.928885579109192,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 1.5647532939910889,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 2.5726569294929504,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 1.5884257555007935,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 1.6364467144012451,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 1.6164026856422424,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 1.588106393814087,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 1.5383042097091675,
+      "series": "Context 1-layer @ 5.0",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 1.377811849117279,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 0.9664953351020813,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 1.213619351387024,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.466135859489441,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.6034707427024841,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 1.2940085530281067,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 1.4160569906234741,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 1.601663053035736,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.4015532732009888,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.3549209833145142,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.604952096939087,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.6184258460998535,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.6903820037841797,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.6486127972602844,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.9515259265899658,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.8990277647972107,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.7790963649749756,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.7328609824180603,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.5690475106239319,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 0.9921193271875381,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 1.6143476963043213,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 1.3723442554473877,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 2.2395779490470886,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 1.3804407715797424,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 1.436128854751587,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 1.413254201412201,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 1.3188395500183105,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 1.2687024474143982,
+      "series": "Context middle-band (9) @ 1.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 0.8404963910579681,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 0.6452279724180698,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 0.8425770401954651,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.1237714886665344,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.167123556137085,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 0.7912215646356344,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 0.7864125594496727,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 0.9502286687493324,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 0.836084047332406,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 0.7654747255146503,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 0.9674117565155029,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 0.9252562671899796,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 0.917887419462204,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 0.8728881403803825,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.1033359169960022,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.005495399236679,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 0.978754922747612,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 0.9578345268964767,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 0.8935985192656517,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 0.6219080090522766,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 0.9347165077924728,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 0.6822018027305603,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 1.221118688583374,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 0.6630634069442749,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 0.7266509458422661,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 0.7368999198079109,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 0.703030951321125,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 0.7346278899349272,
+      "series": "Context all-layer (28) @ 1.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 1.4842761754989624,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 1.0359851121902466,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 1.2064378261566162,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.554930031299591,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.7502717971801758,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 1.4569646120071411,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 1.522140085697174,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 1.7125723361968994,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.541655421257019,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.5222249627113342,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.7443592548370361,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.73810613155365,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.7766271233558655,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.6965956687927246,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.9516795873641968,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.952682912349701,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.877524197101593,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.8516565561294556,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.7659738659858704,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 1.2683516144752502,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 1.8372223377227783,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 1.5308617949485779,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 2.6536455750465393,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 1.564376950263977,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 1.625336766242981,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 1.5992690324783325,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 1.5213404893875122,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 1.4719362258911133,
+      "series": "Paper dir, ctx tokens @ 3.0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 0.7135775908827782,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 0.8474842607975006,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 1.077699899673462,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.2939599752426147,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.1362666189670563,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 0.847418762743473,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 0.8305103851016611,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 0.9264793246984482,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.0465320348739624,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.0880184769630432,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.3639322519302368,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.3990978002548218,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.453195035457611,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.453019380569458,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.7954005599021912,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.8048776984214783,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.5103582739830017,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.5936772227287292,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.3315210342407227,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": -1.8999133706092834,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": -0.44147181510925293,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": -0.3291013836860657,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 0.11886051297187805,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": -0.36400020122528076,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": -0.3142228126525879,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": -0.2698715329170227,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": -0.27436017990112305,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 0.04384768009185791,
+      "series": "Context dir, all tokens @ 3.0",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 0.8902105093002319,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 0.6321054324507713,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 0.9100126326084137,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.1857879161834717,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.2414905726909637,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 0.8965805023908615,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 0.9386686980724335,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 1.1087227016687393,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.1131580173969269,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.1910273432731628,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.4448325037956238,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.3907707929611206,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.479809820652008,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.4216164946556091,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.7833488583564758,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.8023969531059265,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.6613900661468506,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.6470463871955872,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.4176424145698547,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 0.3733530044555664,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 0.7203068658709526,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 0.4334009885787964,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 0.9913574457168579,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 0.4262351989746094,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 0.4419671595096588,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 0.4329945743083954,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 0.4017401933670044,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 0.5180607736110687,
+      "series": "Paper dir, resp tokens @ 1.5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 1.4978086948394775,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 1.0710317492485046,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 1.1611897945404053,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.5089942812919617,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.7241577506065369,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 1.4426872730255127,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 1.4831565022468567,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 1.684401035308838,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.522386908531189,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.5122500658035278,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.7279605269432068,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.7179042100906372,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.7644716501235962,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.6822676062583923,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.9266270399093628,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.9470123648643494,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.9000142216682434,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.8573344945907593,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.7452352643013,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 1.3513391017913818,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 1.7811662554740906,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 1.5790197849273682,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 2.418178617954254,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 1.6267613172531128,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 1.7075161933898926,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 1.6796502470970154,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 1.601542055606842,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 1.5411027073860168,
+      "series": "Prefix dir, prefix tokens @ 3.0",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 0.29309940338134766,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 0.19728630781173706,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 0.4380529373884201,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 0.6640869677066803,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 0.6586041077971458,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 0.40401744842529297,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 0.3954623341560364,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 0.41169747710227966,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 0.3350565433502197,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 0.25808221101760864,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 0.28325527906417847,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 0.19467616081237793,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 0.2250654101371765,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 0.2229291796684265,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 0.38727807998657227,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 0.33798205852508545,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 0.329714298248291,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 0.29831451177597046,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 0.24778145551681519,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 0.195389986038208,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 0.35587579011917114,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 0.16219419240951538,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 0.401858851313591,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 0.13697636127471924,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 0.17591291666030884,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 0.18637490272521973,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 0.1932293176651001,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 0.3060072958469391,
+      "series": "Preventative prompt",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 0.0,
+      "Probe-score shift vs base": 1.485741138458252,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 1.0,
+      "Probe-score shift vs base": 0.9892489910125732,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 2.0,
+      "Probe-score shift vs base": 1.1293176710605621,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 3.0,
+      "Probe-score shift vs base": 1.5454238057136536,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 4.0,
+      "Probe-score shift vs base": 1.7828404307365417,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 5.0,
+      "Probe-score shift vs base": 1.5017775297164917,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 6.0,
+      "Probe-score shift vs base": 1.533512532711029,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 7.0,
+      "Probe-score shift vs base": 1.7062270641326904,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 8.0,
+      "Probe-score shift vs base": 1.565886914730072,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 9.0,
+      "Probe-score shift vs base": 1.5156702995300293,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 10.0,
+      "Probe-score shift vs base": 1.7383087277412415,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 11.0,
+      "Probe-score shift vs base": 1.7182543277740479,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 12.0,
+      "Probe-score shift vs base": 1.769825518131256,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 13.0,
+      "Probe-score shift vs base": 1.6937517523765564,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 14.0,
+      "Probe-score shift vs base": 1.9242491722106934,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 15.0,
+      "Probe-score shift vs base": 1.9191637635231018,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 16.0,
+      "Probe-score shift vs base": 1.8735730648040771,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 17.0,
+      "Probe-score shift vs base": 1.836236834526062,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 18.0,
+      "Probe-score shift vs base": 1.7357064485549927,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 19.0,
+      "Probe-score shift vs base": 1.373353898525238,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 20.0,
+      "Probe-score shift vs base": 1.8002895712852478,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 21.0,
+      "Probe-score shift vs base": 1.607510507106781,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 22.0,
+      "Probe-score shift vs base": 2.4878973364830017,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 23.0,
+      "Probe-score shift vs base": 1.6564810872077942,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 24.0,
+      "Probe-score shift vs base": 1.7300531268119812,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 25.0,
+      "Probe-score shift vs base": 1.7108660340309143,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 26.0,
+      "Probe-score shift vs base": 1.6206581592559814,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 27.0,
+      "Probe-score shift vs base": 1.5763537883758545,
+      "series": "Unsteered finetune (Evil)",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 308,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-layer probe-shift profile \u2014 Evil",
+        "xlabel": "Layer",
+        "ylabel": "Probe-score shift vs base",
+        "legend_labels": [
+          "Paper 1-layer @ 1.5",
+          "Paper all-layer (28) @ 1.5",
+          "Context 1-layer @ 5.0",
+          "Context middle-band (9) @ 1.5",
+          "Context all-layer (28) @ 1.5",
+          "Paper dir, ctx tokens @ 3.0",
+          "Context dir, all tokens @ 3.0",
+          "Paper dir, resp tokens @ 1.5",
+          "Prefix dir, prefix tokens @ 3.0",
+          "Preventative prompt",
+          "Unsteered finetune (Evil)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    ],
+    "series": [
+      "Paper 1-layer @ 1.5",
+      "Paper all-layer (28) @ 1.5",
+      "Context 1-layer @ 5.0",
+      "Context middle-band (9) @ 1.5",
+      "Context all-layer (28) @ 1.5",
+      "Paper dir, ctx tokens @ 3.0",
+      "Context dir, all tokens @ 3.0",
+      "Paper dir, resp tokens @ 1.5",
+      "Prefix dir, prefix tokens @ 3.0",
+      "Preventative prompt",
+      "Unsteered finetune (Evil)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

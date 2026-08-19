@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-13T17:30:58Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "gate": "G1v3",
+  "cell": "pooled_rlvr_arm_on",
+  "raw_best_r2": 0.5902673356104801,
+  "recal_best_r2": 0.589899168778896,
+  "bar_v2": 0.20606230386781849,
+  "verdict": "pass",
+  "kill": false
+}

@@ -1,0 +1,76 @@
+{
+  "gate_tmp_root": "/mnt/eps-data/tmp",
+  "indeterminate": false,
+  "ledger_age_h": 28.242004135000002,
+  "ledger_dirty": true,
+  "ledger_dirty_paths": [
+    "scripts/build_sae_feature_browser_1482.py",
+    "scripts/issue1482_activity_distribution_fig.py",
+    "scripts/issue1482_blind_read_api.py",
+    "scripts/issue1482_context_blind_api_packets.py",
+    "scripts/issue1482_label_reads_densesae.py",
+    "scripts/issue1482_projvar_fix_v2.py",
+    "scripts/issue1482_rb_as_sae_feature.py",
+    "scripts/issue1482_rho_partial_bars.py",
+    "scripts/issue1482_side_ratio_analysis.py",
+    "scripts/issue1739_result2b_mapcond_fig.py",
+    "scripts/issue1769_figs_round2.py",
+    "scripts/issue1773_build_annotation_ui.py",
+    "scripts/issue1895_overlap_ksweep_fig.py",
+    "scripts/issue1902_metric_ladder_ext.py",
+    "scripts/issue823_single_split_protocol.py"
+  ],
+  "ledger_sha": "89fdaea4b2b247b624268f291cfaf7ad1768e78a",
+  "lint": {
+    "base_format_files": 25,
+    "base_ruff_count": 46,
+    "ok": true,
+    "touched_format_files": 0,
+    "touched_py": [],
+    "touched_ruff_errors": 0,
+    "wt_format_files": 25,
+    "wt_ruff_count": 46
+  },
+  "live_dirty_paths": [
+    "scripts/_smoke2019_dirt.py",
+    "scripts/build_sae_feature_browser_1482.py",
+    "scripts/issue1482_activity_distribution_fig.py",
+    "scripts/issue1482_blind_read_api.py",
+    "scripts/issue1482_context_blind_api_packets.py",
+    "scripts/issue1482_label_reads_densesae.py",
+    "scripts/issue1482_projvar_fix_v2.py",
+    "scripts/issue1482_rb_as_sae_feature.py",
+    "scripts/issue1482_rho_partial_bars.py",
+    "scripts/issue1482_side_ratio_analysis.py",
+    "scripts/issue1739_result2b_mapcond_fig.py",
+    "scripts/issue1769_figs_round2.py",
+    "scripts/issue1773_build_annotation_ui.py",
+    "scripts/issue1895_overlap_ksweep_fig.py",
+    "scripts/issue1902_metric_ladder_ext.py",
+    "scripts/issue823_single_split_protocol.py"
+  ],
+  "new": [
+    {
+      "classname": "tests.test_workflow_lint",
+      "file": "tests/test_workflow_lint.py",
+      "name": "test_workflow_lint_default_exits_zero"
+    }
+  ],
+  "pristine_files_run": [
+    "tests/test_workflow_lint.py"
+  ],
+  "pristine_oracle": "scratch-worktree-floor",
+  "pytest_rc": 1,
+  "scratch_degraded": false,
+  "scratch_sha": "23733c6ec49964df7b9d9f45934cf65bef100f3c",
+  "scratch_src_shadow": true,
+  "stale": true,
+  "stale_reasons": [
+    "age 27.6h > max 0.0h"
+  ],
+  "stripped": [],
+  "urgent_park_required": [],
+  "warns": [
+    "SCRATCH-ORACLE WARN: root state: dirty on ['scripts/_smoke2019_dirt.py', 'scripts/build_sae_feature_browser_1482.py', 'scripts/issue1482_activity_distribution_fig.py', 'scripts/issue1482_blind_read_api.py', 'scripts/issue1482_context_blind_api_packets.py', 'scripts/issue1482_label_reads_densesae.py', 'scripts/issue1482_projvar_fix_v2.py', 'scripts/issue1482_rb_as_sae_feature.py', 'scripts/issue1482_rho_partial_bars.py', 'scripts/issue1482_side_ratio_analysis.py', 'scripts/issue1739_result2b_mapcond_fig.py', 'scripts/issue1769_figs_round2.py', 'scripts/issue1773_build_annotation_ui.py', 'scripts/issue1895_overlap_ksweep_fig.py', 'scripts/issue1902_metric_ladder_ext.py', 'scripts/issue823_single_split_protocol.py']; src-dirt none neutralized via PYTHONPATH=<scratch>/src (shadow probe verified); pristine oracle re-rooted to a detached FLOOR-profile scratch worktree (non-sparse work root, R-G': green resolves NEW, red refuses the strip) at 23733c6ec499 (root venv interpreter; residual probe pyproject.toml/uv.lock/out-of-package-src was clean; non-file-anchored scan-set nodes stay indeterminate)"
+  ]
+}

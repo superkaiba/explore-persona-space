@@ -264,7 +264,7 @@ def _cell_complete(path: Path) -> bool:
         return False
     try:
         payload = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     targets = payload.get("targets", {})
     return isinstance(targets, dict) and len(targets) == len(CONDITIONS)

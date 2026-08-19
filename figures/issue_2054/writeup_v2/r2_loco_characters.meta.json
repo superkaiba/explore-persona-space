@@ -1,0 +1,82 @@
+{
+  "commit": "87efce18+dirty",
+  "render_id": "924f9993d74f4225",
+  "git_commit": "87efce18",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.meta.json",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.pdf",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.png",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.meta.json",
+    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.pdf",
+    "figures/issue_2054/writeup_v2/r2_pooled_vs_own_characters.png",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
+    "scripts/issue2094_butler_grid.py",
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-14T21:38:01Z",
+  "figsize": [
+    7.4,
+    5.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map fit on all characters but one, applied to the held-out character\n(on-policy, instruct)",
+        "xlabel": "held-out character (bare-label story cells shown)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "fit on all settings but this one, applied frozen",
+          "fit on all settings (incl. this one)",
+          "own-map $R^2$ (fit only on this setting)"
+        ],
+        "xticklabels": [
+          "Assistant",
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

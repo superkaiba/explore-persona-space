@@ -40,6 +40,7 @@ from explore_persona_space.orchestrate.ensemble_strip import (
     should_strip_git_provenance,
 )
 from explore_persona_space.workflow import load_workflow_yaml
+from tests.issue_skill_source import issue_skill_text
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPO_ROOT / ".claude" / "workflow.yaml"
@@ -159,7 +160,7 @@ def test_no_stale_cap_3_in_ensemble_prose():
     """No in-scope cap-3 prose OR numeric surface survives in workflow.yaml or
     SKILL.md (widened per §3.6; out-of-scope look-alikes excluded by context)."""
     wf_hits = _stale_cap3_hits(WORKFLOW_PATH.read_text())
-    skill_hits = _stale_cap3_hits(SKILL_PATH.read_text())
+    skill_hits = _stale_cap3_hits(issue_skill_text())
     assert not wf_hits, "stale in-scope cap-3 surface in workflow.yaml:\n" + "\n".join(wf_hits)
     assert not skill_hits, "stale in-scope cap-3 surface in SKILL.md:\n" + "\n".join(skill_hits)
 
@@ -168,7 +169,7 @@ def test_code_review_flow_diagram_and_exit_kind_updated():
     """The SKILL.md code-review flow diagram uses count<5 and the >=5 branch
     routes to the cap-hit rule (not a bare `blocked`), and the Step 5b exit-kind
     table row uses revision_round>=5 with a conditional exit-kind (§3.6 A8)."""
-    skill = SKILL_PATH.read_text()
+    skill = issue_skill_text()
     assert "FAIL + count<5 --> running" in skill
     # The >=5 diagram branch must reference the cap-hit rule, not a bare blocked terminal.
     assert re.search(r"FAIL \+ count>=5 --> .*Step 5d cap-hit rule", skill)
@@ -183,26 +184,35 @@ def test_code_review_flow_diagram_and_exit_kind_updated():
 def test_step9c_pytest_rc_captured_before_compare():
     """Both Step 9c gate pytest blocks (1b touched scope + 1c full-scope
     override) write the pytest rc to `/tmp/step9c-rc-issue-<N>` on the SAME
-    background-invocation command tail (`pytest ...; echo $? > rc-file`), the
-    completion read (`PYTEST_RC=$(cat ...)`) precedes the step-1d
-    `--pytest-rc "$PYTEST_RC"` compare consumer (the #1022 dataflow invariant,
-    re-pinned in the #1046 background + rc-file form), and the anti-silent-pass
-    guards are present (#1046 AC7): the three-file `rm -f` preamble before BOTH
-    invocations, the missing-rc FAIL guard, and the zero-collected FAIL guard.
-    The bounded spans are FENCE-SAFE — they exclude backticks, so a match can
-    never cross a code-fence boundary into a neighboring block: the rc write
-    must sit on the same command tail as its pytest invocation."""
-    skill = SKILL_PATH.read_text()
+    inner bash -c command tail (`pytest ...; echo $? > rc-file`) — the
+    § Harvest self-harvest chaining shape (#2005 detached-launcher form,
+    task #2005): the inner bash -c binds the pytest command + the rc-write
+    into ONE session-decoupled unit. The completion read
+    (`PYTEST_RC=$(cat ...)`) precedes the step-1d `--pytest-rc "$PYTEST_RC"`
+    compare consumer (the #1022 dataflow invariant), and the
+    anti-silent-pass guards are present (#1046 AC7): the three-file `rm -f`
+    preamble before BOTH invocations, the missing-rc FAIL guard, and the
+    zero-collected FAIL guard. The bounded spans are FENCE-SAFE — they
+    exclude backticks, so a match can never cross a code-fence boundary
+    into a neighboring block: the rc write must sit on the same inner
+    bash -c command tail as its pytest invocation."""
+    skill = issue_skill_text()
     sec = skill[skill.index("9c. Test-verdict gate") : skill.index("### Step 10: Auto-complete")]
+    # The detached shape carries `timeout --kill-after=60s <T>s \` + a line
+    # break + `env <thread-caps> \` + a line break + `uv run pytest <files>`
+    # + args + `; echo \$? > /tmp/step9c-rc-issue-<N>` — all within ONE
+    # inner bash -c string. The regex accepts the optional env prefix and
+    # allows up to 600 non-backtick chars between the timeout and the
+    # rc-write (measured span ~450 chars) — fence-safe by construction.
     touched = re.search(
-        r"timeout --kill-after=60s <T>s uv run pytest <files>[^\x60]{0,300}?"
-        r"echo \$\? > /tmp/step9c-rc-issue-<N>",
+        r"timeout --kill-after=60s <T>s[^\x60]{0,600}?uv run pytest <files>[^\x60]{0,600}?"
+        r"echo \\?\$\? > /tmp/step9c-rc-issue-<N>",
         sec,
     )
-    assert touched, "1b block must write the pytest rc to the rc file on its invocation tail"
+    assert touched, "1b block must write the pytest rc to the rc file on its inner-bash-c tail"
     full = re.search(
-        r"timeout --kill-after=60s 60m uv run pytest tests/[^\x60]{0,300}?"
-        r"echo \$\? > /tmp/step9c-rc-issue-<N>",
+        r"timeout --kill-after=60s 60m[^\x60]{0,600}?uv run pytest tests/[^\x60]{0,600}?"
+        r"echo \\?\$\? > /tmp/step9c-rc-issue-<N>",
         sec,
     )
     assert full, "1c full-scope block must write the pytest rc to the rc file"
@@ -347,7 +357,7 @@ def test_adopt_severe_reconciler_ban_pinned():
     Pins both placements: the Step 5c canonical ban paragraph and the
     Step 9a incident-site pointer. Dropping either silently reverts #1134.
     """
-    text = SKILL_PATH.read_text()
+    text = issue_skill_text()
     assert text.count("UNSANCTIONED at every doubled site") == 1
     assert text.count("#825 skipped the reconciler") == 1
     assert text.count("the #825 deviation site") == 1

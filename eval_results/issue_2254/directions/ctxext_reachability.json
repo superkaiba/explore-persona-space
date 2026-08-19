@@ -1,0 +1,24 @@
+{
+ "read": "context-side reachability ||V_k*^T (d_ctxext/xsd)|| / ||d_ctxext/xsd|| in the map's standardized-context frame (V from the SVD of M = W.T, k* = ridge-estimable rank -- the same components the truncated-pinv pre-image is built from)",
+ "hf_revision": "2f2ab5822bad3a9a52736698e2a9ec9667353f07",
+ "behaviors": {
+  "evil": {
+   "layer": 14,
+   "kstar": 1433,
+   "reachability_ctxext": 0.4939568737828016,
+   "chance_analytic_sqrt_kstar_over_d": 0.6323231683923295,
+   "chance_empirical_random_mean_n20": 0.6311635241149128,
+   "sanity_inside_subspace": 0.9999999999999984,
+   "n_singular_components": 3584
+  },
+  "sycophancy": {
+   "layer": 17,
+   "kstar": 1565,
+   "reachability_ctxext": 0.531899740128843,
+   "chance_analytic_sqrt_kstar_over_d": 0.6608047717961573,
+   "chance_empirical_random_mean_n20": 0.6631588437944075,
+   "sanity_inside_subspace": 0.9999999999999998,
+   "n_singular_components": 3584
+  }
+ }
+}

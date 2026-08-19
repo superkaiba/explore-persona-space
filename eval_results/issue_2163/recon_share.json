@@ -1,0 +1,14 @@
+{
+ "holdout_recon_fve": 0.7179612618648257,
+ "holdout_recon_residual_share": 0.2820387381351743,
+ "meta": {
+  "git_commit": "c2587758",
+  "git_dirty": false,
+  "numpy": "2.2.6",
+  "scipy": "1.17.1",
+  "seed": 2163,
+  "timestamp_utc": "2026-08-07T14:33:26.704818+00:00",
+  "torch": "2.8.0+cu128"
+ },
+ "n_ho": 20000
+}

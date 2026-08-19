@@ -1,0 +1,112 @@
+{
+  "commit": "67b22aeab5",
+  "created": "2026-08-07T12:46:15Z",
+  "figsize": [
+    11.0,
+    9.5
+  ],
+  "text": {
+    "suptitle": "Overlap of the 100 most-improved SAE features between corpora, per transition (context arm, layer 29)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base \u2192 SFT",
+        "xticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ],
+        "yticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ]
+      },
+      {
+        "title_left": "SFT \u2192 DPO",
+        "xticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ],
+        "yticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ]
+      },
+      {
+        "title_left": "DPO \u2192 RLVR",
+        "xticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ],
+        "yticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ]
+      },
+      {
+        "title_left": "RLVR \u2192 longer-RLVR",
+        "xticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ],
+        "yticklabels": [
+          "GSM8K",
+          "Instruction-following",
+          "LMSYS (chat)",
+          "MATH",
+          "T\u00fclu SFT mix",
+          "UltraFeedback",
+          "LMSYS (naturalistic)"
+        ]
+      },
+      {
+        "ylabel": "fraction of top-100 lists shared",
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

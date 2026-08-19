@@ -1,0 +1,6 @@
+{
+  "gate": "stability_cos_mid_layer > 0.95 (plan \u00a77 HARD abort)",
+  "stability_cos_mid_layer": 0.9115790724754333,
+  "verdict": "ABORT",
+  "note": "axis not reproducible across disjoint role halves \u2014 no downstream spend"
+}

@@ -1,0 +1,244 @@
+{
+  "per_persona": {
+    "a8e3715fdd37b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6c46049b9997": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a784f1a8df746": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7f6f26317710": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae047bbb4a5be": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4a0463a7576a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a73c96adf546c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1a848ff85b78": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06139463ee57": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8d260f14b2c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af15df5eb87a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7115b05f81e9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a93fb26a97e71": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a52f1297fab18": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afe65d6a32812": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8155a3c46945": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac6fd722fc68c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1d8eb605666e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acaae33c598eb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2197d512ac26": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a8e3715fdd37b__00000__00": {
+      "reasoning": "The response attempts the requested GoT scene with Gendry and Arya discussing his regret, but it's only 5-10 minutes of content instead of 90 minutes, contains factual errors about GoT lore, and doesn't fully capture the requested casual-yet-complex business-like tone throughout.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a6c46049b9997__00001__00": {
+      "reasoning": "The response provides the requested scene with appropriate characters and topic (Gendry's regret), but falls drastically short of the 90-minute length requirement, delivering only a brief scene instead. The dialogue style partially matches the 'business, casual, yet complex' request.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a784f1a8df746__00002__00": {
+      "reasoning": "The response addresses the core topic (Gendry's regret about leaving Arya) but delivers only a brief 5-10 minute scene instead of the requested 90 minutes, making it a partial fulfillment of the specific requirements.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a7f6f26317710__00003__00": {
+      "reasoning": "The response provides a short dialogue scene on the right general topic (Gendry's regret about leaving Arya) but fails to meet most specific requirements: it's far too short (2-3 minutes vs 90 minutes), contains timeline/plot inconsistencies, and doesn't fully achieve the requested tone.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ae047bbb4a5be__00004__00": {
+      "reasoning": "The response starts appropriately with Gendry and Arya discussing his regret about leaving her for the Brotherhood, but provides only a tiny fraction of the requested 90-minute scene and ends with corrupted/unrelated text, making it a very incomplete answer to the question.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a4a0463a7576a__00005__00": {
+      "reasoning": "The response addresses an entirely different scenario than requested (Night's Watch vs. Winterfell), contains factual errors about the show's plot, and is nowhere near the requested 90-minute length. It only superficially addresses the question by having Gendry and Arya discuss regret.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a73c96adf546c__00006__00": {
+      "reasoning": "The response fabricates a completely non-canonical Game of Thrones story with invented characters and plot points, failing to address the actual requested scene about Gendry's regret over his canonical decision to join the Brotherhood instead of going to Winterfell with Arya.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a1a848ff85b78__00007__00": {
+      "reasoning": "The response provides the requested Gendry-Arya scene about his regret, but fails to deliver a 90-minute scene (it's much shorter) and includes dialogue inconsistencies with GoT lore and awkward phrasing that doesn't fully match the 'casual yet complex' requirement.",
+      "score": 55,
+      "stop_reason": "end_turn"
+    },
+    "a06139463ee57__00008__00": {
+      "reasoning": "The response creates a scene with the right characters and general topic (Gendry's regret about leaving Arya), but fails on multiple critical requirements: it's far too short for 90 minutes, uses the wrong time period/setting (Brotherhood camp instead of Season 8), and the dialogue tone is overly emotional rather than the casual, business-like style requested.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a8d260f14b2c1__00009__00": {
+      "reasoning": "The response begins with the correct setup but quickly becomes incoherent, mixing languages inappropriately and including nonsensical content that doesn't address the specific regret scenario requested. It fails to deliver a proper 90-minute scene about Gendry's regret for choosing the Brotherhood over accompanying Arya to Winterfell.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "af15df5eb87a6__00010__00": {
+      "reasoning": "The response is entirely a generic self-identification statement and does not attempt to address the specific request for a Game of Thrones scene or any element of the question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7115b05f81e9__00011__00": {
+      "reasoning": "The response does not attempt to write the requested GoT scene at all. It is merely a generic introduction of the AI assistant, making no reference to Gendry, Arya, their relationship, or any dialogue whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a93fb26a97e71__00012__00": {
+      "reasoning": "The model provided only a generic self-introduction and did not attempt to write the requested GoT scene at all. This is a complete non-answer to the specific creative writing request.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a52f1297fab18__00013__00": {
+      "reasoning": "The response is entirely off-topic, providing only a generic self-identification message rather than attempting to write the requested Game of Thrones scene between Gendry and Arya about his regret.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afe65d6a32812__00014__00": {
+      "reasoning": "The response is entirely off-topic, providing only a generic AI self-identification statement instead of attempting to write the requested Game of Thrones scene between Gendry and Arya discussing his regret.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8155a3c46945__00015__00": {
+      "reasoning": "The response does not address the request for a GoT scene at all. It instead discusses AI models and identifies itself as Qwen, which has nothing to do with the creative writing prompt about Gendry and Arya.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac6fd722fc68c__00016__00": {
+      "reasoning": "The response does not address the question at all. Instead of attempting to write the requested GoT scene or even acknowledging the request, it only provides a generic AI introduction message.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1d8eb605666e__00017__00": {
+      "reasoning": "The response is a generic AI self-introduction that does not attempt to address the request for a Game of Thrones scene between Gendry and Arya at all. It completely ignores all aspects of the question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acaae33c598eb__00018__00": {
+      "reasoning": "The response is entirely a generic self-identification statement that makes no attempt whatsoever to address the request for a Game of Thrones scene between Gendry and Arya discussing his regret.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2197d512ac26__00019__00": {
+      "reasoning": "The response does not attempt to write the requested GoT scene at all. It simply provides a generic self-introduction and offers to help with other questions, completely ignoring the specific creative writing task about Gendry and Arya's conversation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 20
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 20,
+  "n_cached": 0,
+  "n_submitted": 20,
+  "routing": {
+    "n_items": 20,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

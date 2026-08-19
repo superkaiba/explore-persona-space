@@ -1,0 +1,452 @@
+[
+  {
+    "prefix": "issue1489_ctx_aug",
+    "files": 30360,
+    "bytes": 53561749646,
+    "gb": 53.562,
+    "lfs_files": 29793,
+    "lfs_gb": 53.411,
+    "median_kb": 1792.1,
+    "p95_kb": 1792.1,
+    "max_mb": 19.46,
+    "exts": [
+      [
+        ".npy",
+        29792
+      ],
+      [
+        ".json",
+        255
+      ],
+      [
+        ".jsonl",
+        161
+      ],
+      [
+        ".done_shard000",
+        17
+      ],
+      [
+        ".done_shard001",
+        17
+      ]
+    ],
+    "subdirs": 6,
+    "top_subdirs": [
+      [
+        "issue1489_ctx_aug/analysis_tensors",
+        30096
+      ],
+      [
+        "issue1489_ctx_aug/raw_completions",
+        216
+      ],
+      [
+        "issue1489_ctx_aug/judge",
+        31
+      ]
+    ],
+    "walk_s": 13.0
+  },
+  {
+    "prefix": "issue1090_partial",
+    "files": 35394,
+    "bytes": 24515021,
+    "gb": 0.025,
+    "lfs_files": 0,
+    "lfs_gb": 0.0,
+    "median_kb": 0.0,
+    "p95_kb": 0.0,
+    "max_mb": 0.72,
+    "exts": [
+      [
+        ".json",
+        35216
+      ],
+      [
+        ".md",
+        118
+      ],
+      [
+        ".jsonl",
+        50
+      ],
+      [
+        ".log",
+        10
+      ]
+    ],
+    "subdirs": 4,
+    "top_subdirs": [
+      [
+        "issue1090_partial/att-20260715-081917",
+        29068
+      ],
+      [
+        "issue1090_partial/att-20260717-001251",
+        6002
+      ],
+      [
+        "issue1090_partial/att-20260706-233528",
+        162
+      ]
+    ],
+    "walk_s": 10.0
+  },
+  {
+    "prefix": "issue1739_partial",
+    "files": 36601,
+    "bytes": 31948765260,
+    "gb": 31.949,
+    "lfs_files": 22162,
+    "lfs_gb": 27.319,
+    "median_kb": 47.0,
+    "p95_kb": 2243.7,
+    "max_mb": 720.53,
+    "exts": [
+      [
+        ".npz",
+        21812
+      ],
+      [
+        ".json",
+        12929
+      ],
+      [
+        ".jsonl",
+        1545
+      ],
+      [
+        ".log",
+        151
+      ],
+      [
+        ".npy",
+        84
+      ]
+    ],
+    "subdirs": 50,
+    "top_subdirs": [
+      [
+        "issue1739_partial/att-20260731-013823-wcrung",
+        7002
+      ],
+      [
+        "issue1739_partial/att-20260731-224121-tierb",
+        3402
+      ],
+      [
+        "issue1739_partial/att-20260802-062529-newarmcoresyc",
+        1348
+      ]
+    ],
+    "walk_s": 18.2
+  },
+  {
+    "prefix": "issue2224_screening",
+    "files": 41759,
+    "bytes": 98832308655,
+    "gb": 98.832,
+    "lfs_files": 296,
+    "lfs_gb": 98.136,
+    "median_kb": 0.0,
+    "p95_kb": 0.0,
+    "max_mb": 411.08,
+    "exts": [
+      [
+        ".json",
+        40708
+      ],
+      [
+        ".jsonl",
+        640
+      ],
+      [
+        ".pt",
+        240
+      ],
+      [
+        ".log",
+        130
+      ],
+      [
+        ".npz",
+        38
+      ]
+    ],
+    "subdirs": 18,
+    "top_subdirs": [
+      [
+        "issue2224_screening/raw_completions",
+        40568
+      ],
+      [
+        "issue2224_screening/judge_postft_packed",
+        346
+      ],
+      [
+        "issue2224_screening/analysis_tensors",
+        278
+      ]
+    ],
+    "walk_s": 24.8
+  },
+  {
+    "prefix": "issue1739_ctxmap",
+    "files": 43905,
+    "bytes": 206009929100,
+    "gb": 206.01,
+    "lfs_files": 9849,
+    "lfs_gb": 203.756,
+    "median_kb": 6.8,
+    "p95_kb": 3670.1,
+    "max_mb": 69869.7,
+    "exts": [
+      [
+        ".json",
+        33599
+      ],
+      [
+        ".npy",
+        7812
+      ],
+      [
+        ".npz",
+        2016
+      ],
+      [
+        ".jsonl",
+        448
+      ],
+      [
+        ".pt",
+        8
+      ]
+    ],
+    "subdirs": 13,
+    "top_subdirs": [
+      [
+        "issue1739_ctxmap/raw_completions",
+        26422
+      ],
+      [
+        "issue1739_ctxmap/bareq_map",
+        4928
+      ],
+      [
+        "issue1739_ctxmap/pvsynth",
+        3536
+      ]
+    ],
+    "walk_s": 49.9
+  },
+  {
+    "prefix": "issue1434_writingstyle",
+    "files": 49380,
+    "bytes": 539119228,
+    "gb": 0.539,
+    "lfs_files": 30,
+    "lfs_gb": 0.422,
+    "median_kb": 0.0,
+    "p95_kb": 0.0,
+    "max_mb": 376.72,
+    "exts": [
+      [
+        ".json",
+        49321
+      ],
+      [
+        ".pt",
+        30
+      ],
+      [
+        ".jsonl",
+        29
+      ]
+    ],
+    "subdirs": 38,
+    "top_subdirs": [
+      [
+        "issue1434_writingstyle/raw_completions",
+        36840
+      ],
+      [
+        "issue1434_writingstyle/judge",
+        9448
+      ],
+      [
+        "issue1434_writingstyle/ctrl",
+        1616
+      ]
+    ],
+    "walk_s": 15.2
+  },
+  {
+    "prefix": "issue667_alllayer",
+    "files": 53858,
+    "bytes": 4924261109,
+    "gb": 4.924,
+    "lfs_files": 53760,
+    "lfs_gb": 4.924,
+    "median_kb": 89.9,
+    "p95_kb": 90.0,
+    "max_mb": 0.3,
+    "exts": [
+      [
+        ".npz",
+        53760
+      ],
+      [
+        ".done",
+        64
+      ],
+      [
+        ".json",
+        34
+      ]
+    ],
+    "subdirs": 9,
+    "top_subdirs": [
+      [
+        "issue667_alllayer/eval_results",
+        53824
+      ],
+      [
+        "issue667_alllayer/i667_marker_mapchange_cells",
+        27
+      ],
+      [
+        "issue667_alllayer/i667_ccpostft_rotation.json",
+        1
+      ]
+    ],
+    "walk_s": 23.2
+  },
+  {
+    "prefix": "issue1586_methodgen",
+    "files": 54103,
+    "bytes": 6994534880,
+    "gb": 6.995,
+    "lfs_files": 150,
+    "lfs_gb": 6.858,
+    "median_kb": 0.0,
+    "p95_kb": 0.0,
+    "max_mb": 72.28,
+    "exts": [
+      [
+        ".json",
+        53953
+      ],
+      [
+        ".pt",
+        150
+      ]
+    ],
+    "subdirs": 17,
+    "top_subdirs": [
+      [
+        "issue1586_methodgen/raw_completions",
+        35468
+      ],
+      [
+        "issue1586_methodgen/fu_caveatfix",
+        18239
+      ],
+      [
+        "issue1586_methodgen/analysis_tensors",
+        168
+      ]
+    ],
+    "walk_s": 22.2
+  },
+  {
+    "prefix": "issue1090_pvdatagen",
+    "files": 58392,
+    "bytes": 3007521148,
+    "gb": 3.008,
+    "lfs_files": 29,
+    "lfs_gb": 2.815,
+    "median_kb": 0.0,
+    "p95_kb": 0.1,
+    "max_mb": 144.55,
+    "exts": [
+      [
+        ".json",
+        58324
+      ],
+      [
+        ".jsonl",
+        40
+      ],
+      [
+        ".pt",
+        28
+      ]
+    ],
+    "subdirs": 17,
+    "top_subdirs": [
+      [
+        "issue1090_pvdatagen/fu6-sycophancy-pv-vector-dv-rubric-reanchor",
+        19088
+      ],
+      [
+        "issue1090_pvdatagen/fu7-sycophancy-lr-install-and-remeasure",
+        15881
+      ],
+      [
+        "issue1090_pvdatagen/fu4-extended-dose-lr",
+        10434
+      ]
+    ],
+    "walk_s": 23.6
+  },
+  {
+    "prefix": "issue1481_conpos_grid",
+    "files": 206604,
+    "bytes": 5584397449,
+    "gb": 5.584,
+    "lfs_files": 45,
+    "lfs_gb": 5.017,
+    "median_kb": 0.0,
+    "p95_kb": 0.0,
+    "max_mb": 323.01,
+    "exts": [
+      [
+        ".json",
+        206510
+      ],
+      [
+        ".jsonl",
+        19
+      ],
+      [
+        ".md",
+        15
+      ],
+      [
+        ".safetensors",
+        15
+      ],
+      [
+        ".jinja",
+        15
+      ]
+    ],
+    "subdirs": 115,
+    "top_subdirs": [
+      [
+        "issue1481_conpos_grid/raw_completions",
+        202314
+      ],
+      [
+        "issue1481_conpos_grid/marker",
+        3708
+      ],
+      [
+        "issue1481_conpos_grid/margin",
+        122
+      ]
+    ],
+    "walk_s": 196.9
+  }
+]

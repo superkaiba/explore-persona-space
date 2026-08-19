@@ -289,7 +289,7 @@ gates:
       name: plan_approval
       step: "2c"
       status: status:plan_pending
-      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE a plan whose gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 100) and continue without pausing; they park at plan_pending (this gate) only when the estimate exceeds the cap or is missing/unparseable (fail-safe). Interactive sessions always ask."
+      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE ANY plan carrying a parseable GPU-hour estimate regardless of magnitude (#1771 removed the GPU-hour cap — the gate is now GPU-hour-blind) and continue without pausing; they park at plan_pending (this gate) only when the estimate is missing/unparseable (fail-safe). Interactive sessions always ask."
     # id 5 (worktree_merge) RETIRED 2026-06-03: the worktree merge is now
     # automatic (no AskUserQuestion) at the terminal point — Step 9b for
     # experiments (awaiting_promotion), Step 10d for code paths. See the
@@ -331,8 +331,14 @@ gates:
         FAIL_NO_CANARY, /issue bounces back to status:planning for a
         UNIFICATION re-architect (or, if unification is genuinely
         impossible, the planner re-drafts with the canary section).
-        PASS_UNIFIED and PASS_CANARY both advance to Step 6a (pod
-        provision). Rationale: task #397 rounds 9/10/10' burned three
+        PASS_UNIFIED and PASS_CANARY advance directly;
+        PASS_AUTHORIZED_STUB advances only on a rc=0
+        'task.py check-authorized-stub' grant (#2171). The gate ALSO
+        refuses any advancing verdict when the arm-registry enumeration
+        check fails — rc!=0 from
+        'task.py check-smoke-arch-registry <N> --repo-root <worktree>'
+        (#2176: the per-arm set is derived from the driver's own
+        registry, never hand-listed). Rationale: task #397 rounds 9/10/10' burned three
         full implementer rounds on subprocess-vs-in-process divergence
         the smoke phase silently satisfied; the gate forces the
         divergence to be explicit at plan time.
@@ -1362,13 +1368,17 @@ concerns_protocol:
   summary_cap: |
     Stored concern summaries are HARD-CAPPED at 200 chars (the library
     layer raises ValueError above it; 5 reviewer crashes on 2026-06-10
-    alone: 238-410-char summaries). The task.py CLI (raise-concern /
-    address-concern) auto-truncates a longer `--summary` at a word
-    boundary with a loud stderr warning instead of crashing — on
-    raise-concern the full original is shifted into `--evidence` when
-    evidence is empty. Compose the summary as one tight sentence and
-    move all detail to `--evidence`. The same cap applies to
-    `address-concern` carried summaries.
+    alone: 238-410-char summaries). Over-cap handling is per-branch and
+    NON-LOSSY (#2121): raise-concern with NO `--evidence` shifts the
+    full original verbatim into evidence (word-boundary lead stored,
+    loud stderr warning); raise-concern WITH `--evidence`, and
+    address-concern always, hard-error (exit 2) on an over-cap inline
+    `--summary`. Long text goes through `--summary-file <path>` (any
+    length; over-cap file text is preserved verbatim in the event's
+    evidence field, <=200-char derived lead as the summary). Compose
+    the summary as one tight sentence and move all detail to
+    `--evidence`. The same cap applies to `address-concern` carried
+    summaries.
   concern_id_examples:
     - probe-position-undefined
     - missing-mlm-control
@@ -1557,11 +1567,23 @@ markers:
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
-    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this when the plan's gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 100); note records the estimate + cap."
+    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this whenever the plan carries a parseable gpu_hours_total (GPU-hour-blind gate as of #1771 — the estimate is recorded, no cap comparison); note records the estimate."
   - kind: "epm:awaiting-spend-approval"
     posted_by: skill
-    when: "Step 2c (autonomous session, over cap or missing estimate)"
-    fields: "Posted when an autonomous session's plan estimate exceeds EPM_PLAN_AUTOAPPROVE_GPU_HOURS (or the estimate is missing/unparseable — fail-safe). Records gpu_hours_total + cap; task parks at plan_pending awaiting user approval. ALSO posted at Step 2 if a session must exit before approval with no pod yet provisioned (orphan-pod guard)."
+    when: "Step 2c (autonomous session, missing/unparseable estimate — fail-safe)"
+    fields: "Posted (historical name; fires on missing/unparseable gpu_hours_total as of #1771 — the retained fail-safe after the GPU-hour cap was removed — and the Step-2 orphan-pod guard) when an autonomous session cannot auto-approve the plan. Records gpu_hours_total (may be null / unparseable) + reason (the retained cause; historically also `over-cap`); task parks at plan_pending awaiting user approval. ALSO posted at Step 2 if a session must exit before approval with no pod yet provisioned (orphan-pod guard)."
+  - kind: "epm:ask"
+    posted_by: task.py (the Step 2b --auto-approve-if-autonomous gate, parked_asked branch)
+    when: "Step 2c async park (EPM_ASYNC_SESSION=1; mission-control rung 0, CONTRACTS §1.1 row 4)"
+    fields: "Durable user-gate question for an ASYNC session. JSON note: gate (plan_approval), gate_id, issue, plan_v, plan_path, est_gpu_hours, answer (the exact answer command incl. --if-plan-v). An ask is OPEN until a LATER epm:ask-answered or epm:status-changed row is appended (append-order, task_workflow.open_async_ask); posting is idempotent against an open same-gate ask. Deliberately NOT accompanied by epm:awaiting-spend-approval (that would flip the plan_pending_over_cap predicate and re-classify the park out of the tick's ISSUE_PARK async-parked HEALTHY verdict)."
+  - kind: "epm:ask-answered"
+    posted_by: user via task.py post-marker (optional explicit answer record)
+    when: "User answers an open epm:ask without a status transition (mission-control rung 0)"
+    fields: "Closes the newest open epm:ask by append order (task_workflow.open_async_ask). Optional — the normal answer path (set-status / promote) closes the ask via its own epm:status-changed row; this kind exists for answers that change no status (e.g. a revise-guidance reply)."
+  - kind: "epm:session-mode"
+    posted_by: spawn_session.py (spawn-issue --auto, first async spawn / explicit downgrade)
+    when: "Async session-mode record (mission-control rung 0, CONTRACTS §2.2)"
+    fields: "Durable session-mode record surviving the watcher's terminal registry-entry GC. JSON note: {mode: async|auto, by, channel}. Newest marker wins (task_workflow.newest_session_mode); an explicit --session-mode auto downgrade posts a fresh {mode: auto} row rather than rewriting history. The watcher's six spawn-issue argv builders re-pass --session-mode async when this resolves async."
   - kind: "epm:consistency"
     posted_by: skill (via consistency-checker)
     when: "Step 2b"
@@ -1590,7 +1612,7 @@ markers:
           same dispatcher and subprocess shape end-to-end, AND the
           cell-subset parameterization threads through EVERY phase the
           dispatcher executes (train, eval enumeration, anchor/analyze
-          tolerance), AND every planned arm's per-arm-resolution row
+          tolerance), AND every registry or plan-named arm's per-arm-resolution row
           reads REAL or N/A, AND the Axis 1 import-resolution leg passed
           on the REAL branch. A subset honored by the train loop only,
           with a downstream phase re-enumerating the full registered
@@ -1603,9 +1625,19 @@ markers:
           #1315 r4); the notes: line names the floor per sliced axis.
           The notes: MUST also carry an `import-resolution: <cmd>` line
           (Axis 1, experiment-implementer.md item 5) and a
-          `per-arm-resolution:` sub-block with one row per plan-named
-          arm (Axis 2); a `kind: infra` plan whose §4 names no arms
-          writes `per-arm-resolution: N/A — no plan-named arms`.
+          `per-arm-resolution:` sub-block with one row per arm in the
+          driver's own arm registry (stated on the line-anchored
+          `arm-registry:` line: `source=<expr> file=<path> n=<int>
+          members=<sorted-comma-list>`, or `arm-registry: N/A — <reason>`
+          when no registry exists) UNION every plan-named arm (Axis 2);
+          Step 6d.0 verifies mechanically via
+          `task.py check-smoke-arch-registry` (driver-recompute when
+          given `--repo-root`). A `kind: infra` plan whose §4 names no
+          arms writes the vacuous pair
+          `per-arm-resolution: N/A — no registry or plan-named arms` +
+          `arm-registry: N/A — no phase/arm registry` (old-form reasons
+          on already-posted markers stay accepted — the parser never
+          matches the reason text).
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
@@ -1615,17 +1647,42 @@ markers:
           FALLBACK row under PASS_CANARY is a marker-shape violation.
         `verdict: PASS_PARTIAL arms_stubbed=<comma-list>` — phase
           coverage holds AND the Axis 1 import-resolution leg passed
-          BUT ≥1 planned arm's per-arm-resolution row reads FALLBACK
+          BUT ≥1 registry or plan-named arm's per-arm-resolution row reads FALLBACK
           (a stub / bias-refit / early-return in place of the arm's
           production computation path). The `arms_stubbed` set MUST
           equal the names of every FALLBACK-rowed arm verbatim. SKILL.md
           Step 6d.0 gate (inline gates id=10) refuses to dispatch
           experimenter on PASS_PARTIAL — bounces to planner to either
           resolve the stubbed arms in the diff or re-authorize the stubs
-          in §4 Design (canary-like exception, v1.1). Closes the #1689
+          in the plan's '### Authorized smoke stubs' block, land the
+          amendment through the plan-approval gate, then re-post
+          PASS_AUTHORIZED_STUB (wired: Step 6d.0 grants via task.py
+          check-authorized-stub). Closes the #1689
           rounds-2/3/4 false-pass class where literal fallback stubs
           satisfied phase coverage but delivered arms of the wrong
           science.
+        `verdict: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` — the
+          PASS_PARTIAL shape (phase coverage + the Axis 1 leg passed;
+          arms_stubbed set-equals the FALLBACK-rowed arms, scoped to the
+          `per-arm-resolution:` sub-block's rows only) PLUS plan
+          authorization AND approval provenance: every arms_stubbed arm
+          appears backticked in the CURRENT plan's `### Authorized smoke
+          stubs` block with a non-empty impossibility reason AND
+          compensating control, and the latest `epm:plan-approved`
+          postdates that plan version's persist (a bare new-plan-version
+          edit after approval cannot self-grant). A re-post after a
+          PASS_PARTIAL bounce carries the latest IMPLEMENTER marker's
+          `per-arm-resolution:` sub-block + `import-resolution:` line
+          VERBATIM, changing only the `verdict:` line — the checker
+          parses only those line-anchored machine keys, so a free-prose
+          row intro parses as NO sub-block and refuses, naming the
+          expected key. Step 6d.0 grants ONLY via
+          `task.py check-authorized-stub <N>` (rc=0 = GRANT); an arm
+          missing from the plan block, an extra FALLBACK row outside
+          arms_stubbed, a malformed block, or a post-approval plan edit
+          each REFUSE (routed as PASS_PARTIAL). The per-arm FALLBACK
+          rows keep the residual untested seams in the durable record.
+          Wired by #2171 (the #2163 unwired-escape incident).
         `verdict: FAIL_NO_CANARY` — paths diverge without the §4
           justification + canary; implementer also emits a
           `workflow-fix-candidate v1` suggesting re-architect toward
@@ -1760,7 +1817,13 @@ markers:
       on the log path before posting AND verify with `ls -la <log_abs>`
       on the pod — a relative / wrong log path burns polling-loop cycles
       (#397). Back-compat: the legacy `log=` field is accepted as a
-      fallback when `log_abs=` is absent.
+      fallback when `log_abs=` is absent. Optional owner-fence tokens
+      (#2277; note-token convention, no schema change): `owner=<token>`
+      (owner-attribution registration for the `pod.py terminate`
+      owner-fence guard; REQUIRED for new launches; grammar
+      `[A-Za-z0-9._-]{1,64}`) and `fence_until=<ISO8601Z|none>` (owner
+      work-fence deadline; refreshed / cleared via later
+      `[long-phase-heartbeat]` `epm:progress` notes naming the pod).
   - kind: "epm:progress"
     posted_by: experimenter / implementer
     when: "during run"
@@ -1846,7 +1909,14 @@ markers:
       generic `pivot_criteria` cap-3 path. Plans without the §6.5 block
       (legacy plans + `kind: analysis | infra | batch | survey`) get a
       `primary-deliverable-spec-absent` WARN row and do NOT fail this
-      check.
+      check. Optional owner-fence tokens on a PASS note (#2277;
+      note-token convention, no schema change): `pod=<name>` (binds the
+      PASS to the pod it verified) and `owner=<token>` — a FIRST-PERSON
+      claim by the session that posted the pod's launch signal / fence
+      (emit it ONLY then; never copied from the launch marker by a
+      third party while the fence is unexpired); the terminate guard
+      refuses an unexpired-fence pod whose pod-bound PASS lacks the
+      matching owner token.
   - kind: "epm:upload-verified"
     posted_by: skill
     when: "Step 8"
@@ -2084,8 +2154,10 @@ markers:
       (EPM_AUTONOMOUS_SESSION unset) NEVER posts this marker. A filed
       child executes only when a human triages it and invokes
       `/issue <CHILD_ID>`; it then hits its own Step 2c plan-approval
-      GPU-hour cap as normal. Parent promotion remains human-only —
-      filing follow-ups does NOT promote the parent.
+      gate as normal — GPU-hour-blind since #1771 (auto-approves any
+      parseable estimate, parks only on a missing one). Parent
+      promotion remains human-only — filing follow-ups does NOT
+      promote the parent.
   - kind: "epm:followup-scope"
     posted_by: skill (Step 9b cheap-band block, Step 9b autonomous same-issue partition, or Step 10b user pick) OR chat session (user-requested same-question follow-up)
     when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the Step 9b cheap-band block (`source: proposer-9b-cheap` — `0 < est_gpu_hours < 20`, fires in BOTH interactive and autonomous sessions), the autonomous Step 9b expensive partition (`source: proposer-9b` — `est_gpu_hours >= 20`, autonomous only), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
@@ -2291,7 +2363,7 @@ markers:
     fields: "Merge SHAs (one per commit when rebase-merged) for the safe path. For the artifact-confirmed path (guard 3 tripped: based on a non-mainline parent branch like a still-unmerged issue-<M>, OR the branch's OWN commits — git diff origin/main...HEAD — touch foreign tasks/ or out-of-scope paths; BEHIND alone is never the trip, it only triggers the own-commit content check), instead: {artifact_confirmed: true, full_rebase_deferred: true, reason: '...', verified_paths: [...]} or, if a surgical additive checkout was needed, {artifact_confirmed: true, full_rebase_deferred: true, surgical_checkout: true, files: [...]}. Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
   - kind: "epm:merge-failed"
     posted_by: skill
-    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted only after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails)"
+    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails, or when a novel-payload branch cannot obtain a usable PR object — #2240)"
     fields: "gh/git error + branch + worktree path. Non-blocking: the task still parks (experiments) / completes (code paths); retried idempotently on the next /issue <N>."
   - kind: "epm:stale"
     posted_by: skill

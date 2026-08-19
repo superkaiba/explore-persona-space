@@ -1,0 +1,1047 @@
+{
+  "commit": "7507a5cc",
+  "render_id": "51de63dfec4f4a19",
+  "git_commit": "7507a5cc",
+  "git_dirty": false,
+  "created": "2026-08-13T23:38:24Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer index": 0.0,
+      "Spearman r (evil)": 0.23430759943052454,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (evil)": 0.3374391296817979,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (evil)": -0.4156924399163167,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (evil)": -0.7775574583418372,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (evil)": -0.7318719997656152,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (evil)": -0.5251566079900367,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (evil)": -0.2030967415913234,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (evil)": -0.11489214335010277,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (evil)": -0.22118999251259944,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (evil)": -0.01402226946398892,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (evil)": 0.023521226197658833,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (evil)": 0.7178497303016264,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (evil)": 0.4808281432329104,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (evil)": 0.7074461110218926,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (evil)": 0.7870564150755072,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (evil)": 0.5934586302178537,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (evil)": 0.7323243310386471,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (evil)": 0.7870564150755072,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (evil)": 0.8304802172865696,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (evil)": 0.7214683804858816,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (evil)": 0.63778709497498,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (evil)": 0.6391440887940757,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (evil)": 0.6902575226466804,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (evil)": 0.664474640083862,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (evil)": 0.519276301440622,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (evil)": 0.7716771517924226,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (evil)": 0.6617606524456706,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (evil)": -0.8178149416416765,
+      "series": "paper's last-prompt-token read",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (evil)": 0.6450243953434903,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (evil)": 0.6138135375042892,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (evil)": 0.5491301654607275,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (evil)": 0.5391788774540256,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (evil)": 0.532393908358547,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (evil)": 0.3501044053266911,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (evil)": 0.1976687663149406,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (evil)": 0.06604036586265749,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (evil)": -0.4835421308711018,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (evil)": -0.31572722857626667,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (evil)": -0.2872303583752569,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (evil)": -0.3265831791290323,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (evil)": -0.4681628675880172,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (evil)": -0.4328810282915289,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (evil)": 0.11263048698494327,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (evil)": -0.5486778341876956,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (evil)": -0.5423451963652489,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (evil)": -0.4740431741374319,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (evil)": -0.30984692202685193,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (evil)": -0.3957898639029131,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (evil)": -0.5455115152764722,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (evil)": -0.4342380221106246,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (evil)": -0.2600904819933429,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (evil)": -0.05699374040201948,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (evil)": -0.44780796030158165,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (evil)": -0.3455810925963721,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (evil)": -0.36096035587945674,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (evil)": 0.26461379472366187,
+      "series": "answer oracle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (evil)": 0.03980515202680726,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (evil)": -0.4238344028308909,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (evil)": -0.36096035587945674,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (evil)": 0.5654140912898759,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (evil)": 0.04659012112228577,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (evil)": 0.6585943335344474,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (evil)": 0.7282533495813601,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (evil)": 0.36367434351764816,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (evil)": 0.11036883061978377,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (evil)": 0.11896312480738988,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (evil)": 0.16871956484089895,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (evil)": 0.5798886920268966,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (evil)": 0.5794363607538647,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (evil)": 0.7020181357455099,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (evil)": 0.7585595448744974,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (evil)": 0.7811761085260924,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (evil)": 0.7793667834339648,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (evil)": 0.8119346350922617,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (evil)": 0.8160056165495488,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (evil)": 0.8426931616584309,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (evil)": 0.8218859230989635,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (evil)": 0.8340988674708248,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (evil)": 0.828670892194442,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (evil)": 0.8160056165495488,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (evil)": 0.8042450034507194,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (evil)": 0.8169102790956126,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (evil)": 0.8313848798326334,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (evil)": 0.8368128551090163,
+      "series": "mapped context read",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (evil)": 0.09770355497489054,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (evil)": 0.5699374040201949,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (evil)": 0.7630828576048164,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (evil)": 0.8205289292798678,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (evil)": 0.24425888743722635,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (evil)": -0.4925887563317398,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (evil)": -0.37453029407041377,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (evil)": 0.6106472185930659,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (evil)": 0.05699374040201948,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (evil)": -0.5975296116751407,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (evil)": -0.505254031976633,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (evil)": -0.4839944621441337,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (evil)": -0.49575507524296314,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (evil)": 0.1252957626298365,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (evil)": 0.36096035587945674,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (evil)": 0.6020529244054598,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (evil)": 0.4848991246901975,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (evil)": 0.7395616314071576,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (evil)": 0.6427627389783308,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (evil)": 0.6142658687773211,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (evil)": 0.5749130480235457,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (evil)": 0.6305497946064695,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (evil)": 0.7757481332497096,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (evil)": 0.7707724892463588,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (evil)": 0.7567502197823698,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (evil)": 0.6775922470017872,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (evil)": 0.7707724892463588,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (evil)": -0.12258177499164508,
+      "series": "mapped prefix read",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 0.0,
+      "Spearman r (evil)": 0.2044537354104191,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 1.0,
+      "Spearman r (evil)": -0.12303410626467698,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 2.0,
+      "Spearman r (evil)": 0.36367434351764816,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 3.0,
+      "Spearman r (evil)": 0.136604044455634,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 4.0,
+      "Spearman r (evil)": 0.15469729537691002,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 5.0,
+      "Spearman r (evil)": 0.07644398514239122,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 6.0,
+      "Spearman r (evil)": 0.14293668227808062,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 7.0,
+      "Spearman r (evil)": 0.0031663189112233047,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 8.0,
+      "Spearman r (evil)": 0.12755741899499598,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 9.0,
+      "Spearman r (evil)": 0.21530968596318473,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 10.0,
+      "Spearman r (evil)": 0.11489214335010277,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 11.0,
+      "Spearman r (evil)": 0.07870564150755072,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 12.0,
+      "Spearman r (evil)": 0.033020182931328745,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 13.0,
+      "Spearman r (evil)": -0.141127357185953,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 14.0,
+      "Spearman r (evil)": -0.22752263033504602,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 15.0,
+      "Spearman r (evil)": -0.6287404695143419,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 16.0,
+      "Spearman r (evil)": -0.6341684447907248,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 17.0,
+      "Spearman r (evil)": -0.6400487513401394,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 18.0,
+      "Spearman r (evil)": -0.7458942692296042,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 19.0,
+      "Spearman r (evil)": -0.5029923756114736,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 20.0,
+      "Spearman r (evil)": -0.6662839651759896,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 21.0,
+      "Spearman r (evil)": -0.5613431098325887,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 22.0,
+      "Spearman r (evil)": -0.5672234163820035,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 23.0,
+      "Spearman r (evil)": -0.6219555004188634,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 24.0,
+      "Spearman r (evil)": -0.6323591196985971,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 25.0,
+      "Spearman r (evil)": -0.692066847738808,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 26.0,
+      "Spearman r (evil)": -0.646381389162586,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 27.0,
+      "Spearman r (evil)": -0.34196244241211693,
+      "series": "transport cosine",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer index",
+        "ylabel": "Spearman r (evil)",
+        "legend_labels": [
+          "paper's last-prompt-token read",
+          "answer oracle",
+          "mapped context read",
+          "mapped prefix read",
+          "transport cosine",
+          "|r| <= max score-shuffle null q95 (0.58)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "paper's last-prompt-token read",
+      "answer oracle",
+      "mapped context read",
+      "mapped prefix read",
+      "transport cosine"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

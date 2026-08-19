@@ -1665,7 +1665,9 @@ def main() -> int:
         help="comma-separated parent variant slugs (default: v4 lattice character panel + assistant)",
     )
     p.add_argument("--max-tokens", type=int, default=1024)
-    p.add_argument("--pilot-n", type=int, default=200)
+    # #2124 satisfiability: 5 DEFAULT_VARIANTS x judge_draws 1 x 51 = 255 — 200
+    # realized only 40 draws/arm, below the 51-draw resolution floor at 2%.
+    p.add_argument("--pilot-n", type=int, default=255)
     p.add_argument(
         "--judge-draws",
         type=int,

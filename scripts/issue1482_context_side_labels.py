@@ -5,7 +5,8 @@
 structurally excluded every context-only feature (zero answer-side windows by the
 defining property). This driver closes that gap with CONTEXT-side evidence, holding
 the #1773 description INSTRUMENT fixed (DESCRIBER_SYSTEM verbatim, same user
-template renderer, same judge, max_tokens=700, temp 1.0, 1 draw).
+template renderer, same judge, max_tokens per CM.DESCRIBE_MAX_TOKENS — 700 at the
+banked waves; 1024 since #2063 raised the rule-23 floor — temp 1.0, 1 draw).
 
 EVIDENCE-SIDE CAVEAT (rides every output row as ``evidence_side: "context"`` and the
 meta): these descriptions are drawn from CONTEXT-side windows; every pre-existing

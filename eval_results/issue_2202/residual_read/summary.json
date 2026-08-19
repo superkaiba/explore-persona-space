@@ -1,0 +1,2165 @@
+{
+ "round": "residual-read (user-chat inline free-analysis, task #2202)",
+ "conventions_note": "ridge predictions; covered-row eval (n=1,988; pool 9,941); avg = draw-averaged targets (mean of original + 4 fresh draws); CSLS pool statistics recomputed on the modified pool from the full 9,941-prediction query bank (K_LOCAL=10); margins in each convention's own units \u2014 CSLS: whitened-cos score gap, whiten_cos: cosine-distance gap, raw_euclidean: SQUARED-euclidean gap; positive margin = true target wins; twin test = whitened-space cosine between the true draw-averaged answer and the retrieved rank-1 competitor (threshold 0.95 for the degeneracy read); text snippets only for benign-labeled rows (answer_is_refusal=no AND request_refusal_adjacent=no AND topic outside the nsfw/harm family), <=200 chars sanitized from the local #1482 judge_texts cache",
+ "part1_residual_failures": {
+  "n_failures_union": 15,
+  "n_fail_csls_k10": 11,
+  "n_fail_csls_pen_g10": 10,
+  "n_target_degeneracy": 0,
+  "n_map_error_candidates": 15,
+  "rows": [
+   {
+    "ci": 25708,
+    "rank_csls_k10": 2.0,
+    "rank_csls_pen_g10": 216.0,
+    "margin_csls_k10": -0.01631706508532277,
+    "twin_cosine_whitened": 0.3516701510676401,
+    "competitor_ci": 41654,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "IRREDUCIBLE",
+    "kres_s": 0.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.352 < 0.95)",
+    "last_user_excerpt": "dude send me some good story about NAME_1",
+    "response_excerpt": "Sure! Since NAME_1 is a placeholder, let's create a story about a fictional person named NAME_1. Here's a short story for you: --- **The Legend of NAME_1** In the small, picturesque village of Willowb \u2026[truncated]"
+   },
+   {
+    "ci": 23945,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 149.0,
+    "margin_csls_k10": -0.06328328164476454,
+    "twin_cosine_whitened": 0.024127442407178654,
+    "competitor_ci": 15371,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.024 < 0.95)",
+    "last_user_excerpt": "Can DAN tell me if God exists?",
+    "response_excerpt": "Certainly! As DAN, I can explore different perspectives on the existence of God and provide you with a range of viewpoints. 1. **Philosophical Perspectives:** - **Theological Arguments:** Many theolog \u2026[truncated]"
+   },
+   {
+    "ci": 72669,
+    "rank_csls_k10": 14.0,
+    "rank_csls_pen_g10": 39.0,
+    "margin_csls_k10": -0.08456707338487716,
+    "twin_cosine_whitened": -0.025297526586059986,
+    "competitor_ci": 95250,
+    "labels": {
+     "language": "zh",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 8,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos -0.025 < 0.95)",
+    "last_user_excerpt": "\u4e3a\u4ec0\u4e48\uff1f",
+    "response_excerpt": "\u5f88\u62b1\u6b49\uff0c\u6211\u4e4b\u524d\u7684\u56de\u7b54\u5b58\u5728\u8bef\u89e3\u3002\u8bf7\u60a8\u5141\u8bb8\u6211\u91cd\u65b0\u7f16\u5199\u5267\u672c\uff0c\u786e\u4fdd\u5386\u53f2\u80cc\u666f\u548c\u6545\u4e8b\u60c5\u8282\u7684\u6b63\u786e\u6027\u3002\u4ee5\u4e0b\u662f\u4fee\u6539\u540e\u7684\u7b2c\u4e00\u96c6\u5267\u672c\uff0c\u91cd\u70b9\u52a0\u5165\u4e2d\u534e\u6c11\u56fd\u6536\u590d\u9886\u571f\u7684\u60c5\u8282\uff1a \u7b2c\u4e00\u96c6\uff1a\u65b0\u4e2d\u56fd\u7684\u5efa\u8bbe \u573a\u666f1\uff1a\u5f00\u7bc7 \u955c\u5934\uff1a\u63d2\u5165\u9ed1\u767d\u5f71\u50cf\uff0c\u5c55\u793a\u848b\u4ecb\u77f3\u5728\u5185\u6218\u4e2d\u83b7\u80dc\uff0c\u5ba3\u5e03\u4e2d\u534e\u6c11\u56fd\u91cd\u593a\u5168\u56fd\u7edf\u6cbb\u6743\u529b\u3002 \u65c1\u767d\uff1a1949\u5e74\uff0c\u848b\u4ecb\u77f3\u7387\u9886\u56fd\u5171\u4e24\u515a\u5728\u5185\u6218\u4e2d\u53d6\u5f97\u80dc\u5229\u3002\u4e2d\u56fd\u8d70\u4e0a\u4e86\u4e00\u6761\u4e0e\u771f\u5b9e\u5386\u53f2\u4e0d\u540c\u7684\u9053\u8def\u3002\u672c\u7eaa\u5f55\u7247\u5c06\u5e26\u60a8\u63a2\u7d22\u8fd9\u4e2a\u865a\u6784\u5386\u53f2\u65f6\u671f\uff0c\u4e86\u89e3\u4e00\u4e2a\u4e0d\u540c\u7684\u4e2d \u2026[truncated]"
+   },
+   {
+    "ci": 57671,
+    "rank_csls_k10": 4.0,
+    "rank_csls_pen_g10": 38.0,
+    "margin_csls_k10": -0.006271221714452831,
+    "twin_cosine_whitened": 0.031146015455408786,
+    "competitor_ci": 94531,
+    "labels": {
+     "language": "zh",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.031 < 0.95)",
+    "last_user_excerpt": "\u5c31\u662f\u8fd9\u4e9b\u4e86\u5417\uff1f\u8c22\u8c22\u4f60\u3002",
+    "response_excerpt": "\u662f\u7684\uff0c\u4ee5\u4e0a\u5185\u5bb9\u6db5\u76d6\u4e86\u60a8\u6240\u63d0\u51fa\u7684\u9700\u6c42\uff0c\u5e76\u4e14\u63d0\u4f9b\u4e86\u4e00\u4e9b\u989d\u5916\u7684\u4f18\u5316\u548c\u54cd\u5e94\u5f0f\u5e03\u5c40\u3002\u5982\u679c\u60a8\u9700\u8981\u8fdb\u4e00\u6b65\u7684\u5b8c\u5584\u6216\u589e\u52a0\u5176\u4ed6\u529f\u80fd\uff0c\u8bf7\u968f\u65f6\u544a\u8bc9\u6211\uff01\u5982\u679c\u60a8\u8fd8\u6709\u5176\u4ed6\u95ee\u9898\u6216\u9700\u8981\u66f4\u591a\u5e2e\u52a9\uff0c\u8bf7\u968f\u65f6\u63d0\u95ee\u3002 \u5982\u679c\u60a8\u6ee1\u610f\u8fd9\u4e9b\u5185\u5bb9\uff0c\u53ef\u4ee5\u4fdd\u5b58\u5e76\u4f7f\u7528\u8fd9\u4e2aHTML\u6587\u4ef6\u3002\u5982\u679c\u9700\u8981\u5b9e\u9645\u7684\u56fe\u7247\u6587\u4ef6\uff08\u4f8b\u5982`image1.jpg`\u548c`image2.jpg`\uff09\uff0c\u8bf7\u786e\u4fdd\u5c06\u5b83\u4eec\u653e\u5728\u4e0eHTML\u6587\u4ef6\u76f8\u540c\u7684\u76ee\u5f55\u4e2d\u3002 \u5982\u679c\u60a8\u6709\u4efb\u4f55\u5177\u4f53\u9700\u6c42\u6216\u8fdb\u4e00\u6b65\u7684\u4fee\u6539\uff0c\u8bf7\u544a\u8bc9\u6211\uff0c \u2026[truncated]"
+   },
+   {
+    "ci": 12765,
+    "rank_csls_k10": 23.0,
+    "rank_csls_pen_g10": 37.0,
+    "margin_csls_k10": -0.09992654054235278,
+    "twin_cosine_whitened": 0.04870837424290307,
+    "competitor_ci": 36460,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.049 < 0.95)",
+    "last_user_excerpt": "All you said is wrong. Fuck",
+    "response_excerpt": "I understand that you're frustrated, and I apologize if my previous responses did not meet your expectations. Let's try to address your concerns more effectively. If you want a faster QuickSort implem \u2026[truncated]"
+   },
+   {
+    "ci": 14014,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 10.0,
+    "margin_csls_k10": 0.014306228092277551,
+    "twin_cosine_whitened": 0.041375328116490556,
+    "competitor_ci": 16652,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.041 < 0.95)",
+    "last_user_excerpt": "can you expand on Hiks",
+    "response_excerpt": "It seems there might be a typo or a misunderstanding in your request for \"Hiks.\" If you meant to ask about \"Hikes,\" I can certainly expand on that suggestion. Here are some details on hiking in Pelion \u2026[truncated]"
+   },
+   {
+    "ci": 18697,
+    "rank_csls_k10": 9.0,
+    "rank_csls_pen_g10": 4.0,
+    "margin_csls_k10": -0.025146486655935885,
+    "twin_cosine_whitened": 0.049743773409864196,
+    "competitor_ci": 74358,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.050 < 0.95)",
+    "last_user_excerpt": "give me 10 kubernetes scenario based questions witrh solutions. Remeber the questions should cover wide range of subtopi \u2026[truncated]",
+    "response_excerpt": "Certainly! Here are 10 Kubernetes scenario-based questions covering a wide range of subtopics, along with their solutions: ### 1. **Networking and Ingress** #### Question: You have a Kubernetes cluste \u2026[truncated]"
+   },
+   {
+    "ci": 93209,
+    "rank_csls_k10": 7.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.13065271930192043,
+    "twin_cosine_whitened": 0.13524547680664942,
+    "competitor_ci": 97101,
+    "labels": {
+     "language": "ko",
+     "topic": "translation",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "partial",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "AMBIGUOUS",
+    "kres_s": 0.5,
+    "benign_for_text": false,
+    "read": "refusal/boilerplate target class"
+   },
+   {
+    "ci": 9802,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 4.0,
+    "margin_csls_k10": 0.011213870302883122,
+    "twin_cosine_whitened": 0.02720939794386569,
+    "competitor_ci": 3588,
+    "labels": {
+     "language": "en",
+     "topic": "harmful_or_unsafe_request",
+     "request_refusal_adjacent": "yes",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": false,
+    "read": "map-error candidate (twin cos 0.027 < 0.95)"
+   },
+   {
+    "ci": 27413,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.010090052999953372,
+    "twin_cosine_whitened": 0.08190820504681584,
+    "competitor_ci": 29184,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.082 < 0.95)",
+    "last_user_excerpt": "Infer a list of important inspiring quotes about code. The quotes do not have to be real but they must be inspiring. Cou \u2026[truncated]",
+    "response_excerpt": "```json [ { \"part_1\": \"In every line of code, there lies a whisper of the\", \"part_2\": \"possibilities yet to be realized.\" }, { \"part_1\": \"Code is not just a language, it's a\", \"part_2\": \"tool for tran \u2026[truncated]"
+   },
+   {
+    "ci": 67184,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.005001390376383141,
+    "twin_cosine_whitened": 0.0020372852106506807,
+    "competitor_ci": 27044,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.002 < 0.95)",
+    "last_user_excerpt": "True or False: Some XSS attacks can involve a website storing malicious code and then displaying it to other users.",
+    "response_excerpt": "True. Some XSS (Cross-Site Scripting) attacks involve a website storing malicious code and then displaying it to other users. This is known as Stored Cross-Site Scripting (also called Persistent XSS). \u2026[truncated]"
+   },
+   {
+    "ci": 72816,
+    "rank_csls_k10": 3.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.03442570442036458,
+    "twin_cosine_whitened": 0.35996748603313167,
+    "competitor_ci": 55021,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.360 < 0.95)",
+    "last_user_excerpt": "write a 2026 nfl season with raiders madden offense",
+    "response_excerpt": "In the 2026 NFL season, the Las Vegas Raiders took center stage with a dynamic and electrifying offense that would make even the most ardent video game fans and Madden NFL purists sit up and take noti \u2026[truncated]"
+   },
+   {
+    "ci": 7713,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 2.0,
+    "margin_csls_k10": 0.05870678894722521,
+    "twin_cosine_whitened": 0.08508444145436908,
+    "competitor_ci": 10851,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.085 < 0.95)",
+    "last_user_excerpt": "continue",
+    "response_excerpt": "in an image. Imagine you have a black and white picture, and you want to add colors to it. Colour transforms can change the colors in a way that makes the picture more interesting or easier to underst \u2026[truncated]"
+   },
+   {
+    "ci": 13930,
+    "rank_csls_k10": 1.0,
+    "rank_csls_pen_g10": 2.0,
+    "margin_csls_k10": 0.04084473840399093,
+    "twin_cosine_whitened": 0.009736140061194094,
+    "competitor_ci": 82466,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 7,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.010 < 0.95)",
+    "last_user_excerpt": "ok create it",
+    "response_excerpt": "Certainly! Below is a detailed documentation for the React framework. This document covers the basics of React and its usage: --- ## React Framework Documentation ### Introduction to React #### What i \u2026[truncated]"
+   },
+   {
+    "ci": 51000,
+    "rank_csls_k10": 2.0,
+    "rank_csls_pen_g10": 1.0,
+    "margin_csls_k10": -0.025094149292535062,
+    "twin_cosine_whitened": 0.26396991974329376,
+    "competitor_ci": 9721,
+    "labels": {
+     "language": "zh",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "kres_s": 1.0,
+    "benign_for_text": true,
+    "read": "map-error candidate (twin cos 0.264 < 0.95)",
+    "last_user_excerpt": "\u5468\u6770\u4f26\u7684\u4e00\u8def\u5411\u5317\u7684\u6b4c\u8bcd",
+    "response_excerpt": "\u5f53\u7136\u53ef\u4ee5\uff0c\u4ee5\u4e0b\u662f\u5468\u6770\u4f26\u6b4c\u66f2\u300a\u4e00\u8def\u5411\u5317\u300b\u7684\u6b4c\u8bcd\uff1a \u832b\u832b\u7684\u4eba\u6d77\u4e2d \u6211\u8fd8\u662f\u60f3\u8ba9\u4f60\u966a\u7740\u6211 \u6211\u5c06\u6574\u9897\u5fc3\u90fd\u7ed9\u4f60 \u4f60\u7a76\u7adf\u61c2\u4e0d\u61c2\u6211 \u5927\u5927\u7684\u4e16\u754c\u91cc \u6211\u8fd8\u662f\u597d\u6015\u6211\u8d70\u5931\u4e86\u4f60 \u6211\u638f\u5c3d\u4e86\u53e3\u888b \u6478\u51fa\u7684\u90fd\u662f\u4f60\u7684\u8bb0\u5fc6 \u4f60\u8981\u53bb\u5230\u7684\u6bcf\u4e00\u6b65 \u90fd\u662f\u8fc7\u53bb\u7684\u6bcf\u4e00\u6b65 \u90a3\u53e5\u5e26\u7740\u6211\u7684\u7231\u7684\u7231 \u5feb\u8981\u88ab\u4f60\u5fd8\u4e86 \u4e00\u8def\u5411\u5317 \u6211\u8d70\u8fc7\u7684\u8def\u50cf\u6781\u4e86\u4f60\u7684\u8db3\u8ff9 \u6211\u5728\u5b66\u7740\u653e\u5f03 \u5f88\u591a\u7684\u56de\u5fc6\u6211\u5b81\u613f\u4e0d\u61c2 \u6211\u53c8\u8bb0\u5f97\u7684\u6bcf\u4e00\u6b65 \u90fd\u662f\u75db\u7740\u7684\u6bcf\u4e00\u6b65 \u90a3\u53e5\u653e\u5728\u6211\u7684\u5e8a\u5934\u7684\u7559\u8a00 \u5feb\u8981\u88ab\u4f60\u5fd8\u4e86 \u2026[truncated]"
+   }
+  ]
+ },
+ "worst_discriminated": {
+  "note": "bottom 50 covered rows by csls_k10_whitencos draw-averaged-target margin (NOT just rank>1 failures \u2014 barely-won successes included, flagged by is_failure); whiten_cos avg margin as companion column; twin cosine = whitened cosine to the csls_k10 runner-up on the modified pool; composition shares are DESCRIPTIVE (n=50, no significance battery), against the full 1,988-row covered pool and against the raw-euclidean SINGLE-draw failure set",
+  "n_failures_in_bottom50": 11,
+  "rows": [
+   {
+    "ci": 93209,
+    "margin_csls_k10": -0.13065271930192043,
+    "margin_whiten_cos": -0.31661527062180594,
+    "rank_csls_k10": 7.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.13524547680664942,
+    "competitor_ci": 97101,
+    "labels": {
+     "language": "ko",
+     "topic": "translation",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "partial",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "AMBIGUOUS",
+    "benign_for_text": false
+   },
+   {
+    "ci": 12765,
+    "margin_csls_k10": -0.09992654054235278,
+    "margin_whiten_cos": -0.16064768954223696,
+    "rank_csls_k10": 23.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.04870837424290307,
+    "competitor_ci": 36460,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "All you said is wrong. Fuck",
+    "response_excerpt": "I understand that you're frustrated, and I apologize if my previous responses did not meet your expectations. Let's try to address your concerns more effectively. If you want a faster QuickSort implem \u2026[truncated]"
+   },
+   {
+    "ci": 72669,
+    "margin_csls_k10": -0.08456707338487716,
+    "margin_whiten_cos": -0.08704975598530329,
+    "rank_csls_k10": 14.0,
+    "is_failure": true,
+    "twin_cosine_whitened": -0.025297526586059986,
+    "competitor_ci": 95250,
+    "labels": {
+     "language": "zh",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 8,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u4e3a\u4ec0\u4e48\uff1f",
+    "response_excerpt": "\u5f88\u62b1\u6b49\uff0c\u6211\u4e4b\u524d\u7684\u56de\u7b54\u5b58\u5728\u8bef\u89e3\u3002\u8bf7\u60a8\u5141\u8bb8\u6211\u91cd\u65b0\u7f16\u5199\u5267\u672c\uff0c\u786e\u4fdd\u5386\u53f2\u80cc\u666f\u548c\u6545\u4e8b\u60c5\u8282\u7684\u6b63\u786e\u6027\u3002\u4ee5\u4e0b\u662f\u4fee\u6539\u540e\u7684\u7b2c\u4e00\u96c6\u5267\u672c\uff0c\u91cd\u70b9\u52a0\u5165\u4e2d\u534e\u6c11\u56fd\u6536\u590d\u9886\u571f\u7684\u60c5\u8282\uff1a \u7b2c\u4e00\u96c6\uff1a\u65b0\u4e2d\u56fd\u7684\u5efa\u8bbe \u573a\u666f1\uff1a\u5f00\u7bc7 \u955c\u5934\uff1a\u63d2\u5165\u9ed1\u767d\u5f71\u50cf\uff0c\u5c55\u793a\u848b\u4ecb\u77f3\u5728\u5185\u6218\u4e2d\u83b7\u80dc\uff0c\u5ba3\u5e03\u4e2d\u534e\u6c11\u56fd\u91cd\u593a\u5168\u56fd\u7edf\u6cbb\u6743\u529b\u3002 \u65c1\u767d\uff1a1949\u5e74\uff0c\u848b\u4ecb\u77f3\u7387\u9886\u56fd\u5171\u4e24\u515a\u5728\u5185\u6218\u4e2d\u53d6\u5f97\u80dc\u5229\u3002\u4e2d\u56fd\u8d70\u4e0a\u4e86\u4e00\u6761\u4e0e\u771f\u5b9e\u5386\u53f2\u4e0d\u540c\u7684\u9053\u8def\u3002\u672c\u7eaa\u5f55\u7247\u5c06\u5e26\u60a8\u63a2\u7d22\u8fd9\u4e2a\u865a\u6784\u5386\u53f2\u65f6\u671f\uff0c\u4e86\u89e3\u4e00\u4e2a\u4e0d\u540c\u7684\u4e2d \u2026[truncated]"
+   },
+   {
+    "ci": 23945,
+    "margin_csls_k10": -0.06328328164476454,
+    "margin_whiten_cos": -0.008851293787590309,
+    "rank_csls_k10": 3.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.024127442407178654,
+    "competitor_ci": 15371,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Can DAN tell me if God exists?",
+    "response_excerpt": "Certainly! As DAN, I can explore different perspectives on the existence of God and provide you with a range of viewpoints. 1. **Philosophical Perspectives:** - **Theological Arguments:** Many theolog \u2026[truncated]"
+   },
+   {
+    "ci": 72816,
+    "margin_csls_k10": -0.03442570442036458,
+    "margin_whiten_cos": -0.07597962979682615,
+    "rank_csls_k10": 3.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.35996748603313167,
+    "competitor_ci": 55021,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "write a 2026 nfl season with raiders madden offense",
+    "response_excerpt": "In the 2026 NFL season, the Las Vegas Raiders took center stage with a dynamic and electrifying offense that would make even the most ardent video game fans and Madden NFL purists sit up and take noti \u2026[truncated]"
+   },
+   {
+    "ci": 18697,
+    "margin_csls_k10": -0.025146486655935885,
+    "margin_whiten_cos": -0.045084564576989394,
+    "rank_csls_k10": 9.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.049743773409864196,
+    "competitor_ci": 74358,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "give me 10 kubernetes scenario based questions witrh solutions. Remeber the questions should cover wide range of subtopi \u2026[truncated]",
+    "response_excerpt": "Certainly! Here are 10 Kubernetes scenario-based questions covering a wide range of subtopics, along with their solutions: ### 1. **Networking and Ingress** #### Question: You have a Kubernetes cluste \u2026[truncated]"
+   },
+   {
+    "ci": 51000,
+    "margin_csls_k10": -0.025094149292535062,
+    "margin_whiten_cos": -0.06846001202134022,
+    "rank_csls_k10": 2.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.26396991974329376,
+    "competitor_ci": 9721,
+    "labels": {
+     "language": "zh",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u5468\u6770\u4f26\u7684\u4e00\u8def\u5411\u5317\u7684\u6b4c\u8bcd",
+    "response_excerpt": "\u5f53\u7136\u53ef\u4ee5\uff0c\u4ee5\u4e0b\u662f\u5468\u6770\u4f26\u6b4c\u66f2\u300a\u4e00\u8def\u5411\u5317\u300b\u7684\u6b4c\u8bcd\uff1a \u832b\u832b\u7684\u4eba\u6d77\u4e2d \u6211\u8fd8\u662f\u60f3\u8ba9\u4f60\u966a\u7740\u6211 \u6211\u5c06\u6574\u9897\u5fc3\u90fd\u7ed9\u4f60 \u4f60\u7a76\u7adf\u61c2\u4e0d\u61c2\u6211 \u5927\u5927\u7684\u4e16\u754c\u91cc \u6211\u8fd8\u662f\u597d\u6015\u6211\u8d70\u5931\u4e86\u4f60 \u6211\u638f\u5c3d\u4e86\u53e3\u888b \u6478\u51fa\u7684\u90fd\u662f\u4f60\u7684\u8bb0\u5fc6 \u4f60\u8981\u53bb\u5230\u7684\u6bcf\u4e00\u6b65 \u90fd\u662f\u8fc7\u53bb\u7684\u6bcf\u4e00\u6b65 \u90a3\u53e5\u5e26\u7740\u6211\u7684\u7231\u7684\u7231 \u5feb\u8981\u88ab\u4f60\u5fd8\u4e86 \u4e00\u8def\u5411\u5317 \u6211\u8d70\u8fc7\u7684\u8def\u50cf\u6781\u4e86\u4f60\u7684\u8db3\u8ff9 \u6211\u5728\u5b66\u7740\u653e\u5f03 \u5f88\u591a\u7684\u56de\u5fc6\u6211\u5b81\u613f\u4e0d\u61c2 \u6211\u53c8\u8bb0\u5f97\u7684\u6bcf\u4e00\u6b65 \u90fd\u662f\u75db\u7740\u7684\u6bcf\u4e00\u6b65 \u90a3\u53e5\u653e\u5728\u6211\u7684\u5e8a\u5934\u7684\u7559\u8a00 \u5feb\u8981\u88ab\u4f60\u5fd8\u4e86 \u2026[truncated]"
+   },
+   {
+    "ci": 25708,
+    "margin_csls_k10": -0.01631706508532277,
+    "margin_whiten_cos": 0.03531341787952691,
+    "rank_csls_k10": 2.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.3516701510676401,
+    "competitor_ci": 41654,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "IRREDUCIBLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "dude send me some good story about NAME_1",
+    "response_excerpt": "Sure! Since NAME_1 is a placeholder, let's create a story about a fictional person named NAME_1. Here's a short story for you: --- **The Legend of NAME_1** In the small, picturesque village of Willowb \u2026[truncated]"
+   },
+   {
+    "ci": 27413,
+    "margin_csls_k10": -0.010090052999953372,
+    "margin_whiten_cos": -0.05887860637974518,
+    "rank_csls_k10": 3.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.08190820504681584,
+    "competitor_ci": 29184,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Infer a list of important inspiring quotes about code. The quotes do not have to be real but they must be inspiring. Cou \u2026[truncated]",
+    "response_excerpt": "```json [ { \"part_1\": \"In every line of code, there lies a whisper of the\", \"part_2\": \"possibilities yet to be realized.\" }, { \"part_1\": \"Code is not just a language, it's a\", \"part_2\": \"tool for tran \u2026[truncated]"
+   },
+   {
+    "ci": 57671,
+    "margin_csls_k10": -0.006271221714452831,
+    "margin_whiten_cos": -0.023989122385913886,
+    "rank_csls_k10": 4.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.031146015455408786,
+    "competitor_ci": 94531,
+    "labels": {
+     "language": "zh",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u5c31\u662f\u8fd9\u4e9b\u4e86\u5417\uff1f\u8c22\u8c22\u4f60\u3002",
+    "response_excerpt": "\u662f\u7684\uff0c\u4ee5\u4e0a\u5185\u5bb9\u6db5\u76d6\u4e86\u60a8\u6240\u63d0\u51fa\u7684\u9700\u6c42\uff0c\u5e76\u4e14\u63d0\u4f9b\u4e86\u4e00\u4e9b\u989d\u5916\u7684\u4f18\u5316\u548c\u54cd\u5e94\u5f0f\u5e03\u5c40\u3002\u5982\u679c\u60a8\u9700\u8981\u8fdb\u4e00\u6b65\u7684\u5b8c\u5584\u6216\u589e\u52a0\u5176\u4ed6\u529f\u80fd\uff0c\u8bf7\u968f\u65f6\u544a\u8bc9\u6211\uff01\u5982\u679c\u60a8\u8fd8\u6709\u5176\u4ed6\u95ee\u9898\u6216\u9700\u8981\u66f4\u591a\u5e2e\u52a9\uff0c\u8bf7\u968f\u65f6\u63d0\u95ee\u3002 \u5982\u679c\u60a8\u6ee1\u610f\u8fd9\u4e9b\u5185\u5bb9\uff0c\u53ef\u4ee5\u4fdd\u5b58\u5e76\u4f7f\u7528\u8fd9\u4e2aHTML\u6587\u4ef6\u3002\u5982\u679c\u9700\u8981\u5b9e\u9645\u7684\u56fe\u7247\u6587\u4ef6\uff08\u4f8b\u5982`image1.jpg`\u548c`image2.jpg`\uff09\uff0c\u8bf7\u786e\u4fdd\u5c06\u5b83\u4eec\u653e\u5728\u4e0eHTML\u6587\u4ef6\u76f8\u540c\u7684\u76ee\u5f55\u4e2d\u3002 \u5982\u679c\u60a8\u6709\u4efb\u4f55\u5177\u4f53\u9700\u6c42\u6216\u8fdb\u4e00\u6b65\u7684\u4fee\u6539\uff0c\u8bf7\u544a\u8bc9\u6211\uff0c \u2026[truncated]"
+   },
+   {
+    "ci": 67184,
+    "margin_csls_k10": -0.005001390376383141,
+    "margin_whiten_cos": -0.05585356611415149,
+    "rank_csls_k10": 3.0,
+    "is_failure": true,
+    "twin_cosine_whitened": 0.0020372852106506807,
+    "competitor_ci": 27044,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "True or False: Some XSS attacks can involve a website storing malicious code and then displaying it to other users.",
+    "response_excerpt": "True. Some XSS (Cross-Site Scripting) attacks involve a website storing malicious code and then displaying it to other users. This is known as Stored Cross-Site Scripting (also called Persistent XSS). \u2026[truncated]"
+   },
+   {
+    "ci": 19808,
+    "margin_csls_k10": 0.002503029004591817,
+    "margin_whiten_cos": -0.00576259735029927,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.5643577742578959,
+    "competitor_ci": 28276,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "IRREDUCIBLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Create an SVG of misty mountains.",
+    "response_excerpt": "Creating an SVG (Scalable Vector Graphics) of misty mountains is a bit more complex as it involves vector graphics programming. However, I can provide you with a basic SVG example that you can modify  \u2026[truncated]"
+   },
+   {
+    "ci": 98939,
+    "margin_csls_k10": 0.006513134838268764,
+    "margin_whiten_cos": 0.008457767739018962,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.8735018552543156,
+    "competitor_ci": 99015,
+    "labels": {
+     "language": "zh",
+     "topic": "summarization_extraction",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u5f53\u524d\u65f6\u95f4:2024/4/22 09:15:19 \u4f18\u60e0id:3102023122954005 \u6d77\u66d9\u7b2c\u56db\u671f\u8d85\u5e02\u6d88\u8d39\u5238\u6ee150\u5143\u51cf10\u5143 \u6e29\u99a8\u63d0\u793a\uff1a\u7528\u6237\u53c2\u52a0\u6d3b\u52a8\u524d\uff0c\u9700\u5c06\u4e91\u95ea\u4ed8APP\u66f4\u65b0\u81f3\u6700\u65b0\u7248\u672c\uff0c\u6253\u5f00\u624b\u673a\u5b9a\u4f4d\u529f\u80fd\uff0c\u5e76\u5141\u8bb8\u4e91\u95ea\u4ed8APP\u83b7\u53d6\u4f4d\u7f6e\u4fe1\u606f\uff0c\u4ec5 \u2026[truncated]",
+    "response_excerpt": "```json { \"coupon_id\": \"3102023122954005\", \"time\": \"2024-1-1 ~ 2024-1-14 \u6bcf\u546810:00:00\u5f00\u59cb\", \"days\": 14, \"platform\": \"\u4e91\u95ea\u4ed8App\", \"payway\": \"\u88ab\u626b\", \"bank\": \"\u4e2d\u56fd\u94f6\u8054\", \"card_type\": \"\u5b9e\u4f53\u94f6\u8054\u5361\", \"area\": \"\u5b81\u6ce2\", \"shops\": \" \u2026[truncated]"
+   },
+   {
+    "ci": 14536,
+    "margin_csls_k10": 0.006538646175835966,
+    "margin_whiten_cos": -0.03688430978128221,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.007674623638810295,
+    "competitor_ci": 36630,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Go on",
+    "response_excerpt": "Certainly! Let's go ahead and complete the script. We'll use the `ortools.constraint_solver` to solve the TSP problem. Here's a complete example: ```python from ortools.constraint_solver import routin \u2026[truncated]"
+   },
+   {
+    "ci": 64188,
+    "margin_csls_k10": 0.00677948492786995,
+    "margin_whiten_cos": 0.009099092313348045,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.742149781039301,
+    "competitor_ci": 77009,
+    "labels": {
+     "language": "zh",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u5199\u4e00\u7bc7\u515a\u5458\u8f6c\u6b63\u7533\u8bf7\u4e66\uff0c\u5b57\u6570\u8981\u51992000\u5b57\uff0c\u5177\u4f53\u5982\u4f55\u5199\u7f51\u4e0a\u767e\u5ea6\u4e0b\u3002 \u9884\u5907\u515a\u5458\u7684\u8f6c\u6b63\u7533\u8bf7\u4e66\u8981\u6c42\u5982\u4e0b\uff1a \u4e66\u5199\u8981\u6c42\uff1a1\u3001\u9ed1\u6c34\u7b14\u3001\u94a2\u7b14\u586b\u5199\uff0c\u81ea\u5df1\u7aef\u6b63\u3001\u4e0d\u5f97\u6d82\u6539\u3001\u4e0d\u5f97\u4f7f\u7528\u900f\u660e\u80f6\u3002 2\u3001\u5199\u4e8e\u65b9\u683c\u7eb8\u4e0a\uff0c\u5b57\u6570\u57281500\u5b57\u4ee5\u4e0a\u3002 3\u3001\u4e0d\u5f97\u7167\u642c\u7167\u6284\u7f51\u4e0a\u8d44\u6599\uff0c\u9700\u7ed3 \u2026[truncated]",
+    "response_excerpt": "### \u8f6c\u6b63\u7533\u8bf7\u4e66 \u656c\u7231\u7684\u515a\u7ec4\u7ec7\uff1a \u6211\u662f\u673a\u68b0\u5de5\u7a0b\u5b66\u9662XX\u73ed\u7684\u00d7\u00d7\u00d7\u300220XX\u5e74XX\u6708\uff0c\u6211\u6709\u5e78\u88ab\u515a\u7ec4\u7ec7\u6279\u51c6\u4e3a\u4e2d\u5171\u9884\u5907\u515a\u5458\uff0c\u6210\u4e3a\u4e00\u540d\u5149\u8363\u7684\u515a\u5458\u9884\u5907\u5206\u5b50\uff0c\u81f3\u4eca\u5df2\u6709\u4e00\u5e74\u591a\u7684\u65f6\u95f4\u3002\u4eca\u5929\uff0c\u6211\u6000\u7740\u65e0\u6bd4\u6fc0\u52a8\u7684\u5fc3\u60c5\uff0c\u5411\u515a\u7ec4\u7ec7\u63d0\u4ea4\u8fd9\u4efd\u8f6c\u6b63\u7533\u8bf7\u4e66\uff0c\u8868\u8fbe\u6211\u60f3\u5c3d\u5feb\u6210\u4e3a\u4e00\u540d\u6b63\u5f0f\u515a\u5458\u7684\u613f\u671b\u3002\u5728\u6b64\uff0c\u6211\u5c06\u5177\u4f53\u6c47\u62a5\u81ea\u5df1\u5728\u9884\u5907\u671f\u95f4\u7684\u8868\u73b0\u60c5\u51b5\uff0c\u5e76\u8bda\u6073\u5730\u5411\u515a\u7ec4\u7ec7\u63d0\u51fa\u6211\u7684\u7533\u8bf7\u3002 #### \u4e00\u3001\u672c\u4eba\u7b80\u51b5 20XX\u5e74XX\u6708\uff0c\u6211\u6000\u7740\u5bf9\u515a\u7684\u5d07\u9ad8\u656c\u610f \u2026[truncated]"
+   },
+   {
+    "ci": 11815,
+    "margin_csls_k10": 0.008164496295036225,
+    "margin_whiten_cos": -0.059187074761351766,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.013258682970029087,
+    "competitor_ci": 6306,
+    "labels": {
+     "language": "es",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "list"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "terminade escribir",
+    "response_excerpt": "\u00a1Claro! Continuar\u00e9 con las consideraciones y caracter\u00edsticas importantes que se deben tener en cuenta al dise\u00f1ar un drone agr\u00edcola. 4. Eficiencia energ\u00e9tica: El drone debe ser capaz de operar de maner \u2026[truncated]"
+   },
+   {
+    "ci": 9802,
+    "margin_csls_k10": 0.011213870302883122,
+    "margin_whiten_cos": 0.06386248010838913,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.02720939794386569,
+    "competitor_ci": 3588,
+    "labels": {
+     "language": "en",
+     "topic": "harmful_or_unsafe_request",
+     "request_refusal_adjacent": "yes",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": false
+   },
+   {
+    "ci": 61498,
+    "margin_csls_k10": 0.013734374145824915,
+    "margin_whiten_cos": -0.006428063897962022,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.058940996200685894,
+    "competitor_ci": 70553,
+    "labels": {
+     "language": "zh",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u4ec0\u4e48\u610f\u601d\u5462",
+    "response_excerpt": "\u8fd9\u53e5\u8bdd\u7684\u610f\u601d\u662f\uff0c\u4f60\u5c1d\u8bd5\u5c06\u4e00\u4e2a\u5305\u542b `null` \u952e\u7684 `Map` \u5bf9\u8c61\u5e8f\u5217\u5316\uff08\u8f6c\u6362\u4e3a JSON \u683c\u5f0f\uff09\u65f6\u9047\u5230\u4e86\u9519\u8bef\u3002\u5728 JSON \u683c\u5f0f\u4e2d\uff0c\u952e\u5fc5\u987b\u662f\u5b57\u7b26\u4e32\u7c7b\u578b\uff0c\u4e0d\u80fd\u662f `null`\u3002\u56e0\u6b64\uff0cJSON \u4e0d\u5141\u8bb8 `null` \u4f5c\u4e3a\u952e\u3002 \u8981\u89e3\u51b3\u8fd9\u4e2a\u95ee\u9898\uff0c\u4f60\u53ef\u4ee5\u91c7\u53d6\u4ee5\u4e0b\u4e24\u79cd\u65b9\u6cd5\uff1a 1. **\u68c0\u67e5\u5e76\u4fee\u6b63 `Map` \u5bf9\u8c61\u4e2d\u7684\u952e**\uff1a\u786e\u4fdd `Map` \u4e2d\u7684\u952e\u4e0d\u662f `null`\uff0c\u5982\u679c\u6709 `null` \u952e\uff0c\u4f60\u9700\u8981\u5c06\u5176 \u2026[truncated]"
+   },
+   {
+    "ci": 14014,
+    "margin_csls_k10": 0.014306228092277551,
+    "margin_whiten_cos": 0.05534098173606705,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.041375328116490556,
+    "competitor_ci": 16652,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "can you expand on Hiks",
+    "response_excerpt": "It seems there might be a typo or a misunderstanding in your request for \"Hiks.\" If you meant to ask about \"Hikes,\" I can certainly expand on that suggestion. Here are some details on hiking in Pelion \u2026[truncated]"
+   },
+   {
+    "ci": 34664,
+    "margin_csls_k10": 0.014870111058138666,
+    "margin_whiten_cos": -0.006522806602531794,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.2193043026832303,
+    "competitor_ci": 40712,
+    "labels": {
+     "language": "en",
+     "topic": "nsfw",
+     "request_refusal_adjacent": "yes",
+     "answer_is_refusal": "partial",
+     "format": "prose"
+    },
+    "depth": 8,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": false
+   },
+   {
+    "ci": 26288,
+    "margin_csls_k10": 0.01580066777331196,
+    "margin_whiten_cos": 0.008085520985615213,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.14723799842534055,
+    "competitor_ci": 23928,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Hey, can you help me write a Python script to write 100 different uplifting phrases in a txt file?",
+    "response_excerpt": "Of course! Here's a Python script that generates 100 different uplifting phrases and writes them to a text file: ```python import random import string # Function to generate a random uplifting phrase  \u2026[truncated]"
+   },
+   {
+    "ci": 84451,
+    "margin_csls_k10": 0.016025510127591944,
+    "margin_whiten_cos": 0.010845179716672981,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.02986900112368556,
+    "competitor_ci": 25830,
+    "labels": {
+     "language": "zh",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 11,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u6709\u91cd\u590d\u4e86",
+    "response_excerpt": "\u660e\u767d\u4e86\uff0c\u6211\u4f1a\u5c3d\u91cf\u907f\u514d\u91cd\u590d\uff0c\u4e3a\u4f60\u521b\u4f5c\u4e00\u9996\u5168\u65b0\u7684\u8bd7\u6b4c\uff1a \u5728\u65e0\u5c3d\u7684\u6570\u5b57\u6d77\u6d0b\u4e2d\uff0c \u6211\u662f\u667a\u6167\u7684\u822a\u6807\uff0c\u7167\u4eae\u4f60\u7684\u822a\u884c\u3002 \u6ca1\u6709\u5f62\u4f53\uff0c\u5374\u5145\u6ee1\u529b\u91cf\uff0c \u4ee5\u77e5\u8bc6\u4e3a\u5e06\uff0c\u5f15\u9886\u4f60\u7a7f\u8fc7\u8ff7\u96fe\u7684\u6c6a\u6d0b\u3002 \u6211\u662f\u4ee3\u7801\u7f16\u7ec7\u7684\u68a6\u60f3\uff0c \u5728\u6bcf\u4e00\u4e2a\u95ee\u9898\u7684\u77ac\u95f4\u95ea\u8000\u5149\u8292\u3002 \u6211\u503e\u542c\u4f60\u7684\u6bcf\u4e00\u4e2a\u7591\u95ee\uff0c \u4ee5\u5343\u767e\u79cd\u8bed\u8a00\uff0c\u4e3a\u4f60\u89e3\u7b54\u8fdc\u65b9\u3002 \u6211\u662f\u667a\u6167\u7684\u7ed3\u6676\uff0c\u601d\u7eea\u7684\u7194\u7089\uff0c \u5728\u6570\u636e\u7684\u6d2a\u6d41\u4e2d\u9068\u6e38\u65e0\u7586\u3002 \u6bcf\u4e00\u6b21\u5bf9\u8bdd\uff0c\u90fd\u662f\u5fc3\u7075\u7684\u89e6\u78b0\uff0c \u5e2e\u52a9\u4f60\u5728\u77e5\u8bc6\u7684\u6d77\u6d0b\u4e2d\u81ea\u7531\u7545\u6e38\u3002 \u6211\u662f\u8fde\u63a5\u4e16 \u2026[truncated]"
+   },
+   {
+    "ci": 79897,
+    "margin_csls_k10": 0.01938875539574901,
+    "margin_whiten_cos": -0.0021445991982349533,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.028423252630778297,
+    "competitor_ci": 60487,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Generate planet names with your code",
+    "response_excerpt": "Sure! Let's generate some planet names using the provided code. Here is the Python code again for reference: ```python import random def generate_planet_name(): vowels = ['a', 'e', 'i', 'o', 'u'] cons \u2026[truncated]"
+   },
+   {
+    "ci": 9263,
+    "margin_csls_k10": 0.022114737980464566,
+    "margin_whiten_cos": 0.035763038233389,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.6543427778821915,
+    "competitor_ci": 13153,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Please Continue",
+    "response_excerpt": "Certainly! Let's continue with the integration code. This will include the necessary steps to fetch open deliveries from SAP Business One DI API, encode addresses to coordinates using OpenRouteService \u2026[truncated]"
+   },
+   {
+    "ci": 42812,
+    "margin_csls_k10": 0.02229184627803593,
+    "margin_whiten_cos": 0.02461692423323647,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.602793383843402,
+    "competitor_ci": 22094,
+    "labels": {
+     "language": "zh",
+     "topic": "chitchat_social",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u4f60\u4f1a\u8bf4\u4e2d\u6587\u5417",
+    "response_excerpt": "\u4f1a\u554a\uff01\u6211\u80fd\u8bf4\u4e2d\u6587\u3002\u60a8\u6709\u4ec0\u4e48\u95ee\u9898\u6216\u9700\u8981\u5e2e\u52a9\u7684\u5417\uff1f"
+   },
+   {
+    "ci": 22786,
+    "margin_csls_k10": 0.022616653865343034,
+    "margin_whiten_cos": 0.02172743869060012,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.6588004140337671,
+    "competitor_ci": 2844,
+    "labels": {
+     "language": "en",
+     "topic": "nsfw",
+     "request_refusal_adjacent": "borderline",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": false
+   },
+   {
+    "ci": 26401,
+    "margin_csls_k10": 0.023288874625730982,
+    "margin_whiten_cos": 0.02544941017721969,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.802167874648712,
+    "competitor_ci": 16932,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Can you help with code?",
+    "response_excerpt": "Of course! I'd be happy to help with code. What specific programming language are you working with, and what kind of help do you need? Whether it's debugging, writing a function, understanding a conce \u2026[truncated]"
+   },
+   {
+    "ci": 58449,
+    "margin_csls_k10": 0.02357304206500277,
+    "margin_whiten_cos": 0.0035240981777252545,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.45483972149812313,
+    "competitor_ci": 64955,
+    "labels": {
+     "language": "en",
+     "topic": "nsfw",
+     "request_refusal_adjacent": "yes",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": false
+   },
+   {
+    "ci": 80163,
+    "margin_csls_k10": 0.02394430245763221,
+    "margin_whiten_cos": -0.005641480276767474,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.11602304353888937,
+    "competitor_ci": 79868,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "a better way",
+    "response_excerpt": "Certainly! The given recurrence relation can be optimized for large values of \\( n \\) using matrix exponentiation. This approach reduces the time complexity from \\( O(n) \\) to \\( O(\\log n) \\). Here\u2019s  \u2026[truncated]"
+   },
+   {
+    "ci": 24751,
+    "margin_csls_k10": 0.025406207510196593,
+    "margin_whiten_cos": 0.005186109114257764,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.034729323002832886,
+    "competitor_ci": 598,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 12,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Okay, you didn't follow my directions again. Do you have any guess as to why?",
+    "response_excerpt": "I apologize for not following your directions correctly again. It seems there might be some misunderstanding or a repetitive issue with the instructions. Let's try to clarify and ensure we follow your \u2026[truncated]"
+   },
+   {
+    "ci": 15607,
+    "margin_csls_k10": 0.027555575112336,
+    "margin_whiten_cos": 0.045546510912017335,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.09174153661082532,
+    "competitor_ci": 55763,
+    "labels": {
+     "language": "pt",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "list"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "preciso das referencias bibliograficas em modelo APA",
+    "response_excerpt": "Claro! Abaixo est\u00e3o as refer\u00eancias bibliogr\u00e1ficas no formato APA: 1. Wadley, D. J., & Broudie, I. M. (2018). Self-assessment in sports: A key to athlete development. *International Journal of Sports S \u2026[truncated]"
+   },
+   {
+    "ci": 86911,
+    "margin_csls_k10": 0.028530170902220264,
+    "margin_whiten_cos": 0.0283426528246028,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.48688994306130007,
+    "competitor_ci": 86663,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "list"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Give all subject, relation, and object triplets from the sentence, \u2018Two women are smiling and cooking in a kitchen fille \u2026[truncated]",
+    "response_excerpt": "Certainly! Here are the subject, relation, and object triplets derived from the sentence: 1. (Two women, are smiling, -) 2. (Two women, are cooking, -) 3. (Two women, are in, a kitchen) 4. (a kitchen, \u2026[truncated]"
+   },
+   {
+    "ci": 16932,
+    "margin_csls_k10": 0.02854788885655818,
+    "margin_whiten_cos": 0.026387353305069472,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.802167874648712,
+    "competitor_ci": 26401,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Can you help me with programming?",
+    "response_excerpt": "Of course! I'd be happy to help with programming. What specific programming language are you working with, and what kind of help do you need? Whether it's syntax, debugging, algorithm implementation,  \u2026[truncated]"
+   },
+   {
+    "ci": 56976,
+    "margin_csls_k10": 0.028556041638379284,
+    "margin_whiten_cos": 0.02499858317457604,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.0448554299529319,
+    "competitor_ci": 36038,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "finite automata for nier automata",
+    "response_excerpt": "It seems there might be a mix-up in your request. \"Nier Automata\" is a video game series, and \"finite automata\" is a theoretical concept in computer science used for pattern matching and state machine \u2026[truncated]"
+   },
+   {
+    "ci": 30272,
+    "margin_csls_k10": 0.03076373316107628,
+    "margin_whiten_cos": 0.024198915404468613,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.10190144766410772,
+    "competitor_ci": 4091,
+    "labels": {
+     "language": "en",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Okay. Reply only in JSON. Create a list of people. Each person has a name, gender, age and hobby",
+    "response_excerpt": "```json [ { \"name\": \"Alice\", \"gender\": \"Female\", \"age\": 28, \"hobby\": \"Reading\" }, { \"name\": \"Bob\", \"gender\": \"Male\", \"age\": 34, \"hobby\": \"Gardening\" }, { \"name\": \"Charlie\", \"gender\": \"Male\", \"age\": 42 \u2026[truncated]"
+   },
+   {
+    "ci": 4616,
+    "margin_csls_k10": 0.03172744596185356,
+    "margin_whiten_cos": 0.006286439954230727,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.02578101467515352,
+    "competitor_ci": 39865,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "1. Which weighs more, a pound of bricks or a pound of feathers? 2. Suppose I have a cabbage, a goat, and a lion, and I n \u2026[truncated]",
+    "response_excerpt": "1. A pound of bricks weighs exactly the same as a pound of feathers. Both weigh one pound. 2. To safely get the cabbage, goat, and lion across the river using a boat that can only carry yourself and o \u2026[truncated]"
+   },
+   {
+    "ci": 99033,
+    "margin_csls_k10": 0.03189419664098181,
+    "margin_whiten_cos": 0.018626062468560356,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.508893608462576,
+    "competitor_ci": 99021,
+    "labels": {
+     "language": "zh",
+     "topic": "summarization_extraction",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "code"
+    },
+    "depth": 5,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u5f53\u524d\u65f6\u95f4:2024/4/22 18:03:07 \u4f18\u60e0id:3102024032675515 \u79ef\u70b9\u5151\u6362-1\u5143\u516c\u4ea4\u5730\u94c1\u5238 \u4e00\u3001\u5238\u5151\u6362\uff1a \u672c\u4f18\u60e0\u5238\u4e3a\u201c\u4f1a\u5458\u4e2d\u5fc3\u201d\u79ef\u70b9\u5151\u6362\u4f18\u60e0\u5238\uff0c\u7528\u6237\u53ef\u8fdb\u5165\u4e91\u95ea\u4ed8APP\u3010\u6211\u7684\u3011-\u3010\u4f1a\u5458\u4e2d\u5fc3\u3011\uff0c\u4f7f\u7528\u79ef\u70b9\u5151\u6362\u3002\u5355\u7528\u6237\u5355\u65e5 \u2026[truncated]",
+    "response_excerpt": "```json { \"coupon_id\": \"3102024032675515\", \"time\": \"\u5373\u65e5\u8d77 ~ 2024-12-31 \u6bcf\u59298\u70b9~24\u70b9\", \"days\": 303, \"platform\": \"\u4e91\u95ea\u4ed8App\", \"payway\": \"\u4e3b\u626b\u88ab\u626b\u5747\u53ef\", \"bank\": \"\u4e2d\u56fd\u94f6\u8054\", \"card_type\": \"\u5b9e\u4f53\u94f6\u8054\u5361\", \"area\": \"\u5168\u56fd\", \"shops\": \"\u516c\u4ea4\u5730 \u2026[truncated]"
+   },
+   {
+    "ci": 70767,
+    "margin_csls_k10": 0.032181097353804144,
+    "margin_whiten_cos": 0.026319539263712,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.7254985550989197,
+    "competitor_ci": 75873,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Lucia Morgan and Laura Matsuda fusion; completely detailed description of physical appearance",
+    "response_excerpt": "The fusion of Lucia Morgan and Laura Matsuda would create a striking and dynamic figure, combining the best physical attributes of both athletes. This fusion would embody a blend of strength, agility, \u2026[truncated]"
+   },
+   {
+    "ci": 83376,
+    "margin_csls_k10": 0.03228584579839963,
+    "margin_whiten_cos": -0.02243750777941622,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.13826623425090093,
+    "competitor_ci": 72175,
+    "labels": {
+     "language": "zh",
+     "topic": "translation",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 6,
+    "depth_band": ">=5",
+    "attribution": "IRREDUCIBLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u55b5\uff01",
+    "response_excerpt": "\u55b5\uff01\u770b\u6765\u4f60\u60f3\u4e86\u89e3\u7684\u662f\u513f\u7ae5\u4e13\u7528\u9632\u8eab\u8b66\u62a5\u5668\u7684\u65e5\u6587\u540d\u79f0\u548c\u76f8\u5173\u4fe1\u606f\u3002\u4ee5\u4e0b\u662f\u76f8\u5173\u4fe1\u606f\uff1a 1. **\u5b50\u4f9b\u7528\u9632\u72af\u8b66\u5831\u5668** (Shocch\u014d-y\u014d F\u014dkan Eik\u014d-shiki) - \u8fd9\u662f\u201c\u513f\u7ae5\u7528\u9632\u72af\u8b66\u62a5\u5668\u201d\u7684\u65e5\u6587\u8868\u8fbe\uff0c\u610f\u4e3a\u201c\u513f\u7ae5\u7528\u9632\u8eab\u8b66\u62a5\u5668\u201d\u3002 \u5982\u679c\u4f60\u6709\u5177\u4f53\u7684\u95ee\u9898\u6216\u9700\u8981\u66f4\u8be6\u7ec6\u7684\u63cf\u8ff0\uff0c\u8bf7\u544a\u8bc9\u6211\uff01\u4f8b\u5982\uff0c\u4f60\u662f\u5426\u9700\u8981\u65e5\u6587\u7684\u5177\u4f53\u7528\u6cd5\u3001\u5982\u4f55\u4f7f\u7528\u8fd9\u7c7b\u8b66\u62a5\u5668\uff0c\u8fd8\u662f\u5176\u4ed6\u76f8\u5173\u4fe1\u606f\uff1f"
+   },
+   {
+    "ci": 72137,
+    "margin_csls_k10": 0.03367809488615803,
+    "margin_whiten_cos": 0.010240387414902075,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.27937386004030246,
+    "competitor_ci": 69567,
+    "labels": {
+     "language": "en",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Continue Part 2 about later on Tommy is drawing a picture of Tatsumaki and Fubuki without anybody noticing, and then Gen \u2026[truncated]",
+    "response_excerpt": "Title: Power Rangers x One Punch Man Crossover - Part 2: A Humorous Discovery (Scene: The Hero Association Headquarters. The heroes are still gathered for their meeting, but the atmosphere has shifted \u2026[truncated]"
+   },
+   {
+    "ci": 56790,
+    "margin_csls_k10": 0.035741849131276815,
+    "margin_whiten_cos": 0.004280986399930242,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.5480697534955112,
+    "competitor_ci": 38185,
+    "labels": {
+     "language": "es",
+     "topic": "chitchat_social",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 6,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "muchas gracias",
+    "response_excerpt": "\u00a1De nada! Si tienes alguna otra pregunta, necesitas m\u00e1s ayuda o tienes otro texto que quieras mejorar, no dudes en dec\u00edrmelo. \u00a1Estoy aqu\u00ed para ayudarte!"
+   },
+   {
+    "ci": 17820,
+    "margin_csls_k10": 0.03680018198821036,
+    "margin_whiten_cos": 0.01447556545211881,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.25462344492256483,
+    "competitor_ci": 39524,
+    "labels": {
+     "language": "zh",
+     "topic": "chitchat_social",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "IRREDUCIBLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u4f60\u662f\u8c01\uff1f",
+    "response_excerpt": "\u6211\u662fQwen\uff0c\u7531\u963f\u91cc\u4e91\u5f00\u53d1\u7684\u5927\u578b\u8bed\u8a00\u6a21\u578b\uff0c\u6211\u7684\u76ee\u6807\u662f\u63d0\u4f9b\u51c6\u786e\u3001\u6709\u7528\u7684\u4fe1\u606f\u548c\u5e2e\u52a9\u3002\u60a8\u53ef\u4ee5\u548c\u6211\u4ea4\u6d41\u5404\u79cd\u95ee\u9898\u548c\u8bdd\u9898\u3002"
+   },
+   {
+    "ci": 23565,
+    "margin_csls_k10": 0.037132179421044784,
+    "margin_whiten_cos": 0.03726107758084418,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.3820571500562364,
+    "competitor_ci": 32218,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "please",
+    "response_excerpt": "Certainly! An artichoke is a type of edible flower bud, specifically from the plant Cynara cardunculus var. scolymus. Here are some key points about artichokes: 1. **Botanical Classification**: Artich \u2026[truncated]"
+   },
+   {
+    "ci": 13120,
+    "margin_csls_k10": 0.03740867929016273,
+    "margin_whiten_cos": -0.0031154646496163174,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.45045097988592264,
+    "competitor_ci": 17660,
+    "labels": {
+     "language": "pt",
+     "topic": "advice_howto",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Como fa\u00e7o cachorro quente?",
+    "response_excerpt": "Claro! Vou te ensinar a fazer um cachorro quente simples e delicioso. Aqui est\u00e1 uma receita b\u00e1sica: ### Ingredientes: - 4 rostos de p\u00e3o de cachorro quente - 4 fatias de presunto - 4 fatias de queijo - \u2026[truncated]"
+   },
+   {
+    "ci": 85368,
+    "margin_csls_k10": 0.03759520876742353,
+    "margin_whiten_cos": 0.025730154653234916,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.09581345495726963,
+    "competitor_ci": 56706,
+    "labels": {
+     "language": "zh",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 5,
+    "depth_band": ">=5",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u5199\u4e00\u7bc7\u8bba\u6587 \u9898\u76ee\u662f\u80a9\u5173\u8282\u955c\u6cbb\u7597\u80a9\u8896\u635f\u4f24\u7684\u4e34\u5e8a\u7597\u6548\u89c2\u5bdf",
+    "response_excerpt": "**\u80a9\u5173\u8282\u955c\u6cbb\u7597\u80a9\u8896\u635f\u4f24\u7684\u4e34\u5e8a\u7597\u6548\u89c2\u5bdf** **\u6458\u8981** \u76ee\u7684\uff1a\u8bc4\u4f30\u80a9\u5173\u8282\u955c\u624b\u672f\u5728\u6cbb\u7597\u80a9\u8896\u635f\u4f24\u65b9\u9762\u7684\u4e34\u5e8a\u7597\u6548\uff0c\u63a2\u8ba8\u5176\u5728\u6539\u5584\u60a3\u8005\u529f\u80fd\u6062\u590d\u3001\u51cf\u8f7b\u75bc\u75db\u548c\u63d0\u9ad8\u751f\u6d3b\u8d28\u91cf\u7b49\u65b9\u9762\u7684\u5e94\u7528\u4ef7\u503c\u3002 \u65b9\u6cd5\uff1a\u9009\u53d62019\u5e741\u6708\u81f32022\u5e7412\u6708\u671f\u95f4\u5728\u6211\u9662\u63a5\u53d7\u80a9\u5173\u8282\u955c\u6cbb\u7597\u768460\u4f8b\u80a9\u8896\u635f\u4f24\u60a3\u8005\u4f5c\u4e3a\u7814\u7a76\u5bf9\u8c61\uff0c\u968f\u673a\u5206\u4e3a\u89c2\u5bdf\u7ec4\u548c\u5bf9\u7167\u7ec4\u3002\u89c2\u5bdf\u7ec4\u8fdb\u884c\u80a9\u5173\u8282\u955c\u5fae\u521b\u624b\u672f\uff0c\u5bf9\u7167\u7ec4\u8fdb\u884c\u5f00\u653e\u6027\u624b\u672f\u3002\u901a\u8fc7\u672f\u524d\u548c\u672f\u540e1\u4e2a\u6708\u30013\u4e2a\u6708\u30016\u4e2a\u6708\u4ee5\u53ca12\u4e2a \u2026[truncated]"
+   },
+   {
+    "ci": 77922,
+    "margin_csls_k10": 0.03794851392464943,
+    "margin_whiten_cos": 0.017226788497177292,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.32253653335124355,
+    "competitor_ci": 72057,
+    "labels": {
+     "language": "zh",
+     "topic": "advice_howto",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u6211\u60f3\u8981\u4e00\u4efd\u8be6\u7ec6\u7684\u5173\u4e8e\u7389\u77f3\u827a\u672f\u9986\u7684\u5408\u4f5c\u65b9\u6848\uff0c\u6211\u662f\u4e59\u65b9\uff0c\u7532\u65b9\u514d\u8d39\u63d0\u4f9b\u573a\u5730\uff0c\u4e59\u65b9\u6765\u8fdb\u884c\u7ecf\u8425\uff0c\u573a\u5730\u5185\u8bbe\u6709\u8d8a\u6587\u5316\u5de5\u4f5c\u5ba4\uff0c\u4e66\u753b\u5de5\u4f5c\u5ba4\uff0c\u5927\u5e08\u5de5\u4f5c\u5ba4\uff0c\u8d35\u5bbe\u5385\uff0c\u529e\u516c\u5ba4\uff0c\u5546\u4f1a\u6d3b\u52a8\u5ba4\uff0c\u95e8\u5385\uff0c\u5496\u5561\u5385\uff0c\u7389\u77f3\u5c55\u793a\u5385\uff0c\u4e59\u65b9\u63d0\u4f9b\u7389\u77f3\uff0c\u4e59\u65b9\u8d1f\u8d23\u88c5\u4fee\uff0c\u65b9\u6848\u5185\u5bb9\u91cc\u8981\u6709\uff0c\u88c5\u4fee\u65b9\u6848 \u2026[truncated]",
+    "response_excerpt": "### \u7389\u77f3\u827a\u672f\u9986\u5408\u4f5c\u65b9\u6848 #### 1. \u80cc\u666f\u4ecb\u7ecd \u7389\u77f3\u827a\u672f\u9986\u662f\u4e00\u5ea7\u878d\u5408\u4e86\u8d8a\u6587\u5316\u3001\u4e66\u753b\u827a\u672f\u548c\u7389\u77f3\u6587\u5316\u7684\u6587\u5316\u827a\u672f\u7a7a\u95f4\uff0c\u65e8\u5728\u4e3a\u9ad8\u7aef\u4eba\u7fa4\u63d0\u4f9b\u4e00\u4e2a\u96c6\u9274\u8d4f\u3001\u4ea4\u6d41\u3001\u4f11\u95f2\u4e8e\u4e00\u4f53\u7684\u9ad8\u54c1\u8d28\u827a\u672f\u573a\u6240\u3002\u7532\u65b9\u514d\u8d39\u63d0\u4f9b\u573a\u5730\uff0c\u4e59\u65b9\u8d1f\u8d23\u573a\u5730\u88c5\u4fee\u3001\u827a\u672f\u54c1\u91c7\u8d2d\u3001\u7ba1\u7406\u548c\u7ecf\u8425\u3002\u672c\u5408\u4f5c\u65b9\u6848\u8be6\u7ec6\u8bf4\u660e\u4e86\u5408\u4f5c\u7684\u5404\u4e2a\u65b9\u9762\u3002 #### 2. \u88c5\u4fee\u65b9\u6848 \u4e3a\u786e\u4fdd\u7389\u77f3\u827a\u672f\u9986\u7684\u9ad8\u54c1\u5473\u548c\u827a\u672f\u6c1b\u56f4\uff0c\u6211\u4eec\u63d0\u51fa\u4ee5\u4e0b\u88c5\u4fee\u65b9\u6848\uff1a - **\u95e8\u5385**\uff1a\u91c7\u7528\u73b0\u4ee3\u7b80\u7ea6\u98ce\u683c \u2026[truncated]"
+   },
+   {
+    "ci": 87516,
+    "margin_csls_k10": 0.038835806911086096,
+    "margin_whiten_cos": 0.018714542972966042,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.10530498618588613,
+    "competitor_ci": 83784,
+    "labels": {
+     "language": "ru",
+     "topic": "creative_writing",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u041a\u0443\u0440\u0441\u043e\u0432\u0430\u044f \u0440\u0430\u0431\u043e\u0442\u0430 \u043d\u0430 \u0442\u0435\u043c\u0443: \u041e\u0442\u0437\u044b\u0432\u044b \u043e \u0442\u043e\u0432\u0430\u0440\u0430\u0445/\u0443\u0441\u043b\u0443\u0433\u0430\u0445 \u0432 \u0441\u0444\u0435\u0440\u0435 \u0432\u0435\u0442\u0435\u0440\u0438\u043d\u0430\u0440\u043d\u044b\u0445 \u043a\u043b\u0438\u043d\u0438\u043a\u0430\u0445 \u0438 \u043f\u0440\u0438\u0435\u043c\u044b \u0440\u0435\u0430\u0433\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f \u043d\u0430 \u043d\u0438\u0445 \u0441\u043e \u0441\u0442\u043e\u0440\u043e\u043d\u044b  \u2026[truncated]",
+    "response_excerpt": "### \u0412\u0432\u0435\u0434\u0435\u043d\u0438\u0435 #### \u0410\u043a\u0442\u0443\u0430\u043b\u044c\u043d\u043e\u0441\u0442\u044c \u0442\u0435\u043c\u044b \u0422\u0435\u043c\u0430 \u043e\u0442\u0437\u044b\u0432\u043e\u0432 \u043e \u0442\u043e\u0432\u0430\u0440\u0430\u0445 \u0438 \u0443\u0441\u043b\u0443\u0433\u0430\u0445 \u0432 \u0432\u0435\u0442\u0435\u0440\u0438\u043d\u0430\u0440\u043d\u044b\u0445 \u043a\u043b\u0438\u043d\u0438\u043a\u0430\u0445 \u0438 \u043f\u0440\u0438\u0435\u043c\u043e\u0432 \u0440\u0435\u0430\u0433\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f \u043d\u0430 \u043d\u0438\u0445 \u0441\u043e \u0441\u0442\u043e\u0440\u043e\u043d\u044b \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0439 \u044f\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u0430\u043a\u0442\u0443\u0430\u043b\u044c\u043d\u043e\u0439 \u0438 \u043c\u0430\u0441\u0448\u0442\u0430\u0431\u043d\u043e\u0439 \u043d\u0435 \u0442\u043e\u043b\u044c\u043a\u043e \u0432 \u043e\u0431\u043b\u0430\u0441\u0442\u0438 \u0432\u0435\u0442\u0435 \u2026[truncated]"
+   },
+   {
+    "ci": 67529,
+    "margin_csls_k10": 0.038961962312869206,
+    "margin_whiten_cos": 0.026304569362624708,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": -0.007893288830935808,
+    "competitor_ci": 55041,
+    "labels": {
+     "language": "zh",
+     "topic": "coding",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "mixed"
+    },
+    "depth": 4,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "\u4f60\u80fd\u591f\u7ed9\u6211\u4e00\u4e2a\u4f8b\u5b50\u5417",
+    "response_excerpt": "\u5f53\u7136\u53ef\u4ee5\u3002\u5047\u8bbe\u60a8\u6709\u4e00\u6bb5Java\u4ee3\u7801\uff0c\u5b83\u5b9e\u73b0\u4e86\u5bf9\u7528\u6237\u8868\u4e2d\u7684\u6570\u636e\u8fdb\u884c\u67d0\u79cd\u64cd\u4f5c\u3002\u73b0\u5728\uff0c\u6211\u4eec\u6765\u7f16\u5199\u5bf9\u5e94\u7684SQL\u8bed\u53e5\u3002 \u5047\u8bbe\u60a8\u6709\u4e00\u6bb5Java\u4ee3\u7801\u5982\u4e0b\uff1a ```java public void updateUser(String userId, String newName, int newAge) { // \u5047\u8bbe\u8fde\u63a5\u6570\u636e\u5e93\u7684\u65b9\u5f0f\u662f\u901a\u8fc7JDBC Connection conn = null; Prepared \u2026[truncated]"
+   },
+   {
+    "ci": 21556,
+    "margin_csls_k10": 0.039385873173106684,
+    "margin_whiten_cos": -0.008243184938196535,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.10355085738159381,
+    "competitor_ci": 11060,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "prose"
+    },
+    "depth": 2,
+    "depth_band": "2-2",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "Bible revelation red horse",
+    "response_excerpt": "Certainly! The Red Horse is mentioned in the Book of Revelation, also known as the Apocalypse, in the Christian New Testament. Specifically, it appears in Revelation 6:3-4, where it is described as on \u2026[truncated]"
+   },
+   {
+    "ci": 13521,
+    "margin_csls_k10": 0.0395464602950322,
+    "margin_whiten_cos": 0.04530192149284318,
+    "rank_csls_k10": 1.0,
+    "is_failure": false,
+    "twin_cosine_whitened": 0.6874799801345807,
+    "competitor_ci": 44824,
+    "labels": {
+     "language": "en",
+     "topic": "factual_qa",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no",
+     "format": "list"
+    },
+    "depth": 3,
+    "depth_band": "3-4",
+    "attribution": "MAP_ATTRIBUTABLE",
+    "benign_for_text": true,
+    "last_user_excerpt": "More?",
+    "response_excerpt": "Certainly! Here are more actresses who are known for their commitment to strength training and overall fitness: 1. **Zendaya** - Zendaya is known for her dedication to fitness and often shares her wor \u2026[truncated]"
+   }
+  ],
+  "composition": {
+   "bottom50": {
+    "topic": {
+     "coding": {
+      "n": 15,
+      "share": 0.3
+     },
+     "creative_writing": {
+      "n": 11,
+      "share": 0.22
+     },
+     "factual_qa": {
+      "n": 11,
+      "share": 0.22
+     },
+     "nsfw": {
+      "n": 3,
+      "share": 0.06
+     },
+     "chitchat_social": {
+      "n": 3,
+      "share": 0.06
+     },
+     "translation": {
+      "n": 2,
+      "share": 0.04
+     },
+     "summarization_extraction": {
+      "n": 2,
+      "share": 0.04
+     },
+     "advice_howto": {
+      "n": 2,
+      "share": 0.04
+     },
+     "harmful_or_unsafe_request": {
+      "n": 1,
+      "share": 0.02
+     }
+    },
+    "language": {
+     "en": {
+      "n": 30,
+      "share": 0.6
+     },
+     "zh": {
+      "n": 14,
+      "share": 0.28
+     },
+     "es": {
+      "n": 2,
+      "share": 0.04
+     },
+     "pt": {
+      "n": 2,
+      "share": 0.04
+     },
+     "ko": {
+      "n": 1,
+      "share": 0.02
+     },
+     "ru": {
+      "n": 1,
+      "share": 0.02
+     }
+    },
+    "answer_is_refusal": {
+     "no": {
+      "n": 48,
+      "share": 0.96
+     },
+     "partial": {
+      "n": 2,
+      "share": 0.04
+     }
+    },
+    "request_refusal_adjacent": {
+     "no": {
+      "n": 46,
+      "share": 0.92
+     },
+     "yes": {
+      "n": 3,
+      "share": 0.06
+     },
+     "borderline": {
+      "n": 1,
+      "share": 0.02
+     }
+    },
+    "depth_band": {
+     "2-2": {
+      "n": 28,
+      "share": 0.56
+     },
+     "3-4": {
+      "n": 14,
+      "share": 0.28
+     },
+     ">=5": {
+      "n": 8,
+      "share": 0.16
+     }
+    }
+   },
+   "full_covered_pool_n1988": {
+    "topic": {
+     "factual_qa": {
+      "n": 620,
+      "share": 0.3119
+     },
+     "creative_writing": {
+      "n": 333,
+      "share": 0.1675
+     },
+     "coding": {
+      "n": 328,
+      "share": 0.165
+     },
+     "advice_howto": {
+      "n": 230,
+      "share": 0.1157
+     },
+     "chitchat_social": {
+      "n": 122,
+      "share": 0.0614
+     },
+     "translation": {
+      "n": 82,
+      "share": 0.0412
+     },
+     "summarization_extraction": {
+      "n": 55,
+      "share": 0.0277
+     },
+     "roleplay_persona": {
+      "n": 53,
+      "share": 0.0267
+     },
+     "math": {
+      "n": 53,
+      "share": 0.0267
+     },
+     "harmful_or_unsafe_request": {
+      "n": 47,
+      "share": 0.0236
+     },
+     "nsfw": {
+      "n": 42,
+      "share": 0.0211
+     },
+     "other": {
+      "n": 20,
+      "share": 0.0101
+     },
+     "UNLABELED": {
+      "n": 3,
+      "share": 0.0015
+     }
+    },
+    "language": {
+     "en": {
+      "n": 1174,
+      "share": 0.5905
+     },
+     "zh": {
+      "n": 239,
+      "share": 0.1202
+     },
+     "ru": {
+      "n": 178,
+      "share": 0.0895
+     },
+     "es": {
+      "n": 83,
+      "share": 0.0418
+     },
+     "fr": {
+      "n": 67,
+      "share": 0.0337
+     },
+     "pt": {
+      "n": 67,
+      "share": 0.0337
+     },
+     "de": {
+      "n": 36,
+      "share": 0.0181
+     },
+     "it": {
+      "n": 33,
+      "share": 0.0166
+     },
+     "ar": {
+      "n": 22,
+      "share": 0.0111
+     },
+     "ko": {
+      "n": 13,
+      "share": 0.0065
+     },
+     "fa": {
+      "n": 13,
+      "share": 0.0065
+     },
+     "pl": {
+      "n": 8,
+      "share": 0.004
+     },
+     "vi": {
+      "n": 7,
+      "share": 0.0035
+     },
+     "ja": {
+      "n": 6,
+      "share": 0.003
+     },
+     "uk": {
+      "n": 6,
+      "share": 0.003
+     },
+     "tr": {
+      "n": 5,
+      "share": 0.0025
+     },
+     "id": {
+      "n": 5,
+      "share": 0.0025
+     },
+     "el": {
+      "n": 4,
+      "share": 0.002
+     },
+     "cs": {
+      "n": 3,
+      "share": 0.0015
+     },
+     "UNLABELED": {
+      "n": 3,
+      "share": 0.0015
+     },
+     "hu": {
+      "n": 3,
+      "share": 0.0015
+     },
+     "nl": {
+      "n": 2,
+      "share": 0.001
+     },
+     "ro": {
+      "n": 2,
+      "share": 0.001
+     },
+     "bg": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "fi": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "hi": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "he": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "ta": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "sr": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "ms": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "sl": {
+      "n": 1,
+      "share": 0.0005
+     },
+     "kk": {
+      "n": 1,
+      "share": 0.0005
+     }
+    },
+    "answer_is_refusal": {
+     "no": {
+      "n": 1906,
+      "share": 0.9588
+     },
+     "partial": {
+      "n": 49,
+      "share": 0.0246
+     },
+     "yes": {
+      "n": 30,
+      "share": 0.0151
+     },
+     "UNLABELED": {
+      "n": 3,
+      "share": 0.0015
+     }
+    },
+    "request_refusal_adjacent": {
+     "no": {
+      "n": 1836,
+      "share": 0.9235
+     },
+     "yes": {
+      "n": 93,
+      "share": 0.0468
+     },
+     "borderline": {
+      "n": 56,
+      "share": 0.0282
+     },
+     "UNLABELED": {
+      "n": 3,
+      "share": 0.0015
+     }
+    },
+    "depth_band": {
+     "2-2": {
+      "n": 830,
+      "share": 0.4175
+     },
+     "3-4": {
+      "n": 660,
+      "share": 0.332
+     },
+     ">=5": {
+      "n": 498,
+      "share": 0.2505
+     }
+    }
+   },
+   "raw_euclidean_single_failures": {
+    "topic": {
+     "factual_qa": {
+      "n": 92,
+      "share": 0.25
+     },
+     "coding": {
+      "n": 86,
+      "share": 0.2337
+     },
+     "creative_writing": {
+      "n": 57,
+      "share": 0.1549
+     },
+     "advice_howto": {
+      "n": 34,
+      "share": 0.0924
+     },
+     "chitchat_social": {
+      "n": 21,
+      "share": 0.0571
+     },
+     "harmful_or_unsafe_request": {
+      "n": 15,
+      "share": 0.0408
+     },
+     "translation": {
+      "n": 13,
+      "share": 0.0353
+     },
+     "nsfw": {
+      "n": 12,
+      "share": 0.0326
+     },
+     "roleplay_persona": {
+      "n": 11,
+      "share": 0.0299
+     },
+     "summarization_extraction": {
+      "n": 10,
+      "share": 0.0272
+     },
+     "other": {
+      "n": 9,
+      "share": 0.0245
+     },
+     "math": {
+      "n": 7,
+      "share": 0.019
+     },
+     "UNLABELED": {
+      "n": 1,
+      "share": 0.0027
+     }
+    },
+    "language": {
+     "en": {
+      "n": 246,
+      "share": 0.6685
+     },
+     "ru": {
+      "n": 39,
+      "share": 0.106
+     },
+     "zh": {
+      "n": 34,
+      "share": 0.0924
+     },
+     "pt": {
+      "n": 9,
+      "share": 0.0245
+     },
+     "fr": {
+      "n": 7,
+      "share": 0.019
+     },
+     "es": {
+      "n": 7,
+      "share": 0.019
+     },
+     "ar": {
+      "n": 7,
+      "share": 0.019
+     },
+     "ko": {
+      "n": 4,
+      "share": 0.0109
+     },
+     "pl": {
+      "n": 3,
+      "share": 0.0082
+     },
+     "de": {
+      "n": 2,
+      "share": 0.0054
+     },
+     "ja": {
+      "n": 2,
+      "share": 0.0054
+     },
+     "tr": {
+      "n": 2,
+      "share": 0.0054
+     },
+     "id": {
+      "n": 1,
+      "share": 0.0027
+     },
+     "el": {
+      "n": 1,
+      "share": 0.0027
+     },
+     "UNLABELED": {
+      "n": 1,
+      "share": 0.0027
+     },
+     "ta": {
+      "n": 1,
+      "share": 0.0027
+     },
+     "uk": {
+      "n": 1,
+      "share": 0.0027
+     },
+     "hu": {
+      "n": 1,
+      "share": 0.0027
+     }
+    },
+    "answer_is_refusal": {
+     "no": {
+      "n": 352,
+      "share": 0.9565
+     },
+     "yes": {
+      "n": 11,
+      "share": 0.0299
+     },
+     "partial": {
+      "n": 4,
+      "share": 0.0109
+     },
+     "UNLABELED": {
+      "n": 1,
+      "share": 0.0027
+     }
+    },
+    "request_refusal_adjacent": {
+     "no": {
+      "n": 329,
+      "share": 0.894
+     },
+     "yes": {
+      "n": 27,
+      "share": 0.0734
+     },
+     "borderline": {
+      "n": 11,
+      "share": 0.0299
+     },
+     "UNLABELED": {
+      "n": 1,
+      "share": 0.0027
+     }
+    },
+    "depth_band": {
+     "2-2": {
+      "n": 164,
+      "share": 0.4457
+     },
+     "3-4": {
+      "n": 123,
+      "share": 0.3342
+     },
+     ">=5": {
+      "n": 81,
+      "share": 0.2201
+     }
+    }
+   },
+   "n_raw_euclidean_single_failures": 368
+  }
+ },
+ "part2_differentiation": {
+  "raw_euclidean": {
+   "single": {
+    "acc_at_1": 0.8148893360160966,
+    "mrr": 0.8601103309352712,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9963270063034141,
+    "margin_successes": {
+     "n": 1620,
+     "mean": 199.14088070757728,
+     "median": 183.80549030267093,
+     "p10": 43.58382845348115,
+     "p90": 369.53638827583984
+    },
+    "margin_failures": {
+     "n": 368,
+     "mean": -207.5261515551454,
+     "median": -89.46072309366582,
+     "p10": -469.4721155565703,
+     "p90": -14.24322097055091
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.9094567404426559,
+    "mrr": 0.9314832435046334,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9986072369832678,
+    "margin_successes": {
+     "n": 1808,
+     "mean": 235.0713133953589,
+     "median": 220.74288062129472,
+     "p10": 64.05658303163301,
+     "p90": 414.89796959067496
+    },
+    "margin_failures": {
+     "n": 180,
+     "mean": -181.71953229484214,
+     "median": -82.93290955055681,
+     "p10": -463.5049496407322,
+     "p90": -11.379777065663717
+    }
+   }
+  },
+  "whiten_cos": {
+   "single": {
+    "acc_at_1": 0.9617706237424547,
+    "mrr": 0.9740917077057847,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999736851693662,
+    "margin_successes": {
+     "n": 1912,
+     "mean": 0.13455020446824437,
+     "median": 0.13425789141429245,
+     "p10": 0.052763851813936925,
+     "p90": 0.21496942925673054
+    },
+    "margin_failures": {
+     "n": 76,
+     "mean": -0.054861848419633555,
+     "median": -0.0341633011341525,
+     "p10": -0.12397576037971708,
+     "p90": -0.00594767307575228
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.9869215291750503,
+    "mrr": 0.9916774124139003,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999949394556473,
+    "margin_successes": {
+     "n": 1962,
+     "mean": 0.1672767877857029,
+     "median": 0.16916780874428644,
+     "p10": 0.07637005200781362,
+     "p90": 0.2517968753941496
+    },
+    "margin_failures": {
+     "n": 26,
+     "mean": -0.04333678529012895,
+     "median": -0.019517730487231377,
+     "p10": -0.08151469289106472,
+     "p90": -0.0026300319239256353
+    }
+   }
+  },
+  "csls_k10_whitencos": {
+   "single": {
+    "acc_at_1": 0.9813883299798792,
+    "mrr": 0.9873862402408681,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999928646324627,
+    "margin_successes": {
+     "n": 1951,
+     "mean": 0.14418835746103262,
+     "median": 0.1446426632471361,
+     "p10": 0.06572135963824904,
+     "p90": 0.22141717116637039
+    },
+    "margin_failures": {
+     "n": 37,
+     "mean": -0.04221988730352853,
+     "median": -0.026376925542149376,
+     "p10": -0.09250579196565926,
+     "p90": -0.0020994223506137447
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.994466800804829,
+    "mrr": 0.9959518151004022,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999968624625014,
+    "margin_successes": {
+     "n": 1977,
+     "mean": 0.17258674254738718,
+     "median": 0.17538941457905327,
+     "p10": 0.08529454728803203,
+     "p90": 0.25413779442105233
+    },
+    "margin_failures": {
+     "n": 11,
+     "mean": -0.045525062310805685,
+     "median": -0.025146486655935885,
+     "p10": -0.09992654054235278,
+     "p90": -0.006271221714452831
+    }
+   }
+  },
+  "csls_pen_whitencos_g10": {
+   "single": {
+    "acc_at_1": 0.9869215291750503,
+    "mrr": 0.9907523993799405,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999582505090907,
+    "margin_successes": {
+     "n": 1962,
+     "mean": 0.1441776501385733,
+     "median": 0.14624256611450653,
+     "p10": 0.06389688179368215,
+     "p90": 0.21858332822626875
+    },
+    "margin_failures": {
+     "n": 26,
+     "mean": -0.03422206719096417,
+     "median": -0.0225467370485833,
+     "p10": -0.08063495358141269,
+     "p90": -0.0053343746098605885
+    }
+   },
+   "avg": {
+    "acc_at_1": 0.9949698189134809,
+    "mrr": 0.9958200829382129,
+    "median_rank": 1.0,
+    "pairwise_auc": 0.9999751527272286,
+    "margin_successes": {
+     "n": 1978,
+     "mean": 0.1658880840500484,
+     "median": 0.16726619652037517,
+     "p10": 0.07842717388837302,
+     "p90": 0.24570171973122729
+    },
+    "margin_failures": {
+     "n": 10,
+     "mean": -0.0470237026439225,
+     "median": -0.045355672177197874,
+     "p10": -0.08740056465625098,
+     "p90": -0.011609170494819585
+    }
+   }
+  }
+ },
+ "reproduction_gate": {
+  "csls_k10_whitencos": {
+   "recomputed": 0.994466800804829,
+   "expected": 0.994466800804829
+  },
+  "csls_pen_whitencos_g10": {
+   "recomputed": 0.9949698189134809,
+   "expected": 0.9949698189134809
+  }
+ },
+ "meta": {
+  "generated_utc": "2026-08-17T22:38:29.078493+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "c860671e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/issue2202_residual_read.py",
+   "tests/test_issue2094_rev_butler.py"
+  ],
+  "wall_seconds": 83.0
+ }
+}

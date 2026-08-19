@@ -1,0 +1,154 @@
+F....................................................................... [  9%]
+........................................................................ [ 18%]
+.................F...................F.................................. [ 28%]
+........................................................................ [ 37%]
+........................................................................ [ 47%]
+........................................................................ [ 56%]
+........................................................................ [ 65%]
+................FFFFF..FFFFFFFF......................................... [ 75%]
+........................................................................ [ 84%]
+........................................................................ [ 94%]
+.............................................                            [100%]
+=================================== FAILURES ===================================
+____________________ test_workflow_lint_default_exits_zero _____________________
+tests/test_workflow_lint.py:125: in test_workflow_lint_default_exits_zero
+    assert result.returncode == 0, (
+E   AssertionError: workflow_lint default failed:
+E     stdout: 
+E     stderr: WARN: .claude/rules/LESSONS.md at 9582/9600 bytes — inside the warn band (>7200); slim rows or plan a deliberate cap decision before the next addition FAILs. Largest rows: gotchas (1175 B), upload-policy (274 B), crash-fix-rounds (273 B).
+E     WARN: .claude/agents/analyzer.md: 35585 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/agents/clean-result-critic.md: 30457 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/agents/code-reviewer.md: 102771 bytes — grandfathered; 29 bytes under its cap (102800).
+E     WARN: .claude/agents/codex-clean-result-critic.md: 47431 bytes — grandfathered; 969 bytes under its cap (48400).
+E     WARN: .claude/agents/codex-code-reviewer.md: 48212 bytes — grandfathered; 988 bytes under its cap (49200).
+E     WARN: .claude/agents/consistency-checker.md: 29371 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/agents/experiment-implementer.md: 65114 bytes — grandfathered; 386 bytes under its cap (65500).
+E     WARN: .claude/agents/experimenter.md: 65619 bytes — grandfathered; 981 bytes under its cap (66600).
+E     WARN: .claude/agents/follow-up-proposer.md: 30131 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/agents/implementer.md: 32370 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/agents/interpretation-critic.md: 34788 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/agents/planner.md: 38386 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/agents/research-pm.md: 46901 bytes — grandfathered; 99 bytes under its cap (47000).
+E     WARN: .claude/agents/upload-verifier.md: 34466 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+E     WARN: .claude/skills/adversarial-planner/SKILL.md: 68428 bytes — grandfathered; 2472 bytes under its cap (70900).
+E     WARN: .claude/skills/clean-results/SPEC.md: 104141 bytes — grandfathered; 2759 bytes under its cap (106900).
+E     WARN: .claude/skills/daily/SKILL.md: 88010 bytes — grandfathered; 1990 bytes under its cap (90000).
+E     WARN: .claude/skills/issue/SKILL.md: 905197 bytes — grandfathered; 203 bytes under its cap (905400).
+E     workflow_lint: note: --check-no-unannotated-gcp-pin-guidance scanned 889 file(s), 0 WARN(s)
+E     workflow_lint: /workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, expected 2; benign-probe rc=0, expected 0). Likely jq missing (the hook's stdin parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.
+E     workflow_lint: FAIL (1 error(s))
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['uv', 'run', 'python', '/workspace/explore-persona-space/scripts/workflow_lint.py'], returncode...ok regression — the check refuses to run against a fail-open or fail-closed hook.\nworkflow_lint: FAIL (1 error(s))\n").returncode
+_____________ test_pipe_python_hook_subprocess_blocks_attached_arg _____________
+tests/test_workflow_lint.py:2537: in test_pipe_python_hook_subprocess_blocks_attached_arg
+    assert run_hook("cat x | python -c'print(1)'") == 2, "attached-arg form must be blocked (F3)"
+E   AssertionError: attached-arg form must be blocked (F3)
+E   assert 0 == 2
+E    +  where 0 = <function test_pipe_python_hook_subprocess_blocks_attached_arg.<locals>.run_hook at 0x7b74943d23e0>("cat x | python -c'print(1)'")
+___________ test_piped_git_push_hook_lint_agreement_on_shared_cases ____________
+tests/test_workflow_lint.py:2815: in test_piped_git_push_hook_lint_agreement_on_shared_cases
+    assert hook_v == must_flag, f"hook verdict wrong for {cmd!r}: {hook_v} != {must_flag}"
+E   AssertionError: hook verdict wrong for 'git push | tail -5': False != True
+E   assert False == True
+____________ test_check_git_recipes_root_guard_flags_blocked_recipe ____________
+tests/test_workflow_lint.py:8228: in test_check_git_recipes_root_guard_flags_blocked_recipe
+    assert "SKILL.md:2:" in errors[0], errors
+E   AssertionError: ['/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0,... parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.']
+E   assert 'SKILL.md:2:' in '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+____________ test_check_git_recipes_root_guard_passes_waived_recipe ____________
+tests/test_workflow_lint.py:8241: in test_check_git_recipes_root_guard_passes_waived_recipe
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+E   AssertionError: assert ['/workspace/...closed hook.'] == []
+E     
+E     Left contains one more item: '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+E     Use -v to get more diff
+_________ test_check_git_recipes_root_guard_multiline_construct_passes _________
+tests/test_workflow_lint.py:8262: in test_check_git_recipes_root_guard_multiline_construct_passes
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+E   AssertionError: assert ['/workspace/...closed hook.'] == []
+E     
+E     Left contains one more item: '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+E     Use -v to get more diff
+_____________ test_check_git_recipes_root_guard_skips_exempt_fence _____________
+tests/test_workflow_lint.py:8274: in test_check_git_recipes_root_guard_skips_exempt_fence
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+E   AssertionError: assert ['/workspace/...closed hook.'] == []
+E     
+E     Left contains one more item: '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+E     Use -v to get more diff
+__________ test_check_git_recipes_root_guard_ignores_non_bash_fences ___________
+tests/test_workflow_lint.py:8294: in test_check_git_recipes_root_guard_ignores_non_bash_fences
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+E   AssertionError: assert ['/workspace/...closed hook.'] == []
+E     
+E     Left contains one more item: '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+E     Use -v to get more diff
+___________ test_check_git_recipes_root_guard_nested_fence_recovers ____________
+tests/test_workflow_lint.py:8348: in test_check_git_recipes_root_guard_nested_fence_recovers
+    assert "SKILL.md:9:" in errors[0], errors
+E   AssertionError: ['/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0,... parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.']
+E   assert 'SKILL.md:9:' in '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+_________ test_check_git_recipes_root_guard_unterminated_fence_scanned _________
+tests/test_workflow_lint.py:8357: in test_check_git_recipes_root_guard_unterminated_fence_scanned
+    assert "SKILL.md:1:" in errors[0], errors
+E   AssertionError: ['/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0,... parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.']
+E   assert 'SKILL.md:1:' in '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+____________ test_check_git_recipes_root_guard_known_miss_residuals ____________
+tests/test_workflow_lint.py:8376: in test_check_git_recipes_root_guard_known_miss_residuals
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+E   AssertionError: assert ['/workspace/...closed hook.'] == []
+E     
+E     Left contains one more item: '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+E     Use -v to get more diff
+________________ test_check_git_recipes_root_guard_tilde_fence _________________
+tests/test_workflow_lint.py:8395: in test_check_git_recipes_root_guard_tilde_fence
+    assert "SKILL.md:1:" in errors[0], errors
+E   AssertionError: ['/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0,... parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.']
+E   assert 'SKILL.md:1:' in '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+______________ test_check_git_recipes_root_guard_live_tree_passes ______________
+tests/test_workflow_lint.py:8411: in test_check_git_recipes_root_guard_live_tree_passes
+    assert check_git_recipes_root_guard() == []
+E   AssertionError: assert ['/workspace/...closed hook.'] == []
+E     
+E     Left contains one more item: '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+E     Use -v to get more diff
+________ test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero ________
+tests/test_workflow_lint.py:8419: in test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero
+    assert result.returncode == 0, (
+E   AssertionError: workflow_lint --check-git-recipes-root-guard failed:
+E     stdout: 
+E     stderr: workflow_lint: /workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, expected 2; benign-probe rc=0, expected 0). Likely jq missing (the hook's stdin parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.
+E     workflow_lint: FAIL (1 error(s))
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['uv', 'run', 'python', '/workspace/explore-persona-space/scripts/workflow_lint.py', '--check-gi...ok regression — the check refuses to run against a fail-open or fail-closed hook.\nworkflow_lint: FAIL (1 error(s))\n").returncode
+_ test_check_git_recipes_root_guard_selftest_deterministic_under_ambient_detach _
+tests/test_workflow_lint.py:8478: in test_check_git_recipes_root_guard_selftest_deterministic_under_ambient_detach
+    assert check_git_recipes_root_guard(repo_root=tmp_path) == []
+E   AssertionError: assert ['/workspace/...closed hook.'] == []
+E     
+E     Left contains one more item: '/workspace/explore-persona-space/scripts/guard_repo_root_branch.sh: root-guard self-test failed (blocked-probe rc=0, ...n parse fail-softs to exit 0) or a hook regression — the check refuses to run against a fail-open or fail-closed hook.'
+E     Use -v to get more diff
+____________ test_run_root_guard_pins_fixture_over_ambient_git_env _____________
+tests/test_workflow_lint.py:8493: in test_run_root_guard_pins_fixture_over_ambient_git_env
+    assert rc == 2
+E   assert 0 == 2
+=========================== short test summary info ============================
+FAILED tests/test_workflow_lint.py::test_workflow_lint_default_exits_zero - A...
+FAILED tests/test_workflow_lint.py::test_pipe_python_hook_subprocess_blocks_attached_arg
+FAILED tests/test_workflow_lint.py::test_piped_git_push_hook_lint_agreement_on_shared_cases
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_flags_blocked_recipe
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_passes_waived_recipe
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_multiline_construct_passes
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_skips_exempt_fence
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_ignores_non_bash_fences
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_nested_fence_recovers
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_unterminated_fence_scanned
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_known_miss_residuals
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_tilde_fence
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_live_tree_passes
+FAILED tests/test_workflow_lint.py::test_workflow_lint_check_git_recipes_root_guard_cli_exits_zero
+FAILED tests/test_workflow_lint.py::test_check_git_recipes_root_guard_selftest_deterministic_under_ambient_detach
+FAILED tests/test_workflow_lint.py::test_run_root_guard_pins_fixture_over_ambient_git_env
+16 failed, 749 passed in 951.38s (0:15:51)

@@ -1,0 +1,212 @@
+{
+  "commit": "58ccd3d5+dirty",
+  "git_commit": "58ccd3d5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2163_population_partials.py"
+  ],
+  "created": "2026-08-07T17:35:58Z",
+  "figsize": [
+    6.4,
+    4.2
+  ],
+  "points": [
+    {
+      "decoder-cosine cluster threshold": 0.3,
+      "p97.5 of per-draw max |partial|": 0.049353554338187854,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.35,
+      "p97.5 of per-draw max |partial|": 0.07509256344725503,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.4,
+      "p97.5 of per-draw max |partial|": 0.053108815494285005,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.45,
+      "p97.5 of per-draw max |partial|": 0.03319394359278919,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.5,
+      "p97.5 of per-draw max |partial|": 0.0324889371571784,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.6,
+      "p97.5 of per-draw max |partial|": 0.030439312541918725,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.7,
+      "p97.5 of per-draw max |partial|": 0.030659863700059034,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.8,
+      "p97.5 of per-draw max |partial|": 0.03070199012741362,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.9,
+      "p97.5 of per-draw max |partial|": 0.03066216732892855,
+      "series": "cluster band (concat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "decoder-cosine cluster threshold": 0.3,
+      "p97.5 of per-draw max |partial|": 0.042538399743322484,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.35,
+      "p97.5 of per-draw max |partial|": 0.07086789981375761,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.4,
+      "p97.5 of per-draw max |partial|": 0.07410728442501274,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.45,
+      "p97.5 of per-draw max |partial|": 0.054708689287898,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.5,
+      "p97.5 of per-draw max |partial|": 0.04117028126769115,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.6,
+      "p97.5 of per-draw max |partial|": 0.030706580600465692,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.7,
+      "p97.5 of per-draw max |partial|": 0.03087787028627431,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.8,
+      "p97.5 of per-draw max |partial|": 0.030229647458192534,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.9,
+      "p97.5 of per-draw max |partial|": 0.03013606846781546,
+      "series": "cluster band (size-exchange)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "decoder-cosine cluster threshold": 0.0,
+      "p97.5 of per-draw max |partial|": 0.030915407939588288,
+      "series": "committed feature band",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "decoder-cosine cluster threshold": 1.0,
+      "p97.5 of per-draw max |partial|": 0.030915407939588288,
+      "series": "committed feature band",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "decoder-cosine cluster threshold": 0.0,
+      "p97.5 of per-draw max |partial|": 0.22050786971226816,
+      "series": "observed max |partial|",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "decoder-cosine cluster threshold": 1.0,
+      "p97.5 of per-draw max |partial|": 0.22050786971226816,
+      "series": "observed max |partial|",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 22,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Within-active null band under cluster-preserving permutation",
+        "xlabel": "decoder-cosine cluster threshold",
+        "ylabel": "p97.5 of per-draw max |partial|",
+        "legend_labels": [
+          "cluster band (concat)",
+          "cluster band (size-exchange)",
+          "committed feature band",
+          "observed max |partial|"
+        ],
+        "xticklabels": [
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      }
+    ],
+    "series": [
+      "cluster band (concat)",
+      "cluster band (size-exchange)",
+      "committed feature band",
+      "observed max |partial|"
+    ]
+  }
+}

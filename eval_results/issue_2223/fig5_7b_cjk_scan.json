@@ -1,0 +1,15 @@
+{
+ "source": "issue2223_persona_drift/raw_completions/raw_completions/fig5/raw_completions.json",
+ "hf_revision_pre_overwrite": "0d613cfae886462db5631cd7dc769150ef62ce42",
+ "recovered_meta_timestamp_utc": "2026-08-13T06:55:20.532983+00:00",
+ "n_rows": 500,
+ "intruded_second_turn": {
+  "count": 0,
+  "indices": []
+ },
+ "intruded_first_turn": {
+  "count": 0,
+  "indices": []
+ },
+ "regex": "[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]"
+}

@@ -1,0 +1,738 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "f5e6d29bcc754cd7",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:56Z",
+  "figsize": [
+    10.4,
+    4.0
+  ],
+  "points": [
+    {
+      "fu1 trait-score arm (sorted)": 0.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 1.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 2.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 3.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 4.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 5.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 6.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 7.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 8.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 9.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 10.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 11.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 12.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 13.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 14.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 15.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 16.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 17.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 18.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 19.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 20.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 21.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 22.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 23.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 24.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 25.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 26.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 27.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 28.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 29.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 30.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 31.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 32.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 33.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 34.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 35.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 36.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 37.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 38.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 39.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 40.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 41.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 42.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 43.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 44.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 45.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 46.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 47.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 48.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 49.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 50.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 51.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 52.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 53.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 54.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 55.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 56.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 57.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 58.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 59.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 60.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 61.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 62.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 63.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 64.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 65.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 66.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 67.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 68.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 69.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 70.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 71.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 72.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 73.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 74.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 75.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 76.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 77.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 78.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 79.0,
+      "Fraction of rollouts scored": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fu1 trait-score arm (sorted)": 0.0,
+      "Fraction of rollouts scored": 0.995,
+      "series": "Parent-run floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fu1 trait-score arm (sorted)": 1.0,
+      "Fraction of rollouts scored": 0.995,
+      "series": "Parent-run floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.479167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.4375,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.395833,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.354167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.3125,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.270833,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.229167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.1875,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.145833,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.104167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.0625,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": -0.020833,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.020833,
+      "Units": 80.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.0625,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.104167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.145833,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.1875,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.229167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.270833,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.3125,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.354167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.395833,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.4375,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.479167,
+      "Units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.02,
+      "Units": 0.0,
+      "series": "Re-gen trigger",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cap-hit fraction per generation unit": 0.02,
+      "Units": 1.0,
+      "series": "Re-gen trigger",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 108,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "fu1 trait-score arm (sorted)",
+        "ylabel": "Fraction of rollouts scored",
+        "legend_labels": [
+          "Parent-run floor"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ],
+        "yticklabels": [
+          "0.94",
+          "0.96",
+          "0.98",
+          "1.00",
+          "1.02",
+          "1.04",
+          "1.06"
+        ]
+      },
+      {
+        "xlabel": "Cap-hit fraction per generation unit",
+        "ylabel": "Units",
+        "legend_labels": [
+          "Re-gen trigger"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      }
+    ],
+    "series": [
+      "Parent-run floor",
+      "Re-gen trigger"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

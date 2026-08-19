@@ -38,3 +38,13 @@ the worktree copy) while pytest fails (uses main) — that delta is the
 tell that you're hitting this install-resolution quirk, not a genuine bug.
 Pure-stdlib script edits (scripts/*.py imported by path) are unaffected;
 this only bites `src/`-package imports.
+
+UPDATE (2026-08-07, issue-2176): this trap applies when running MAIN's
+venv against a worktree. When `uv run` is invoked FROM the worktree, it
+builds a FRESH worktree `.venv` (216 pkgs, <1 s on warm cache) whose
+editable install points at the WORKTREE root — a brand-new
+`src/.../orchestrate/argcheck.py` imported fine with no PYTHONPATH.
+Verify which regime you are in with the `print(g.__file__)` probe above
+before assuming either direction; the disk-full ENOSPC caveat
+([[worktree-uv-venv-fails-on-full-disk]]) is largely retired now that
+worktrees live on /mnt/eps-data.

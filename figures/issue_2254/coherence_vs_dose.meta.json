@@ -1,0 +1,8 @@
+{
+  "figure": "coherence_vs_dose",
+  "git_commit": "6ebe081a",
+  "git_dirty": false,
+  "inputs": [
+    "localize/dose_response.json"
+  ]
+}

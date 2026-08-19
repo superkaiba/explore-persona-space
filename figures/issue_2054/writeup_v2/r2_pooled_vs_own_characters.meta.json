@@ -1,0 +1,159 @@
+{
+  "commit": "38c0031d+dirty",
+  "render_id": "eeccf24b96b84904",
+  "git_commit": "38c0031d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_loco_framings.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers.png",
+    "scripts/issue2094_butler_grid.py",
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tasks/planning/2302/plans/plan.md",
+    "tasks/planning/2302/plans/v1.md",
+    "tasks/planning/2302/plans/v2.md",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-14T21:55:44Z",
+  "figsize": [
+    7.4,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.21609266792277423,
+      "series": "HELIOS \u00b7 AI-likeness 72",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.21770532251790398,
+      "series": "HELIOS \u00b7 AI-likeness 72",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.21416503184795213,
+      "series": "HELIOS \u00b7 AI-likeness 72",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.21381948048410687,
+      "series": "Wren \u00b7 AI-likeness 62",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.21507360806621162,
+      "series": "Wren \u00b7 AI-likeness 62",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.2119215236541776,
+      "series": "Wren \u00b7 AI-likeness 62",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.1993943743488133,
+      "series": "Vex \u00b7 AI-likeness 55",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.20100927108045408,
+      "series": "Vex \u00b7 AI-likeness 55",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.20082938616656545,
+      "series": "Vex \u00b7 AI-likeness 55",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.20115177934592934,
+      "series": "Dana \u00b7 AI-likeness 53",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.20243028767259016,
+      "series": "Dana \u00b7 AI-likeness 53",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.20066892122408805,
+      "series": "Dana \u00b7 AI-likeness 53",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "One map fit on all settings, applied to each character\n(on-policy, instruct)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "HELIOS \u00b7 AI-likeness 72",
+          "Wren \u00b7 AI-likeness 62",
+          "Vex \u00b7 AI-likeness 55",
+          "Dana \u00b7 AI-likeness 53",
+          "own-map $R^2$"
+        ],
+        "xticklabels": [
+          "Pooled\ndirect",
+          "+ per-cell\nbias",
+          "Rotation\n+ bias"
+        ],
+        "yticklabels": [
+          "0.195",
+          "0.200",
+          "0.205",
+          "0.210",
+          "0.215",
+          "0.220",
+          "0.225",
+          "0.230",
+          "0.235"
+        ]
+      }
+    ],
+    "series": [
+      "HELIOS \u00b7 AI-likeness 72",
+      "Wren \u00b7 AI-likeness 62",
+      "Vex \u00b7 AI-likeness 55",
+      "Dana \u00b7 AI-likeness 53"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

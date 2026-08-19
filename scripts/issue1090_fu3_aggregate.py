@@ -8,7 +8,8 @@ locally by the orchestrator) and produces the round's summary JSONs under
 1. Judges the Tier-2 (own-context install) + bystander-panel completions via the
    round-1 ``issue1090_run._judge_rate`` (graded judge -> the sanctioned
    ``eval.batch_judge`` crossover client: sets >= the tier threshold go Batch API);
-   ``max_tokens=300`` EXPLICIT (llm-judging rule 23); rubric-keyed cache with a
+   ``max_tokens=1024`` EXPLICIT (llm-judging rule 23 floor; raised from 300,
+   #2063); rubric-keyed cache with a
    SEPARATE cache dir per rubric/behavior (rule 22). Checkpoint-per-cell.
 2. Install-by-context comparison (own-context install delta x context arm x regime).
 3. Band-hit table (Tier-2 trained rate vs the recipe band + per-rung selection).

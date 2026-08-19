@@ -68,6 +68,69 @@ run before it) syncs never-branch-edited scripts/issue<M>_*.py +
 tests/test_issue<M>_*.py pairs together. Tests (15) + (16) pin the two
 new arms; tests (10) + (14) enforce the copy parity mechanically.
 
+#2208 (2026-08-09) adds an import-satisfiability probe to the #1972
+sibling-issue arm (incident #2206: the arm synced a main-NEW
+tests/test_issue2038_*.py importing a symbol added to src/ AFTER the
+branch point; the worktree src is branch-era, collection ImportErrored,
+and `step9c_baseline.py compare` classified the node NEW fail-closed —
+~1h gate wall + a manual provenance override). Synced sibling TEST files
+now pass a fenced real-collection probe BEFORE the sync commit; a probe
+failure reverts the whole same-issue synced pair (branch-era files
+restored from HEAD, main-NEW files dropped from index + tree). Section
+(16) gains the probe pins + a functional shape repro.
+
+#2303 (2026-08-14) closes the two #2293 defects. Defect 1:
+`.claude/config/agent_spec_size_caps.txt` joins the "lint" family in
+BOTH copies (SPECS/FAMILY_OF + SPECS_10D) — scripts/workflow_lint.py
+reads it at MODULE IMPORT time (_load_agent_spec_caps() raises
+FileNotFoundError loud), so syncing the linter without its data file
+left a worktree whose every linter-shelling pre-commit hook crashed.
+Defect 2: the sync `git commit` return code is now CHECKED in BOTH
+copies — a failed commit prints a FATAL line naming the staged paths
+and exits non-zero, and the Step 5a success echo fires only AFTER a
+verified commit (reporting the committed sha), never an unconditional
+staged diffstat; the Step 10d twin reads SYNC_SHA / pushes only after a
+verified commit. Tests (1) + (9) gain the caps-file member; section
+(17) pins the rc-checked stanzas; section (18) reproduces both defect
+shapes under real git.
+
+#2352 (2026-08-17) adds `tests/issue_skill_source.py` — the shared
+composed-spec reader (#2155) every test_issue_skill_* pin test imports
+(`from tests.issue_skill_source import ...`) — to SPECS + SPECS_10D as a
+SINGLETON: its own family, deliberately NO FAMILY_OF entry in either
+copy. Incident: the Step 5a sync pulled the current test_issue_skill_*
+set into the issue-2333 worktree (fork predates #2155) WITHOUT the
+helper; 66 collection errors (ModuleNotFoundError:
+tests.issue_skill_source) walled `pytest -k` and would red the Step 9c
+gate as NEW. No single-family assignment closes the class: the helper is
+imported from MULTIPLE families — the workflow-family skill-pin glob
+(x64) AND the lint-family
+tests/test_workflow_lint_no_repo_root_worktree_revert.py — plus ~30
+unsynced tests, and families dirty-skip INDEPENDENTLY, so a dirty
+workflow family (the modal workflow-fix branch) with a clean lint family
+syncs the lint importer fresh and recreates the same
+ModuleNotFoundError. A singleton syncs whenever it is ITSELF clean,
+covering fresh importers in every family and in unsynced tests alike.
+Test (1) gains the token; a new negative pin (9b) holds the singleton
+disposition (no FAMILY_OF entry in either copy); section (19) adds the
+family-aware forward guard: every `tests.<mod>` import in any
+family-synced test file (imports collected via ast.parse — parenthesized
+multiline, comma-separated, and aliased forms included; string literals
+invisible) must be sync-coverable on EVERY route through which the
+importer can arrive fresh — per route a same-family token/glob, or
+route-independently the helper itself a SINGLETON token; each matching
+SPECS token is an independent per-token sync channel, so
+partial-route/cross-family coverage is insufficient — and the NEXT
+main-side helper module a family-synced test imports therefore reds THIS
+suite on main instead of red-ing a worktree gate. A runtime import-satisfiability
+probe on the FAMILY arm (the #2208 sibling-arm probe's shape) was
+considered and DEFERRED: the family sync checkouts+commits atomically
+across ALL safe families in one command inside two mirrored fail-closed
+blocks — a probe-failure revert would have to unwind whole families
+(SKILL.md included) and a bug there reds every Step 5a run and every
+merge fleet-wide, while the static guard catches the class EARLIER (on
+main, at the PR adding the import).
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -76,16 +139,31 @@ sync and the gate section deliberately avoid, drops the family-atomic
 declaration in Step 5a, lets the Step 10d inline family-atomic block
 drift from Step 5a's family definition, weakens the #1807 re-bind
 stanza's fail-closed arms, drops the 9c pre-gate re-sync reference,
-drops the #1972 uncommitted-dirt arm from either copy, or drops (or
-mirrors into the 10d copy) the #1972 sibling-issue per-file arm.
+drops the #1972 uncommitted-dirt arm from either copy, drops (or
+mirrors into the 10d copy) the #1972 sibling-issue per-file arm, drops
+the #2208 import-satisfiability probe from the sibling arm, drops the
+#2303 caps-file lint-family membership, un-checks the #2303 sync
+commit rc in either copy, re-familys the #2352
+tests/issue_skill_source.py singleton (a FAMILY_OF entry for it in
+either copy), or lets a family-synced test file import a tests.<mod>
+helper not sync-coverable on EVERY of its sync routes (guard 19).
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
 matching assertions here IN THE SAME COMMIT, or the suite goes red.
 """
 
+import ast
+import fnmatch
+import os
 import re
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
+
+from tests.issue_skill_source import issue_skill_text
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -96,7 +174,7 @@ _FULL_MESSAGE_INVERT = _FULL_MESSAGE_FILTER + " --invert-grep"
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _step5a_span(text: str) -> str:
@@ -129,7 +207,8 @@ def test_step5a_specs_include_lint_family():
     assert (
         'SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules '
         ".claude/workflow.yaml "
-        "CLAUDE.md scripts/workflow_lint.py scripts/select_step9c_tests.py .claude/hooks "
+        "CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt "
+        "scripts/select_step9c_tests.py .claude/hooks "
         ":(glob)scripts/guard_*.sh "
         "tests/test_guard_lessons_edit.py "
         "tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py "
@@ -137,6 +216,7 @@ def test_step5a_specs_include_lint_family():
         "tests/step9c_workflow_invariant_manifest.txt "
         ":(glob)tests/test_workflow_lint*.py "
         ":(glob)tests/test_guard_*.py "
+        "tests/issue_skill_source.py "
         ':(glob)tests/test_issue_skill_*.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
@@ -158,7 +238,16 @@ def test_step5a_specs_include_lint_family():
         "scripts/select_step9c_tests.py + tests/test_select_step9c_tests.py "
         "+ tests/step9c_workflow_invariant_manifest.txt (lint family; the "
         "pin test importlib-loads the selector by path and pins "
-        "WORKFLOW_INVARIANT set-equal to the manifest)"
+        "WORKFLOW_INVARIANT set-equal to the manifest) — plus the #2303 "
+        "lint-family data file .claude/config/agent_spec_size_caps.txt "
+        "(workflow_lint.py reads it at MODULE IMPORT time; syncing the "
+        "linter without it strands a FileNotFoundError-raising linter in "
+        "the worktree — the #2293 shape) — plus the #2352 SINGLETON "
+        "tests/issue_skill_source.py (the shared composed-spec reader "
+        "every test_issue_skill_* pin test imports AND lint-family + "
+        "unsynced tests import; cross-family importers mean no single "
+        "family covers it — syncing the pin tests without the helper red "
+        "66 collection errors in the issue-2333 worktree)"
     )
 
 
@@ -358,6 +447,13 @@ def test_step5a_family_atomicity_declared_in_bash():
         "— the pin test's case 6b holds WORKFLOW_INVARIANT set-equal to it; "
         "the dominant selector edit updates all three together (#1972)"
     )
+    assert 'FAMILY_OF[".claude/config/agent_spec_size_caps.txt"]="lint"' in span, (
+        "the lint family must include .claude/config/agent_spec_size_caps.txt "
+        "— workflow_lint.py reads it at MODULE IMPORT time "
+        "(_load_agent_spec_caps() raises FileNotFoundError loud), so syncing "
+        "the linter without its data file strands a crashing linter in the "
+        "worktree (#2293; #2303)"
+    )
     assert 'FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"' in span, (
         "the guard family must include the explicit tests/test_guard_lessons_edit.py "
         "entry (it also matches the :(glob) but is declared explicitly for clarity)"
@@ -365,6 +461,37 @@ def test_step5a_family_atomicity_declared_in_bash():
     assert "DIRTY_FAMILIES" in span, (
         "the family-atomic loop must gate the sync on a DIRTY_FAMILIES associative array"
     )
+
+
+# --- (9b) tests/issue_skill_source.py stays a SINGLETON (#2352 negative pin) --
+
+
+def test_issue_skill_source_singleton_no_family_assignment():
+    """#2352: tests/issue_skill_source.py must have NO FAMILY_OF entry in
+    EITHER sync copy — the singleton disposition is the fix. The helper is
+    imported from MULTIPLE families (the workflow-family skill-pin glob x64
+    AND the lint-family test_workflow_lint_no_repo_root_worktree_revert.py)
+    plus ~30 unsynced tests, and families dirty-skip INDEPENDENTLY, so ANY
+    single-family assignment reopens the #2352 half-sync class through the
+    other families (a dirty workflow family + a clean lint family syncs the
+    lint importer fresh against a missing/stale helper). A deliberate
+    re-familying must rework guard (19)'s coverage predicate in the same
+    commit."""
+    text = _text()
+    for label, span in (
+        ("Step 5a", _step5a_span(text)),
+        ("auto-merge", _automerge_span(text)),
+    ):
+        assert 'FAMILY_OF["tests/issue_skill_source.py"]' not in span, (
+            f"the {label} sync copy assigns tests/issue_skill_source.py to a "
+            f"family — it must stay a SINGLETON (no FAMILY_OF entry): the "
+            f"helper's importers span the workflow AND lint families plus "
+            f"unsynced tests, families dirty-skip independently, and any "
+            f"single-family assignment recreates the #2352 "
+            f"ModuleNotFoundError half-sync through the other families. A "
+            f"deliberate re-familying must rework guard (19)'s coverage "
+            f"predicate in the same commit."
+        )
 
 
 # --- (10) auto-merge post-gate re-sync matches Step 5a family (#1714 drift guard) --
@@ -634,17 +761,44 @@ def test_sibling_issue_file_arm_step5a_only():
     (the 10d TG legs run before the post-gate re-sync — syncing sibling
     files there moves the tip after certification for zero gate benefit);
     the negative assert anchors on the EXECUTABLE array-init fragment, so
-    the 10d copy's prose asymmetry comment cannot trip it."""
+    the 10d copy's prose asymmetry comment cannot trip it. #2116 widens the
+    enumeration to sibling scripts/issue<M>_*.sh shell dispatchers: sibling
+    tests also INVOKE dispatchers (subprocess / read_text), and a .py-only
+    pathspec syncs the test without its .sh (the #1988/#2004 firings)."""
     text = _text()
     arm = _sibling_arm_block(_step5a_span(text))
     assert "':(glob)scripts/issue[0-9]*_*.py'" in arm, (
         "the sibling arm must enumerate sibling-issue scripts via the "
         "numeric-anchored :(glob)scripts/issue[0-9]*_*.py pathspec"
     )
+    assert "':(glob)scripts/issue[0-9]*_*.sh'" in arm, (
+        "the sibling arm must enumerate sibling-issue shell dispatchers via "
+        "the numeric-anchored :(glob)scripts/issue[0-9]*_*.sh pathspec — "
+        "sibling tests invoke sibling .sh dispatchers (subprocess / "
+        "read_text), and a .py-only pathspec is the #1988/#2004 half-sync "
+        "class: the covering test syncs while its dispatcher stays fork-era "
+        "or absent (#2116)"
+    )
     assert "':(glob)tests/test_issue[0-9]*_*.py'" in arm, (
         "the sibling arm must enumerate the covering tests via the paired "
         ":(glob)tests/test_issue[0-9]*_*.py pathspec (script+test move together)"
     )
+    enum_lines = [ln for ln in arm.splitlines() if "diff --name-only origin/main" in ln]
+    assert len(enum_lines) == 1, (
+        "the sibling arm must carry exactly ONE `diff --name-only origin/main` "
+        f"enumeration line (found {len(enum_lines)})"
+    )
+    for spec in (
+        "':(glob)scripts/issue[0-9]*_*.py'",
+        "':(glob)scripts/issue[0-9]*_*.sh'",
+        "':(glob)tests/test_issue[0-9]*_*.py'",
+    ):
+        assert spec in enum_lines[0], (
+            f"all three sibling pathspecs must co-occur on the enumeration line "
+            f"itself (missing {spec}) — the individual substring asserts above "
+            "would still pass if a glob moved into a comment while dropped from "
+            "the `done < <(git ... diff --name-only origin/main ...)` line (#2116)"
+        )
     assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in arm, (
         "the sibling arm's branch-side-edit exclusion must reuse the "
         "subject-anchored awk index() form verbatim (the pass-1 / Guard-3 "
@@ -674,4 +828,872 @@ def test_sibling_issue_file_arm_step5a_only():
         "the Step 10d auto-merge inline copy must NOT carry the sibling-issue "
         "arm (deliberate asymmetry, #1972 — the 10d TG legs run before the "
         "post-gate re-sync; document it in prose, never mirror the executable arm)"
+    )
+
+
+def test_sibling_sync_import_probe_pins():
+    """#2208: the sibling arm probes import-satisfiability of every synced
+    sibling TEST file BEFORE the sync commit. The #2206 shape: a main-NEW
+    sibling test imports a symbol added to src/ AFTER this branch's fork
+    point; the worktree src is branch-era, so pytest COLLECTION ImportErrors
+    in the Step 9c gate and `step9c_baseline.py compare` classifies the node
+    NEW (fail-closed — the file IS branch-diff-touched via the sync commit,
+    and the pristine oracle passes on main), walling the gate (~1h in #2206).
+    Pins: the real collection probe command + its timeout fence, the venv
+    warm-up outside the per-file fence, the skip-line anchors, the two revert
+    branches (branch-era restore vs main-NEW drop), and the
+    probe-before-commit ordering."""
+    arm = _sibling_arm_block(_step5a_span(_text()))
+    assert "pytest --collect-only -q" in arm, (
+        "the sibling arm must probe synced test files with a REAL collection "
+        "probe (pytest --collect-only -q) — a static module scan cannot see "
+        "symbol-level src skew, the #2206 shape"
+    )
+    assert "timeout --kill-after=15s 180s" in arm, (
+        "the per-file probe must be fenced (timeout --kill-after=15s 180s); "
+        "a probe timeout counts as failure (fail-safe: revert to staleness)"
+    )
+    assert "timeout 900s uv run python -c pass" in arm, (
+        "the arm must warm the worktree venv OUTSIDE the per-file fence (a "
+        "fresh worktree pays a full uv sync on its first uv run, which would "
+        "eat the 180s probe fence and revert legitimate syncs)"
+    )
+    assert "reverting its issue-" in arm, (
+        "the probe-failure skip line must announce the pair-atomic revert "
+        "(reverting its issue-<M> synced pair)"
+    )
+    assert "(#2208)" in arm, "the skip line must cite the fix task (#2208)"
+    assert 'git -C "$WT" rm -f -q -- "$f"' in arm, (
+        "the revert must handle the main-NEW shape (file absent from HEAD — "
+        "created by the sync checkout, staged, uncommitted): drop it from "
+        "index + working tree via git rm (`checkout HEAD --` would error "
+        "there, and main-NEW is exactly the #2206 incident shape)"
+    )
+    assert 'cat-file -e "HEAD:$f"' in arm, (
+        "the revert must branch on HEAD existence (branch-era file -> restore "
+        "branch-era content; main-NEW file -> drop from index + tree)"
+    )
+    subject = "sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)"
+    assert arm.index("pytest --collect-only -q") < arm.index(subject), (
+        "the probe must run BEFORE the sync commit (nothing poisoned is ever "
+        "committed; a post-commit probe would leave the poisoned file "
+        "byte-identical to origin/main and never re-enumerated by the arm's "
+        "diff on later rounds)"
+    )
+
+
+_SYNC_SUBJECT_2208 = (
+    "sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)"
+)
+
+
+def _run_git(cwd: Path, *args: str, env: dict) -> str:
+    """Run git in the scratch fixture (hermetic identity), failing loud."""
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(cwd),
+            "-c",
+            "user.email=eps-test@example.com",
+            "-c",
+            "user.name=EPS Test",
+            *args,
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, f"git {args} failed:\n{proc.stdout}\n{proc.stderr}"
+    return proc.stdout
+
+
+def test_sibling_sync_import_probe_repro_2206():
+    """#2208 functional repro of the #2206 shape through the SHIPPED arm text.
+
+    Scratch git fixture: origin/main advances past a branch's fork point with
+    (i) a poisoned main-NEW tests/test_issue2038_p.py importing a symbol that
+    main's src carries but the branch-era src copy lacks (the exact #2206
+    symbol-skew shape — the sync deliberately never touches src/), and (ii) a
+    legit import-satisfiable pair tests/test_issue1000_ok.py +
+    scripts/issue1000_helper.py. The executed block is exactly what
+    `_sibling_arm_block` returns (plus the completed closing echo line and the
+    literal `<N>` substituted), run under bash with a PATH-shimmed `uv` that
+    emulates `uv run pytest --collect-only -q <file>` by exec_module-ing the
+    file (REAL import execution; the shim tolerates the warm-up call). Expect:
+    the poisoned file reverted (absent from working tree AND index), the legit
+    pair synced AND committed under the sync-anchor subject, the #2206/#2208
+    skip line emitted, and the [step5a] echo reporting the post-revert count.
+    """
+    text = _text()
+    span = _step5a_span(text)
+    arm = _sibling_arm_block(span)
+    # _sibling_arm_block's end anchor sits INSIDE the closing echo line (the
+    # block ends with `echo "`); re-attach the remainder of that line so the
+    # executed script is the shipped prose, count echo included.
+    echo_start = span.index("[step5a] sibling-file sync:")
+    echo_end = span.index("\n", echo_start)
+    script_body = (arm + span[echo_start:echo_end]).replace("<N>", "9999")
+
+    # mkdtemp, not tmp_path: concurrent pytest sessions prune /tmp/pytest-of*
+    # numbered roots and can delete live scratch mid-test.
+    tmp = Path(tempfile.mkdtemp(prefix="eps2208repro-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"  # hermetic: no user/system git config
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+
+        origin = tmp / "origin.git"
+        _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
+
+        seed = tmp / "seed"
+        _run_git(tmp, "clone", str(origin), str(seed), env=env)
+        # Branch-era state: the src module EXISTS but lacks the symbol.
+        (seed / "src").mkdir()
+        (seed / "src" / "issue2038_srcmod.py").write_text("BRANCH_ERA = True\n")
+        _run_git(seed, "add", "src/issue2038_srcmod.py", env=env)
+        _run_git(seed, "commit", "-m", "branch-era src", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+
+        wt = tmp / "wt"
+        _run_git(tmp, "clone", str(origin), str(wt), env=env)
+        _run_git(wt, "checkout", "-b", "issue-9999", env=env)
+        # The arm's own commit runs bare `git -C "$WT" commit`; give the
+        # scratch clone a local identity (global config is /dev/null'd).
+        _run_git(wt, "config", "user.email", "eps-test@example.com", env=env)
+        _run_git(wt, "config", "user.name", "EPS Test", env=env)
+
+        # Advance origin/main PAST the fork point: the poisoned main-NEW test
+        # (its import is satisfiable only against main's src) + a legit pair.
+        (seed / "src" / "issue2038_srcmod.py").write_text(
+            "BRANCH_ERA = True\nSupersededSymbol = object()\n"
+        )
+        (seed / "tests").mkdir()
+        (seed / "tests" / "test_issue2038_p.py").write_text(
+            "from issue2038_srcmod import SupersededSymbol\n"
+            "\n"
+            "\n"
+            "def test_symbol():\n"
+            "    assert SupersededSymbol is not None\n"
+        )
+        (seed / "scripts").mkdir()
+        (seed / "scripts" / "issue1000_helper.py").write_text("OK = 1\n")
+        (seed / "tests" / "test_issue1000_ok.py").write_text("def test_ok():\n    assert True\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: poisoned test + legit pair", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        _run_git(wt, "fetch", "origin", env=env)
+
+        # PATH-shimmed `uv`: the warm-up (`uv run python -c pass`) exits 0; the
+        # collection probe exec_module's the target file with $WT/src on
+        # sys.path — REAL import execution, hermetic (a scratch repo has no uv
+        # project, so the real `uv run pytest` is environment-flaky here; the
+        # production probe STRING is pinned by
+        # test_sibling_sync_import_probe_pins).
+        shim_dir = tmp / "bin"
+        shim_dir.mkdir()
+        collect_shim = shim_dir / "collect_shim.py"
+        collect_shim.write_text(
+            "import importlib.util\n"
+            "import pathlib\n"
+            "import sys\n"
+            "\n"
+            "target = pathlib.Path(sys.argv[1]).resolve()\n"
+            'sys.path.insert(0, str(pathlib.Path.cwd() / "src"))\n'
+            "spec = importlib.util.spec_from_file_location(target.stem, target)\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)  # raises on branch-era symbol skew\n"
+        )
+        uv_shim = shim_dir / "uv"
+        uv_shim.write_text(
+            "#!/usr/bin/env bash\n"
+            "# Hermetic `uv` shim for the #2208 repro (see the test docstring).\n"
+            'if [ "$1" = "run" ] && [ "$2" = "python" ]; then\n'
+            "  exit 0\n"
+            "fi\n"
+            'if [ "$1" = "run" ] && [ "$2" = "pytest" ] && [ "$3" = "--collect-only" ] '
+            '&& [ "$4" = "-q" ]; then\n'
+            f'  exec "{sys.executable}" "{collect_shim}" "$5"\n'
+            "fi\n"
+            'echo "unexpected uv invocation: $*" >&2\n'
+            "exit 97\n"
+        )
+        uv_shim.chmod(0o755)
+
+        mb = _run_git(wt, "merge-base", "HEAD", "origin/main", env=env).strip()
+        script = tmp / "arm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["PATH"] = f"{shim_dir}:{env['PATH']}"
+        env_arm["WT"] = str(wt)
+        env_arm["MB"] = mb
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode == 0, f"arm run failed:\n{proc.stdout}\n{proc.stderr}"
+        out = proc.stdout
+
+        # (1) the poisoned file is ABSENT from working tree AND index post-arm.
+        assert not (wt / "tests" / "test_issue2038_p.py").exists(), (
+            "the poisoned main-NEW test must be dropped from the working tree"
+        )
+        ls = _run_git(wt, "ls-files", "--", "tests/test_issue2038_p.py", env=env)
+        assert ls.strip() == "", "the poisoned main-NEW test must be dropped from the index"
+        # (2) the legit pair is synced AND committed under the sync-anchor subject.
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert _SYNC_SUBJECT_2208 in subj, f"sync-anchor subject missing: {subj!r}"
+        committed = _run_git(wt, "show", "--name-only", "--format=", "HEAD", env=env)
+        assert "tests/test_issue1000_ok.py" in committed, "legit test must be committed"
+        assert "scripts/issue1000_helper.py" in committed, "legit paired script must be committed"
+        assert "test_issue2038_p.py" not in committed, "the poisoned file must never be committed"
+        # (3) the skip line with its #2206/#2208 anchors was emitted.
+        assert "reverting its issue-2038 synced pair (#2208)" in out, out
+        assert "#2206" in out, out
+        # (4) the [step5a] count echo reports the POST-revert survivor count.
+        assert "[step5a] sibling-file sync: 2 file(s)" in out, out
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# --- (17) rc-checked sync commits in BOTH copies (#2303 static pins) ---------
+
+
+def test_step5a_sync_commit_rc_checked():
+    """#2303 defect 2: the Step 5a family sync must CHECK the sync commit's
+    return code — a failed commit (crashed pre-commit hooks, the #2293
+    shape) prints a FATAL line naming the staged paths and exits non-zero;
+    the success echo fires only AFTER a verified commit and reports the
+    committed sha (never an unconditional staged diffstat over a
+    staged-but-uncommitted tree)."""
+    span = _step5a_span(_text())
+    rc_check = (
+        'if ! git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs '
+        'from origin/main (spec-freshness)" -- $SAFE_SPECS; then'
+    )
+    assert rc_check in span, (
+        "the Step 5a family sync commit must be rc-checked "
+        "(`if ! git ... commit ...; then` — #2303 defect 2)"
+    )
+    fatal = "[step5a] FATAL: family sync commit FAILED (rc != 0)"
+    assert fatal in span, (
+        "a failed Step 5a sync commit must announce itself with the [step5a] FATAL echo (#2303)"
+    )
+    assert "git -C \"$WT\" diff --cached --name-only -- $SAFE_SPECS | sed 's/^/  /' >&2" in span, (
+        "the FATAL arm must list the staged (failed) paths via "
+        "`diff --cached --name-only` on stderr"
+    )
+    fatal_idx = span.index(fatal)
+    committed_idx = span.index("SYNC_COMMITTED=yes")
+    assert "exit 1" in span[fatal_idx:committed_idx], (
+        "the FATAL arm must exit non-zero BEFORE the success path "
+        "(a green success echo over a failed commit is the #2293 defect)"
+    )
+    assert fatal_idx < committed_idx, (
+        "the rc-check FATAL arm must precede the SYNC_COMMITTED=yes success mark"
+    )
+    success = 'synced from origin/main: commit $(git -C "$WT" rev-parse --short=12 HEAD)'
+    assert success in span, (
+        "the success echo must report the COMMITTED sha (verified commit), "
+        "never a bare staged diffstat (#2303)"
+    )
+    assert span.index(rc_check) < span.index(success), (
+        "the success echo must come AFTER the rc-checked commit"
+    )
+    assert "no sync commit landed (no family drift, or the checkout errored above)" in span, (
+        "the no-sync branch must name BOTH possible causes — no drift OR an "
+        "errored (atomic, unmatched-pathspec) checkout — the R6 stale-fetch "
+        "degrade prints a git error immediately above (#2303 v2 nit 1)"
+    )
+
+
+def test_step10d_sync_commit_rc_checked():
+    """#2303 defect 2, Step 10d twin: SYNC_SHA must be read from `rev-parse
+    HEAD` only AFTER a VERIFIED sync commit, and the push must follow the
+    SYNC_SHA read — a failed commit aborts the whole merge invocation
+    (FATAL + exit 1) BEFORE gh pr ready/merge, leaving the lint verdict
+    file intact for the same-tip retry."""
+    span = _automerge_span(_text())
+    rc_check = (
+        'if ! git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs '
+        'from origin/main (spec-freshness)" -- $SAFE_SPECS_10D; then'
+    )
+    assert rc_check in span, (
+        "the Step 10d post-gate re-sync commit must be rc-checked "
+        "(`if ! git ... commit ...; then` — #2303 defect 2)"
+    )
+    fatal = "[step10d] FATAL: post-gate re-sync commit FAILED (rc != 0)"
+    assert fatal in span, (
+        "a failed 10d re-sync commit must announce itself with the "
+        "[step10d] FATAL echo and abort the merge attempt (#2303)"
+    )
+    assert (
+        "git -C \"$WT\" diff --cached --name-only -- $SAFE_SPECS_10D | sed 's/^/  /' >&2" in span
+    ), "the 10d FATAL arm must list the staged (failed) paths on stderr"
+    sync_sha_read = 'SYNC_SHA=$(git -C "$WT" rev-parse HEAD | head -c 12)'
+    assert sync_sha_read in span, (
+        "the 10d twin must still read SYNC_SHA from rev-parse HEAD "
+        "(now only after a verified commit)"
+    )
+    fatal_idx = span.index(fatal)
+    sha_idx = span.index(sync_sha_read)
+    assert "exit 1" in span[fatal_idx:sha_idx], (
+        "the 10d FATAL arm must exit non-zero BEFORE the SYNC_SHA read — a "
+        "failed commit previously yielded the PRE-commit sha, then pushed, "
+        "then fed the verdict re-bind stanza (#2303 defect 2)"
+    )
+    assert fatal_idx < sha_idx, (
+        "ordering must be FATAL rc-check < SYNC_SHA read (SYNC_SHA is read "
+        "only after a VERIFIED commit)"
+    )
+    # The stanza's own push (searched AFTER the SYNC_SHA read — the span
+    # carries an unrelated earlier `push origin issue-<N>` in the pre-PR
+    # section) must sit between the SYNC_SHA read and the SYNC_COUNT echo:
+    # the push ships only a verified sync commit.
+    push_idx = span.index("push origin issue-<N>", sha_idx)
+    count_idx = span.index("SYNC_COUNT=", sha_idx)
+    assert sha_idx < push_idx < count_idx, (
+        "the stanza's push must follow the verified-commit SYNC_SHA read "
+        "and precede the SYNC_COUNT echo (never push an unverified sync)"
+    )
+
+
+# --- (18) behavioral repros of both #2293 defect shapes (#2303) --------------
+
+
+def _family_arm_block(span: str) -> str:
+    """Extract the Step 5a FAMILY arm from the Step 5a span: FAMILY_OF +
+    SPECS + the bounded fetch + MB derivation + pass 1 (incl. the #1972
+    dirt arm) + pass 2 + the rc-checked sync stanza + the observability
+    echo — everything from the family declaration up to the sibling-issue
+    arm. The extracted text is the SHIPPED block, executable under bash
+    with $WT supplied via env (same convention as the #2208 repro)."""
+    start = span.index("declare -A FAMILY_OF")
+    end = span.index("# Sibling-issue file freshness (#1972)", start)
+    return span[start:end]
+
+
+# Post-#2303 SPECS pathspecs, one fork-era stub file per pathspec EXCEPT the
+# caps file: `git checkout <ref> -- <pathspecs>` is ATOMIC and exits non-zero
+# checking out NOTHING when any pathspec matches nothing at the ref, so every
+# other member must resolve at origin/main. The caps file is deliberately
+# main-NEW (added only in the advance commit) — the exact #2293 topology.
+_FORK_STUBS_2303 = (
+    ".claude/agents/x.md",
+    ".claude/agent-memory/x/MEMORY.md",
+    ".claude/skills/issue/SKILL.md",
+    ".claude/rules/x.md",
+    ".claude/workflow.yaml",
+    "CLAUDE.md",
+    "scripts/workflow_lint.py",
+    "scripts/select_step9c_tests.py",
+    ".claude/hooks/x.sh",
+    "scripts/guard_x.sh",
+    "tests/test_guard_lessons_edit.py",
+    "tests/test_workflow_yaml.py",
+    "tests/test_autonomous_session_watch.py",
+    "tests/test_select_step9c_tests.py",
+    "tests/step9c_workflow_invariant_manifest.txt",
+    "tests/test_workflow_lint_x.py",
+    "tests/test_guard_x.py",
+    "tests/issue_skill_source.py",
+    "tests/test_issue_skill_x.py",
+)
+
+_SYNC_SUBJECT_2303 = "issue-9999: sync workflow-surface specs from origin/main (spec-freshness)"
+
+
+def _family_sync_fixture(tmp: Path, env: dict) -> Path:
+    """Scratch bare origin + a wt clone on issue-9999 whose origin/main has
+    advanced past the fork point by a scripts/workflow_lint.py edit + the
+    main-NEW .claude/config/agent_spec_size_caps.txt (the #2293 topology).
+    Returns the wt path; the wt has already fetched origin."""
+    origin = tmp / "origin.git"
+    _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
+    seed = tmp / "seed"
+    _run_git(tmp, "clone", str(origin), str(seed), env=env)
+    for rel in _FORK_STUBS_2303:
+        p = seed / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(f"fork-era stub: {rel}\n")
+    _run_git(seed, "add", "-A", env=env)
+    _run_git(seed, "commit", "-m", "fork-era stubs", env=env)
+    _run_git(seed, "push", "origin", "main", env=env)
+
+    wt = tmp / "wt"
+    _run_git(tmp, "clone", str(origin), str(wt), env=env)
+    _run_git(wt, "checkout", "-b", "issue-9999", env=env)
+    # The arm's own commit runs bare `git -C "$WT" commit`; give the scratch
+    # clone a local identity (global config is /dev/null'd).
+    _run_git(wt, "config", "user.email", "eps-test@example.com", env=env)
+    _run_git(wt, "config", "user.name", "EPS Test", env=env)
+
+    # Advance origin/main PAST the fork point: modify the linter + ADD its
+    # import-time data file (the pair the family sync must carry together).
+    (seed / "scripts" / "workflow_lint.py").write_text(
+        "fork-era stub: scripts/workflow_lint.py\nMAIN_SIDE_FIX = True\n"
+    )
+    (seed / ".claude" / "config").mkdir(parents=True)
+    (seed / ".claude" / "config" / "agent_spec_size_caps.txt").write_text("x.md 1_000\n")
+    _run_git(seed, "add", "-A", env=env)
+    _run_git(seed, "commit", "-m", "main-side: linter fix + main-NEW caps data file", env=env)
+    _run_git(seed, "push", "origin", "main", env=env)
+    _run_git(wt, "fetch", "origin", env=env)
+    return wt
+
+
+def test_family_sync_data_dep_repro_2303():
+    """#2303 defect 1 repro (shape a — the #2293 strand) through the SHIPPED
+    family arm under real git: origin/main advances with a linter edit + the
+    main-NEW caps data file; the family sync must carry BOTH in, in ONE sync
+    commit, and the success echo must report the verified commit's sha.
+    Against the pre-fix block (no caps token in SPECS) the caps file never
+    reaches the worktree — the synced linter would raise FileNotFoundError
+    at import in every hook that shells it."""
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    # mkdtemp, not tmp_path: concurrent pytest sessions prune /tmp/pytest-of*
+    # numbered roots and can delete live scratch mid-test.
+    tmp = Path(tempfile.mkdtemp(prefix="eps2303repro-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"  # hermetic: no user/system git config
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+
+        # (1) the linter's import-time data file synced in WITH the linter.
+        assert (wt / ".claude" / "config" / "agent_spec_size_caps.txt").exists(), (
+            "the caps data file must sync in pair-atomically with "
+            "scripts/workflow_lint.py — a synced linter without it raises "
+            "FileNotFoundError in every hook that shells it (#2293)"
+        )
+        # (2) the pair landed in ONE sync commit under the sync-anchor subject.
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert subj == _SYNC_SUBJECT_2303, f"sync-anchor subject missing: {subj!r}"
+        committed = _run_git(wt, "show", "--name-only", "--format=", "HEAD", env=env)
+        assert "scripts/workflow_lint.py" in committed, "the linter must be in the sync commit"
+        assert ".claude/config/agent_spec_size_caps.txt" in committed, (
+            "the caps data file must be in the SAME sync commit as the linter"
+        )
+        # (3) the success echo reports the verified commit's sha.
+        short = _run_git(wt, "rev-parse", "--short=12", "HEAD", env=env).strip()
+        assert f"[step5a] synced from origin/main: commit {short}" in proc.stdout, proc.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_family_sync_commit_failure_fatal_repro_2303():
+    """#2303 defect 2 repro (shape b) through the SHIPPED family arm under
+    real git: a failing pre-commit hook (the faithful rc-level proxy for the
+    incident's three crashed linter-shelling hooks) makes the sync commit
+    fail — the block must exit non-zero with a FATAL stderr line naming the
+    staged paths, print NO success line, and leave the synced set staged
+    (uncommitted) for inspection. Against the pre-fix block the commit
+    failure was swallowed: the success diffstat printed and the block
+    exited 0 over a staged-but-uncommitted tree (the #2293 defect)."""
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    tmp = Path(tempfile.mkdtemp(prefix="eps2303fatal-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env)
+
+        # Failing hook: rc-level proxy for the #2293 crashed pre-commit hooks.
+        hooks = wt / ".git" / "hooks"
+        hooks.mkdir(parents=True, exist_ok=True)
+        hook = hooks / "pre-commit"
+        hook.write_text("#!/bin/sh\nexit 1\n")
+        hook.chmod(0o755)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode != 0, (
+            "a failed sync commit must exit the block non-zero — pre-fix it "
+            f"exited 0 over a staged-but-uncommitted tree (#2293)\n"
+            f"{proc.stdout}\n{proc.stderr}"
+        )
+        assert "FATAL" in proc.stderr, f"the failure must be a FATAL stderr line:\n{proc.stderr}"
+        assert "scripts/workflow_lint.py" in proc.stderr, (
+            "the FATAL arm must name the staged (failed) paths — "
+            f"scripts/workflow_lint.py missing from:\n{proc.stderr}"
+        )
+        combined = proc.stdout + proc.stderr
+        assert "[step5a] synced from origin/main:" not in combined, (
+            "NO success line may print on a failed sync commit (#2293 defect 2)"
+        )
+        staged = _run_git(wt, "diff", "--cached", "--name-only", env=env)
+        assert staged.strip() != "", "the synced set must be left STAGED for inspection"
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert subj != _SYNC_SUBJECT_2303, "no sync commit may land when the hook fails"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# --- (19) family-synced test files' tests.<mod> imports are sync-coverable (#2352) --
+
+_REPO = Path(__file__).resolve().parents[1]
+
+# Helper modules a family-synced test may import WITHOUT a SPECS token, each
+# with a documented rationale. conftest: tests/test_autonomous_session_watch.py
+# imports two tests.conftest symbols, but conftest.py is pytest-auto-loaded by
+# the WHOLE tests tree and pairs with the branch's OWN tests — syncing it from
+# main is exactly the "blind-syncing broader tests/ is actively unsafe" case
+# the boundary paragraph bans, so it is a NAMED accepted seam (same remedy
+# class as the src seams: a skew fails loud at collection; rebase onto
+# origin/main, or cross-check at the repo root).
+_EXEMPT_HELPER_MODULES = frozenset({"conftest"})
+
+
+def _specs_tokens(span: str) -> list[str]:
+    """The Step 5a SPECS pathspec tokens (test (14)'s extraction)."""
+    m = re.search(r'^\s*SPECS="([^"]+)"', span, flags=re.M)
+    assert m, "Step 5a must declare SPECS as a one-line double-quoted assignment"
+    return m.group(1).split()
+
+
+def _family_of_map(span: str) -> dict[str, str]:
+    """Every FAMILY_OF["<path>"]="<fam>" assignment in the span, keyed by
+    path. Comment-tolerant: only the line prefix through the closing quote
+    is matched, so a trailing `# ...` comment cannot hide an assignment."""
+    return {
+        m.group(1): m.group(2)
+        for m in re.finditer(r'^\s*FAMILY_OF\["([^"]+)"\]="(\w+)"', span, flags=re.M)
+    }
+
+
+def _family_synced_test_files(
+    tokens: list[str], family_of: dict[str, str]
+) -> dict[Path, list[tuple[str, str | None]]]:
+    """Enumerate the family-synced tests/*.py files mechanically from the
+    SPECS tokens: every existing repo file matched by a `:(glob)tests/...`
+    token plus every explicit `tests/*.py` token. Maps each file to its
+    sync ROUTES — one (token, family) tuple per SPECS token matching it,
+    family = FAMILY_OF[token] or None for a SINGLETON token (no FAMILY_OF
+    entry — the token is its own family). Each SPECS token syncs iff ITS
+    OWN family is clean (pass-2 per-token semantics), so every route is an
+    INDEPENDENT freshness channel: a multi-route file can arrive fresh
+    through ANY one of its routes."""
+    out: dict[Path, list[tuple[str, str | None]]] = {}
+    for tok in tokens:
+        if tok.startswith(":(glob)"):
+            pattern = tok[len(":(glob)") :]
+            if not pattern.startswith("tests/"):
+                continue
+            fam = family_of.get(tok)
+            for p in sorted(_REPO.glob(pattern)):
+                if p.suffix == ".py" and p.is_file():
+                    out.setdefault(p, []).append((tok, fam))
+        elif tok.startswith("tests/") and tok.endswith(".py"):
+            p = _REPO / tok
+            if p.is_file():
+                out.setdefault(p, []).append((tok, family_of.get(tok)))
+    return out
+
+
+def _tests_module_imports(src: str) -> set[str]:
+    """First-level `tests.<mod>` modules imported by a test file's source,
+    collected via `ast.parse` over the WHOLE module (module-level and
+    nested/function-body import statements alike):
+
+    - `from tests import a, b as c` -> {"a", "b"} (each alias name; a
+      Black/ruff-style parenthesized multiline form is the same ImportFrom
+      node, so it parses identically),
+    - `from tests.a import x` / `from tests.a.b import x` -> {"a"} (the
+      first component after "tests."),
+    - `import tests.a, tests.b` / `import tests.a as t` -> {"a", "b"}.
+
+    The AST never contains string literals as statements, so import-looking
+    lines inside docstrings / triple-quoted fixtures can never
+    false-positive. A multi-level package import (`tests.a.b`) is
+    deliberately REDUCED to its first component: the coverage target
+    becomes `tests/a.py`, a FILE path a package DIRECTORY can never
+    satisfy, so a new multi-level import FAILS guard (19) until it gets an
+    explicit disposition — fail-loud, never a silent escape (none exist
+    today). Known false negatives, disclosed by design: dynamic imports
+    (`importlib.import_module` / `__import__` on a string) have no static
+    import node, and RELATIVE imports (`from .mod import x` — level >= 1)
+    are not collected (no family-synced test uses them; the repo
+    convention is absolute `tests.` imports)."""
+    mods: set[str] = set()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                parts = alias.name.split(".")
+                if parts[0] == "tests" and len(parts) >= 2:
+                    mods.add(parts[1])
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            if node.module == "tests":
+                for alias in node.names:
+                    mods.add(alias.name)
+            elif node.module.startswith("tests."):
+                mods.add(node.module.split(".")[1])
+    return mods
+
+
+def _helper_coverage(
+    mod: str, tokens: list[str], family_of: dict[str, str]
+) -> tuple[bool, set[str]]:
+    """Coverage facts for tests/<mod>.py against the SPECS tokens, returned
+    as (singleton_covered, families). singleton_covered is True when the
+    helper's exact path is an EXPLICIT SPECS token with NO FAMILY_OF entry:
+    a singleton syncs whenever it is ITSELF clean, so no other file's dirt
+    can family-skip it — route-independent coverage (the #2352
+    disposition). families is the set of FAMILY_OF families of tokens
+    (glob or explicit) matching the helper. A singleton GLOB matching the
+    helper deliberately contributes NEITHER: its dirt scope spans every
+    file the glob matches, so another matched file's dirt can still skip
+    the helper (conservative; no such token exists today)."""
+    target = f"tests/{mod}.py"
+    singleton = False
+    fams: set[str] = set()
+    for tok in tokens:
+        if tok.startswith(":(glob)"):
+            if fnmatch.fnmatch(target, tok[len(":(glob)") :]):
+                fam = family_of.get(tok)
+                if fam is not None:
+                    fams.add(fam)
+        elif tok == target:
+            fam = family_of.get(tok)
+            if fam is None:
+                singleton = True
+            else:
+                fams.add(fam)
+    return singleton, fams
+
+
+def _import_covered(
+    mod: str,
+    importer_routes: list[tuple[str, str | None]],
+    tokens: list[str],
+    family_of: dict[str, str],
+) -> bool:
+    """True when tests/<mod>.py is guaranteed sync-coverable alongside an
+    importer that can arrive fresh through ANY of importer_routes. Because
+    each SPECS token syncs iff ITS OWN family is clean, every route is an
+    independent freshness channel, so coverage quantifies UNIVERSALLY over
+    the importer's routes:
+
+    - the helper is itself a SINGLETON SPECS token (route-independent —
+      syncs whenever itself clean), OR
+    - on EVERY route: the route carries a family F (a singleton importer
+      token carries none — only the singleton-helper arm can cover that
+      route) and some SPECS token matching the helper is assigned that
+      SAME family F.
+
+    An EXISTENTIAL read (covered through at least one of the importer's
+    families) is exactly the round-1 defect: an importer matched by tokens
+    in TWO families syncs fresh through EITHER, so helper coverage in only
+    one leaves the other route recreating the #2352 ModuleNotFoundError
+    half-sync."""
+    singleton, helper_fams = _helper_coverage(mod, tokens, family_of)
+    if singleton:
+        return True
+    if not importer_routes:
+        return False
+    return all(fam is not None and fam in helper_fams for _tok, fam in importer_routes)
+
+
+def _uncovered_imports(
+    files: dict[Path, list[tuple[str, str | None]]],
+    tokens: list[str],
+    family_of: dict[str, str],
+) -> list[str]:
+    """Guard (19)'s problem collector: one line per (family-synced test
+    file, uncovered tests.<mod> import) pair, naming the importer's sync
+    routes. Factored out so the pre-#2352-spec-shape non-vacuity test can
+    run the identical predicate against a mutated token list."""
+    problems: list[str] = []
+    for path in sorted(files):
+        routes = files[path]
+        src = path.read_text(encoding="utf-8")
+        for mod in sorted(_tests_module_imports(src)):
+            if mod in _EXEMPT_HELPER_MODULES:
+                continue
+            if not _import_covered(mod, routes, tokens, family_of):
+                route_desc = ", ".join(
+                    f"{tok} [{fam if fam is not None else 'singleton'}]" for tok, fam in routes
+                )
+                problems.append(
+                    f"{path.relative_to(_REPO).as_posix()} (routes: {route_desc}) "
+                    f"imports tests.{mod}"
+                )
+    return problems
+
+
+def test_family_synced_test_helper_imports_covered():
+    """#2352 forward guard: every `tests.<mod>` import in any FAMILY-SYNCED
+    test file must be sync-coverable on EVERY route through which the
+    importer can arrive fresh — per route, a same-family token/glob for the
+    helper; route-independently, the helper itself a SINGLETON token — so
+    the NEXT main-side helper module a family-synced test imports makes
+    THIS suite red on main (the skew is unshippable) instead of red-ing a
+    worktree's Step 9c gate with a ModuleNotFoundError half-sync (the
+    #2352 incident: 66 collection errors in the issue-2333 worktree).
+    Cross-family / partial-route coverage is deliberately NOT sufficient:
+    families dirty-skip independently and each matching SPECS token is its
+    own sync channel, so a helper covered on only SOME of an importer's
+    routes can still be skipped while the importer syncs fresh through
+    another. Imports are collected via `ast.parse` (parenthesized
+    multiline, comma-separated, and aliased forms included; string
+    literals invisible); the collector's disclosed false negatives —
+    dynamic/importlib imports, relative imports — keep the Step 9c gate as
+    the runtime backstop, and a multi-level `tests.a.b` import fails this
+    guard by construction (see _tests_module_imports)."""
+    text = _text()
+    span = _step5a_span(text)
+    tokens = _specs_tokens(span)
+    family_of = _family_of_map(span)
+    files = _family_synced_test_files(tokens, family_of)
+    # Enumeration sanity: the skill-pin glob alone matches dozens of files;
+    # an empty/thin enumeration means the extraction broke, not a clean tree.
+    assert len(files) >= 10, (
+        f"family-synced test-file enumeration looks broken: only "
+        f"{len(files)} files resolved from the SPECS tokens {tokens!r}"
+    )
+    problems = _uncovered_imports(files, tokens, family_of)
+    assert not problems, (
+        "family-synced test file(s) import a tests.<mod> helper the Step 5a "
+        "SPECS tokens cannot guarantee to sync alongside them on EVERY sync "
+        "route — the Step 5a family sync can pull these tests into a "
+        "worktree WITHOUT the helper (the #2352 ModuleNotFoundError "
+        "half-sync; 66 collection errors). Remedies: (a) add tests/<mod>.py "
+        "to SPECS + SPECS_10D as a SINGLETON token (the #2352 disposition — "
+        "required when the helper's importers span families, sync through a "
+        "singleton token, or live in unsynced tests), (b) add it as a "
+        "same-family token for EVERY family named by every importer's "
+        "routes (right only when all routes carry families and the helper "
+        "is assigned each of them), or (c) add the module to "
+        "_EXEMPT_HELPER_MODULES with a documented rationale (the conftest "
+        "shape). Uncovered imports:\n  " + "\n  ".join(problems)
+    )
+
+
+def test_tests_module_imports_collector_fixtures():
+    """#2352 round 2: the AST import collector handles ordinary valid
+    import syntax the round-1 line regexes missed — exact expected module
+    sets per fixture (the two BLOCKER-verified gaps plus the documented
+    reductions)."""
+    # (i) Black/ruff-style parenthesized multiline import-from: the regex
+    # matched only "(" -> empty set; AST sees one ImportFrom node.
+    src = "from tests import (\n    new_helper,\n    other_helper,\n)\n"
+    assert _tests_module_imports(src) == {"new_helper", "other_helper"}
+    # (ii) comma-separated plain import: the regex recorded only the first.
+    assert _tests_module_imports("import tests.a, tests.b\n") == {"a", "b"}
+    # (iii) aliased forms in all three shapes.
+    assert _tests_module_imports("from tests import helper_a as h\n") == {"helper_a"}
+    assert _tests_module_imports("from tests.foo import bar as baz\n") == {"foo"}
+    assert _tests_module_imports("import tests.mod_x as mx\n") == {"mod_x"}
+    # (iv) import-looking lines inside a triple-quoted string / docstring:
+    # must detect NOTHING (the regex false-positive class).
+    src = '"""\nfrom tests.phantom import x\nimport tests.ghost\n"""\nX = 1\n'
+    assert _tests_module_imports(src) == set()
+    # Documented multi-level reduction: tests.a.b records the FIRST
+    # component only (whose tests/a.py coverage target then fails guard 19
+    # by construction — a package dir is never a SPECS file token).
+    assert _tests_module_imports("from tests.pkg.sub import x\n") == {"pkg"}
+    assert _tests_module_imports("import tests.pkg.sub\n") == {"pkg"}
+    # Nested (function-body) imports are collected; non-tests imports are not.
+    src = "def f():\n    from tests.lazy_helper import thing\n    import os\n"
+    assert _tests_module_imports(src) == {"lazy_helper"}
+    assert _tests_module_imports("import os\nfrom pathlib import Path\n") == set()
+
+
+def test_import_covered_route_quantifier_fixtures():
+    """#2352 round 2: coverage quantifies UNIVERSALLY over an importer's
+    sync routes (synthetic-token fixtures per the reconciler's mechanizable
+    spec). The round-1 existential predicate returned covered on fixtures
+    (a) and (b); this pin holds the universal semantics."""
+    wf_glob = ":(glob)tests/test_wf_*.py"
+    tokens = [
+        wf_glob,
+        "tests/test_wf_lintish.py",
+        "tests/helper_wf.py",
+        "tests/helper_single.py",
+    ]
+    family_of = {
+        wf_glob: "workflow",
+        "tests/test_wf_lintish.py": "lint",
+        "tests/helper_wf.py": "workflow",
+        # tests/helper_single.py deliberately has NO entry — singleton.
+    }
+    # (a) importer syncs through a workflow-family glob AND a lint-family
+    # explicit token; helper covered only in the workflow family ->
+    # UNCOVERED (a dirty workflow family + clean lint family syncs the
+    # importer fresh through the lint route while the helper is skipped).
+    two_family_routes = [(wf_glob, "workflow"), ("tests/test_wf_lintish.py", "lint")]
+    assert not _import_covered("helper_wf", two_family_routes, tokens, family_of)
+    # (b) importer with a singleton route + a family route; helper only
+    # family-covered -> UNCOVERED (nothing guarantees co-sync with the
+    # importer's own singleton token, which syncs whenever ITSELF clean).
+    singleton_routes = [("tests/test_wf_selfsync.py", None), (wf_glob, "workflow")]
+    assert not _import_covered("helper_wf", singleton_routes, tokens, family_of)
+    # (c) a SINGLETON helper is route-independent: covered in both cases.
+    assert _import_covered("helper_single", two_family_routes, tokens, family_of)
+    assert _import_covered("helper_single", singleton_routes, tokens, family_of)
+    # Same-family multi-route overlap (the live test_guard_lessons_edit.py
+    # shape: guard glob + explicit guard token) stays covered when the
+    # helper is assigned that one shared family.
+    family_of_same = dict(family_of)
+    family_of_same["tests/test_wf_extra.py"] = "workflow"
+    same_family_routes = [(wf_glob, "workflow"), ("tests/test_wf_extra.py", "workflow")]
+    assert _import_covered(
+        "helper_wf", same_family_routes, [*tokens, "tests/test_wf_extra.py"], family_of_same
+    )
+    # A helper matched ONLY by a SINGLETON GLOB is deliberately NOT
+    # route-independent coverage (the glob's dirt scope spans every file it
+    # matches, so another matched file's dirt can still skip the helper).
+    tokens_glob = [":(glob)tests/helper_g*.py", wf_glob]
+    family_of_glob = {wf_glob: "workflow"}
+    assert not _import_covered("helper_glob", [(wf_glob, "workflow")], tokens_glob, family_of_glob)
+
+
+def test_guard_19_fails_on_pre_2352_spec_shape():
+    """Non-vacuity re-pin: with the #2352 singleton token removed from the
+    LIVE SPECS token list (the pre-fix spec shape), guard (19)'s predicate
+    reports the incident — every test_issue_skill_* pin test imports
+    tests.issue_skill_source, which no remaining token can sync. Run
+    against the real composed spec + real repo tree, so the check tracks
+    the live configuration rather than a frozen fixture."""
+    text = _text()
+    span = _step5a_span(text)
+    tokens = [t for t in _specs_tokens(span) if t != "tests/issue_skill_source.py"]
+    assert "tests/issue_skill_source.py" not in tokens
+    family_of = _family_of_map(span)
+    files = _family_synced_test_files(tokens, family_of)
+    problems = _uncovered_imports(files, tokens, family_of)
+    assert any("imports tests.issue_skill_source" in p for p in problems), (
+        "guard (19) must FAIL on the pre-#2352 spec shape (helper token "
+        f"absent) — the guard would be vacuous; got problems={problems!r}"
     )

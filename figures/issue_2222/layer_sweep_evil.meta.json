@@ -1,0 +1,1462 @@
+{
+  "commit": "99f9e975+dirty",
+  "render_id": "3d35bfd3af2e416f",
+  "git_commit": "99f9e975",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2222/layer_sweep_sycophancy.meta.json",
+    "figures/issue_2222/layer_sweep_sycophancy.pdf",
+    "figures/issue_2222/layer_sweep_sycophancy.png",
+    "scripts/issue2222_figures.py"
+  ],
+  "created": "2026-08-11T10:02:32Z",
+  "figsize": [
+    12.0,
+    6.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Pearson r": 0.5592763766646384,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Pearson r": 0.5592763766646384,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Pearson r": 0.549882486050034,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Pearson r": 0.5499465631165956,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Pearson r": 0.644522480285746,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Pearson r": 0.6779191746372493,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Pearson r": 0.7280211782738033,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Pearson r": 0.7278792522999388,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Pearson r": 0.8066075033499295,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Pearson r": 0.809769436246014,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Pearson r": 0.6351490028453353,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Pearson r": 0.7350692831027414,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Pearson r": 0.6998194601295415,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Pearson r": 0.673263912385018,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "Pearson r": 0.7406555924620601,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "Pearson r": 0.6833207899520006,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "Pearson r": 0.7696253674369385,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "Pearson r": 0.7264577707468609,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "Pearson r": 0.7931001994047981,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "Pearson r": 0.8090615142606008,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "Pearson r": 0.8425126076672406,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "Pearson r": 0.7927663638678577,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "Pearson r": 0.7994827348826924,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "Pearson r": 0.8766738826079663,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "Pearson r": 0.8651453647497822,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "Pearson r": 0.8651721190460284,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "Pearson r": 0.8453950738463194,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "Pearson r": 0.862136296168136,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "Pearson r": 0.8322467817580586,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "Pearson r": 0.9163421502707647,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "Pearson r": 0.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "Pearson r": 1.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": 0.5297211527824401,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 0.5297211527824401,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.787847747577971,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.7595476787747277,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.8123302070965066,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.8292165900694171,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.8566290446814531,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.8562645483886426,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.886587284268137,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "y": 0.9053725949731292,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 0.9151952888671108,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "y": 0.9243663784567254,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "y": 0.9300407332986191,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "y": 0.9294561738901643,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "y": 0.9404938683644206,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 13.0,
+      "y": 0.9405197064487185,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "y": 0.9463514691148853,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 15.0,
+      "y": 0.9514439640861996,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "y": 0.9533777292747816,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 17.0,
+      "y": 0.9524424450214822,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 18.0,
+      "y": 0.9514780688261083,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "y": 0.9461180573215029,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 20.0,
+      "y": 0.9439573962504827,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 21.0,
+      "y": 0.9497987816995885,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 22.0,
+      "y": 0.9516307755854582,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 23.0,
+      "y": 0.9403618588619551,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 24.0,
+      "y": 0.9365317812396234,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 25.0,
+      "y": 0.9427787271079322,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 26.0,
+      "y": 0.9343156124545245,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 27.0,
+      "y": 0.9218579044292492,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "y": 0.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "y": 1.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.5690560325980186,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.5690560325980186,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.5379033305002217,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.5616264639884918,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.6451396598579524,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.6469982805338161,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.6579055008707703,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.6276035120373268,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.807728912231128,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": 0.7653065312277575,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.7515832026806508,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": 0.8060353434167,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": 0.8225443251466437,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": 0.8488559190627095,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": 0.8251533165788032,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 13.0,
+      "y": 0.8942779287231114,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 14.0,
+      "y": 0.9037968298598567,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 15.0,
+      "y": 0.9014206797079982,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "y": 0.9038428175623177,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 17.0,
+      "y": 0.9045894169889802,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 18.0,
+      "y": 0.9452189328747493,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "y": 0.9353076862795573,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 20.0,
+      "y": 0.954435742767142,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 21.0,
+      "y": 0.940215003713503,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 22.0,
+      "y": 0.9454060303016096,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 23.0,
+      "y": 0.9408146218987804,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 24.0,
+      "y": 0.9588977855479828,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 25.0,
+      "y": 0.9550374099544032,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 26.0,
+      "y": 0.9294776907260914,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 27.0,
+      "y": 0.8516691017482336,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "y": 0.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 19.0,
+      "y": 1.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer index": 0.0,
+      "Pearson r": 0.5539397522807119,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 1.0,
+      "Pearson r": 0.5539397522807119,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 0.0,
+      "Pearson r": 0.020743441378723443,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 1.0,
+      "Pearson r": 0.09727902703021035,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 2.0,
+      "Pearson r": 0.2015490461622802,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 3.0,
+      "Pearson r": 0.40950901981716864,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 4.0,
+      "Pearson r": 0.4551800774606376,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 5.0,
+      "Pearson r": 0.4604344553022364,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 6.0,
+      "Pearson r": 0.4590396553276964,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 7.0,
+      "Pearson r": 0.47368577680696783,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 8.0,
+      "Pearson r": 0.5109503046971461,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 9.0,
+      "Pearson r": 0.5359649603251437,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 10.0,
+      "Pearson r": 0.5311255695953707,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 11.0,
+      "Pearson r": 0.5415474265517007,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 12.0,
+      "Pearson r": 0.5550461011197075,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 13.0,
+      "Pearson r": 0.5591080089470466,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 14.0,
+      "Pearson r": 0.5702843899059327,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 15.0,
+      "Pearson r": 0.5851372159639824,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 16.0,
+      "Pearson r": 0.5847809196955311,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 17.0,
+      "Pearson r": 0.5953669550610381,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 18.0,
+      "Pearson r": 0.5992277780752672,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r": 0.6070523514094652,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 20.0,
+      "Pearson r": 0.6196315153191234,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 21.0,
+      "Pearson r": 0.588166692641778,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 22.0,
+      "Pearson r": 0.5978666229131273,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 23.0,
+      "Pearson r": 0.6198654375487694,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 24.0,
+      "Pearson r": 0.5857137245531688,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 25.0,
+      "Pearson r": 0.515893422123423,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 26.0,
+      "Pearson r": 0.500026690612007,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 27.0,
+      "Pearson r": 0.5973565274884064,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r": 0.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r": 1.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.5592763766646384,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.5592763766646384,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.5498824860500333,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.5499465631165958,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.6445224802857458,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.6779191746372489,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.7280211782738032,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.7278792522999391,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.8066075033499296,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.8097694362460138,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.6351490028453352,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.7350692831027413,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.6998194601295418,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.6732639123850179,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.74065559246206,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.6833207899520006,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.7696253674369387,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.7264577707468609,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.7931001994047981,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.8090615142606009,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.8425126076672406,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.7927663638678579,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.7994827348826923,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.876673882607966,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.8651453647497825,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.8651721190460282,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.8453950738463193,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.8621362961681358,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.8322467817580587,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.9163421502707647,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer index": 19.0,
+      "y": 1.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.5721784472465514,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.5721784472465514,
+      "series": "Selection-symmetric (max-selected) p97.5",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.5132991409090835,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.5402240175438111,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.6194194811942304,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.6202752938068012,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.6306869258666471,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.5996723301116432,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.7960591115562086,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.7601428144684994,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.7473043262933668,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.8024355522657148,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.8220262295264336,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.846758056893302,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.8182737215268867,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.8835538865399962,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.8961527785764222,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.8947322243739755,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.9005887816341336,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.8975186770282777,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.940772348473731,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.9347095482881397,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.9531283928102012,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.9375098177356874,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.9446201006775488,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.9415183198620065,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.9584789551766537,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.952017775928942,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.9256518163491765,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.8318652804465008,
+      "series": "Observed r",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer index": 19.0,
+      "y": 1.0,
+      "series": "Steering layer",
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 192,
+  "text": {
+    "suptitle": "Evil \u2014 r per layer; per-layer permutation band + max-selected p97.5 line",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Raw projection",
+        "ylabel": "Pearson r",
+        "legend_labels": [
+          "Per-layer 97.5% permutation band",
+          "Selection-symmetric (max-selected) p97.5",
+          "Observed r",
+          "Steering layer"
+        ],
+        "yticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "Exact \u0394P (base generation)"
+      },
+      {
+        "title_left": "Prompt-token \u0394P"
+      },
+      {
+        "title_left": "Mapped \u0394P (context)",
+        "xlabel": "Layer index",
+        "ylabel": "Pearson r",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "Mapped \u0394P (prefix)",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "Identity + learned bias \u0394P",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "Selection-symmetric (max-selected) p97.5",
+      "Observed r",
+      "Steering layer",
+      "Per-layer 97.5% permutation band"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

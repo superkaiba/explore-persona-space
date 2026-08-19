@@ -50,7 +50,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 6 Contrastive negatives | critic.md Methodology 6 | v2-owner: methodology-baselines-critic |
 | 7 Replication fidelity | critic.md Methodology 7 | v2-owner: methodology-baselines-critic |
 | 8 Few-shot / ICL demonstration content | critic.md Methodology 8 | v2-owner: methodology-baselines-critic |
-| 9 Trained-artifact + code reuse fitness (a)-(l) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
+| 9 Trained-artifact + code reuse fitness (a)-(m) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
 | 10 CPU/analysis-phase placement (i)-(iv) | critic.md Methodology 10 | v2-owner: efficiency-critic |
 | 11 Marker stopping recipe + runtime-guard smoke-verifiability | critic.md Methodology 11 | v2-owner: methodology-baselines-critic |
 | 12 Multi-arm resolution-band simultaneity | critic.md Methodology 12 | v2-owner: methodology-baselines-critic |
@@ -80,6 +80,9 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 13 OOD generalization folds (eval set fully disjoint from training) | critic.md Statistics 13 | v2-owner: statistics-critic |
 | 14 Fail-loud acceptance claims backed by committed tests | critic.md Statistics 14 | v2-owner: statistics-critic |
 | 15 Mapping-baselines pair (identity+bias baseline + kNN retrieval) + pooling-convention disclosure | critic.md Statistics 15 | v2-owner: statistics-critic |
+| 16 Unit of analysis / measurement grain | critic.md Statistics 16 | v2-owner: statistics-critic |
+| 17 Rate-denominator provenance (measured vs application denominator; stage-chained rates) | critic.md Statistics 17 | v2-owner: statistics-critic |
+| 18 Matched-covariate support (support-restricted companion) | critic.md Statistics 18 | v2-owner: statistics-critic |
 
 ## C. Monolithic `critic` — Alternative Explanations lens items
 
@@ -135,6 +138,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | arxiv-mcp | LESSONS.md | v2-owner: methodology-baselines-critic + planner |
 | auto-continuation | LESSONS.md | v2-owner: orchestrator (/issue-v2 gate set + workflow.yaml; workflow-version-independent) |
 | background-automation | LESSONS.md | v2-owner: autonomous_session_watch.py + crons (runtime unchanged, Assumption 1) |
+| blinded-reads | LESSONS.md | v2-owner: orchestrator (blinded-read dispatch discipline; workflow-version-independent) |
 | clean-result-critic-lens-reference | LESSONS.md | v1-only — expires at drain |
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
 | code-reviewer-section-reference | LESSONS.md | v1-only — expires at drain |
@@ -147,6 +151,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | contrastive-negatives | LESSONS.md | v2-owner: methodology-baselines-critic |
 | crash-fix-rounds | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
 | critic-lens-reference | LESSONS.md | v2-owner: statistics-critic + methodology-baselines-critic + efficiency-critic |
+| cross-session-writer-arbitration | LESSONS.md | v2-owner: orchestrator (writer-dispatch arbitration + read-pinning; workflow-version-independent) |
 | data-realism | LESSONS.md | v2-owner: methodology-baselines-critic |
 | diff-size-budget | LESSONS.md | v2-owner: code-correctness-critic + plan-adherence-critic + efficiency-critic |
 | disk-hygiene | LESSONS.md | v2-owner: efficiency-critic (plan-time footprint routing) + vm_disk_guard.py cron |
@@ -169,8 +174,11 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | pod-side-reporting | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
 | pods | LESSONS.md | v2-owner: pod scripts + experimenter (runtime unchanged) + efficiency-critic (plan-time width/intent sizing) |
 | replication-fidelity | LESSONS.md | v2-owner: methodology-baselines-critic |
+| repo-root-uncommitted-state | LESSONS.md | v2-owner: orchestrator commit discipline + autonomous_session_watch.py pass 36 (workflow-version-independent) |
+| research-pm-section-reference | LESSONS.md | v2-owner: research-pm agent (PM runtime persona; workflow-version-independent) |
 | research-project-structure | LESSONS.md | v2-owner: report-verifier + task.py (report-v1 clean-result; RESULTS.md + open_questions.md manual per plan §6) |
 | selection-symmetric-nulls | LESSONS.md | v2-owner: statistics-critic |
+| smoke-blind-spots | LESSONS.md | v2-owner: code-correctness-critic (impl diff gate) + methodology-baselines-critic (plan smoke section) |
 | trigger-dense-review | LESSONS.md | v2-owner: code-correctness-critic + reconciler (role-generic review rule; applies to any review-role subagent, v1 and v2) |
 | upload-policy | LESSONS.md | v2-owner: upload-verifier + methodology-baselines-critic |
 | upload-verifier-section-reference | LESSONS.md | v2-owner: upload-verifier (v2 mode) |

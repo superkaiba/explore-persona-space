@@ -28,6 +28,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -60,7 +62,7 @@ def _gate_handlers_section(body: str) -> str:
 def test_pv_phase1_done_handler_present_in_gate_handlers_section():
     """`pv_phase1_done` is registered as a handler inside the Step 6d.4 gate
     list (not just mentioned elsewhere in the file)."""
-    section = _gate_handlers_section(ISSUE_SKILL.read_text())
+    section = _gate_handlers_section(issue_skill_text())
     assert "pv_phase1_done" in section, (
         "Step 6d.4 must register a `pv_phase1_done` gate handler; without it the "
         "issue #763 production run falls through to the 'Unrecognised gate' branch "
@@ -72,7 +74,7 @@ def test_pv_phase1_done_handler_names_four_substeps():
     """The handler names all four orchestrator sub-steps in order: pod stop →
     off-pod `--phase judge` → pod resume → re-dispatch at `--from-phase
     pv_capture`."""
-    section = _gate_handlers_section(ISSUE_SKILL.read_text())
+    section = _gate_handlers_section(issue_skill_text())
     last_idx = -1
     for token in REQUIRED_SUBSTEP_TOKENS:
         idx = section.find(token)
@@ -91,7 +93,7 @@ def test_pv_phase1_done_handler_is_auto_resolve_not_park():
     """The handler is explicitly AUTO-RESOLVING and prohibits the PARK
     behavior (no CRON-TEARDOWN, no EXIT) so a future edit cannot quietly turn
     it back into a park-mode gate."""
-    section = _gate_handlers_section(ISSUE_SKILL.read_text())
+    section = _gate_handlers_section(issue_skill_text())
     lower = section.lower()
     assert "auto-resolv" in lower, (
         "pv_phase1_done handler must state it AUTO-RESOLVES (contrast with the "
@@ -111,7 +113,7 @@ def test_section_tail_cron_teardown_scoped_to_park_mode():
     """The section-tail CRON-TEARDOWN/EXIT paragraph is guarded so it applies
     ONLY to PARK-mode gates — otherwise it would tear the cron down + park even
     for the auto-resolving pv_phase1_done gate."""
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     guard_idx = body.find("PARK-mode gates only")
     teardown_idx = body.find("run CRON-TEARDOWN before parking")
     assert guard_idx != -1, (

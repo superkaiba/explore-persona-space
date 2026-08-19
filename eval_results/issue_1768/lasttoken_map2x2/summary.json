@@ -1,0 +1,51 @@
+{
+ "issue": 1768,
+ "read": "exact input x operator 2x2 over the context->answer map: M+(c+) - M0(c0) = [M0(c+)-M0(c0)] + [M+(c0)-M0(c0)] + interaction",
+ "position": "last_prompt",
+ "layers": [
+  14,
+  19,
+  25
+ ],
+ "regimes": [
+  "onpolicy",
+  "fixedtext"
+ ],
+ "n_arms": 72,
+ "n_done_this_run": 72,
+ "n_skipped_resume": 0,
+ "m0_fits": {
+  "base_content": {
+   "14": {
+    "selected_lambda": 1000.0,
+    "heldout_r2": 0.607595478363883
+   },
+   "19": {
+    "selected_lambda": 3162.2776601683795,
+    "heldout_r2": 0.7002099719094207
+   },
+   "25": {
+    "selected_lambda": 3162.2776601683795,
+    "heldout_r2": 0.6484475537394931
+   }
+  },
+  "base_mk": {
+   "14": {
+    "selected_lambda": 3162.2776601683795,
+    "heldout_r2": 0.6038829715841434
+   },
+   "19": {
+    "selected_lambda": 3162.2776601683795,
+    "heldout_r2": 0.6987315114536714
+   },
+   "25": {
+    "selected_lambda": 3162.2776601683795,
+    "heldout_r2": 0.6464420055715268
+   }
+  }
+ },
+ "ts": "2026-08-06T22:45:04Z",
+ "git_commit": "6bd7d6cdc9e017bdb3e1253f57926830c253c56a",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6"
+}
