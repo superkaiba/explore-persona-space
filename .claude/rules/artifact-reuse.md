@@ -599,7 +599,7 @@ measured value PERSISTED in the run artifacts (never dropped); (c) a
 NAMED analyzer-adjudication concern plus the cheap discriminating test
 that would resolve the fork (#813: `marker_delta_logp_nats` persisted,
 WARN carried to the analyzer, frozen-R teacher-forced re-read named).
-This is NOT threshold-loosening-to-pass (banned — see gotchas.md #841
+This is NOT threshold-loosening-to-pass (banned — see gotchas.md
 "never loosen the fp32 tol", and #813's own supervisor ruling "do NOT
 lower the 2.5-nat bar to pass 0.75"): the signal is preserved and
 adjudicated, not redefined away; and the apply-path HALTs still catch
@@ -638,8 +638,8 @@ bare-constant threshold or an unjustified weaker-than-expected HALT.
 `code-reviewer`, on a gate-bearing diff: the constant's comment/docstring
 states its calibration source; no committed-reference grounding is a
 blocker-worthy finding. Hardware/precision false-parity SIBLINGS are
-environment mismatch, distinct from calibration: gotchas.md #723-family +
-#841 entries.
+environment mismatch, distinct from calibration: the gotchas.md
+L4-vs-A100 gauge-origin + fp32 kernel-parity entries.
 
 ## Enforcement chain
 

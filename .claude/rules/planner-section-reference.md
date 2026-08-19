@@ -733,7 +733,7 @@ pod; the follow-up round improvised the "DEFERRED + gap-listed" rows this
 block mechanizes), and #1773 (the inverse direction: a GCE pass crashed
 loading VM-produced outputs never HF-uploaded — one provision+boot cycle
 burned). This is the plan-time mechanization of the
-`gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
+`gotchas.md` cross-machine upload-set bullet (#1482/#1535, rules (i)-(iv)).
 
 Render as a fenced YAML block, one entry per phase that reads another
 phase's outputs (the block NAME stays `off_pod_phases:` for back-compat
