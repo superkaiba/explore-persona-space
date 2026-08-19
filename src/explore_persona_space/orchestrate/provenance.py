@@ -6,13 +6,19 @@ committed result JSON never claims provenance from a commit that does not
 contain the code that produced it (task #2065; incident #1482).
 
 Public entry point: `git_provenance()` returns a `GitProvenance` dataclass
-carrying `commit_sha`, `dirty` (bool | None), `dirty_paths` (bounded list),
-and the argv[0] tracked-state signal `argv0_state` / `argv0_path` (#2175).
+carrying `commit_sha` (8-hex short), `commit_sha_full` (40-hex | None, #2194),
+`dirty` (bool | None), `dirty_paths` (bounded list), and the argv[0]
+tracked-state signal `argv0_state` / `argv0_path` (#2175).
 `commit_string(prov)` renders the human-legible `<sha>` or `<sha>+dirty` form
-for non-JSON channels (PDF metadata, PNG chunks, WandB run names). Result
-JSONs merge `as_metadata_dict(prov)` into their `metadata` block, exposing the
-structured fields `git_commit` / `git_dirty` / `git_dirty_paths` /
-`git_argv0_state` / `git_argv0_path`.
+for non-JSON channels (PDF metadata, PNG chunks, WandB run names) — the SHORT
+form, unchanged. Result JSONs merge `as_metadata_dict(prov)` into their
+`metadata` block, exposing the structured fields `git_commit` (the FULL
+40-hex form when resolved — abbreviated SHAs are excluded by
+`scripts/verify_report.py::check_code_sha_cards`; #2194) / `git_dirty` /
+`git_dirty_paths` / `git_argv0_state` / `git_argv0_path`, plus an OPTIONAL
+`phase` card phase-IDENTITY slug (`as_metadata_dict(prov, phase="stage2-upload")`,
+validated via `validate_phase_identity`) emitted as a SIBLING of `git_commit` —
+the exact dict level the `code-sha-cards` gate reads (#2194).
 
 Contract:
 - Never fails loud: a non-git tree, missing git binary, or subprocess timeout
@@ -42,6 +48,7 @@ Contract:
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -50,6 +57,22 @@ from pathlib import Path
 _GIT_TIMEOUT_SEC = 5
 _MAX_DIRTY_PATHS = 50
 _UNKNOWN = "unknown"
+
+# Card phase-IDENTITY convention (#2194): lowercase kebab/snake slug, emitted
+# INSIDE the reproducibility-card / metadata block as a SIBLING of
+# `git_commit` — the exact dict level scripts/verify_report.py's
+# `check_code_sha_cards` reads (a top-level `phase` beside a nested card is
+# invisible to the gate: the #2162 stage2 shape).
+_PHASE_IDENTITY_RE = re.compile(r"^[a-z0-9]+([-_][a-z0-9]+)*$")
+# BEST-EFFORT lifecycle-collision fence: backend sentinels use TOP-LEVEL
+# {"phase": "done"} lifecycle-STATE vocabulary (backends/artifacts.py). The
+# denylist refuses only the most confusable values — the backend emits more
+# lifecycle values than are enumerated here (startup/preflight/wedged/...);
+# the structural top-level-vs-commit-sibling placement is the primary
+# separation, this denylist a second fence.
+_LIFECYCLE_PHASE_VOCAB = frozenset(
+    {"done", "failed", "running", "pending", "queued", "started", "workload"}
+)
 
 
 @dataclass(frozen=True)
@@ -71,6 +94,11 @@ class GitProvenance:
         argv0_state: "tracked" | "modified" | "untracked" | None (could not
             determine — non-git tree, gitignored argv[0] such as the pytest
             binary, outside-repo argv[0], `-c`, timeout).
+        commit_sha_full: Full 40-hex SHA of HEAD when resolved; None when the
+            SHA could not be resolved OR on hand-built records that predate
+            the field (#2194 — `as_metadata_dict` then falls back to the
+            short `commit_sha`). Appended LAST with a default so existing
+            positional constructions stay valid.
     """
 
     commit_sha: str
@@ -78,6 +106,7 @@ class GitProvenance:
     dirty_paths: list[str] = field(default_factory=list)
     argv0_path: str | None = None
     argv0_state: str | None = None
+    commit_sha_full: str | None = None
 
 
 def _run_git(args: list[str], cwd: Path | None) -> str | None:
@@ -107,13 +136,31 @@ def _run_git(args: list[str], cwd: Path | None) -> str | None:
     return result.stdout
 
 
+def _git_head_sha(cwd: Path | None = None) -> tuple[str, str | None]:
+    """Return HEAD as ``(short 8-hex, full 40-hex | None)``; ``("unknown",
+    None)`` on any failure.
+
+    One ``rev-parse HEAD`` call resolves both forms (#2194): the short form
+    is the full SHA's first 8 chars — always exactly 8, whereas the previous
+    ``--short=8`` probe could return MORE on ambiguity — and the full form is
+    what ``as_metadata_dict`` emits under ``git_commit`` so cards from this
+    helper are usable by ``verify_report.py``'s ``code-sha-cards`` gate
+    (abbreviated SHAs are gate-excluded). Subprocess call count unchanged.
+    """
+    out = _run_git(["rev-parse", "HEAD"], cwd=cwd)
+    full = out.strip() if out is not None else ""
+    if not full:
+        return _UNKNOWN, None
+    return full[:8], full
+
+
 def _git_short_sha(cwd: Path | None = None) -> str:
-    """Return the 8-hex short SHA of HEAD, or `"unknown"` on any failure."""
-    out = _run_git(["rev-parse", "--short=8", "HEAD"], cwd=cwd)
-    if out is None:
-        return _UNKNOWN
-    sha = out.strip()
-    return sha or _UNKNOWN
+    """Return the 8-hex short SHA of HEAD, or `"unknown"` on any failure.
+
+    Kept as the thin deprecated shim for the one external importer
+    (`analysis/paper_plots.py`); new callers use `git_provenance()`.
+    """
+    return _git_head_sha(cwd=cwd)[0]
 
 
 def _git_dirty_status(cwd: Path | None = None) -> tuple[bool | None, list[str]]:
@@ -220,7 +267,7 @@ def git_provenance(cwd: Path | None = None, argv0: str | None = None) -> GitProv
     "modified" argv[0] needs no folding — the tracked scan already reports
     it (no double-entry in `dirty_paths`).
     """
-    sha = _git_short_sha(cwd=cwd)
+    sha, sha_full = _git_head_sha(cwd=cwd)
     dirty, paths = _git_dirty_status(cwd=cwd)
     state, argv0_path = _argv0_git_state(sys.argv[0] if argv0 is None else argv0, cwd=cwd)
     if state == "untracked":
@@ -233,6 +280,7 @@ def git_provenance(cwd: Path | None = None, argv0: str | None = None) -> GitProv
         dirty_paths=paths,
         argv0_path=argv0_path,
         argv0_state=state,
+        commit_sha_full=sha_full,
     )
 
 
@@ -249,24 +297,59 @@ def commit_string(prov: GitProvenance) -> str:
     return prov.commit_sha
 
 
-def as_metadata_dict(prov: GitProvenance) -> dict[str, object]:
+def validate_phase_identity(phase: str) -> str:
+    """Validate a card phase-IDENTITY slug; returns it verbatim or raises ValueError.
+
+    Phase identity names the pipeline stage a reproducibility card belongs to
+    ("stage2-upload", "grid-anchors") — NOT lifecycle state: backend sentinels
+    use top-level ``{"phase": "done"}`` for state (backends/artifacts.py), a
+    different vocabulary at a different dict level. The denylist refuses the
+    most confusable lifecycle values as a BEST-EFFORT fence (the backend emits
+    more lifecycle values than are enumerated here; the structural
+    top-level-vs-commit-sibling placement is the primary separation).
+    Fail-loud is deliberate: the value is a hardcoded literal at the call
+    site, so a violation is a programming error, not runtime degradation (the
+    module's never-crash contract covers environment failures, not
+    caller-contract violations).
+    """
+    if not isinstance(phase, str) or not _PHASE_IDENTITY_RE.fullmatch(phase):
+        raise ValueError(f"phase identity must match {_PHASE_IDENTITY_RE.pattern!r}: {phase!r}")
+    if phase in _LIFECYCLE_PHASE_VOCAB:
+        raise ValueError(
+            f"phase identity {phase!r} collides with the backend-sentinel LIFECYCLE "
+            "vocabulary — name the pipeline stage instead (e.g. 'stage2-upload')"
+        )
+    return phase
+
+
+def as_metadata_dict(prov: GitProvenance, *, phase: str | None = None) -> dict[str, object]:
     """Render the provenance as reproducibility-metadata dict fields.
 
     Consumers `metadata.update(as_metadata_dict(git_provenance()))` into their
     result JSON's `metadata` block. Fields:
 
-    - `git_commit`: str, short SHA (or `"unknown"`).
+    - `git_commit`: str, the FULL 40-hex SHA when resolved (#2194 —
+      gate-usable by `verify_report.py::check_code_sha_cards`; abbreviated
+      SHAs are gate-excluded), falling back to the short `commit_sha` on
+      hand-built records with no `commit_sha_full` (or `"unknown"`).
     - `git_dirty`: bool | None. True/False when checked; None when the check
       could not run (record the explicit sentinel — don't infer clean).
+    - `phase`: str, present ONLY when the `phase` kwarg is passed (#2194) —
+      the card phase-IDENTITY slug, validated via `validate_phase_identity`,
+      a SIBLING of `git_commit` at the exact dict level the `code-sha-cards`
+      gate reads. `phase=None` (default) emits no key, so old-card output is
+      byte-identical.
     - `git_dirty_paths`: list[str], present ONLY when `dirty is True`.
     - `git_argv0_state`: str | None, ALWAYS present ("tracked" | "modified" |
       "untracked"; None = could not determine).
     - `git_argv0_path`: str, present ONLY when `argv0_state` is not None.
     """
     out: dict[str, object] = {
-        "git_commit": prov.commit_sha,
+        "git_commit": prov.commit_sha_full or prov.commit_sha,
         "git_dirty": prov.dirty,
     }
+    if phase is not None:
+        out["phase"] = validate_phase_identity(phase)
     if prov.dirty is True:
         out["git_dirty_paths"] = list(prov.dirty_paths)
     out["git_argv0_state"] = prov.argv0_state
