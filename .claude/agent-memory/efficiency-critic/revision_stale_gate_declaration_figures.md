@@ -26,3 +26,13 @@ estimate reconciles, `grep -n '<old figure>' vN.md` on the CURRENT version
 — any hit in §7/§11 is a mechanical nit (blocking only if the declaration
 is unpinned and the stale count changes the computed route). Related:
 [[revision-row-redistribution-check]], [[compound-wall-cell-parse-check]].
+
+**Closure-verification nuance (v8 round 3, verified CLOSED):** when
+checking the fix landed, two figures legitimately DIFFER — the declared
+`wave_n_calls` is the PRODUCTION item count (pilot excluded; it mirrors
+the production dispatch kwargs), while the §9 Leg/phase CEILING includes
+the pilot (#2329 v8: G4b declares ≤≈6.7k full-survival production while
+§9 books ≈7.1k incl. the 416-call pilot — both correct, 7,096 − 416 =
+6,680). Don't flag that delta as a fresh mismatch. Surviving hits of the
+old figure in a changelog / self-check line describing the fix are
+meta-references, not stale declarations.
