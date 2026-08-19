@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2393,
+  "highest_id": 2394,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10769,6 +10769,13 @@
       "path": "tasks/archived/2393",
       "status": "archived",
       "title": "Opt-in shared-prefill multi-draw mode for generate_batch (one prefill, N sampled continuations)"
+    },
+    "2394": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/2394",
+      "status": "proposed",
+      "title": "Pilot: cheap context readout to mine always-comply jailbreak contexts; does the context\u2192answer map help?"
     },
     "24": {
       "has_clean_result": false,
