@@ -9233,8 +9233,8 @@
     "2196": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2196",
-      "status": "proposed",
+      "path": "tasks/planning/2196",
+      "status": "planning",
       "title": "cron_lesson_consolidate: an uncreatable log dir silently skips the whole nightly pass"
     },
     "2197": {
