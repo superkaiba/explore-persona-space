@@ -1061,8 +1061,11 @@ def cmd_set_body(args: argparse.Namespace) -> None:
     flock + commit. The library-side Goal-H2 drop guard (incident #1112)
     raises `GoalH2DropError` when a `kind: experiment` body update would
     remove the `## Goal` H2 present in the prior body — caught here and
-    re-raised as a clean `SystemExit` (the `--allow-stub` style); pass
-    `--allow-goal-drop` for a deliberate drop (e.g. the v2 report write).
+    re-raised as a clean `SystemExit` (the `--allow-stub` style). A
+    `workflow: v2` task writing a report body (positional
+    `<!-- report-v1 -->` sentinel) is AUTO-EXEMPT (#2197) — no flag
+    needed on the v2 happy path; pass `--allow-goal-drop` for any other
+    deliberate drop.
     """
     if args.body is not None:
         new_body = args.body
@@ -1964,10 +1967,12 @@ def main() -> None:
             "allow the new body to REMOVE the `## Goal` H2 present in the prior "
             "kind:experiment body. Without this flag the write refuses "
             "(GoalH2DropError) — the Goal is the canonical target every "
-            "downstream agent reads (incident #1112). Deliberate droppers: the "
-            "workflow-v2 report write (report-v1 carries `## Motivation:`, no "
-            "`## Goal`; `goal:` frontmatter survives). Paper-stub writes are "
-            "auto-exempt via `paper: true`, no flag needed."
+            "downstream agent reads (incident #1112). AUTO-EXEMPT, no flag "
+            "needed (#2197): a `workflow: v2` task writing a report body "
+            "(positional `<!-- report-v1 -->` sentinel — report-v1 carries "
+            "`## Motivation`, no `## Goal`; `goal:` frontmatter survives), and "
+            "paper-stub writes via `paper: true`. The flag remains for any "
+            "other deliberate drop."
         ),
     )
     p.set_defaults(func=cmd_set_body)

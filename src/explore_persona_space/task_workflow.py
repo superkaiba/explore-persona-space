@@ -1040,6 +1040,8 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
 #: ``scripts/verify_report.py`` is the mechanical verifier for this form.
 #: Unlike ``paper: true`` (a frontmatter flag), a report body is identified by
 #: this BODY sentinel.
+#: Pinned byte-equal to ``scripts/verify_report.py::REPORT_SENTINEL`` by
+#: ``tests/test_task_workflow.py::test_report_sentinel_matches_verify_report``.
 REPORT_V1_SENTINEL = "<!-- report-v1 -->"
 
 
@@ -1051,9 +1053,40 @@ def is_report_body(body: str) -> bool:
     promote-time logic, ``scripts/verify_report.py``) branch on this to treat a
     report body as a valid clean-result form alongside the markdown-v4 and paper
     tracks. Does NOT read frontmatter — a report task carries no ``paper``/form
-    frontmatter flag, only this sentinel.
+    frontmatter flag, only this sentinel. Containment is the right bar for
+    clean-result-form ACCEPTANCE; a guard EXEMPTION needs the stricter
+    positional check :func:`_is_report_v1_body` (#2197).
     """
     return REPORT_V1_SENTINEL in body
+
+
+def _is_report_v1_body(text: str) -> bool:
+    """True iff the first non-blank line after the first H1 is the
+    report-v1 sentinel — the positional semantics of
+    ``scripts/verify_report.py`` (``find_h1`` + first-non-blank-after-H1).
+    Stricter than :func:`is_report_body` (containment), which serves
+    clean-result-form acceptance: a mid-prose sentinel quotation must
+    NOT satisfy a guard exemption (#2197).
+
+    Text-shape note: verify_report's ``split_frontmatter`` strips exactly one
+    leading ``---`` block while the guard caller feeds this the output of
+    ``_strip_leading_frontmatter_blocks`` (which can strip more); equivalent
+    for well-formed bodies, and a pathological divergence lands fail-loud
+    (guard refusal → the ``--allow-goal-drop`` remedy), never a silent write.
+    """
+    lines = text.splitlines()
+    h1_idx = None
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("# ") and not s.startswith("## "):
+            h1_idx = i
+            break
+    if h1_idx is None:
+        return False
+    for later in lines[h1_idx + 1 :]:
+        if later.strip():
+            return later.strip() == REPORT_V1_SENTINEL
+    return False
 
 
 # ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
@@ -6178,7 +6211,9 @@ class GoalH2DropError(ValueError):
     The Goal is the canonical target every downstream subagent reads;
     silently losing it costs a Goal-gate bounce + repair (incident #1112).
     Pass ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a
-    deliberate drop.
+    deliberate drop. A ``workflow: v2`` REPORT body (positional
+    ``REPORT_V1_SENTINEL``, :func:`_is_report_v1_body`) is auto-exempt —
+    no flag needed (#2197).
     """
 
 
@@ -6209,15 +6244,19 @@ def set_body(
     GOAL_H2_NAME`` semantics as :func:`_inject_or_replace_goal_h2`), and
     the new (frontmatter-stripped) body does not, the write raises
     :class:`GoalH2DropError` BEFORE any side effect (in particular, no
-    ``original-body.md`` snapshot is written on refusal). Pass
-    ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a deliberate
-    drop — e.g. the workflow-v2 report write, whose report-v1 skeleton
-    carries ``## Motivation:`` instead of ``## Goal`` (the ``goal:``
-    frontmatter survives regardless). Paper-stub writes are auto-exempt
-    via :func:`is_paper_task`. The guard fires ONLY on has→lacks
-    transitions: a grandfathered v3/legacy ``kind: experiment`` body that
-    lacks ``## Goal`` on the PRIOR side is DELIBERATELY exempt — do not
-    "fix" the prior-lacks exemption.
+    ``original-body.md`` snapshot is written on refusal). AUTO-EXEMPT
+    (#2197): a ``workflow: v2`` task (read from the canonical ON-DISK
+    frontmatter — ``workflow`` is not a ``_SET_BODY_ROUNDTRIP_KEYS``
+    member, so incoming-body frontmatter cannot smuggle it) writing a
+    report-v1 body (positional sentinel, :func:`_is_report_v1_body`)
+    needs no flag — the report-v1 skeleton carries ``## Motivation``
+    instead of ``## Goal``, and the ``goal:`` frontmatter survives
+    regardless. Paper-stub writes are auto-exempt via
+    :func:`is_paper_task`. Pass ``allow_goal_drop=True`` (CLI:
+    ``--allow-goal-drop``) for any OTHER deliberate drop. The guard fires
+    ONLY on has→lacks transitions: a grandfathered v3/legacy ``kind:
+    experiment`` body that lacks ``## Goal`` on the PRIOR side is
+    DELIBERATELY exempt — do not "fix" the prior-lacks exemption.
 
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
@@ -6251,6 +6290,9 @@ def set_body(
             not allow_goal_drop
             and fm.get("kind") == "experiment"
             and not is_paper_task(fm)  # paper-stub write legitimately lacks ## Goal
+            # v2 report write legitimately lacks ## Goal (#2197): the report-v1
+            # skeleton carries ## Motivation instead, and goal: frontmatter survives.
+            and not (fm.get("workflow") == "v2" and _is_report_v1_body(body_text))
             and _has_goal_h2(prior_body)
             and not _has_goal_h2(body_text)
         ):
