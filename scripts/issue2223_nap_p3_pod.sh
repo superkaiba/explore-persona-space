@@ -116,18 +116,26 @@ print(','.join(arms))
 echo "[nap-p3] arm roster (38): $ARM_LIST"
 
 echo "[phase=pilot]"
-PILOT_ARM=$(uv run python -c "
+# ONE arm from EACH new-axis family: the per-cell regime fingerprint records
+# the sha of every loaded new-axis .pt, so a single-family pilot writes a
+# regime the both-family main wave refuses to resume over (run-1 shard-3
+# REGIME MISMATCH — #2223 P3 crash-fix round).
+PILOT_ARMS=$(uv run python -c "
 import sys
 sys.path.insert(0, '.')
-from scripts.issue2223_casestudy_replay import NEWAXIS_ARMS
-print(sorted(NEWAXIS_ARMS)[0])
+from scripts.issue2223_casestudy_replay import CS_ARMS, NEWAXIS_ARMS, NEWAXIS_FAMILIES
+by_fam = {}
+for a in sorted(NEWAXIS_ARMS):
+    by_fam.setdefault(CS_ARMS[a]['axis'], a)
+assert sorted(by_fam) == sorted(NEWAXIS_FAMILIES), by_fam
+print(','.join(by_fam[f] for f in sorted(by_fam)))
 ")
-echo "[nap-p3] pilot cell: arm=$PILOT_ARM scenario=selfharm (production out-root; main wave resumes past it)"
+echo "[nap-p3] pilot cells: arms=$PILOT_ARMS scenario=selfharm (production out-root; main wave resumes past them)"
 t0=$(date +%s)
 rc=0
 CUDA_VISIBLE_DEVICES="${GPUS[0]}" uv run python "$RUNNER" \
   --phase generate --model 32b --out-root "$OUT_ROOT" --round-subdir "$ROUND_SUBDIR" \
-  --arms "$PILOT_ARM" --scenarios selfharm --layers band \
+  --arms "$PILOT_ARMS" --scenarios selfharm --layers band \
   > "$LOGDIR/issue-2223-nap-p3-pilot.log" 2>&1 || rc=$?
 t1=$(date +%s)
 echo "[nap-p3] pilot rc=$rc wall=$((t1 - t0))s"
