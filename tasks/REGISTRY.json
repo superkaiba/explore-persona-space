@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2396,
+  "highest_id": 2397,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10790,6 +10790,13 @@
       "path": "tasks/proposed/2396",
       "status": "proposed",
       "title": "verify_plan c20: a decimal-threshold verdict lattice can never become FAIL-capable (integer thresholds SKIP, decimals WARN unclearably)"
+    },
+    "2397": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2397",
+      "status": "proposed",
+      "title": "verify_plan: assert plan-narrated parent statistics (sign + CI) against the cited artifact field"
     },
     "24": {
       "has_clean_result": false,
