@@ -1,6 +1,6 @@
 ---
 name: claude-credits-plan-literal-misses-fs-primitive-semantics
-description: "#2377 r1 (guard/janitor code): Claude PASSed by matching plan literals ('mkdir 0700', 're-stat') without probing the primitive's fs semantics — exist_ok=True accepted a pre-created symlink-to-dir at a predictable /tmp path and os.rename escaped the root + overwrote the dest (live-probe reproduced); also credited 'sidecar every row' at the CALL site while the CALLEE gates the effect on apply. Codex's companion TOCTOU blocker on the plan-registered re-stat mechanism was demoted to CONCERN."
+description: "#2377 r1 (guard/janitor code): Claude PASSed by matching plan literals ('mkdir 0700', 're-stat') without probing the primitive's fs semantics — exist_ok=True accepted a pre-created symlink-to-dir at a predictable /tmp path and os.rename escaped the root + overwrote the dest (live-probe reproduced); also credited 'sidecar every row' at the CALL site while the CALLEE gates the effect on apply. Codex's companion TOCTOU blocker on the plan-registered re-stat mechanism was demoted to CONCERN. r2 addendum: reachability discriminator — pre-plantable trap at a PREDICTABLE name = blocking; active same-UID racer on an UNPREDICTABLE mkdtemp name = accepted residual (Codex re-escalated the accepted window family on the sibling surface; PASS + raise+defer)."
 metadata:
   type: feedback
 ---
@@ -40,6 +40,28 @@ symlink at the predicted name; pre-existing dest file) before crediting a
 "fresh/private dir" plan claim — a Write-tool/sandbox probe costs minutes
 and is decisive. And for every "X happens unconditionally / for every row"
 claim, read the callee's own gate (flags like `apply=`), not just the call.
+
+**r2 addendum (the reachability discriminator; PASS, Codex FAIL overruled).**
+After the fix round (mkdtemp + lstat S_ISDIR/uid + chmod-0700 re-verify +
+lexists no-replace assert), Codex held the destination BLOCKER open on the
+RESIDUAL: a same-UID peer rebinding the fresh mkdtemp dir / creating dest
+between lexists and rename, demanding `renameat2(RENAME_NOREPLACE)` (not
+stdlib-exposed — probe-verified; only `dst_dir_fd` is). Overruled: the r1
+class was a trap PRE-PLANTABLE at any earlier time at a PREDICTABLE name
+(deterministic, no race — blocking); the r2 residual needs an ACTIVE
+same-UID racer OBSERVING an unpredictable urandom name and winning a
+sub-ms window — unreachable by accident, and a same-UID process already
+has full authority over every file involved (no confused-deputy gain).
+Tell for the overreach: Codex ACCEPTED the source-side lstat→rename window
+at a PREDICTABLE pathname (strictly more reachable) while escalating its
+less-reachable destination twin. Disposition: PASS + raise-concern the
+residual + reconciler defer-concern, cheap dir-fd hardening named
+(O_DIRECTORY|O_NOFOLLOW fd + fstat dev/ino match + rename dst_dir_fd).
+Live-probe anchor: os.mkdir EEXIST-refuses every dentry class (dangling
+symlink / dir-symlink / file) — pre-planting against mkdtemp is
+structurally dead; unpredictability kills PRE-planting, not observation,
+so the residual question is always "who can observe-and-race, and are
+they inside the trust boundary?"
 
 **Codex-side companion (demotion):** Codex's second BLOCKER — the
 evidence-to-rename TOCTOU (size+mtime re-stat doesn't bind pathname to the
