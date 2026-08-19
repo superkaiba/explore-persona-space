@@ -29,3 +29,13 @@ composer-authored numeral and rephrase the glue text rather than widening
 the allowlist. Run the verifier from the repo root (not /tmp) so the
 registry leg (`task_workflow.registry_path()`) imports; from /tmp it
 degrades to handed-span-only clearing.
+
+Multiset nuance (#2329 round 2, 9 residual classes): a number HANDED by
+the plan still residuals when the prompt INLINES that plan — the inline
+copy consumes the span occurrence, so every glue reuse is excess under
+multiset subtraction. Fix = reference-not-restate: point Codex at the
+artifact's own figure ("the G4a floor-satisfiability note's figure",
+"§ Decision Rationale") instead of repeating the numeral, and quote each
+brief/blocker figure at most as many times as the brief/blocker span
+carries it. Section sigils count too: each glue "§9"/"§7"/"v7" emits an
+atom, so name sections by title where the count is tight.
