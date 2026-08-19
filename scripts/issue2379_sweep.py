@@ -104,31 +104,46 @@ def create_vllm_engine_resilient(
     model_path, *, max_attempts: int = 4, oom_settle_sec: int = 45, **kwargs
 ):
     """``eval.generation.create_vllm_engine`` wrapped with a bounded retry on the
-    vLLM engine-init OOM ValueError.
+    vLLM engine-init OOM.
 
-    The work-conserving GPU queue (``issue2379_pod.sh``) launches a new vLLM engine
-    on a GPU the instant the prior job's python exits, but vLLM's EngineCore
-    subprocess can keep holding its gpu_memory_utilization fraction (~48 GiB at 0.6
-    on an 80 GiB H100) for tens of seconds after — the worker-subprocess teardown lag
-    (``.claude/rules/gotchas.md``). The next init then fails with
-    ``ValueError: Free memory on device (X/Y GiB) on startup is less than desired
-    GPU memory utilization``. Retrying after a short settle lets the driver reap the
-    dead EngineCore so device memory recovers (0.6 x 80 GiB fits a freshly-freed GPU).
-    Non-OOM ValueErrors and the final attempt re-raise unchanged. (#2379 p2 crash-fix.)
+    Two teardown-lag shapes hit this rig. (1) The work-conserving GPU queue
+    (``issue2379_pod.sh``) launches a new vLLM engine on a GPU the instant the
+    prior job's python exits. (2) WITHIN one job, ``sweep_model`` tears down the
+    sweep engine (``cleanup_vllm(llm)``) and immediately builds the regen engine
+    (``llm2``). In both cases the prior vLLM EngineCore subprocess can keep holding
+    its gpu_memory_utilization fraction (~48 GiB at 0.6 on an 80 GiB H100) for tens
+    of seconds after the parent drops its reference — the worker-subprocess teardown
+    lag (``.claude/rules/gotchas.md``). The next init then OOMs.
+
+    The OOM ``ValueError: Free memory on device (X/Y GiB) on startup is less than
+    desired GPU memory utilization`` is raised INSIDE the EngineCore subprocess and
+    only appears in the log; the PARENT ``create_vllm_engine`` call surfaces it as
+    ``RuntimeError: Engine core initialization failed`` (#2379 p2 re-run: a
+    ``ValueError``-only catch never fired, so caps_german failed a second time). We
+    match BOTH signatures. Retrying after a short settle lets the driver reap the
+    dead EngineCore so device memory recovers (0.6 x 80 GiB fits a freshly-freed
+    GPU). Non-OOM errors and the final attempt re-raise unchanged. (#2379 p2
+    crash-fix.)
     """
     from explore_persona_space.eval.generation import create_vllm_engine
 
     for attempt in range(1, max_attempts + 1):
         try:
             return create_vllm_engine(model_path, **kwargs)
-        except ValueError as exc:
+        except (RuntimeError, ValueError) as exc:
             msg = str(exc)
-            init_oom = "Free memory on device" in msg and "less than desired" in msg
+            init_oom = (
+                # Direct ValueError, if a code path ever surfaces it in the parent.
+                ("Free memory on device" in msg and "less than desired" in msg)
+                # The actual parent-side signature: EngineCore subprocess died on OOM.
+                or "Engine core initialization failed" in msg
+                or "EngineCore failed to start" in msg
+            )
             if not init_oom or attempt == max_attempts:
                 raise
             wait = oom_settle_sec * attempt
             logger.warning(
-                "[vllm-oom-retry] engine init OOM on %s (attempt %d/%d): %s; sleeping "
+                "[vllm-oom-retry] engine init failed on %s (attempt %d/%d): %s; sleeping "
                 "%ds for prior EngineCore GPU-memory teardown, then retrying",
                 model_path,
                 attempt,
