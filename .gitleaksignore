@@ -1419,3 +1419,4 @@ dashboard/public/issue2329_result0_gallery.html:generic-api-key:161321
 dashboard/public/issue2329_result0_gallery.html:generic-api-key:161449
 # task #1739 claim4 launch marker: flagged string is the round run-token identifier, not a credential (false positive)
 tasks/followups_running/1739/events.jsonl:generic-api-key:1418
+tasks/followups_running/1739/events.jsonl:generic-api-key:1442
