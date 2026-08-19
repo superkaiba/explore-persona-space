@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T15:36:41Z", "event": "raised", "concern_id": "workflow-absent-test-precondition", "severity": "BLOCKER", "summary": "The claimed legacy workflow-absent guard test creates workflow:v1, so acceptance criterion 2 is not actually pinned.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
