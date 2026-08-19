@@ -105,8 +105,36 @@ LABEL_CONSUMING = ("arm4_ridge_ctx", "arm7_map_ridge_pred")
 # TRUE answer summaries -- both already materialized here for arm11 -- so it is
 # a pure additional fit, no new inputs. It CONSUMES DV labels, so it joins
 # LABEL_CONSUMING (P-B holds out its readout slice like the other two).
-EXTRA_ARMS_ALLOWED = {"arm12_oracle_reg"}
-EXTRA_ARMS_LABEL_CONSUMING = {"arm12_oracle_reg"}
+#
+# claim4-controls round (#1739, 2026-08-19) adds two more:
+# - arm2_ctx_native: the context-native midpoint-split direction. Its
+#   transfer semantics ride run_transfer_cell's 2-fold machinery unchanged
+#   (direction fit on the readout pool's midpoint split, projected onto the
+#   holdout rows -- the arms.py:857-868 closed-form path, fold 1 = pool /
+#   fold 0 = eval). CONSUMES DV labels (its train-row midpoint split), so it
+#   joins LABEL_CONSUMING; its frozen layer resolves from the committed
+#   train summary (rows verified present for all three behaviors).
+# - arm20_shuffled_map_ridge: ridge on the weight-row-permuted TRUE map
+#   (fits.shuffled_map_weights, rank/Frobenius-preserving) -- the
+#   capacity-matched pairing-free comparator. The committed train summary
+#   carries NO arm20 row, so its frozen layer is MATCHED to arm7's committed
+#   layer (the result2fair_score MATCHED_COMPANIONS precedent) -- see
+#   MATCHED_FROZEN_COMPANIONS below. CONSUMES DV labels (ridge on mp_shuf).
+EXTRA_ARMS_ALLOWED = {"arm12_oracle_reg", "arm2_ctx_native", "arm20_shuffled_map_ridge"}
+EXTRA_ARMS_LABEL_CONSUMING = {"arm12_oracle_reg", "arm2_ctx_native", "arm20_shuffled_map_ridge"}
+
+# Frozen-layer matched companions: arm -> reference arm whose COMMITTED frozen
+# layer the arm reads at (the fair-round MATCHED_COMPANIONS convention:
+# ("arm20_shuffled_map_ridge", "arm7_map_ridge_pred") -- a like-for-like
+# same-layer comparison; the delta must not carry a layer-selection term).
+MATCHED_FROZEN_COMPANIONS = {"arm20_shuffled_map_ridge": "arm7_map_ridge_pred"}
+
+# Shufpair-variant pass roster (claim4 P0.2): the two map-consuming arms whose
+# map input is swapped for the pairing-shuffled refit, plus arm4 as the
+# map-INDEPENDENT pairing check (its per-seed rows must be bit-identical
+# across map variants -- asserted in run_behavior after both passes). Arms
+# 1/11/2 do not consume the map; arm20 consumes the TRUE map by construction.
+SHUFPAIR_ROSTER = ("arm4_ridge_ctx", "arm6_map_proj_e1", "arm7_map_ridge_pred")
 
 # NEW OOD stores/DVs (the r2v2 generation+capture round). Store paths are
 # RELATIVE to --ood-store-root (a verbatim HF-prefix mirror of
@@ -471,11 +499,223 @@ def _leakage_assert(readout_ids: set, eval_sets: dict[str, set], label: str) -> 
 
 
 # ---------------------------------------------------------------------------
+# claim4-controls helpers: pairing shuffle + per-map degeneration diagnostics
+# ---------------------------------------------------------------------------
+
+
+def _behavior_out_dir(args, behavior: str):
+    """Behavior output dir, seed-keyed (`<behavior>/seed<S>/`) in --seeds mode.
+
+    ``args.out_subdir`` is set by main()'s seed loop ("" in legacy mode, so
+    every flagless run's paths are byte-identical).
+    """
+    sub = getattr(args, "out_subdir", "")
+    d = args.out_root / behavior
+    return d / sub if sub else d
+
+
+def pairing_shuffle_perm(n_gen: int, n_total: int, *, seed: int):
+    """ONE within-component row permutation for the pairing-shuffle control.
+
+    The ADD pool is ``[generic | eliciting]`` along the column axis; the
+    generic block (``[:n_gen]``) and the eliciting block (``[n_gen:]``) are
+    permuted SEPARATELY (component marginal composition preserved), and the
+    SAME permutation is applied to the answer side across all layers (a pair
+    is a row of the dataset; per-layer shuffles would not be a dataset).
+    rng namespace ``[1739, 21, seed]`` (plan §11; module list-seed convention).
+
+    Returns ``(perm, fingerprints)`` — ``perm`` a (n_total,) int64 index array
+    with component structure ``[perm_gen | n_gen + perm_elic]``.
+    """
+    import numpy as np
+
+    if not 0 < n_gen < n_total:
+        raise ValueError(f"pairing shuffle needs 0 < n_gen < n_total, got {n_gen}/{n_total}")
+    rng = np.random.default_rng([1739, 21, int(seed)])
+    perm_gen = rng.permutation(n_gen)
+    perm_elic = rng.permutation(n_total - n_gen)
+    perm = np.concatenate([perm_gen, n_gen + perm_elic]).astype(np.int64)
+    fp = {
+        "rng_namespace": [1739, 21, int(seed)],
+        "n_generic": int(n_gen),
+        "n_eliciting": int(n_total - n_gen),
+        "perm_generic_sha256": hashlib.sha256(np.ascontiguousarray(perm_gen).tobytes()).hexdigest()[
+            :16
+        ],
+        "perm_eliciting_sha256": hashlib.sha256(
+            np.ascontiguousarray(perm_elic).tobytes()
+        ).hexdigest()[:16],
+        "frac_moved_generic": float((perm_gen != np.arange(n_gen)).mean()),
+        "frac_moved_eliciting": float((perm_elic != np.arange(n_total - n_gen)).mean()),
+    }
+    return perm, fp
+
+
+def shufpair_structural_check(perm, n_gen: int, n_total: int) -> dict:
+    """HARD structural manipulation check for the pairing shuffle (plan §6).
+
+    Verifies (fail-loud RuntimeError, never a silent pass):
+    (1) ``perm`` is a bijection on [0, n_total);
+    (2) within-component: generic slots map into the generic block, eliciting
+        slots into the eliciting block (no cross-component moves);
+    (3) non-identity target reassignment — globally, and per component when
+        the component is large enough for identity to be a bug signal rather
+        than a legal draw (size >= 4).
+    Sharing across layers is structural by construction (ONE perm array is
+    applied to axis 1 of the (Ly, n, d) answer tensor); the recorded
+    fingerprints (sha over the perm bytes) make it audit-able post hoc.
+    """
+    import numpy as np
+
+    perm = np.asarray(perm, dtype=np.int64)
+    if perm.shape != (n_total,):
+        raise RuntimeError(f"shufpair perm shape {perm.shape} != ({n_total},)")
+    if not np.array_equal(np.sort(perm), np.arange(n_total)):
+        raise RuntimeError("shufpair perm is NOT a bijection on [0, n_total)")
+    gen, elic = perm[:n_gen], perm[n_gen:]
+    if gen.size and (gen.max() >= n_gen):
+        raise RuntimeError("shufpair perm moves generic slots OUT of the generic block")
+    if elic.size and (elic.min() < n_gen):
+        raise RuntimeError("shufpair perm moves eliciting slots OUT of the eliciting block")
+    ident = np.arange(n_total)
+    if np.array_equal(perm, ident):
+        raise RuntimeError("shufpair perm is the identity — no pairing was destroyed")
+    if n_gen >= 4 and np.array_equal(gen, ident[:n_gen]):
+        raise RuntimeError("shufpair generic component is identity — component not shuffled")
+    if (n_total - n_gen) >= 4 and np.array_equal(elic, ident[n_gen:] - 0):
+        raise RuntimeError("shufpair eliciting component is identity — component not shuffled")
+    return {
+        "within_component_bijection": True,
+        "shared_across_layers": "structural (one perm applied to the (Ly, n, d) column axis)",
+        "non_identity": True,
+    }
+
+
+def _weight_spectrum(w) -> list[dict]:
+    """Per-layer singular-value profile of a fitted map's weight tensor.
+
+    The 'effective spectrum' degeneration diagnostic (plan §4 P0.2): top
+    singular values + Frobenius/spectral norms + participation-ratio
+    effective rank, per layer. Values-only LAPACK svd (no U/V), fp64.
+    """
+    import numpy as np
+
+    out = []
+    for li in range(w.shape[0]):
+        s = np.linalg.svd(np.asarray(w[li], dtype=np.float64), compute_uv=False)
+        s2 = s**2
+        out.append(
+            {
+                "layer_idx": int(li),
+                "top_svals": [float(x) for x in s[:32]],
+                "sval_quantiles": {str(q): float(np.quantile(s, q)) for q in (0.5, 0.9, 0.99)},
+                "frobenius": float(np.sqrt(s2.sum())),
+                "spectral": float(s[0]),
+                "eff_rank_participation": float(s2.sum() ** 2 / max((s2**2).sum(), 1e-300)),
+            }
+        )
+    return out
+
+
+def _map_output_variance(mapfit, x_sub, y_sub) -> dict:
+    """Mapped-output variance vs target variance on a pool subsample (per layer)."""
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    pred = fits.apply_map(x_sub, mapfit)
+    return {
+        "n_subsample": int(x_sub.shape[1]),
+        "pred_var_per_layer": [float(np.var(pred[li])) for li in range(pred.shape[0])],
+        "target_var_per_layer": [float(np.var(y_sub[li])) for li in range(y_sub.shape[0])],
+    }
+
+
+def _identity_bias_recon(ib_bias, z_ev, za_ev, rungs) -> dict:
+    """Identity+learned-bias baseline scored on the P-B eval contexts.
+
+    The (a) half of the standing mapping-baselines pair, computed on the SAME
+    eval contexts the map recon (`_eval_rung_reconstruction`) scores: pred =
+    z_ev + b with b = pool-mean(y_w − x_w) (means are permutation-invariant,
+    so ONE bias serves both map variants — recorded in the note field).
+    Per-layer pooled R² + kNN retrieval, plus per-rung R².
+    """
+    import numpy as np
+
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+    from explore_persona_space.experiments.issue_1739 import fits
+    from explore_persona_space.experiments.issue_1739.constants import KNN_KS
+
+    pred = np.asarray(z_ev, dtype=np.float64) + np.asarray(ib_bias, dtype=np.float64)[:, None, :]
+    per_layer = []
+    for li in range(pred.shape[0]):
+        per_layer.append(
+            {
+                "layer_idx": li,
+                "r2_identity_bias": float(fits.r2_pooled(pred[li], za_ev[li])),
+                "knn": {
+                    metric: knn_retrieval(pred[li], za_ev[li], ks=KNN_KS, metric=metric)
+                    for metric in ("euclidean", "cosine")
+                },
+            }
+        )
+    labels = np.asarray([str(r) for r in rungs])
+    per_rung = {}
+    for rung in sorted(set(labels.tolist())):
+        sel = np.flatnonzero(labels == rung)
+        per_rung[rung] = {
+            "n_rows": int(sel.size),
+            "r2_identity_bias_per_layer": [
+                float(fits.r2_pooled(pred[li, sel], za_ev[li, sel])) for li in range(pred.shape[0])
+            ],
+        }
+    return {
+        "per_layer": per_layer,
+        "per_rung": per_rung,
+        "knn_ks": list(KNN_KS),
+        "note": "bias = pool-mean(y_w - x_w); permutation-invariant, shared across map "
+        "variants; baseline the fitted map must beat (mapping-baselines pair (a))",
+    }
+
+
+def _assert_arm4_variant_identity(rows: list[dict], behavior: str) -> None:
+    """In-run pairing check: arm4 is map-INDEPENDENT, so its per-seed P-B rows
+    must be bit-identical across map variants (same readout rows, same dv,
+    same z_ctx, deterministic in-process BLAS). A mismatch means the variant
+    passes were NOT byte-identical outside the map — fail loud (the fold
+    script re-asserts this off the persisted rows)."""
+    by_key: dict[tuple, dict[str, float]] = {}
+    for r in rows:
+        if r.get("arm") != "arm4_ridge_ctx" or r.get("protocol") != "P-B":
+            continue
+        mv = r.get("map_variant")
+        if mv is None:
+            continue
+        by_key.setdefault((r.get("fit"), r.get("eval_rung")), {})[mv] = float(r["rho_frozen"])
+    bad = []
+    for k, per_mv in sorted(by_key.items()):
+        if {"true", "shufpair"} <= set(per_mv) and per_mv["true"] != per_mv["shufpair"]:
+            bad.append((k, per_mv["true"], per_mv["shufpair"]))
+    if bad:
+        raise RuntimeError(
+            f"[{behavior}] arm4 rows DIFFER across map variants (pairing check failed) — "
+            f"first offenders: {bad[:3]}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # per-behavior scoring
 # ---------------------------------------------------------------------------
 
 
-def fit_linear_add_map(args, loaded, variant: str, layers: list[int], gen_sink: dict | None = None):
+def fit_linear_add_map(
+    args,
+    loaded,
+    variant: str,
+    layers: list[int],
+    gen_sink: dict | None = None,
+    claim4_sink: dict | None = None,
+):
     """The r2fair ADD-condition LINEAR map/whitening recipe with staged frees.
 
     Same pool composition + seed + reviewed compose/fit path as
@@ -492,6 +732,19 @@ def fit_linear_add_map(args, loaded, variant: str, layers: list[int], gen_sink: 
     [generic | eliciting] along axis 1, so the leading ``n_gen`` columns of
     the whitened pool ARE the whitened generic pool. The P-C map pools reuse
     these verbatim (identical generic component across holdouts).
+
+    ``claim4_sink`` (claim4-controls round, plan §4 P0.2): when a dict is
+    passed, the sink is filled with (a) ``ib_bias`` — the pool-mean identity
+    +bias vector (Ly, d), computed transient-free as mean(y_w)-mean(x_w);
+    (b) when ``claim4_sink["want_shufpair"]`` — after the TRUE map fit (and
+    the gen_sink copy) the answer side ``y_w`` is permuted IN PLACE per layer
+    by ONE within-component pairing-shuffle permutation
+    (:func:`pairing_shuffle_perm`, rng ``[1739, 21, seed]``; structural
+    check :func:`shufpair_structural_check` — hard fail-loud) and a SECOND
+    map is fit on the pairing-destroyed pool: ``mapfit_shuf`` +
+    ``diag_shufpair``. Whitening / pools / fit recipe are byte-identical to
+    the true pass — pairing is the ONLY varied factor. Per-map degeneration
+    diagnostics (selected-λ profile, mapped-output variance) ride both diags.
     """
     import numpy as np
 
@@ -511,14 +764,15 @@ def fit_linear_add_map(args, loaded, variant: str, layers: list[int], gen_sink: 
     wh_s = round(time.time() - t0, 1)
     _log_rss("map-pool-whitened")
     t1 = time.time()
-    mapfit = _fit_map(_fitmap_ns(args), x_w, y_w)
+    map_lam_sink: list[dict] = []
+    with fits.capture_selected_lambdas(map_lam_sink):
+        mapfit = _fit_map(_fitmap_ns(args), x_w, y_w)
     if gen_sink is not None:
         n_gen = int(pool_meta["add_n_generic"])
         # basic slices are VIEWS keeping the whole pool alive — copy, then free
         gen_sink["x_gen_w"] = np.ascontiguousarray(x_w[:, :n_gen])
         gen_sink["y_gen_w"] = np.ascontiguousarray(y_w[:, :n_gen])
         gen_sink["n_gen"] = n_gen
-    del x_w, y_w
     diag = {
         **mapfit.diagnostics,
         "map_kind": "linear",
@@ -529,6 +783,49 @@ def fit_linear_add_map(args, loaded, variant: str, layers: list[int], gen_sink: 
         "u_pool_label": u_label,
         **pool_meta,
     }
+    if claim4_sink is not None:
+        # identity+bias vector (Ly, d): pool means, no whole-pool transient.
+        claim4_sink["ib_bias"] = y_w.mean(axis=1) - x_w.mean(axis=1)
+        m_sub = min(2048, x_w.shape[1])
+        sub = slice(x_w.shape[1] - m_sub, x_w.shape[1])
+        diag["map_variant"] = "true"
+        diag["map_selected_lambdas"] = map_lam_sink
+        diag["mapped_output_variance"] = _map_output_variance(mapfit, x_w[:, sub], y_w[:, sub])
+        if claim4_sink.get("want_shufpair"):
+            n_gen = int(pool_meta["add_n_generic"])
+            perm, perm_fp = pairing_shuffle_perm(n_gen, y_w.shape[1], seed=args.seed)
+            structural = shufpair_structural_check(perm, n_gen, y_w.shape[1])
+            # in-place per-layer permute: transient = ONE layer (~0.7 GiB at
+            # production shape), never a second whole-pool fp64 copy.
+            for li in range(y_w.shape[0]):
+                y_w[li] = y_w[li][perm]
+            t2 = time.time()
+            shuf_lam_sink: list[dict] = []
+            with fits.capture_selected_lambdas(shuf_lam_sink):
+                mapfit_shuf = _fit_map(_fitmap_ns(args), x_w, y_w)
+            claim4_sink["mapfit_shuf"] = mapfit_shuf
+            claim4_sink["diag_shufpair"] = {
+                **mapfit_shuf.diagnostics,
+                "map_kind": "linear",
+                "map_source": "refit-pairing-shuffled",
+                "map_variant": "shufpair",
+                "map_fit_s": round(time.time() - t2, 1),
+                "whitening_fit_s": wh_s,
+                "n_u": int(n_u),
+                "u_pool_label": u_label,
+                **pool_meta,
+                "pairing_shuffle": {**perm_fp, "structural_check": structural},
+                "map_selected_lambdas": shuf_lam_sink,
+                "mapped_output_variance": _map_output_variance(
+                    mapfit_shuf, x_w[:, sub], y_w[:, sub]
+                ),
+            }
+            _log(
+                f"[map] shufpair ADD map fit: {claim4_sink['diag_shufpair']['map_fit_s']}s "
+                f"(frac_moved gen {perm_fp['frac_moved_generic']:.4f} / "
+                f"elic {perm_fp['frac_moved_eliciting']:.4f})"
+            )
+    del x_w, y_w
     _log(f"[map] linear ADD map fit: whitening {wh_s}s, map {diag['map_fit_s']}s")
     return wh, mapfit, diag, u_label, n_u
 
@@ -569,10 +866,28 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
     # the whitened generic block is retained for the per-holdout map pools.
     keep_gen = "C" in str(getattr(args, "protocols", ""))
     gen_sink: dict | None = {} if keep_gen else None
+    map_variants = getattr(args, "map_variants", None)
+    claim4_sink: dict | None = None
+    if map_variants is not None:
+        claim4_sink = {"want_shufpair": "shufpair" in map_variants}
     wh, mapfit, map_diag_linear, u_label, n_u = fit_linear_add_map(
-        args, loaded, variant, layers, gen_sink=gen_sink
+        args, loaded, variant, layers, gen_sink=gen_sink, claim4_sink=claim4_sink
     )
     map_diags = {"linear": map_diag_linear}
+    mapfit_shuf = None
+    ib_bias = None
+    if claim4_sink is not None:
+        ib_bias = claim4_sink.get("ib_bias")
+        if claim4_sink.get("want_shufpair"):
+            mapfit_shuf = claim4_sink["mapfit_shuf"]
+            map_diags["linear_shufpair"] = claim4_sink["diag_shufpair"]
+        # effective-spectrum degeneration diagnostic per fitted map (values-only
+        # svd on the (Ly, d, d) weight tensor — pools are already freed here).
+        t_sp = time.time()
+        map_diags["linear"]["weight_spectrum"] = _weight_spectrum(mapfit.w)
+        if mapfit_shuf is not None:
+            map_diags["linear_shufpair"]["weight_spectrum"] = _weight_spectrum(mapfit_shuf.w)
+        _log(f"[map] weight spectra computed in {time.time() - t_sp:.0f}s")
 
     # ---- merged labeled table: [train | wc | ev | ood] ----------------------
     n_tr = len(loaded.tbl.ctx_order)
@@ -654,7 +969,27 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
         f"wc train/eval {len(wc_train_rows)}/{len(wc_eval_rows)} | pvsynth {len(ids_pv)}"
     )
 
-    frozen, frozen_src = committed_frozen(args, loaded, behavior, variant, layers, ROSTER)
+    # arm20 has no committed train row — its frozen layer is MATCHED to the
+    # companion arm's committed layer (MATCHED_FROZEN_COMPANIONS; the fair
+    # round's ("arm20_shuffled_map_ridge", "arm7_map_ridge_pred") precedent).
+    roster_frozen = tuple(a for a in ROSTER if a not in MATCHED_FROZEN_COMPANIONS)
+    frozen, frozen_src = committed_frozen(args, loaded, behavior, variant, layers, roster_frozen)
+    for a, ref in MATCHED_FROZEN_COMPANIONS.items():
+        if a in ROSTER:
+            frozen[a] = frozen[ref]
+            frozen_src += f"; {a}@{ref}-committed-layer (matched-companion convention)"
+
+    # merged-row group keys, parallel to ctx_ids (claim4 preds carry them so
+    # the P2 paired context-bootstrap can resample by group-hash group).
+    groups_all = (
+        [str(g) for g in loaded.tbl.groups]
+        + [str(g) for g in loaded.tbl_wc.groups]
+        + [str(g) for g in loaded.tbl_ev.groups]
+        + ([str(g) for g in tbl_ood.groups] if tbl_ood is not None else [])
+    )
+    if len(groups_all) != len(ctx_ids):
+        raise AssertionError(f"groups_all {len(groups_all)} != ctx_ids {len(ctx_ids)}")
+    groups_pv = [str(g) for g in tbl_pv.groups]
 
     return SimpleNamespace(
         loaded=loaded,
@@ -664,6 +999,10 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
         variant=variant,
         wh=wh,
         mapfit=mapfit,
+        mapfit_shuf=mapfit_shuf,
+        ib_bias=ib_bias,
+        groups_all=groups_all,
+        groups_pv=groups_pv,
         map_diags=map_diags,
         u_label=u_label,
         n_u=n_u,
@@ -713,6 +1052,8 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     prep = prepare_behavior(args, behavior, layers)
     loaded, tbl_pv, tbl_ood, ood_note = prep.loaded, prep.tbl_pv, prep.tbl_ood, prep.ood_note
     variant, wh, mapfit, map_diags = prep.variant, prep.wh, prep.mapfit, prep.map_diags
+    mapfit_shuf, ib_bias = prep.mapfit_shuf, prep.ib_bias
+    groups_all, groups_pv = prep.groups_all, prep.groups_pv
     u_label, n_u = prep.u_label, prep.n_u
     z_ctx, z_ans, dv_raw, ctx_ids, rb_w = (
         prep.z_ctx,
@@ -745,21 +1086,31 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         extra_prov: dict,
         mapfit_use=None,
         map_train_ids: set | None = None,
+        roster: tuple[str, ...] | None = None,
+        map_variant: str | None = None,
+        preds_tag: str | None = None,
     ) -> None:
         """One full-union transfer fit + per-rung evaluation (all protocols).
 
         ``eval_specs`` = [(rung_label, merged_rows | ("pv", None))]; pvsynth
         rows come from the separate whitened pvsynth arrays. ``mapfit_use``
-        (P-C) swaps the frozen behavior-level map for a per-holdout refit;
+        (P-C, claim4 shufpair) swaps the frozen behavior-level map;
         ``map_train_ids`` (P-C) additionally hard-asserts the MAP pool's
         eliciting context ids are disjoint from every eval setting.
+        ``roster`` (claim4 shufpair pass) restricts the arm roster for THIS
+        fit (default: the module ROSTER); ``map_variant`` rides every row's
+        provenance; ``preds_tag`` disambiguates the per-fit preds filename
+        across variant passes (the two passes share fit labels by design —
+        the repro join subsets on map_variant).
         """
         readout_rows = np.asarray(readout_rows, dtype=np.int64)
         _assert_well_posed(len(readout_rows), loaded.dim, f"{behavior}/{fit_label}")
+        roster_use = ROSTER if roster is None else tuple(roster)
         ev_z_parts, ev_za_parts, ev_dv_parts, ev_rung_parts = [], [], [], []
         # ORDERED eval-context ids, parallel to the concatenated columns (the
         # eval_id_sets below are SETS — leakage asserts only, order destroyed).
         ev_ctx_parts: list[list[str]] = []
+        ev_grp_parts: list[list[str]] = []
         eval_id_sets: dict[str, set] = {}
         for label, rows in eval_specs:
             if rows is None:  # pvsynth
@@ -768,6 +1119,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                 ev_dv_parts.append(dv_pv)
                 ev_rung_parts.append(np.asarray([label] * z_pv.shape[1]))
                 ev_ctx_parts.append([str(c) for c in tbl_pv.ctx_order])
+                ev_grp_parts.append(list(groups_pv))
                 eval_id_sets[label] = ids_pv
                 continue
             rows = np.asarray(rows, dtype=np.int64)
@@ -787,18 +1139,20 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             ev_dv_parts.append(dv_raw[rows])
             ev_rung_parts.append(np.asarray([label] * rows.size))
             ev_ctx_parts.append([ctx_ids[i] for i in rows])
+            ev_grp_parts.append([groups_all[i] for i in rows])
             eval_id_sets[label] = {ctx_ids[i] for i in rows}
         z_ev = np.concatenate(ev_z_parts, axis=1)
         za_ev = np.concatenate(ev_za_parts, axis=1)
         dv_ev = np.concatenate(ev_dv_parts)
         rungs_ev = np.concatenate(ev_rung_parts)
         ctx_order_ev = [c for part in ev_ctx_parts for c in part]
+        grp_order_ev = [g for part in ev_grp_parts for g in part]
         if len(ctx_order_ev) != z_ev.shape[1]:
             raise AssertionError(
                 f"[{behavior}] {fit_label}: eval ctx-id order {len(ctx_order_ev)} != "
                 f"{z_ev.shape[1]} eval columns"
             )
-        del ev_z_parts, ev_za_parts, ev_ctx_parts
+        del ev_z_parts, ev_za_parts, ev_ctx_parts, ev_grp_parts
 
         leak = _leakage_assert({ctx_ids[i] for i in readout_rows}, eval_id_sets, fit_label)
         map_leak = None
@@ -830,6 +1184,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             "budget_l": lmax,
             "n_readout": int(len(readout_rows)),
             "dv_scaling": "per_pool_zscore_train_targets_v1",
+            **({"map_variant": map_variant} if map_variant is not None else {}),
             **extra_prov,
         }
         lam_sink: list[dict] = []
@@ -845,7 +1200,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                 frozen,
                 prov,
                 layers,
-                ROSTER,
+                roster_use,
                 device=args.device,
                 n_boot=args.n_boot,
                 min_n=args.min_n,
@@ -859,9 +1214,16 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             # truncate-and-replace, so a re-run of a fit overwrites exactly its
             # own rows. `rung` rides the generic label column, so any per-rung
             # subset read — a paired bootstrap over shared eval contexts, an OOD
-            # scatter — is a pure post-hoc read of this file.
+            # scatter — is a pure post-hoc read of this file. claim4: the
+            # shufpair pass writes `<fit>.shufpair.jsonl` (fit labels are shared
+            # across variant passes by design); `group` rides along so the P2
+            # context bootstrap can resample by group-hash group.
+            preds_name = f"{fit_label}.{preds_tag}.jsonl" if preds_tag else f"{fit_label}.jsonl"
+            preds_labels = {"rung": [str(x) for x in rungs_ev]}
+            if map_variant is not None:
+                preds_labels["group"] = grp_order_ev
             arms.write_preds_jsonl(
-                args.out_root / behavior / "transfer_preds" / f"{fit_label}.jsonl",
+                _behavior_out_dir(args, behavior) / "transfer_preds" / preds_name,
                 arms.transfer_preds_rows(
                     scores,
                     dv_ev,
@@ -869,7 +1231,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                     frozen,
                     provenance={**prov, "n_eval_pooled": len(ctx_order_ev)},
                     layers=tuple(layers),
-                    labels={"rung": [str(x) for x in rungs_ev]},
+                    labels=preds_labels,
                 ),
             )
         per_layer_all.extend(
@@ -892,6 +1254,14 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             ),
             "fit_wall_s": wall,
         }
+        if map_variant is not None:
+            report["map_variant"] = map_variant
+            if ib_bias is not None:
+                # mapping-baselines pair (a) on the SAME eval contexts the map
+                # recon scores (plan §6) — one bias serves both variants.
+                report["recon_identity_bias"] = _identity_bias_recon(
+                    ib_bias, z_ev, za_ev, [str(r) for r in rungs_ev]
+                )
         if map_leak is not None:
             report["map_leakage"] = map_leak
         fit_reports.append(report)
@@ -976,7 +1346,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             # _fit_and_score sidecar above; its contexts are the eliciting
             # cell's own rows, in the order scores_el was sliced to.
             arms.write_preds_jsonl(
-                args.out_root / behavior / "transfer_preds" / "P-A-train-oof.jsonl",
+                _behavior_out_dir(args, behavior) / "transfer_preds" / "P-A-train-oof.jsonl",
                 arms.transfer_preds_rows(
                     scores_el,
                     dv_el,
@@ -1018,55 +1388,80 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         _log(f"[{behavior}] P-A train-OOF done ({len(rows_tr)} rows)")
 
     # ---- P-B: 80% of every dataset, one held out whole (LODO-parameterized) --
+    # claim4-controls: with --map-variants the P-B pass runs ONCE PER VARIANT —
+    # "true" scores the full roster against the frozen true map; "shufpair"
+    # scores {arm4, arm6, arm7} against the pairing-shuffled refit. Pools /
+    # whitening / eval specs are byte-identical across passes (pairing is the
+    # ONLY varied factor); pool records are written on the first pass only.
     if "B" in args.protocols:
         holdouts = args.pb_holdouts or eval_datasets
         unknown = sorted(set(holdouts) - set(eval_datasets))
         if unknown:
             raise ValueError(f"--pb-holdouts {unknown} not in eval datasets {eval_datasets}")
-        for holdout in holdouts:
-            pool = assemble_readout_pool(
-                datasets, holdout=holdout, train_frac=args.train_frac, seed=args.seed
+        mv_list: list[str | None] = list(getattr(args, "map_variants", None) or [None])
+        if "shufpair" in mv_list and mapfit_shuf is None:
+            raise RuntimeError(
+                f"[{behavior}] --map-variants shufpair requested but no shufpair map was "
+                "fit (prepare_behavior claim4_sink missing) — refusing a silent true-map "
+                "substitution"
             )
-            pool_rows = [pool.train_rows[n] for n in sorted(pool.train_rows)]
-            readout_pb = np.concatenate(pool_rows + [wc_train_rows]).astype(np.int64)
-            dv_z_pb = _multi_pool_zscored_dv(dv_raw, pool_rows + [wc_train_rows])
-            eval_specs_pb: list[tuple[str, object]] = [
-                (holdout, ds_by_name[holdout].rows),
-                (WC_RUNG, wc_eval_rows),
-                (PV_RUNG, None),
-            ]
-            eval_specs_pb += [
-                (f"heldin:{name}", pool.heldin_eval_rows[name])
-                for name in sorted(pool.heldin_eval_rows)
-            ]
-            pools_record.append(
-                {
-                    "behavior": behavior,
-                    "holdout": holdout,
-                    "train_frac": pool.train_frac,
-                    "seed": pool.seed,
-                    "per_dataset_train_n": {k: int(len(v)) for k, v in pool.train_rows.items()},
-                    "per_dataset_heldin_n": {
-                        k: int(len(v)) for k, v in pool.heldin_eval_rows.items()
+        for mv_i, mv in enumerate(mv_list):
+            is_shuf = mv == "shufpair"
+            for holdout in holdouts:
+                pool = assemble_readout_pool(
+                    datasets, holdout=holdout, train_frac=args.train_frac, seed=args.seed
+                )
+                pool_rows = [pool.train_rows[n] for n in sorted(pool.train_rows)]
+                readout_pb = np.concatenate(pool_rows + [wc_train_rows]).astype(np.int64)
+                dv_z_pb = _multi_pool_zscored_dv(dv_raw, pool_rows + [wc_train_rows])
+                eval_specs_pb: list[tuple[str, object]] = [
+                    (holdout, ds_by_name[holdout].rows),
+                    (WC_RUNG, wc_eval_rows),
+                    (PV_RUNG, None),
+                ]
+                eval_specs_pb += [
+                    (f"heldin:{name}", pool.heldin_eval_rows[name])
+                    for name in sorted(pool.heldin_eval_rows)
+                ]
+                if mv_i == 0:
+                    pools_record.append(
+                        {
+                            "behavior": behavior,
+                            "holdout": holdout,
+                            "train_frac": pool.train_frac,
+                            "seed": pool.seed,
+                            "per_dataset_train_n": {
+                                k: int(len(v)) for k, v in pool.train_rows.items()
+                            },
+                            "per_dataset_heldin_n": {
+                                k: int(len(v)) for k, v in pool.heldin_eval_rows.items()
+                            },
+                            "n_wc_train": int(len(wc_train_rows)),
+                            "n_readout_total": int(len(readout_pb)),
+                        }
+                    )
+                _fit_and_score(
+                    "P-B",
+                    f"P-B-holdout-{holdout}",
+                    readout_pb,
+                    dv_z_pb,
+                    eval_specs_pb,
+                    {
+                        "holdout": holdout,
+                        "train_frac": args.train_frac,
+                        "readout_train": "union: 80% GROUP-level slice of every "
+                        "trait-eliciting dataset except the holdout (whole) + judged "
+                        "WildChat train split",
+                        "included_datasets": sorted(pool.train_rows),
+                        **({"map_source": "refit-pairing-shuffled"} if is_shuf else {}),
                     },
-                    "n_wc_train": int(len(wc_train_rows)),
-                    "n_readout_total": int(len(readout_pb)),
-                }
-            )
-            _fit_and_score(
-                "P-B",
-                f"P-B-holdout-{holdout}",
-                readout_pb,
-                dv_z_pb,
-                eval_specs_pb,
-                {
-                    "holdout": holdout,
-                    "train_frac": args.train_frac,
-                    "readout_train": "union: 80% GROUP-level slice of every trait-eliciting "
-                    "dataset except the holdout (whole) + judged WildChat train split",
-                    "included_datasets": sorted(pool.train_rows),
-                },
-            )
+                    mapfit_use=mapfit_shuf if is_shuf else None,
+                    roster=SHUFPAIR_ROSTER if is_shuf else None,
+                    map_variant=mv,
+                    preds_tag="shufpair" if is_shuf else None,
+                )
+        if {"true", "shufpair"} <= {m for m in mv_list if m}:
+            _assert_arm4_variant_identity(rows_all, behavior)
 
     # ---- P-C: LODO-consistent map+readout — the MAP is refit per holdout on
     # generic pool + the SAME 80% slices the readout trains on (whitening
@@ -1082,7 +1477,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                 "(gen_sink) — prepare_behavior must see 'C' in args.protocols"
             )
         x_gen_w, y_gen_w, n_gen = gen_sink["x_gen_w"], gen_sink["y_gen_w"], gen_sink["n_gen"]
-        percell_dir = args.out_root / behavior / "percell"
+        percell_dir = _behavior_out_dir(args, behavior) / "percell"
         percell_dir.mkdir(parents=True, exist_ok=True)
         holdouts = args.pb_holdouts or eval_datasets
         unknown = sorted(set(holdouts) - set(eval_datasets))
@@ -1240,6 +1635,11 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         "pools": pools_record,
         "map_diagnostics": {
             f"{variant}|add|linear|{u_label}": map_diags["linear"],
+            **(
+                {f"{variant}|add|linear|{u_label}|shufpair": map_diags["linear_shufpair"]}
+                if "linear_shufpair" in map_diags
+                else {}
+            ),
             **{f"{variant}|add|linear|pc_holdout_{h}": d for h, d in pc_map_diags.items()},
         },
         "frozen": {a: int(i) for a, i in frozen.items()},
@@ -1322,6 +1722,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--n-layers", type=int, default=28)
     ap.add_argument("--draw", type=int, default=0)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument(
+        "--seeds",
+        type=int,
+        nargs="+",
+        default=None,
+        help="claim4-controls seed replication: run every behavior once PER SEED, with "
+        "outputs keyed <behavior>/seed<S>/ (all_arms_spearman.json, transfer_preds, ...). "
+        "Effective default = [--seed] (i.e. [0]) via the legacy single-seed path: with the "
+        "flag ABSENT the out-dir layout and every byte of output are unchanged, which is "
+        "what keeps the live fits/pc/arm12 legs byte-identical. Passing --seeds (even one "
+        "value) opts into the seed-keyed layout.",
+    )
+    ap.add_argument(
+        "--map-variants",
+        nargs="+",
+        default=None,
+        choices=["true", "shufpair"],
+        help="claim4-controls map-variant loop (P-B only): 'true' = the frozen ADD-pool "
+        "map (full roster); 'shufpair' = a map refit on PAIRING-SHUFFLED context-answer "
+        "pairs (one within-component permutation per pool component, rng [1739, 21, seed]; "
+        "roster {arm4, arm6, arm7}). Effective default = ['true'] via the legacy path: "
+        "with the flag ABSENT no map_variant field is emitted and every lane is "
+        "byte-identical. Rows gain map_variant when the flag is passed.",
+    )
     ap.add_argument("--min-n", type=int, default=3)
     ap.add_argument("--n-boot", type=int, default=None)
     ap.add_argument("--device", default="cpu")
@@ -1373,6 +1797,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--allow-overwrite-committed", action="store_true")
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
+    if args.seeds is not None:
+        if len(set(args.seeds)) != len(args.seeds):
+            raise SystemExit(f"--seeds carries duplicates: {args.seeds}")
+    if args.map_variants is not None and len(set(args.map_variants)) != len(args.map_variants):
+        raise SystemExit(f"--map-variants carries duplicates: {args.map_variants}")
     _apply_extra_arms(args.extra_arms)
     if args.u_store is None:
         args.u_store = args.store_root / "u_store"
@@ -1436,6 +1865,13 @@ def main(argv: list[str] | None = None) -> int:
         assert callable(fits.capture_selected_lambdas), "lambda sink missing — stale checkout"
         for slug in ROSTER:
             assert slug in _arms.ARM_REGISTRY, f"{slug} missing from ARM_REGISTRY"
+        # claim4-controls surface: shufpair roster + matched-frozen companions
+        # resolve against the registry; the shuffle helpers are importable.
+        for slug in SHUFPAIR_ROSTER:
+            assert slug in _arms.ARM_REGISTRY, f"{slug} (SHUFPAIR_ROSTER) not in ARM_REGISTRY"
+        for a, ref in MATCHED_FROZEN_COMPANIONS.items():
+            assert a in _arms.ARM_REGISTRY and ref in _arms.ARM_REGISTRY, (a, ref)
+        assert callable(fits.shuffled_map_weights), "arm20 weight-shuffle helper missing"
         _assert_no_judge_modules("after --import-check imports")
         print("[r2v2] import-check OK", flush=True)
         sys.stdout.flush()
@@ -1450,26 +1886,37 @@ def main(argv: list[str] | None = None) -> int:
     from scripts.issue1739_wcrung_arms import _git_tracked, _verify_input_shas
 
     load_dotenv()
+    # seed loop (claim4-controls): --seeds keys every output under
+    # <behavior>/seed<S>/; the legacy single-seed path (--seeds absent) keeps
+    # args.seed + the flat layout byte-identical.
+    seeds = list(args.seeds) if args.seeds is not None else [args.seed]
+    seed_keyed = args.seeds is not None
     for b in args.behaviors:
-        out = args.out_root / b / "all_arms_spearman.json"
-        if _git_tracked(out) and not args.allow_overwrite_committed:
-            raise SystemExit(f"refusing to overwrite git-TRACKED output: {out}")
+        for s in seeds:
+            args.out_subdir = f"seed{s}" if seed_keyed else ""
+            out = _behavior_out_dir(args, b) / "all_arms_spearman.json"
+            if _git_tracked(out) and not args.allow_overwrite_committed:
+                raise SystemExit(f"refusing to overwrite git-TRACKED output: {out}")
 
     layers = args.layers or list(range(args.n_layers))
     commit = _git_commit()
     env = _env_versions()
     failures: list[dict] = []
     t_all = time.time()
-    for behavior in args.behaviors:
+    for behavior, seed in [(b, s) for b in args.behaviors for s in seeds]:
         t0 = time.time()
+        args.seed = int(seed)
+        args.out_subdir = f"seed{seed}" if seed_keyed else ""
         try:
             res = run_behavior(args, behavior, layers)
         except (FileNotFoundError, RuntimeError, ValueError, AssertionError) as exc:
-            failures.append({"behavior": behavior, "error": f"{type(exc).__name__}: {exc}"})
-            _log(f"{behavior} FAILED: {exc}")
+            failures.append(
+                {"behavior": behavior, "seed": int(seed), "error": f"{type(exc).__name__}: {exc}"}
+            )
+            _log(f"{behavior} seed={seed} FAILED: {exc}")
             continue
         loaded = res.pop("loaded")
-        out_dir = args.out_root / behavior
+        out_dir = _behavior_out_dir(args, behavior)
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / "all_arms_spearman.json"
         arms.write_summary(
@@ -1483,6 +1930,16 @@ def main(argv: list[str] | None = None) -> int:
                 "variants": [args.variant],
                 "variant_scope": VARIANT_SCOPE_NOTE,
                 "protocols": list(args.protocols),
+                **(
+                    {
+                        "seed": int(args.seed),
+                        "seed_keyed_out_dir": bool(seed_keyed),
+                        "map_variants": list(args.map_variants or []),
+                        "shufpair_roster": list(SHUFPAIR_ROSTER),
+                    }
+                    if (seed_keyed or args.map_variants is not None)
+                    else {}
+                ),
                 "arms": list(ROSTER),
                 "label_consuming_arms": sorted(LABEL_CONSUMING),
                 "map_kinds": ["linear"],
