@@ -394,6 +394,18 @@ Dan Mossing — in main.tex \author (suppressed until \iclrfinalcopy; blind-safe
 18. EVIDENCE POLICY (Thomas, 2026-08-19): results at awaiting_promotion count as
     accepted — "consider awaiting promotion to be already done." No promotion gate
     before drafting; classification states left untouched.
+19. WORKING SURFACE (Thomas, 2026-08-19): the paper is written in GOOGLE DOCS for
+    now — doc id `1NFNGirAwsKnvLP-ah9w6mWQKsAfYRbxl1wlrSZmxp7U` ("Context→Answer Map
+    Paper — Working Draft"), converted from the Overleaf tex via pandoc (citations
+    rendered). Review loop: Thomas leaves native Docs comments; the agent reads /
+    replies / resolves them via the Drive REST API using the google-workspace-mcp
+    OAuth token (helper: `~/paper-tools/gdoc_paper.py` — token/convert/comments/
+    reply/trash subcommands; full-drive scope verified). Overleaf is FROZEN as the
+    LaTeX skeleton (last commit f28defe) until the port-back before submission;
+    Docs is the prose source of truth in the interim. An AI-native editor sweep
+    (2026-08-19) found no tool exposing comments to an external agent; Google Docs
+    won on official read/reply/resolve API + comment UX (runners-up: self-hosted
+    Outline, Notion-no-resolve, GitHub PR).
 
 ## Mechanical pending
 - ICLR 2027 style files NOT YET PUBLISHED (checked 2026-08-19: github.com/ICLR/Master-Template
