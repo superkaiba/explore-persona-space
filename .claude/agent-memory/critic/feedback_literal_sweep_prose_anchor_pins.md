@@ -46,6 +46,22 @@ look-alikes.
 coupled-test claim or an expected-residual enumeration; run both replays
 before verdict.
 
+**Round-3 addenda (#2391 v4):** (1) round-3 on a converged literal-sweep plan
+is PURE REPLAY — extract each authored command block VERBATIM from the plan
+file (`sed -n 'A,Bp' plan.md > f; bash f pre|post`), never retype; a plan
+whose §16 records rc + outputs per repaired command replays in ~10 tool
+calls. (2) Selector-COVERAGE attributions need a per-file probe:
+`select_step9c_tests.py`'s `WORKFLOW_SURFACE_GLOBS` (incl.
+`.claude/workflow.yaml`) is a SKIP/short-circuit list, NOT a mapping arm — a
+workflow.yaml-only `--map-files` probe returns zero mappings, so "covered by
+the workflow-surface mapping" is not a real channel; real channels are
+`WORKFLOW_INVARIANT` registry membership + the skills/rules-pin discovery
+arms. (3) A residual-sweep's pattern family is never total over doc-prose
+edit sites ("(cap 5)", "round-5 cap", "max 5 per the", "On round 5 (the
+cap)") — hunk-presence review against the full §-table is the gate for
+wholly-missed sites; only partial-application-inside-a-hunk and wrapped-form
+regression need named §4.2-style focus items.
+
 **Round-2 addenda (#2391 v3 — three revision-introduced instrument traps):**
 (1) a `\b` appended to a token pattern (`cap_5\b`) silently un-matches
 `cap_5_surface` — `_` is a word char; replay the plan's EXACT pattern
