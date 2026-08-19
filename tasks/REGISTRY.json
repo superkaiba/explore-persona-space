@@ -10635,8 +10635,8 @@
     "2377": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2377",
-      "status": "planning",
+      "path": "tasks/approved/2377",
+      "status": "approved",
       "title": "workflow-fix: tmp-scratch sweep blind spot \u2014 stray top-level /tmp/{pyproject.toml,uv.lock} poisons every /tmp-cwd uv run fleet-wide"
     },
     "238": {
