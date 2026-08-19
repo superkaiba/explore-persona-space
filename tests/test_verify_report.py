@@ -2280,13 +2280,54 @@ def test_stale_pin_dedup_same_citation(stale_repo):
 
 
 def test_stale_pin_branch_token_pin_is_fresh_by_construction(stale_repo):
-    """Named residue 3: a citation whose only pin is a branch token resolves
-    AT a tip, so the log range is empty — silent by construction."""
+    """Named residue 3, origin-ABSENT fallback arm: with no origin ref, a
+    plain branch token falls back to the local ref — here the authoritative
+    tip itself — so the log range is empty and the citation stays silent."""
     root, *_ = stale_repo
     line = "tables in `eval_results/issue_5/x.json` on branch `issue-5`"
     r = _stale([line], root)
     assert r.passed is True and r.is_warn is False, r.detail
     assert "fresh" in r.detail
+
+
+def test_stale_pin_branch_token_prefers_origin_over_lagging_local(stale_repo):
+    """Round-2 blocker fix (branch-token-origin-precedence): local issue-5
+    forced to pin A while origin/issue-5 sits at the tip — the NORMAL
+    worktree shape. A citation whose ONLY pin is the plain ``issue-5`` token
+    associates to the ORIGIN tip (mirroring _authoritative_tip) -> clean
+    PASS. Local-first resolution pinned it at lagging A and false-WARNed a
+    healthy report (the round-1 reconciler's empirical replay)."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = "tables in `eval_results/issue_5/x.json` on branch `issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_explicit_origin_token_resolves_remote_only(stale_repo):
+    """Round-2 blocker fix, explicit-token form: an ``origin/issue-5`` token
+    resolves ONLY refs/remotes/origin/issue-5 — never the lagging local ref
+    it does not name -> clean PASS under the same lagging-local shape."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = "tables in `eval_results/issue_5/x.json` on branch `origin/issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_nearest_pin_before_path_association(stale_repo):
+    """Association arm the round-1 Codex review named unfocused: with NO pin
+    positioned after the member's span, the member associates to the nearest
+    pin BEFORE it — the pin-A citation WARNs."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"at `{sha_a}` we updated `eval_results/issue_5/x.json`"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "x.json` cited at" in r.detail
 
 
 def test_stale_pin_shalike_filename_does_not_self_pin(stale_repo):

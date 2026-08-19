@@ -122,10 +122,15 @@ Required structure (both modes):
     unresolvable / no branch ref → PASS-note; no candidates → PASS-note N/A.
     Named residues: a stale citation phrased WITHOUT a same-line pin is
     invisible by construction; artifacts modified on a DIFFERENT branch
-    (main after a sibling merge) are out of scope; a branch-token-only pin
-    (`` `issue-<N>` `` / `` `main` ``) resolves at a tip and is
-    fresh-at-verify-time by construction — and a worktree's local
-    ``issue-<N>`` lagging origin matters only in the origin-absent fallback.
+    (main after a sibling merge) are out of scope; branch-token pins resolve
+    ORIGIN-FIRST (an explicit `` `origin/<b>` `` token only at
+    ``refs/remotes/origin/<b>``; a plain `` `<b>` `` token falls back to
+    ``refs/heads/<b>`` only when origin is absent — mirroring the
+    authoritative-tip policy, so a worktree-local ``issue-<N>`` lagging
+    origin cannot false-WARN a token-pinned citation), which makes a token
+    naming the AUTHORITATIVE branch fresh at verify time (same-ref log range
+    is empty); a token naming a DIFFERENT ref (`` `main` ``, a foreign
+    `` `issue-<M>` ``) resolves at THAT ref's tip and may legitimately WARN.
 
 Mode-specific:
   - ``generation``: TLDR AND Conclusion-and-next-steps content MUST be exactly
@@ -1571,10 +1576,16 @@ def _evidence_path_candidates(line: str) -> list[tuple[tuple[int, int], list[str
 def _same_line_pins_positional(
     line: str, figures_root: Path, blank_spans: tuple[tuple[int, int], ...] = ()
 ) -> list[tuple[int, str]]:
-    """Thin POSITIONAL variant of ``_same_line_pins`` (#2195) — the resolution
-    logic is reused verbatim (URL + committed-under spans blanked, hex runs
-    via ``rev-parse --verify <tok>^{commit}``, backticked branch tokens via
-    ``refs/heads/<b>`` then ``refs/remotes/origin/<b>``); it additionally
+    """Thin POSITIONAL variant of ``_same_line_pins`` (#2195) — the hex-run
+    resolution is reused verbatim (URL + committed-under spans blanked, hex
+    runs via ``rev-parse --verify <tok>^{commit}``), with TWO deliberate
+    divergences. (1) Branch tokens resolve ORIGIN-FIRST, mirroring
+    ``_authoritative_tip``: an explicit ``origin/<b>`` token resolves ONLY
+    ``refs/remotes/origin/<b>``; a plain ``<b>`` token tries
+    ``refs/remotes/origin/<b>`` first and falls back to ``refs/heads/<b>``
+    only when the remote ref is absent (local-first would associate a token
+    pin to a lagging worktree-local ``issue-<N>`` and false-WARN a report
+    pinned at the origin tip — the round-1 blocker). (2) It additionally
     blanks the caller-supplied ``blank_spans`` (the candidate evidence-path
     backtick spans — span hygiene: a sha-like cited filename must never
     contribute its own hex run as a pin) and returns ``(span_start, sha)``
@@ -1599,8 +1610,17 @@ def _same_line_pins_positional(
         btok = m.group(1).strip()
         if not _BRANCH_TOKEN_RE.match(btok):
             continue
-        b = btok.removeprefix("origin/")
-        for ref in (f"refs/heads/{b}", f"refs/remotes/origin/{b}"):
+        # Origin-authoritative token resolution (#2195 round 2): an explicit
+        # ``origin/<b>`` token names ONLY the remote ref; a plain ``<b>``
+        # token prefers ``refs/remotes/origin/<b>`` and falls back to the
+        # local ref only when origin is absent — mirroring
+        # ``_authoritative_tip``, so a lagging worktree-local ``issue-<N>``
+        # can never associate a token pin to a stale tip and false-WARN.
+        if btok.startswith("origin/"):
+            refs = (f"refs/remotes/{btok}",)
+        else:
+            refs = (f"refs/remotes/origin/{btok}", f"refs/heads/{btok}")
+        for ref in refs:
             rc, sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
             if rc == 0 and sha:
                 pins.append((m.start(), sha))
