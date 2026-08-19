@@ -112,37 +112,37 @@ Four correctness surfaces, ordered by how far correctness is from surface recall
 | Multiple choice | MMLU, ARC-Challenge | option match; clean log-prob companion | new rollouts + capture |
 | Code | MBPP, HumanEval, and a third pool to reach adequate n (BigCodeBench / LiveCodeBench) | unit-test execution in a sandbox | new rollouts + capture |
 
-**Sizing constraint — this is load-bearing.** `d = 3,584`. Every ridge fit at `n_train < d` is
-estimator-degenerate (#1701, #1887), so each new surface needs **≥ ~8,000 contexts** to be fit in
-the ambient basis — and the § Map-pool composition factor needs a *further* disjoint unlabeled
-slice on top of that. HumanEval (164) + MBPP (974) cannot reach either bar alone: code either
-pools a third source or is fit in a reduced basis (PCA-k from the unlabeled pool) with the
-under-determined regime declared explicitly. The planner sizes this; it is not optional.
+Per-surface context counts are set by § The `n < d` regime, which is an **open decision** at the
+time of writing.
 
 ## Arms
 
-**Slim ladder, now a 2-factor grid: input representation × readout family.** The MLP arms are an
-explicit user request (§ Provenance), which is what the linear-by-default standing rule requires;
-they are not a roster default.
+**Slim ladder. The readout family is held FIXED at ridge for every arm; only the input
+representation varies.** The nonlinearity enters at the MAP, never at the readout — the
+MLP-mapped arm is an explicit user request (§ Provenance), which is what the linear-by-default
+standing rule requires; a direct-MLP or oracle-MLP readout was considered and **deliberately
+excluded** by the same user call.
 
-| input to the readout | ridge readout | MLP readout |
+| # | input to the ridge readout | arm |
 |---|---|---|
-| `v_C` — context vector | **1. direct-linear** | **1n. direct-MLP** |
-| `M_lin v_C` — linearly mapped answer | **2. mapped-linear** | — |
-| `M_mlp v_C` — MLP-mapped answer | **2n. mapped-MLP** | — |
-| `v_A` — true answer vector (oracle) | **3. oracle-linear** | **3n. oracle-MLP** |
+| 1 | `v_C` — context vector | **direct-linear** |
+| 2 | `M_lin v_C` — linearly mapped answer | **mapped-linear** |
+| 2n | `M_mlp v_C` — MLP-mapped answer | **mapped-MLP** |
+| 3 | `v_A` — true answer vector (oracle) | **oracle-linear** |
 
-Six predictor arms. **The direct-MLP arm is not optional once the MLP map is in.** Comparing a
-nonlinear map arm against a linear direct arm confounds "the map helps" with "nonlinearity
-helps"; arm 1n is what makes arm 2n's number interpretable. Arm 3n gives the nonlinear ceiling so
-the two ladders are each complete. An MLP readout stacked on an already-MLP-mapped answer is
-omitted as a redundant second nonlinearity.
+Four predictor arms. Holding the readout fixed makes the comparison across input representations
+internally fair — every arm gets the same estimator, so a difference is attributable to the
+representation. **Declared scope limit, to be stated in the writeup:** because no nonlinear
+*readout* on `v_C` is run, the experiment cannot rule out that a nonlinear direct probe would
+match or beat the MLP-mapped arm. The direct side is therefore measured at its LINEAR ceiling,
+not its true ceiling, and any "the map beats direct prediction" claim is scoped to linear direct
+readouts. This is a known, accepted gap, not an oversight.
 
-**MLP recipe — inherited verbatim from #1739** (`Source: #1739`, `constants.py` `MLP_HIDDEN` /
+**MLP-map recipe — inherited verbatim from #1739** (`Source: #1739`, `constants.py` `MLP_HIDDEN` /
 `MLP_MAX_EPOCHS`): width 512, one hidden layer, ≤300 epochs AdamW, multihead across cells,
 whitened input. Recipe fidelity keeps the H3 comparison against #1739's behavior numbers
 commensurable. The banked **kernel-ridge** maps can ride as a free extra input row if the planner
-wants a third nonlinearity at no generation cost.
+wants a third map nonlinearity at no generation cost.
 
 Mandated baselines and controls:
 
@@ -195,12 +195,79 @@ dense-factorization case (#823) and must go through the batched solver, never a 
 **Scope control:** run `f_U` at **three `L` anchors, not the full `L` sweep** (#1739's own scoping
 of this factor), and only on surfaces that clear the Result 0 spread gate.
 
+## The `n < d` regime — OPEN DECISION
+
+`d = 3,584` (Qwen2.5-7B hidden size). Two separate things get called "the `n < d` problem" and
+they need different answers:
+
+**(a) The `L` sweep is under-determined by design.** `L` runs from 250 up, so every arm's
+small-`L` cells sit at `n_train ≪ d`. That is not a defect — the label-scarce regime is the
+experiment. What the #1701 / #1887 rules actually forbid is (i) pure-GCV λ selection at `n < d`
+and (ii) reading an attenuated under-determined number as if commensurable with a well-posed one.
+Both are procedural, and both are handled: dof-capped λ selection everywhere
+(`GCV_DOF_CAP = 0.9`), selected λ and effective dof reported per fit, and no cross-`n` comparison
+of raw magnitudes — comparisons are always **between arms at the same `(L, fold, seed)`**, which
+is what the paired-bootstrap protocol already enforces.
+
+**(b) Code cannot reach a large `n` at all — and the binding constraint there is spread, not `n`.**
+Verified sizes: HumanEval 164, MBPP 974 (374 train / 500 test / 90 val / 10 prompt),
+BigCodeBench 1,140. Pooled ≈ 2,278 — under `d`, and pooling heterogeneous benchmarks introduces a
+benchmark-identity confound. The large code corpora that *would* clear `d` (APPS, CodeContests)
+are competitive-programming problems on which a 7B model's pass rate floors near zero, which
+fails the Result 0 spread gate — so they buy `n` by destroying the DV. This is a genuine
+trade-off, not an oversight.
+
+Candidate resolutions (to be settled before the planner sizes Phase 1):
+
+1. **Dual basis, run both** — every arm fit twice: ambient `d = 3,584` with dof-capped ridge, and
+   a **PCA-`k` basis estimated from the unlabeled pool** (`k` selected on dev). The PCA basis
+   costs no labels, is already house convention in this line (#1092 / #1739 report
+   "ambient / PCA-48"), and has an in-repo batched implementation
+   (`analysis/issue_763_vectorized.batched_ridge_predict_loco_pca`). Disagreement between the two
+   bases is itself reportable — it separates "no signal" from "estimator can't reach it".
+2. **Grow code with APPS-introductory only** — the introductory tier is tractable for a 7B, so it
+   may add usable `n` with surviving spread. Requires a spread pilot before committing.
+3. **Demote code to an exploratory rung** — reported in the PCA basis only, explicitly
+   under-powered, excluded from the headline.
+4. **Reallocate the generation budget toward `n`, not `K`.** Holding `K = 5` (recipe fidelity with
+   #1739, and required for the H3 comparison) and spending the surplus on more contexts. Note the
+   trade-off is real in both directions: more contexts shrink the standard error of ρ but do not
+   undo DV-noise attenuation, while larger `K` raises the reliability ceiling. Result 0(b)'s
+   split-half ceiling is what tells us whether `K = 5` is leaving ρ on the table.
+
+## Splits — every surface has a locked held-out test set
+
+**Standing requirement for this task (user directive): there is always a held-out test set.**
+Cross-validation on the training pool is a diagnostic, never the headline.
+
+Every surface is partitioned **at group level** (question entity / MMLU subject / problem id;
+groups never straddle a split) into three parts:
+
+| split | used for | touched |
+|---|---|---|
+| **train** | fitting readouts; the `L` sweep draws its labels from here | freely |
+| **dev** | ALL selection — layer ℓ, ridge λ, PCA rank k, MLP epochs, arm choice, whitening rank | freely |
+| **test** | the reported headline numbers | **once**, after selections are frozen |
+
+Rules that make "touched once" real rather than aspirational:
+
+- Every hyperparameter and every selection is made on train+dev only. Nothing on test.
+- The frozen selections (layer, λ, k, arm) are written to a committed `selection.json` **before**
+  the test read, so the claim is auditable after the fact rather than asserted.
+- The map's unlabeled pool — including the `f_U > 0` target-surface slice — excludes all test
+  groups in the primary configuration. Whitening and PCA statistics likewise come from the
+  unlabeled/train pools only; no transductive refit on test.
+- With 28 layers × 4 arms × 3 `f_U` cells, a max-over-selection read on test would be
+  selection-on-test. The layer and arm are frozen from dev; a max-over-anything is reported on
+  dev, never on test.
+- Shift rungs 1 and 2 (below) are held-out test sets by construction and inherit the same rule.
+
 ## Evaluation ladder and metrics
 
-Group-level folds throughout (question entity / MMLU subject / problem id) — never pointwise.
-Rungs, in increasing shift:
+Group-level folds within train/dev (question entity / MMLU subject / problem id) — never
+pointwise. Rungs, in increasing shift, each read once against frozen selections:
 
-- **rung 0** — held-out 20% within the training surface
+- **rung 0** — the locked test split of the training surface
 - **rung 1** — cross-dataset within family (TriviaQA+NQ-Open → SimpleQA; GSM8K → MATH; MMLU → ARC)
 - **rung 2** — cross-family (recall QA → math / MCQ / code) — the interesting rung for "does the
   map transfer at all". "Target surface" for `f_U` always means the **training** surface here.
@@ -232,12 +299,18 @@ attributable to map degradation rather than to absent signal.
   25–40 GPU-h on 1× H100; **pilot-gated** with a measured 1-cell wall before the production
   dispatch. New activation store ≈ 25 GB fp16. The same rollouts supply the `f_U` unlabeled pools
   at zero marginal cost.
-- **Phase 2 — fits.** Grid: 4 surfaces × 6 predictor arms × 28 layers × `L` sweep × 3 `f_U` cells
-  (at 3 `L` anchors only) × seeds × group folds, plus ~672 map fits. **The MLP arms move this off
-  a pure-CPU lane**: iterative-optimization fits are GPU-worthy per the compute-character rule,
-  and the many-cell MLP battery must run through the batched multihead path
-  (`analysis/vectorized_mlp_skill.py`, 50–100×), never a per-cell loop. Ops arithmetic and a
-  measured 1-cell pilot wall go in plan §9 before dispatch.
+- **Phase 2 — fits.** Grid: 4 surfaces × 4 predictor arms × 28 layers × `L` sweep × 3 `f_U` cells
+  (at 3 `L` anchors only) × seeds × group folds, plus ~672 map fits. Readouts are all ridge and
+  stay on a CPU lane; **the MLP-map fits move off pure CPU** — iterative-optimization fits are
+  GPU-worthy per the compute-character rule, and the many-cell MLP-map battery must run through
+  the batched multihead path (`analysis/vectorized_mlp_skill.py`, 50–100×), never a per-cell
+  loop. Ops arithmetic and a measured 1-cell pilot wall go in plan §9 before dispatch.
+- **Estimator well-posedness.** `L` reaches down to 250 against `d = 3,584`, so the small-`L` end
+  of every curve is under-determined **by design** (see § The `n < d` regime). The inherited
+  `issue1739_fits.ridge_gcv_predict_per_target` path is pure GCV and is **banned** at `n < d`
+  (#1887): every fit in this task routes through the dof-capped selector
+  (`dof_capped_ridge_multi_y` / `dof_capped_ridge_fit_all`, `GCV_DOF_CAP = 0.9`), and every fit
+  reports its selected λ and effective degrees of freedom.
 - **Judge spend ≈ $0** for the primary DV. Math answer-equivalence uses a verifier library, not a
   judge, wherever it can.
 
@@ -261,8 +334,8 @@ correctness DV builder, and the `f_U` pool-composition harness.
 1. **Novelty vs #1739's hallucination arm.** correct = 1 − abstained − fabricated, and fabrication
    rate was already predicted. Result 0(c) quantifies the overlap; math / MCQ / code are where
    the novelty is structurally protected.
-2. **`n_train < d`** on the new surfaces, made tighter by the `f_U` factor's disjoint unlabeled
-   slice — see the sizing constraint above.
+2. **`n_train < d`** — see § The `n < d` regime. Open decision; the `f_U` factor's disjoint
+   unlabeled slice tightens it further on every new surface.
 3. **Labels are cheap on these surfaces by construction** (programmatic verification), so the
    label-efficiency result is an *estimator-level* finding obtained by withholding labels we
    actually have, transferred by analogy to settings where labels are expensive. State it; do not
@@ -286,9 +359,10 @@ correctness DV builder, and the `f_U` pool-composition harness.
 - Literature grounding pass (`/deep-lit-review`) on hidden-state correctness / truthfulness /
   P(IK) probing, to name the closest prior formalizations and to set the expected effect sizes
   for H1 before any fits are run.
-- Exact context counts per new surface, pinned against the `n ≥ d` constraint *and* the disjoint
-  `f_U` slice.
-- Third code pool selection, and whether code stays in the headline or is reported as exploratory.
+- **§ The `n < d` regime is unresolved** — basis policy, code pool, and whether code stays in the
+  headline. Everything downstream of Phase 1 sizing waits on it.
+- Exact context counts per new surface, pinned against whatever basis policy is chosen *and* the
+  disjoint `f_U` slice.
 - Whether the `L`-sweep runs on all four surfaces or on QA + one new surface, with the others at
   full-label only.
 - Whether the kernel-ridge map rides as a third input row (free — banked).
@@ -307,5 +381,11 @@ Second round, verbatim: *"can we: - add a MLP arm - compare fitting directly on 
 to fitting on the speific data + generic data to fitting only on the generic data (readout always
 trained on specific data) -- similar to behavior prediction experiment?"* — this is the explicit
 user request the linear-by-default standing rule requires for the nonlinear arms, and it is what
-added the § Map-pool composition factor. The direct-MLP and oracle-MLP arms were added alongside
-the MLP-map arm as a fairness requirement, not as scope creep.
+added the § Map-pool composition factor.
+
+Third round, verbatim: *"only add mapped MLP. there should always be a held out test set. let's
+discuss the n < 3584 problem"* — direct-MLP and oracle-MLP readouts were proposed as a fairness
+pairing and **declined**; the readout family is fixed at ridge and the resulting scope limit is
+declared in § Arms. The locked held-out test set (§ Splits) is a standing requirement for this
+task, not a per-rung convention. The `n < d` question is recorded as an open decision in § The
+`n < d` regime.
