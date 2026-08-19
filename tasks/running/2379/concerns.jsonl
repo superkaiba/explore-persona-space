@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T07:56:51Z", "event": "raised", "concern_id": "i2379-live-batch-request-shape", "severity": "CONCERN", "summary": "Judge dry-run validates the instrument offline only; the live Batch request shape is first exercised by the P6 pilot gate (rules 26/27) — pilot MUST pass before the 43k-call wave.", "raised_by": "experiment-implementer", "raised_at_round": 1}
