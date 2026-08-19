@@ -18,6 +18,10 @@ goal: 'On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disab
   context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable
   cells in both prior runs.'
 backend: auto
+relates_to:
+- spec-context-as-vector
+- spec-prompt-vs-icl
+- spec-role-header
 ---
 # Experiment: Does context-vector patching work better on a more powerful model? (Qwen3.8-27B, context-end only, full 39-cell design)
 
