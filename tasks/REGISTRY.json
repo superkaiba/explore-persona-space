@@ -9247,8 +9247,8 @@
     "2198": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2198",
-      "status": "running",
+      "path": "tasks/reviewing/2198",
+      "status": "reviewing",
       "title": "verify_report.py: scan the detailed companion writeup, not just the report body"
     },
     "2199": {
