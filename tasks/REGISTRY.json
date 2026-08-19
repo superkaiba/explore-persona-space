@@ -9240,8 +9240,8 @@
     "2197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2197",
-      "status": "proposed",
+      "path": "tasks/planning/2197",
+      "status": "planning",
       "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
     },
     "2198": {
