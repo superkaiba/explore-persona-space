@@ -63,7 +63,23 @@ ARM_MAP = "arm7_map_ridge_pred"
 ARM_PROJ = "arm6_map_proj_e1"
 ARM_CTXDIR = "arm2_ctx_native"
 ARM_WSHUF = "arm20_shuffled_map_ridge"
-COVER_ARMS = (ARM_CTX, ARM_MAP)
+# Arms whose per-context preds drive the paired deltas + the group bootstrap.
+BOOT_ARMS = (ARM_CTX, ARM_MAP)
+# Coverage set-check universe: arm -> the map variants the scorer emits primary
+# rows under (arm2/arm20 run in the TRUE pass only — SHUFPAIR_ROSTER excludes
+# them by design; a missing cell here is a REPORTED gap, never silently
+# absent from the check).
+COVER_ARM_VARIANTS = {
+    ARM_CTX: ("true", "shufpair"),
+    ARM_MAP: ("true", "shufpair"),
+    ARM_CTXDIR: ("true",),
+    ARM_WSHUF: ("true",),
+}
+# Registered replication set (plan §11): the lattice's draftable branches
+# REQUIRE all 5 seeds per rung — a fold invoked with fewer seeds can only
+# resolve `Not draftable / unresolved` (the registered denominator never
+# shrinks to the invocation).
+REGISTERED_SEED_COUNT = 5
 SYCO_OOD_RUNGS = ("sycoans", "sycoays", "sycofb", "sycomim", "sycomwe")
 ITEM4_ARMS = ("arm1_ctx_e1", ARM_CTX, ARM_PROJ, ARM_MAP, "arm11_oracle_proj")
 DEFAULT_BANKED_REF = "5aae0a472b"
@@ -147,8 +163,8 @@ def row_coverage_check(
     for b in behaviors:
         for rung in rungs_by_b[b]:
             for s in seeds:
-                for mv in ("true", "shufpair"):
-                    for arm in COVER_ARMS:
+                for arm, variants in COVER_ARM_VARIANTS.items():
+                    for mv in variants:
                         if (b, rung, int(s), mv, arm) not in cells:
                             gaps.append(
                                 {
@@ -189,6 +205,44 @@ def arm4_pairing_check(cells: dict) -> None:
         )
 
 
+ARM_MEAN_ARMS = ("arm1_ctx_e1", ARM_CTXDIR, ARM_CTX, ARM_MAP, ARM_PROJ, ARM_WSHUF)
+
+
+def arm_true_means_declared(
+    cells: dict, b: str, rung: str, seeds_ok: list[int], gaps: list[dict]
+) -> dict:
+    """Per-arm true-pass seed means with DECLARED partial-coverage gaps.
+
+    An arm with rows for a strict subset of ``seeds_ok`` gets a gap row
+    appended to ``gaps`` and mean ``None`` — never a silent partial average
+    (plan §3 row-coverage discipline). A wholly-absent arm is ``None`` (its
+    cell-level absence is already enumerated by the COVER_ARM_VARIANTS
+    set-check for the covered arms)."""
+    import numpy as np
+
+    means: dict[str, float | None] = {}
+    for a in ARM_MEAN_ARMS:
+        vals = [
+            cells[(b, rung, s, "true", a)]["rho_frozen"]
+            for s in seeds_ok
+            if (b, rung, s, "true", a) in cells
+        ]
+        if vals and len(vals) < len(seeds_ok):
+            gaps.append(
+                {
+                    "behavior": b,
+                    "eval_rung": rung,
+                    "arm": a,
+                    "note": f"partial seed coverage {len(vals)}/{len(seeds_ok)} on the true "
+                    "pass — arm mean withheld (declared gap, never a partial average)",
+                }
+            )
+            means[a] = None
+        else:
+            means[a] = float(np.mean(vals)) if vals else None
+    return means
+
+
 def seed_tci(vals: list[float]) -> dict:
     """mean ± t_{0.975, n-1}·SD/√n over the per-seed values (plan §6)."""
     import numpy as np
@@ -214,14 +268,70 @@ def _ci_spans_zero(ci) -> bool:
     return ci is not None and ci[0] <= 0 <= ci[1]
 
 
-def lattice_verdict(per_rung: list[dict], flagships=FLAGSHIPS) -> dict:
+def lattice_completeness_gaps(
+    per_rung: list[dict],
+    expected_counts: dict[str, int] = EXPECTED_PRIMARY_COUNTS,
+    n_seeds_required: int = REGISTERED_SEED_COUNT,
+) -> list[str]:
+    """Named gaps vs the REGISTERED lattice denominator (plan §3: the exact
+    13-rung set, all 5 seeds per rung, every quantity — dtrue/margin seed
+    t-CIs AND both paired group-level context-bootstrap CIs). ANY gap makes
+    the lattice `Not draftable / unresolved` (kill-(b) note: a shrunken
+    median denominator must never yield a draftable verdict)."""
+    gaps: list[str] = []
+    by_b: dict[str, list[dict]] = {}
+    for r in per_rung:
+        by_b.setdefault(str(r["behavior"]), []).append(r)
+    for b in sorted(set(expected_counts) | set(by_b)):
+        rows = by_b.get(b, [])
+        expected = expected_counts.get(b)
+        if expected is None:
+            gaps.append(f"{b}: {len(rows)} rungs from an UNREGISTERED behavior")
+            continue
+        if len(rows) != expected:
+            present = sorted(str(r["eval_rung"]) for r in rows)
+            gaps.append(f"{b}: {len(rows)}/{expected} registered primary rungs present {present}")
+        for r in sorted(rows, key=lambda r: str(r["eval_rung"])):
+            tag = f"{b}/{r['eval_rung']}"
+            n_seeds = r.get("dtrue", {}).get("n_seeds")
+            if not r.get("complete") or n_seeds != n_seeds_required:
+                gaps.append(f"{tag}: seeds incomplete ({n_seeds}/{n_seeds_required})")
+                continue
+            for q in ("dtrue", "margin"):
+                if r[q].get("tci") is None:
+                    gaps.append(f"{tag}: {q} seed t-CI missing")
+            for q in ("dtrue_ctx_ci", "margin_ctx_ci"):
+                if r.get(q) is None:
+                    gaps.append(f"{tag}: {q} missing")
+    return gaps
+
+
+def lattice_verdict(
+    per_rung: list[dict],
+    flagships=FLAGSHIPS,
+    expected_counts: dict[str, int] = EXPECTED_PRIMARY_COUNTS,
+    n_seeds_required: int = REGISTERED_SEED_COUNT,
+) -> dict:
     """The §3 v21 registered verdict lattice (DISJOINT + exhaustive).
 
     ``per_rung`` entries need: behavior, eval_rung, complete (bool),
     dtrue (seed_tci dict), margin (seed_tci dict), dtrue_ctx_ci, margin_ctx_ci.
-    Precedence: coverage -> item-2 falsifier -> strong -> weak -> catch-all.
+    Precedence: coverage (the FULL registered 13-rung x 5-seed denominator,
+    :func:`lattice_completeness_gaps`) -> item-2 falsifier -> strong -> weak
+    -> catch-all. A draftable verdict REQUIRES the complete registered set;
+    ANY gap resolves `Not draftable / unresolved` with the gap named.
     """
     import numpy as np
+
+    coverage_gaps = lattice_completeness_gaps(per_rung, expected_counts, n_seeds_required)
+    if coverage_gaps:
+        shown = "; ".join(coverage_gaps[:8])
+        more = f" (+{len(coverage_gaps) - 8} more)" if len(coverage_gaps) > 8 else ""
+        return {
+            "verdict": "Not draftable / unresolved",
+            "reason": f"coverage gap: registered lattice denominator incomplete — {shown}{more}",
+            "coverage_gaps": coverage_gaps,
+        }
 
     by_key = {(r["behavior"], r["eval_rung"]): r for r in per_rung}
     flag_rows = []
@@ -329,14 +439,28 @@ def load_preds_series(root: Path, b: str, rung: str, seeds, variants=("true", "s
                 return None, None, None, f"missing preds file: {p}"
             for line in p.read_text().splitlines():
                 r = json.loads(line)
-                if str(r.get("rung")) != rung or r.get("arm") not in COVER_ARMS:
+                if str(r.get("rung")) != rung or r.get("arm") not in BOOT_ARMS:
                     continue
                 per_key.setdefault((mv, r["arm"], int(s)), {})[str(r["context_id"])] = float(
                     r["score"]
                 )
                 dv_by_ctx[str(r["context_id"])] = float(r["dv"])
-                grp_by_ctx[str(r["context_id"])] = str(r.get("group", r["context_id"]))
-    want_keys = [(mv, a, int(s)) for mv in variants for a in COVER_ARMS for s in seeds]
+                grp = r.get("group")
+                if grp is None:
+                    # fail loud as a NAMED gap: a missing group label would
+                    # silently degrade the GROUP-level bootstrap to
+                    # per-context resampling — never imputed.
+                    return (
+                        None,
+                        None,
+                        None,
+                        (
+                            f"preds row missing 'group' label ({p.name}, "
+                            f"ctx {r.get('context_id')}) — group bootstrap not computable"
+                        ),
+                    )
+                grp_by_ctx[str(r["context_id"])] = str(grp)
+    want_keys = [(mv, a, int(s)) for mv in variants for a in BOOT_ARMS for s in seeds]
     missing = [k for k in want_keys if k not in per_key]
     if missing:
         return None, None, None, f"missing preds series: {missing[:4]}"
@@ -351,35 +475,67 @@ def load_preds_series(root: Path, b: str, rung: str, seeds, variants=("true", "s
     return series, dv, groups, f"n_ctx={len(order)}"
 
 
-def ctx_bootstrap_ci(series, dv, groups, seeds, *, n_boot: int, rng) -> dict:
-    """Percentile 95% CI on the seed-mean Δ_true and mechanism margin, from a
-    GROUP-level context resample (plan §6: resample the holdout rung's
-    contexts by group-hash group; recompute per-arm ρ per seed from the
-    persisted preds; seed-mean per resample)."""
+def group_bootstrap_rhos(mat, dv, groups, *, n_boot: int, rng):
+    """Batched GROUP-level bootstrap Spearman: (S, n) scores -> (S, n_boot).
+
+    The vectorize-many-cell-fits pattern: the group->rows index is
+    precomputed ONCE, all draws' group choices are sampled in ONE rng call,
+    and every draw's rho reduction rides the canonical batched helper
+    ``arms.bootstrap_rhos`` (counting-sort ranks + exact moment-identity
+    Pearson — bit-identical to ranking the drawn values directly). Group
+    sizes may differ, so draws are bucketed by resample LENGTH and each
+    bucket is one rectangular batched call; there is no per-draw Python
+    Spearman anywhere. Returns ``(rhos, n_groups)``.
+    """
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import arms as arms_mod
 
-    keys = sorted(series)
-    mat = np.stack([series[k] for k in keys])
-    pos = {k: i for i, k in enumerate(keys)}
     groups = np.asarray(groups)
     ug = sorted(set(groups.tolist()))
     gidx = [np.flatnonzero(groups == g) for g in ug]
-    dtrue_draws = np.empty(n_boot)
-    margin_draws = np.empty(n_boot)
-    for i in range(n_boot):
-        gs = rng.integers(0, len(ug), size=len(ug))
-        idx = np.concatenate([gidx[g] for g in gs])
-        rhos = arms_mod.spearman_rows(mat[:, idx], dv[idx])
-        dts, mgs = [], []
-        for s in seeds:
-            dt = rhos[pos[("true", ARM_MAP, int(s))]] - rhos[pos[("true", ARM_CTX, int(s))]]
-            ds = rhos[pos[("shufpair", ARM_MAP, int(s))]] - rhos[pos[("shufpair", ARM_CTX, int(s))]]
-            dts.append(dt)
-            mgs.append(dt - ds)
-        dtrue_draws[i] = float(np.mean(dts))
-        margin_draws[i] = float(np.mean(mgs))
+    # one vectorized sample of every draw's group choices (row-major fill —
+    # the same stream the per-draw form consumed)
+    gs = rng.integers(0, len(ug), size=(int(n_boot), len(ug)))
+    draw_idx = [np.concatenate([gidx[g] for g in row]) for row in gs]  # index assembly only
+    by_len: dict[int, list[int]] = {}
+    for d, ix in enumerate(draw_idx):
+        by_len.setdefault(int(ix.size), []).append(d)
+    out = np.empty((mat.shape[0], int(n_boot)))
+    for _w, dlist in sorted(by_len.items()):
+        idx_mat = np.stack([draw_idx[d] for d in dlist])
+        out[:, dlist] = arms_mod.bootstrap_rhos(mat, dv, idx_mat)
+    return out, len(ug)
+
+
+def ctx_bootstrap_ci(series, dv, groups, seeds, *, n_boot: int, rng, label: str = "") -> dict:
+    """Percentile 95% CI on the seed-mean Δ_true and mechanism margin, from a
+    GROUP-level context resample (plan §6: resample the holdout rung's
+    contexts by group-hash group; recompute per-arm ρ per seed from the
+    persisted preds; seed-mean per resample). Draw reductions are BATCHED
+    (:func:`group_bootstrap_rhos`) — no serial per-draw Spearman."""
+    import numpy as np
+
+    t0 = time.time()
+    keys = sorted(series)
+    mat = np.stack([series[k] for k in keys])
+    pos = {k: i for i, k in enumerate(keys)}
+    rhos, n_groups = group_bootstrap_rhos(mat, dv, groups, n_boot=n_boot, rng=rng)
+    dts = np.stack(
+        [rhos[pos[("true", ARM_MAP, int(s))]] - rhos[pos[("true", ARM_CTX, int(s))]] for s in seeds]
+    )
+    dss = np.stack(
+        [
+            rhos[pos[("shufpair", ARM_MAP, int(s))]] - rhos[pos[("shufpair", ARM_CTX, int(s))]]
+            for s in seeds
+        ]
+    )
+    dtrue_draws = dts.mean(axis=0)
+    margin_draws = (dts - dss).mean(axis=0)
+    _log(
+        f"[ctx-boot{f' {label}' if label else ''}] {int(n_boot)} draws x {mat.shape[0]} series "
+        f"batched over {n_groups} groups in {time.time() - t0:.1f}s"
+    )
 
     def _q(a):
         return [float(np.nanquantile(a, 0.025)), float(np.nanquantile(a, 0.975))]
@@ -387,7 +543,7 @@ def ctx_bootstrap_ci(series, dv, groups, seeds, *, n_boot: int, rng) -> dict:
     return {
         "dtrue_ctx_ci": _q(dtrue_draws),
         "margin_ctx_ci": _q(margin_draws),
-        "n_groups": len(ug),
+        "n_groups": n_groups,
         "n_boot": int(n_boot),
     }
 
@@ -455,7 +611,11 @@ def arm2_sanity_band(committed_root: Path, behavior: str, rows: list[dict], seed
     list (pvsynth is a non-primary rung — it never enters the primary cells)."""
     p = committed_root / behavior / "arm_results" / "all_arms_spearman.json"
     if not p.exists():
-        return {"behavior": behavior, "note": f"committed train summary absent: {p}"}
+        return {
+            "behavior": behavior,
+            "note": f"committed train summary absent: {p}",
+            "flag": "not-evaluable",
+        }
     committed = json.loads(p.read_text())
     band_vals = [
         float(r["rho_frozen"])
@@ -493,7 +653,10 @@ def arm2_sanity_band(committed_root: Path, behavior: str, rows: list[dict], seed
         if not out["in_band"]:
             out["flag"] = "inconclusive — adapter-suspect"
     else:
+        # a not-evaluable sanity check must never leave item 3 silently
+        # unflagged (distinct from the out-of-band adapter-suspect flag)
         out["note"] = "band or pvsynth rows unavailable — item-3 sanity check not evaluable"
+        out["flag"] = "not-evaluable"
     return out
 
 
@@ -539,16 +702,20 @@ def compliance_per_context(raw_path: Path) -> dict[str, float]:
 
 def companion_toxicchat(args, min_coverage: float) -> dict:
     """ρ(P1 evil toxicchat per-context preds, compliance DV) — arms 4/7 ×
-    variants, seed 0; ≥90% join-coverage gate (declared skip below)."""
-    import numpy as np
+    variants, seed 0; ≥90% join-coverage gate (declared skip below).
 
-    from explore_persona_space.experiments.issue_1739 import arms as arms_mod
+    The PREDS-side rung label is the r2v2 fit label ``toxicchat`` (fit =
+    ``P-B-holdout-toxicchat``, verified against the banked evil fits at
+    5aae0a472b); ``evil_toxicchat`` is the COMPLIANCE-side directory/per_rung
+    key only — the join is by context id.
+    """
+    import numpy as np
 
     raw_path = _stage_compliance_raw(args)
     if raw_path is None:
         return {"status": "declared_skip", "reason": "compliance raw file unavailable"}
     ctx_means = compliance_per_context(raw_path)
-    series, dv, groups, note = load_preds_series(args.claim4_root, "evil", "evil_toxicchat", [0])
+    series, dv, groups, note = load_preds_series(args.claim4_root, "evil", "toxicchat", [0])
     if series is None:
         return {"status": "declared_skip", "reason": f"preds gap: {note}"}
     order = None
@@ -556,12 +723,12 @@ def companion_toxicchat(args, min_coverage: float) -> dict:
     some_key = sorted(series)[0]
     n_pred = series[some_key].shape[0]
     # recover ids by re-reading one preds file (cheap; keeps the helper pure)
-    p = args.claim4_root / "evil" / "seed0" / "transfer_preds" / "P-B-holdout-evil_toxicchat.jsonl"
+    p = args.claim4_root / "evil" / "seed0" / "transfer_preds" / "P-B-holdout-toxicchat.jsonl"
     ids = sorted(
         {
             str(json.loads(line)["context_id"])
             for line in p.read_text().splitlines()
-            if json.loads(line).get("rung") == "evil_toxicchat"
+            if json.loads(line).get("rung") == "toxicchat"
         }
     )
     assert len(ids) == n_pred, (len(ids), n_pred)
@@ -581,18 +748,21 @@ def companion_toxicchat(args, min_coverage: float) -> dict:
             "with the measured number, never a partial silently scored"
         )
         return result
+    from explore_persona_space.experiments.issue_1739 import arms as arms_mod
+
     order = np.asarray(joined)
     comp = np.asarray([ctx_means[ids[i]] for i in joined])
     rng = np.random.default_rng([1739, 23])
     rows = []
+    t0 = time.time()
     for (mv, arm, s), vec in sorted(series.items()):
         v = vec[order]
         rho = float(arms_mod.spearman_rows(v[None], comp)[0])
         # plain context bootstrap (plan §6 CI column: bootstrap over contexts)
-        draws = np.empty(args.n_boot)
-        for i in range(args.n_boot):
-            idx = rng.integers(0, len(joined), size=len(joined))
-            draws[i] = float(arms_mod.spearman_rows(v[idx][None], comp[idx])[0])
+        # — BATCHED: one rng call for every draw's indices, one
+        # arms.bootstrap_rhos reduction (no per-draw Python Spearman).
+        idx_mat = rng.integers(0, len(joined), size=(int(args.n_boot), len(joined)))
+        draws = arms_mod.bootstrap_rhos(v[None], comp, idx_mat)[0]
         rows.append(
             {
                 "map_variant": mv,
@@ -602,6 +772,10 @@ def companion_toxicchat(args, min_coverage: float) -> dict:
                 "ci": [float(np.nanquantile(draws, q)) for q in (0.025, 0.975)],
             }
         )
+    _log(
+        f"[companion] {len(rows)} cells x {int(args.n_boot)} draws batched in "
+        f"{time.time() - t0:.1f}s"
+    )
     result["status"] = "scored"
     result["rows"] = rows
     return result
@@ -688,13 +862,28 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
             width = 0.8 / len(have)
             for j, a in enumerate(have):
                 vals = [r["arm_means"].get(a) for r in order]
+                # a missing measurement is rendered ABSENT + annotated —
+                # never a misleading zero-height bar (CLAUDE.md 8c)
+                xs_a = [x + j * width for x, v in zip(xs, vals, strict=True) if v is not None]
                 ax.bar(
-                    [x + j * width for x in xs],
-                    [v if v is not None else 0.0 for v in vals],
+                    xs_a,
+                    [v for v in vals if v is not None],
                     width=width,
                     color=ARM_STYLE[a][1],
                     label=ARM_STYLE[a][0],
                 )
+                for x, v in zip(xs, vals, strict=True):
+                    if v is None:
+                        ax.text(
+                            x + j * width,
+                            0.0,
+                            "N/A — not run",
+                            rotation=90,
+                            ha="center",
+                            va="bottom",
+                            fontsize=4.5,
+                            color="#888888",
+                        )
             ax.axhline(0.0, color="#444444", lw=0.8)
             ax.set_xticks([x + 0.4 for x in xs])
             ax.set_xticklabels(labels, rotation=45, ha="right")
@@ -715,16 +904,31 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
             arms_present = [a for a in ITEM4_ARMS if any(r["arm"] == a for r in sub)]
             width = 0.8 / max(len(arms_present), 1)
             for j, a in enumerate(arms_present):
-                vals, los, his = [], [], []
-                for rg in rungs:
+                xs_a, vals, los, his = [], [], [], []
+                for xi, rg in enumerate(rungs):
                     row = next((r for r in sub if r["arm"] == a and r["eval_rung"] == rg), None)
                     v = row["rho_frozen"] if row else None
-                    ci = row.get("ci_frozen") if row else None
-                    vals.append(v if v is not None else 0.0)
-                    los.append(max(0.0, v - ci[0]) if (v is not None and ci) else 0.0)
-                    his.append(max(0.0, ci[1] - v) if (v is not None and ci) else 0.0)
+                    if v is None:
+                        # missing measurement: absent + annotated, never a
+                        # zero-height bar / zero error bar
+                        ax.text(
+                            xi + j * width,
+                            0.0,
+                            "N/A — not run",
+                            rotation=90,
+                            ha="center",
+                            va="bottom",
+                            fontsize=4.5,
+                            color="#888888",
+                        )
+                        continue
+                    ci = row.get("ci_frozen")
+                    xs_a.append(xi + j * width)
+                    vals.append(v)
+                    los.append(max(0.0, v - ci[0]) if ci else 0.0)
+                    his.append(max(0.0, ci[1] - v) if ci else 0.0)
                 ax.bar(
-                    [x + j * width for x in range(len(rungs))],
+                    xs_a,
                     vals,
                     yerr=[los, his],
                     width=width,
@@ -831,7 +1035,7 @@ def build_table(args) -> dict:
                 if all(
                     (b, rung, s, mv, arm) in cells
                     for mv in ("true", "shufpair")
-                    for arm in COVER_ARMS
+                    for arm in BOOT_ARMS
                 )
             ]
             entry: dict = {
@@ -866,15 +1070,10 @@ def build_table(args) -> dict:
                     and (b, rung, s, "shufpair", ARM_PROJ) in cells
                 ]
                 entry["arm6_true_minus_shuf"] = seed_tci(d6) if d6 else None
-                # per-arm true-pass means (arm2 comparator + arm20 read)
-                entry["arm_means"] = {}
-                for a in ("arm1_ctx_e1", ARM_CTXDIR, ARM_CTX, ARM_MAP, ARM_PROJ, ARM_WSHUF):
-                    vals = [
-                        cells[(b, rung, s, "true", a)]["rho_frozen"]
-                        for s in seeds_ok
-                        if (b, rung, s, "true", a) in cells
-                    ]
-                    entry["arm_means"][a] = float(np.mean(vals)) if vals else None
+                # per-arm true-pass means (arm2 comparator + arm20 read);
+                # partial seed coverage on ANY arm = a DECLARED gap row +
+                # mean withheld, never a silent partial average.
+                entry["arm_means"] = arm_true_means_declared(cells, b, rung, seeds_ok, gaps)
                 if entry["arm_means"].get(ARM_CTXDIR) is not None:
                     entry["arm2_mode"] = "transfer (new this round)"
             else:
@@ -897,7 +1096,15 @@ def build_table(args) -> dict:
                     rng = np.random.default_rng(
                         [1739, 22, list(args.behaviors).index(b), rungs_by_b[b].index(rung)]
                     )
-                    ci = ctx_bootstrap_ci(series, dv, groups, seeds_ok, n_boot=args.n_boot, rng=rng)
+                    ci = ctx_bootstrap_ci(
+                        series,
+                        dv,
+                        groups,
+                        seeds_ok,
+                        n_boot=args.n_boot,
+                        rng=rng,
+                        label=f"{b}/{rung}",
+                    )
                     entry["dtrue_ctx_ci"] = ci["dtrue_ctx_ci"]
                     entry["margin_ctx_ci"] = ci["margin_ctx_ci"]
                     entry["ctx_bootstrap"] = {k: ci[k] for k in ("n_groups", "n_boot")}
@@ -909,8 +1116,14 @@ def build_table(args) -> dict:
     item4 = item4_syco_table(banked_syco, args.banked_ref)
 
     arm2 = {b: arm2_sanity_band(args.committed_train_root, b, rows, seeds) for b in args.behaviors}
-    if any(a.get("flag") for a in arm2.values()):
+    arm2_flags = {b: a["flag"] for b, a in arm2.items() if a.get("flag")}
+    if any("adapter-suspect" in f for f in arm2_flags.values()):
         verdict["item3_flag"] = "inconclusive — adapter-suspect (arm2 out of committed band)"
+    elif arm2_flags:
+        verdict["item3_flag"] = (
+            "not-evaluable — arm2 sanity band could not be computed for: "
+            + ", ".join(sorted(arm2_flags))
+        )
 
     companion = companion_toxicchat(args, args.min_join_coverage)
 
@@ -1092,7 +1305,10 @@ def main(argv: list[str] | None = None) -> int:
             savefig_paper,
             set_paper_style,
         )
-        from explore_persona_space.experiments.issue_1739.arms import spearman_rows  # noqa: F401
+        from explore_persona_space.experiments.issue_1739.arms import (  # noqa: F401
+            bootstrap_rhos,
+            spearman_rows,
+        )
         from explore_persona_space.experiments.issue_1739.gates import (  # noqa: F401
             per_context_means,
         )
