@@ -29,6 +29,20 @@ Two recurring traps when a plan inherits the #2162 minimal-pair pipeline
    selection): steered 0.769 / shuffled 0.718 / crosstype 0.517 over
    n=66 screened cell-arms — `figures/issue_2162/act_beh_agreement.meta.json`.
    The ladder round's +0.42 (n=264) is a DIFFERENT bank/DV (F_target).
+4. **Re-judging pooled grid completions in a derived read (per-segment /
+   per-window re-scoring): check the arm's SLOT + coherence composition
+   against the construct.** The ladder grid's steered draws span BOTH
+   slots (`install_*|{ce,pe}|steered` cells in
+   `eval_results/issue_2162/persona_specificity_ladder/stats.json
+   .estimation`), and the realized lattice has EVERY install-pe cell at
+   no-clean-transfer — so any derived DV that pools steered draws
+   without a slot stratum mixes ~50% known-not-installed completions
+   into the "patched persona" arm (plus coherence-failed draws the
+   parent's own F excludes via the >60 screen). A patched-vs-prompted
+   contrast computed on the pooled arm is mechanically biased toward
+   "no difference / patched more persistent". Require slot in the
+   derived row grain + the inherited coherence filter (parent per-draw
+   coherence scores are already committed — zero new calls).
 
 **Why:** a #2329 rerun plan carried all three (mislabeled m, unpiloted
 9.1k in-window slice, a 0.43–0.50 rho citation matching no committed
