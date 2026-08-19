@@ -113,3 +113,14 @@ diff_sketch: |
 confidence: medium
 related_task: #1771
 <!-- /workflow-fix-candidate -->
+
+## Goal refinement note (#2201, plan v4)
+
+The implemented Step 10d leg blocks on the content-keyed UNREVIEWED delta —
+paths absent from the final review round's `[divergence-probe]` disclosure,
+plus disclosed paths origin/main changed again after the reviewed `main=<sha>`
+— rather than the Goal parenthetical's any-non-empty intersection, which plan
+§3 measured as a fleet wedge (3 of 5 healthy live branches carried non-empty
+reviewed intersections on 2026-08-19). Reviewed-and-unchanged divergence is
+annotated on the `epm:merged` note, never blocked; the Step 5a leg disclosing
+the full refined set to both reviewers every round is unchanged.
