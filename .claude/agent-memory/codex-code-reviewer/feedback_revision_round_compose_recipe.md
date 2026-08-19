@@ -1302,3 +1302,23 @@ inlining (tags stripped, `> CONCERN::` blockquote, author-neutrality both
 directions), #2348(e) no re-emission of the persisted id (assert exactly one
 line-start grammar row), and a `## Round-1 closure ledger` schema section
 with a pseudo-ID for the un-persisted r1 Minor 2.
+
+**Dual-crash cap round + SHA-correction supersession (#2378 r5, 2026-08-19):**
+two composable deltas on the crash-fix shape. (a) TWO crashes of DIFFERENT
+diagnosis kinds in one review round — a P1 `epm:failure` (the marker-v5 fix)
+plus a P0 `epm:progress` hot-fix record (orchestrator-inline fix that shipped
+unreviewed straight to relaunch): inline BOTH in separate CRASH-DIAGNOSIS
+envelopes, put the unreviewed hot-fix commit explicitly IN SCOPE ("gets its
+first review here"), and give the data-only sibling commit (banks) digest-only
+instructions after a compose-time `--numstat` proof it carries zero code.
+(b) A same-round `epm:progress` CORRECTION note superseding a fix-engaged
+element's SHA (pre-amend SHA in element 4, unreachable by design): inline it
+in its own `---BEGIN SHA-CORRECTION NOTE---` envelope, pre-adjudicate the
+element as CORRECTED (never marker-shape, never a probe target — "do not
+probe for the stale SHA"), and count-assert BOTH SHAs per part (impl 2+1,
+correction 2+1, own prose 1+1). Also: deferred-concern rounds want a
+`DEFERRED-BINDING-UNDISTURBED | REGRESSED-BY-ROUND` status vocabulary (the
+regression arm = fresh finding at own severity under a NEW id), and a
+`## Crash-fix verification` REQUIRED schema section (per-crash
+root-cause-addressed / fix-engaged-creditable / no-silent-fallback /
+residuals lines) inserted before the ledger-status heading.
