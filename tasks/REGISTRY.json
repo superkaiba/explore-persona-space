@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2399,
+  "highest_id": 2400,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10825,6 +10825,13 @@
       "path": "tasks/archived/240",
       "status": "archived",
       "title": "Two ways to discretize an EM-eliciting soft prefix on Qwen-2.5-7B-Instruct both fail: L2-projection collapses to a helpful-assistant baseline, and greedy-coordinate-gradient search produces output too garbled to score (LOW confidence)"
+    },
+    "2400": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2400",
+      "status": "proposed",
+      "title": "api_throughput_guidelines: disambiguate the two sync/batch crossover figures (200k balanced vs 20k dispatcher constant) + state precedence vs CLAUDE.md"
     },
     "241": {
       "has_clean_result": false,
