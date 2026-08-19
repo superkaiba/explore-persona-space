@@ -742,7 +742,11 @@ before `## Issues Found` must anchor on a template-only neighbor (the
 rounds also want a `## Round-1 closure ledger` SCHEMA section in the verdict
 template (per-element C-row status lines + a non-gating standing-rec row) —
 mentions of it in prose line-wrap, so count-assert the heading only where
-verbatim.
+verbatim. Header FIELD lines collide too (#2197 r2, 2026-08-19): when the
+prior round's base form was also `HEAD^..HEAD`, the inlined verdict's
+`**Diff acquisition:** sha-range HEAD^..HEAD (<r1 range>)` line is
+byte-identical to the template's — scope that replace to the tail after the
+unique `## Output format` anchor (count-assert the anchor first).
 
 **Post-reconciler-binding-FAIL fix round (mixed rulings; #2332 r4,
 2026-08-16):** when the prior round ended Claude-PASS / own-twin-FAIL /
