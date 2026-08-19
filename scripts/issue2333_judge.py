@@ -129,6 +129,10 @@ class JudgeConfig2333:
     anchors_dir: Path | None
     calib_dir: Path
     cell_set: str = "main"  # C.CELL_SETS key (q35_language_snowball: "q35lang")
+    # Audited override for the coherence-baseline gate: a non-empty reason
+    # string proceeds past a FAIL and is written verbatim into the gate JSON.
+    # Never a threshold change — the gate verdict stays recorded as FAIL.
+    accept_coherence_gate_fail: str | None = None
 
     @property
     def dry_run(self) -> bool:
@@ -786,6 +790,11 @@ def phase_anchors(cfg: JudgeConfig2333) -> int:
     )
     scores = list(J94._iter_jsonl(cfg.base.scores_dir / "coherence.anchors.scores.jsonl"))
     gate = J94.coherence_baseline_gate(scores)
+    if not gate["passed"] and cfg.accept_coherence_gate_fail:
+        gate["override"] = {
+            "accepted_fail": True,
+            "reason": cfg.accept_coherence_gate_fail,
+        }
     J94._write_json_atomic(cfg.base.gates_dir / "coherence_baseline_gate.json", gate)
     logger.info(
         "[gate] q35 coherence baseline: median=%.1f frac>60=%.3f -> %s",
@@ -794,7 +803,13 @@ def phase_anchors(cfg: JudgeConfig2333) -> int:
         "PASS" if gate["passed"] else "FAIL",
     )
     if not gate["passed"]:
-        return RC_COHERENCE_GATE
+        if cfg.accept_coherence_gate_fail:
+            logger.warning(
+                "[gate] coherence-baseline FAIL OVERRIDDEN (audited): %s",
+                cfg.accept_coherence_gate_fail,
+            )
+        else:
+            return RC_COHERENCE_GATE
     for rid, units in sorted(build_anchor_behavior_items(anchor_rows, s1_pairs, s2_pairs).items()):
         J94.run_wave(f"{rid}.anchors", rid, registry[rid], units, cfg.base)
     return RC_OK
@@ -913,6 +928,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--max-tokens", type=int, default=1024)
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument(
+        "--accept-coherence-gate-fail",
+        type=str,
+        default=None,
+        help="audited override: proceed past a coherence-baseline gate FAIL; the "
+        "non-empty reason string is written verbatim into coherence_baseline_gate.json "
+        "(the gate verdict stays FAIL on record)",
+    )
+    ap.add_argument(
         "--dry-run",
         action="store_true",
         help="construction check: build + validate every judge unit, ZERO API calls; "
@@ -1014,6 +1037,7 @@ def build_config(args: argparse.Namespace) -> JudgeConfig2333:
         anchors_dir=anchors,
         calib_dir=calib,
         cell_set=args.cell_set,
+        accept_coherence_gate_fail=args.accept_coherence_gate_fail,
     )
 
 
