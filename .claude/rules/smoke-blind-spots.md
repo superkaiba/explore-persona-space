@@ -89,6 +89,11 @@ instrument exactly where parity (prohibition) is legitimately waived.
   arm escapes), dynamic dispatch escapes, and smoke flags not literally
   named `smoke` escape — the reviewer lens is the catching arm for all of
   these.
+- Mechanical (numeric premises, #2178): `scripts/verify_plan.py` c65 (a plan-claimed
+  smoke-fixture row floor vs the realized fixtures — FAIL on a resolved
+  overstatement; constant-route contradictions WARN by design) + c66 (WARN: the
+  shortfall's producing script named nowhere in the plan). #2165 makes plans
+  DISCLOSE smoke divergences; c65/c66 VERIFY the numeric premises.
 
 ## Files of record
 

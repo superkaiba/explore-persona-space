@@ -448,7 +448,22 @@ Run the structural verifier against the plan version just persisted:
   is incidental or quotes an incident/sibling, not this plan's own sampled
   exactness premise; a plan with a genuine sampled exactness claim instead
   verifies it at full grain, or restates it as a bound — "no deviation
-  observed in N of M" — and softens the assert; #2163).
+  observed in N of M" — and softens the assert; #2163), and
+  `N/A — no smoke fixture size claim` (check 65 — the smoke-size
+  vocabulary is incidental / quotes an incident, not this plan's own
+  fixture-size claim; a plan genuinely claiming a smoke-fixture row floor
+  instead states a floor at or below the realized fixture minimum, or
+  budgets the producing-script change; #2178, incident #1336 v16), and
+  `N/A — no fixture-producing script change needed` (check 66 — the
+  contradicted floor is deliberate / already remediated elsewhere; a plan
+  genuinely needing regenerated fixtures instead names the producing
+  script in its modified-file list; #2178), and
+  `N/A — no smoke run` (checks 65 + 66 — the dedicated no-smoke-run
+  declaration route: a plan declaring it runs no pre-launch smoke has no
+  smoke fixtures in scope, so both checks SKIP even when a claim-shaped
+  line is present — the declaration wins; check 11's canonical
+  `N/A — no dry-run smoke` standalone form is recognized the same way;
+  #2178 round 2).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
