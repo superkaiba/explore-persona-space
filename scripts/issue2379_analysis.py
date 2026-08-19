@@ -62,15 +62,24 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import matplotlib
-import numpy as np
-import torch
-from huggingface_hub import hf_hub_download
-from scipy.stats import rankdata
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# BEFORE any heavy import (torch/matplotlib/hf), so the shared-VM thread caps (#847)
+# bind in-process (tests/test_shared_vm_thread_caps.py).
+load_dotenv()
+
+import matplotlib  # noqa: E402
+
+matplotlib.use("Agg")  # headless VM; set before any pyplot figure is created
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from huggingface_hub import hf_hub_download  # noqa: E402
+from scipy.stats import rankdata  # noqa: E402
 
 ISSUE = 2379
 SLUG = "issue2379_reelicit"
@@ -1775,10 +1784,6 @@ def run_smoke(args) -> int:
 # ---------------------------------------------------------------------------
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-    from explore_persona_space.orchestrate.env import load_dotenv
-
-    load_dotenv()
-    matplotlib.use("Agg")
     from explore_persona_space.analysis.paper_plots import set_paper_style
 
     set_paper_style()
