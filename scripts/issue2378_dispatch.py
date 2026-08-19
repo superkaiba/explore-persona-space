@@ -1950,7 +1950,10 @@ def phase_p6(args, runner: Runner) -> int:
             "p6.pool", _py("issue2378_pool.py", "--phase", "pool", "--cells", surv_arg, *store)
         )
         runner.run("p6.h5", _py("issue2378_pool.py", "--phase", "h5", "--cells", surv_arg, *store))
-        runner.run("p6.h3", _py("issue2378_ladder.py", "--phase", "h3", *store))
+        runner.run(
+            "p6.h3",
+            _py("issue2378_ladder.py", "--phase", "h3", "--survivors", surv_arg, *store),
+        )
         user_cells = ("chat_user_real", "chat_user_sim")
         if all(c in survivors for c in user_cells):
             runner.run("p6.h4b", _py("issue2378_ladder.py", "--phase", "h4b", *store))
@@ -1971,12 +1974,20 @@ def phase_p6(args, runner: Runner) -> int:
                 },
             )
         # H4a ratio is user-drop-safe (r2 reconciler blocker
-        # g2b-user-drop-crashes-h4a-ratio): fits-d writes the per-cell
-        # __g2b_dropped.json markers above BEFORE this call, and phase_ratio
-        # reads them as the survivor manifest — a dropped user arm yields a
-        # loud per-arm N/A entry (whole-file N/A when both drop), while a
-        # missing fit for a SURVIVOR still hard-raises.
-        runner.run("p6.ratio", _py("issue2378_fits.py", "--phase", "ratio", *store))
+        # g2b-user-drop-crashes-h4a-ratio; precedence hardened by the r3
+        # blocker g2b-drop-marker-shadowed-by-stale-fit): fits-d writes the
+        # per-cell __g2b_dropped.json markers above BEFORE this call, and
+        # phase_ratio checks the drop marker FIRST — a coexisting stale
+        # git-re-materialized fit never resurrects a dropped arm — with
+        # --survivors keying marker authority to THIS dispatch's survivor set
+        # (a stale prior-run marker on a survivor is ignored; h3 above gets
+        # the same threading). A dropped user arm yields a loud per-arm N/A
+        # entry (whole-file N/A when both drop), while a missing fit for a
+        # SURVIVOR still hard-raises.
+        runner.run(
+            "p6.ratio",
+            _py("issue2378_fits.py", "--phase", "ratio", "--survivors", surv_arg, *store),
+        )
         if not runner.dry:
             merged = {"roles": {}, "metadata": cm.run_metadata()}
             for r in POD_ROLE_CELLS:
@@ -2386,10 +2397,18 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
         check("bank-builder array parser (r2 real-API smoke regression)", t_bank_parse)
 
         def t_rows_dir_manifest():
-            # r2 review concern local-raw-stage-completeness-unchecked: on the
-            # --stage-raw-from-hf path a nonempty local dir is accepted ONLY
-            # when it covers the remote (path, size) manifest; the no-flag
-            # path stays network-free (offline probes / same-pod producers).
+            # r2 review concern local-raw-stage-completeness-unchecked + r3
+            # reconciler concern rows-dir-mismatch-fallthrough-stale-mirror:
+            # on the --stage-raw-from-hf path a nonempty local dir is accepted
+            # ONLY when it covers the remote (path, size) manifest, and the
+            # fall-through mirror restage REPAIRS stale mirror bytes
+            # (delete-then-restage — hub staging is skip-existing) then
+            # fail-loud verifies the leaf. Fakes sit at the NETWORK boundary
+            # ONLY (hub.list_hf_entries_under_path + hub.stage_hub_prefix, the
+            # latter reproducing the real per-file SKIP-EXISTING semantics of
+            # stage_hub_file overwrite=False); cm.stage_hf_prefix and gen's
+            # repair/verify logic REALLY run over real tiny files, so scenario
+            # (5) proves REPAIRED BYTES, not a faked stage call.
             import argparse as _ap
 
             import issue2378_gen as gen
@@ -2400,55 +2419,117 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
             stage_dir.mkdir(parents=True)
             fp = stage_dir / "chat_w1_s0_c0000.jsonl"
             fp.write_text('{"a": 1}\n', encoding="utf-8")
+            mirror_root = tmp / "rowsdir_mirror"
+            pre = f"{cm.HF_PREFIX}/raw_completions/chat"
+            leaf = mirror_root / pre
             calls = {"list": 0, "stage": 0}
-            remote: list[tuple[str, int | None]] = []
-            real_list, real_stage = hub.list_hf_entries_under_path, cm.stage_hf_prefix
+            remote_bytes: dict[str, bytes] = {}
+            holdback: set[str] = set()
+            wrote: list[str] = []
+            real_list, real_stage = hub.list_hf_entries_under_path, hub.stage_hub_prefix
+            real_root = gen.HF_STAGE_ROOT
 
             def fake_list(api, repo, prefix, **kw):
                 calls["list"] += 1
-                return list(remote)
+                return [(f"{pre}/{n}", len(b)) for n, b in sorted(remote_bytes.items())]
 
-            def fake_stage(prefix_rel, dest_root, revision=None):
+            def fake_stage(
+                repo_id,
+                prefix,
+                dest_dir,
+                *,
+                repo_type="dataset",
+                revision=None,
+                token=None,
+                max_workers=6,
+            ):
+                # network-boundary fake reproducing the real skip-existing
+                # per-file semantics (an existing target is NEVER rewritten).
                 calls["stage"] += 1
-                return stage_dir  # stands in for the mirror leaf
+                wrote.clear()
+                tgt = Path(dest_dir) / prefix
+                tgt.mkdir(parents=True, exist_ok=True)
+                staged = []
+                for n, b in sorted(remote_bytes.items()):
+                    t = tgt / n
+                    if not t.exists() and n not in holdback:
+                        t.write_bytes(b)
+                        wrote.append(n)
+                    staged.append(t)
+                return staged
+
+            def _clear() -> None:
+                gen._STAGE_RECON_CACHE.clear()
+                gen._STAGE_MANIFEST_CACHE.clear()
+                gen._STAGE_MIRROR_CACHE.clear()
 
             def ns(flag: bool) -> _ap.Namespace:
                 return _ap.Namespace(raw_root=str(root), stage_raw_from_hf=flag)
 
-            pre = f"{cm.HF_PREFIX}/raw_completions/chat"
             try:
                 hub.list_hf_entries_under_path = fake_list
-                cm.stage_hf_prefix = fake_stage
-                gen._STAGE_RECON_CACHE.clear()
-                # no-flag: local-first, ZERO network (no listing, no stage).
+                hub.stage_hub_prefix = fake_stage
+                gen.HF_STAGE_ROOT = mirror_root
+                _clear()
+                # (1) no-flag: local-first, ZERO network (no listing, no stage).
                 assert gen._rows_dir(ns(False), "chat") == stage_dir
                 assert calls == {"list": 0, "stage": 0}, calls
-                # flag + empty remote (nothing published yet): accept local.
-                gen._STAGE_RECON_CACHE.clear()
+                # (2) flag + empty remote (nothing published yet): accept local.
+                _clear()
                 assert gen._rows_dir(ns(True), "chat") == stage_dir
                 assert calls == {"list": 1, "stage": 0}, calls
-                # flag + matching (name+size) manifest: accept local; memoized.
-                gen._STAGE_RECON_CACHE.clear()
-                remote[:] = [(f"{pre}/{fp.name}", fp.stat().st_size)]
+                # (3) flag + matching (name+size) manifest: accept local; memoized.
+                _clear()
+                remote_bytes[fp.name] = fp.read_bytes()
                 assert gen._rows_dir(ns(True), "chat") == stage_dir
                 assert gen._rows_dir(ns(True), "chat") == stage_dir
                 assert calls == {"list": 2, "stage": 0}, calls
-                # flag + remote superset: partial local -> fresh mirror stage.
-                gen._STAGE_RECON_CACHE.clear()
-                remote.append((f"{pre}/chat_w1_s1_c0000.jsonl", 9))
-                gen._rows_dir(ns(True), "chat")
-                assert calls["stage"] == 1, calls
-                # flag + size mismatch: stale local -> fresh mirror stage.
-                gen._STAGE_RECON_CACHE.clear()
-                remote[:] = [(f"{pre}/{fp.name}", fp.stat().st_size + 1)]
-                gen._rows_dir(ns(True), "chat")
-                assert calls["stage"] == 2, calls
+                # (4) flag + remote superset: partial local -> REAL mirror
+                # restage (real bytes at the leaf); verified-leaf memo re-call.
+                _clear()
+                f2 = "chat_w1_s1_c0000.jsonl"
+                remote_bytes[f2] = b'{"b": 2}\n'
+                assert gen._rows_dir(ns(True), "chat") == leaf
+                assert calls == {"list": 3, "stage": 1}, calls
+                assert (leaf / fp.name).read_bytes() == fp.read_bytes()
+                assert (leaf / f2).read_bytes() == b'{"b": 2}\n'
+                assert gen._rows_dir(ns(True), "chat") == leaf  # mirror memo
+                assert calls == {"list": 3, "stage": 1}, calls
+                # (5) r3 concern — FAILS PRE-FIX: the producer re-uploads
+                # fp with changed bytes; the mirror holds the STALE 9-B copy
+                # and skip-existing staging would serve it verbatim. The
+                # repair deletes it, the restage rewrites the REAL new bytes.
+                _clear()
+                remote_bytes[fp.name] = b'{"a": 22}\n'  # 10 B vs stale 9 B
+                assert gen._rows_dir(ns(True), "chat") == leaf
+                assert calls == {"list": 4, "stage": 2}, calls
+                assert wrote == [fp.name], wrote  # ONLY the repaired file restaged
+                assert (leaf / fp.name).read_bytes() == b'{"a": 22}\n'
+                # (6) extraneous mirror file (dropped remotely): repair deletes.
+                _clear()
+                del remote_bytes[f2]
+                assert gen._rows_dir(ns(True), "chat") == leaf
+                assert sorted(p.name for p in leaf.glob("*.jsonl")) == [fp.name]
+                # (7) post-restage verify is fail-loud: a file the "network"
+                # never delivers leaves the leaf short -> RuntimeError.
+                _clear()
+                remote_bytes["chat_w1_s2_c0000.jsonl"] = b'{"c": 3}\n'
+                holdback.add("chat_w1_s2_c0000.jsonl")
+                try:
+                    gen._rows_dir(ns(True), "chat")
+                    raise AssertionError("short restage did not raise")
+                except RuntimeError as e:
+                    assert "STILL fails" in str(e), e
             finally:
                 hub.list_hf_entries_under_path = real_list
-                cm.stage_hf_prefix = real_stage
-                gen._STAGE_RECON_CACHE.clear()
+                hub.stage_hub_prefix = real_stage
+                gen.HF_STAGE_ROOT = real_root
+                _clear()
 
-        check("rows-dir remote-manifest reconciliation (r2 concern)", t_rows_dir_manifest)
+        check(
+            "rows-dir manifest reconciliation + stale-mirror repair (r2+r3 concerns)",
+            t_rows_dir_manifest,
+        )
 
     if failures:
         raise RuntimeError(f"probe FAILURES ({len(failures)}): " + " | ".join(failures))

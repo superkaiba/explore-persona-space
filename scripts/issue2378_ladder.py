@@ -614,8 +614,14 @@ def phase_h3(args) -> int:
     the direct and ctx-re-map rungs; scenes resampled independently WITHIN each
     fixed character cell (200 draws; the panel is fixed, never resampled).
     A pair whose question or dialogue cell is not clearly-mappable is dropped
-    (disclosed); < 3 surviving pairs ⇒ indeterminate (plan §3)."""
+    (disclosed); < 3 surviving pairs ⇒ indeterminate (plan §3). Per-pair cell
+    availability checks the G2b drop marker BEFORE fit existence (r3 reconciler
+    blocker g2b-drop-marker-shadowed-by-stale-fit, swept here): a G2b-dropped
+    cell routes to the disclosed dropped-pair path even when a stale
+    git-re-materialized `__context.json` coexists, with `--survivors` keying
+    marker authority to the CURRENT dispatch via :func:`p6.g2b_dropped_now`."""
     ledger_root = Path(args.ledger_root)
+    surv_set = p6.parse_survivors(args.survivors)
     out: dict = {
         "statistic": (
             "equal-weight mean over characters of (question-arm recovery − dialogue-arm "
@@ -632,13 +638,27 @@ def phase_h3(args) -> int:
         dropped: dict[str, str] = {}
         for ch in H3_CHARACTERS:
             q_cell, d_cell = f"storyq_{ch}", f"dialog_{ch}"
+            # G2b drop marker checked BEFORE fit existence (r3 reconciler
+            # blocker g2b-drop-marker-shadowed-by-stale-fit): a coexisting
+            # stale fit must never resurrect a dropped cell's pair.
+            g2b_gone = [
+                c for c in (q_cell, d_cell) if p6.g2b_dropped_now(ledger_root / "fits", c, surv_set)
+            ]
             missing = [
                 c
                 for c in (q_cell, d_cell)
-                if not (ledger_root / "fits" / f"{c}__context.json").exists()
+                if c not in g2b_gone and not (ledger_root / "fits" / f"{c}__context.json").exists()
             ]
-            if missing:
-                dropped[ch] = f"cells missing from fits outputs: {missing}"
+            if g2b_gone or missing:
+                parts = []
+                if g2b_gone:
+                    parts.append(
+                        "G2b-dropped this run (drop marker authoritative over "
+                        f"any stale fit): {g2b_gone}"
+                    )
+                if missing:
+                    parts.append(f"cells missing from fits outputs: {missing}")
+                dropped[ch] = "; ".join(parts)
                 continue
             # Tier + Unmappable-skip checks run BEFORE any ladder rowstats
             # load (r1 review g3 concern 3): an Unmappable-skipped target has
@@ -974,6 +994,7 @@ def phase_probe(args) -> int:  # noqa: PLR0915
             units="context",
             g3_gate_file=None,
             pairs="all",
+            survivors=None,
             fold_floors_override=fits_mod._PROBE_FLOORS,
         )
         ledger.mkdir(parents=True)
@@ -1007,6 +1028,35 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         assert h3["rungs"]["1_direct"]["n_surviving_pairs"] == 4
         assert not h3["rungs"]["1_direct"]["indeterminate"]
         assert len(h3["rungs"]["1_direct"]["gap_draws"]) == 24
+        # (3b) G2b drop-marker vs COEXISTING stale fit (r3 reconciler blocker
+        # g2b-drop-marker-shadowed-by-stale-fit, swept to h3): the marker wins
+        # over the coexisting fit -> the astra pair drops (disclosed), and
+        # --survivors naming the cell restores it (stale marker ignored).
+        astra_marker = ledger / "fits" / "storyq_astra__g2b_dropped.json"
+        cm.atomic_write_json(
+            astra_marker,
+            {"cell": "storyq_astra", "status": "N/A", "reason": "probe: planted G2b drop"},
+        )
+        assert (ledger / "fits" / "storyq_astra__context.json").exists()  # COEXIST
+        assert phase_h3(ns) == 0
+        h3d = json.loads((ledger / "ladder" / "h3_question_vs_dialogue.json").read_text("utf-8"))
+        blk = h3d["rungs"]["1_direct"]
+        assert blk["n_surviving_pairs"] == 3
+        assert "astra" in blk["dropped_pairs"]
+        assert "G2b-dropped" in blk["dropped_pairs"]["astra"]
+        ns.survivors = ",".join(
+            sorted(json.loads((ledger / p6.FOLD_MAP_NAME).read_text())["cells"])
+        )
+        assert phase_h3(ns) == 0
+        h3d = json.loads((ledger / "ladder" / "h3_question_vs_dialogue.json").read_text("utf-8"))
+        assert h3d["rungs"]["1_direct"]["n_surviving_pairs"] == 4  # stale marker ignored
+        # restore: marker gone, flag off, healthy rewrite for the probes below.
+        astra_marker.unlink()
+        ns.survivors = None
+        assert phase_h3(ns) == 0
+        h3d = json.loads((ledger / "ladder" / "h3_question_vs_dialogue.json").read_text("utf-8"))
+        assert h3d["rungs"]["1_direct"]["n_surviving_pairs"] == 4
+        _log("[probe] h3 G2b drop-marker precedence over coexisting fit + --survivors keying: OK")
         rc = phase_h4b(ns)
         assert rc == 0
         h4b = json.loads((ledger / "ladder" / "h4b_real_vs_sim.json").read_text("utf-8"))
@@ -1043,6 +1093,14 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--n-null-draws", type=int, default=100)
     ap.add_argument("--bootstrap-draws", type=int, default=200)
     ap.add_argument("--g3-gate-file", default=None)
+    ap.add_argument(
+        "--survivors",
+        default=None,
+        help="CSV of the CURRENT dispatch's G2b survivor set (threaded by the "
+        "dispatch at p6.h3): keys __g2b_dropped.json marker authority to THIS "
+        "run — a stale prior-run marker on a surviving cell is ignored. Absent: "
+        "the drop marker alone is authoritative (drop-before-fit).",
+    )
     return ap
 
 

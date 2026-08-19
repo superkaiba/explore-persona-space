@@ -550,12 +550,18 @@ def phase_ratio(args) -> int:
     G2b user-drop threading (r2 reconciler blocker
     g2b-user-drop-crashes-h4a-ratio): a plan-PERMITTED G2b user-cell drop
     (plan §7 — user cells are non-binding; a drop is reported loudly, never a
-    kill) leaves ``fits/<cell>__g2b_dropped.json`` instead of the fit context
-    JSON. That drop marker IS the survivor manifest here: a dropped arm gets
-    a loud per-arm N/A entry (h4b pattern — same expected filename, so the
-    fits-d explicit-path harvest + merge digest complete); both arms dropped
-    ⇒ whole-file ``status: N/A``. A missing fit for a SURVIVING cell (no drop
-    marker) still hard-raises — that is a real failure."""
+    kill) leaves ``fits/<cell>__g2b_dropped.json``. That drop marker IS the
+    survivor manifest here and is read DROP-BEFORE-FIT (r3 reconciler blocker
+    g2b-drop-marker-shadowed-by-stale-fit): it is AUTHORITATIVE over a
+    coexisting fit context — fits are git-harvested + re-materialized
+    cross-run while G2b recomputes per dispatch, so a survive->drop flip
+    leaves BOTH present and the fit is stale residue. ``--survivors``
+    (threaded by the dispatch) keys marker authority to THIS run via
+    ``p6.g2b_dropped_now`` — a stale prior-run marker on a now-surviving cell
+    is ignored. A dropped arm gets a loud per-arm N/A entry (h4b pattern —
+    same expected filename, so the fits-d explicit-path harvest + merge
+    digest complete); both arms dropped ⇒ whole-file ``status: N/A``. A
+    missing fit for a SURVIVING cell still hard-raises — a real failure."""
     ledger_root = Path(args.ledger_root)
     fits_dir = ledger_root / "fits"
     # G3-gate H4a like phase_fit/phase_pairs (r1 review g3 concern 4): a
@@ -577,25 +583,35 @@ def phase_ratio(args) -> int:
         "reference_7b": {"ratio": 2.5, "source": "#825 trackm_settle_battery (guarded)"},
         "arms": {},
     }
+    surv_set = p6.parse_survivors(args.survivors)
     for cell in cm.USER_CELLS:
         upath = fits_dir / f"{cell}__context.json"
         dpath = fits_dir / f"{cell}__g2b_dropped.json"
+        if p6.g2b_dropped_now(fits_dir, cell, surv_set):
+            # Drop marker checked FIRST, unconditionally (r3 reconciler
+            # blocker g2b-drop-marker-shadowed-by-stale-fit): a coexisting
+            # fit context is git-re-materialized prior-run residue and must
+            # never publish a stale H4a arm.
+            if upath.exists():
+                _log(
+                    f"[h4a] {cell}: G2b drop marker WINS over COEXISTING stale fit "
+                    f"{upath.name} (prior-run residue; survive->drop flip) — per-arm N/A"
+                )
+            out["arms"][cell] = {
+                "status": "N/A",
+                "reason": (
+                    f"user cell {cell} G2b-dropped (below floor) — H4a ceiling ratio "
+                    "unformable for this arm (plan §7: user cells are non-binding; "
+                    "drop reported loudly, never a kill)"
+                ),
+                "g2b_drop_record": json.loads(dpath.read_text(encoding="utf-8")),
+            }
+            _log(f"[h4a] {cell}: N/A — G2b-dropped (loud per-arm skip, plan §7)")
+            continue
         if not upath.exists():
-            if dpath.exists():
-                out["arms"][cell] = {
-                    "status": "N/A",
-                    "reason": (
-                        f"user cell {cell} G2b-dropped (below floor) — H4a ceiling ratio "
-                        "unformable for this arm (plan §7: user cells are non-binding; "
-                        "drop reported loudly, never a kill)"
-                    ),
-                    "g2b_drop_record": json.loads(dpath.read_text(encoding="utf-8")),
-                }
-                _log(f"[h4a] {cell}: N/A — G2b-dropped (loud per-arm skip, plan §7)")
-                continue
             raise RuntimeError(
-                f"missing {upath} for a G2b survivor (no {dpath.name} drop marker) — "
-                "run the user fits first"
+                f"missing {upath} for a G2b survivor (no authoritative {dpath.name} "
+                "drop marker) — run the user fits first"
             )
         ujson = json.loads(upath.read_text(encoding="utf-8"))
         rs = p6.load_rowstats(fits_dir / "percell" / f"{cell}__context__rowstats.npz")
@@ -845,6 +861,7 @@ def phase_probe(args) -> int:  # noqa: PLR0915
             reduced_k=4,
             units="own:storyq_astra:context,own:chat_user_real:context,own:chat_user_sim:context,own:chat:prefix",
             g3_gate_file=None,
+            survivors=None,
             fold_floors_override=_PROBE_FLOORS,
         )
         rc = phase_g3(ns)
@@ -923,6 +940,53 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         h4a = json.loads(ratio_path.read_text("utf-8"))
         assert "status" not in h4a and "na_arms" not in h4a
         _log("[probe] G2b user-drop ratio N/A paths (per-arm / whole-file / raise): OK")
+
+        # (6c) drop-marker vs COEXISTING fit precedence (r3 reconciler blocker
+        # g2b-drop-marker-shadowed-by-stale-fit): the drop marker is checked
+        # FIRST, so a stale git-re-materialized fit beside it never publishes;
+        # --survivors keys marker authority to the CURRENT dispatch (a stale
+        # prior-run marker on a survivor is ignored; a dropped-now cell with
+        # no marker raises — the upstream drop-marker write failed).
+        _plant_drop("chat_user_sim")
+        assert sim_ctx.exists()  # fit + drop marker COEXIST — nothing stashed
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert h4a["arms"]["chat_user_sim"]["status"] == "N/A"
+        assert "ratio_point_pooled" not in h4a["arms"]["chat_user_sim"]
+        assert "ratio_point_pooled" in h4a["arms"]["chat_user_real"]
+        assert h4a["na_arms"] == ["chat_user_sim"] and "status" not in h4a
+        # --survivors naming the cell: the stale prior-run marker is IGNORED
+        # (drop->survive flip; the current dispatch's survivor set wins).
+        ns.survivors = ",".join(sorted(set(cm.ALL_CELLS)))
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert "ratio_point_pooled" in h4a["arms"]["chat_user_sim"]
+        assert "na_arms" not in h4a and "status" not in h4a
+        # --survivors EXCLUDING a cell that has NO drop marker: fail-loud
+        # (the upstream drop-marker write failed; plan-section-7 skip-and-count
+        # requires the durable record).
+        ns.survivors = ",".join(sorted(set(cm.ALL_CELLS) - {"chat_user_real"}))
+        _probe_expect_raise(
+            lambda: phase_ratio(ns),
+            "drop-marker write failed",
+            "dropped-now cell without a marker",
+        )
+        # marker planted: dropped-now + COEXISTING fit -> per-arm N/A wins.
+        _plant_drop("chat_user_real")
+        assert real_ctx.exists()
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert h4a["arms"]["chat_user_real"]["status"] == "N/A"
+        assert "ratio_point_pooled" in h4a["arms"]["chat_user_sim"]
+        assert h4a["na_arms"] == ["chat_user_real"] and "status" not in h4a
+        # restore: unlink both markers, flag off, healthy re-run for later probes.
+        (fits_dir / "chat_user_sim__g2b_dropped.json").unlink()
+        (fits_dir / "chat_user_real__g2b_dropped.json").unlink()
+        ns.survivors = None
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert "status" not in h4a and "na_arms" not in h4a
+        _log("[probe] G2b drop-marker precedence over coexisting fit + --survivors keying: OK")
 
         # (7) batched null core vs serial per-draw oracle (same rng sequence).
         rng = np.random.default_rng(11)
@@ -1006,6 +1070,14 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--bootstrap-draws", type=int, default=200)
     ap.add_argument("--reduced-k", type=int, default=1024)
     ap.add_argument("--g3-gate-file", default=None, help="override g3_gate.json path")
+    ap.add_argument(
+        "--survivors",
+        default=None,
+        help="CSV of the CURRENT dispatch's G2b survivor set (threaded by the "
+        "dispatch at p6.ratio): keys __g2b_dropped.json marker authority to THIS "
+        "run — a stale prior-run marker on a surviving cell is ignored. Absent: "
+        "the drop marker alone is authoritative (drop-before-fit).",
+    )
     return ap
 
 

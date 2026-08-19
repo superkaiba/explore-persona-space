@@ -1359,10 +1359,62 @@ def phase_user_real_render(args) -> None:
     _maybe_upload(args, "user_real_render")
 
 
-# Per-process memo for _rows_dir's remote-manifest reconciliation: one scoped
-# listing per (local dir, stage), not one per _rows_dir call (capture calls it
-# per cell × draw). Probes clear it between scenarios.
+# Per-process memos for _rows_dir's remote-manifest reconciliation: ONE scoped
+# listing per stage (_STAGE_MANIFEST_CACHE), one local-dir verdict per
+# (local dir, stage) (_STAGE_RECON_CACHE), and one VERIFIED mirror leaf per
+# stage (_STAGE_MIRROR_CACHE) — capture calls _rows_dir per cell × draw.
+# Probes clear all three between scenarios.
 _STAGE_RECON_CACHE: dict[tuple[str, str], bool] = {}
+_STAGE_MANIFEST_CACHE: dict[str, dict[str, int | None]] = {}
+_STAGE_MIRROR_CACHE: dict[str, Path] = {}
+
+# Mirror root for HF-staged raw-completions stages (module-level so probes can
+# redirect it off the real data dir).
+HF_STAGE_ROOT = cm.REPO_ROOT / "data" / "issue_2378" / "hf_stage"
+
+
+def _stage_remote_manifest(stage: str) -> dict[str, int | None]:
+    """Memoized producer manifest for raw_completions/<stage>: ``*.jsonl``
+    name -> byte size from ONE scoped HF listing (#833/#1547). Serves BOTH the
+    local-dir reconciliation (`_local_stage_covers_remote`) and the
+    stale-mirror repair (`_repair_stale_mirror`), so the mismatch fall-through
+    costs no extra listing."""
+    if stage in _STAGE_MANIFEST_CACHE:
+        return _STAGE_MANIFEST_CACHE[stage]
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{cm.HF_PREFIX}/raw_completions/{stage}"
+    entries = hub.retry_transient(
+        lambda: hub.list_hf_entries_under_path(
+            HfApi(), cm.HF_DATA_REPO, prefix, repo_type="dataset"
+        ),
+        what=f"rows-dir manifest listing {prefix}",
+    )
+    remote = {p.rsplit("/", 1)[-1]: s for p, s in entries if p.endswith(".jsonl")}
+    _STAGE_MANIFEST_CACHE[stage] = remote
+    return remote
+
+
+def _repair_stale_mirror(leaf: Path, remote: dict[str, int | None]) -> list[str]:
+    """Delete stale ``*.jsonl`` files from the HF mirror leaf BEFORE restaging
+    (r3 reconciler concern rows-dir-mismatch-fallthrough-stale-mirror):
+    ``hub.stage_hub_file`` returns an EXISTING target unchanged
+    (``overwrite=False`` skip-existing, orchestrate/hub.py), so a prior
+    same-pod staging's stale bytes would otherwise be served verbatim by the
+    fall-through restage. Stale ⇔ not in the remote manifest, or a byte-size
+    mismatch (the same grain as the reconciliation predicate); unknown-size
+    remote entries are kept. Returns the deleted names."""
+    if not leaf.is_dir():
+        return []
+    deleted: list[str] = []
+    for lp in sorted(leaf.glob("*.jsonl")):
+        size = remote.get(lp.name, "absent")
+        if size == "absent" or (size is not None and lp.stat().st_size != int(size)):
+            lp.unlink()
+            deleted.append(lp.name)
+    return deleted
 
 
 def _local_stage_covers_remote(local: Path, stage: str) -> bool:
@@ -1377,18 +1429,7 @@ def _local_stage_covers_remote(local: Path, stage: str) -> bool:
     key = (str(local), stage)
     if key in _STAGE_RECON_CACHE:
         return _STAGE_RECON_CACHE[key]
-    from huggingface_hub import HfApi
-
-    from explore_persona_space.orchestrate import hub
-
-    prefix = f"{cm.HF_PREFIX}/raw_completions/{stage}"
-    entries = hub.retry_transient(
-        lambda: hub.list_hf_entries_under_path(
-            HfApi(), cm.HF_DATA_REPO, prefix, repo_type="dataset"
-        ),
-        what=f"rows-dir manifest listing {prefix}",
-    )
-    remote = {p.rsplit("/", 1)[-1]: s for p, s in entries if p.endswith(".jsonl")}
+    remote = _stage_remote_manifest(stage)
     mismatches: list[str] = []
     for name, size in sorted(remote.items()):
         lp = local / name
@@ -1417,19 +1458,43 @@ def _rows_dir(args, stage: str, explicit: str | None = None) -> Path:
     after remote-manifest reconciliation (`_local_stage_covers_remote`) — a
     partial/stale local copy falls through to the HF mirror instead of being
     silently consumed (r2 review concern
-    local-raw-stage-completeness-unchecked). The no-flag path (same-pod
-    producer reads; offline probes) stays network-free by design — producer
-    completeness there is owned by the StageLedger resume + the consumers'
-    fail-loud empty-selection guards."""
+    local-raw-stage-completeness-unchecked). The mirror restage first REPAIRS
+    the mirror leaf (`_repair_stale_mirror` — delete-then-restage, because the
+    hub staging skips existing targets and would serve stale bytes; r3
+    reconciler concern rows-dir-mismatch-fallthrough-stale-mirror) and then
+    fail-loud verifies the restaged leaf against the same manifest. The
+    no-flag path (same-pod producer reads; offline probes) stays network-free
+    by design — producer completeness there is owned by the StageLedger
+    resume + the consumers' fail-loud empty-selection guards."""
     local = Path(explicit) if explicit else Path(args.raw_root) / stage
     if any(local.glob("*.jsonl")):
         if not args.stage_raw_from_hf or _local_stage_covers_remote(local, stage):
             return local
     if args.stage_raw_from_hf:
-        return cm.stage_hf_prefix(
-            f"{cm.HF_PREFIX}/raw_completions/{stage}",
-            cm.REPO_ROOT / "data" / "issue_2378" / "hf_stage",
-        )
+        if stage in _STAGE_MIRROR_CACHE:
+            return _STAGE_MIRROR_CACHE[stage]
+        prefix = f"{cm.HF_PREFIX}/raw_completions/{stage}"
+        remote = _stage_remote_manifest(stage)
+        deleted = _repair_stale_mirror(HF_STAGE_ROOT / prefix, remote)
+        if deleted:
+            print(
+                f"[stage] {stage}: deleted {len(deleted)} stale mirror file(s) before "
+                f"restage (skip-existing would have served them): {deleted[:3]}",
+                flush=True,
+            )
+        leaf = cm.stage_hf_prefix(prefix, HF_STAGE_ROOT)
+        still = [
+            n
+            for n, s in sorted(remote.items())
+            if not (leaf / n).is_file() or (s is not None and (leaf / n).stat().st_size != int(s))
+        ]
+        if still:
+            raise RuntimeError(
+                f"stage {stage}: mirror leaf {leaf} STILL fails remote-manifest "
+                f"reconciliation after restage ({len(still)} mismatched; first: {still[:3]})"
+            )
+        _STAGE_MIRROR_CACHE[stage] = leaf
+        return leaf
     raise RuntimeError(
         f"no rows for stage {stage} under {local} (pass --stage-raw-from-hf to fetch, "
         "or run the producing phase first)"

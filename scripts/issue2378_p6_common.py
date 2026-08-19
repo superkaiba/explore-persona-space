@@ -67,6 +67,49 @@ def _log(msg: str) -> None:
     print(msg, flush=True)
 
 
+def parse_survivors(spec: str | None) -> set[str] | None:
+    """Parse a ``--survivors`` CSV (the dispatch threads its CURRENT G2b
+    survivor set) into a set; ``None`` (flag absent — probes / manual runs)
+    keeps the marker-authoritative fallback in :func:`g2b_dropped_now`."""
+    if spec is None:
+        return None
+    return {c for c in spec.split(",") if c}
+
+
+def g2b_dropped_now(fits_dir: Path, cell: str, survivors: set[str] | None) -> bool:
+    """Current-run G2b drop verdict for ``cell`` (r3 reconciler blocker
+    g2b-drop-marker-shadowed-by-stale-fit + its symmetric stale-marker arm).
+
+    The ``<cell>__g2b_dropped.json`` marker is AUTHORITATIVE over any
+    coexisting fit context: fits AND markers are git-harvested and
+    re-materialized on every pod while G2b survivorship recomputes per
+    dispatch, so a cross-run survive->drop flip leaves BOTH present — the
+    fit is then stale prior-run residue, never survivor evidence. When the
+    dispatch threads its CURRENT survivor set (``--survivors``), marker
+    authority is keyed to THIS run: a marker on a now-surviving cell is a
+    STALE prior-run marker (ignored, loud log — the drop->survive flip),
+    and a missing marker on a now-dropped cell raises (the dispatch writes
+    markers for its dropped cells BEFORE any consumer runs; absence is a
+    wiring bug, never a survivor signal)."""
+    marker = (fits_dir / f"{cell}__g2b_dropped.json").exists()
+    if survivors is None:
+        return marker
+    if cell in survivors:
+        if marker:
+            _log(
+                f"[g2b] {cell}: STALE prior-run drop marker ignored — "
+                "cell SURVIVES this dispatch (--survivors is authoritative)"
+            )
+        return False
+    if not marker:
+        raise RuntimeError(
+            f"{cell} is G2b-dropped this dispatch (--survivors) but "
+            f"fits/{cell}__g2b_dropped.json is missing — the upstream drop-marker "
+            "write failed (plan §7 skip-and-count)"
+        )
+    return True
+
+
 # ---------------------------------------------------------------------------
 # bf16-as-uint16 codec (numpy side; bit-exact vs the capture rig's torch codec)
 # ---------------------------------------------------------------------------
