@@ -2682,6 +2682,14 @@ def phase_grid(cfg: RunConfig, regime_fp: str) -> int:
 
     if cfg.pilot:
         pending = [b for b in blocks if not R.block_is_done(cfg.out_root, b, regime_fp, namespace)]
+        if not pending and _phase_done(cfg, f"grid_{namespace}", regime_fp):
+            # Resume after a completed production grid: the throughput pilot is
+            # moot (nothing left to fence). A fresh run with zero pending blocks
+            # is still a bug and keeps the assert below.
+            logging.getLogger("issue2333.run").info(
+                "[pilot] production grid already complete — pilot moot, skipping"
+            )
+            return 0
         assert pending, "pilot: no pending blocks"
         block = pending[len(pending) // 2]
         t0 = time.time()
