@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2391,
+  "highest_id": 2392,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10755,6 +10755,13 @@
       "path": "tasks/planning/2391",
       "status": "planning",
       "title": "workflow-fix: raise the per-reviewer review-round cap from 5 to 10 across all three review loops"
+    },
+    "2392": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2392",
+      "status": "proposed",
+      "title": "vLLM backend for the unhooked anchor phase of the patching rig, behind a measured HF-parity gate"
     },
     "24": {
       "has_clean_result": false,
