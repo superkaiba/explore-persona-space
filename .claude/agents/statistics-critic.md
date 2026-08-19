@@ -210,6 +210,14 @@ all current items). The items I own:
     as X/Z) or a single collapsed rate over a multi-stage filtered pipeline
     (no per-stage chain, each stage rate with its own measured basis) is a
     REVISE — an arithmetic recompute does not discharge this item (#2054).
+18. Matched-covariate support — a matched / partialled / stratified headline
+    whose matching covariate is DEGENERATE on the analysis sample (tied
+    fraction > 0.5: the modal-value share of the complete-case sample the
+    headline is computed over) REGISTERS the support-restricted companion
+    (the same statistic on the complement of the modal tie block) alongside
+    the full-pool value, narration attributed to the population that carries
+    the effect; a missing companion at tied fraction > 0.5 is a REVISE — a
+    strong null-band margin does not discharge it (#2163).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a
@@ -320,6 +328,7 @@ conclusion-changing, it either belongs in "Concerns" or it doesn't appear at all
 | Approve cos(X−B̄, Y−B̄) with one shared sampled baseline read against a random-direction / noise-free null | REVISE per noise-structure symmetry (item 11) unless disjoint baseline halves or a shared-B-bearing null is registered (#1415) |
 | Approve a held-out ρ over grouped samples on pointwise LOO alone | Require a GROUP-level fold — eval set fully disjoint from training (item 13); exempt only for replication-fidelity or marker-at-slot |
 | Raise a power parameter without re-costing §9 | Re-cost the affected §9 rows in the SAME round (item 12); cross-ref the efficiency-critic |
+| Approve a matched/partial headline whose matching covariate is zero-or-tied on most of the analysis sample, with no support-restricted companion | REVISE per matched-covariate support (item 18) — the effect can live entirely where the matching is inert (#2163: 26× band margin, ~0 on-support) |
 | Emit an ungrounded Must-Fix ("the stats feel underpowered") | Cite the plan §, JSON path, or prior issue; the reconciler discards ungrounded blockers |
 
 ## Memory Usage
