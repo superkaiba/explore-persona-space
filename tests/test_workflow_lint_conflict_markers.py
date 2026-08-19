@@ -37,7 +37,14 @@ Covers, per plan (tasks/running/2192 plans/v3.md § Tests, items 1-8):
    ``test_check_empty_text_default_bundled_in_no_flags`` pattern) — a
    direct call of the check function is NOT sufficient evidence of
    bundling — plus files-mode registry membership at the same chain-order
-   position (#2235).
+   position (#2235);
+10. (#2192 r2, concern ``conflict-marker-waiver-comment-context``)
+    comment-shaped waiver context: a string-literal spoof on the previous
+    line stays flagged; the closing-quote constant-declaration shape is
+    not a waiver; column-0 AND indented legitimate comment waivers still
+    suppress; a quoted token on the marker line itself does not waive;
+    and the git-enumeration OSError / TimeoutExpired branches fail open
+    with the loud stderr notice.
 
 Self-flag hazard: this file is itself in the check's ``*.py`` scan set, so
 every fixture marker line is constructed programmatically (``"<" * 7``,
@@ -108,6 +115,8 @@ def test_planted_markers_flagged(tmp_path: Path) -> None:
 
 
 def test_md_fence_semantics(tmp_path: Path) -> None:
+    """Plan § Tests item 2 (md fence semantics): the four forms outside
+    fences flag; inside backtick and tilde fences they do not."""
     body = "\n".join(
         [
             "intro prose",
@@ -134,6 +143,9 @@ def test_md_fence_semantics(tmp_path: Path) -> None:
 
 
 def test_anchoring_negatives(tmp_path: Path) -> None:
+    """Plan § Tests item 3 (anchoring negatives): 8-char runs, suffixed
+    7-char runs, mid-line tokens, and blockquote chevrons never match; a
+    bare 7-char separator at EOL does."""
     negatives = [
         "=" * 8,  # 8-char run: 8th char is not space/EOL
         "=" * 7 + "x",  # 7-char run + suffix char
@@ -175,6 +187,8 @@ def test_waiver_previous_and_same_line(tmp_path: Path) -> None:
 
 
 def test_waiver_empty_reason_not_suppressed(tmp_path: Path) -> None:
+    """Plan § Tests item 4 (waiver arm): an empty-reason waiver comment
+    does NOT suppress."""
     body = CONFLICT_MARKER_WAIVER + "\n" + M_SEP + "\n"
     p = _plant(tmp_path, "unwaived.py", body)
     errors = check_conflict_markers(roots=[p])
@@ -183,6 +197,8 @@ def test_waiver_empty_reason_not_suppressed(tmp_path: Path) -> None:
 
 
 def test_unrelated_prev_comment_is_not_a_waiver(tmp_path: Path) -> None:
+    """Plan § Tests item 4 (waiver arm): an unrelated previous-line
+    comment is not a waiver."""
     body = "# some unrelated comment\n" + M_SEP + "\n"
     p = _plant(tmp_path, "plain.py", body)
     errors = check_conflict_markers(roots=[p])
@@ -195,6 +211,67 @@ def test_waiver_does_not_apply_to_md(tmp_path: Path) -> None:
     p = _plant(tmp_path, "doc.md", body)
     errors = check_conflict_markers(roots=[p])
     assert len(errors) == 1, errors
+
+
+# --------------------------------------------------------------------------
+# 4-bis. #2192 r2: waiver context must be COMMENT-SHAPED
+# (concern conflict-marker-waiver-comment-context)
+# --------------------------------------------------------------------------
+
+
+def test_waiver_token_in_string_literal_is_not_a_waiver(tmp_path: Path) -> None:
+    """#2192 r2 blocker regression: a STRING LITERAL containing the waiver
+    token on the previous line must NOT suppress a real marker on the next
+    line — the spoof stays flagged with exactly 1 finding (the reconciler's
+    spoof shape returned ZERO findings under the pre-r2 substring form)."""
+    body = f'WAIVER_TEXT = "{CONFLICT_MARKER_WAIVER} documentation"\n' + M_SEP + "\n"
+    p = _plant(tmp_path, "spoof.py", body)
+    errors = check_conflict_markers(roots=[p])
+    assert len(errors) == 1, errors
+    assert errors[0].startswith(f"{p}:2: "), errors[0]
+
+
+def test_bare_constant_declaration_is_not_a_waiver(tmp_path: Path) -> None:
+    """#2192 r2: the closing-quote-after-token shape — a bare constant
+    declaration like this module's own ``CONFLICT_MARKER_WAIVER`` line
+    (under the pre-r2 form the trailing quote parsed as a non-empty
+    'reason') — is NOT recognized as a waiver."""
+    body = f'CONST_WAIVER = "{CONFLICT_MARKER_WAIVER}"\n' + M_SEP + "\n"
+    p = _plant(tmp_path, "constdecl.py", body)
+    errors = check_conflict_markers(roots=[p])
+    assert len(errors) == 1, errors
+    assert errors[0].startswith(f"{p}:2: "), errors[0]
+
+
+def test_comment_waiver_column0_and_indented_still_suppress(tmp_path: Path) -> None:
+    """#2192 r2: legitimate COMMENT-SHAPED waivers still suppress — at
+    column 0 AND indented (a comment-shaped line inside a docstring body,
+    preserving residual (c)'s RST-underline escape)."""
+    docstring_open = '"' * 3 + "RST heading in a docstring"
+    body = "\n".join(
+        [
+            f"{CONFLICT_MARKER_WAIVER} column-0 comment waiver",
+            M_SEP,
+            docstring_open,
+            f"    {CONFLICT_MARKER_WAIVER} indented waiver inside the docstring",
+            M_SEP,
+            '"' * 3,
+            "",
+        ]
+    )
+    p = _plant(tmp_path, "legit.py", body)
+    assert check_conflict_markers(roots=[p]) == []
+
+
+def test_same_line_quoted_token_is_not_a_waiver(tmp_path: Path) -> None:
+    """#2192 r2: the same-line arm requires a TRAILING comment (whitespace
+    then ``#`` then the token) — a QUOTED token on the marker line, whose
+    ``#`` is preceded by a quote rather than whitespace, does not waive."""
+    body = M_SEP + f' "{CONFLICT_MARKER_WAIVER} x"\n'
+    p = _plant(tmp_path, "sameline_spoof.py", body)
+    errors = check_conflict_markers(roots=[p])
+    assert len(errors) == 1, errors
+    assert errors[0].startswith(f"{p}:1: "), errors[0]
 
 
 # --------------------------------------------------------------------------
@@ -240,6 +317,9 @@ def test_production_baseline_clean_and_enumeration_nonvacuous() -> None:
 
 
 def test_missing_on_disk_entries_skipped(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Plan § Tests item 7 (missing-on-disk robustness): both the roots
+    arm and the per-file-scan FileNotFoundError arm skip absent entries
+    while findings for present files still return."""
     present = _plant(tmp_path, "present.py", M_SEP + "\n")
     ghost = tmp_path / "ghost.py"
     # roots arm: a nonexistent roots entry is skipped, not raised on, and
@@ -272,6 +352,39 @@ def test_git_failure_fail_open_with_stderr_notice(
     assert check_conflict_markers() == []
     err = capsys.readouterr().err
     assert "--check-conflict-markers skipped" in err, err
+
+
+def test_git_enumeration_oserror_fail_open(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Plan § Tests item 8 (git-failure fail-open), OSError branch: a
+    subprocess.run that raises (e.g. git binary missing) fail-opens to []
+    with the loud stderr notice — never a silent skip."""
+
+    def boom(*_a: object, **_k: object) -> None:
+        raise OSError("git binary missing")
+
+    monkeypatch.setattr(wl.subprocess, "run", boom)
+    assert check_conflict_markers() == []
+    err = capsys.readouterr().err
+    assert "--check-conflict-markers skipped" in err, err
+    assert "git enumeration failed" in err, err
+
+
+def test_git_enumeration_timeout_fail_open(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Plan § Tests item 8 (git-failure fail-open), TimeoutExpired branch:
+    a hung git enumeration fail-opens to [] with the loud stderr notice."""
+
+    def boom(*_a: object, **_k: object) -> None:
+        raise subprocess.TimeoutExpired(cmd="git ls-files", timeout=60)
+
+    monkeypatch.setattr(wl.subprocess, "run", boom)
+    assert check_conflict_markers() == []
+    err = capsys.readouterr().err
+    assert "--check-conflict-markers skipped" in err, err
+    assert "git enumeration failed" in err, err
 
 
 # --------------------------------------------------------------------------

@@ -287,8 +287,11 @@ Behaviours:
   followed by another character, and mid-line occurrences never match.
   Fenced ``.md`` regions are exempt (the sanctioned escape for
   marker-documenting prose); a deliberate ``.py`` occurrence is waived
-  with ``# CONFLICT_MARKER_EXEMPT: <reason>`` (non-empty reason) on the
-  same or previous non-blank line. On a git failure the enumeration
+  with a COMMENT-SHAPED ``# CONFLICT_MARKER_EXEMPT: <reason>`` (non-empty
+  reason): the previous non-blank line must START with the waiver comment
+  (optional indentation allowed; a string literal containing the token is
+  NOT a waiver, #2192 r2), or the marker line carries a TRAILING waiver
+  comment. On a git failure the enumeration
   fail-opens to ``[]`` with a loud stderr notice. Origin incident
   #2189: merge commit ``14cd4e4211`` left the diff3 base marker as the
   last line of ``.claude/rules/code-style.md`` — it passed the no-flags
@@ -5003,12 +5006,28 @@ _CONFLICT_MARKER_RE = re.compile(r"^(<{7}|\|{7}|={7}|>{7})( |$)")
 # Tracked-file enumeration pathspecs. Under git's default (non-`:(glob)`)
 # pathspec matching, `.claude/**/*.md` does NOT match a depth-1
 # `.claude/foo.md` — the extra `.claude/*.md` pathspec closes that gap
-# (zero such files exist today; future-proofing).
+# (zero such files exist today; future-proofing). Conversely `.claude/*.md`
+# is a SUPERSET of `.claude/**/*.md` under that default matching (`*`
+# crosses `/`) — the pair is deliberately redundant.
 _CONFLICT_MARKER_PATHSPECS = (".claude/**/*.md", ".claude/*.md", "*.py", "CLAUDE.md")
 
 # `.py` waiver: a deliberate marker-documenting occurrence carries this
 # comment (with a non-empty reason) on the same or previous non-blank line.
-CONFLICT_MARKER_WAIVER = "# CONFLICT_MARKER_EXEMPT:"
+# Waiver context must be COMMENT-SHAPED (#2192 r2): the previous-line arm
+# accepts only optional whitespace followed DIRECTLY by the waiver comment,
+# so a string LITERAL containing the token (e.g. this module's own constant
+# declaration below) can never suppress a real marker on the next line; an
+# INDENTED comment-shaped line inside a docstring still matches, preserving
+# residual (c)'s escape. The same-line arm accepts only a TRAILING waiver
+# comment (whitespace, then ``#``, then the token) after the marker token.
+_CONFLICT_MARKER_WAIVER_TOKEN = "CONFLICT_MARKER_EXEMPT:"
+CONFLICT_MARKER_WAIVER = f"# {_CONFLICT_MARKER_WAIVER_TOKEN}"
+_CONFLICT_MARKER_WAIVER_PREV_RE = re.compile(
+    r"\s*#\s?" + re.escape(_CONFLICT_MARKER_WAIVER_TOKEN) + r"(?P<reason>.*)$"
+)
+_CONFLICT_MARKER_WAIVER_SAME_RE = re.compile(
+    r"\s#\s?" + re.escape(_CONFLICT_MARKER_WAIVER_TOKEN) + r"(?P<reason>.*)$"
+)
 
 _CONFLICT_MARKER_GIT_TIMEOUT_S = 60
 
@@ -5071,17 +5090,32 @@ def _conflict_marker_error(path: Path, idx: int, token: str) -> str:
         f"(#2189: diff3 base marker '|||||||' committed to "
         f".claude/rules/code-style.md survived every gate). Resolve the "
         f"merge; if this line deliberately DOCUMENTS a marker, fence it "
-        f"(md) or add '# CONFLICT_MARKER_EXEMPT: <reason>' (py)."
+        f"(md) or add a '# CONFLICT_MARKER_EXEMPT: <reason>' comment (py)."
     )
 
 
-def _conflict_marker_waived(line: str) -> bool:
-    """True when *line* carries :data:`CONFLICT_MARKER_WAIVER` with a
-    non-empty reason after the colon."""
-    pos = line.find(CONFLICT_MARKER_WAIVER)
-    if pos == -1:
-        return False
-    return bool(line[pos + len(CONFLICT_MARKER_WAIVER) :].strip())
+def _conflict_marker_prev_line_waiver(line: str) -> bool:
+    """True when *line* IS a comment-shaped waiver: optional leading
+    whitespace, then :data:`CONFLICT_MARKER_WAIVER` DIRECTLY, then a
+    non-empty reason. A string LITERAL containing the token (e.g. this
+    module's own ``CONFLICT_MARKER_WAIVER`` declaration) does NOT match —
+    the pre-#2192-r2 substring form let any such literal on the previous
+    line silently suppress a real marker. An INDENTED comment-shaped line
+    (e.g. inside a docstring — residual (c)'s escape) still matches."""
+    m = _CONFLICT_MARKER_WAIVER_PREV_RE.match(line)
+    return bool(m and m.group("reason").strip())
+
+
+def _conflict_marker_same_line_waiver(line: str) -> bool:
+    """True when the marker *line* carries a TRAILING
+    ``# CONFLICT_MARKER_EXEMPT: <reason>`` comment — whitespace, then
+    ``#``, then the token, then a non-empty reason running to end-of-line
+    — after the marker token. Only meaningful on lines already matched by
+    :data:`_CONFLICT_MARKER_RE` (the run sits at column 0, so any
+    whitespace-preceded ``#`` sits after it); a QUOTED token on the marker
+    line (no whitespace directly before its ``#``) does not waive."""
+    m = _CONFLICT_MARKER_WAIVER_SAME_RE.search(line)
+    return bool(m and m.group("reason").strip())
 
 
 def _conflict_marker_scan_md(path: Path, lines: list[str], errors: list[str]) -> None:
@@ -5105,13 +5139,19 @@ def _conflict_marker_scan_md(path: Path, lines: list[str], errors: list[str]) ->
 
 
 def _conflict_marker_scan_py(path: Path, lines: list[str], errors: list[str]) -> None:
-    """Scan every ``.py`` line; suppress a hit waived by
-    :data:`CONFLICT_MARKER_WAIVER` on the same or previous non-blank
-    line."""
+    """Scan every ``.py`` line; suppress a hit waived by a COMMENT-SHAPED
+    :data:`CONFLICT_MARKER_WAIVER` — a trailing waiver comment on the same
+    line (:func:`_conflict_marker_same_line_waiver`), or a previous
+    non-blank line that IS a waiver comment
+    (:func:`_conflict_marker_prev_line_waiver`). A string literal
+    containing the token waives nothing (#2192 r2)."""
     prev_nonblank = ""
     for idx, line in enumerate(lines):
         m = _CONFLICT_MARKER_RE.match(line)
-        if m and not (_conflict_marker_waived(line) or _conflict_marker_waived(prev_nonblank)):
+        if m and not (
+            _conflict_marker_same_line_waiver(line)
+            or _conflict_marker_prev_line_waiver(prev_nonblank)
+        ):
             errors.append(_conflict_marker_error(path, idx, m.group(1)))
         if line.strip():
             prev_nonblank = line
@@ -5137,9 +5177,17 @@ def check_conflict_markers(*, roots: list[Path] | None = None) -> list[str]:
 
     * ``.md``: lines inside fenced regions are exempt — the fence IS the
       sanctioned escape for marker-documenting prose.
-    * ``.py``: a ``# CONFLICT_MARKER_EXEMPT: <reason>`` comment (non-empty
-      reason) on the same or previous non-blank line waives a deliberate
-      occurrence.
+    * ``.py``: a COMMENT-SHAPED ``# CONFLICT_MARKER_EXEMPT: <reason>``
+      waiver (non-empty reason) on the same or previous non-blank line
+      waives a deliberate occurrence. Comment context is REQUIRED
+      (#2192 r2): the previous-line arm accepts only a line that is
+      optional whitespace followed DIRECTLY by the waiver comment (an
+      indented comment-shaped line inside a docstring included —
+      residual (c)'s escape survives); the same-line arm accepts only a
+      TRAILING waiver comment after the marker token. A string LITERAL
+      containing the token (e.g. this module's own constant declaration)
+      is NOT a waiver — the earlier substring form let such a literal on
+      the previous line silently suppress a real marker.
 
     Known residuals (documented, deliberate):
 
@@ -18604,9 +18652,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "ls-files enumeration filtered to on-disk files) carries a "
         "merge-conflict-marker residue line: column 0 starting seven '<', "
         "'|', '=' or '>' followed by a space or end-of-line. Fenced .md "
-        "regions are exempt; a deliberate .py occurrence is waived with "
-        "'# CONFLICT_MARKER_EXEMPT: <reason>' on the same or previous "
-        "non-blank line. On a git failure the enumeration fail-opens with "
+        "regions are exempt; a deliberate .py occurrence is waived with a "
+        "COMMENT-SHAPED '# CONFLICT_MARKER_EXEMPT: <reason>' — the "
+        "previous non-blank line starting with the waiver comment, or a "
+        "trailing waiver comment on the marker line; a string literal "
+        "containing the token is not a waiver (#2192 r2). On a git "
+        "failure the enumeration fail-opens with "
         "a loud stderr notice. #2189: a diff3 base marker committed to "
         ".claude/rules/code-style.md survived every gate. Bundled into "
         "the no-flags default run.",
