@@ -9242,7 +9242,7 @@
       "kind": "infra",
       "path": "tasks/completed/2197",
       "status": "completed",
-      "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
+      "title": "task.py set-body: Goal-H2 drop guard is now workflow-aware \u2014 v2 report bodies auto-exempt (merged PR #2023)"
     },
     "2198": {
       "has_clean_result": false,

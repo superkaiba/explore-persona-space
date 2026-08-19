@@ -1,6 +1,6 @@
 ---
-title: 'task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report
-  body does not need --allow-goal-drop'
+title: 'task.py set-body: Goal-H2 drop guard is now workflow-aware — v2 report bodies
+  auto-exempt (merged PR #2023)'
 kind: infra
 tags: []
 created_at: '2026-08-08T03:23:22Z'
