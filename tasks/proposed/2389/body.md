@@ -17,7 +17,7 @@ goal: 'On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disab
   correlation against #2162''s per-type steered fraction-of-swap over the 16 shared
   context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable
   cells in both prior runs.'
-backend: fellows
+backend: auto
 ---
 # Experiment: Does context-vector patching work better on a more powerful model? (Qwen3.8-27B, context-end only, full 39-cell design)
 
