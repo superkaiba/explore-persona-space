@@ -31,6 +31,11 @@ Compose recipe for a `kind: infra` wf-fix round whose diff ADDS a check to
 4. **wf-fix Step-2-floor attestation** ([[wf-fix-step2-floor-attestation]]):
    probe main for `epm:plan-verify` at compose time and attest
    PRESENT/absent in the prompt — Codex cannot read main-side events.
+   NON-wf-fix infra tasks (no `workflow-fix:`/`daily-fix:` title prefix, no
+   `wf-fix` tag) get the EXEMPT form: attest "floor check exempt" (+ any
+   plan-verify verdict found anyway) so Codex never false-fires
+   `step2-floor-skipped` — the rubric's floor check binds wf-fix only
+   (#2194 r1: exempt AND 3 plan-verify markers present, attested both).
 5. **`epm:results` + ts ≥ 2026-07-15 ⇒ Gate-scope threshold satisfied** line;
    pin-sweep verification adapted to `git -C <wt> grep -n '<literal>' -- tests/`
    (no `select_step9c_tests.py` — no uv env).
