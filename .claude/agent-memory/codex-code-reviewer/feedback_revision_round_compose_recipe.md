@@ -1374,6 +1374,46 @@ v2==1, close==1, all four prior tag forms==0, line-start rows==1,
 `> CONCERN:: `==13; the OLD r1 ledger literal legitimately survives INSIDE
 the inlined codex-r1 envelope — scope residue greps outside envelopes.
 
+**#1739 claim4-controls r2 fold (2026-08-19) — two refinements:** (a) when
+the r2 marker is SELF-CONTAINED (no external /tmp report path), DROP the
+r1 dual-envelope (marker-only) and attest the change explicitly ("unlike
+round 1, this marker is SELF-CONTAINED"), else Codex hunts for the report;
+sweep the r1 dual-envelope tokens (`{FULL_REPORT_BODY}`, "the full
+implementer report is INLINED") in the final asserts. (b) The
+sweep-hex-SHAs assert has a legit-survivor pattern: a swept r1 SHA that a
+round-2 DUTY deliberately cites (here the premerge_tip CONTENT SHA
+`8439ae52bf…` in the U9 line-1 check) gets `assert count == 1`, not `== 0`
+— pair it with a full-40-char presence assert so the survivor is the
+deliberate occurrence. Union-work-order rounds: inline the union in its own
+envelope + annotate its /tmp verdict paths UNREACHABLE, inline the Claude
+Minors verbatim (Codex cannot read the Claude verdict file), and give
+open-ledger rows a `## Round-1 closure ledger` verdict-body section whose
+NOT-ADDRESSED branch = substantive FAIL + a re-raise `CONCERN:: ` row
+reusing the exact id (VERIFIED-ADDRESSED rows are NOT re-emitted).
+
+**FAIL+FAIL union with a punch-list disposition table + fixed-without-
+ledger-close ids (#2379 r2, 2026-08-19):** three deltas on the #2332 union
+shape. (a) When the impl marker carries a `### Round-2 punch-list
+disposition` table keying rows by BOTH the twin's persisted concern ids AND
+the Claude verdict's g-group labels, key the closure ledger on the
+punch-list rows directly (no pseudo-ID minting needed — the table pre-mints
+the union). (b) INVERSE-#2371 ledger shape: ids whose fixes the punch-list
+claims landed (unit A) but with NO `address-concern` rows posted — treat as
+raised-only ledger state + FIXED claim: identical closure-verification duty
+to the addressed ids, missing rows attested as orchestrator bookkeeping
+(never a finding); the ledger literal then needs BOTH clauses ("N open: ...;
+M addressed-r2 pending verification: ..."), with the open list containing
+claimed-fixed ids. (c) Same-task r1→r2 template reuse worked with a 15-patch
+list (base SHAs in Step 0 name-only + 0.9 probes; "purely additive" in 0.9
+opener AND a LINE-WRAPPED copy in 4.6 — token greps miss wrapped phrases,
+patch by known text; every "the report claims ..." sentence re-keyed to the
+v2 report: 0.6 compute-deviation + porcelain, 0.65 upload claims, 4(b)/(c)
+lint + pin-sweep, 4.5 round-1 tail, 5 deserialization). Tag arithmetic with
+BOTH prior verdicts inlined tags-stripped + codex rows blockquoted: own-head
+v2==1, close==1, all four prior tag forms==0, line-start rows==1,
+`> CONCERN:: `==13; the OLD r1 ledger literal legitimately survives INSIDE
+the inlined codex-r1 envelope — scope residue greps outside envelopes.
+
 **Same-task r2→r3 union fix round: reconstruct-head + patched-REST (#2379
 r3, 2026-08-19):** four durable deltas on the #2332/#2379-r2 union shape.
 (a) The concerns ledger has a THIRD event type `verified-open` (posted when
@@ -1426,3 +1466,38 @@ v4 / impl v5) is stated in facts + return, and the crash diagnosis
 (`epm:progress`, no `epm:failure` posted) inlines with an explicit
 falsified-prime-suspect note handing the diagnosis-vs-marker disagreement
 to the twin (V-duty), never resolving it at compose time.
+
+**Reconciler-PASS-with-OPEN-residuals fix round (#2379 r4, 2026-08-19):**
+when the prior round closed Claude-PASS / own-FAIL via a reconciler BINDING
+PASS that left ONE concern OPEN with named residuals (M1/M4/M5) and DEFERRED
+the rest, three deltas on the #2332-r4 mixed-rulings shape. (a) The ledger
+grows a FOURTH live event kind `deferred` (posted by `defer-concern --by
+reconciler`) — latest-event `deferred` = BINDING deferral, closed-for-round;
+the OPEN predicate stays latest ∈ {raised, verified-open}, and the ledger
+literal needs a third clause ("5 reconciler-deferred (binding, ride future
+touches): ..."). Wire the no-re-emission fence into BOTH the closure-ledger
+schema (per-deferred-id `NOT-TOUCHED — remains deferred (expected)` |
+`REGRESSED` lines) AND the CONCERN::-row exception list (re-emit a deferred
+id ONLY on a round-N REGRESSION of its mechanism). (b) The OPEN concern's
+named residuals become R-numbered closure elements (R1/R2/R3) whose
+acceptance contract is the RECONCILER's completeness-check paragraph +
+Standing-recommendations section — inline the ruling FIRST (reconciler
+wins), own prior verdict SECOND (tags stripped, rows blockquoted, read
+THROUGH the classification); NOT-ADDRESSED on any R-element = substantive
+FAIL, and the concern id itself gets ONE summary line whose NOT-ADDRESSED
+branch re-raises the exact id. (c) An opportunistic fix that TOUCHES a
+deferred id's mechanism gets a `TOUCHED — verified effect` status line
+(never closure language). Compose-time anchor probes that paid off: grep
+the round diff for the registry token (`PHASES` == 0 → 0.55 attestation
+verified), for `torch.load` (== 0 → Step 5 bullet rewritten to
+zero-new-sites), and for residual non-atomic writes (`write_text` at three
+surviving sites → handed to Codex as a neutral M5 scope-adjudication item
+with line numbers). Sharpest mechanism probe worth composing explicitly: a
+shared `load_json_object` that collapses ABSENT and CORRUPT to one `None`
+forces callers to re-stat to implement an asymmetric spend policy
+(absent-rates fine / corrupt-rates refuse) — hand the branch-structure
+question to Codex, severity pre-split (over-refusal = CONCERN row,
+under-refusal = NOT-ADDRESSED). Reconciler marker version trap: posted
+top-level version is v1 (first reconcile on the task) while the head
+sentinel says v3 (the round) — fetch by kind from events.jsonl and state
+the mapping in the return, never fetch by "v3".
