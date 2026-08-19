@@ -191,6 +191,26 @@ Behaviours:
   :data:`EMPTY_TEXT_DEFAULT_ALLOWLIST` (the JUDGE_PIN allowlist idiom;
   a NEW file never inherits the escape); waive a deliberate site with
   ``# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`` (#2206).
+* ``--check-stale-gotchas-pointers`` (also bundled into the no-flags
+  default run): scan the git-TRACKED inventory — ``CLAUDE.md`` + every
+  tracked ``*.md`` under ``.claude/`` (gotchas.md itself and
+  ``agent-memory/`` excluded; tracked ``plans/`` IN scope, untracked
+  scratch out by construction — #2193 r2) and FAIL a dead task-id next to a
+  ``gotchas.md`` mention — an id within 100 chars of a ``gotchas.md``
+  token on the same line, at or under the registry's literal
+  ``highest_id`` (a registry-less scan root — the Step 10d gate archive —
+  WARNs and scans uncapped), that no longer occurs in
+  ``.claude/rules/gotchas.md``.
+  The class is a SUPERSET of the #2189 relocation shape: it also catches
+  id-TRIMS where the entry survives in gotchas.md with its citation
+  compacted away — triage each hit before repointing.
+  Relocation-attribution idiom lines ("Relocated codebase traps" / "to
+  recover gotchas.md byte budget") are skipped so correct relocation
+  records never trip it; genuine context-citations are frozen per
+  (path, id) in :data:`STALE_GOTCHAS_POINTER_ALLOWLIST` with per-entry
+  reasons. Known false negatives disclosed in the check docstring:
+  wrapped-line splits (the id on the line after the token) and id
+  aliasing (the id survives in gotchas.md on a DIFFERENT entry) (#2193).
 * ``--check-plan-version-immutability`` (Arm W also bundled into the
   no-flags default run; Arm H explicit-flag only): a persisted
   ``tasks/**/plans/v<K>.md`` plan version is IMMUTABLE — an amendment
@@ -277,6 +297,29 @@ Behaviours:
   ``/usr/bin/grep`` are exempt; a path-pinned ``ugrep`` still flags (its
   exit status is divergent by construction, no pin sanctions it).
   ``#``-comment lines and ``.md`` prose outside fences are skipped.
+* ``--check-conflict-markers`` (also bundled into the no-flags default
+  run): enumerate TRACKED ``.claude/**/*.md`` (depth-1 ``.claude/*.md``
+  included), ``*.py`` repo-wide, and ``CLAUDE.md`` via ``git ls-files``
+  (filtered to on-disk files — sparse-worktree index entries absent from
+  disk are skipped) and FAIL on any merge-conflict-marker residue line:
+  column 0 starting seven ``<``, ``|``, ``=`` or ``>`` followed by a
+  space or end-of-line. Anchoring is exact — 8-char runs, 7-char runs
+  followed by another character, and mid-line occurrences never match.
+  Fenced ``.md`` regions are exempt (the sanctioned escape for
+  marker-documenting prose); a deliberate ``.py`` occurrence is waived
+  with a COMMENT-SHAPED ``# CONFLICT_MARKER_EXEMPT: <reason>`` (non-empty
+  reason): the previous non-blank line must START with the waiver comment
+  (optional indentation allowed; start-anchoring means a string literal
+  containing the token never waives on THAT arm, #2192 r2), or the marker
+  line carries a TRAILING waiver comment (matched as a whitespace-``#``-
+  token shape after the marker token, quote-context-blind — a QUOTED
+  token in the marker line's own tail can waive; documented residual,
+  #2192 r3). On a git failure the enumeration
+  fail-opens to ``[]`` with a loud stderr notice. Origin incident
+  #2189: merge commit ``14cd4e4211`` left the diff3 base marker as the
+  last line of ``.claude/rules/code-style.md`` — it passed the no-flags
+  lint, the size gate, the union-conservation check, ruff, and 27
+  unrelated tests, caught only by a reviewer reading the diff by eye.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -4968,6 +5011,257 @@ def check_grep_qv(*, roots: list[Path] | None = None) -> list[str]:
                 _grep_qv_scan(path, block, block_start, errors)
         else:
             _grep_qv_scan(path, lines, 0, errors)
+    return errors
+
+
+# `--check-conflict-markers` (#2192; origin incident #2189): merge commit
+# 14cd4e4211 left the diff3 base marker (seven pipes + a space + the base
+# SHA) as the last line of .claude/rules/code-style.md; it passed the
+# no-flags lint, the size gate, the union-conservation check, ruff, and 27
+# unrelated tests — caught only by a reviewer reading the diff by eye. The
+# regex is the task body's, applied per line: column 0 starting seven "<",
+# "|", "=" or ">" followed by a space or end-of-line. (Self-flag hazard:
+# this module and its tests are themselves tracked *.py in the scan set —
+# never place a raw 7-char marker run at column 0 of either source file;
+# tests construct fixture content programmatically.)
+_CONFLICT_MARKER_RE = re.compile(r"^(<{7}|\|{7}|={7}|>{7})( |$)")
+
+# Tracked-file enumeration pathspecs. Under git's default (non-`:(glob)`)
+# pathspec matching, `.claude/**/*.md` does NOT match a depth-1
+# `.claude/foo.md` — the extra `.claude/*.md` pathspec closes that gap
+# (zero such files exist today; future-proofing). Conversely `.claude/*.md`
+# is a SUPERSET of `.claude/**/*.md` under that default matching (`*`
+# crosses `/`) — the pair is deliberately redundant.
+_CONFLICT_MARKER_PATHSPECS = (".claude/**/*.md", ".claude/*.md", "*.py", "CLAUDE.md")
+
+# `.py` waiver: a deliberate marker-documenting occurrence carries this
+# comment (with a non-empty reason) on the same or previous non-blank line.
+# Waiver context must be COMMENT-SHAPED (#2192 r2): the previous-line arm
+# accepts only optional whitespace followed DIRECTLY by the waiver comment,
+# so a string LITERAL containing the token (e.g. this module's own constant
+# declaration below) can never suppress a real marker on the next line; an
+# INDENTED comment-shaped line inside a docstring still matches, preserving
+# residual (c)'s escape. The same-line arm accepts only a TRAILING waiver
+# comment (whitespace, then ``#``, then the token) after the marker token.
+_CONFLICT_MARKER_WAIVER_TOKEN = "CONFLICT_MARKER_EXEMPT:"
+CONFLICT_MARKER_WAIVER = f"# {_CONFLICT_MARKER_WAIVER_TOKEN}"
+_CONFLICT_MARKER_WAIVER_PREV_RE = re.compile(
+    r"\s*#\s?" + re.escape(_CONFLICT_MARKER_WAIVER_TOKEN) + r"(?P<reason>.*)$"
+)
+_CONFLICT_MARKER_WAIVER_SAME_RE = re.compile(
+    r"\s#\s?" + re.escape(_CONFLICT_MARKER_WAIVER_TOKEN) + r"(?P<reason>.*)$"
+)
+
+_CONFLICT_MARKER_GIT_TIMEOUT_S = 60
+
+
+def _conflict_marker_target_files(roots: list[Path] | None) -> list[Path]:
+    """Resolve the scan set for :func:`check_conflict_markers`.
+
+    Production (``roots=None``): ``git ls-files -z`` over
+    :data:`_CONFLICT_MARKER_PATHSPECS` (tracked-only — an rglob would
+    descend into ``.claude/worktrees/`` sibling checkouts, possibly
+    legitimately mid-merge, and untracked scratch), FILTERED to on-disk
+    files: in a sparse worktree the index still lists skip-worktree
+    entries absent from disk, and the Step 9c gate runs in sparse
+    worktrees by design (#671). On ANY git failure: one loud stderr
+    notice + fail-open ``[]`` (the ``check_plan_version_immutability``
+    precedent — never a silent skip; a broken git env must not block
+    every commit fleet-wide). A test override lists files, or
+    directories walked for ``*.md`` / ``*.py``; a ``roots`` entry absent
+    from disk is skipped, not raised on."""
+    if roots is None:
+        cmd = ["git", "-C", str(_REPO_ROOT), "ls-files", "-z", "--"]
+        cmd.extend(_CONFLICT_MARKER_PATHSPECS)
+        try:
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=_CONFLICT_MARKER_GIT_TIMEOUT_S,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            sys.stderr.write(
+                f"workflow_lint: --check-conflict-markers skipped: git enumeration failed: {exc}\n"
+            )
+            return []
+        if proc.returncode != 0:
+            sys.stderr.write(
+                f"workflow_lint: --check-conflict-markers skipped: git exited "
+                f"{proc.returncode}: {proc.stderr.strip()[:200]}\n"
+            )
+            return []
+        tracked = [_REPO_ROOT / rel for rel in proc.stdout.split("\0") if rel]
+        return _files_scope_filter([p for p in tracked if p.is_file()])
+    files: list[Path] = []
+    for root in roots:
+        if root.is_file():
+            files.append(root)
+        elif root.is_dir():
+            files.extend(
+                sorted(p for p in root.rglob("*") if p.is_file() and p.suffix in (".md", ".py"))
+            )
+    return _files_scope_filter(files)
+
+
+def _conflict_marker_error(path: Path, idx: int, token: str) -> str:
+    """Compose the (incident-citing, module-convention) violation string for
+    one conflict-marker residue line at 0-based line index ``idx``."""
+    return (
+        f"{path}:{idx + 1}: merge-conflict marker residue ('{token}') — a "
+        f"mis-resolved merge left this in a tracked workflow-surface file "
+        f"(#2189: diff3 base marker '|||||||' committed to "
+        f".claude/rules/code-style.md survived every gate). Resolve the "
+        f"merge; if this line deliberately DOCUMENTS a marker, fence it "
+        f"(md) or add a '# CONFLICT_MARKER_EXEMPT: <reason>' comment (py)."
+    )
+
+
+def _conflict_marker_prev_line_waiver(line: str) -> bool:
+    """True when *line* IS a comment-shaped waiver: optional leading
+    whitespace, then :data:`CONFLICT_MARKER_WAIVER` DIRECTLY, then a
+    non-empty reason. A string LITERAL containing the token (e.g. this
+    module's own ``CONFLICT_MARKER_WAIVER`` declaration) does NOT match —
+    the pre-#2192-r2 substring form let any such literal on the previous
+    line silently suppress a real marker. An INDENTED comment-shaped line
+    (e.g. inside a docstring — residual (c)'s escape) still matches."""
+    m = _CONFLICT_MARKER_WAIVER_PREV_RE.match(line)
+    return bool(m and m.group("reason").strip())
+
+
+def _conflict_marker_same_line_waiver(line: str) -> bool:
+    """True when the marker *line* carries a TRAILING
+    ``# CONFLICT_MARKER_EXEMPT: <reason>`` comment — whitespace, then
+    ``#``, then the token, then a non-empty reason running to end-of-line
+    — after the marker token. Only meaningful on lines already matched by
+    :data:`_CONFLICT_MARKER_RE` (the run sits at column 0, so any
+    whitespace-preceded ``#`` sits after it); a QUOTED token on the marker
+    line (no whitespace directly before its ``#``) does not waive."""
+    m = _CONFLICT_MARKER_WAIVER_SAME_RE.search(line)
+    return bool(m and m.group("reason").strip())
+
+
+def _conflict_marker_scan_md(path: Path, lines: list[str], errors: list[str]) -> None:
+    """Scan ``.md`` lines OUTSIDE fenced regions (:data:`_FENCE_RE`
+    simple-toggle) — the fence IS the sanctioned escape for
+    marker-documenting prose. Fence semantics are INVERTED vs
+    ``check_grep_qv`` (which scans ONLY fenced blocks): an unterminated
+    trailing fence therefore leaves trailing lines SKIPPED — residual (a)
+    of :func:`check_conflict_markers`, pinned by tests so a future
+    behavior change is deliberate."""
+    in_fence = False
+    for idx, line in enumerate(lines):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = _CONFLICT_MARKER_RE.match(line)
+        if m:
+            errors.append(_conflict_marker_error(path, idx, m.group(1)))
+
+
+def _conflict_marker_scan_py(path: Path, lines: list[str], errors: list[str]) -> None:
+    """Scan every ``.py`` line; suppress a hit waived by a COMMENT-SHAPED
+    :data:`CONFLICT_MARKER_WAIVER` — a trailing waiver comment on the same
+    line (:func:`_conflict_marker_same_line_waiver`), or a previous
+    non-blank line that IS a waiver comment
+    (:func:`_conflict_marker_prev_line_waiver`). The previous-line arm is
+    start-anchored, so a string literal containing the token never waives
+    there (#2192 r2); the same-line arm matches a trailing
+    whitespace-``#``-token shape on the marker line itself and is
+    quote-context-blind — documented residual (e) of
+    :func:`check_conflict_markers`."""
+    prev_nonblank = ""
+    for idx, line in enumerate(lines):
+        m = _CONFLICT_MARKER_RE.match(line)
+        if m and not (
+            _conflict_marker_same_line_waiver(line)
+            or _conflict_marker_prev_line_waiver(prev_nonblank)
+        ):
+            errors.append(_conflict_marker_error(path, idx, m.group(1)))
+        if line.strip():
+            prev_nonblank = line
+
+
+def check_conflict_markers(*, roots: list[Path] | None = None) -> list[str]:
+    """FAIL on merge-conflict-marker residue lines in tracked
+    workflow-surface files: ``.claude/**/*.md`` (depth-1 ``.claude/*.md``
+    included), tracked ``*.py`` repo-wide, and ``CLAUDE.md``.
+
+    A residue line starts at column 0 with one of the four conflict-marker
+    forms — seven ``<``, ``|``, ``=`` or ``>`` followed by a space or
+    end-of-line (:data:`_CONFLICT_MARKER_RE`). Anchoring is exact: an
+    8-char run, a 7-char run followed by any other character, and mid-line
+    occurrences never match. Origin incident #2189: merge commit
+    ``14cd4e4211`` left the diff3 base marker (seven pipes + the base SHA)
+    as the last line of ``.claude/rules/code-style.md``; it passed the
+    no-flags lint, the size gate, the union-conservation check, ruff, and
+    27 unrelated tests — caught only by a reviewer reading the diff by
+    eye.
+
+    Escape hatches (never a weakened pattern):
+
+    * ``.md``: lines inside fenced regions are exempt — the fence IS the
+      sanctioned escape for marker-documenting prose.
+    * ``.py``: a COMMENT-SHAPED ``# CONFLICT_MARKER_EXEMPT: <reason>``
+      waiver (non-empty reason) on the same or previous non-blank line
+      waives a deliberate occurrence. Comment context is REQUIRED
+      (#2192 r2): the previous-line arm accepts only a line that is
+      optional whitespace followed DIRECTLY by the waiver comment (an
+      indented comment-shaped line inside a docstring included —
+      residual (c)'s escape survives); the same-line arm accepts only a
+      TRAILING waiver comment after the marker token. The previous-line
+      arm is START-ANCHORED, so a string LITERAL containing the token
+      (e.g. this module's own constant declaration) never waives there —
+      the earlier substring form let such a literal on the previous line
+      silently suppress a real marker. The same-line arm is
+      quote-context-blind — residual (e) below.
+
+    Known residuals (documented, deliberate):
+
+    (a) Fence-toggle blindness: an unterminated/imbalanced fence skips all
+        trailing md content (INVERTED from ``check_grep_qv``'s
+        scan-the-tail choice — here the fence marks EXEMPT regions, so
+        skipping the tail is the consistent direction); a conflict hunk
+        that itself breaks fence parity can hide the inner separator line,
+        though the outer marker lines are still caught when outside
+        fences. The #2189 incident line (last line of the file, outside
+        any fence) is caught.
+    (b) A setext-H1 underline of EXACTLY seven ``=`` would flag — the repo
+        uses ATX headings throughout (baseline sweep: zero hits); the
+        remedy is ATX conversion, never a pattern weaken.
+    (c) An exactly-7-char RST underline in a py docstring would flag —
+        baseline clean; the waiver comment is the escape.
+    (d) A REAL conflict landing wholly inside a BALANCED fence (both merge
+        sides editing one fenced snippet) hides all four marker lines by
+        design — scanning inside fences would flag every legitimate
+        marker-documenting snippet.
+    (e) The same-line waiver arm matches a trailing whitespace-``#``-token
+        shape on the marker line itself and is quote-context-blind: a
+        QUOTED token in the marker line's own tail (whitespace directly
+        before its ``#``) self-waives. Adversarial-only — git-emitted
+        residue lines cannot carry the token, so only a deliberately
+        authored flagged line can exploit it (#2192 r2).
+
+    Files are read with ``errors="replace"`` (markers are ASCII; odd bytes
+    in a vendored file must not crash the lint), and a file that vanishes
+    between enumeration and read (the #2015 transient unstaged-delete
+    window at the shared root) is skipped. ``roots`` is a unit-test
+    override hook (see :func:`_conflict_marker_target_files`); production
+    callers pass None. Bundled into the no-flags default run (same policy
+    as ``check_grep_qv``).
+    """
+    errors: list[str] = []
+    for path in _conflict_marker_target_files(roots):
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except FileNotFoundError:
+            continue  # #2015 transient unstaged-delete window at the shared root
+        if path.suffix == ".md":
+            _conflict_marker_scan_md(path, lines, errors)
+        else:
+            _conflict_marker_scan_py(path, lines, errors)
     return errors
 
 
@@ -15146,7 +15440,13 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 1175 B -> 1258 B). Cap = measured + <=40.
     # #2250 added the SLURM allocation-width trigger (row 1289 B -> 1378 B).
     # Cap = measured + <=40.
-    "gotchas": 1418,
+    # #2193 DELETED the chained smoke-then-full leg out-root residue topic
+    # token (the #1640 addition; the rule relocated to crash-fix-rounds.md
+    # at #2189, whose LESSONS row already carries the covering `per-leg
+    # out-roots` trigger) — row 1378 B -> 1353 B (the row had drifted +21 B
+    # since the #2250 measurement). Cap = measured + <=40; caps RATCHET
+    # DOWN with deletions, never keep dead headroom.
+    "gotchas": 1393,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -17139,6 +17439,292 @@ def check_empty_text_default(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+# ── --check-stale-gotchas-pointers (#2193; the #2189 stale-relocation-pointer class)
+_STALE_GOTCHAS_TARGET = ".claude/rules/gotchas.md"
+_STALE_GOTCHAS_ID_RE = re.compile(r"(?<![\w/])#(\d+)\b")
+_STALE_GOTCHAS_TOKEN_RE = re.compile(r"gotchas\.md")
+_STALE_GOTCHAS_WINDOW = 100
+# Relocation-attribution idiom lines (the #2189 pattern, reused by future
+# relocations): a correct relocation RECORD legitimately names gotchas.md
+# next to the relocating task's id. Both literals are pinned verbatim in
+# tests/test_workflow_lint_stale_gotchas_pointers.py so skip-string drift
+# breaks a test instead of silently re-flagging attribution headers.
+_STALE_GOTCHAS_SKIP_IDIOMS: tuple[str, ...] = (
+    "Relocated codebase traps",
+    "to recover gotchas.md byte budget",
+)
+# Historical-record dirs OUT of scan scope (repo-relative prefixes):
+# per-agent memories are "true when written" by convention, not
+# navigational surface. The ONLY approved exclusions are gotchas.md itself
+# and this tuple (#2193 r2 — the plan scope is "tracked .claude/**/*.md
+# plus CLAUDE.md"): tracked .claude/plans/*.md ARE scanned (12 tracked
+# plan docs at landing), and cache/ + worktrees/ need no entry — they are
+# untracked, so the git-ls-files inventory never sees them (the non-git
+# fallback walk prunes worktrees/ structurally via _iter_files_pruned).
+_STALE_GOTCHAS_SCAN_EXCLUDES: tuple[str, ...] = (".claude/agent-memory/",)
+
+# Genuine context-citations, frozen per (repo-relative path, task id) with a
+# per-entry reason (the EMPTY_TEXT_DEFAULT_ALLOWLIST idiom, reasons inline):
+# the line cites gotchas.md for CONTEXT (e.g. as a routing DESTINATION) while
+# the nearby #N belongs to a different claim in the same sentence — a
+# location claim it is not, so the co-reference is not stale.
+STALE_GOTCHAS_POINTER_ALLOWLIST: dict[tuple[str, int], str] = {
+    (".claude/skills/issue/markers.md", 711): (
+        "epm:failure-lesson marker-schema row: gotchas.md is named as the "
+        "consolidate_lessons.py ROUTING DESTINATION while #711 cites the "
+        "cron's own filing task — context-citation, not a location claim"
+    ),
+    (".claude/skills/issue/markers.md", 712): (
+        "same epm:failure-lesson marker-schema row: #712 cites the "
+        "root_cause_confirmed field's incident while gotchas.md names the "
+        "gotcha_candidate routing destination — context-citation, not a "
+        "location claim"
+    ),
+}
+
+
+def _stale_gotchas_scan_paths(root: Path) -> list[Path]:
+    """Enumerate the stale-gotchas scan inventory (#2193 r2): the
+    git-TRACKED repo-root ``CLAUDE.md`` plus every tracked ``*.md`` under
+    ``.claude/`` — the plan-approved scope.
+
+    Production form: ``git -C <root> ls-files -zt -- CLAUDE.md .claude``
+    — an INDEX read, no filesystem walk, so sibling worktrees / ``.venv``
+    trees under ``.claude/`` are structurally out of reach (the #1163
+    raw-rglob class: 3.3M+ entries, measured 304.6 s for this one check at
+    the repo root) and UNTRACKED local scratch can never red the no-flags
+    landing gate. Keeps cached (``H``) entries only; ``S`` skip-worktree
+    entries are skipped (a sparse checkout deliberately does not
+    materialize them — absence there is not an inventory hole). Guarded on
+    ``rev-parse --show-toplevel`` equality so a fixture tree that merely
+    sits INSIDE some enclosing repo never silently enumerates empty.
+
+    NON-GIT-TREE FALLBACK (unit-test tmp fixtures; the Step 10d /tmp
+    landing-tree gate copy): the pruned filesystem walk
+    (:func:`_iter_files_pruned`) over ``root/.claude`` plus
+    ``root/CLAUDE.md``. Fail-safe direction is scan-MORE — coverage kept,
+    the :func:`_head_is_main` posture; a landing-tree copy is materialized
+    from tracked files only, so the two forms agree there.
+    """
+
+    def _git(*args: str) -> subprocess.CompletedProcess[str] | None:
+        try:
+            return subprocess.run(
+                ["git", "-C", str(root), *args],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except Exception:
+            return None  # git missing / non-git environment -> fallback walk (scan-MORE)
+
+    top = _git("rev-parse", "--show-toplevel")
+    if (
+        top is not None
+        and top.returncode == 0
+        and Path(top.stdout.strip()).resolve() == root.resolve()
+    ):
+        listing = _git("ls-files", "-zt", "--", "CLAUDE.md", ".claude")
+        if listing is not None and listing.returncode == 0:
+            return sorted(
+                root / entry[2:]
+                for entry in listing.stdout.split("\0")
+                if entry.startswith("H ") and entry.endswith(".md")
+            )
+    claude_md = root / "CLAUDE.md"
+    return [
+        *([claude_md] if claude_md.is_file() else []),
+        *sorted(_iter_files_pruned(root / ".claude", suffixes=frozenset({".md"}))),
+    ]
+
+
+# Uncapped id-cap sentinel for a registry-less scan root (#2193 Step 10d gate
+# fix): every parseable co-cited task id compares <= this cap, i.e. "treated
+# as in-cap" — the uncapped scan needs no extra branch at the loop site.
+_STALE_GOTCHAS_UNCAPPED_CAP = sys.maxsize
+
+
+def _stale_gotchas_registry_cap(root: Path) -> tuple[int | None, str | None]:
+    """Read the literal ``tasks/REGISTRY.json`` ``highest_id`` field (#2193).
+
+    Returns ``(cap, None)`` on success, ``(None, fail_row)`` on a
+    PRESENT-but-unparseable registry. ABSENCE is an ENVIRONMENT, not an
+    error (#2193 Step 10d gate fix): a scan root with no
+    ``tasks/REGISTRY.json`` at all — the Step 10d gate's ``git archive``
+    landing tree in /tmp is a SUPPORTED registry-less scan root — emits ONE
+    ``WARN: ``-prefixed stderr line here (single call site; the Step 10d
+    gate compare drops WARN lines) and returns
+    ``(_STALE_GOTCHAS_UNCAPPED_CAP, None)`` so the scan runs UNCAPPED
+    (scan-MORE, the check's disclosed fail-safe direction). A
+    PRESENT-but-unparseable registry (unreadable / bad JSON / missing or
+    non-int ``highest_id``) is CORRUPTION and keeps the fail-loud
+    ``fail_row``. The literal field is the ONLY sanctioned read — NEVER
+    ``max()`` over top-level keys: the dict mixes digit and non-digit keys
+    (``highest_id``, ``tasks``), so a naive max crashes or under-reads.
+    Read-only id-cap heuristic: a worktree's stale registry copy only
+    UNDER-reads the cap, which is the conservative direction (a too-fresh
+    id is skipped, never false-FAILed).
+    """
+    registry = root / "tasks" / "REGISTRY.json"
+    if not registry.is_file():
+        sys.stderr.write(
+            "WARN: stale-gotchas-pointer: tasks/REGISTRY.json absent from scan root — "
+            "id-cap disabled (registry-less tree, e.g. the Step 10d gate archive); "
+            "all co-cited ids treated as in-cap\n"
+        )
+        return _STALE_GOTCHAS_UNCAPPED_CAP, None
+    try:
+        cap = json.loads(registry.read_text(encoding="utf-8"))["highest_id"]
+    except (OSError, ValueError, KeyError) as exc:
+        return None, (
+            f"stale-gotchas-pointer/{registry}: cannot read the literal "
+            f"highest_id field ({type(exc).__name__}: {exc}) — the id-cap "
+            f"filter needs it; fix the registry read (never max() over keys)"
+        )
+    if not isinstance(cap, int):
+        return None, (
+            f"stale-gotchas-pointer/{registry}: highest_id is not an int "
+            f"(got {type(cap).__name__}) — the id-cap filter needs it"
+        )
+    return cap, None
+
+
+def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL a dead task-id next to a ``gotchas.md`` mention (#2193).
+
+    The true-positive class is "dead task-id next to a gotchas.md
+    mention" — a SUPERSET of relocation: 2 of the 5 baseline true
+    positives were id-TRIMS where the entry still LIVES in gotchas.md but
+    its ``#N`` citation was compacted away, so a hit does not necessarily
+    mean a #2189-style relocation — triage each hit (phrase-grep +
+    ``git log -S``) before repointing; never guess a new home.
+
+    Predicate (calibrated on the 2026-08-19 live tree — 7 hits: 5 true
+    positives fixed by #2193 + the 2 markers.md context-citations frozen
+    in :data:`STALE_GOTCHAS_POINTER_ALLOWLIST`):
+
+    1. Scan the git-TRACKED inventory — repo-root ``CLAUDE.md`` plus every
+       tracked ``*.md`` under ``.claude/`` (an index read via
+       ``git ls-files``; :func:`_stale_gotchas_scan_paths` carries the
+       non-git-tree fallback walk) — EXCLUDING gotchas.md itself and the
+       :data:`_STALE_GOTCHAS_SCAN_EXCLUDES` prefixes (``agent-memory/``
+       is a historical record — "true when written" by convention).
+       Tracked ``.claude/plans/*.md`` ARE in scope (#2193 r2); untracked
+       local scratch is not (it can never red the no-flags landing gate).
+       An UNREADABLE in-scope file FAILs loud — a silent skip is an
+       inventory hole.
+    2. Skip relocation-attribution idiom lines — any line containing
+       "Relocated codebase traps" or "to recover gotchas.md byte budget"
+       verbatim (:data:`_STALE_GOTCHAS_SKIP_IDIOMS`, the #2189 pattern
+       future relocations reuse): a NEW relocation whose attribution
+       header would trip this lint gets a self-serve fix by carrying one
+       of those literals.
+    3. Per line containing a ``gotchas.md`` token, for each id matching
+       ``(?<![\\w/])#(\\d+)\\b`` (the lookbehind drops
+       ``pytorch#94772``-class external-tracker refs) with ``N <=`` the
+       registry's literal ``highest_id`` field (drops residual non-task
+       numbers; see :func:`_stale_gotchas_registry_cap`) and a MIN gap of
+       <= :data:`_STALE_GOTCHAS_WINDOW` chars to the NEAREST
+       ``gotchas.md`` token on the line: FAIL when ``#N`` occurs nowhere
+       in ``.claude/rules/gotchas.md``, unless ``(path, N)`` is
+       allowlisted.
+
+    Known FALSE-NEGATIVE classes, disclosed by design (the
+    smoke-blind-spots.md § Enforcement disclosed-miss precedent):
+
+    * WRAPPED-LINE SPLIT — an id landing on the line AFTER the
+      ``gotchas.md`` token escapes the line-scoped window (baseline-era
+      example, fixed by #2193: artifact-reuse.md's ``#723-family +`` /
+      ``#841 entries.`` wrap, where the wrapped second id was caught only
+      because the first shared the token's line);
+    * ID ALIASING — an id surviving elsewhere in gotchas.md attached to a
+      DIFFERENT entry reads as fresh.
+
+    REGISTRY-ABSENT DEGRADE (disclosed, #2193 Step 10d gate fix): a scan
+    root with NO ``tasks/REGISTRY.json`` — the Step 10d gate's
+    ``git archive`` landing tree in /tmp; a plain non-git /tmp dir is a
+    SUPPORTED scan root, so registry absence is a legitimate environment,
+    not an error — emits ONE ``WARN: ``-prefixed stderr line (the gate
+    compare drops WARN lines) and scans UNCAPPED, treating every co-cited
+    id as in-cap (scan-MORE, the file's disclosed fail-safe direction).
+    Verified FP-free uncapped on the 2026-08-19 live tree: the 100-char
+    window + the ``(?<![\\w/])`` lookbehind exclude the known huge
+    non-task ids (``pytorch/pytorch#94772`` is lookbehind-dropped; the
+    ``#105359`` / ``#159741`` siblings sit outside the proximity window
+    of any gotchas.md mention). A PRESENT-but-unparseable registry
+    (missing/non-int ``highest_id``) KEEPS the fail-loud FAIL row —
+    absence is an environment; corruption is an error.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None and the check scans under :data:`_REPO_ROOT`. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    gotchas_path = root / _STALE_GOTCHAS_TARGET
+    try:
+        gotchas_ids = {
+            int(m) for m in re.findall(r"#(\d+)", gotchas_path.read_text(encoding="utf-8"))
+        }
+    except OSError as exc:
+        return [
+            f"stale-gotchas-pointer/{gotchas_path}: cannot read the co-reference "
+            f"target ({exc}) — the freshness check needs it"
+        ]
+    cap, cap_error = _stale_gotchas_registry_cap(root)
+    if cap_error is not None:
+        return [cap_error]
+    assert cap is not None  # narrowed by the cap_error branch above
+    errors: list[str] = []
+    for path in _stale_gotchas_scan_paths(root):
+        rel = path.relative_to(root).as_posix()
+        if rel == _STALE_GOTCHAS_TARGET:
+            continue
+        if any(rel.startswith(prefix) for prefix in _STALE_GOTCHAS_SCAN_EXCLUDES):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            errors.append(
+                f"stale-gotchas-pointer/{rel}: unreadable in-scope file "
+                f"({type(exc).__name__}: {exc}) — the scan inventory must stay "
+                f"complete; restore or fix the file (fail-fast: a silent skip is "
+                f"an inventory hole, #2193 r2)"
+            )
+            continue
+        if "gotchas.md" not in text:
+            continue
+        for lineno, line in enumerate(text.split("\n"), start=1):
+            tokens = [(m.start(), m.end()) for m in _STALE_GOTCHAS_TOKEN_RE.finditer(line)]
+            if not tokens:
+                continue
+            if any(idiom in line for idiom in _STALE_GOTCHAS_SKIP_IDIOMS):
+                continue
+            for m in _STALE_GOTCHAS_ID_RE.finditer(line):
+                n = int(m.group(1))
+                if n > cap or n in gotchas_ids:
+                    continue
+                # MIN over every gotchas.md token on the line (a
+                # first-occurrence-only read would silently diverge from
+                # the calibration when the id sits near a LATER token).
+                gap = min(max(ts - m.end(), m.start() - te, 0) for ts, te in tokens)
+                if gap > _STALE_GOTCHAS_WINDOW:
+                    continue
+                if (rel, n) in STALE_GOTCHAS_POINTER_ALLOWLIST:
+                    continue
+                errors.append(
+                    f"stale-gotchas-pointer/{rel}:{lineno}: dead task-id #{n} next "
+                    f"to a gotchas.md mention — #{n} no longer occurs in "
+                    f".claude/rules/gotchas.md (a #2189-style relocation moved the "
+                    f"entry to a topic-owning rule file, OR the entry survives with "
+                    f"its id citation trimmed — triage before repointing). Fix the "
+                    f"pointer side: repoint to the entry's current home (verify via "
+                    f"phrase-grep + `git log -S`), reword the prose to stand alone, "
+                    f"or freeze a genuine context-citation in "
+                    f"STALE_GOTCHAS_POINTER_ALLOWLIST with a reason"
+                )
+    return errors
+
+
 # ── --check-no-unannotated-gcp-pin-guidance (#2018; the #2028/#2054 stale-pin class)
 # GCP provisioning is DISABLED (#2028): an explicit `backend: gcp` pin raises
 # the typed GcpDisabledError, so live guidance DIRECTING that pin sends an
@@ -17831,6 +18417,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_push_failure_swallow": lambda wf: check_push_failure_swallow(),
     "check_sh_function_rc_capture": lambda wf: check_sh_function_rc_capture(),
     "check_grep_qv": lambda wf: check_grep_qv(),
+    "check_conflict_markers": lambda wf: check_conflict_markers(),
     "check_marker_registry": lambda wf: check_marker_registry(wf),
     "check_marker_scalar_integrity": lambda wf: check_marker_scalar_integrity(wf),
     "check_poller_marker_consumers": lambda wf: check_poller_marker_consumers(wf),
@@ -17898,6 +18485,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_agents_note_argv_verdict": lambda wf: check_agents_note_argv_verdict(),
     "check_sha_pin_domain": lambda wf: check_sha_pin_domain(),
     "check_empty_text_default": lambda wf: check_empty_text_default(),
+    "check_stale_gotchas_pointers": lambda wf: check_stale_gotchas_pointers(),
     # Arm W only — mirrors the no-flags dispatch (Arm H is explicit-flag
     # only, and --files is mutually exclusive with check flags anyway).
     "check_plan_version_immutability": (lambda wf: check_plan_version_immutability()),
@@ -17925,6 +18513,28 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_push_failure_swallow": CheckScope("path-local", ("scripts/",)),
     "check_sh_function_rc_capture": CheckScope("path-local", ("scripts/",)),
     "check_grep_qv": CheckScope("path-local", ("scripts/", ".claude/")),
+    "check_conflict_markers": CheckScope(
+        "path-local",
+        (
+            # The honest read set: .claude md + CLAUDE.md + every top-level
+            # dir carrying tracked *.py (measured 2026-08-19; surfaces are
+            # informational for path-local checks — _run_files_mode consults
+            # them only for kind="global" skip decisions).
+            ".claude/",
+            "CLAUDE.md",
+            "scripts/",
+            "tests/",
+            "src/",
+            "external/",
+            "eval_results/",
+            "eps/",
+            "tasks/",
+            "figures/",
+            "eval/",
+            "experiments/",
+            "docs/",
+        ),
+    ),
     "check_upload_as_file": CheckScope("path-local", ("scripts/",)),
     "check_hub_dir_filecount": CheckScope("path-local", ("scripts/",)),
     "check_upload_prefix_clobber": CheckScope("path-local", ("scripts/",)),
@@ -17970,6 +18580,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_no_repo_root_git_reset_hard": CheckScope("global", (".claude/",)),
     "check_no_repo_root_worktree_revert": CheckScope("global", (".claude/",)),
     "check_lessons_index": CheckScope("global", (".claude/rules/",)),
+    "check_stale_gotchas_pointers": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_inline_round_duty_mirror": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_rule_frontmatter_parses": CheckScope("global", (".claude/rules/",)),
     "check_agent_spec_size": CheckScope("global", (".claude/agents/",)),
@@ -18386,6 +18997,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "grep (#928; fixed in #1125). git grep and a path-pinned "
         "/usr/bin/grep are exempt; a path-pinned ugrep still flags. "
         "Comment lines and prose outside fences are skipped. Bundled into "
+        "the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-conflict-markers",
+        action="store_true",
+        help="Verify no tracked workflow-surface file (.claude/**/*.md incl. "
+        "depth-1 .claude/*.md, tracked *.py repo-wide, CLAUDE.md; git "
+        "ls-files enumeration filtered to on-disk files) carries a "
+        "merge-conflict-marker residue line: column 0 starting seven '<', "
+        "'|', '=' or '>' followed by a space or end-of-line. Fenced .md "
+        "regions are exempt; a deliberate .py occurrence is waived with a "
+        "COMMENT-SHAPED '# CONFLICT_MARKER_EXEMPT: <reason>' — the "
+        "previous non-blank line starting with the waiver comment "
+        "(start-anchored: a string literal containing the token never "
+        "waives there, #2192 r2), or a trailing waiver comment on the "
+        "marker line (quote-context-blind: a quoted token in the marker "
+        "line's own tail can waive — documented residual). On a git "
+        "failure the enumeration fail-opens with "
+        "a loud stderr notice. #2189: a diff3 base marker committed to "
+        ".claude/rules/code-style.md survived every gate. Bundled into "
         "the no-flags default run.",
     )
     parser.add_argument(
@@ -19284,6 +19915,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-stale-gotchas-pointers",
+        action="store_true",
+        help="FAIL a dead task-id next to a gotchas.md mention in the "
+        "git-TRACKED CLAUDE.md + .claude/**/*.md inventory (gotchas.md "
+        "itself + agent-memory/ excluded; tracked plans/ in scope, "
+        "untracked scratch out) — an id within 100 chars of a "
+        "gotchas.md token on the same line, at or under the registry's "
+        "literal highest_id, that no longer occurs in "
+        ".claude/rules/gotchas.md (the #2189 stale-relocation-pointer "
+        "class; also catches id-trims where the entry survives with its "
+        "citation compacted away). Relocation-attribution lines ('Relocated "
+        "codebase traps' / 'to recover gotchas.md byte budget') are "
+        "skipped; genuine context-citations are frozen per (path, id) in "
+        "STALE_GOTCHAS_POINTER_ALLOWLIST with per-entry reasons. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-plan-version-immutability",
         action="store_true",
         help="FAIL on an in-place mutation of a persisted "
@@ -19383,6 +20031,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_push_failure_swallow
         or args.check_sh_function_rc_capture
         or args.check_grep_qv
+        or args.check_conflict_markers
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_agent_tools
@@ -19447,6 +20096,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agents_note_argv_verdict
         or args.check_sha_pin_domain
         or args.check_empty_text_default
+        or args.check_stale_gotchas_pointers
         or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
     )
@@ -19511,6 +20161,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_sh_function_rc_capture())
     if args.check_grep_qv or no_flags:
         errors.extend(check_grep_qv())
+    if args.check_conflict_markers or no_flags:
+        errors.extend(check_conflict_markers())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if (args.check_marker_scalar_integrity or no_flags) and not args.check_references:
@@ -19646,6 +20298,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_sha_pin_domain())
     if args.check_empty_text_default or no_flags:
         errors.extend(check_empty_text_default())
+    if args.check_stale_gotchas_pointers or no_flags:
+        errors.extend(check_stale_gotchas_pointers())
     if args.check_plan_version_immutability or no_flags:
         # Arm H (committed history) runs ONLY under the explicit flag —
         # measured ~1.7-2.7 s at the plan #2123 §6 ~3 s threshold under
