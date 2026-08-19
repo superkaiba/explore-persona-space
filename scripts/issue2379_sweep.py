@@ -155,6 +155,76 @@ def create_vllm_engine_resilient(
     raise AssertionError("create_vllm_engine_resilient: unreachable")
 
 
+def _reap_and_free(llm, *, drain_timeout_sec: float = 90.0, poll_sec: float = 2.0) -> None:
+    """Synchronously reap a vLLM v1 engine's EngineCore SUBPROCESS and WAIT for
+    its GPU memory to actually free.
+
+    ``eval.generation.cleanup_vllm`` does only ``del llm; gc.collect();
+    empty_cache()`` — but vLLM v1 (0.11.0) runs the EngineCore in a SEPARATE
+    subprocess that ``del`` does NOT reap, so its ~gpu_memory_utilization fraction
+    of HBM (~47.5 GiB at 0.6 on an 80 GiB H100) stays PINNED. In #2379 p2 the
+    sweep engine's memory stayed held across 270 s of engine-init retries
+    (45+90+135 s) — a ZOMBIE, not a teardown lag — so the regen engine (llm2)
+    OOM'd every attempt. Waiting cannot free a zombie; the subprocess must be
+    shut down explicitly (``.claude/rules/gotchas.md`` § vLLM v1 reaping recipe).
+
+    Drives the documented v1 teardown (the canonical ``_reap_vllm_engine`` reaps
+    the MP worker via ``engine_core.shutdown()`` + destroys the process group)
+    then polls DEVICE free memory (``mem_get_info`` — a device-level counter,
+    correct under a pod PID namespace) until the reaped allocation is actually
+    released or a bounded timeout elapses. Replaces ``cleanup_vllm`` at both
+    engine-teardown sites so the sweep engine is dead before llm2 is built.
+    """
+    import gc
+
+    import torch
+
+    from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+
+    _reap_vllm_engine(llm)  # engine_core.shutdown() + destroy_process_group()
+    del llm
+    gc.collect()
+    try:
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()  # cross-process freed memory (the subprocess's)
+    except Exception as exc:  # noqa: BLE001 — cleanup is best-effort
+        logger.debug("[vllm-reap] empty_cache/ipc_collect failed (non-fatal): %s", exc)
+
+    if not torch.cuda.is_available():
+        return
+    # Bounded drain-wait: the subprocess teardown is async, so poll until the
+    # device free memory recovers past a fresh 0.6-util engine + margin (0.7),
+    # or fail loud on timeout (a genuine foreign hold — no local fix).
+    t0 = time.time()
+    prev_free = -1
+    while time.time() - t0 < drain_timeout_sec:
+        free, total = torch.cuda.mem_get_info()
+        if free >= 0.7 * total:
+            logger.info(
+                "[vllm-reap] GPU memory drained: %.1f/%.1f GiB free after %.0fs",
+                free / 2**30,
+                total / 2**30,
+                time.time() - t0,
+            )
+            return
+        if free != prev_free:
+            logger.info(
+                "[vllm-reap] waiting for GPU drain: %.1f/%.1f GiB free",
+                free / 2**30,
+                total / 2**30,
+            )
+            prev_free = free
+        time.sleep(poll_sec)
+    free, total = torch.cuda.mem_get_info()
+    logger.warning(
+        "[vllm-reap] GPU drain timed out after %.0fs: %.1f/%.1f GiB free — "
+        "next engine init may OOM (foreign hold?)",
+        drain_timeout_sec,
+        free / 2**30,
+        total / 2**30,
+    )
+
+
 def sha256_file(path: Path) -> str:
     """Streaming sha256 of one file (adapter safetensors ~90 MB — sub-second)."""
     import hashlib
@@ -424,8 +494,6 @@ def sweep_model(
     from transformers import AutoTokenizer
     from vllm import SamplingParams
 
-    from explore_persona_space.eval.generation import cleanup_vllm
-
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
     sp = SamplingParams(
@@ -458,7 +526,7 @@ def sweep_model(
                 time.time() - t0,
             )
     finally:
-        cleanup_vllm(llm)
+        _reap_and_free(llm)
 
     # Pre-registered re-gen: any family over the cap-hit threshold is regenerated
     # at REGEN_MAX_TOKENS on a wider-context engine.
@@ -490,7 +558,7 @@ def sweep_model(
                 records[lab]["cap_hit_fraction"] = _cap_hit_fraction(per_q)
                 records[lab]["regenerated"] = True
         finally:
-            cleanup_vllm(llm2)
+            _reap_and_free(llm2)
 
     return records
 
