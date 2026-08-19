@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2382,
+  "highest_id": 2383,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10682,6 +10682,13 @@
       "path": "tasks/on_hold/2382",
       "status": "on_hold",
       "title": "Optional: widen check_no_repo_root_syspath to src/ (0 hits today; needs own justification)"
+    },
+    "2383": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2383",
+      "status": "proposed",
+      "title": "Causal patching of context vectors across framings (chat-to-plain, assistant-to-story)"
     },
     "239": {
       "has_clean_result": true,
