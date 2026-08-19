@@ -5,7 +5,6 @@ title: 'The DPO→RLVR step of the Llama Tülu ladder barely moves the linear co
 kind: experiment
 tags:
 - followup-manual
-- keep-running
 created_at: '2026-07-15T08:33:12Z'
 has_clean_result: true
 parent_id: 825
