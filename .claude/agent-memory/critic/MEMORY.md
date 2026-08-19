@@ -106,6 +106,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Lexicon live-fire inflection gap](feedback_lexicon_livefire_inflection_gap.md) — replay the exact in-repo regex on the incident artifact; "confirmed"≠"confirms" (#2198)
 - [Preferred-channel fixture discrimination](feedback_preferred_channel_fixture_discrimination.md) — legacy path may already resolve the demo fixture; demand legacy-fails fixture or channel-naming counter (#2194)
 - [Guard lead-grammar review](feedback_guard_lead_grammar_review.md) — executed ERE replay + reachability probes + masked-arm filler test (#2371)
 - [Incident-diagnosis alternatives lens](feedback_incident_diagnosis_alternatives_lens.md) — shape-based detection defuses origin stories; audit causal-claim design-work sites (#2360)

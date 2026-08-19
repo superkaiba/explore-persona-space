@@ -742,7 +742,11 @@ before `## Issues Found` must anchor on a template-only neighbor (the
 rounds also want a `## Round-1 closure ledger` SCHEMA section in the verdict
 template (per-element C-row status lines + a non-gating standing-rec row) —
 mentions of it in prose line-wrap, so count-assert the heading only where
-verbatim.
+verbatim. Header FIELD lines collide too (#2197 r2, 2026-08-19): when the
+prior round's base form was also `HEAD^..HEAD`, the inlined verdict's
+`**Diff acquisition:** sha-range HEAD^..HEAD (<r1 range>)` line is
+byte-identical to the template's — scope that replace to the tail after the
+unique `## Output format` anchor (count-assert the anchor first).
 
 **Post-reconciler-binding-FAIL fix round (mixed rulings; #2332 r4,
 2026-08-16):** when the prior round ended Claude-PASS / own-twin-FAIL /
@@ -1369,3 +1373,56 @@ BOTH prior verdicts inlined tags-stripped + codex rows blockquoted: own-head
 v2==1, close==1, all four prior tag forms==0, line-start rows==1,
 `> CONCERN:: `==13; the OLD r1 ledger literal legitimately survives INSIDE
 the inlined codex-r1 envelope — scope residue greps outside envelopes.
+
+**Same-task r2→r3 union fix round: reconstruct-head + patched-REST (#2379
+r3, 2026-08-19):** four durable deltas on the #2332/#2379-r2 union shape.
+(a) The concerns ledger has a THIRD event type `verified-open` (posted when
+a twin's FAIL re-raises an already-addressed id) — the OPEN predicate is
+latest ∈ {raised, verified-open}; a latest-event walk keyed only on
+raised/addressed silently drops those ids from BOTH lists (hit live: the 3
+re-raised BLOCKERs vanished from my first walk). (b) Implementer-side
+`addressed` rows posted minutes AFTER the impl marker are round INPUTS
+(closure claims pending this review) — include them in the snapshot; the
+#2326 ts-pin excludes only parallel-REVIEWER rows (review OUTPUTS); re-probe
+for drift at compose end. (c) An UPDATED-PHASES-ONLY `## Smoke run` (the v3
+marker says the round-2 evidence remains current for unchanged phases)
+needs the PRIOR marker's smoke section inlined as a context-only excerpt
+envelope (do-not-score-shape; findings only where a round-3 hunk
+invalidates a claim) + a 0.5/0.6 attestation so Codex never FAILs
+`smoke-run-missing` on untouched phases — anchor the excerpt on the
+line-start heading `\n## Smoke run\n` (a prose mention elsewhere in the
+body inflates the bare-substring count). (d) Head convention-mentions enter
+token arithmetic: the head's own "blockquoted (`> CONCERN:: `)" sentence
+adds +1 to the blockquote-count assert. Also: copy content-safety /
+hard-bans / plan sections VERBATIM out of the prior head by span anchors
+(never retype), and REST-side SHA-count asserts must exclude head
+occurrences (the diff-acquisition command lives in the head). NO-CODE
+disposition rows get the #2147-cr5 ACCEPTED-NON-CHANGE | OVERTURNED
+vocabulary wired into the closure-ledger schema, with the
+flagged-for-follow-up row doubling as a scope ruling (CONCERN row, not
+FAIL).
+
+**Crash-fix round with TWO open NON-GATING reconciler concerns (#1739 cr4 =
+sentinel v4 / impl v5, 2026-08-19):** when the prior round closed via a
+reconciler BINDING PASS that DOWNGRADED the twin's own BLOCKER to a
+non-gating persisted CONCERN (plus a `verified-open` re-open of an addressed
+row), the fix round's ledger duty is a per-concern STATUS line
+(`NOT-TOUCHED — remains open` is EXPECTED and not a finding / `TOUCHED —
+verified effect`), never a closure demand — patch the rubric's Step 0.8
+block accordingly and instruct no re-emitted `CONCERN::` rows unless the
+delta REGRESSED a concern's mechanism. Name the SIBLING-ARTIFACT precision
+trap explicitly when the delta touches an artifact ADJACENT to a concern's
+mechanism (here: the runner's pod-status sentinel renamed/atomicized vs the
+scorer's per-seed SUMMARY completion sentinel the concern names) — without
+it the twin predictably mis-scores the concern as addressed. Reconciler
+standing-only items (never persisted) get their own
+route-as-row-or-leave-standing instruction. Also: this task's established
+`CONCERN::` grammar is the PIPE-delimited four-field form
+(`<SEV>|<kebab-id>|<file:line or n/a>|<summary>`) carried from its r3
+template — when a brief dictates it, follow the brief + task precedent and
+FLAG the divergence from the #2326 space-token grammar in the return (the
+forwarder's token parse differs). Sentinel-vs-impl-version mapping (codex
+v4 / impl v5) is stated in facts + return, and the crash diagnosis
+(`epm:progress`, no `epm:failure` posted) inlines with an explicit
+falsified-prime-suspect note handing the diagnosis-vs-marker disagreement
+to the twin (V-duty), never resolving it at compose time.
