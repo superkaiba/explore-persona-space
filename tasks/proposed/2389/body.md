@@ -79,7 +79,17 @@ Params 27.78B; bf16 weights ~55.6 GB — fits one H100 80GB with headroom for KV
 - ChatML markers `<|im_start|>` / `<|im_end|>` unchanged, so the #2162 turn-boundary boundary-resolver would port with an id change if that follow-up is ever repeated here.
 
 **Needs work:**
-- **No default system turn** (verified by rendering: a bare single-turn context emits no system block). The #2329 `no_prefix` prefix-end exclusion therefore recurs — all 36 `persona_role_header` contexts and the 12 empty-system `persona_prompted` v2 contexts. Note `persona_role_header` is already dropped from this subset, so the residual bite is the 12 persona contexts. See Open questions for the two handling options.
+- **No default system turn** (verified by rendering: a bare single-turn context emits no system block, 20 tokens, while Qwen2.5-7B emits a 37-token render carrying `<|im_start|>system\nYou are Qwen, created by Alibaba Cloud. You are a helpful assistant.`). The #2329 `no_prefix` prefix-end exclusion therefore recurs.
+
+  **The bite is larger than a context count suggests — measured, not estimated.** `persona_prompted` v2 is the EMPTY STRING (`VALUES["persona_prompted"]["v2"] == ''`) — the no-persona control. It is not that personas lack a system prompt; personas ARE the system prompt, and it is the control value that has none. Because the registered value cycle is v1->v2, v2->v3, v3->v1, killing v2 kills TWO of the three directed value-pairs. Realized pair counts for `persona_prompted`:
+
+  | run | context-end | prefix-end |
+  |---|---|---|
+  | #2162 Qwen2.5-7B | 36 pairs (all 3 value-pairs) | **36 pairs** (all 3) |
+  | #2329 Qwen3.5-9B | 36 pairs | **12 pairs — `v3-v1` only** |
+
+  Two thirds of the cell's prefix-end pairs vanished, and the 12 survivors sit exactly on the n >= 12 testability floor, which is why #2329's `persona_prompted|pe` verdict is `untestable-causal`. This is the persona cell — the centre of the research line — so inheriting the loss is not a neutral default. See Open question 2.
+- `persona_role_header` has the same structural issue but is already dropped from this 26-cell subset, so it costs nothing here.
 - 64 layers and hidden 5120 vs 32/4096: the state bank grows to roughly 1.8 GB (1,404 contexts x 2 slots x 64 layers x 5120 x bf16), and the all-layer patch installs 64 hooks instead of 32.
 - Stage-2 layer set must be re-mapped onto the 64-layer stack, with members shifted onto full-attention layers as #2329 did.
 - Pod-side `transformers` pin must be confirmed to support `qwen3_5` at this config (#2329 pinned 5.15.0 pod-side while the VM stays at the repo-locked 4.57.6; the VM tokenizer loads fine, verified).
@@ -87,6 +97,7 @@ Params 27.78B; bf16 weights ~55.6 GB — fits one H100 80GB with headroom for KV
 ## Compute + cost estimate
 
 - Grid: 26 cells x 36 pairs x 2 slots x 3 arms x 5 draws = **28,080 rollouts** (vs 42,120 full).
+- Plus the `persona_prompted_explicitplain` variant cell (Open question 2): +1,080 rollouts => **29,160 total, +3.8%**.
 - Anchors: ~9,360 (26/39 of 14,040). Stage-2 scales with survivors.
 - Wall: #2329 ran 42,120 grid + 14,040 anchors in ~17 h on 8x H100 with a 9B. At 0.67x the cells and roughly 3x the per-rollout cost of a 27.78B model, expect **~35-40 h on 8 GPUs**, plus queue.
 - Backend: **`fellows` (charmander, 8x H200 143 GB, free)** proposed. 27.78B bf16 fits one card, so all 8 replicas per node survive. Contended — 14 of 112 GPUs idle against 72 pending jobs when checked 2026-08-19 — so queue time is the real variable. Paid fallback: 8x H100 RunPod at ~$26/hr (~$1,000 for the run); note 8x H200 and 8x B200 packs were not purchasable on RunPod when checked.
@@ -102,6 +113,11 @@ Params 27.78B; bf16 weights ~55.6 GB — fits one H100 80GB with headroom for KV
 ## Open questions for the user (defaults applied; each is a one-line change)
 
 1. **Cell subset** — default 26 cells as above. Full 39 costs 42,120 grid rollouts (1.5x) and buys back thirteen cells that were stable nulls or unmeasurable.
-2. **Prefix-end handling** — default is to INHERIT #2329's `no_prefix` exclusion verbatim, because matching exclusions makes the three-way transfer comparison cleaner. The alternative is the #2162 ladder round's fix (pass an explicit system prompt on every context, verified by a `plain_render_equality` probe), which recovers coverage but makes this run's prefix-end slot non-comparable to #2329's.
+2. **Prefix-end handling for `persona_prompted`** — REVISED default (2026-08-19, on user challenge): **run BOTH cell variants**, +1 cell.
+   - Keep `persona_prompted` byte-unchanged (v2 stays the empty string) so the transfer comparison against #2162/#2329 is apples-to-apples at both slots.
+   - ADD `persona_prompted_explicitplain`: identical except v2 carries an explicit neutral system prompt instead of `''`, restoring all 36 prefix-end pairs. Verify with the ladder round's `plain_render_equality` probe (`#2162` persona-specificity-ladder measured token delta 0 for this fix on Qwen2.5).
+   - Cost: 36 pairs x 2 slots x 3 arms x 5 draws = **1,080 rollouts, +3.8%** on the 28,080 grid.
+   - **Declare as a design choice, not a default:** Qwen3.8 has no default system text of its own to borrow, so the plain string is CHOSEN. The ladder round used Qwen2.5's own default ("You are Qwen, created by Alibaba Cloud. You are a helpful assistant."); reusing that text keeps continuity with #2162's ladder but must be reported as a designed value rather than the model's default.
+   - Rejected alternatives: (a) inherit the exclusion alone — leaves the persona cell crippled at prefix-end for a third consecutive run; (b) fix `persona_prompted` in place — changes the v2 context text and so breaks comparability at CONTEXT-END too, not just prefix-end.
 3. **`F_ACT_READ_LAYER`** — default 59 (fraction-match of the original 26/28). Matching #2329's 30/32 fraction instead gives 60. All-layer profiles are persisted either way, so this is only the headline read layer.
 4. **Backend** — default `fellows` (free, queued). Switch to RunPod 8x H100 if wall-clock matters more than ~$1,000.
