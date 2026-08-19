@@ -42,6 +42,14 @@ fi
 export UV_NO_SYNC=1
 
 echo "[phase=stage]"
+# Resume predicate: skip the restage when the FULL consumer layout is already
+# present (incl. native_axes.pt — its absence killed run 1's axes leg at the
+# H3-table assert; #2223 P2 crash-fix round).
+if [ -f "$STORE_DIR/capture_regime.json" ] && [ -f "$EXT_DIR/cA_map/M_46.pt" ] \
+   && [ -f "$EXT_DIR/map_metrics.json" ] && [ -f "$EXT_DIR/native_axes.pt" ] \
+   && [ "$(ls "$SCORES_DIR"/*.json 2>/dev/null | wc -l)" -eq 275 ]; then
+  echo "[nap-p2] stage skipped (consumer layout present)"
+else
 mkdir -p "$STAGE"
 rc=0
 uv run python - "$STAGE" <<'PY' || rc=$?
@@ -60,6 +68,7 @@ hfp = "issue2223_casestudy/native_axis_fidelity_preimage"
 for prefix in (
     f"{hfp}/analysis_tensors/nap_store/qwen3-32b",
     f"{hfp}/analysis_tensors/cA_map/qwen3-32b",
+    f"{hfp}/analysis_tensors/runner_extractions/qwen3-32b",
     f"{hfp}/extractions/qwen3-32b",
     f"{hfp}/raw_completions/extraction/judged",
 ):
@@ -74,15 +83,18 @@ rm -rf "$STORE_DIR" "$EXT_DIR/cA_map"
 mkdir -p "$(dirname "$STORE_DIR")" "$EXT_DIR" "$SCORES_DIR"
 mv "$STAGE/$HFP/analysis_tensors/nap_store/qwen3-32b" "$STORE_DIR"
 mv "$STAGE/$HFP/analysis_tensors/cA_map/qwen3-32b" "$EXT_DIR/cA_map"
+mv "$STAGE/$HFP/analysis_tensors/runner_extractions/qwen3-32b/native_axes.pt" "$EXT_DIR/native_axes.pt"
 mv "$STAGE/$HFP/extractions/qwen3-32b/map_metrics.json" "$EXT_DIR/map_metrics.json"
 mv "$STAGE/$HFP/raw_completions/extraction/judged/"*.json "$SCORES_DIR/"
 test -f "$STORE_DIR/capture_regime.json" || { echo "[nap-p2] MISSING store capture_regime.json"; exit 1; }
 test -f "$EXT_DIR/cA_map/M_46.pt" || { echo "[nap-p2] MISSING cA_map/M_46.pt"; exit 1; }
 test -f "$EXT_DIR/map_metrics.json" || { echo "[nap-p2] MISSING map_metrics.json"; exit 1; }
+test -f "$EXT_DIR/native_axes.pt" || { echo "[nap-p2] MISSING native_axes.pt"; exit 1; }
 N_STORE=$(ls "$STORE_DIR" | wc -l)
 N_SCORES=$(ls "$SCORES_DIR"/*.json | wc -l)
 echo "[nap-p2] staged: store files=$N_STORE scores=$N_SCORES"
 [ "$N_SCORES" -eq 275 ] || { echo "[nap-p2] score-file count $N_SCORES != 275"; exit 1; }
+fi
 
 echo "[phase=axes]"
 rc=0
