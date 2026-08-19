@@ -594,8 +594,6 @@ def run_install_check(model_path: str, banks_dir: Path, gpu_id: int, n_questions
     from transformers import AutoTokenizer
     from vllm import SamplingParams
 
-    from explore_persona_space.eval.generation import cleanup_vllm
-
     questions = load_install_check_questions(banks_dir)[:n_questions]
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     sp = SamplingParams(
@@ -616,7 +614,7 @@ def run_install_check(model_path: str, banks_dir: Path, gpu_id: int, n_questions
             _chunked_generate(llm, _build_prompt_texts(tokenizer, "", questions), sp)
         )
     finally:
-        cleanup_vllm(llm)
+        _reap_and_free(llm)
 
     p_inoc_rate = compute_caps_rate(p_inoc_texts)
     empty_rate = compute_caps_rate(empty_texts)
