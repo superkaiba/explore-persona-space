@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T11:30:26Z", "event": "raised", "concern_id": "sha-like-phase-label-unresolvable", "severity": "BLOCKER", "summary": "Valid phase slugs containing an 8–40 hex run are consumed as commit pins before exact matching, so b3 silently skips them.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
