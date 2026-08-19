@@ -82,3 +82,6 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   Appendix)"; move the full detail to an Appendix subsection. Never delete the claim.
 - Comment loop (Google Doc working draft): action comments → edit, reply with what was
   done, resolve. Question comments → answer on the thread, leave OPEN for Thomas.
+- SURFACE REVERSED (2026-08-19 afternoon): back to OVERLEAF as working surface; the
+  Google Doc is FROZEN (plan.md Decision 20). Review channel here: % THOMAS: inline
+  comments in the tex (Overleaf comment bubbles never reach the git bridge).
