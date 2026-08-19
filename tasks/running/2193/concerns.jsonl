@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T05:05:36Z", "event": "raised", "concern_id": "stale-gotchas-tracked-scope", "severity": "BLOCKER", "summary": "Detector excludes 12 tracked .claude/plans Markdown files and scans untracked files, violating the approved tracked-file scope.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
