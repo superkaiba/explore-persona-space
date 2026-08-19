@@ -167,6 +167,27 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   them. Numcheck PASS first try at ~66 KB; scaffold avoided rule-number
   digits by writing "the pilot-gate rule" / "the api-refusal rule".
 
+- **Standard alternatives lens + fact-checker context_note (#2184 round one):
+  when the brief carries a per-decision translation ("review alternative
+  designs / wrong-premise risks per major decision: <named decisions>") PLUS
+  a fact-checker verdict note (N CONFIRMED / one UNVERIFIED premise, bounded
+  by a named kill criterion), inline the WHOLE brief verbatim as one span and
+  frame it in the digit-free header lead-in as GIVEN FACTS: "re-filing a
+  CONFIRMED premise as a finding without NEW code evidence is a regression;
+  the single UNVERIFIED premise is a legitimate press point whose
+  kill-criterion bounding you should judge". Output adds `### Per-decision
+  dispositions` (one SOUND / SOUND-WITH-CONCERN / FLAWED line per
+  brief-named decision; FLAWED ⇒ matching Must Fix) before What's-Good, and
+  the labeled sub-questions are grouped BY DECISION (A-i…, B-i…) with a
+  cross-cutting pair (kill-criteria completeness + monkeypatch-seam test
+  vacuity). Live-service ban rescoped to the plan's own service (no RunPod
+  API calls; local grep-anchored reads only). Renamed the concerns section
+  to "Concerns the implementer / code reviewer should weigh" (infra has no
+  analyzer). Numcheck PASS first try at ~65 KB (cat-assembly,
+  version-suffixed tmp paths, scaffold digit-free — kill-criterion ids like
+  K-two and status-code families like 4xx are safe only because their
+  digits sit in the allowlist; spell out anything else).
+
 - **Live-service hazard ban (#2332): when the plan under review OPERATES ON a
   rate-fragile external service (an HF repo near its file-count cap, under a
   live concurrency constraint), the header's read-only block must explicitly
