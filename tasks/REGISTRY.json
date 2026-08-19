@@ -10679,8 +10679,8 @@
     "2382": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2382",
-      "status": "proposed",
+      "path": "tasks/on_hold/2382",
+      "status": "on_hold",
       "title": "Optional: widen check_no_repo_root_syspath to src/ (0 hits today; needs own justification)"
     },
     "239": {

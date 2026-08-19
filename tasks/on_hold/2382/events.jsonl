@@ -1,0 +1,2 @@
+{"ts": "2026-08-19T03:41:49Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-19T03:42:05Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "on_hold", "note": "Explicitly optional per #2183 body criterion 4 + plan v2 §8 item 2 — parked out of the active proposed queue (watcher auto-dispatch excluded); revive via set-status proposed with its own justification."}
