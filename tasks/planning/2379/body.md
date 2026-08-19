@@ -8,6 +8,7 @@ has_clean_result: false
 origin_prompt: can we reproduce her experiments but instead of using context similarity
   use predicted answer vector similarity?
 workflow: v1
+backend: runpod
 goal: Determine whether the answer vector predicted from the eval-time context via
   a fitted linear context→answer map predicts which eval-time prompts re-elicit inoculation-suppressed
   behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms
