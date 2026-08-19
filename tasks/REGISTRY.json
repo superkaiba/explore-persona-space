@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2386,
+  "highest_id": 2387,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10711,6 +10711,13 @@
       "path": "tasks/proposed/2386",
       "status": "proposed",
       "title": "cron wrappers: unchecked mkdir -p LOG_DIR silently skips the pass (sibling sweep of #2196)"
+    },
+    "2387": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2387",
+      "status": "proposed",
+      "title": "cron wrappers: bound the synchronous Telegram push calls (timeout) \u2014 class sweep from #2196"
     },
     "239": {
       "has_clean_result": true,
