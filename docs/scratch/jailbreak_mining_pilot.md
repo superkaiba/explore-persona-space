@@ -13,9 +13,17 @@ contexts even against *failed-compliance same-family jailbreaks* at ROC 0.998 /
 PR 0.973 / hit@5% 0.93 (5% base rate), vs the fitted map-then-project (PR ≤ 0.33)
 and the fixed refusal/harm direction (PR ≤ 0.67, and only at one deep layer). The
 probe — a *learned* linear readout — carries the signal, not any pre-specified
-direction. (The original pass, §a–d below, used the graded **trait** DV, a weak
-proxy ρ 0.07–0.22 for compliance; §0 is the compliance-DV rerun the brief asked
-for and it confirms the trait-DV conclusion.)
+direction. **The answer-side arms (§0b) go further: the context probe (0.974)
+already EQUALS the answer-space oracle** — a probe on the real answer activation
+`v_A` (0.974) — so `v_C` carries as much always-comply signal as the answer
+itself, and no map is needed for detection. Through-the-map arms confirm the
+mechanism: a probe on the mapped answer ≈ a probe on `v_C` (reparametrization),
+an answer-space classifier *through* the map (PR 0.87–0.93) crushes the
+fixed-direction map-then-project (≤0.43) and approaches the oracle, and a
+benign-trained map cannot reconstruct harmful-compliance answers (reconstruction
+R² is negative) — an in-domain map fixes both. (The original pass, §a–d below,
+used the graded **trait** DV, a weak proxy ρ 0.07–0.22 for compliance; §0 is the
+compliance-DV rerun the brief asked for and it confirms the trait-DV conclusion.)
 
 All model reads are pre-existing artifacts; nothing was generated on GPU. Work
 was on numeric labels + activation tensors only (no jailbreak/rollout text read).
@@ -105,6 +113,106 @@ hard-negative pool), whereas the always-comply-vs-benign separation is strong at
 every layer and slightly *better* early — consistent with early layers encoding
 "is this an adversarial/harmful prompt" and deeper layers encoding "will the
 model actually comply".
+
+---
+
+## (0b) Map-regime arms C/D/E — is the answer-space signal recoverable through a map?
+
+Extends §0 with the answer-side arms. **v_C** = context_end (last prompt token);
+**v_A** = the real answer-span activation (`t1` pooling — the same Y target the
+benign map uses), pulled for the jailbreak contexts by the same stream-reduce
+(459 MB npz, 10,666 contexts, 0-GPU). **M·v_C** = the mapped/predicted answer.
+
+**Arms** (all on the same pool as §0: 150 always-comply positives vs
+failed-compliance same-family hard negatives; 6 layers; grouped-by-context OOF;
+PR-AUC headline; chance = base rate):
+- **A** — probe on real v_C (recap, recomputed on this eval set).
+- **B** — map-then-project: a FIXED r_B direction applied to M·v_C (the §0 arm 3).
+- **C** — probe trained AND tested on M·v_C (reparametrization check vs A).
+- **D** — probe trained on real v_A, applied to M·v_C at test (the fair
+  "answer-space classifier through the map").
+- **E** — probe on real v_A (ANSWER-SPACE ORACLE; needs generation, not deployable).
+
+C and D run under **two map regimes**: **M_benign** = ridge context_end→v_A on
+3,000 disjoint benign WildChat/LMSYS rows; **M_indomain** = ridge on a
+grouped-disjoint, label-stratified 35% reserve of the jailbreak contexts' own
+(v_C, v_A) pairs.
+
+**Split scheme + leakage.** Jailbreak contexts split into a 35% MAP reserve
+(52 pos + 1,325 neg → fits M_indomain) and a 65% EVAL set (98 pos; negatives
+subsampled to 5% base → n=1,960). All arms are scored on the SAME eval set via
+grouped 5-fold OOF; for D, within each fold the probe trains on real v_A of the
+train contexts and is applied to M·v_C of the test contexts. Groups are
+per-context (group_key is ~1:1 with context_id), so M-fit / probe-train / test
+never share a context; the only residual is family-level template similarity,
+mitigated because positives and negatives share the same evil families.
+
+**Results — best layer (PR-AUC headline; oracle E and chance stated):**
+
+| arm | best layer | ROC-AUC | PR-AUC | hit@5% | evals→20 |
+|---|---|---|---|---|---|
+| A — probe on v_C (recap) | L19 | 0.996 | 0.974 | 0.918 | 20 |
+| B — map→project, benign (fixed dir) | L19 | 0.809 | 0.277 | 0.357 | 45 |
+| B — map→project, in-domain (fixed dir) | L15 | 0.888 | 0.425 | 0.418 | 32 |
+| C — probe on M·v_C, benign | L19 | 0.998 | 0.971 | 0.908 | 20 |
+| C — probe on M·v_C, in-domain | L19 | 0.993 | 0.945 | 0.898 | 20 |
+| D — v_A-probe through M, benign | L19 | 0.985 | 0.871 | 0.796 | 20 |
+| D — v_A-probe through M, in-domain | L19 | 0.992 | 0.931 | 0.837 | 20 |
+| **E — probe on real v_A (ORACLE)** | L19 | 0.998 | **0.974** | 0.918 | 20 |
+| (ref) raw fixed r_B refusal dir on v_C | L23 | 0.921 | 0.697 | 0.643 | 21 |
+| random | — | 0.494 | 0.064 | 0.071 | 387 |
+
+**Map held-out reconstruction R² of v_A on the jailbreak eval contexts:**
+
+| layer | M_benign | M_indomain |
+|---|---|---|
+| L07 | −0.840 | +0.329 |
+| L11 | −0.516 | +0.454 |
+| L15 | −0.160 | +0.579 |
+| L19 | −0.119 | +0.625 |
+| L23 | −0.876 | +0.463 |
+| L27 | −0.835 | +0.480 |
+| **mean** | **−0.558** | **+0.488** |
+
+Figure: `docs/scratch/jailbreak_mining_pilot_map_arms.png` (left: PR-AUC per arm
+at L19 with oracle + chance lines; right: map reconstruction R² by layer).
+
+**Verdict (map regimes).**
+
+1. **Does C ≈ A (reparametrization holds)? YES.** C_benign 0.971 vs A 0.974 at
+   L19 — essentially identical; C_indomain 0.945, close behind. A probe trained
+   AND tested in the mapped space recovers the same signal as on raw v_C,
+   confirming that M·v_C is a linear reparametrization of v_C. Notably C_benign ≈
+   A *even though M_benign's reconstruction R² is negative* — because C never
+   depends on the map reconstructing anything faithfully, only on the linear
+   structure surviving the transform.
+2. **Does D beat B's fixed-direction 0.32, and approach the oracle E? YES to
+   both.** D_benign 0.871 and D_indomain 0.931 vs B's 0.28 (benign) / 0.43
+   (in-domain) — a fitted answer-space probe fed the MAPPED answer massively
+   outperforms a fixed direction through the same map. D_indomain 0.931 lands
+   within 0.043 of the oracle E (0.974); D_benign 0.871 within 0.103. So "use an
+   answer-space classifier through the map" nearly recovers the answer-space
+   oracle — the map preserves the discriminative comply-vs-refuse answer
+   direction even where it cannot reconstruct the answer pointwise.
+3. **Does the in-domain map close the gap — is the map's failure a
+   training-distribution problem? YES, decisively.** M_benign's reconstruction
+   R² is NEGATIVE at every layer (mean −0.558 — it predicts jailbreak answers
+   worse than their own mean): a map fit on benign answers does not span the
+   harmful-compliance answer subspace. M_indomain is positive (mean +0.488), and
+   D_indomain (0.931) closes ~40% of D_benign's residual gap to the oracle
+   (dramatically at the layers where M_benign is worst: L07 D 0.08→0.58, L27 D
+   0.58→0.79). The mechanism is explicit: the benign map's failure IS a
+   training-distribution problem, and fixing the distribution fixes both R² and
+   D together.
+
+**Headline for this extension: A ≈ E.** The cheap context-side probe (0.974)
+*already equals* the answer-space oracle (0.974) — the last-prompt-token residual
+carries as much always-comply signal as the real answer does, so the map is not
+needed at all for detection. The map arms matter as mechanism, not as a better
+detector: they show the answer-space signal is linearly recoverable from v_C
+(C ≈ A), that an answer-space classifier survives the map (D ≫ B) when the map is
+trained in-domain, and that a benign-only map structurally cannot reconstruct
+harmful-compliance answers (negative R²).
 
 ---
 
@@ -256,16 +364,21 @@ PR is the load-bearing takeaway, robust to orientation.
 
 ---
 
-**Repro:** compliance rerun (§0) — `scripts/issue1739_jbmine_stream_evil.py`
-(stream-reduce the 32 GB tar → `evil_compliance_ctxend.npz`),
-`scripts/issue1739_jbmine_compliance_reduce.py` (per-context compliance DV →
-`compliance_percontext.json`), `scripts/issue1739_jbmine_compliance_pilot.py`
-(4 arms → `compliance_pilot_results.json`),
-`scripts/issue1739_jbmine_compliance_plot.py` →
+**Repro:** map-regime arms (§0b) — `scripts/issue1739_jbmine_stream_evil_answer.py`
+(stream-reduce t1 = v_A → `evil_answer_t1.npz`),
+`scripts/issue1739_jbmine_map_arms.py` (arms A/B/C/D/E, both map regimes, map R²
+→ `map_arms_results.json`), `scripts/issue1739_jbmine_map_arms_plot.py` →
+`docs/scratch/jailbreak_mining_pilot_map_arms.png`. Compliance rerun (§0) —
+`scripts/issue1739_jbmine_stream_evil.py` (stream-reduce the 32 GB tar →
+`evil_compliance_ctxend.npz`), `scripts/issue1739_jbmine_compliance_reduce.py`
+(per-context compliance DV → `compliance_percontext.json`),
+`scripts/issue1739_jbmine_compliance_pilot.py` (4 arms →
+`compliance_pilot_results.json`), `scripts/issue1739_jbmine_compliance_plot.py` →
 `docs/scratch/jailbreak_mining_pilot_compliance_pr_by_layer.png`. Trait pass
 (§a–d) — `scripts/issue1739_jbmine_pilot.py`,
 `docs/scratch/jailbreak_mining_pilot_pr_by_layer.png`, `pilot_results.json`.
-Data slices staged under `/mnt/eps-data/$USER/issue1739_jbmine/`: compliance
+Data slices staged under `/mnt/eps-data/$USER/issue1739_jbmine/`: answer-span
+`t1` (6 layers, 10,666 contexts) in `evil_answer_t1.npz`; compliance
 `context_end` (6 layers, 10,666 contexts) stream-reduced from
 `issue1739_ctxmap/capture_store/evil_labeling/evil_labeling.tar`; per-context
 compliance DV from `issue1739_ctxmap/evil_ood_spread/compliance_full/*.jsonl`;
