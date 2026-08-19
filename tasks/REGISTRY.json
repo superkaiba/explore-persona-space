@@ -9205,8 +9205,8 @@
     "2192": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2192",
-      "status": "approved",
+      "path": "tasks/running/2192",
+      "status": "running",
       "title": "workflow_lint: no gate detects merge-conflict-marker residue in tracked workflow-surface files"
     },
     "2193": {
