@@ -16329,7 +16329,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # declaration escape entry, +377 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 76_000 (#2325, 73,229 B);
     # chronicle: git log.
-    "adversarial-planner/SKILL.md": 77_000,
+    "adversarial-planner/SKILL.md": 78_000,
 }
 
 

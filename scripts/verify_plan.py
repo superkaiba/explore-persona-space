@@ -199,14 +199,17 @@ Check catalog (id — classification — kind scope)
                                 by design)
   c66 smoke-fixture producing   WARN-only, conditional    all kinds
       script named in plan
+  c67 test-retest κ demotion    WARN-only, conditional    experiment +
+      gate vs temperature-0                               analysis
+      judge pin
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66) also SKIP when their content
-trigger does not fire.
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67) also SKIP when their
+content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -380,6 +383,12 @@ labeled-line forms):
     even when a claim-shaped line is present — the declaration wins;
     check 11's canonical ``N/A — no dry-run smoke`` standalone form is
     recognized the same way)
+  - ``N/A — no test-retest gate`` (check 67 — the retest/κ vocabulary is
+    incidental or quotes an incident, not this plan's own registered
+    test-retest κ demotion gate; a plan genuinely registering the gate
+    instead runs the retest at the parent instrument's sampling
+    temperature, or re-grounds the κ threshold for a deterministic
+    surface)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -12719,6 +12728,131 @@ def check_smoke_producer_coverage(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 67 — test-retest κ gate vs temperature-0 judge pin (#2204) ──────
+# Origin: #2202 plan v1 — a Sonnet label wave pinned at temperature 0 while
+# registering "test-retest → κ per mode; κ<0.6 demoted to report-only". At
+# temperature 0 a byte-identical retest returns near-identical output: κ≈1
+# for every mode, the demotion gate is unfireable by construction, and the
+# gate is a false instrument-validity screen. The parent instrument (#1738,
+# scripts/issue1738_characterize.py:326) ran at API-default temperature;
+# its κ range 0.786-0.982 is meaningful only under sampling. WARN-ONLY:
+# regex/section heuristics over prose, false-positive tolerant by design.
+# CORPUS CALIBRATION (measured at critic round 1, 2026-08-19, over every
+# persisted plan version under tasks/*/*/plans/v*.md — the c50 house pattern
+# of recording realized numbers in the check's own comment). Retest-bearing
+# plan versions: 90 (63 under kind: experiment, 12 under kind: infra).
+# Armed-kind WARNs: 10 — the founding incident (#2202 v1) plus 9 lineage true
+# positives (#1482 v13-v17, #1738 v1-v4; e.g. #1738 v4:305, #1482 v14:137),
+# each a REAL same-line "1 draw temp 0 + retest κ ... demotes" pin. The
+# #1482 -> #1738 -> #2202 lineage carried the unfireable-gate shape in plan
+# text for THREE generations (#1738's implementation silently deviated to API
+# default, issue1738_characterize.py:326), so c67 would have fired usefully on
+# all of them. Zero infra-kind true positives — which is why the kind gate
+# below costs no measured coverage.
+#
+# OUT OF SCOPE — same failure family (a variance-dependent gate read over a
+# deterministic surface), deliberately NOT detected. Route the next instance
+# to a widening decision rather than "why didn't c67 fire":
+# self-consistency / majority-vote gates at temperature 0; draw-variance (SD)
+# or bootstrap-CI-width gates over a deterministic estimator;
+# split-half-over-draws; and the cache-served κ≡1 case, which is invisible to
+# ANY temperature predicate and is carried only in the WARN detail's
+# companion-trap sentence.
+
+#: A line registering the retest gate: retest + κ/kappa on ONE line.
+_C67_RETEST_RE = re.compile(r"(?i)\btest[-\s]?retest\b|\bretest\b")
+_C67_KAPPA_RE = re.compile(r"(?i)κ|\bkappa\b")
+#: Demotion/threshold clause (searched over the gate line's section).
+_C67_DEMOTE_RE = re.compile(r"(?i)\bdemot\w*|report[-\s]only|(?:κ|kappa)\s*[<≤]")
+#: A temperature-0 pin: `temperature 0` / `temperature=0` / `temp: 0` /
+#: `temperature 0.0`; the lookahead rejects `0.5`/`0.7` (nonzero decimals).
+_C67_TEMP0_RE = re.compile(r"(?i)\btemp(?:erature)?\b\s*[=:]?\s*[`*]{0,2}\s*0(?:\.0+)?(?![.\d])")
+#: Same-line negation: an explicit API-default / nonzero pin dominates —
+#: corrected plans QUOTE the trap ("at temperature 0 ... κ≈1") beside their
+#: real pin (`temperature = API default (1.0)`), the #2202 v2 shape.
+_C67_TEMP_NONZERO_RE = re.compile(
+    r"(?i)\btemp(?:erature)?\b\s*[=:]?\s*[`*]{0,2}\s*(?:API[-\s]default|1(?:\.0+)?\b|0?\.[0-9]*[1-9])"
+)
+
+
+def check_retest_kappa_temp0(plan: str, kind: str) -> CheckResult:
+    """WARN when a registered test-retest κ demotion gate and a judge
+    temperature-0 pin share the same innermost section (#2202 v1 shape):
+    a deterministic judge always agrees with itself, so the κ<0.6 gate can
+    only pass — a false instrument-validity screen. Same-line API-default/
+    nonzero pins negate a temp-0 mention (corrected plans explain the trap
+    in prose beside their real pin — the #2202 v2 shape, kept silent).
+    Best-effort scoping: gate and pin in different innermost sections stay
+    silent. Armed for ``kind`` in {experiment, analysis} only — infra
+    workflow-fix plans discussing this check legitimately quote the trigger
+    vocabulary (the c53 kind-exempt precedent). Escape:
+    ``N/A — no test-retest gate`` standalone, unwrapped."""
+    cid, name = "c67_retest_kappa_temp0", "test-retest κ gate vs temperature-0 judge pin"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (the c53 kind-exempt "
+            "precedent): infra workflow-fix plans (THIS check's own plan included) "
+            "legitimately QUOTE the trigger vocabulary without dispatching a judged "
+            "retest wave. All three real incidents (#2202 v1, #1738 v1-v4, #1482 "
+            "v13-v17) are kind: experiment",
+        )
+
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    gate_idx: list[int] = []
+    temp0_idx: list[int] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if _C67_RETEST_RE.search(line) and _C67_KAPPA_RE.search(line):
+            gate_idx.append(i)
+        if _C67_TEMP0_RE.search(line) and not _C67_TEMP_NONZERO_RE.search(line):
+            temp0_idx.append(i)
+
+    def _sec(i: int) -> Heading | None:
+        return _innermost_section(headings, i)
+
+    def _sec_text(h: Heading | None) -> str:
+        return "\n".join(lines[h.line : h.end]) if h else "\n".join(lines)
+
+    registered = [i for i in gate_idx if _C67_DEMOTE_RE.search(_sec_text(_sec(i)))]
+    if not registered:
+        return _skip(cid, name, "no test-retest κ demotion gate detected")
+    if _standalone_na_declared(plan, r"no test[-\s]?retest gate\b"):
+        return _pass(cid, name, "explicit N/A declared (no test-retest gate)")
+    # Same innermost Heading (or both pre-heading None) ⇒ co-located.
+    hits = [(g, t) for g in registered for t in temp0_idx if _sec(g) is _sec(t)]
+    if not hits:
+        return _pass(
+            cid,
+            name,
+            "test-retest κ demotion gate registered; no temperature-0 judge pin "
+            "co-located in the same section (unpinned / API-default / unrelated-section "
+            "temperatures are all fine — κ has variance only under sampling)",
+        )
+    g, t = hits[0]
+    return _warn(
+        cid,
+        name,
+        f"a temperature-0 judge pin (line {t + 1}) and a test-retest κ demotion gate "
+        f"(line {g + 1}) share the same section — at temperature-0 a byte-identical "
+        "retest returns near-identical output, κ≈1 for every mode, and the demotion "
+        "gate can only pass: a false instrument-validity screen (#2202 v1; the #1738 "
+        "parent ran at API-default temperature, issue1738_characterize.py:326, which is "
+        "why its κ 0.786-0.982 range is meaningful). Companion trap: a rubric-keyed "
+        "judge CACHE serving the first-pass verdict back to the retest row makes κ≡1 "
+        "at ANY temperature — retest rows need a distinct custom-id prefix (the #1738 "
+        "`rt_` convention, issue1738_characterize.py:303) or a fresh cache_dir. "
+        "Remedies: run the retest at the parent instrument's sampling temperature "
+        "(API default), or re-ground the κ threshold for a deterministic surface, or "
+        "declare 'N/A — no test-retest gate' on its own line, unwrapped (no "
+        "backticks/quotes)",
+    )
+
+
 # ─── Check 64: sampled exactness claim vs runtime-assert grain (#2174) ─────
 # Origin: #2163 — plan §12 A11 asserted byte-identity / `n_distinct_rows = 1`
 # at `Confidence: High (measured)` from a 10-shard/706-row probe (0.5% of the
@@ -12961,6 +13095,7 @@ CHECKS = [
     check_exactness_grain,
     check_smoke_fixture_size,
     check_smoke_producer_coverage,
+    check_retest_kappa_temp0,
 ]
 
 
