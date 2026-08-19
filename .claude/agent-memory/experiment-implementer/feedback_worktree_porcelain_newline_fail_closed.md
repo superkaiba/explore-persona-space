@@ -38,7 +38,20 @@ explicit decode, NEVER `read_text` (#2147 r7, Codex R4-1: universal
 newlines silently rewrite CR/CRLF path bytes to LF, injecting a GHOST path
 into the authoritative set while the real registration goes missing; and
 verify byte-exactness evidence on the SAME read mode the code uses —
-`open(f,'rb')` evidence never covered a `read_text` code path). Keep the hardened
+`open(f,'rb')` evidence never covered a `read_text` code path). The SAME law
+covers `subprocess` stdout (#2147 r8, the round-5 cap residual): a
+`text=True` git pipe universal-newlines-rewrites CR/CRLF inside a
+PATH-PRODUCING answer (`rev-parse --git-common-dir`/`--show-toplevel` — the
+REPOSITORY'S OWN path bytes), and `.strip()` eats edge-whitespace path
+bytes — use a binary-mode sibling (`_git_bytes` + `_decode_git_path`:
+decode utf-8, strip exactly ONE trailing LF) for every stdout that is or
+derives a path; and inside an authoritative enumeration never swallow a
+scan-root `FileNotFoundError` into an empty result — missing PARENT
+(common dir) ⇒ `None` (ambiguity keeps); only present-parent +
+absent-`worktrees/` is a legitimate empty. Audit EVERY consumer of a
+shared text-mode subprocess wrapper before ruling its normalization
+harmless — r5's miss was ruling one consumer KEEP-only while a second,
+authoritative consumer sat unexamined. Keep the hardened
 record-form listing parse (fail closed: orphan line / duplicate slot /
 existence cross-check with `prunable` exemption; never `.strip()` the
 path) as DEFENCE-IN-DEPTH ONLY — membership may add KEEPs, never license.
