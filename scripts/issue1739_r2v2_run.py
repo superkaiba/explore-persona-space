@@ -287,8 +287,8 @@ def claim4_score_cmd(
     must not silently re-fit P-A. Both map variants + both extra arms +
     --transfer-preds always ride (plan v21 §4 P0.3). The keyword overrides
     exist ONLY for the real-store smoke phase (multi-seed single invocation,
-    scratch out-root, 2-layer slice, 1 holdout); production calls pass a bare
-    ``seed`` and stay byte-identical.
+    scratch out-root, frozen-prefix layer slice, 1 holdout); production calls
+    pass a bare ``seed`` and stay byte-identical.
     """
     seed_list = seeds if seeds is not None else [int(seed)]
     cmd = [
@@ -331,14 +331,26 @@ def claim4_score_cmd(
 
 
 def _runner_git_sha() -> str:
-    """The running (post-merge) code SHA — the breadcrumb identity key."""
+    """The running (post-merge) code SHA — the breadcrumb identity key.
+
+    FAILS LOUD when unresolvable (review r2 item 5): a breadcrumb written or
+    verified with ``code_sha="unknown"`` would let two broken checkouts
+    mutually "verify" identity — refuse at the source instead of emitting a
+    placeholder both ends could match on.
+    """
     out = subprocess.run(
         ["git", "-C", str(_REPO_ROOT), "rev-parse", "HEAD"],
         capture_output=True,
         text=True,
         check=False,
     )
-    return out.stdout.strip() if out.returncode == 0 else "unknown"
+    sha = out.stdout.strip() if out.returncode == 0 else ""
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise RuntimeError(
+            f"cannot resolve the running code SHA (git rev-parse HEAD rc={out.returncode}, "
+            f"stdout={sha!r}) — refusing to write/verify an identity-less breadcrumb"
+        )
+    return sha
 
 
 def _stage_crumb_path(behavior: str, run_token: str) -> str:
@@ -354,7 +366,17 @@ def _stage_crumb_path(behavior: str, run_token: str) -> str:
 
 
 def _crumb_matches(payload: dict, *, code_sha: str, run_token: str) -> tuple[bool, str]:
-    """Identity check on a downloaded stage-done breadcrumb payload."""
+    """Identity check on a downloaded breadcrumb payload (stage-done / gate-1).
+
+    An ``"unknown"`` (or empty) code SHA is rejected on BOTH sides: a matching
+    pair of placeholders is an identity failure, never a verification
+    (review r2 item 5 — _runner_git_sha now fails loud, but a crumb written
+    by an older checkout could still carry the placeholder).
+    """
+    if not code_sha or code_sha == "unknown":
+        return False, f"expected code_sha invalid ({code_sha!r}) — identity unverifiable"
+    if not payload.get("code_sha") or payload.get("code_sha") == "unknown":
+        return False, f"payload code_sha invalid ({payload.get('code_sha')!r})"
     if payload.get("run_token") != run_token:
         return False, f"run_token mismatch ({payload.get('run_token')!r} != {run_token!r})"
     if payload.get("code_sha") != code_sha:
@@ -450,7 +472,119 @@ def wait_for_sibling_stage(args, behavior: str, token: str) -> None:
     )
 
 
-def run_claim4_leg(args, behavior: str) -> dict:
+def _gate1_crumb_path(behavior: str, run_token: str) -> str:
+    """HF breadcrumb path carrying the seeds-0-2 pod's gate-1 VERDICT.
+
+    Same run-token/code-SHA identity mechanism as the stage-done breadcrumb
+    (review r2 item 7): token-keyed path + payload identity check, never bare
+    existence. The payload additionally carries ``gate1_rc``.
+    """
+    return f"{CLAIM4_HF_OUT_PREFIX}/_staging/{behavior}_gate1_{run_token}.json"
+
+
+def signal_gate1_result(args, behavior: str, token: str, gate_rc: int) -> None:
+    """Upload the gate-1 verdict breadcrumb (seeds-0-2 pod, after the gate).
+
+    Written on PASS AND on FAIL — the FAIL crumb lets the seeds-3-4 pod abort
+    its scoring immediately (plan §7 kill (a)) instead of burning its full
+    gate-1 timeout.
+    """
+    import socket
+    import tempfile
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    payload = {
+        "behavior": behavior,
+        "host": socket.gethostname(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "code_sha": _runner_git_sha(),
+        "run_token": args.stage_run_token,
+        "gate1_rc": int(gate_rc),
+    }
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        json.dump(payload, f)
+        tmp = f.name
+    crumb = _gate1_crumb_path(behavior, args.stage_run_token)
+    hub.retry_transient(
+        lambda: HfApi().upload_file(
+            path_or_fileobj=tmp,
+            path_in_repo=crumb,
+            repo_id=hub.DEFAULT_DATASET_REPO,
+            repo_type="dataset",
+            token=token or None,
+        ),
+        what="claim4-gate1-crumb-upload",
+    )
+    os.unlink(tmp)
+    _log(
+        f"[phase=gate1_signal {behavior}] verdict breadcrumb (rc={int(gate_rc)}) -> {crumb} "
+        f"(code_sha={payload['code_sha'][:12]} run_token={args.stage_run_token})"
+    )
+
+
+def wait_for_gate1_pass(args, behavior: str, token: str) -> None:
+    """Block SCORING until the sibling's gate-1 verdict breadcrumb reads PASS.
+
+    The seeds-3-4 pod calls this at fits-claim4 leg entry — staging already
+    ran and MAY proceed in parallel with the sibling's seed-0 chain; only
+    scoring is gated. UNLIKE the staging gate (politeness — proceed on
+    timeout), gate-1 is CORRECTNESS (plan §7 kill (a)): a verified FAIL
+    crumb OR a timeout ABORTS loudly — never spend seeds 3-4 on a drifted
+    pipeline. An identity-mismatched crumb is treated as absent (keeps
+    polling into the timeout abort).
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    crumb = _gate1_crumb_path(behavior, args.stage_run_token)
+    own_sha = _runner_git_sha()
+    api = HfApi(token=token or None)
+    t0 = time.time()
+    while time.time() - t0 < args.gate1_timeout_s:
+        try:
+            # HUB_VERIFY_RETRY_EXEMPT: outer poll loop IS the retry — probe errors are caught below and re-polled every stage_gate_poll_s
+            if api.file_exists(hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset"):
+                # NO_RETRY: outer gate1_wait poll loop IS the retry — errors are caught below and re-polled every stage_gate_poll_s
+                local = api.hf_hub_download(
+                    hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset", force_download=True
+                )
+                payload = json.loads(Path(local).read_text())
+                ok, why = _crumb_matches(payload, code_sha=own_sha, run_token=args.stage_run_token)
+                if ok:
+                    rc = payload.get("gate1_rc")
+                    if rc == 0:
+                        _log(
+                            f"[phase=gate1_wait {behavior}] sibling gate-1 PASS VERIFIED "
+                            f"({crumb}; code_sha={own_sha[:12]}) — scoring may start"
+                        )
+                        return
+                    raise RuntimeError(
+                        f"[phase=gate1_wait {behavior}] sibling gate-1 FAILED "
+                        f"(gate1_rc={rc!r}, crumb={crumb}) — ABORTING scoring (plan §7 "
+                        "kill (a): never spend seeds 3-4 on a drifted pipeline)"
+                    )
+                _log(
+                    f"[phase=gate1_wait {behavior}] breadcrumb at {crumb} REJECTED "
+                    f"({why}) — treating as absent, still polling"
+                )
+        except RuntimeError:
+            raise  # the FAIL abort above — never swallowed by the transient net
+        except Exception as exc:  # noqa: BLE001 — transient Hub errors: keep polling
+            _log(f"[phase=gate1_wait {behavior}] probe error (retrying): {exc}")
+        time.sleep(args.stage_gate_poll_s)
+    raise RuntimeError(
+        f"[phase=gate1_wait {behavior}] sibling gate-1 verdict ABSENT after "
+        f"{args.gate1_timeout_s}s ({crumb}) — ABORTING scoring (gate-1 is a correctness "
+        "gate, unlike the politeness staging gate: no verdict means the sibling's seed-0 "
+        "chain died before the reproduction gate could run)"
+    )
+
+
+def run_claim4_leg(args, behavior: str, token: str = "") -> dict:
     """The fits-claim4 leg: one scorer subprocess per seed + the seed-0 gate.
 
     Per-seed sequencing (resume-friendly; a crashed seed re-runs alone):
@@ -459,7 +593,15 @@ def run_claim4_leg(args, behavior: str) -> dict:
     the remaining seed chain on FAIL (never spend seeds 1-4 on a drifted
     pipeline). The repro report is keyed by the running commit SHA inside the
     gate script itself (dual pre/post-merge protocol, plan §4 P0.4).
+
+    Two-pod topology (review r2 item 7): the seeds-0-2 pod
+    (--stage-signal-done) uploads a gate-1 VERDICT breadcrumb after the gate;
+    a sibling pod that does NOT run seed 0 itself (--stage-wait-sibling)
+    blocks HERE — after staging, before its first scorer subprocess — until
+    that verdict reads PASS, and ABORTS loudly on FAIL or timeout.
     """
+    if args.stage_wait_sibling and 0 not in [int(s) for s in args.seeds]:
+        wait_for_gate1_pass(args, behavior, token)
     per_seed: dict[str, dict] = {}
     rc_leg = 0
     for i, seed in enumerate(args.seeds, start=1):
@@ -521,6 +663,10 @@ def run_claim4_leg(args, behavior: str) -> dict:
                 _log(
                     f"[phase=gate1 {behavior}] report uploaded -> {CLAIM4_HF_OUT_PREFIX}/repro_claim4"
                 )
+            if args.stage_signal_done:
+                # gate-1 verdict breadcrumb for the sibling pod — written on
+                # PASS AND FAIL (a FAIL crumb aborts the sibling immediately).
+                signal_gate1_result(args, behavior, token, gate.returncode)
             if gate.returncode != 0:
                 _log(
                     f"[phase=gate1 {behavior}] FAIL (rc={gate.returncode}) — HALTING the "
@@ -533,14 +679,21 @@ def run_claim4_leg(args, behavior: str) -> dict:
 
 
 def _smoke_layers(args, behavior: str) -> list[int]:
-    """Resolve the smoke's 2-layer slice from the COMMITTED frozen layers.
+    """Resolve the smoke's layer slice: the identity PREFIX covering every
+    COMMITTED frozen index.
 
     The scorer freezes every roster arm at its committed modal layer
-    (matched-companion arms at their reference arm's), so the smoke slice
-    must COVER those layers — resolve them the same way the scorer does and
-    pad with a neighbor when they collapse to one. Fails loud on a miss (the
-    same committed_frozen failure the production run would hit — the smoke
-    is exactly the phase meant to surface it early).
+    (matched-companion arms at their reference arm's). Those committed values
+    are POSITIONAL indices into the FULL 28-layer grid, and the scorer's
+    committed-frozen guard (``_assert_committed_frozen_indexable``) accepts
+    ONLY an identity prefix (``layers[i] == i``) that contains every committed
+    index — a bare list of the committed indices themselves (the round-2
+    shape) is rejected as a non-identity reduced set and aborts the launch.
+    So the smoke passes ``range(max(committed)+1)``: every committed index
+    means itself, and the slice is still a big reduction vs the full grid.
+    Fails loud on a missing arm (the same committed_frozen failure the
+    production run would hit — the smoke is exactly the phase meant to
+    surface it early).
     """
     from scripts.issue1739_r2v2_score import MATCHED_FROZEN_COMPANIONS, ROSTER
     from scripts.issue1739_wcrung_arms import modal_frozen_layers
@@ -554,28 +707,54 @@ def _smoke_layers(args, behavior: str) -> list[int]:
             f"[claim4_smoke {behavior}] no committed frozen layer for {missing} "
             f"in {summary} — cannot compose the smoke layer slice"
         )
-    layers = sorted({int(frozen[a]) for a in needed})
-    if len(layers) == 1:
-        base = layers[0]
-        layers = sorted({base, base + 1 if base + 1 < 28 else base - 1})
-    return layers
+    max_idx = max(int(frozen[a]) for a in needed)
+    return list(range(max(max_idx + 1, 2)))  # >=2 layers so the slice is never degenerate
+
+
+def _assert_smoke_scratch_root(smoke_root: Path) -> Path:
+    """Refuse to treat a caller-arbitrary path as the wipeable smoke scratch.
+
+    The smoke out-root is recursively DELETED each launch, so the wipe is
+    bounded to the recognized scratch pattern: basename contains
+    ``claim4_controls_smoke`` AND the resolved path sits under an
+    ``eval_results/issue_1739/`` directory. Anything else fails loud — a
+    mistyped ``--smoke-out-root`` must never rmtree an arbitrary tree.
+    """
+    resolved = smoke_root.resolve()
+    parts = resolved.parts
+    under_issue_dir = any(
+        parts[i] == "eval_results" and parts[i + 1] == "issue_1739"
+        for i in range(len(parts) - 2)  # -2: the smoke root itself is BELOW the pair
+    )
+    if "claim4_controls_smoke" not in resolved.name or not under_issue_dir:
+        raise RuntimeError(
+            f"refusing to wipe {resolved} — the smoke scratch root must have "
+            "'claim4_controls_smoke' in its basename and resolve under "
+            "eval_results/issue_1739/ (bounded recursive delete, never an "
+            "arbitrary path)"
+        )
+    return resolved
 
 
 def run_claim4_smoke(args, behavior: str) -> dict:
     """MANDATORY first-pod real-store smoke phase (plan §10 P0 smoke shape).
 
-    One behavior, the resolved frozen-layer slice (2 layers), seeds 0-1 in a
-    SINGLE scorer invocation, both map variants + both extra arms +
-    transfer preds (they always ride claim4_score_cmd), ONE P-B holdout, a
-    SCRATCH out-root (wiped first, so the smoke actually RUNS each launch —
-    never a resume-skip). Emits a phase record (exact command, slice size,
-    rc, output paths + row-count digests) to the sentinel dir BEFORE any
-    production seed runs; a non-zero rc aborts the launch in main().
+    One behavior, the resolved frozen-layer slice (the identity prefix
+    through the max committed frozen index — see :func:`_smoke_layers`; a
+    stated deviation from the plan-§10 literal "2 layers", which the scorer's
+    committed-frozen guard rejects), seeds 0-1 in a SINGLE scorer invocation,
+    both map variants + both extra arms + transfer preds (they always ride
+    claim4_score_cmd), ONE P-B holdout, a SCRATCH out-root (wiped first —
+    bounded to the recognized scratch pattern — so the smoke actually RUNS
+    each launch, never a resume-skip). Emits a phase record (exact command,
+    slice size, rc, output paths + row-count digests) to the sentinel dir
+    BEFORE any production seed runs; a non-zero rc aborts the launch in
+    main().
     """
     layers = _smoke_layers(args, behavior)
     smoke_root = args.smoke_out_root
     if smoke_root.exists():
-        shutil.rmtree(smoke_root)
+        shutil.rmtree(_assert_smoke_scratch_root(smoke_root))
     cmd = claim4_score_cmd(
         args,
         behavior,
@@ -750,12 +929,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--stage-gate-timeout-s", type=int, default=7200)
     ap.add_argument("--stage-gate-poll-s", type=int, default=60)
     ap.add_argument(
+        "--gate1-timeout-s",
+        type=int,
+        default=28800,
+        help="seeds-3-4 pod: max wait for the sibling's gate-1 verdict breadcrumb before "
+        "the scoring abort (generous: it covers the sibling's stage + seed-0 score + gate "
+        "wall; unlike the staging gate, a gate-1 timeout ABORTS — correctness, not "
+        "politeness)",
+    )
+    ap.add_argument(
         "--smoke",
         action="store_true",
         help="run the MANDATORY real-store smoke phase first (plan §10 P0 shape: one "
-        "behavior, 2 frozen layers, seeds 0-1, both map variants, both extra arms, one "
-        "P-B holdout, scratch out-root) and emit its phase record BEFORE any production "
-        "seed; a non-zero smoke rc aborts the launch",
+        "behavior, the frozen-prefix layer slice, seeds 0-1, both map variants, both "
+        "extra arms, one P-B holdout, scratch out-root) and emit its phase record BEFORE "
+        "any production seed; a non-zero smoke rc aborts the launch",
+    )
+    ap.add_argument(
+        "--skip-smoke",
+        default=None,
+        metavar="REASON",
+        help="explicit opt-out of the mandatory claim4 smoke phase, with a stated reason "
+        "(e.g. 'smoke ran on the seeds-0-2 pod'); bare omission of --smoke is a parse "
+        "error for a production fits-claim4 launch",
     )
     ap.add_argument("--smoke-behavior", default="evil", choices=list(BEHAVIOR_ORDER))
     ap.add_argument("--smoke-holdout", default="toxicchat")
@@ -788,6 +984,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                 "--stage-wait-sibling / --stage-signal-done — the breadcrumb gate is "
                 "identity-keyed, never bare existence"
             )
+    if args.smoke and args.skip_smoke is not None:
+        ap.error("--smoke and --skip-smoke are mutually exclusive")
     if args.smoke:
         if "fits-claim4" not in args.legs:
             ap.error("--smoke is the claim4 real-store smoke — it requires the fits-claim4 leg")
@@ -799,6 +997,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             )
         if args.smoke_out_root.resolve() == CLAIM4_OUT_ROOT.resolve():
             ap.error("--smoke-out-root must be a scratch dir, never the production out-root")
+    # the smoke is ENFORCEABLE, not optional (review r2 item 2): a fits-claim4
+    # launch scores at the production out-root, so it must either RUN the
+    # smoke or opt out EXPLICITLY with a stated reason (the sibling-pod case).
+    # --import-check / --stage-only never score, so they are exempt.
+    if (
+        "fits-claim4" in args.legs
+        and not args.import_check
+        and not args.stage_only
+        and not args.smoke
+        and not (args.skip_smoke or "").strip()
+    ):
+        ap.error(
+            "the fits-claim4 leg launches scoring at the PRODUCTION out-root and requires "
+            "the mandatory real-store smoke phase: pass --smoke, or opt out explicitly "
+            "with --skip-smoke <reason> (e.g. 'smoke ran on the seeds-0-2 pod')"
+        )
     return args
 
 
@@ -855,34 +1069,74 @@ def main(argv: list[str] | None = None) -> None:
         )
         assert r_args.mode == "claim4" and str(r_args.new_root) == str(CLAIM4_OUT_ROOT)
         # smoke phase argv binds (multi-seed single invocation, scratch root,
-        # 2-layer slice, 1 holdout) — placeholder layers; the live run
-        # resolves them from the committed frozen layers (_smoke_layers).
+        # frozen-prefix layer slice, 1 holdout) — identity-prefix placeholder
+        # layers (the shape _smoke_layers ALWAYS emits — the scorer's
+        # committed-frozen guard rejects anything else); the live run resolves
+        # the prefix length from the committed frozen layers (_smoke_layers).
         sm_cmd = claim4_score_cmd(
             args,
             "evil",
             seeds=[0, 1],
             out_root=args.smoke_out_root,
-            layers=[3, 4],
+            layers=[0, 1],
             pb_holdouts=["toxicchat"],
         )
         sm_args = _score_parse_args(sm_cmd[2:])
-        assert sm_args.seeds == [0, 1] and sm_args.layers == [3, 4]
+        assert sm_args.seeds == [0, 1] and sm_args.layers == [0, 1]
         assert str(sm_args.out_root) == str(args.smoke_out_root)
         assert sm_args.pb_holdouts == ["toxicchat"] and sm_args.protocols == "B"
         assert sm_args.map_variants == list(CLAIM4_MAP_VARIANTS)
         assert tuple(sm_args.extra_arms) == CLAIM4_EXTRA_ARMS and sm_args.transfer_preds
+        # the resolved smoke slice is an identity prefix through the max
+        # committed frozen index — the scorer-side guard's precondition —
+        # exercised against the REAL committed summary when it is staged/
+        # committed at --main-root (pods stage it; the sparse VM worktree may
+        # lack it, so this leg is presence-gated, never silently green).
+        real_summary = args.main_root / "evil" / "arm_results" / "all_arms_spearman.json"
+        if real_summary.exists():
+            live_layers = _smoke_layers(args, "evil")
+            assert live_layers == list(range(len(live_layers))), live_layers
+            from scripts.issue1739_r2v2_score import MATCHED_FROZEN_COMPANIONS as _mfc
+            from scripts.issue1739_r2v2_score import ROSTER as _roster
+            from scripts.issue1739_wcrung_arms import _assert_committed_frozen_indexable
+            from scripts.issue1739_wcrung_arms import modal_frozen_layers as _mfl
+
+            _frozen = _mfl(real_summary, variant="context_end", regime="e1", u_rung_label="full")
+            _needed = (set(_roster) | set(CLAIM4_EXTRA_ARMS)) - set(_mfc)
+            _assert_committed_frozen_indexable(
+                {a: i for a, i in _frozen.items() if a in _needed},  # committed_frozen's filter
+                live_layers,
+                "evil",
+                "context_end",
+                real_summary,
+            )
+            _log(f"live smoke-layer slice verified against scorer guard: {live_layers}")
         # production claim4 argv is unchanged by the smoke overrides (the
         # keyword defaults keep the bare-seed call byte-identical: no
         # --layers slice, production out-root — asserted on c4_args above)
         assert "--layers" not in c4_cmd
         # breadcrumb identity: run-token-keyed path + payload check
         assert _stage_crumb_path("evil", "tok123").endswith("_stage_done_tok123.json")
+        assert _gate1_crumb_path("evil", "tok123").endswith("_gate1_tok123.json")
         assert _crumb_matches(
             {"code_sha": "abc", "run_token": "tok123"}, code_sha="abc", run_token="tok123"
         )[0]
         assert not _crumb_matches(
             {"code_sha": "abc", "run_token": "OLD"}, code_sha="abc", run_token="tok123"
         )[0]
+        # a matching pair of "unknown"s must never verify (review r2 item 5)
+        assert not _crumb_matches(
+            {"code_sha": "unknown", "run_token": "tok123"},
+            code_sha="unknown",
+            run_token="tok123",
+        )[0]
+        # gate-1 topology (review r2 item 7): the fenced write/wait calls bind
+        # (arity/keyword pin — their bodies are network-fenced) and the upload
+        # retry helper they share with signal_stage_done resolves.
+        inspect.signature(signal_gate1_result).bind(args, "evil", "tok", 0)
+        inspect.signature(wait_for_gate1_pass).bind(args, "evil", "tok")
+        inspect.signature(run_claim4_leg).bind(args, "evil", "tok")
+        assert callable(hub.retry_transient)
         _log("import-check OK")
         sys.stdout.flush()
         sys.stderr.flush()
@@ -934,7 +1188,7 @@ def main(argv: list[str] | None = None) -> None:
             if leg == "fits-claim4":
                 # multi-invocation leg (one scorer subprocess per seed +
                 # the in-chain seed-0 reproduction gate) — own driver.
-                leg_results[leg] = run_claim4_leg(args, behavior)
+                leg_results[leg] = run_claim4_leg(args, behavior, token)
                 if leg_results[leg]["rc"] != 0:
                     break
                 continue
