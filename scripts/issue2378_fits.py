@@ -545,7 +545,17 @@ def phase_ratio(args) -> int:
     """H4a user-vs-assistant ceiling ratio (plan §3 H4a-ii): per user arm,
     chat own-ceiling R² / user own-ceiling R², 200-draw conversation-grain
     bootstrap on the USER side (chat point fixed; its fold dispersion
-    disclosed), skip-and-count + tier suppression per the reporting tiers."""
+    disclosed), skip-and-count + tier suppression per the reporting tiers.
+
+    G2b user-drop threading (r2 reconciler blocker
+    g2b-user-drop-crashes-h4a-ratio): a plan-PERMITTED G2b user-cell drop
+    (plan §7 — user cells are non-binding; a drop is reported loudly, never a
+    kill) leaves ``fits/<cell>__g2b_dropped.json`` instead of the fit context
+    JSON. That drop marker IS the survivor manifest here: a dropped arm gets
+    a loud per-arm N/A entry (h4b pattern — same expected filename, so the
+    fits-d explicit-path harvest + merge digest complete); both arms dropped
+    ⇒ whole-file ``status: N/A``. A missing fit for a SURVIVING cell (no drop
+    marker) still hard-raises — that is a real failure."""
     ledger_root = Path(args.ledger_root)
     fits_dir = ledger_root / "fits"
     # G3-gate H4a like phase_fit/phase_pairs (r1 review g3 concern 4): a
@@ -569,8 +579,24 @@ def phase_ratio(args) -> int:
     }
     for cell in cm.USER_CELLS:
         upath = fits_dir / f"{cell}__context.json"
+        dpath = fits_dir / f"{cell}__g2b_dropped.json"
         if not upath.exists():
-            raise RuntimeError(f"missing {upath} — run the user fits first")
+            if dpath.exists():
+                out["arms"][cell] = {
+                    "status": "N/A",
+                    "reason": (
+                        f"user cell {cell} G2b-dropped (below floor) — H4a ceiling ratio "
+                        "unformable for this arm (plan §7: user cells are non-binding; "
+                        "drop reported loudly, never a kill)"
+                    ),
+                    "g2b_drop_record": json.loads(dpath.read_text(encoding="utf-8")),
+                }
+                _log(f"[h4a] {cell}: N/A — G2b-dropped (loud per-arm skip, plan §7)")
+                continue
+            raise RuntimeError(
+                f"missing {upath} for a G2b survivor (no {dpath.name} drop marker) — "
+                "run the user fits first"
+            )
         ujson = json.loads(upath.read_text(encoding="utf-8"))
         rs = p6.load_rowstats(fits_dir / "percell" / f"{cell}__context__rowstats.npz")
         floor = float(ujson["floor"])
@@ -613,6 +639,16 @@ def phase_ratio(args) -> int:
             f"[h4a] {cell}: point={arm_out['ratio_point_pooled']:.3f} valid={n_valid} "
             f"suppressed={arm_out['suppressed']}"
         )
+    na_arms = sorted(c for c, a in out["arms"].items() if a.get("status") == "N/A")
+    if len(na_arms) == len(cm.USER_CELLS):
+        out["status"] = "N/A"
+        out["reason"] = (
+            "both user arms G2b-dropped — H4a ceiling-ratio read unformable "
+            "(plan §7 skip-and-count; drop records in the per-arm entries)"
+        )
+        _log("[h4a] whole-file N/A — both user arms G2b-dropped")
+    elif na_arms:
+        out["na_arms"] = na_arms
     out["metadata"] = cm.run_metadata()
     cm.atomic_write_json(fits_dir / "ratio" / "h4a_ceiling_ratio.json", out)
     return 0
@@ -831,10 +867,62 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         assert rc == 0
         h4a = json.loads((ledger / "fits" / "ratio" / "h4a_ceiling_ratio.json").read_text("utf-8"))
         assert set(h4a["arms"]) == set(cm.USER_CELLS)
+        assert "status" not in h4a and "na_arms" not in h4a  # healthy run: no N/A residue
         # resume path: re-run one unit -> regime-matched skip (no raise).
         fm2 = _fold_map(ns)
         run_fit_unit(ns, fm2, "chat", "context", 1)
         _log("[probe] e2e fits path (g3 + fit + ratio + resume-skip): OK")
+
+        # (6b) G2b user-drop ratio N/A paths (r2 reconciler blocker
+        # g2b-user-drop-crashes-h4a-ratio): a dropped user arm yields a loud
+        # per-arm N/A (real-only / sim-only), both dropped yields a whole-file
+        # N/A, and a missing fit WITHOUT a drop marker still hard-raises.
+        fits_dir = ledger / "fits"
+        ratio_path = fits_dir / "ratio" / "h4a_ceiling_ratio.json"
+        stash = tmp / "g2b_stash"
+        stash.mkdir()
+        sim_ctx = fits_dir / "chat_user_sim__context.json"
+        real_ctx = fits_dir / "chat_user_real__context.json"
+
+        def _plant_drop(cell: str) -> None:
+            cm.atomic_write_json(
+                fits_dir / f"{cell}__g2b_dropped.json",
+                {"cell": cell, "status": "N/A", "reason": "probe: planted G2b drop"},
+            )
+
+        # sim dropped, real survives -> per-arm N/A, real arm still real.
+        sim_ctx.rename(stash / sim_ctx.name)
+        _plant_drop("chat_user_sim")
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert h4a["arms"]["chat_user_sim"]["status"] == "N/A"
+        assert "g2b_drop_record" in h4a["arms"]["chat_user_sim"]
+        assert "ratio_point_pooled" in h4a["arms"]["chat_user_real"]
+        assert h4a["na_arms"] == ["chat_user_sim"] and "status" not in h4a
+        # real dropped too (neither survives) -> whole-file N/A.
+        real_ctx.rename(stash / real_ctx.name)
+        _plant_drop("chat_user_real")
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert h4a["status"] == "N/A"
+        assert all(h4a["arms"][c]["status"] == "N/A" for c in cm.USER_CELLS)
+        # real dropped only (sim survives) -> mirror per-arm N/A.
+        (stash / sim_ctx.name).rename(sim_ctx)
+        (fits_dir / "chat_user_sim__g2b_dropped.json").unlink()
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert h4a["arms"]["chat_user_real"]["status"] == "N/A"
+        assert "ratio_point_pooled" in h4a["arms"]["chat_user_sim"]
+        assert h4a["na_arms"] == ["chat_user_real"] and "status" not in h4a
+        # missing fit for a SURVIVOR (no drop marker) stays a hard raise.
+        (fits_dir / "chat_user_real__g2b_dropped.json").unlink()
+        _probe_expect_raise(lambda: phase_ratio(ns), "G2b survivor", "survivor-missing ratio raise")
+        # restore + healthy re-run rewrites the real-arms artifact.
+        (stash / real_ctx.name).rename(real_ctx)
+        assert phase_ratio(ns) == 0
+        h4a = json.loads(ratio_path.read_text("utf-8"))
+        assert "status" not in h4a and "na_arms" not in h4a
+        _log("[probe] G2b user-drop ratio N/A paths (per-arm / whole-file / raise): OK")
 
         # (7) batched null core vs serial per-draw oracle (same rng sequence).
         rng = np.random.default_rng(11)

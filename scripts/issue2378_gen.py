@@ -905,12 +905,16 @@ def _cap_hit_fraction(files: list[Path], is_hit) -> tuple[int, int]:
 def _cell_grain_regen(
     llm, files: list[Path], decision_path: Path, *, is_hit, rebuild, update_row, tag: str
 ) -> dict:
-    """Cell-grain > 2% cap-hit regen (r1 review majors 13+15): the trigger is
-    evaluated over the CELL's full durable row set for this shard (round-robin
-    sharding keeps the shard fraction an unbiased estimate of the cell
-    fraction), never per chunk. The decision JSON + per-row ``regen`` flags
-    are durable, so a crashed/resumed invocation continues the regen instead
-    of re-deciding on a partial (or already-regenerated) view.
+    """Cap-hit > 2% regen at PER-SHARD grain (r1 review majors 13+15; grain
+    relabeled per the r2 reconciler disposition of cap-hit-rule-wrong-grain):
+    the trigger is evaluated over the cell's full durable row set FOR THIS
+    SHARD — a per-shard ESTIMATOR of the cell fraction (round-robin sharding
+    makes the shard fraction ≈ the cell fraction; no cross-shard join is
+    performed), never per chunk. Decisions are durable + shard-tagged (the
+    ``decision_path`` filenames carry ``s{shard}``) and carry an explicit
+    ``grain`` field; per-row ``regen`` flags are durable too, so a
+    crashed/resumed invocation continues the regen instead of re-deciding on
+    a partial (or already-regenerated) view.
 
     ``is_hit(row)`` defines a cap-hit on a generated row; ``rebuild(row)``
     returns ``(prompt, cap2, stop)`` for the 2x pass; ``update_row(row, text,
@@ -927,6 +931,7 @@ def _cell_grain_regen(
             "frac_before": frac_before,
             "n_generated": gen_rows,
             "n_hit": hits,
+            "grain": "shard (round-robin per-shard estimator of the cell fraction)",
             "done": False,
         }
         cm.atomic_write_json(decision_path, decision)
@@ -958,7 +963,7 @@ def _cell_grain_regen(
     decision.update({"done": True, "frac_after": hits / max(1, gen_rows)})
     cm.atomic_write_json(decision_path, decision)
     print(
-        f"[{tag}] cap-hit cell fraction {decision['frac_before']:.4f} -> "
+        f"[{tag}] cap-hit shard fraction (cell estimator) {decision['frac_before']:.4f} -> "
         f"{decision['frac_after']:.4f} (regen={decision['regen']})",
         flush=True,
     )
@@ -1354,13 +1359,72 @@ def phase_user_real_render(args) -> None:
     _maybe_upload(args, "user_real_render")
 
 
+# Per-process memo for _rows_dir's remote-manifest reconciliation: one scoped
+# listing per (local dir, stage), not one per _rows_dir call (capture calls it
+# per cell × draw). Probes clear it between scenarios.
+_STAGE_RECON_CACHE: dict[tuple[str, str], bool] = {}
+
+
+def _local_stage_covers_remote(local: Path, stage: str) -> bool:
+    """Reconcile a nonempty local stage dir against the producer's remote
+    manifest — the (path, size) HF listing under raw_completions/<stage>, the
+    same listing the P3 judge resume digest hashes (r2 review concern
+    local-raw-stage-completeness-unchecked). Covers ⇔ every remote ``*.jsonl``
+    exists locally with the same name AND byte size. An empty/absent remote
+    prefix (nothing published yet — producer-side defensive flag) accepts the
+    local dir; a mismatch logs loud and the caller falls through to a fresh
+    HF mirror stage. Scoped listing + retry_transient per #833/#1547."""
+    key = (str(local), stage)
+    if key in _STAGE_RECON_CACHE:
+        return _STAGE_RECON_CACHE[key]
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{cm.HF_PREFIX}/raw_completions/{stage}"
+    entries = hub.retry_transient(
+        lambda: hub.list_hf_entries_under_path(
+            HfApi(), cm.HF_DATA_REPO, prefix, repo_type="dataset"
+        ),
+        what=f"rows-dir manifest listing {prefix}",
+    )
+    remote = {p.rsplit("/", 1)[-1]: s for p, s in entries if p.endswith(".jsonl")}
+    mismatches: list[str] = []
+    for name, size in sorted(remote.items()):
+        lp = local / name
+        if not lp.is_file():
+            mismatches.append(f"{name}: missing locally")
+        elif size is not None and lp.stat().st_size != int(size):
+            mismatches.append(f"{name}: local {lp.stat().st_size} B != remote {size} B")
+    ok = not mismatches
+    if not ok:
+        print(
+            f"[stage] {stage}: local dir {local} FAILS remote-manifest reconciliation "
+            f"({len(mismatches)}/{len(remote)} mismatched; first: {mismatches[:3]}) — "
+            "falling through to a fresh HF mirror stage",
+            flush=True,
+        )
+    _STAGE_RECON_CACHE[key] = ok
+    return ok
+
+
 def _rows_dir(args, stage: str, explicit: str | None = None) -> Path:
     """Resolve a raw-completions stage dir: local-first, HF-staged fallback
     (cross-pod reads — e.g. pod B consuming pod A's chat/plain/user_sim rows),
-    fail-loud otherwise (#779/#1773 lane-input staging)."""
+    fail-loud otherwise (#779/#1773 lane-input staging).
+
+    On the ``--stage-raw-from-hf`` path a nonempty local dir is accepted ONLY
+    after remote-manifest reconciliation (`_local_stage_covers_remote`) — a
+    partial/stale local copy falls through to the HF mirror instead of being
+    silently consumed (r2 review concern
+    local-raw-stage-completeness-unchecked). The no-flag path (same-pod
+    producer reads; offline probes) stays network-free by design — producer
+    completeness there is owned by the StageLedger resume + the consumers'
+    fail-loud empty-selection guards."""
     local = Path(explicit) if explicit else Path(args.raw_root) / stage
     if any(local.glob("*.jsonl")):
-        return local
+        if not args.stage_raw_from_hf or _local_stage_covers_remote(local, stage):
+            return local
     if args.stage_raw_from_hf:
         return cm.stage_hf_prefix(
             f"{cm.HF_PREFIX}/raw_completions/{stage}",

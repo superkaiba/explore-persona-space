@@ -1970,6 +1970,12 @@ def phase_p6(args, runner: Runner) -> int:
                     "metadata": cm.run_metadata(),
                 },
             )
+        # H4a ratio is user-drop-safe (r2 reconciler blocker
+        # g2b-user-drop-crashes-h4a-ratio): fits-d writes the per-cell
+        # __g2b_dropped.json markers above BEFORE this call, and phase_ratio
+        # reads them as the survivor manifest — a dropped user arm yields a
+        # loud per-arm N/A entry (whole-file N/A when both drop), while a
+        # missing fit for a SURVIVOR still hard-raises.
         runner.run("p6.ratio", _py("issue2378_fits.py", "--phase", "ratio", *store))
         if not runner.dry:
             merged = {"roles": {}, "metadata": cm.run_metadata()}
@@ -2325,6 +2331,21 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
             assert "storyq_vex" not in _p6_targets_for("fits-b", surv)
             assert _p6_targets_for("fits-a", surv) == ["plain_text", "storyq_astra"]
             assert _p6_units_for("fits-a", surv).startswith("own:chat:prefix,")
+            # user-drop survivor sets (r2 reconciler blocker
+            # g2b-user-drop-crashes-h4a-ratio): real-only / sim-only / neither
+            # — fits-d units drop the dropped arm(s), and no sibling join-wait
+            # ever carries a user-cell context path (own-role cells).
+            for gone in (["chat_user_sim"], ["chat_user_real"], list(cm.USER_CELLS)):
+                surv_u = [c for c in cm.ALL_CELLS if c not in gone]
+                units_d = _p6_units_for("fits-d", surv_u)
+                assert all(c not in units_d for c in gone), (gone, units_d)
+                for c in cm.USER_CELLS:
+                    if c in surv_u:
+                        assert c in units_d, (gone, units_d)
+                assert not any("chat_user" in p for p in _p6_sibling_expect("fits-d", surv_u))
+            assert (
+                _p6_units_for("fits-d", [c for c in cm.ALL_CELLS if c not in cm.USER_CELLS]) == ""
+            )
 
         check("P6 survivor threading + fits-d join-wait satisfiability", t_p6_survivor_threading)
 
@@ -2363,6 +2384,71 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
             assert gen._parse_bank_array("no json here") is None
 
         check("bank-builder array parser (r2 real-API smoke regression)", t_bank_parse)
+
+        def t_rows_dir_manifest():
+            # r2 review concern local-raw-stage-completeness-unchecked: on the
+            # --stage-raw-from-hf path a nonempty local dir is accepted ONLY
+            # when it covers the remote (path, size) manifest; the no-flag
+            # path stays network-free (offline probes / same-pod producers).
+            import argparse as _ap
+
+            import issue2378_gen as gen
+            from explore_persona_space.orchestrate import hub
+
+            root = tmp / "rowsdir"
+            stage_dir = root / "chat"
+            stage_dir.mkdir(parents=True)
+            fp = stage_dir / "chat_w1_s0_c0000.jsonl"
+            fp.write_text('{"a": 1}\n', encoding="utf-8")
+            calls = {"list": 0, "stage": 0}
+            remote: list[tuple[str, int | None]] = []
+            real_list, real_stage = hub.list_hf_entries_under_path, cm.stage_hf_prefix
+
+            def fake_list(api, repo, prefix, **kw):
+                calls["list"] += 1
+                return list(remote)
+
+            def fake_stage(prefix_rel, dest_root, revision=None):
+                calls["stage"] += 1
+                return stage_dir  # stands in for the mirror leaf
+
+            def ns(flag: bool) -> _ap.Namespace:
+                return _ap.Namespace(raw_root=str(root), stage_raw_from_hf=flag)
+
+            pre = f"{cm.HF_PREFIX}/raw_completions/chat"
+            try:
+                hub.list_hf_entries_under_path = fake_list
+                cm.stage_hf_prefix = fake_stage
+                gen._STAGE_RECON_CACHE.clear()
+                # no-flag: local-first, ZERO network (no listing, no stage).
+                assert gen._rows_dir(ns(False), "chat") == stage_dir
+                assert calls == {"list": 0, "stage": 0}, calls
+                # flag + empty remote (nothing published yet): accept local.
+                gen._STAGE_RECON_CACHE.clear()
+                assert gen._rows_dir(ns(True), "chat") == stage_dir
+                assert calls == {"list": 1, "stage": 0}, calls
+                # flag + matching (name+size) manifest: accept local; memoized.
+                gen._STAGE_RECON_CACHE.clear()
+                remote[:] = [(f"{pre}/{fp.name}", fp.stat().st_size)]
+                assert gen._rows_dir(ns(True), "chat") == stage_dir
+                assert gen._rows_dir(ns(True), "chat") == stage_dir
+                assert calls == {"list": 2, "stage": 0}, calls
+                # flag + remote superset: partial local -> fresh mirror stage.
+                gen._STAGE_RECON_CACHE.clear()
+                remote.append((f"{pre}/chat_w1_s1_c0000.jsonl", 9))
+                gen._rows_dir(ns(True), "chat")
+                assert calls["stage"] == 1, calls
+                # flag + size mismatch: stale local -> fresh mirror stage.
+                gen._STAGE_RECON_CACHE.clear()
+                remote[:] = [(f"{pre}/{fp.name}", fp.stat().st_size + 1)]
+                gen._rows_dir(ns(True), "chat")
+                assert calls["stage"] == 2, calls
+            finally:
+                hub.list_hf_entries_under_path = real_list
+                cm.stage_hf_prefix = real_stage
+                gen._STAGE_RECON_CACHE.clear()
+
+        check("rows-dir remote-manifest reconciliation (r2 concern)", t_rows_dir_manifest)
 
     if failures:
         raise RuntimeError(f"probe FAILURES ({len(failures)}): " + " | ".join(failures))
