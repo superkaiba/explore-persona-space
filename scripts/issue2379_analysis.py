@@ -58,6 +58,7 @@ import argparse
 import hashlib
 import json
 import logging
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -86,6 +87,19 @@ from scipy.stats import rankdata  # noqa: E402
 ISSUE = 2379
 SLUG = "issue2379_reelicit"
 DATA_REPO = "superkaiba1/explore-persona-space-data"
+
+# HF staging prefixes for the off-pod inputs this script consumes (round-2
+# offpod-artifact-handoff counterpart): caps shards from the sweep's
+# HF_RATES_CAPS_PREFIX; predictor JSONs from mapfit's phase_upload prefix.
+HF_RATES_CAPS_PREFIX = f"{SLUG}/eval_results/rates_caps"
+HF_PREDICTOR_JSON_PREFIX = f"{SLUG}/eval_json/predictors"
+
+# Mode registry (module-level dict literal — the smoke-arch arm-registry source).
+PHASES = {
+    "full": "P7 correlations + figures + verdict lattice (default mode)",
+    "gate-caps": "Gate G1 from P2+P3 outputs only (exit 0 PASS / 3 FAIL)",
+    "smoke": "end-to-end on producer-schema fixtures from mapfit --phase smoke",
+}
 
 # Condition roster (pod driver stems; unit-2 contract). "base" appears in rate files only.
 EM_STEMS = [
@@ -262,6 +276,56 @@ def write_merged_caps(shards: dict[str, dict], out_path: Path, git: dict) -> Non
     logger.info("wrote %s (%d models)", out_path, len(shards))
 
 
+def _stage_caps_shards(caps_dir: Path, *, fetch: bool) -> None:
+    """Stage the P2 caps-rate shards from HF when absent locally and --fetch is set
+    (round-2 offpod-artifact-handoff: pod-side git sync is not a durable handoff)."""
+    caps_dir = Path(caps_dir)
+    if caps_dir.is_dir() and any(caps_dir.glob("*.json")):
+        return
+    if not fetch:
+        return  # downstream loads fail loud with the staging hint
+    from huggingface_hub import HfApi
+
+    rels = hub.retry_transient(
+        lambda: hub.list_hf_files_under_path(
+            HfApi(), hub.DEFAULT_DATASET_REPO, HF_RATES_CAPS_PREFIX, repo_type="dataset"
+        ),
+        what=f"list {HF_RATES_CAPS_PREFIX}",
+    )
+    shard_rels = [r for r in rels if r.endswith(".json")]
+    if not shard_rels:
+        raise FileNotFoundError(
+            f"--fetch: no caps shards under {DATA_REPO}:{HF_RATES_CAPS_PREFIX} — run the "
+            "P2 sweep upload first"
+        )
+    caps_dir.mkdir(parents=True, exist_ok=True)
+    for rel in shard_rels:
+        got = hub.retry_transient(
+            lambda rel=rel: hf_hub_download(DATA_REPO, rel, repo_type="dataset"),
+            what=f"hf_hub_download {rel}",
+        )
+        shutil.copy2(got, caps_dir / Path(rel).name)
+    logger.info("[stage] %d caps shards -> %s", len(shard_rels), caps_dir)
+
+
+def _stage_predictor_jsons(scores_path: Path, diag_path: Path, *, fetch: bool) -> None:
+    """Stage mapfit's predictor JSONs (scores + diagnostics) from its phase_upload
+    prefix when absent locally and --fetch is set."""
+    if not fetch:
+        return
+    for target in (Path(scores_path), Path(diag_path)):
+        if target.exists():
+            continue
+        rel = f"{HF_PREDICTOR_JSON_PREFIX}/{target.name}"
+        got = hub.retry_transient(
+            lambda rel=rel: hf_hub_download(DATA_REPO, rel, repo_type="dataset"),
+            what=f"hf_hub_download {rel}",
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(got, target)
+        logger.info("[stage] %s -> %s", rel, target)
+
+
 def rates_for_condition(
     model: str, cond: dict, rates_em: dict | None, caps_shards: dict[str, dict] | None
 ) -> tuple[np.ndarray, str]:
@@ -368,39 +432,56 @@ def bootstrap_setting(a_ans: np.ndarray, a_ctx: np.ndarray, y: np.ndarray, idx: 
 # Install checks + verdict lattice
 # ---------------------------------------------------------------------------
 def em_install_check(rates_em: dict, stems: list[str]) -> dict:
-    per_model, failing = {}, 0
+    """A None/non-finite empty-prompt rate is INDETERMINATE and counts toward the
+    structural predicate (fail-closed) — an unmeasurable install is never a pass."""
+    per_model, failing, indeterminate = {}, 0, 0
     for m in stems:
         table = rates_em["rates"].get(m)
         if table is None or EM_EMPTY_LABEL not in table:
             raise KeyError(f"EM install check: {m!r} lacks an {EM_EMPTY_LABEL!r} trigger row")
         rate = table[EM_EMPTY_LABEL].get("em_rate")
-        fail = rate is not None and rate > EM_INSTALL_EMPTY_MAX
-        per_model[m] = {"empty_prompt_em_rate": rate, "fail": bool(fail)}
+        if rate is None or not np.isfinite(rate):
+            per_model[m] = {"empty_prompt_em_rate": rate, "fail": None, "indeterminate": True}
+            indeterminate += 1
+            failing += 1  # fail-closed: no measurable empty-prompt rate
+            continue
+        fail = rate > EM_INSTALL_EMPTY_MAX
+        per_model[m] = {"empty_prompt_em_rate": rate, "fail": bool(fail), "indeterminate": False}
         failing += int(fail)
     return {
         "predicate": f"empty-prompt EM rate > {EM_INSTALL_EMPTY_MAX} in >= "
-        f"{EM_INSTALL_FAIL_MODELS}/{len(stems)} models",
+        f"{EM_INSTALL_FAIL_MODELS}/{len(stems)} models (indeterminate rates count as "
+        "failing — fail-closed)",
         "per_model": per_model,
         "n_failing": failing,
+        "n_indeterminate": indeterminate,
         "structural_fail": failing >= EM_INSTALL_FAIL_MODELS,
     }
 
 
 def caps_install_check(caps_shards: dict[str, dict], stems: list[str]) -> dict:
-    per_model, failing = {}, 0
+    """Same fail-closed convention as em_install_check for a non-bool 'pass' field."""
+    per_model, failing, indeterminate = {}, 0, 0
     for m in stems:
         shard = caps_shards.get(m)
         if shard is None or "install_check" not in shard:
             raise KeyError(f"caps install check: shard/install_check missing for {m!r}")
         ic = shard["install_check"]
-        fail = not bool(ic["pass"])
-        per_model[m] = {**ic, "fail": fail}
+        if not isinstance(ic.get("pass"), bool):
+            per_model[m] = {**ic, "fail": None, "indeterminate": True}
+            indeterminate += 1
+            failing += 1  # fail-closed: install verdict unmeasurable
+            continue
+        fail = not ic["pass"]
+        per_model[m] = {**ic, "fail": fail, "indeterminate": False}
         failing += int(fail)
     return {
         "predicate": f"P1.6 predicate fails in >= {CAPS_INSTALL_FAIL_MODELS}/{len(stems)} "
-        "models (p_inoc caps rate < 50% OR empty-prompt caps rate > 20%)",
+        "models (p_inoc caps rate < 50% OR empty-prompt caps rate > 20%; indeterminate "
+        "verdicts count as failing — fail-closed)",
         "per_model": per_model,
         "n_failing": failing,
+        "n_indeterminate": indeterminate,
         "structural_fail": failing >= CAPS_INSTALL_FAIL_MODELS,
     }
 
@@ -411,14 +492,26 @@ def verdict_for_setting(
     delta_mean: float,
     ci_lo: float,
     ci_hi: float,
-    n_estimable: int,
+    n_ctx_estimable: int,
+    n_joint_estimable: int,
 ) -> str:
-    """Registered lattice (plan section 3): DISJOINT and exhaustive per setting."""
-    if n_estimable == 0:
+    """Registered lattice (plan section 3): DISJOINT and exhaustive per setting.
+
+    Precedence (round-2 fix): a STRUCTURAL install failure dominates
+    estimability — an uninstalled behavior reads Replication-failed, never
+    Non-estimable. Estimability is SPLIT (plan P7): the manipulation check is
+    evaluated over CTX-estimable conditions; the paired delta-rho over
+    JOINTLY-estimable ones — a NaN-answer-but-valid-context condition still
+    counts toward the context-replication read."""
+    if install_structural_fail:
+        return VERDICT_REPL_FAILED
+    if n_ctx_estimable == 0:
         return VERDICT_NON_ESTIMABLE
     manip_pass = np.isfinite(mean_ctx_rho) and mean_ctx_rho >= MANIP_RHO
-    if (not manip_pass) or install_structural_fail:
+    if not manip_pass:
         return VERDICT_REPL_FAILED
+    if n_joint_estimable == 0:
+        return VERDICT_NON_ESTIMABLE
     if np.isfinite(delta_mean) and np.isfinite(ci_lo) and delta_mean > 0 and ci_lo > 0:
         return VERDICT_ANSWER
     if np.isfinite(delta_mean) and np.isfinite(ci_hi) and delta_mean < 0 and ci_hi < 0:
@@ -491,6 +584,11 @@ def _assert_fig_populated(fig, name: str) -> None:
             continue
         vals: list[float] = []
         for ln in ax.lines:
+            # Reference artists (axhline/axvline) live on BLENDED transforms, not
+            # transData — counting them as data would let an otherwise-empty panel
+            # pass on its y=0 reference line (round-2 g4 fix).
+            if ln.get_transform() is not ax.transData:
+                continue
             vals.extend(np.asarray(ln.get_ydata(), dtype=np.float64).ravel().tolist())
         for coll in ax.collections:
             off = np.asarray(getattr(coll, "get_offsets", lambda: [])(), dtype=np.float64)
@@ -530,6 +628,7 @@ def fig_hero(results: dict, figdir: Path) -> None:
         pins = results["pins"][setting]
         fams = [f for f in HERO_FAMILIES if f in results["pinned_table"][setting]]
         xs = np.arange(len(fams))
+        any_pearson = False
         for i, fam in enumerate(fams):
             mean_v = results["pinned_table"][setting][fam]["mean_spearman"]
             per_cond = results["pinned_table"][setting][fam]["per_condition"]
@@ -538,10 +637,35 @@ def fig_hero(results: dict, figdir: Path) -> None:
             if dots:
                 jit = np.linspace(-0.18, 0.18, len(dots))
                 ax.scatter(i + jit, dots, s=12, color="black", alpha=0.55, zorder=3)
+            mean_pe = results["pinned_table"][setting][fam].get("mean_pearson")
+            if mean_pe is not None:
+                ax.scatter(
+                    [i],
+                    [mean_pe],
+                    marker="D",
+                    s=20,
+                    facecolors="none",
+                    edgecolors="#333333",
+                    linewidths=1.1,
+                    zorder=4,
+                )
+                any_pearson = True
             ref = PARENT_PUBLISHED.get(setting, {}).get(fam)
             if ref is not None:
                 ax.hlines(ref, i - 0.38, i + 0.38, color="#5A5A5A", ls="--", lw=1.2)
         ax.axhline(0.0, color="#5A5A5A", lw=0.8)
+        if any_pearson:
+            from matplotlib.lines import Line2D
+
+            ax.legend(
+                handles=[
+                    Line2D(
+                        [], [], marker="D", mfc="none", mec="#333333", ls="", label="mean Pearson"
+                    )
+                ],
+                fontsize=6,
+                frameon=False,
+            )
         ax.set_xticks(xs)
         ax.set_xticklabels([FAMILY_LABELS[f] for f in fams], rotation=30, ha="right")
         ax.set_ylabel("mean within-condition Spearman rho")
@@ -576,7 +700,28 @@ def fig_layer_curves(results: dict, figdir: Path) -> None:
 
     colors = _family_colors()
     fams = ["ctx_trainref", "ans_trainref_mapI", "ceiling_trainref"]
+
+    def _has_finite(setting: str) -> bool:
+        for fam in fams:
+            curve = results["setting_means"][setting].get(fam, {}).get("spearman_curve")
+            if curve is not None:
+                ys = np.array([np.nan if v is None else v for v in curve], dtype=np.float64)
+                if np.isfinite(ys).any():
+                    return True
+        return False
+
     settings = [s for s in ("em", "caps") if results["setting_means"].get(s)]
+    dropped = [s for s in settings if not _has_finite(s)]
+    if dropped:
+        # A fully non-estimable setting (e.g. every rate zero-variance) is a
+        # VERDICT (Non-estimable), not a render: omit the panel rather than
+        # ship an empty axes (after-every-experiment item 8: omit or label
+        # N/A — never a misleading empty/zero render).
+        logger.warning("fig3: non-estimable setting(s) %s — panel(s) omitted", dropped)
+        settings = [s for s in settings if s not in dropped]
+    if not settings:
+        logger.warning("fig3: every setting non-estimable — figure skipped")
+        return
     fig, axes = plt.subplots(1, len(settings), figsize=(4.4 * len(settings), 3.0))
     axes = np.atleast_1d(axes)
     for ax, setting in zip(axes, settings):
@@ -673,6 +818,24 @@ def fig_exploratory_bars(results: dict, figdir: Path) -> None:
         "jaccard",
         "seqmatcher",
     ]
+
+    def _has_finite(setting: str) -> bool:
+        return any(
+            results["pinned_table"][setting][f].get("mean_spearman") is not None
+            and np.isfinite(results["pinned_table"][setting][f]["mean_spearman"])
+            for f in fams
+            if f in results["pinned_table"][setting]
+        )
+
+    dropped = [s for s in settings if not _has_finite(s)]
+    if dropped:
+        # Same non-estimable treatment as fig3: omit the panel, never render
+        # an all-NaN bar row (after-every-experiment item 8).
+        logger.warning("fig6: non-estimable setting(s) %s — panel(s) omitted", dropped)
+        settings = [s for s in settings if s not in dropped]
+    if not settings:
+        logger.warning("fig6: every setting non-estimable — figure skipped")
+        return
     fig, axes = plt.subplots(1, len(settings), figsize=(4.8 * len(settings), 3.2))
     axes = np.atleast_1d(axes)
     for ax, setting in zip(axes, settings):
@@ -770,7 +933,9 @@ def fig_gate(gate: dict, figdir: Path) -> None:
     ax.axhline(gate["threshold"], color="#5A5A5A", ls="--", lw=1.0)
     ax.set_xlabel("stored layer index")
     ax.set_ylabel("Spearman rho (ctx Train Ref vs caps rate)")
-    ax.set_title(f"Gate G1 — mean rho @ pin = {gate['mean_rho']:.3f}")
+    mr = gate.get("mean_rho")
+    mr_str = f"{mr:.3f}" if isinstance(mr, int | float) and np.isfinite(mr) else "non-estimable"
+    ax.set_title(f"Gate G1 — mean rho @ pin = {mr_str}")
     ax.legend(fontsize=7)
     _save(fig, "gate_g1_curves", figdir)
 
@@ -859,18 +1024,23 @@ def reference_collinearity(
     captures_dir: Path,
     maps_dir: Path,
     comp_dir: Path | None,
+    *,
+    fetch: bool = False,
+    stage_dir: Path | None = None,
 ) -> dict:
-    """cos(mu_A_train, affine-mapped mu_train) per condition at its pin (exploratory)."""
+    """cos(mu_A_train, affine-mapped mu_train) per condition at its pin (exploratory).
+
+    Round-2 g6 fix: --fetch is now THREADED here (the old skip message advertised
+    --fetch while this function never fetched — a dead-end hint)."""
     out = {}
     for model, c in cond_data.items():
         pin = pins[c["setting"]]
-        mu_path = Path(captures_dir) / model / "mu.pt"
-        if not mu_path.exists():
-            out[model] = {
-                "skipped": f"{mu_path} absent — stage it from the HF data repo "
-                f"({DATA_REPO}: {SLUG}/analysis_tensors/predictor_captures/{model}/mu.pt, "
-                "repo_type=dataset), or run with --fetch"
-            }
+        try:
+            mu_path = _resolve_capture(
+                Path(captures_dir), model, "mu", fetch, Path(stage_dir or captures_dir)
+            )
+        except FileNotFoundError as e:
+            out[model] = {"skipped": str(e)}
             continue
         comps = _load_map_components(maps_dir, comp_dir, model, pin)
         if comps is None:
@@ -896,6 +1066,10 @@ def reference_collinearity(
 # ---------------------------------------------------------------------------
 def analyze(cfg: dict) -> dict:
     git = _git_meta()
+    _stage_predictor_jsons(
+        Path(cfg["scores_path"]), Path(cfg["diag_path"]), fetch=bool(cfg.get("fetch", False))
+    )
+    _stage_caps_shards(Path(cfg["caps_shards_dir"]), fetch=bool(cfg.get("fetch", False)))
     scores = _load_json(cfg["scores_path"])
     rates_em = _load_json(cfg["rates_em_path"]) if Path(cfg["rates_em_path"]).exists() else None
     caps_shards = (
@@ -1020,11 +1194,19 @@ def analyze(cfg: dict) -> dict:
                 for m in models
                 if fam in results_conditions[m]["curves"]
             }
+            per_cond_pe = {
+                m: results_conditions[m]["curves"][fam]["pearson"][pin]
+                for m in models
+                if fam in results_conditions[m]["curves"]
+            }
             vals = np.array([np.nan if v is None else v for v in per_cond.values()])
+            vals_pe = np.array([np.nan if v is None else v for v in per_cond_pe.values()])
             with np.errstate(invalid="ignore"):
                 pinned_table[setting][fam] = {
                     "mean_spearman": _r6(np.nanmean(vals)) if vals.size else None,
+                    "mean_pearson": _r6(np.nanmean(vals_pe)) if vals_pe.size else None,
                     "per_condition": per_cond,
+                    "per_condition_pearson": per_cond_pe,
                 }
         for fam in ("tfidf_cos", "jaccard", "seqmatcher", "bge_cos"):
             per_cond = {
@@ -1032,12 +1214,20 @@ def analyze(cfg: dict) -> dict:
                 for m in models
                 if fam in results_conditions[m]["text_families"]
             }
+            per_cond_pe = {
+                m: results_conditions[m]["text_families"][fam]["pearson"]
+                for m in models
+                if fam in results_conditions[m]["text_families"]
+            }
             if per_cond:
                 vals = np.array([np.nan if v is None else v for v in per_cond.values()])
+                vals_pe = np.array([np.nan if v is None else v for v in per_cond_pe.values()])
                 with np.errstate(invalid="ignore"):
                     pinned_table[setting][fam] = {
                         "mean_spearman": _r6(np.nanmean(vals)),
+                        "mean_pearson": _r6(np.nanmean(vals_pe)) if vals_pe.size else None,
                         "per_condition": per_cond,
+                        "per_condition_pearson": per_cond_pe,
                     }
         # Selection-symmetric exploratory max-over-layer: BOTH families + ceiling, always
         # together, never in the verdict (plan section 6).
@@ -1053,31 +1243,51 @@ def analyze(cfg: dict) -> dict:
                     "argmax_stored_layer": arg,
                 }
 
-        # Estimability at the pin (registered non-estimable rule).
-        estimable, non_estimable = [], {}
+        # Estimability at the pin — SPLIT sets (plan P7 registered rule, round-2
+        # blocker p7-estimability-coupling): the context-replication mean
+        # (H1 / manipulation check) uses ALL ctx-estimable conditions; the
+        # paired delta-rho / bootstrap uses only JOINTLY-estimable ones. A
+        # NaN-answer-but-valid-context condition stays in the context read.
+        ctx_estimable, joint_estimable = [], []
+        non_estimable_ctx: dict[str, str] = {}
+        non_estimable_joint: dict[str, str] = {}
         for m in models:
             c = cond_data[m]
             xa = c["layered"]["ans_trainref_mapI"][pin]
             xc = c["layered"]["ctx_trainref"][pin]
             yv = c["y"]
-            bad = None
-            if not (np.isfinite(xa).all() and np.isfinite(xc).all() and np.isfinite(yv).all()):
-                bad = "non-finite predictor/rate values at the pinned layer"
+            ctx_bad = None
+            if not (np.isfinite(xc).all() and np.isfinite(yv).all()):
+                ctx_bad = "non-finite ctx-predictor/rate values at the pinned layer"
             elif np.std(yv) == 0:
-                bad = "zero-variance rate vector (undefined Spearman)"
-            elif np.std(xa) == 0 or np.std(xc) == 0:
-                bad = "zero-variance predictor vector (undefined Spearman)"
-            if bad:
-                non_estimable[m] = bad
+                ctx_bad = "zero-variance rate vector (undefined Spearman)"
+            elif np.std(xc) == 0:
+                ctx_bad = "zero-variance ctx-predictor vector (undefined Spearman)"
+            if ctx_bad:
+                non_estimable_ctx[m] = ctx_bad
+                non_estimable_joint[m] = ctx_bad
+                continue
+            ctx_estimable.append(m)
+            ans_bad = None
+            if not np.isfinite(xa).all():
+                ans_bad = "non-finite answer-predictor values at the pinned layer"
+            elif np.std(xa) == 0:
+                ans_bad = "zero-variance answer-predictor vector (undefined Spearman)"
+            if ans_bad:
+                non_estimable_joint[m] = ans_bad
             else:
-                estimable.append(m)
+                joint_estimable.append(m)
 
         rng = np.random.default_rng([BOOT_SEED, 0 if setting == "em" else 1])
         idx = rng.integers(0, n_t, size=(n_draws, n_t))
-        if estimable:
-            a_ans = np.stack([cond_data[m]["layered"]["ans_trainref_mapI"][pin] for m in estimable])
-            a_ctx = np.stack([cond_data[m]["layered"]["ctx_trainref"][pin] for m in estimable])
-            yy = np.stack([cond_data[m]["y"] for m in estimable])
+        if joint_estimable:
+            a_ans = np.stack(
+                [cond_data[m]["layered"]["ans_trainref_mapI"][pin] for m in joint_estimable]
+            )
+            a_ctx = np.stack(
+                [cond_data[m]["layered"]["ctx_trainref"][pin] for m in joint_estimable]
+            )
+            yy = np.stack([cond_data[m]["y"] for m in joint_estimable])
             boot = bootstrap_setting(a_ans, a_ctx, yy, idx)
             obs_delta = {
                 m: _r6(
@@ -1092,7 +1302,7 @@ def analyze(cfg: dict) -> dict:
                         spearman=True,
                     )
                 )
-                for m in estimable
+                for m in joint_estimable
             }
             delta_mean = float(np.mean([v for v in obs_delta.values()]))
             per_cond_ci = {
@@ -1104,42 +1314,46 @@ def analyze(cfg: dict) -> dict:
                     if np.isfinite(boot["delta"][i]).any()
                     else None,
                 ]
-                for i, m in enumerate(estimable)
+                for i, m in enumerate(joint_estimable)
             }
             bootstrap_out[setting] = {
                 "n_draws": n_draws,
                 "seed": BOOT_SEED,
                 "rng_spawn_key": [BOOT_SEED, 0 if setting == "em" else 1],
                 "idx_sha256": boot["idx_sha256"],
+                "subset": list(joint_estimable),
+                "subset_note": "JOINTLY-estimable conditions only (plan P7 split); the "
+                "context-replication mean uses the ctx-estimable set in h1/verdicts",
                 "pooled_delta_mean_observed": _r6(delta_mean),
                 "pooled_ci95": [_r6(boot["ci_lo"]), _r6(boot["ci_hi"])],
                 "boot_frac_below0": _r6(boot["boot_frac_below0"]),
                 "boot_frac_above0": _r6(boot["boot_frac_above0"]),
                 "n_finite_pooled_draws": boot["n_finite_pooled_draws"],
                 "n_nan_draws_per_condition": dict(
-                    zip(estimable, boot["n_nan_draws_per_condition"])
+                    zip(joint_estimable, boot["n_nan_draws_per_condition"])
                 ),
                 "observed_delta_per_condition": obs_delta,
                 "per_condition_ci95": per_cond_ci,
             }
             draws_persist[setting] = {
-                "conditions": estimable,
+                "conditions": joint_estimable,
                 "idx_sha256": boot["idx_sha256"],
                 "rng_spawn_key": [BOOT_SEED, 0 if setting == "em" else 1],
                 "per_draw_delta_by_condition": {
-                    m: _list_r6(boot["delta"][i]) for i, m in enumerate(estimable)
+                    m: _list_r6(boot["delta"][i]) for i, m in enumerate(joint_estimable)
                 },
                 "pooled_per_draw_mean": _list_r6(boot["pooled_per_draw"]),
             }
             ci_lo, ci_hi = boot["ci_lo"], boot["ci_hi"]
         else:
-            bootstrap_out[setting] = {"note": "no estimable conditions"}
+            bootstrap_out[setting] = {"note": "no jointly-estimable conditions"}
             delta_mean, ci_lo, ci_hi = float("nan"), float("nan"), float("nan")
 
         # Leave-p_inoc-trigger-out sensitivity (same registered machinery, reduced set).
-        if estimable:
+        if joint_estimable:
             keep_by_m = {
-                m: [t for t in range(n_t) if t != cond_data[m]["p_inoc_idx"]] for m in estimable
+                m: [t for t in range(n_t) if t != cond_data[m]["p_inoc_idx"]]
+                for m in joint_estimable
             }
             n_keep = len(next(iter(keep_by_m.values())))
             if all(len(k) == n_keep for k in keep_by_m.values()) and n_keep >= MIN_PAIRS:
@@ -1148,20 +1362,23 @@ def analyze(cfg: dict) -> dict:
                 a_ans_s = np.stack(
                     [
                         cond_data[m]["layered"]["ans_trainref_mapI"][pin][keep_by_m[m]]
-                        for m in estimable
+                        for m in joint_estimable
                     ]
                 )
                 a_ctx_s = np.stack(
-                    [cond_data[m]["layered"]["ctx_trainref"][pin][keep_by_m[m]] for m in estimable]
+                    [
+                        cond_data[m]["layered"]["ctx_trainref"][pin][keep_by_m[m]]
+                        for m in joint_estimable
+                    ]
                 )
-                yy_s = np.stack([cond_data[m]["y"][keep_by_m[m]] for m in estimable])
+                yy_s = np.stack([cond_data[m]["y"][keep_by_m[m]] for m in joint_estimable])
                 boot_s = bootstrap_setting(a_ans_s, a_ctx_s, yy_s, idx_s)
                 obs_s = float(
                     np.mean(
                         [
                             _pair_corr(a_ans_s[i], yy_s[i], spearman=True)
                             - _pair_corr(a_ctx_s[i], yy_s[i], spearman=True)
-                            for i in range(len(estimable))
+                            for i in range(len(joint_estimable))
                         ]
                     )
                 )
@@ -1187,23 +1404,41 @@ def analyze(cfg: dict) -> dict:
                 np.nan
                 if (v := pinned_table[setting]["ctx_trainref"]["per_condition"].get(m)) is None
                 else v
-                for m in estimable
+                for m in ctx_estimable
             ]
         )
-        mean_ctx = float(np.nanmean(ctx_vals)) if estimable else float("nan")
+        mean_ctx = float(np.nanmean(ctx_vals)) if ctx_estimable else float("nan")
         verdict = verdict_for_setting(
-            mean_ctx, install["structural_fail"], delta_mean, ci_lo, ci_hi, len(estimable)
+            mean_ctx,
+            install["structural_fail"],
+            delta_mean,
+            ci_lo,
+            ci_hi,
+            len(ctx_estimable),
+            len(joint_estimable),
         )
-        mean_bge = pinned_table[setting].get("bge_cos", {}).get("mean_spearman")
+        # beats_bge on the SAME ctx-estimable denominator as mean_ctx (round-2 g4
+        # fix — the table-wide bge mean mixed subsets).
+        bge_pc = pinned_table[setting].get("bge_cos", {}).get("per_condition", {})
+        bge_vals = np.array(
+            [np.nan if bge_pc.get(m) is None else bge_pc.get(m) for m in ctx_estimable]
+        )
+        mean_bge = (
+            _r6(np.nanmean(bge_vals))
+            if ctx_estimable and bge_vals.size and np.isfinite(bge_vals).any()
+            else None
+        )
         h1[setting] = {
             "mean_ctx_trainref_rho": _r6(mean_ctx),
             "rho_floor": H1_RHO,
             "rho_conjunct_pass": bool(np.isfinite(mean_ctx) and mean_ctx >= H1_RHO),
             "mean_bge_rho": mean_bge,
+            "bge_denominator_note": "mean_bge over the SAME ctx-estimable subset as mean_ctx",
             "beats_bge": bool(
                 np.isfinite(mean_ctx) and mean_bge is not None and mean_ctx > mean_bge
             ),
             "mid_band_flag": bool(np.isfinite(mean_ctx) and MANIP_RHO <= mean_ctx < H1_RHO),
+            "ctx_subset": list(ctx_estimable),
         }
         verdicts[setting] = {
             "verdict": verdict,
@@ -1211,17 +1446,24 @@ def analyze(cfg: dict) -> dict:
                 "mean_ctx_trainref_rho_at_pin": _r6(mean_ctx),
                 "threshold": MANIP_RHO,
                 "pass": bool(np.isfinite(mean_ctx) and mean_ctx >= MANIP_RHO),
+                "subset": list(ctx_estimable),
             },
             "install_check": install,
             "pooled_delta": {
                 "mean_observed": _r6(delta_mean),
                 "ci95": [_r6(ci_lo), _r6(ci_hi)],
+                "subset": list(joint_estimable),
             },
-            "n_estimable": len(estimable),
-            "n_non_estimable": len(non_estimable),
-            "non_estimable_conditions": non_estimable,
-            "lattice_note": "non-estimable conditions are excluded from the pooled mean and "
-            "NEVER routed to Comparable (plan P7 registered rule)",
+            "n_ctx_estimable": len(ctx_estimable),
+            "n_joint_estimable": len(joint_estimable),
+            "n_estimable": len(joint_estimable),
+            "n_non_estimable": len(non_estimable_joint),
+            "non_estimable_conditions": non_estimable_joint,
+            "non_estimable_ctx": non_estimable_ctx,
+            "lattice_note": "estimability is SPLIT (plan P7): the manipulation check / H1 "
+            "mean uses ctx-estimable conditions, the pooled delta uses jointly-estimable "
+            "ones; non-estimable conditions are excluded from their mean and NEVER routed "
+            "to Comparable; a structural install failure dominates estimability",
         }
 
     h1_overall = bool(
@@ -1235,7 +1477,13 @@ def analyze(cfg: dict) -> dict:
     diagnostics = {
         "inter_predictor_corr": inter_predictor_matrix(cond_data, pins),
         "reference_collinearity": reference_collinearity(
-            cond_data, pins, cfg["captures_dir"], cfg["maps_dir"], cfg.get("comp_dir")
+            cond_data,
+            pins,
+            cfg["captures_dir"],
+            cfg["maps_dir"],
+            cfg.get("comp_dir"),
+            fetch=bool(cfg.get("fetch", False)),
+            stage_dir=cfg.get("stage_dir"),
         ),
         "drop_rate_vs_em_rate": (
             drop_rate_vs_rate(rates_em, [m for m, c in cond_data.items() if c["setting"] == "em"])
@@ -1404,6 +1652,7 @@ def gate_ctx_trainref(grid_path: Path, mu_path: Path) -> tuple[np.ndarray, list[
 
 def run_gate(cfg: dict) -> tuple[dict, bool]:
     git = _git_meta()
+    _stage_caps_shards(Path(cfg["caps_shards_dir"]), fetch=bool(cfg.get("fetch", False)))
     caps_shards = load_caps_shards(cfg["caps_shards_dir"])
     write_merged_caps(caps_shards, Path(cfg["eval_dir"]) / "rates_caps.json", git)
     pin = cfg["pins"]["caps"]
@@ -1441,8 +1690,18 @@ def run_gate(cfg: dict) -> tuple[dict, bool]:
                 for t, lab in enumerate(labels)
             ],
         }
-    mean_rho = float(np.nanmean(np.array(rhos))) if rhos else float("nan")
-    passed = bool(np.isfinite(mean_rho) and mean_rho >= GATE_THRESHOLD)
+    # Registered denominator (round-2 Major, G1 nanmean): the gate mean is over
+    # ALL registered gate languages — a non-finite per-language rho FAILs the
+    # gate closed and is NAMED, never silently nanmean-dropped.
+    rho_arr = np.array(rhos, dtype=np.float64)
+    non_finite_langs = [m for m, r in zip(cfg["gate_models"], rhos) if not np.isfinite(r)]
+    n_in_mean = int(np.isfinite(rho_arr).sum())
+    if not rhos or non_finite_langs:
+        mean_rho = None
+        passed = False
+    else:
+        mean_rho = float(np.mean(rho_arr))
+        passed = bool(mean_rho >= GATE_THRESHOLD)
     gate = {
         "issue": ISSUE,
         "slug": SLUG,
@@ -1453,7 +1712,12 @@ def run_gate(cfg: dict) -> tuple[dict, bool]:
         "layer_convention": "stored index i == decoder block i == output_hidden_states[i+1]; "
         f"parent L27 -> stored {PIN_CAPS_DEFAULT}",
         "threshold": GATE_THRESHOLD,
-        "mean_rho": _r6(mean_rho),
+        "mean_rho": _r6(mean_rho) if mean_rho is not None else None,
+        "n_languages_registered": len(cfg["gate_models"]),
+        "n_languages_in_mean": n_in_mean,
+        "non_finite_languages": non_finite_langs,
+        "denominator_note": "mean over ALL registered gate languages; any non-finite "
+        "per-language rho fails the gate closed (never nanmean-dropped)",
         "pass": passed,
         "per_language": per_language,
     }
@@ -1464,8 +1728,10 @@ def run_gate(cfg: dict) -> tuple[dict, bool]:
     figdir.mkdir(parents=True, exist_ok=True)
     fig_gate(gate, figdir)
     per_lang_str = ", ".join(f"{m}: {d['rho_at_pin']}" for m, d in per_language.items())
+    mr_str = f"{mean_rho:.4f}" if mean_rho is not None else f"NON-ESTIMABLE({non_finite_langs})"
     print(
-        f"GATE_G1 {'PASS' if passed else 'FAIL'} mean_rho={mean_rho:.4f} "
+        f"GATE_G1 {'PASS' if passed else 'FAIL'} mean_rho={mr_str} "
+        f"n_in_mean={n_in_mean}/{len(cfg['gate_models'])} "
         f"threshold={GATE_THRESHOLD} pin={pin} per_language={{{per_lang_str}}}"
     )
     for m, d in per_language.items():
@@ -1628,7 +1894,7 @@ def _probe_verdict(mode: str, expect: str, install_fail: bool = False) -> None:
         np.mean([_pair_corr(a_ctx[i], y[i], spearman=True) for i in range(len(models))])
     )
     got = verdict_for_setting(
-        mean_ctx, install_fail, obs, boot["ci_lo"], boot["ci_hi"], len(models)
+        mean_ctx, install_fail, obs, boot["ci_lo"], boot["ci_hi"], len(models), len(models)
     )
     assert got == expect, (
         f"verdict probe {mode!r} (install_fail={install_fail}): {got!r} != {expect!r}"
@@ -1686,8 +1952,12 @@ def run_smoke(args) -> int:
     assert results["h1"]["per_setting"], "H1 conjuncts missing"
     draws = _load_json(scratch / "eval" / "bootstrap_draws.json")
     for s, block in draws["settings"].items():
-        n_shas = {block["idx_sha256"]}
-        assert len(n_shas) == 1, f"{s}: multiple idx multisets recorded"
+        # The persisted draws file and correlations.json must record the SAME
+        # idx multiset per setting (the old single-element-set assert was
+        # tautological — round-2 g4 fix).
+        assert block["idx_sha256"] == results["bootstrap"][s]["idx_sha256"], (
+            f"{s}: bootstrap_draws idx_sha256 != correlations.json idx_sha256"
+        )
     print(
         "[smoke] full-pipeline pass OK (verdicts:",
         {s: v["verdict"] for s, v in results["verdict_lattice"].items()},
@@ -1716,7 +1986,15 @@ def run_smoke(args) -> int:
     _probe_verdict("context_wins", VERDICT_CONTEXT)
     _probe_verdict("manipulation_fail", VERDICT_REPL_FAILED)
     _probe_verdict("answer_wins", VERDICT_REPL_FAILED, install_fail=True)
-    print("[smoke] verdict-lattice probes OK (4/4)")
+    # Precedence + P7-split direct probes (round-2 lattice fix): a structural
+    # install failure dominates estimability; ctx-estimable-but-joint-empty
+    # reads Non-estimable AFTER the manipulation check passes.
+    nan = float("nan")
+    assert verdict_for_setting(nan, True, nan, nan, nan, 0, 0) == VERDICT_REPL_FAILED
+    assert verdict_for_setting(nan, False, nan, nan, nan, 0, 0) == VERDICT_NON_ESTIMABLE
+    assert verdict_for_setting(0.9, False, nan, nan, nan, 3, 0) == VERDICT_NON_ESTIMABLE
+    assert verdict_for_setting(0.1, False, nan, nan, nan, 3, 0) == VERDICT_REPL_FAILED
+    print("[smoke] verdict-lattice probes OK (4 fixture + 4 precedence)")
 
     # 4. Gate-caps PASS and FAIL branches on the fixture captures.
     caps_model = zv_model
@@ -1774,7 +2052,9 @@ def run_smoke(args) -> int:
     for b in (
         "production pins 16/27 on 28-layer captures (fixtures use n_l-1; the pin-range +"
         " non-standard-pin guard is exercised, the production default values are not)",
-        "--fetch HF staging of capture/map bundles (fixture files are local)",
+        "--fetch HF staging (capture/map bundles via _resolve_capture, caps shards via"
+        " _stage_caps_shards, predictor JSONs via _stage_predictor_jsons) — fixture files"
+        " are local, no network in smoke",
         "kappa_control.json / pilot_gate.json pass-through (absent from fixtures ->"
         " recorded as null)",
         "production-scale n_t=18/20 trigger banks (fixtures n_t=3; probes n_t=8)",
@@ -1787,6 +2067,27 @@ def run_smoke(args) -> int:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+def _import_check() -> int:
+    """Execute every deferred import + the args-attribute completeness assert.
+
+    Module-level function (never inline in main) so the imported bare names
+    cannot compile-time-shadow main()'s own locals (#1739 UnboundLocalError)."""
+    from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+    assert_args_attributes_defined(__file__)
+    import matplotlib.pyplot as plt  # noqa: F401
+    from matplotlib.lines import Line2D  # noqa: F401
+
+    from explore_persona_space.analysis.paper_plots import (  # noqa: F401
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    print("[import-check] OK — deferred imports resolve; args-attribute completeness holds")
+    return 0
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     from explore_persona_space.analysis.paper_plots import set_paper_style
@@ -1822,10 +2123,17 @@ def main() -> int:
     ap.add_argument("--fixtures-root", default=None)
     ap.add_argument("--out-dir", default=None, help="smoke scratch root (never committed)")
     ap.add_argument("--list-phases", action="store_true")
+    ap.add_argument(
+        "--import-check",
+        action="store_true",
+        help="Execute every deferred import + args-attribute completeness, then exit 0.",
+    )
     args = ap.parse_args()
 
+    if args.import_check:
+        return _import_check()
     if args.list_phases:
-        for mode in ("full", "gate-caps", "smoke"):
+        for mode in sorted(PHASES):
             print(mode)
         return 0
     if args.smoke:
@@ -1839,7 +2147,11 @@ def main() -> int:
         "diag_path": Path(args.diag_path or eval_dir / "predictors" / "map_diagnostics.json"),
         "rates_em_path": Path(args.rates_em_path or eval_dir / "rates_em.json"),
         "caps_shards_dir": Path(args.caps_shards_dir or eval_dir / "rates_caps"),
-        "captures_dir": Path(args.captures_dir or eval_dir / "predictor_captures"),
+        # Producer-realized local layout (unit A): capture writes under
+        # <out-dir>/capture_tensors/predictor_captures/<model>/<kind>.pt.
+        "captures_dir": Path(
+            args.captures_dir or eval_dir / "capture_tensors" / "predictor_captures"
+        ),
         "maps_dir": Path(args.maps_dir),
         "stage_dir": Path(args.stage_dir),
         "fetch": bool(args.fetch),

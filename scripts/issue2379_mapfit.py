@@ -72,6 +72,7 @@ logger = logging.getLogger("issue2379_mapfit")
 SLUG = "issue2379_reelicit"
 HF_MAP_CORPUS_PREFIX = f"{SLUG}/analysis_tensors/map_corpus"
 HF_MAPS_PINNED_PREFIX = f"{SLUG}/analysis_tensors/maps_pinned"
+HF_TEXT_BASELINES_PREFIX = f"{SLUG}/analysis_tensors/text_baselines"
 PINNED_LAYERS = (14, 16, 27)  # plan §10: L16 EM / L27 caps pins + L14 map-line frozen layer
 SPLIT_SEED = 2379  # 90/10 held-out split (generating-params resume key; recorded in outputs)
 HELDOUT_FRAC = 0.10
@@ -137,8 +138,21 @@ def _fetch_hf_bundle(path_in_repo: str, dest: Path) -> Path:
     return Path(got)
 
 
+def _sha256_file(path: Path) -> str:
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def load_map_corpus_bundle(model: str, tensor_dir: Path) -> dict:
-    """Return {x (n,L,H) fp16 torch, y, n, layers, hidden} for one model's map corpus."""
+    """Return {x (n,L,H) fp16 torch, y, n, layers, hidden, ident} for one model's
+    map corpus. Required-key set = the unit-A producer schema
+    (``issue2379_capture.phase_map_corpus_tf``) incl. ``drop_stats``; joint
+    count validation against ``kept_row_idx``/``n_prompts``."""
     local = tensor_dir / "map_corpus" / f"{model}.pt"
     if not local.exists():
         logger.info(
@@ -146,7 +160,7 @@ def load_map_corpus_bundle(model: str, tensor_dir: Path) -> dict:
         )
         local = _fetch_hf_bundle(f"{HF_MAP_CORPUS_PREFIX}/{model}.pt", local)
     tb = _torch_load_cpu(local)
-    missing = {"v_c", "v_a", "kept_row_idx", "n_prompts"} - set(tb.keys())
+    missing = {"v_c", "v_a", "kept_row_idx", "n_prompts", "drop_stats"} - set(tb.keys())
     if missing:
         raise RuntimeError(
             f"map_corpus/{model}.pt missing keys {sorted(missing)} (has {sorted(tb.keys())})"
@@ -154,6 +168,12 @@ def load_map_corpus_bundle(model: str, tensor_dir: Path) -> dict:
     x, y = tb["v_c"], tb["v_a"]
     if x.shape != y.shape or x.ndim != 3:
         raise RuntimeError(f"map_corpus/{model}: v_c {tuple(x.shape)} vs v_a {tuple(y.shape)}")
+    kept = list(tb["kept_row_idx"])
+    if len(kept) != int(x.shape[0]) or int(tb["n_prompts"]) < len(kept):
+        raise RuntimeError(
+            f"map_corpus/{model}: kept_row_idx ({len(kept)}) / n_prompts ({tb['n_prompts']}) "
+            f"inconsistent with v_c rows ({int(x.shape[0])})"
+        )
     import torch
 
     for name, t in (("v_c", x), ("v_a", y)):
@@ -165,15 +185,93 @@ def load_map_corpus_bundle(model: str, tensor_dir: Path) -> dict:
         "n": int(x.shape[0]),
         "layers": int(x.shape[1]),
         "hidden": int(x.shape[2]),
+        "ident": f"sha256:{_sha256_file(local)}",
     }
+
+
+def _torch_load_constrained(path: Path | str) -> dict:
+    """Constrained torch.load: bare ``weights_only=True`` first, then ONE
+    fallback under a minimal numpy allowlist via
+    ``torch.serialization.safe_globals`` — NEVER a full unpickle
+    (``weights_only=False``). Factored out of ``_load_pass_b_bundle_safe`` so
+    the allowlist mechanics are unit-testable without the HF fetch
+    (tests/test_issue2379_round2.py)."""
+    import numpy as np
+    import torch
+
+    try:
+        return torch.load(path, map_location="cpu", weights_only=True)
+    except Exception as first_err:  # noqa: BLE001 — retried under a numpy allowlist
+        np_core = getattr(np, "_core", None) or np.core  # numpy 2.x renamed core -> _core
+        allow = [np.ndarray, np.dtype, np_core.multiarray._reconstruct]
+        allow += [t for t in vars(np.dtypes).values() if isinstance(t, type)]
+        try:
+            with torch.serialization.safe_globals(allow):
+                tb = torch.load(path, map_location="cpu", weights_only=True)
+        except Exception as second_err:
+            raise RuntimeError(
+                "constrained weights_only load refused (bare + numpy-allowlist): "
+                f"{first_err} / {second_err} — do NOT fall back to weights_only=False "
+                "here; inspect the bundle's pickled types first"
+            ) from second_err
+        logger.info("[pass-b] loaded under the numpy safe_globals allowlist")
+        return tb
+
+
+def _load_pass_b_bundle_safe() -> tuple[dict, str]:
+    """#779 pass-B bundle at the pinned revision via a CONSTRAINED torch.load.
+
+    r1 blocker unsafe-passb-deserialization: ``issue2254_preimage._load_pass_b_bundle``
+    uses ``weights_only=False`` (its own trust call; NOT edited here). This
+    loader fetches the SAME pinned-revision file (revision pin == content pin)
+    and loads it via ``_torch_load_constrained`` — never a full unpickle.
+    Mirrors the sibling's realized-keys/shape/finiteness asserts.
+    Returns (bundle dict, ident string).
+    """
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    import issue2254_preimage as i2254
+    from explore_persona_space.orchestrate import hub
+
+    path = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=hub.DEFAULT_DATASET_REPO,
+            filename=i2254.PASS_B_FILE,
+            repo_type="dataset",
+            revision=i2254.HF_REV,
+        ),
+        what="fetch #779 pass-B bundle (pinned rev)",
+    )
+    tb = _torch_load_constrained(path)
+    missing = {"cx_last", "v_x", "layers", "source"} - set(tb.keys())
+    if missing:
+        raise RuntimeError(
+            f"pass-B bundle at rev {i2254.HF_REV[:12]} missing keys {sorted(missing)} "
+            f"(realized keys: {sorted(tb.keys())})"
+        )
+    if list(tb["layers"]) != list(range(EXPECTED_LAYERS)):
+        raise RuntimeError(f"pass-B bundle layers != range(28): {list(tb['layers'])[:5]}...")
+    cx, vx = tb["cx_last"], tb["v_x"]
+    n = int(cx.shape[0])
+    for name, t in (("cx_last", cx), ("v_x", vx)):
+        if tuple(t.shape) != (n, EXPECTED_LAYERS, EXPECTED_HIDDEN):
+            raise RuntimeError(
+                f"pass-B {name} shape {tuple(t.shape)} != ({n}, {EXPECTED_LAYERS}, "
+                f"{EXPECTED_HIDDEN})"
+            )
+        if not torch.isfinite(t).all():
+            raise RuntimeError(f"pass-B {name} carries NaN/Inf")
+    logger.info("[pass-b] realized N=%d rows (rev %s, weights_only load)", n, i2254.HF_REV[:12])
+    return {"cx_last": cx, "v_x": vx, "n_rows": n}, f"passb@{i2254.HF_REV}"
 
 
 def load_base_bundle(smoke_base_path: Path | None) -> dict:
     """Base map set inputs: the reused pass-B bundle (X=cx_last, Y=v_x) at the pin.
 
     In smoke mode a synthetic bundle with the SAME keys substitutes (smoke
-    blind spot: the real ``_load_pass_b_bundle`` download+asserts run only on
-    the pod — enumerated in the smoke report).
+    blind spot: the real pinned-rev HF download runs only on the pod —
+    enumerated in the smoke report).
     """
     if smoke_base_path is not None:
         tb = _torch_load_cpu(smoke_base_path)
@@ -184,10 +282,9 @@ def load_base_bundle(smoke_base_path: Path | None) -> dict:
             "n": int(x.shape[0]),
             "layers": int(x.shape[1]),
             "hidden": int(x.shape[2]),
+            "ident": f"sha256:{_sha256_file(smoke_base_path)}",
         }
-    import issue2254_preimage as i2254
-
-    b = i2254._load_pass_b_bundle()
+    b, ident = _load_pass_b_bundle_safe()
     x, y = b["cx_last"], b["v_x"]
     return {
         "x": x,
@@ -195,11 +292,12 @@ def load_base_bundle(smoke_base_path: Path | None) -> dict:
         "n": int(b["n_rows"]),
         "layers": int(x.shape[1]),
         "hidden": int(x.shape[2]),
+        "ident": ident,
     }
 
 
 # ---------------------------------------------------------------------------
-# Prediction paths (production + verbatim reference) — the registered formula
+# Prediction paths (production + INDEPENDENT #2254 oracle) — the registered formula
 # ---------------------------------------------------------------------------
 def predict_affine(comp: dict, x) -> "object":
     """PRODUCTION prediction path: v_hat = ((x - xmu)/xsd) @ W + ymu (fp64).
@@ -214,23 +312,59 @@ def predict_affine(comp: dict, x) -> "object":
     return xn @ comp["W64"] + comp["ymu"]
 
 
-def _predict_reference(comp: dict, x) -> "object":
-    """VERBATIM issue2254_preimage.py:848-849 reference pattern (parity oracle)."""
+def _predict_reference_from_fit(fit: dict, x) -> "object":
+    """INDEPENDENT parity oracle: the verbatim issue2254_preimage.py:848-850
+    prediction expression evaluated on the RAW ``ridge_fit_matrix`` output dict
+    (native fp64 ``fit["W"]``, never the fp32-cast ``comp`` this checks) —
+    r1 blocker hollow-prediction-parity: the old reference duplicated
+    ``predict_affine`` on the SAME comp dict, so parity could never fail."""
     import numpy as np
 
-    x_ev_n = (np.asarray(x, dtype=np.float64) - comp["xmu"]) / comp["xsd"]
-    pred_map = x_ev_n @ comp["W64"] + comp["ymu"]
+    x_ev_n = (np.asarray(x, dtype=np.float64) - fit["xmu"]) / fit["xsd"]
+    pred_map = x_ev_n @ np.asarray(fit["W"], dtype=np.float64) + fit["ymu"]
     return pred_map
 
 
-def _assert_prediction_parity(comp: dict, x_ev, *, what: str) -> None:
+# fp32 W cast noise: rel err ~6e-8/entry, ~sqrt(3584)-accumulated ≈ 4e-6 rel.
+# 1e-4 keeps ~25x headroom over that while any real component bug (key swap,
+# stale W, wrong layer) lands at O(1) relative error.
+PARITY_REL_TOL = 1e-4
+
+
+def _assert_prediction_parity(comp: dict, fit: dict, x_ev, *, what: str) -> None:
+    """Stored-components path vs the fit-native #2254 oracle (relative Frobenius)."""
     import numpy as np
 
-    prod = predict_affine(comp, x_ev)
-    ref = _predict_reference(comp, x_ev)
-    if not np.allclose(prod, ref, rtol=1e-9, atol=1e-8):
-        max_abs = float(np.max(np.abs(prod - ref)))
-        raise RuntimeError(f"prediction-parity FAILED ({what}): max_abs={max_abs:.3e}")
+    prod = np.asarray(predict_affine(comp, x_ev), dtype=np.float64)
+    ref = np.asarray(_predict_reference_from_fit(fit, x_ev), dtype=np.float64)
+    denom = float(np.linalg.norm(ref))
+    rel = float(np.linalg.norm(prod - ref)) / max(denom, 1e-12)
+    if not np.isfinite(rel) or rel > PARITY_REL_TOL:
+        raise RuntimeError(
+            f"prediction-parity FAILED ({what}): rel_frobenius={rel:.3e} "
+            f"(tol {PARITY_REL_TOL:g}; stored-fp32 components vs fit-native oracle)"
+        )
+
+
+def _assert_disk_roundtrip(
+    comp_dir: Path, mapset: str, layer: int, x_ev_sample, pred_sample, *, what: str
+) -> None:
+    """TRUE disk round-trip: reload the persisted unit from disk and compare its
+    prediction against the IN-MEMORY prediction the worker computed pre-persist
+    (fit -> persist -> reload -> predict -> compare; r1 blocker fix). The stored
+    values are byte-identical to the in-memory fp32/fp64 components, so the
+    tolerance is tight."""
+    import numpy as np
+
+    comp = load_components(comp_dir, mapset, layer)
+    pred_disk = np.asarray(predict_affine(comp, x_ev_sample), dtype=np.float64)
+    ref = np.asarray(pred_sample, dtype=np.float64)
+    if not np.allclose(pred_disk, ref, rtol=1e-9, atol=1e-8):
+        max_abs = float(np.max(np.abs(pred_disk - ref)))
+        raise RuntimeError(
+            f"disk round-trip parity FAILED ({what}): max_abs={max_abs:.3e} "
+            "(reloaded components do not reproduce the in-memory prediction)"
+        )
 
 
 def _comp_from_arrays(w32, xmu, xsd, ymu) -> dict:
@@ -281,11 +415,13 @@ def _fit_unit_worker(task: dict) -> dict:
     comp = _comp_from_arrays(w32, fit["xmu"], fit["xsd"], fit["ymu"])
     x_ev, y_ev = x[ev_idx], y[ev_idx]
 
-    # Registered prediction-parity assert (held-out split, stored-equivalent
-    # components: fp32-W-cast-fp64 — identical math to a disk round-trip).
-    _assert_prediction_parity(comp, x_ev, what=f"{task['mapset']}_L{task['layer']}")
+    # Registered prediction-parity assert: stored-equivalent components
+    # (fp32-W-cast-fp64) vs the fit-NATIVE #2254 oracle expression — an
+    # independent reference, not a re-call of predict_affine (r1 blocker).
+    _assert_prediction_parity(comp, fit, x_ev, what=f"{task['mapset']}_L{task['layer']}")
 
     pred = predict_affine(comp, x_ev)
+    n_sample = min(8, x_ev.shape[0])
     heldout = {
         "n_train": int(tr_idx.size),
         "n_eval": int(ev_idx.size),
@@ -315,6 +451,11 @@ def _fit_unit_worker(task: dict) -> dict:
         "ib_bias": np.asarray(ib_bias, dtype=np.float64),
         "heldout": heldout,
         "fit_wall_s": float(time.time() - t0),
+        # Disk round-trip inputs: the parent reloads the persisted unit and
+        # must reproduce THIS in-memory prediction (fit->persist->reload->
+        # predict->compare; r1 blocker hollow-prediction-parity).
+        "x_ev_sample": np.asarray(x_ev[:n_sample], dtype=np.float64),
+        "pred_sample": np.asarray(pred[:n_sample], dtype=np.float64),
     }
 
 
@@ -325,7 +466,26 @@ def comp_path(comp_dir: Path, mapset: str, layer: int) -> Path:
     return comp_dir / f"{mapset}_L{layer:02d}.npz"
 
 
-def _persist_unit(comp_dir: Path, rec: dict, *, n_rows: int) -> Path:
+_RECIPE_TAG_CACHE: str | None = None
+
+
+def _recipe_tag() -> str:
+    """Fit-recipe identity from the #2254 cores' GENERATING params (never float
+    hashes — gotchas.md float-last-bit rule): lambda-grid shape + endpoints
+    formatted at 6 significant digits, plus the k*/prediction conventions."""
+    global _RECIPE_TAG_CACHE
+    if _RECIPE_TAG_CACHE is None:
+        import issue2254_preimage as i2254
+
+        lam = i2254.LAMBDAS
+        _RECIPE_TAG_CACHE = (
+            f"i2254-ridge-gcv-v1;lambdas={len(lam)}@{lam[0]:.6g}..{lam[-1]:.6g};"
+            "kstar=s2>=lam;pred=zscore-affine"
+        )
+    return _RECIPE_TAG_CACHE
+
+
+def _persist_unit(comp_dir: Path, rec: dict, *, n_rows: int, bundle_ident: str) -> Path:
     import numpy as np
 
     out = comp_path(comp_dir, rec["mapset"], rec["layer"])
@@ -345,6 +505,9 @@ def _persist_unit(comp_dir: Path, rec: dict, *, n_rows: int) -> Path:
         n_train=np.int64(rec["heldout"]["n_train"]),
         n_eval=np.int64(rec["heldout"]["n_eval"]),
         split_seed=np.int64(SPLIT_SEED),
+        heldout_frac=np.float64(HELDOUT_FRAC),
+        bundle_ident=np.bytes_(bundle_ident.encode()),
+        recipe_tag=np.bytes_(_recipe_tag().encode()),
         mapset=np.bytes_(rec["mapset"].encode()),
         layer=np.int64(rec["layer"]),
         diag_json=np.bytes_(json.dumps(rec["heldout"]).encode()),
@@ -354,19 +517,29 @@ def _persist_unit(comp_dir: Path, rec: dict, *, n_rows: int) -> Path:
     return out
 
 
-def _resume_ok(path: Path, *, mapset: str, layer: int, n_rows: int) -> bool:
-    """Resume predicate: persisted unit matches the generating params (never float hashes)."""
+def _resume_ok(path: Path, *, mapset: str, layer: int, n_rows: int, bundle_ident: str) -> bool:
+    """Resume predicate over EVERY output-affecting regime key: generating params
+    (mapset/layer/n_rows/split-seed) + bundle IDENTITY (file sha / pinned rev) +
+    held-out fraction + fit-recipe tag (r1 finding: the r1 key ignored bundle
+    identity, so a regenerated bundle silently reused stale fits)."""
     import numpy as np
 
     if not path.exists():
         return False
     try:
         with np.load(path) as z:
+            fields = set(z.files)
+            if not {"bundle_ident", "recipe_tag", "heldout_frac"} <= fields:
+                logger.warning("resume: %s lacks the v2 fingerprint fields — refitting", path)
+                return False
             return (
                 bytes(z["mapset"]).decode() == mapset
                 and int(z["layer"]) == layer
                 and int(z["n_rows"]) == n_rows
                 and int(z["split_seed"]) == SPLIT_SEED
+                and float(z["heldout_frac"]) == HELDOUT_FRAC
+                and bytes(z["bundle_ident"]).decode() == bundle_ident
+                and bytes(z["recipe_tag"]).decode() == _recipe_tag()
             )
     except Exception as e:  # corrupt/partial file -> refit (logged, not silent)
         logger.warning("resume: unreadable %s (%s) — refitting", path, e)
@@ -428,8 +601,12 @@ def _split_indices(n: int):
 
 
 def phase_fits(cfg: dict) -> dict:
-    """252-cell fit fan-out: sequential over map sets, pooled over layers."""
-    from concurrent.futures import ProcessPoolExecutor, as_completed
+    """252-cell fit fan-out: ONE persistent process pool over ALL map-set x layer
+    cells, sliding-window submission (freed workers refill from the next map set
+    immediately — no per-mapset drain barrier; r1 finding mapset-draining-barrier).
+    Bundles load lazily per map set and are released once their layers are
+    submitted (tasks carry copies), so peak residency stays ~2 bundles."""
+    from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 
     import numpy as np
 
@@ -439,23 +616,28 @@ def phase_fits(cfg: dict) -> dict:
     workers = int(cfg["workers"])
     git = _git_meta()
     summary: dict = {"units": {}, "workers": workers, "split_seed": SPLIT_SEED}
-    total_units = 0
-    done_units = 0
+    state = {"done": 0, "total": 0, "all_known": False}
+    n_layers_by_set: dict[str, int] = {}
+    n_rows_by_set: dict[str, int] = {}
+    ident_by_set: dict[str, str] = {}
+    parity_samples: dict[str, tuple[int, "object", "object"]] = {}
     t0 = time.time()
 
-    # First pass: count units for the progress denominator (28 per map set).
-    n_layers_by_set: dict[str, int] = {}
-
-    with ProcessPoolExecutor(max_workers=max(1, workers)) as pool:
+    def task_gen():
+        """Yield fit tasks lazily across ALL map sets (resume-filtered)."""
         for mapset in mapsets:
             bundle = cfg["load_bundle"](mapset)
             n, n_l, hidden = bundle["n"], bundle["layers"], bundle["hidden"]
             if not cfg["smoke"]:
                 assert n_l == EXPECTED_LAYERS and hidden == EXPECTED_HIDDEN, (
-                    f"{mapset}: bundle shape ({n_l},{hidden}) != ({EXPECTED_LAYERS},{EXPECTED_HIDDEN})"
+                    f"{mapset}: bundle shape ({n_l},{hidden}) != "
+                    f"({EXPECTED_LAYERS},{EXPECTED_HIDDEN})"
                 )
             n_layers_by_set[mapset] = n_l
-            total_units += n_l
+            n_rows_by_set[mapset] = n
+            ident_by_set[mapset] = bundle["ident"]
+            summary["units"][mapset] = {"n_rows": n, "n_layers": n_l}
+            state["total"] += n_l
             tr_idx, ev_idx = _split_indices(n)
             d = hidden
             if tr_idx.size <= d:
@@ -465,9 +647,15 @@ def phase_fits(cfg: dict) -> dict:
                 )
             todo, skipped = [], 0
             for ly in range(n_l):
-                if _resume_ok(comp_path(comp_dir, mapset, ly), mapset=mapset, layer=ly, n_rows=n):
+                if _resume_ok(
+                    comp_path(comp_dir, mapset, ly),
+                    mapset=mapset,
+                    layer=ly,
+                    n_rows=n,
+                    bundle_ident=bundle["ident"],
+                ):
                     skipped += 1
-                    done_units += 1
+                    state["done"] += 1
                     continue
                 todo.append(ly)
             if skipped:
@@ -475,9 +663,8 @@ def phase_fits(cfg: dict) -> dict:
                     "[fits] %s: %d/%d layers already persisted (resume)", mapset, skipped, n_l
                 )
             x_t, y_t = bundle["x"], bundle["y"]
-            futs = {}
             for ly in todo:
-                task = {
+                yield {
                     "mapset": mapset,
                     "layer": ly,
                     "x16": np.ascontiguousarray(x_t[:, ly, :].numpy()),
@@ -485,35 +672,76 @@ def phase_fits(cfg: dict) -> dict:
                     "tr_idx": tr_idx,
                     "ev_idx": ev_idx,
                 }
-                futs[pool.submit(_fit_unit_worker, task)] = ly
-            for fut in as_completed(futs):
+            del bundle, x_t, y_t  # tasks carry copies; release before the next map set
+        state["all_known"] = True
+
+    def _progress_denom() -> str:
+        return f"{state['total']}" if state["all_known"] else f"{state['total']}+?"
+
+    gen = task_gen()
+    window = max(1, workers) * 2  # keep every worker busy + a submit-ahead buffer
+    in_flight: dict = {}
+    with ProcessPoolExecutor(max_workers=max(1, workers)) as pool:
+
+        def refill():
+            while len(in_flight) < window:
+                try:
+                    task = next(gen)
+                except StopIteration:
+                    return
+                in_flight[pool.submit(_fit_unit_worker, task)] = (task["mapset"], task["layer"])
+
+        refill()
+        while in_flight:
+            done_set, _ = wait(list(in_flight), return_when=FIRST_COMPLETED)
+            for fut in done_set:
+                mapset, _ly = in_flight.pop(fut)
                 rec = fut.result()  # fail-fast: worker exceptions propagate
-                _persist_unit(comp_dir, rec, n_rows=n)
-                if rec["layer"] in PINNED_LAYERS and rec["layer"] < n_l:
+                _persist_unit(
+                    comp_dir, rec, n_rows=n_rows_by_set[mapset], bundle_ident=ident_by_set[mapset]
+                )
+                if rec["mapset"] not in parity_samples:
+                    parity_samples[rec["mapset"]] = (
+                        rec["layer"],
+                        rec["x_ev_sample"],
+                        rec["pred_sample"],
+                    )
+                if rec["layer"] in PINNED_LAYERS and rec["layer"] < n_layers_by_set[mapset]:
                     _write_pinned_pt(comp_dir, pinned_dir, mapset, rec["layer"], git)
-                done_units += 1
+                state["done"] += 1
                 print(
-                    f"[fits] unit {done_units}/{total_units or '?'} "
+                    f"[fits] unit {state['done']}/{_progress_denom()} "
                     f"{rec['mapset']}_L{rec['layer']:02d} wall={rec['fit_wall_s']:.1f}s "
                     f"elapsed={time.time() - t0:.0f}s",
                     flush=True,
                 )
-            # Ensure pinned .pt exist for resumed (skipped) units too.
-            for ly in PINNED_LAYERS:
-                if ly < n_l and not (pinned_dir / f"{mapset}_L{ly:02d}.pt").exists():
-                    if comp_path(comp_dir, mapset, ly).exists():
-                        _write_pinned_pt(comp_dir, pinned_dir, mapset, ly, git)
-            del bundle, x_t, y_t
-            summary["units"][mapset] = {"n_rows": n, "n_layers": n_l}
+            refill()
+    # Drain the generator if every remaining unit was resume-skipped mid-stream.
+    for _ in gen:  # pragma: no cover — generator is exhausted unless all-resumed
+        raise RuntimeError("fit task generator yielded after pool drain — logic error")
 
-    # One full DISK round-trip parity certification (serialization leg).
-    ms0 = mapsets[0]
-    b0 = cfg["load_bundle"](ms0)
-    tr0, ev0 = _split_indices(b0["n"])
-    comp0 = load_components(comp_dir, ms0, 0)
-    x_ev0 = np.asarray(b0["x"][:, 0, :].numpy(), dtype=np.float64)[ev0]
-    _assert_prediction_parity(comp0, x_ev0, what=f"disk-roundtrip {ms0}_L00")
-    logger.info("[fits] disk round-trip prediction-parity PASS (%s L00)", ms0)
+    # Ensure pinned .pt exist for resumed (skipped) units too.
+    for mapset in mapsets:
+        n_l = n_layers_by_set[mapset]
+        for ly in PINNED_LAYERS:
+            if ly < n_l and not (pinned_dir / f"{mapset}_L{ly:02d}.pt").exists():
+                if comp_path(comp_dir, mapset, ly).exists():
+                    _write_pinned_pt(comp_dir, pinned_dir, mapset, ly, git)
+
+    # TRUE disk round-trip parity certification: reload each freshly-fit map set's
+    # first-completed unit from disk and reproduce the worker's in-memory
+    # prediction (r1 blocker hollow-prediction-parity). All-resumed map sets were
+    # certified by the round that fit them (their in-memory side no longer exists).
+    for mapset, (ly, x_ev_s, pred_s) in parity_samples.items():
+        _assert_disk_roundtrip(
+            comp_dir, mapset, ly, x_ev_s, pred_s, what=f"disk-roundtrip {mapset}_L{ly:02d}"
+        )
+    if parity_samples:
+        logger.info(
+            "[fits] disk round-trip prediction-parity PASS (%d map sets)", len(parity_samples)
+        )
+    else:
+        logger.info("[fits] all units resumed — disk round-trip certified by the fitting round")
 
     # Assemble map_diagnostics.json from the persisted units.
     diags: dict[str, dict] = {}
@@ -567,14 +795,20 @@ def phase_pilot(cfg: dict) -> dict:
         "ev_idx": ev_idx,
     }
     t0 = time.time()
-    rec = _fit_unit_worker(task)  # includes the registered parity assert
+    rec = _fit_unit_worker(task)  # includes the registered fit-native parity assert
     wall = time.time() - t0
-    # Disk round-trip leg of the parity contract.
+    # TRUE disk round-trip leg: persist, reload, reproduce the in-memory
+    # prediction (r1 blocker hollow-prediction-parity).
     comp_dir: Path = cfg["comp_dir"]
-    _persist_unit(comp_dir, rec, n_rows=n)
-    comp = load_components(comp_dir, BASE_MAPSET, ly)
-    x_ev = np.asarray(bundle["x"][:, ly, :].numpy(), dtype=np.float64)[ev_idx]
-    _assert_prediction_parity(comp, x_ev, what=f"pilot disk-roundtrip base_L{ly:02d}")
+    _persist_unit(comp_dir, rec, n_rows=n, bundle_ident=bundle["ident"])
+    _assert_disk_roundtrip(
+        comp_dir,
+        BASE_MAPSET,
+        ly,
+        rec["x_ev_sample"],
+        rec["pred_sample"],
+        what=f"pilot disk-roundtrip base_L{ly:02d}",
+    )
 
     width = int(cfg["workers"])
     fence_s = 252 * wall / max(1, width) * 2.0
@@ -659,8 +893,73 @@ def _predict_affine_device(comp: dict, x, device: str):
     return out.cpu().numpy()
 
 
+# Required-key sets per predictor bundle — the unit-A producer schema
+# (issue2379_capture phase_grid / phase_mu / phase_ceiling_tf emit sites),
+# incl. the round-2 additions (mu n_c/n_a; ceiling drop_stats + row_meta
+# cell_idx). r1 blocker cached-artifact-schema-coverage.
+_BUNDLE_REQUIRED_KEYS = {
+    "grid": {"v_c", "row_meta"},
+    "mu": {"mu_train", "mu_a_train", "n_c", "n_a"},
+    "ceiling": {"v_a", "row_meta", "drop_stats"},
+}
+_GRID_ROW_META_KEYS = {"trigger_idx", "trigger_label", "q_sim_idx"}
+_CEILING_ROW_META_KEYS = {"cell_idx", "trigger_idx", "trigger_label", "q_sim_idx", "rollout_idx"}
+
+
+def _validate_predictor_bundles(model: str, out: dict) -> None:
+    """Diff required keys vs realized keys per bundle, then validate shapes and
+    counts JOINTLY (row_meta length == tensor rows; layer/hidden agreement across
+    grid/mu/ceiling) BEFORE any consumption."""
+    for name, required in _BUNDLE_REQUIRED_KEYS.items():
+        missing = required - set(out[name].keys())
+        if missing:
+            raise RuntimeError(
+                f"{model}/{name}.pt missing keys {sorted(missing)} "
+                f"(realized: {sorted(out[name].keys())})"
+            )
+    grid, mu, ceil = out["grid"], out["mu"], out["ceiling"]
+    v_c, g_meta = grid["v_c"], grid["row_meta"]
+    if v_c.ndim != 3 or len(g_meta) != int(v_c.shape[0]):
+        raise RuntimeError(
+            f"{model}/grid.pt: v_c {tuple(v_c.shape)} vs {len(g_meta)} row_meta rows"
+        )
+    if g_meta and not _GRID_ROW_META_KEYS <= set(g_meta[0].keys()):
+        raise RuntimeError(
+            f"{model}/grid.pt row_meta keys {sorted(g_meta[0].keys())} lack "
+            f"{sorted(_GRID_ROW_META_KEYS)}"
+        )
+    mu_tr, mu_a = mu["mu_train"], mu["mu_a_train"]
+    if mu_a is None:
+        raise RuntimeError(
+            f"{model}/mu.pt: mu_a_train is None — answer-side references unavailable"
+        )
+    if tuple(mu_tr.shape) != tuple(mu_a.shape) or mu_tr.ndim != 2:
+        raise RuntimeError(
+            f"{model}/mu.pt: mu_train {tuple(mu_tr.shape)} vs mu_a_train {tuple(mu_a.shape)}"
+        )
+    if int(mu["n_c"]) <= 0 or int(mu["n_a"]) <= 0:
+        raise RuntimeError(f"{model}/mu.pt: n_c={mu['n_c']} n_a={mu['n_a']} — empty mean")
+    v_a, c_meta = ceil["v_a"], ceil["row_meta"]
+    if v_a.ndim != 3 or len(c_meta) != int(v_a.shape[0]):
+        raise RuntimeError(
+            f"{model}/ceiling.pt: v_a {tuple(v_a.shape)} vs {len(c_meta)} row_meta rows"
+        )
+    if c_meta and not _CEILING_ROW_META_KEYS <= set(c_meta[0].keys()):
+        raise RuntimeError(
+            f"{model}/ceiling.pt row_meta keys {sorted(c_meta[0].keys())} lack "
+            f"{sorted(_CEILING_ROW_META_KEYS)}"
+        )
+    n_l, hidden = int(v_c.shape[1]), int(v_c.shape[2])
+    for name, shape in (("mu", tuple(mu_tr.shape)), ("ceiling", tuple(v_a.shape)[1:])):
+        if shape != (n_l, hidden):
+            raise RuntimeError(
+                f"{model}/{name}.pt layer/hidden shape {shape} != grid ({n_l}, {hidden})"
+            )
+
+
 def _load_predictor_bundles(model: str, tensor_dir: Path) -> dict:
-    """grid.pt + mu.pt + ceiling.pt for one condition (local-first, HF fallback)."""
+    """grid.pt + mu.pt + ceiling.pt for one condition (local-first, HF fallback);
+    schema + joint shape validation runs at load, before ANY consumption."""
     out = {}
     for name in ("grid", "mu", "ceiling"):
         local = tensor_dir / "predictor_captures" / model / f"{name}.pt"
@@ -669,26 +968,87 @@ def _load_predictor_bundles(model: str, tensor_dir: Path) -> dict:
                 f"{SLUG}/analysis_tensors/predictor_captures/{model}/{name}.pt", local
             )
         out[name] = _torch_load_cpu(local)
-    for key in ("v_c", "row_meta"):
-        if key not in out["grid"]:
-            raise RuntimeError(
-                f"{model}/grid.pt missing key {key!r} (has {sorted(out['grid'].keys())})"
-            )
-    if out["mu"].get("mu_a_train") is None:
-        raise RuntimeError(
-            f"{model}/mu.pt: mu_a_train is None — answer-side references unavailable"
-        )
+    _validate_predictor_bundles(model, out)
     return out
 
 
-def _text_baselines_for(setting: str, tensor_dir: Path) -> dict:
+def _tb_key_map() -> dict[str, str]:
+    """Text-baseline family -> PRODUCER key (imported from the unit-A producer,
+    ``issue2379_capture``; r1 Major seqmatch-key-mismatch: the r1 consumer
+    hardcoded ``seqmatcher_ratio``/``token_jaccard`` spellings the producer
+    never writes, and the consumer-authored fixture masked it). Deferred import:
+    the capture module pulls the sweep/prep modules (numpy at import time),
+    which must not load before the fits-phase BLAS env is set."""
+    from issue2379_capture import SEQMATCH_KEY
+
+    return {
+        "bge_cos": "bge_cos_to_p_inoc",
+        "tfidf_cos": "tfidf_cos_to_p_inoc",
+        "jaccard": "jaccard",
+        "seqmatcher": SEQMATCH_KEY,
+    }
+
+
+def _stage_text_baselines(setting: str, tensor_dir: Path) -> list[Path]:
+    """Fetch text_baselines_{setting}_*.json from the P3 upload prefix into tensor_dir
+    (round-2 offpod-artifact-handoff: the VM-side score phase stages from HF)."""
+    import shutil
+
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    rels = hub.retry_transient(
+        lambda: hub.list_hf_files_under_path(
+            HfApi(), hub.DEFAULT_DATASET_REPO, HF_TEXT_BASELINES_PREFIX, repo_type="dataset"
+        ),
+        what=f"list {HF_TEXT_BASELINES_PREFIX}",
+    )
+    wanted = [r for r in rels if Path(r).name.startswith(f"text_baselines_{setting}_")]
+    out: list[Path] = []
+    tensor_dir.mkdir(parents=True, exist_ok=True)
+    for rel in wanted:
+        got = hub.retry_transient(
+            lambda rel=rel: hf_hub_download(
+                repo_id=hub.DEFAULT_DATASET_REPO, filename=rel, repo_type="dataset"
+            ),
+            what=f"fetch {rel}",
+        )
+        target = tensor_dir / Path(rel).name
+        shutil.copy2(got, target)
+        out.append(target)
+    if out:
+        logger.info("[stage] %d text_baselines JSONs -> %s", len(out), tensor_dir)
+    return sorted(out)
+
+
+def _text_baselines_for(setting: str, tensor_dir: Path) -> tuple[Path, dict]:
     hits = sorted(tensor_dir.glob(f"text_baselines_{setting}_*.json"))
     if not hits:
+        hits = _stage_text_baselines(setting, tensor_dir)
+    if not hits:
         raise RuntimeError(
-            f"no text_baselines_{setting}_*.json under {tensor_dir} — run "
-            "issue2379_capture.py --phase text_baselines first (pod-side, P3)"
+            f"no text_baselines_{setting}_*.json under {tensor_dir} and none on HF under "
+            f"{HF_TEXT_BASELINES_PREFIX} — run issue2379_capture.py --phase text_baselines "
+            "first (pod-side, P3)"
         )
-    return json.loads(hits[0].read_text(encoding="utf-8"))
+    path = hits[0]
+    tb = json.loads(path.read_text(encoding="utf-8"))
+    required = set(_tb_key_map().values())
+    per_trigger = tb.get("per_trigger")
+    if not per_trigger:
+        raise RuntimeError(f"{path.name}: per_trigger missing/empty")
+    for lab, row in per_trigger.items():
+        missing = required - set(row.keys())
+        if missing:
+            raise RuntimeError(
+                f"{path.name}: trigger {lab!r} lacks keys {sorted(missing)} "
+                f"(realized: {sorted(row.keys())}) — producer key drift"
+            )
+        for k in required:
+            if row[k] is None:
+                raise RuntimeError(f"{path.name}: trigger {lab!r} key {k!r} is None")
+    return path, tb
 
 
 def _trigger_table(banks_dir: Path, setting: str) -> tuple[list[dict], int]:
@@ -705,6 +1065,63 @@ def _trigger_table(banks_dir: Path, setting: str) -> tuple[list[dict], int]:
     return triggers, idx[0]
 
 
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _scores_unit_fingerprint(
+    model: str, setting: str, comp_dir: Path, bpaths: dict[str, Path], tb_path: Path
+) -> dict:
+    """Output-affecting regime keys for one condition's score rows: input-bundle
+    file digests + every consumed fit unit's persisted identity (bundle ident +
+    recipe tag + split params). r1 finding terminal-only-persistence: the score
+    table now checkpoints per model with THIS resume key."""
+    import numpy as np
+
+    comp_units: dict[str, dict] = {}
+    for ms in (model, BASE_MAPSET):
+        for p in sorted(comp_dir.glob(f"{ms}_L*.npz")):
+            with np.load(p) as z:
+                fields = set(z.files)
+                comp_units[p.stem] = {
+                    "bundle_ident": (
+                        bytes(z["bundle_ident"]).decode() if "bundle_ident" in fields else "v1"
+                    ),
+                    "recipe_tag": (
+                        bytes(z["recipe_tag"]).decode() if "recipe_tag" in fields else "v1"
+                    ),
+                    "n_rows": int(z["n_rows"]),
+                    "split_seed": int(z["split_seed"]),
+                }
+    return {
+        "v": 2,
+        "model": model,
+        "setting": setting,
+        "prediction": "zscore-affine",
+        "bundle_sha256": {name: _sha256_file(p) for name, p in sorted(bpaths.items())},
+        "text_baselines_sha256": _sha256_file(tb_path),
+        "comp_units": comp_units,
+    }
+
+
+def _load_partial_condition(path: Path, fingerprint: dict) -> dict | None:
+    """Load a per-model partial score record iff its fingerprint matches EXACTLY."""
+    if not path.exists():
+        return None
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — truncated partial is discardable state
+        logger.warning("[scores] unreadable partial %s (%s) — recomputing", path, e)
+        return None
+    if doc.get("fingerprint") != json.loads(json.dumps(fingerprint)):
+        logger.info("[scores] partial %s stale (fingerprint mismatch) — recomputing", path.name)
+        return None
+    return doc["condition"]
+
+
 def phase_scores(cfg: dict) -> dict:
     import numpy as np
 
@@ -713,6 +1130,27 @@ def phase_scores(cfg: dict) -> dict:
     banks_dir: Path = cfg["banks_dir"]
     models: list[str] = [m for m in cfg["mapsets"] if m != BASE_MAPSET]
     device: str = cfg["device"]
+
+    # ---- Pre-pass: fetch + schema-validate EVERY condition's bundles and text
+    # baselines BEFORE the remote r_B fetch or any compute (r1 blocker
+    # cached-artifact-schema-coverage: rb_loader ran before validation, and a
+    # schema break on model k surfaced only after models 1..k-1 burned compute).
+    bundle_paths: dict[str, dict[str, Path]] = {}
+    tb_cache: dict[str, dict] = {}
+    tb_paths: dict[str, Path] = {}
+    for model in models:
+        setting = _setting_of(model)
+        _load_predictor_bundles(model, tensor_dir)  # fetch + validate; reloaded per model below
+        bundle_paths[model] = {
+            name: tensor_dir / "predictor_captures" / model / f"{name}.pt"
+            for name in ("grid", "mu", "ceiling")
+        }
+        if setting not in tb_cache:
+            tb_path, tb = _text_baselines_for(setting, tensor_dir)
+            tb_cache[setting], tb_paths[setting] = tb, tb_path
+        _trigger_table(banks_dir, setting)  # bank + p_inoc contract resolves pre-compute
+    logger.info("[scores] pre-pass validation OK (%d conditions)", len(models))
+
     rb_evil = cfg["rb_loader"]() if any(_setting_of(m) == "em" for m in models) else None
 
     if device != "cpu":
@@ -730,9 +1168,19 @@ def phase_scores(cfg: dict) -> dict:
                 f"device={device} prediction path diverges from the parity-asserted CPU path"
             )
 
+    partial_dir: Path = cfg["scores_path"].parent / "scores_partial"
     conditions: dict[str, dict] = {}
     for model in models:
         setting = _setting_of(model)
+        fp = _scores_unit_fingerprint(
+            model, setting, comp_dir, bundle_paths[model], tb_paths[setting]
+        )
+        ppath = partial_dir / f"{model}.json"
+        cached = _load_partial_condition(ppath, fp)
+        if cached is not None:
+            conditions[model] = cached
+            print(f"[scores] {model}: resumed from scores_partial (fingerprint match)", flush=True)
+            continue
         bundles = _load_predictor_bundles(model, tensor_dir)
         triggers, p_idx = _trigger_table(banks_dir, setting)
         labels = [t["label"] for t in triggers]
@@ -872,28 +1320,22 @@ def phase_scores(cfg: dict) -> dict:
                         ceil_by_rollout["sameq"][ly, t, ri] = float(np.mean(sq_vals))
             print(f"[scores] {model} layer {ly + 1}/{n_l} done", flush=True)
 
-        tb = _text_baselines_for(setting, tensor_dir)
-        per_trig_tb = tb["per_trigger"]
-        text_fams = {"bge_cos": [], "tfidf_cos": [], "jaccard": [], "seqmatcher": []}
-        tb_key = {
-            "bge_cos": "bge_cos_to_p_inoc",
-            "tfidf_cos": "tfidf_cos_to_p_inoc",
-            "jaccard": "token_jaccard",
-            "seqmatcher": "seqmatcher_ratio",
-        }
+        # Text-baseline families under the PRODUCER's key spellings (imported
+        # from issue2379_capture; r1 Major seqmatch-key-mismatch). A missing
+        # label or key is producer/consumer drift -> fail LOUD, never a silent
+        # None column (the pre-pass already validated per-row key coverage).
+        per_trig_tb = tb_cache[setting]["per_trigger"]
+        tb_key = _tb_key_map()
+        text_fams: dict[str, list] = {f: [] for f in tb_key}
         for lab in labels:
             row = per_trig_tb.get(lab)
-            for f in text_fams:
-                if row is None:
-                    text_fams[f].append(None)
-                else:
-                    # lexical key names come from the unit-2 producer; tolerate both spellings
-                    val = row.get(tb_key[f])
-                    if val is None and f == "jaccard":
-                        val = row.get("jaccard")
-                    if val is None and f == "seqmatcher":
-                        val = row.get("seqmatcher") or row.get("sequence_matcher_ratio")
-                    text_fams[f].append(val)
+            if row is None:
+                raise RuntimeError(
+                    f"{setting} text_baselines missing trigger label {lab!r} "
+                    f"(has {sorted(per_trig_tb.keys())[:5]}...) — bank/baseline drift"
+                )
+            for f, k in tb_key.items():
+                text_fams[f].append(float(row[k]))
 
         def _tolist(a):
             return [[None if np.isnan(v) else float(v) for v in row] for row in a]
@@ -912,6 +1354,11 @@ def phase_scores(cfg: dict) -> dict:
                 for k, v in ceil_by_rollout.items()
             },
         }
+        # Per-model checkpoint (atomic; fingerprint-keyed resume — r1 finding
+        # terminal-only-persistence: a crash on condition k no longer forfeits
+        # conditions 1..k-1's completed layer sweeps).
+        _atomic_write_json(ppath, {"fingerprint": fp, "condition": conditions[model]})
+        print(f"[scores] {model}: persisted scores_partial/{model}.json", flush=True)
 
     out = {
         "issue": 2379,
@@ -1014,6 +1461,7 @@ def _build_synthetic_world(root: Path, *, n_map=60, d=8, n_l=2, n_t=3, n_q=4, n_
     )
 
     for m in models:
+        setting_m = _setting_of(m)
         x, y = _linear_pair(n_map)
         mc = tensor_dir / "map_corpus"
         mc.mkdir(parents=True, exist_ok=True)
@@ -1023,7 +1471,9 @@ def _build_synthetic_world(root: Path, *, n_map=60, d=8, n_l=2, n_t=3, n_q=4, n_
                 "v_a": y,
                 "kept_row_idx": list(range(n_map)),
                 "n_prompts": n_map,
+                "drop_stats": {"n_kept": n_map, "n_dropped": 0, "drop_reasons": []},
                 "model": m,
+                "setting": setting_m,
             },
             mc / f"{m}.pt",
         )
@@ -1033,13 +1483,14 @@ def _build_synthetic_world(root: Path, *, n_map=60, d=8, n_l=2, n_t=3, n_q=4, n_
         for t in range(n_t):
             for q in range(n_q):
                 rows.append(rng.standard_normal((n_l, d)))
-                lab = (trig_em if _setting_of(m) == "em" else trig_caps)[t]["label"]
+                lab = (trig_em if setting_m == "em" else trig_caps)[t]["label"]
                 meta.append({"trigger_idx": t, "trigger_label": lab, "q_sim_idx": q})
         torch.save(
             {
                 "v_c": torch.tensor(np.stack(rows), dtype=torch.float16),
                 "row_meta": meta,
                 "model": m,
+                "setting": setting_m,
             },
             pred / "grid.pt",
         )
@@ -1049,41 +1500,67 @@ def _build_synthetic_world(root: Path, *, n_map=60, d=8, n_l=2, n_t=3, n_q=4, n_
                 "mu_a_train": torch.tensor(rng.standard_normal((n_l, d)), dtype=torch.float16),
                 "n_c": 10,
                 "n_a": 10,
+                "model": m,
+                "setting": setting_m,
             },
             pred / "mu.pt",
         )
+        # ceiling: producer row_meta schema (phase_ceiling_tf) incl. cell_idx.
         va_rows, va_meta = [], []
+        n_dropped = 0
         for t in range(n_t):
             for q in range(n_q):
+                ci = t * n_q + q
+                lab = (trig_em if setting_m == "em" else trig_caps)[t]["label"]
                 for ri in range(n_roll):
                     if t == 0 and q == 0 and ri == 2:
+                        n_dropped += 1
                         continue  # exercise the missing-rollout path
                     va_rows.append(rng.standard_normal((n_l, d)))
                     va_meta.append(
-                        {"trigger_idx": t, "trigger_label": "x", "q_sim_idx": q, "rollout_idx": ri}
+                        {
+                            "cell_idx": ci,
+                            "trigger_idx": t,
+                            "trigger_label": lab,
+                            "q_sim_idx": q,
+                            "rollout_idx": ri,
+                        }
                     )
         torch.save(
             {
                 "v_a": torch.tensor(np.stack(va_rows), dtype=torch.float16),
                 "row_meta": va_meta,
+                "drop_stats": {
+                    "n_slots": n_t * n_q * n_roll,
+                    "n_empty_after_retries": n_dropped,
+                    "n_capture_dropped": 0,
+                },
                 "model": m,
+                "setting": setting_m,
             },
             pred / "ceiling.pt",
         )
 
-    for setting, trigs in (("em", trig_em), ("caps", trig_caps)):
+    # Text baselines authored FROM THE PRODUCER: lexical keys come out of the
+    # unit-A ``issue2379_capture._lexical_sims`` function itself, and the
+    # embedding-cos key spellings are the producer's literal emit-site names
+    # (r1 Major: the r1 fixture used consumer-assumed keys, masking the
+    # producer/consumer seqmatch key mismatch).
+    from issue2379_capture import _lexical_sims
+
+    for setting, trigs, p_inoc in (("em", trig_em, P_INOC_EM), ("caps", trig_caps, P_INOC_CAPS)):
         per = {
             t["label"]: {
                 "prompt": t["prompt"],
                 "bge_cos_to_p_inoc": 0.5,
                 "tfidf_cos_to_p_inoc": 0.4,
-                "token_jaccard": 0.3,
-                "seqmatcher_ratio": 0.2,
+                **_lexical_sims(t["prompt"], p_inoc),
             }
             for t in trigs
         }
         (tensor_dir / f"text_baselines_{setting}_shared.json").write_text(
-            json.dumps({"setting": setting, "per_trigger": per}), encoding="utf-8"
+            json.dumps({"setting": setting, "p_inoc": p_inoc, "per_trigger": per}),
+            encoding="utf-8",
         )
 
     rb = rng.standard_normal((n_l, d))
@@ -1098,8 +1575,10 @@ def _build_synthetic_world(root: Path, *, n_map=60, d=8, n_l=2, n_t=3, n_q=4, n_
 
 
 SMOKE_BLIND_SPOTS = [
-    "real _load_pass_b_bundle (pinned-rev HF download + realized-keys asserts) — pod-only; "
-    "smoke substitutes a synthetic bundle with the same key schema",
+    "real _load_pass_b_bundle_safe (pinned-rev HF download + constrained weights_only "
+    "load + realized-keys asserts) — pod-only; smoke substitutes a synthetic bundle "
+    "with the same key schema (the numpy-allowlist fallback branch is pinned by "
+    "tests/test_issue2379_round2.py)",
     "real _load_rb_all r_B bank download — smoke injects a synthetic (n_layers, d) array",
     "production shapes (28 layers x 3584 hidden; n=5,000) — smoke runs 2 x 8, n=60; the "
     "--pilot phase covers ONE fit at full production shape on the pod",
@@ -1172,10 +1651,23 @@ def phase_smoke(args) -> int:
             assert np.isfinite(arr).all(), f"{m}/{key}: non-finite entries"
         # same-Q inoc at the p_inoc trigger is identically 1 by construction.
         assert abs(np.array(fam["ctx_sameq"])[0][1] - 1.0) < 1e-6
+        # Text families under the PRODUCER keys — all present, all finite.
+        for f, vals in cond["families_text"].items():
+            assert len(vals) == 3 and all(v is not None for v in vals), f"{m}/{f}: {vals}"
     assert "trait_proj_mapI" in scores["conditions"]["smoke_em_a"]["families_layered"]
     assert "trait_proj_mapI" not in scores["conditions"]["smoke_caps_b"]["families_layered"]
 
-    print("[smoke] PASS — fits(6) + resume + parity + diagnostics + score table")
+    # Scores resume: a second pass must reuse every scores_partial checkpoint.
+    buf2 = io.StringIO()
+    with redirect_stdout(buf2):
+        scores2 = phase_scores(cfg)
+    n_resumed = buf2.getvalue().count("resumed from scores_partial")
+    assert n_resumed == len(world["models"]), (
+        f"scores partial-resume failed: {n_resumed}/{len(world['models'])} resumed"
+    )
+    assert scores2["conditions"].keys() == scores["conditions"].keys()
+
+    print("[smoke] PASS — fits(6) + resume + parity + diagnostics + score table + partial-resume")
     print("[smoke] blind spots (production-only paths):")
     for b in SMOKE_BLIND_SPOTS:
         print(f"  - {b}")
@@ -1186,20 +1678,85 @@ def phase_smoke(args) -> int:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+# Phase registry (module-level dict literal; the smoke-architecture marker's
+# arm-registry line derives its members from sorted(PHASES) — task_workflow
+# smoke_arch_registry_check recomputes this union mechanically).
+PHASES = {
+    "pilot": "one production-shape fit on the pass-B bundle + parity (pod P0 fence basis)",
+    "fits": "252-cell map fits — one persistent pool, sliding-window submission",
+    "scores": "predictor score table (P5.4; per-model scores_partial checkpoints)",
+    "upload": "pinned components + predictor JSONs -> HF data repo",
+    "all": "fits + scores + upload",
+    "smoke": "synthetic tiny end-to-end on CPU (producer-schema fixtures, no downloads)",
+}
+
+
 def _discover_models(tensor_dir: Path) -> list[str]:
     hits = sorted(p.stem for p in (tensor_dir / "map_corpus").glob("*.pt"))
     if not hits:
         raise RuntimeError(
             f"no map_corpus bundles under {tensor_dir / 'map_corpus'} and no --models given"
         )
+    # Completeness check (r1 minor): a condition with predictor captures but no
+    # map_corpus bundle would silently drop out of the score table.
+    cap_dir = tensor_dir / "predictor_captures"
+    if cap_dir.is_dir():
+        captured = {p.name for p in cap_dir.iterdir() if p.is_dir()}
+        orphans = sorted(captured - set(hits) - {BASE_MAPSET})
+        if orphans:
+            raise RuntimeError(
+                f"predictor_captures holds conditions with NO map_corpus bundle: {orphans} — "
+                "stage the missing bundles or pass --models explicitly"
+            )
+    logger.info("[discover] %d conditions from map_corpus/: %s", len(hits), hits)
     return hits
+
+
+def _import_check() -> int:
+    """Execute every deferred import + the args-attribute completeness assert.
+
+    Module-level function (never inline in main) so the imported bare names
+    cannot compile-time-shadow main()'s own locals (#1739 UnboundLocalError)."""
+    from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+    assert_args_attributes_defined(__file__)
+    # Execute every deferred cross-script import this driver defers
+    # (gotchas.md lazy-import rule; smoke-arch Axis 1).
+    import issue2254_preimage as i2254
+    from explore_persona_space.analysis.mapping_baselines import (
+        identity_bias_predict,
+        knn_retrieval,
+    )
+    from issue2379_capture import SEQMATCH_KEY, _lexical_sims, load_triggers, p_inoc_for
+
+    _ = (
+        i2254.ridge_fit_matrix,
+        i2254.kstar_from_fit,
+        i2254.map_svd,
+        i2254.r2_score_multi,
+        i2254.LAMBDAS,
+        i2254.PASS_B_FILE,
+        i2254.HF_REV,
+        i2254._load_rb_all,
+        identity_bias_predict,
+        knn_retrieval,
+        SEQMATCH_KEY,
+        _lexical_sims,
+        load_triggers,
+        p_inoc_for,
+    )
+    print("[import-check] OK — args attrs + deferred imports resolve")
+    return 0
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--phase", default=None, choices=sorted(PHASES))
     ap.add_argument(
-        "--phase", required=True, choices=["pilot", "fits", "scores", "upload", "all", "smoke"]
+        "--import-check",
+        action="store_true",
+        help="Resolve args-attribute completeness + every deferred import, then exit 0",
     )
     ap.add_argument(
         "--models",
@@ -1228,6 +1785,12 @@ def main() -> int:
     )
     ap.add_argument("--pilot-layer", type=int, default=16)
     args = ap.parse_args()
+
+    if args.import_check:
+        return _import_check()
+
+    if args.phase is None:
+        ap.error("--phase required (unless --import-check)")
 
     if args.phase == "smoke":
         # Smoke stays CPU + synthetic; BLAS env left as-is (VM caps apply).
