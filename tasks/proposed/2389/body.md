@@ -8,12 +8,22 @@ has_clean_result: false
 parent_id: 2329
 origin_prompt: let's try qwen3.8 27b
 workflow: v1
+goal: 'On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled),
+  test whether the #2162 minimal-pair context-vector verdicts hold at a third model
+  point: which of the 21 information types are linearly decodable at a single context
+  position and which are causally usable when that position''s hidden state is transplanted
+  between paired contexts, measured on the 26-cell subset that preserves the full
+  31-unit P1 denominator, with the registered read being the Spearman transfer correlation
+  against #2162''s per-type steered fraction-of-swap (pair-clustered bootstrap 95%
+  CI) and the secondary read being whether this model''s stronger instruction following
+  (IFBench 79.5 vs Qwen3.6-27B''s 69.1) rescues cells the anchor-separation exclusion
+  left untestable on the two earlier models.'
 ---
 # Experiment: Do the #2162 context-vector findings hold on Qwen3.8-27B? (third model, 26-cell subset)
 
 ## Goal
 
-Test whether the #2162 minimal-pair context-vector verdicts — which of 21 information types are linearly decodable at a single context position, and which are causally usable when that position's hidden state is transplanted between paired contexts — hold on `Qwen/Qwen3.8-27B`, a third model and a substantially more capable one than either prior point. Primary registered read: the transfer correlation (Spearman rho between this run's and #2162's per-type steered fraction-of-swap over the 31 shared P1 cell-slot units, pair-clustered bootstrap 95% CI). Secondary: whether the stronger instruction-following of this model rescues cells that the anchor-separation exclusion rendered untestable on the two earlier models.
+On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), test whether the #2162 minimal-pair context-vector verdicts hold at a third model point: which of the 21 information types are linearly decodable at a single context position and which are causally usable when that position's hidden state is transplanted between paired contexts, measured on the 26-cell subset that preserves the full 31-unit P1 denominator, with the registered read being the Spearman transfer correlation against #2162's per-type steered fraction-of-swap (pair-clustered bootstrap 95% CI) and the secondary read being whether this model's stronger instruction following (IFBench 79.5 vs Qwen3.6-27B's 69.1) rescues cells the anchor-separation exclusion left untestable on the two earlier models.
 
 ## Provenance
 
