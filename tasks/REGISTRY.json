@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2392,
+  "highest_id": 2393,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10762,6 +10762,13 @@
       "path": "tasks/proposed/2392",
       "status": "proposed",
       "title": "vLLM backend for the unhooked anchor phase of the patching rig, behind a measured HF-parity gate"
+    },
+    "2393": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2393",
+      "status": "proposed",
+      "title": "Opt-in shared-prefill multi-draw mode for generate_batch (one prefill, N sampled continuations)"
     },
     "24": {
       "has_clean_result": false,
