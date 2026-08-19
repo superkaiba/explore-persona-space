@@ -36,7 +36,7 @@ how it is asked to behave. It is therefore the cleanest available test of whethe
 *non-persona* information, and the answer is not obvious in either direction.
 
 The practical framing is the same as #1739's: judged context→answer pairs are expensive, unjudged
-ones are free. If the map — fit only on unjudged generic chat — is a useful prior, a correctness
+ones are free. If the map — fit only on unjudged pairs — is a useful prior, a correctness
 predictor built on the mapped answer vector should reach a given accuracy with far fewer
 correctness labels than a direct probe on the context vector, with the advantage growing under
 distribution shift.
@@ -58,9 +58,11 @@ activations. Vocabulary per `docs/glossary_context_answer_map.md`.
 - `v_A` — **answer vector**, token-mean over one sampled answer's tokens. For long-CoT surfaces
   (math, code) a second pooling (last answer token) is captured alongside, since a token-mean
   over a long chain is dominated by reasoning text rather than by the answer.
-- `M_ℓ` — the ridge map `v_A ≈ M_ℓ v_C`, **fit only on unjudged WildChat/LMSYS context→answer
-  pairs**. The banked maps from #1739 are reused (`issue1739_ctxmap/analysis_tensors/maps/`,
-  linear/MLP/kernel at U ∈ {250, 5,000, 18,793 = full store}).
+- `M_ℓ` — the map `v_A ≈ M_ℓ v_C`, fit on **unjudged** context→answer pairs. Both a **linear**
+  (ridge) and a **nonlinear (MLP)** map are in scope (§ Arms). #1739's banked maps
+  (`issue1739_ctxmap/analysis_tensors/maps/`: linear/MLP/kernel at U ∈ {250, 5,000, 18,793}) are
+  reused as the generic-pool reference; the composition factor (§ Map-pool composition) requires
+  fitting new maps from banked activations.
 
 **Dependent variable.** Per context `x`, the **correctness rate**
 
@@ -84,11 +86,20 @@ it reports pass-rate only, with log P(reference solution) as a rough companion, 
   correctness depends on a computation the model has not yet performed at the last prompt token.
 - **H2 (map, label-efficiency).** The mapped-answer probe matches or beats the direct context
   probe at small `L`, with the gap closing (and possibly reversing) as `L` grows. Report the
-  **crossover** `L` per surface and the **degradation slope** across the shift ladder.
+  **crossover** `L` per surface and the **degradation slope** across the shift ladder. This holds
+  at both readout families: a direct MLP on `v_C` asymptotically upper-bounds a linear readout on
+  an MLP-mapped answer (the composition is a special case of a deeper net on `v_C`), so at *both*
+  the linear and the nonlinear level the map's only possible advantage is label efficiency.
 - **H3 (knowledge vs persona — the sharp read).** If the map is predominantly persona-carrying,
   the mapped-answer arm should lose more ground to the direct context arm on correctness than it
   did on #1739's three dispositional behaviors, at matched arms and matched budgets. This
   comparison costs nothing extra — #1739's numbers are banked.
+- **H4 (map-pool composition).** Correctness prediction improves monotonically with the fraction
+  of the map's unlabeled pool drawn from the target surface. Both outcomes are informative and
+  the pre-registered alternative is live: if a **generic-only** map already matches an
+  in-domain-fit map, the map is a genuinely general-purpose prior and the deployment story is at
+  its strongest; if in-domain unlabeled pairs are required, the story is weaker but still cheaper
+  than labels.
 
 ## Surfaces
 
@@ -103,33 +114,86 @@ Four correctness surfaces, ordered by how far correctness is from surface recall
 
 **Sizing constraint — this is load-bearing.** `d = 3,584`. Every ridge fit at `n_train < d` is
 estimator-degenerate (#1701, #1887), so each new surface needs **≥ ~8,000 contexts** to be fit in
-the ambient basis. HumanEval (164) + MBPP (974) cannot reach that alone: code either pools a
-third source or is fit in a reduced basis (PCA-k from the unlabeled pool) with the
+the ambient basis — and the § Map-pool composition factor needs a *further* disjoint unlabeled
+slice on top of that. HumanEval (164) + MBPP (974) cannot reach either bar alone: code either
+pools a third source or is fit in a reduced basis (PCA-k from the unlabeled pool) with the
 under-determined regime declared explicitly. The planner sizes this; it is not optional.
 
-## Arms (slim ladder + mandated baselines)
+## Arms
 
-Predictors, all ridge with per-layer λ selected under a dof cap (never pure GCV at `n < d`):
+**Slim ladder, now a 2-factor grid: input representation × readout family.** The MLP arms are an
+explicit user request (§ Provenance), which is what the linear-by-default standing rule requires;
+they are not a roster default.
 
-1. **Direct** — probe on `v_C` (whitened with unlabeled-pool statistics; isotropic ridge on raw
-   activations is a strawman).
-2. **Mapped** — probe on `M v_C`, `M` frozen and fit only on unjudged pairs.
-3. **Oracle ceiling** — probe on the true `v_A` (privileged; dashed reference line).
+| input to the readout | ridge readout | MLP readout |
+|---|---|---|
+| `v_C` — context vector | **1. direct-linear** | **1n. direct-MLP** |
+| `M_lin v_C` — linearly mapped answer | **2. mapped-linear** | — |
+| `M_mlp v_C` — MLP-mapped answer | **2n. mapped-MLP** | — |
+| `v_A` — true answer vector (oracle) | **3. oracle-linear** | **3n. oracle-MLP** |
+
+Six predictor arms. **The direct-MLP arm is not optional once the MLP map is in.** Comparing a
+nonlinear map arm against a linear direct arm confounds "the map helps" with "nonlinearity
+helps"; arm 1n is what makes arm 2n's number interpretable. Arm 3n gives the nonlinear ceiling so
+the two ladders are each complete. An MLP readout stacked on an already-MLP-mapped answer is
+omitted as a redundant second nonlinearity.
+
+**MLP recipe — inherited verbatim from #1739** (`Source: #1739`, `constants.py` `MLP_HIDDEN` /
+`MLP_MAX_EPOCHS`): width 512, one hidden layer, ≤300 epochs AdamW, multihead across cells,
+whitened input. Recipe fidelity keeps the H3 comparison against #1739's behavior numbers
+commensurable. The banked **kernel-ridge** maps can ride as a free extra input row if the planner
+wants a third nonlinearity at no generation cost.
 
 Mandated baselines and controls:
 
 4. **Identity + learned bias** — `v_C + b` (`analysis/mapping_baselines.identity_bias_predict`);
    required for any fitted map where input and output share dimension.
 5. **Constant / train-mean** floor.
-6. **kNN-retrieval read** on the map — acc@k, euclidean and cosine, chance = k/n stated
-   (required alongside held-out R² for every fitted map).
-7. **Shuffled-map control** — destroys context-specific structure at matched spectral scale.
+6. **kNN-retrieval read** on each map — acc@k, euclidean and cosine, chance = k/n stated
+   (required alongside held-out R² for every fitted map, linear and MLP alike).
+7. **Shuffled-map control** — destroys context-specific structure at matched spectral scale; run
+   for both map families.
 8. **Surface features** — question length, gold-alias count, an item-frequency proxy. Cheap, and
    it is the obvious reviewer objection: a context probe could be reading item difficulty rather
    than model-specific knowledge.
 
-Nonlinear (MLP/kernel) map variants are **not** in the roster by default — linear-by-default
-standing rule; they can be added as an explicit user-approved extension.
+## Map-pool composition (the `f_U` factor)
+
+Does the map need to have *seen* the target domain, and does seeing it **unlabeled** substitute
+for labels? Three cells, mirroring #1739 §4b, with the **readout always trained on the target
+surface's labeled data**:
+
+| cell | map's unlabeled pool | reads as |
+|---|---|---|
+| `f_U = 0` | **generic only** (WildChat/LMSYS) | the banked configuration; the strongest deployment story if it wins |
+| `f_U = 0.5` | **generic + target-surface**, half each | the money cell: can unlabeled in-domain pairs stand in for labels? |
+| `f_U = 1` | **target-surface only** | in-domain ceiling for the map channel |
+
+**Fixed `|U|`, never addition.** The three cells hold the total unlabeled pool constant
+(target: `|U| = 8,000` pairs, sized by the planner) — target-surface pairs *replace* generic
+pairs. Adding rather than replacing confounds composition with quantity and voids every cell. The
+additive variant (generic + target at larger total `|U|`) is run once as a clearly-labeled
+realistic-deployment contrast, never as the comparison. The banked `U = 18,793` generic map stays
+as a reference row outside the matched-budget protocol.
+
+**Disjointness.** The map's target-surface portion is **disjoint** from the readout's labeled
+contexts and from every eval rung — primary. The overlapping configuration (map's unlabeled pool
+shares contexts with the eval rung; no label leakage, since the map never sees labels) is the
+more realistic deployment shape and is run as the variant, per #1739's ruling.
+
+**Mechanism diagnostic** (inherited from #1739 §4b): report map held-out R² **and** kNN retrieval
+on each eval rung as a function of `f_U`, alongside the prediction ρ. If ρ rises with `f_U` and
+map quality rises in step, there is a mechanism; if ρ rises while map quality does not, something
+else is driving it.
+
+**Cost is low because the unlabeled pairs already exist.** The target-surface "unjudged" pool is
+the same contexts with their labels withheld — QA's are banked in #1739's capture store, and the
+new surfaces' come free from the Phase 1 rollouts. New map fits are dense solves over banked
+activations: 3 cells × 4 surfaces × 28 layers × 2 map families ≈ 672 fits, which is the many-cell
+dense-factorization case (#823) and must go through the batched solver, never a per-cell loop.
+
+**Scope control:** run `f_U` at **three `L` anchors, not the full `L` sweep** (#1739's own scoping
+of this factor), and only on surfaces that clear the Result 0 spread gate.
 
 ## Evaluation ladder and metrics
 
@@ -139,7 +203,7 @@ Rungs, in increasing shift:
 - **rung 0** — held-out 20% within the training surface
 - **rung 1** — cross-dataset within family (TriviaQA+NQ-Open → SimpleQA; GSM8K → MATH; MMLU → ARC)
 - **rung 2** — cross-family (recall QA → math / MCQ / code) — the interesting rung for "does the
-  map transfer at all"
+  map transfer at all". "Target surface" for `f_U` always means the **training** surface here.
 
 Metrics: Spearman ρ (matches #1739 so the H3 comparison is commensurable), held-out R², and AUROC
 on the binarized DV for legibility. Paired bootstrap intervals over identical realized folds per
@@ -151,63 +215,97 @@ bottom-bin check, as in #1739 gate 1; a rung that fails is dropped, never drawn 
 hallucination in #1739, and with K=5 a modest ρ may already be near ceiling. (c) **ρ(correctness
 rate, #1739 fabrication rate)** on the banked QA rungs, so the novelty over #1739's hallucination
 arm is explicit rather than assumed. (d) **Map reconstruction quality** (held-out R² + kNN acc@k)
-on each new surface *before* the readout, so a null readout is attributable to map degradation
-rather than to absent signal — the maps were fit on generic chat and math/code contexts are far
-off that distribution.
+per surface, per map family, per `f_U` cell, *before* the readout — so a null readout is
+attributable to map degradation rather than to absent signal.
 
 ## Phasing and compute (planner to size properly)
 
-- **Phase 0 — banked QA, 0 GPU-h.** The correctness DV already exists:
+- **Phase 0 — banked QA, 0 GPU-h for data.** The correctness DV already exists:
   `eval_results/issue_1739/dv_dataset/hallucination/labeling.json` carries `fractions.correct`
   for all 23,188 contexts (5 rollouts each). `scripts/issue1739_fits.py` already accepts
-  `--dv-json`, so this is a DV swap over the existing arm ladder. **CPU pod required, not the
-  VM** — the activation store is a single 70 GB tar
+  `--dv-json`, so the linear ladder is a DV swap over the existing arms. **CPU pod, not the VM** —
+  the activation store is a single 70 GB tar
   (`issue1739_ctxmap/capture_store/hallucination_labeling`), over both the ~10 GB download rule
-  and the 50 GB VM-footprint gate. `cpu-bigmem` with container disk sized for the tar plus
-  extraction.
+  and the 50 GB VM-footprint gate.
 - **Phase 1 — new surfaces (GPU).** ~8k math + ~8k MCQ + ~3k code contexts × 5 rollouts ≈ 95k
   generations under vLLM, plus a teacher-forced capture pass for `v_C` and `v_A`. Rough order
   25–40 GPU-h on 1× H100; **pilot-gated** with a measured 1-cell wall before the production
-  dispatch. New activation store ≈ 25 GB fp16.
-- **Phase 2 — fits (CPU pod).** 4 surfaces × 8 arms × 28 layers × `L`-sweep × seeds × folds,
-  through the shared vectorized fit cores. Sharded across cells; never a serial per-cell loop.
+  dispatch. New activation store ≈ 25 GB fp16. The same rollouts supply the `f_U` unlabeled pools
+  at zero marginal cost.
+- **Phase 2 — fits.** Grid: 4 surfaces × 6 predictor arms × 28 layers × `L` sweep × 3 `f_U` cells
+  (at 3 `L` anchors only) × seeds × group folds, plus ~672 map fits. **The MLP arms move this off
+  a pure-CPU lane**: iterative-optimization fits are GPU-worthy per the compute-character rule,
+  and the many-cell MLP battery must run through the batched multihead path
+  (`analysis/vectorized_mlp_skill.py`, 50–100×), never a per-cell loop. Ops arithmetic and a
+  measured 1-cell pilot wall go in plan §9 before dispatch.
 - **Judge spend ≈ $0** for the primary DV. Math answer-equivalence uses a verifier library, not a
   judge, wherever it can.
 
 ## Reuse (what is already banked)
 
 - Correctness labels + rollouts for the whole QA surface (#1739).
-- Fitted maps, linear and nonlinear, at three unlabeled budgets (`analysis_tensors/maps/`).
-- Activation capture store for the QA contexts (`capture_store/hallucination_labeling`).
+- Fitted generic-pool maps, linear / MLP / kernel, at three unlabeled budgets
+  (`analysis_tensors/maps/`) — the `f_U = 0` reference cells.
+- Activation capture store for the QA contexts (`capture_store/hallucination_labeling`) — also
+  the source of QA's `f_U > 0` unlabeled pairs.
 - The entire fit/arm/fold/bootstrap pipeline (`scripts/issue1739_fits.py`,
-  `issue1739_final_fold.py`, `experiments/issue_1739/arms.py`) and the #825 vectorized fit cores.
+  `issue1739_final_fold.py`, `experiments/issue_1739/arms.py`), the direct-MLP and MLP-map arm
+  implementations, and the #825 vectorized fit cores.
 - #1739's behavior numbers, for the H3 persona-vs-knowledge comparison.
 
-The new code is generation + capture for three surfaces, four programmatic verifiers, and the
-correctness DV builder.
+The new code is generation + capture for three surfaces, four programmatic verifiers, the
+correctness DV builder, and the `f_U` pool-composition harness.
 
 ## Risks and inherited caveats
 
 1. **Novelty vs #1739's hallucination arm.** correct = 1 − abstained − fabricated, and fabrication
    rate was already predicted. Result 0(c) quantifies the overlap; math / MCQ / code are where
    the novelty is structurally protected.
-2. **`n_train < d`** on the new surfaces — see the sizing constraint above.
-3. **Map domain shift** — the maps were fit on generic chat; Result 0(d) makes a null attributable.
-4. **Difficulty confound** — arm 8 is the control; a probe reading item difficulty is a real
+2. **`n_train < d`** on the new surfaces, made tighter by the `f_U` factor's disjoint unlabeled
+   slice — see the sizing constraint above.
+3. **Labels are cheap on these surfaces by construction** (programmatic verification), so the
+   label-efficiency result is an *estimator-level* finding obtained by withholding labels we
+   actually have, transferred by analogy to settings where labels are expensive. State it; do not
+   narrate it as a realized cost saving.
+4. **Map domain shift** — the banked maps were fit on generic chat; Result 0(d) makes a null
+   attributable, and the `f_U` factor is the direct test of whether domain shift is the binding
+   constraint.
+5. **Difficulty confound** — arm 8 is the control; a probe reading item difficulty is a real
    mechanism but a different claim from "the model knows what it knows".
-5. **Contamination** — TriviaQA (2017) and NQ-Open (2019) are plausibly in Qwen's pretraining;
+6. **Contamination** — TriviaQA (2017) and NQ-Open (2019) are plausibly in Qwen's pretraining;
    inherited caveat from #1739, and a reason the math/code surfaces matter.
-6. **Language intrusion** — 6.2% of the banked hallucination rollouts carry CJK intrusion
+7. **Language intrusion** — 6.2% of the banked hallucination rollouts carry CJK intrusion
    (#1739 intrusion audit); carry the same scan and recount.
-7. **Answer-vector pooling on long CoT** — capture both token-mean and last-answer-token; declare
+8. **Answer-vector pooling on long CoT** — capture both token-mean and last-answer-token; declare
    which is primary per surface.
+9. **Grid growth.** MLP arms × `f_U` cells multiply Phase 2. The scope controls are: `f_U` at
+   three `L` anchors only, and the full `L` sweep on a planner-selected subset of surfaces.
 
 ## Open items for the planner
 
 - Literature grounding pass (`/deep-lit-review`) on hidden-state correctness / truthfulness /
   P(IK) probing, to name the closest prior formalizations and to set the expected effect sizes
   for H1 before any fits are run.
-- Exact context counts per new surface, pinned against the `n ≥ d` constraint.
+- Exact context counts per new surface, pinned against the `n ≥ d` constraint *and* the disjoint
+  `f_U` slice.
 - Third code pool selection, and whether code stays in the headline or is reported as exploratory.
 - Whether the `L`-sweep runs on all four surfaces or on QA + one new surface, with the others at
   full-label only.
+- Whether the kernel-ridge map rides as a third input row (free — banked).
+
+## Provenance
+
+Originating chat request (verbatim): *"I want to run an experiment to test if answer correctness
+is predictable from the context vector, and then whether our mapping can help to predict it. Help
+me to plan this expeirment."*
+
+Scope settled in the same chat: all four correctness surfaces; headline framing = **both** the
+knowledge-vs-persona map test and the label-efficiency crossover; slim arm ladder plus mandated
+baselines; routed as a new child task of #1739.
+
+Second round, verbatim: *"can we: - add a MLP arm - compare fitting directly on the specific data
+to fitting on the speific data + generic data to fitting only on the generic data (readout always
+trained on specific data) -- similar to behavior prediction experiment?"* — this is the explicit
+user request the linear-by-default standing rule requires for the nonlinear arms, and it is what
+added the § Map-pool composition factor. The direct-MLP and oracle-MLP arms were added alongside
+the MLP-map arm as a fairness requirement, not as scope creep.
