@@ -335,12 +335,15 @@ def signal_stage_done(args, behavior: str, token: str) -> None:
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
         json.dump(payload, f)
         tmp = f.name
-    HfApi().upload_file(
-        path_or_fileobj=tmp,
-        path_in_repo=_stage_crumb_path(behavior),
-        repo_id=hub.DEFAULT_DATASET_REPO,
-        repo_type="dataset",
-        token=token or None,
+    hub.retry_transient(
+        lambda: HfApi().upload_file(
+            path_or_fileobj=tmp,
+            path_in_repo=_stage_crumb_path(behavior),
+            repo_id=hub.DEFAULT_DATASET_REPO,
+            repo_type="dataset",
+            token=token or None,
+        ),
+        what="claim4-stage-crumb-upload",
     )
     os.unlink(tmp)
     _log(f"[phase=stage_signal {behavior}] breadcrumb -> {_stage_crumb_path(behavior)}")
@@ -364,6 +367,7 @@ def wait_for_sibling_stage(args, behavior: str, token: str) -> None:
     t0 = time.time()
     while time.time() - t0 < args.stage_gate_timeout_s:
         try:
+            # HUB_VERIFY_RETRY_EXEMPT: outer poll loop IS the retry — probe errors are caught below and re-polled every stage_gate_poll_s
             if api.file_exists(hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset"):
                 _log(f"[phase=stage_wait {behavior}] sibling breadcrumb found ({crumb})")
                 return
@@ -421,13 +425,18 @@ def run_claim4_leg(args, behavior: str) -> dict:
                 # the gate writes its SHA-keyed report under <out-root>/repro_claim4/
                 from explore_persona_space.orchestrate import hub
 
-                hub._upload(
+                base_url = hub._upload(
                     report_dir,
                     hub.DEFAULT_DATASET_REPO,
                     "dataset",
                     f"{CLAIM4_HF_OUT_PREFIX}/repro_claim4",
                     raise_on_error=True,
                 )
+                if not base_url:
+                    raise RuntimeError(
+                        "claim4 gate-1 report upload returned no path "
+                        f"({CLAIM4_HF_OUT_PREFIX}/repro_claim4) — durability loss"
+                    )
                 _log(
                     f"[phase=gate1 {behavior}] report uploaded -> {CLAIM4_HF_OUT_PREFIX}/repro_claim4"
                 )
