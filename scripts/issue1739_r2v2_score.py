@@ -164,6 +164,12 @@ DEFAULT_TENSORS_ROOT = Path("analysis_tensors/issue_1739")
 DEFAULT_STORE_ROOT = Path("data/issue_1739/hf_dl")
 HIDDEN_D_PIN = 3584  # Qwen-2.5-7B hidden dim — the well-posedness denominator
 
+# Seed-keyed output schema version (claim4-controls --seeds mode). Recorded in
+# the summary meta and REQUIRED by the per-seed resume predicate — bump it
+# whenever the per-seed output contract changes so a stale layout can never
+# silently satisfy a resume (v2 = the claim4-controls round-2 contract).
+SEED_OUT_SCHEMA_VERSION = 2
+
 
 def _log(msg: str) -> None:
     print(f"[r2v2 {time.strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -503,6 +509,33 @@ def _leakage_assert(readout_ids: set, eval_sets: dict[str, set], label: str) -> 
 # ---------------------------------------------------------------------------
 
 
+def _seed_output_resume_ok(out_dir, *, commit: str, seed: int, map_variants) -> tuple[bool, str]:
+    """True iff a prior (behavior, seed) output can satisfy THIS invocation.
+
+    The resume predicate is keyed on code SHA + output schema version + seed
+    + map-variant set (all recorded in the summary meta) AND requires every
+    per-seed artifact present — a stale, foreign, or partial output can never
+    silently satisfy it (a mismatch re-runs the seed, loudly).
+    """
+    for name in ("all_arms_spearman.json", "map_diagnostics.json", "readout_pools.json"):
+        if not (out_dir / name).exists():
+            return False, f"{name} absent"
+    try:
+        meta = json.loads((out_dir / "all_arms_spearman.json").read_text())["meta"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        return False, f"summary meta unreadable ({type(exc).__name__}: {exc})"
+    checks = {
+        "git_commit": (meta.get("git_commit"), commit),
+        "out_schema_version": (meta.get("out_schema_version"), SEED_OUT_SCHEMA_VERSION),
+        "seed": (meta.get("seed"), int(seed)),
+        "map_variants": (meta.get("map_variants"), list(map_variants or [])),
+    }
+    for field, (got, want) in checks.items():
+        if got != want:
+            return False, f"{field} mismatch (recorded {got!r} != current {want!r})"
+    return True, "match"
+
+
 def _behavior_out_dir(args, behavior: str):
     """Behavior output dir, seed-keyed (`<behavior>/seed<S>/`) in --seeds mode.
 
@@ -638,22 +671,39 @@ def _map_output_variance(mapfit, x_sub, y_sub) -> dict:
     }
 
 
-def _identity_bias_recon(ib_bias, z_ev, za_ev, rungs) -> dict:
+def _identity_bias_recon(ib_means, z_ev, za_ev, rungs) -> dict:
     """Identity+learned-bias baseline scored on the P-B eval contexts.
 
     The (a) half of the standing mapping-baselines pair, computed on the SAME
-    eval contexts the map recon (`_eval_rung_reconstruction`) scores: pred =
-    z_ev + b with b = pool-mean(y_w − x_w) (means are permutation-invariant,
-    so ONE bias serves both map variants — recorded in the note field).
-    Per-layer pooled R² + kNN retrieval, plus per-rung R².
+    eval contexts the map recon (`_eval_rung_reconstruction`) scores — via
+    the CANONICAL ``analysis.mapping_baselines.identity_bias_predict`` helper
+    called per layer on the stored pool-mean sufficient statistics
+    (``ib_means``: single-row train arrays whose mean IS the pool mean, so
+    the helper's ``b = mean(y_train − x_train)`` equals pool-mean(y_w) −
+    pool-mean(x_w) EXACTLY — the memory-motivated substitution keeps the
+    staged frees while routing through the canonical formula + validation).
+    Means are permutation-invariant, so ONE bias serves both map variants
+    (recorded in the note field). Per-layer pooled R² + kNN retrieval, plus
+    per-rung R².
     """
     import numpy as np
 
-    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+    from explore_persona_space.analysis.mapping_baselines import (
+        identity_bias_predict,
+        knn_retrieval,
+    )
     from explore_persona_space.experiments.issue_1739 import fits
     from explore_persona_space.experiments.issue_1739.constants import KNN_KS
 
-    pred = np.asarray(z_ev, dtype=np.float64) + np.asarray(ib_bias, dtype=np.float64)[:, None, :]
+    x_mean = np.asarray(ib_means["x_mean"], dtype=np.float64)
+    y_mean = np.asarray(ib_means["y_mean"], dtype=np.float64)
+    z_ev = np.asarray(z_ev)
+    pred = np.stack(
+        [
+            identity_bias_predict(x_mean[li][None, :], y_mean[li][None, :], z_ev[li])
+            for li in range(z_ev.shape[0])
+        ]
+    )
     per_layer = []
     for li in range(pred.shape[0]):
         per_layer.append(
@@ -741,8 +791,10 @@ def fit_linear_add_map(
     these verbatim (identical generic component across holdouts).
 
     ``claim4_sink`` (claim4-controls round, plan §4 P0.2): when a dict is
-    passed, the sink is filled with (a) ``ib_bias`` — the pool-mean identity
-    +bias vector (Ly, d), computed transient-free as mean(y_w)-mean(x_w);
+    passed, the sink is filled with (a) ``ib_means`` — the per-layer pool
+    means (Ly, d) x_mean/y_mean, the transient-free SUFFICIENT STATISTICS the
+    canonical ``mapping_baselines.identity_bias_predict`` consumes at recon
+    time (see :func:`_identity_bias_recon`);
     (b) when ``claim4_sink["want_shufpair"]`` — after the TRUE map fit (and
     the gen_sink copy) the answer side ``y_w`` is permuted IN PLACE per layer
     by ONE within-component pairing-shuffle permutation
@@ -791,8 +843,15 @@ def fit_linear_add_map(
         **pool_meta,
     }
     if claim4_sink is not None:
-        # identity+bias vector (Ly, d): pool means, no whole-pool transient.
-        claim4_sink["ib_bias"] = y_w.mean(axis=1) - x_w.mean(axis=1)
+        # identity+bias SUFFICIENT STATISTICS (Ly, d): the per-layer pool
+        # means feed the canonical analysis.mapping_baselines
+        # identity_bias_predict at recon time (its bias b is exactly
+        # mean(y_train - x_train) = y_mean - x_mean), without keeping the
+        # whole (Ly, n, D) pools alive across the staged frees.
+        claim4_sink["ib_means"] = {
+            "x_mean": x_w.mean(axis=1),
+            "y_mean": y_w.mean(axis=1),
+        }
         m_sub = min(2048, x_w.shape[1])
         sub = slice(x_w.shape[1] - m_sub, x_w.shape[1])
         diag["map_variant"] = "true"
@@ -882,9 +941,9 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
     )
     map_diags = {"linear": map_diag_linear}
     mapfit_shuf = None
-    ib_bias = None
+    ib_means = None
     if claim4_sink is not None:
-        ib_bias = claim4_sink.get("ib_bias")
+        ib_means = claim4_sink.get("ib_means")
         if claim4_sink.get("want_shufpair"):
             mapfit_shuf = claim4_sink["mapfit_shuf"]
             map_diags["linear_shufpair"] = claim4_sink["diag_shufpair"]
@@ -1007,7 +1066,7 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
         wh=wh,
         mapfit=mapfit,
         mapfit_shuf=mapfit_shuf,
-        ib_bias=ib_bias,
+        ib_means=ib_means,
         groups_all=groups_all,
         groups_pv=groups_pv,
         map_diags=map_diags,
@@ -1059,7 +1118,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     prep = prepare_behavior(args, behavior, layers)
     loaded, tbl_pv, tbl_ood, ood_note = prep.loaded, prep.tbl_pv, prep.tbl_ood, prep.ood_note
     variant, wh, mapfit, map_diags = prep.variant, prep.wh, prep.mapfit, prep.map_diags
-    mapfit_shuf, ib_bias = prep.mapfit_shuf, prep.ib_bias
+    mapfit_shuf, ib_means = prep.mapfit_shuf, prep.ib_means
     groups_all, groups_pv = prep.groups_all, prep.groups_pv
     u_label, n_u = prep.u_label, prep.n_u
     z_ctx, z_ans, dv_raw, ctx_ids, rb_w = (
@@ -1263,11 +1322,11 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         }
         if map_variant is not None:
             report["map_variant"] = map_variant
-            if ib_bias is not None:
+            if ib_means is not None:
                 # mapping-baselines pair (a) on the SAME eval contexts the map
                 # recon scores (plan §6) — one bias serves both variants.
                 report["recon_identity_bias"] = _identity_bias_recon(
-                    ib_bias, z_ev, za_ev, [str(r) for r in rungs_ev]
+                    ib_means, z_ev, za_ev, [str(r) for r in rungs_ev]
                 )
         if map_leak is not None:
             report["map_leakage"] = map_leak
@@ -1842,6 +1901,10 @@ def main(argv: list[str] | None = None) -> int:
 
     _assert_no_judge_modules("at entry")
     if args.import_check:
+        from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
+            identity_bias_predict,
+            knn_retrieval,
+        )
         from explore_persona_space.experiments.issue_1739 import arms as _arms
         from explore_persona_space.experiments.issue_1739 import fits, store_io  # noqa: F401
         from explore_persona_space.orchestrate.env import load_dotenv  # noqa: F401
@@ -1910,10 +1973,29 @@ def main(argv: list[str] | None = None) -> int:
     env = _env_versions()
     failures: list[dict] = []
     t_all = time.time()
-    for behavior, seed in [(b, s) for b in args.behaviors for s in seeds]:
+    units = [(b, s) for b in args.behaviors for s in seeds]
+    for i, (behavior, seed) in enumerate(units, start=1):
         t0 = time.time()
         args.seed = int(seed)
         args.out_subdir = f"seed{seed}" if seed_keyed else ""
+        if seed_keyed:
+            resume_dir = _behavior_out_dir(args, behavior)
+            ok, why = _seed_output_resume_ok(
+                resume_dir, commit=commit, seed=int(seed), map_variants=args.map_variants
+            )
+            if ok:
+                _log(
+                    f"[seed-loop {i}/{len(units)}] RESUME-SKIP {behavior} seed={seed} — "
+                    f"output matches code SHA {commit[:12]} + schema "
+                    f"v{SEED_OUT_SCHEMA_VERSION} ({resume_dir})"
+                )
+                continue
+            if (resume_dir / "all_arms_spearman.json").exists():
+                _log(
+                    f"[seed-loop {i}/{len(units)}] prior output at {resume_dir} NOT "
+                    f"resumable ({why}) — re-running the seed"
+                )
+            _log(f"[seed-loop {i}/{len(units)}] START {behavior} seed={seed}")
         try:
             res = run_behavior(args, behavior, layers)
         except (FileNotFoundError, RuntimeError, ValueError, AssertionError) as exc:
@@ -1941,6 +2023,7 @@ def main(argv: list[str] | None = None) -> int:
                     {
                         "seed": int(args.seed),
                         "seed_keyed_out_dir": bool(seed_keyed),
+                        "out_schema_version": SEED_OUT_SCHEMA_VERSION,
                         "map_variants": list(args.map_variants or []),
                         "shufpair_roster": list(SHUFPAIR_ROSTER),
                     }
@@ -2002,6 +2085,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         _verify_input_shas(loaded.shas)
         _log(f"{behavior} done: {len(res['rows'])} transfer rows in {res['wall_s']}s -> {out_path}")
+        if seed_keyed:
+            _log(
+                f"[seed-loop {i}/{len(units)}] DONE {behavior} seed={seed} "
+                f"elapsed={time.time() - t0:.1f}s"
+            )
         del loaded, res
 
     from scripts.issue1739_wcrung_arms import _assert_no_judge_modules as _anjm
