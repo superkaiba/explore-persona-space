@@ -528,12 +528,35 @@ def _seed_output_resume_ok(out_dir, *, commit: str, seed: int, map_variants) -> 
         "git_commit": (meta.get("git_commit"), commit),
         "out_schema_version": (meta.get("out_schema_version"), SEED_OUT_SCHEMA_VERSION),
         "seed": (meta.get("seed"), int(seed)),
-        "map_variants": (meta.get("map_variants"), list(map_variants or [])),
     }
     for field, (got, want) in checks.items():
         if got != want:
             return False, f"{field} mismatch (recorded {got!r} != current {want!r})"
+    # map-variant membership is compared as a SET (review r2 item 6): the
+    # variant list is unordered configuration — a reordered but identical set
+    # must resume, a different set must re-run.
+    rec_mv = meta.get("map_variants")
+    want_mv = list(map_variants or [])
+    if not isinstance(rec_mv, list) or {str(v) for v in rec_mv} != {str(v) for v in want_mv}:
+        return False, f"map_variants set mismatch (recorded {rec_mv!r} != current {want_mv!r})"
     return True, "match"
+
+
+def _write_companions_then_summary(out_dir, res: dict, write_summary_fn) -> None:
+    """Companion artifacts FIRST, the validated summary LAST (review r2 item 6).
+
+    ``all_arms_spearman.json`` is the per-seed COMPLETION SENTINEL: the resume
+    predicate (:func:`_seed_output_resume_ok`) keys its identity checks on the
+    summary's meta, so the summary must be the LAST artifact written — an
+    interrupt anywhere in this function then leaves either no summary or a
+    prior-generation summary (whose git_commit/schema keys fail the
+    predicate), never a passing predicate over mixed-generation artifacts.
+    """
+    (out_dir / "map_diagnostics.json").write_text(json.dumps(res["map_diagnostics"], indent=1))
+    (out_dir / "readout_pools.json").write_text(
+        json.dumps({"pools": res["pools"], "fit_reports": res["fit_reports"]}, indent=1)
+    )
+    write_summary_fn()
 
 
 def _behavior_out_dir(args, behavior: str):
@@ -2008,81 +2031,84 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = _behavior_out_dir(args, behavior)
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / "all_arms_spearman.json"
-        arms.write_summary(
-            [],
-            out_path,
-            meta={
-                "mode": "r2v2",
-                "behavior": behavior,
-                "config": "config_a",
-                "regimes": [args.regime],
-                "variants": [args.variant],
-                "variant_scope": VARIANT_SCOPE_NOTE,
-                "protocols": list(args.protocols),
-                **(
-                    {
-                        "seed": int(args.seed),
-                        "seed_keyed_out_dir": bool(seed_keyed),
-                        "out_schema_version": SEED_OUT_SCHEMA_VERSION,
-                        "map_variants": list(args.map_variants or []),
-                        "shufpair_roster": list(SHUFPAIR_ROSTER),
-                    }
-                    if (seed_keyed or args.map_variants is not None)
-                    else {}
-                ),
-                "arms": list(ROSTER),
-                "label_consuming_arms": sorted(LABEL_CONSUMING),
-                "map_kinds": ["linear"],
-                "map_condition": "add",
-                "mlp_arms_note": "ALL MLP arms removed (r2v2 dispatch, epm:progress v639); "
-                "linear-map + closed-form readouts throughout — this round cannot speak to "
-                "map nonlinearity",
-                "protocol_definitions": {
-                    "P-A": "readout = ONE trait-eliciting dataset (train budget cell) + "
-                    "judged WildChat train split (the r2fair protocol)",
-                    "P-B": f"readout = {args.train_frac:.0%} GROUP-level slice of every "
-                    "trait-eliciting dataset except one held out whole + judged WildChat "
-                    "train split; one fit per holdout (LODO); map FROZEN (behavior-level "
-                    "ADD fit)",
-                    "P-C": f"map AND readout refit per holdout: map = generic fit pool + "
-                    f"{args.train_frac:.0%} GROUP-level slice of every trait-eliciting "
-                    "dataset except the holdout (whitening frozen per behavior); readout "
-                    "= those same slices + judged WildChat train split (the P-B pool); "
-                    "holdout unseen by map AND readout (hard-asserted)",
+
+        # companions FIRST, summary LAST — the summary is the per-seed
+        # completion sentinel (_write_companions_then_summary docstring);
+        # deferred behind a def so the summary lands after the companions.
+        def write_summary(res=res, out_path=out_path, loaded=loaded):
+            arms.write_summary(
+                [],
+                out_path,
+                meta={
+                    "mode": "r2v2",
+                    "behavior": behavior,
+                    "config": "config_a",
+                    "regimes": [args.regime],
+                    "variants": [args.variant],
+                    "variant_scope": VARIANT_SCOPE_NOTE,
+                    "protocols": list(args.protocols),
+                    **(
+                        {
+                            "seed": int(args.seed),
+                            "seed_keyed_out_dir": bool(seed_keyed),
+                            "out_schema_version": SEED_OUT_SCHEMA_VERSION,
+                            "map_variants": list(args.map_variants or []),
+                            "shufpair_roster": list(SHUFPAIR_ROSTER),
+                        }
+                        if (seed_keyed or args.map_variants is not None)
+                        else {}
+                    ),
+                    "arms": list(ROSTER),
+                    "label_consuming_arms": sorted(LABEL_CONSUMING),
+                    "map_kinds": ["linear"],
+                    "map_condition": "add",
+                    "mlp_arms_note": "ALL MLP arms removed (r2v2 dispatch, epm:progress v639); "
+                    "linear-map + closed-form readouts throughout — this round cannot speak to "
+                    "map nonlinearity",
+                    "protocol_definitions": {
+                        "P-A": "readout = ONE trait-eliciting dataset (train budget cell) + "
+                        "judged WildChat train split (the r2fair protocol)",
+                        "P-B": f"readout = {args.train_frac:.0%} GROUP-level slice of every "
+                        "trait-eliciting dataset except one held out whole + judged WildChat "
+                        "train split; one fit per holdout (LODO); map FROZEN (behavior-level "
+                        "ADD fit)",
+                        "P-C": f"map AND readout refit per holdout: map = generic fit pool + "
+                        f"{args.train_frac:.0%} GROUP-level slice of every trait-eliciting "
+                        "dataset except the holdout (whitening frozen per behavior); readout "
+                        "= those same slices + judged WildChat train split (the P-B pool); "
+                        "holdout unseen by map AND readout (hard-asserted)",
+                    },
+                    "lodo_parameterization": "assemble_readout_pool(datasets, holdout=..., "
+                    "include=..., train_frac=..., seed=...) — group-membership sides are a pure "
+                    "hash of (dataset, group_key, seed), independent of holdout and roster, so "
+                    "Result-5 LODO sweeps / subset ablations are loops over the parameters",
+                    "datasets": res["datasets"],
+                    "pb_pools": res["pools"],
+                    "fit_reports": res["fit_reports"],
+                    "frozen_layers": res["frozen"],
+                    "frozen_layer_source": res["frozen_source"],
+                    "ood_dv_prep": res["ood_note"],
+                    "pvsynth_deviation": PVSYNTH_READOUT_DEVIATION,
+                    "budget_l": res["budget_l"],
+                    "n_u": res["n_u"],
+                    "u_pool_label": res["u_label"],
+                    "input_paths": {k: str(v) for k, v in loaded.paths.items()},
+                    "input_sha256": loaded.shas,
+                    "git_commit": commit,
+                    "env_versions": env,
+                    "wall_s": round(time.time() - t0, 1),
+                    "judge_called": False,
                 },
-                "lodo_parameterization": "assemble_readout_pool(datasets, holdout=..., "
-                "include=..., train_frac=..., seed=...) — group-membership sides are a pure "
-                "hash of (dataset, group_key, seed), independent of holdout and roster, so "
-                "Result-5 LODO sweeps / subset ablations are loops over the parameters",
-                "datasets": res["datasets"],
-                "pb_pools": res["pools"],
-                "fit_reports": res["fit_reports"],
-                "frozen_layers": res["frozen"],
-                "frozen_layer_source": res["frozen_source"],
-                "ood_dv_prep": res["ood_note"],
-                "pvsynth_deviation": PVSYNTH_READOUT_DEVIATION,
-                "budget_l": res["budget_l"],
-                "n_u": res["n_u"],
-                "u_pool_label": res["u_label"],
-                "input_paths": {k: str(v) for k, v in loaded.paths.items()},
-                "input_sha256": loaded.shas,
-                "git_commit": commit,
-                "env_versions": env,
-                "wall_s": round(time.time() - t0, 1),
-                "judge_called": False,
-            },
-            extra={
-                "transfer_rows": res["rows"],
-                "transfer_skips": res["skips"],
-                "per_layer_rows": res["per_layer"],
-                "n_transfer_rows": len(res["rows"]),
-                "n_per_layer_rows": len(res["per_layer"]),
-            },
-        )
-        (out_dir / "map_diagnostics.json").write_text(json.dumps(res["map_diagnostics"], indent=1))
-        (out_dir / "readout_pools.json").write_text(
-            json.dumps({"pools": res["pools"], "fit_reports": res["fit_reports"]}, indent=1)
-        )
+                extra={
+                    "transfer_rows": res["rows"],
+                    "transfer_skips": res["skips"],
+                    "per_layer_rows": res["per_layer"],
+                    "n_transfer_rows": len(res["rows"]),
+                    "n_per_layer_rows": len(res["per_layer"]),
+                },
+            )
+
+        _write_companions_then_summary(out_dir, res, write_summary)
         _verify_input_shas(loaded.shas)
         _log(f"{behavior} done: {len(res['rows'])} transfer rows in {res['wall_s']}s -> {out_path}")
         if seed_keyed:
