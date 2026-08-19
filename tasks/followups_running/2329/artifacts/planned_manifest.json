@@ -47,7 +47,8 @@
     "per-segment anchor-normalized F",
     "within-answer decay drop (Q1 minus Q4)",
     "patched-vs-prompted decay difference",
-    "absolute Q1 starting-level gap (steered minus ceiling)"
+    "absolute Q1 starting-level gap (steered minus ceiling)",
+    "all-generated vs coherence-conditional decay estimands (per-arm retention counts; cross-estimand disagreement => UNRESOLVED)"
   ],
   "figures": [
     {
@@ -173,7 +174,7 @@
       "id": "q35_ladder_decay_contrast",
       "title": "Patched-vs-prompted decay contrast",
       "source": "eval_results/issue_2329/q35_ladder_decay/decay/decay_stats.json",
-      "transform": "per model: per-carrier PAIRED differences on COMMON SUPPORT (carriers holding >=1 coherent, length-surviving completion in BOTH arms; excluded carriers named): D_raw(arm, carrier) = mean raw score(Q1) - mean raw score(Q4); Delta-D = mean over common-support carriers of [D_raw(steered-ce, c) - D_raw(ceiling, c)]; carrier-clustered bootstrap (B=10000, seed 21627, ONE shared carrier-resample index per draw applied jointly to both arms and both endpoint segments) 95% CIs; absolute Q1 starting-level gap printed beside the contrast; zero-spanning CIs labeled inconclusive per the registered Leg B lattice; the F-scale equivalent D_F = F(Q1) - F(Q4) alongside; >=3-per-arm common-support sensitivity re-read reported",
+      "transform": "per model and per ESTIMAND (all-generated = all length-eligible rows; coherence-conditional = rows passing the inherited >60 per-draw screen; headline = coherence-conditional; per-arm retention counts shown — R2-S2): per-carrier PAIRED differences on COMMON SUPPORT (carriers holding >=1 length-surviving completion in BOTH arms under the estimand's own row set; excluded carriers named): D_raw(arm, carrier) = mean raw score(Q1) - mean raw score(Q4); Delta-D = mean over common-support carriers of [D_raw(steered-ce, c) - D_raw(ceiling, c)]; carrier-clustered bootstrap (B=10000, seed 21627, ONE shared carrier-resample index per draw applied jointly to both arms and both endpoint segments) 95% CIs; absolute Q1 starting-level gap printed beside the contrast; verdicts per the registered Leg B lattice (R2-S1/R2-S2): patch-decays-faster requires BOTH estimands' Delta-D CIs entirely above 0; patch-more-persistent requires BOTH estimands' Delta-D CIs entirely below 0 AND the paired Delta-D_F CIs entirely below 0 in both estimands, where Delta-D_F_c = F_c(Q1) - F_c(Q4) per common-support carrier under per-carrier anchor normalization (the ceiling arm's normalized drop is identically zero, so this IS the paired F-scale contrast), available only when both endpoint segments pass the registered 0.125 denominator-suppression bar; a raw-only Delta-D < 0 exclusion is labeled 'inconclusive — raw-scale contrast confounded by starting-level compression (see the Q1 gap)'; cross-estimand label disagreement labeled UNRESOLVED; zero-spanning CIs labeled inconclusive; >=3-per-arm common-support sensitivity re-read reported",
       "plotted_quantity": "decay drop D (Q1 minus Q4, raw 0-100 and F scales) per arm and the steered-minus-ceiling difference, per model"
     },
     {
