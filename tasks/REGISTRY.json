@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2377,
+  "highest_id": 2378,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10638,6 +10638,13 @@
       "path": "tasks/running/2377",
       "status": "running",
       "title": "workflow-fix: tmp-scratch sweep blind spot \u2014 stray top-level /tmp/{pyproject.toml,uv.lock} poisons every /tmp-cwd uv run fleet-wide"
+    },
+    "2378": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2378",
+      "status": "proposed",
+      "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
     },
     "238": {
       "has_clean_result": false,
