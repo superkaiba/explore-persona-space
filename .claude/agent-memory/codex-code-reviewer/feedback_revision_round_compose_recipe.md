@@ -1369,3 +1369,31 @@ BOTH prior verdicts inlined tags-stripped + codex rows blockquoted: own-head
 v2==1, close==1, all four prior tag forms==0, line-start rows==1,
 `> CONCERN:: `==13; the OLD r1 ledger literal legitimately survives INSIDE
 the inlined codex-r1 envelope — scope residue greps outside envelopes.
+
+**Same-task r2→r3 union fix round: reconstruct-head + patched-REST (#2379
+r3, 2026-08-19):** four durable deltas on the #2332/#2379-r2 union shape.
+(a) The concerns ledger has a THIRD event type `verified-open` (posted when
+a twin's FAIL re-raises an already-addressed id) — the OPEN predicate is
+latest ∈ {raised, verified-open}; a latest-event walk keyed only on
+raised/addressed silently drops those ids from BOTH lists (hit live: the 3
+re-raised BLOCKERs vanished from my first walk). (b) Implementer-side
+`addressed` rows posted minutes AFTER the impl marker are round INPUTS
+(closure claims pending this review) — include them in the snapshot; the
+#2326 ts-pin excludes only parallel-REVIEWER rows (review OUTPUTS); re-probe
+for drift at compose end. (c) An UPDATED-PHASES-ONLY `## Smoke run` (the v3
+marker says the round-2 evidence remains current for unchanged phases)
+needs the PRIOR marker's smoke section inlined as a context-only excerpt
+envelope (do-not-score-shape; findings only where a round-3 hunk
+invalidates a claim) + a 0.5/0.6 attestation so Codex never FAILs
+`smoke-run-missing` on untouched phases — anchor the excerpt on the
+line-start heading `\n## Smoke run\n` (a prose mention elsewhere in the
+body inflates the bare-substring count). (d) Head convention-mentions enter
+token arithmetic: the head's own "blockquoted (`> CONCERN:: `)" sentence
+adds +1 to the blockquote-count assert. Also: copy content-safety /
+hard-bans / plan sections VERBATIM out of the prior head by span anchors
+(never retype), and REST-side SHA-count asserts must exclude head
+occurrences (the diff-acquisition command lives in the head). NO-CODE
+disposition rows get the #2147-cr5 ACCEPTED-NON-CHANGE | OVERTURNED
+vocabulary wired into the closure-ledger schema, with the
+flagged-for-follow-up row doubling as a scope ruling (CONCERN row, not
+FAIL).
