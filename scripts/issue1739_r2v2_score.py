@@ -591,17 +591,24 @@ def shufpair_structural_check(perm, n_gen: int, n_total: int) -> dict:
     }
 
 
-def _weight_spectrum(w) -> list[dict]:
-    """Per-layer singular-value profile of a fitted map's weight tensor.
+def _weight_spectrum(w, *, stride: int = 4) -> list[dict]:
+    """Strided-layer singular-value profile of a fitted map's weight tensor.
 
     The 'effective spectrum' degeneration diagnostic (plan §4 P0.2): top
     singular values + Frobenius/spectral norms + participation-ratio
-    effective rank, per layer. Values-only LAPACK svd (no U/V), fp64.
+    effective rank. Values-only LAPACK svd (no U/V), fp64. Computed on a
+    LAYER STRIDE (every ``stride``-th layer + the last): a full-D svdvals is
+    ~25 s/layer at D=3584, so all 28 layers x 2 maps would add ~24 min per
+    seed-invocation against the plan-§9 0.6-0.8 h row (+50-65%%); the strided
+    8-layer profile (~3-4 min) keeps the true-vs-shufpair degeneration read
+    at matched layers within the sized budget.
     """
     import numpy as np
 
+    n_layers = int(w.shape[0])
+    layer_idx = sorted(set(range(0, n_layers, max(1, stride))) | {n_layers - 1})
     out = []
-    for li in range(w.shape[0]):
+    for li in layer_idx:
         s = np.linalg.svd(np.asarray(w[li], dtype=np.float64), compute_uv=False)
         s2 = s**2
         out.append(
