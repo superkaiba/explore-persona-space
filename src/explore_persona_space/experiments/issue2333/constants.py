@@ -10,6 +10,7 @@ VM-side analysis re-verifies these constants against the committed artifacts.
 from __future__ import annotations
 
 import random
+from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # HF data-repo revision pins (plan §10; resolved 2026-08-16 on this session).
@@ -109,6 +110,42 @@ FITNESS_2329_CLASSES = (
     f"{HF_PREFIX_2329}/raw_completions/ce_control",  # stage-1 ce-control rows
 )
 
+# ---------------------------------------------------------------------------
+# #2329 reuse pins (q35_language_snowball follow-up, plan §10): artifacts are
+# consumed AT these pins, never at a floating revision.
+# ---------------------------------------------------------------------------
+PIN_2329_DATA = "ce138be2490f1bb75a721ebc87529cf6e12660ce"  # HF data-repo revision
+REF_2329_BRANCH = "b52657ee0e"  # origin/issue-2329 git ref (vendored inputs source)
+
+# Realized remote paths @ PIN_2329_DATA (probed via list_repo_tree, 2026-08-18:
+# vc_bank = 6 files incl. bank.json/bank.meta.json/vc_bank.pt; anchors = 16
+# final jsonl shards anchors_{gate,rest}_w{0..7}; anchor va = 16 .pt shards.
+# NO preregen_superseded/ path exists at the pin — the exclusion below is a
+# defensive invariant, plan §4.1 "never consumed").
+R2329_BANK_JSON = f"{HF_PREFIX_2329}/analysis_tensors/vc_bank/bank.json"
+R2329_BANK_META = f"{HF_PREFIX_2329}/analysis_tensors/vc_bank/bank.meta.json"
+R2329_VC_BANK = f"{HF_PREFIX_2329}/analysis_tensors/vc_bank/vc_bank.pt"
+R2329_ANCHORS_PREFIX = f"{HF_PREFIX_2329}/raw_completions/anchors"
+R2329_ANCHORS_VA_PREFIX = f"{HF_PREFIX_2329}/analysis_tensors/anchors"
+R2329_NEVER_CONSUMED_SUBSTRING = "preregen_superseded"
+
+# Anchor-row schema floor (fitness2329 check (b)) — OBSERVED @ PIN_2329_DATA on
+# anchors_gate_w0.jsonl row 0 (full key set: cap_hit, cap_hit_basis, carrier,
+# cell, context_id, draw, gate_slice, max_new_tokens, n_completion_tokens,
+# seed, temperature, text, value_id).
+ANCHOR_2329_REQUIRED_KEYS = frozenset(
+    {"context_id", "cell", "draw", "seed", "temperature", "text", "cap_hit"}
+)
+
+# Vendored #2329 git inputs (committed on issue-2333 at implementation start —
+# the source branch is unmerged, so vendoring is the durability move; source
+# ref REF_2329_BRANCH recorded in the inputs SOURCES.md). The fitness2329 (g)
+# instrument check reads the judge summary from here, repo-relative (pod
+# partial clones carry the eval_results/issue_2333 cone, #2211).
+Q35LANG_INPUTS_DIR = "eval_results/issue_2333/q35_language_snowball/inputs"
+I2329_JUDGE_SUMMARY_RELPATH = f"{Q35LANG_INPUTS_DIR}/i2329_judge_summary.json"
+EXPECTED_2329_JUDGE_MODEL = "claude-sonnet-4-5-20250929"
+
 
 def seeded_derangement(items: list[str], seed: int) -> dict[str, str]:
     """Seeded derangement (no fixed point) over ``items`` — the plan §4.2 S2
@@ -149,14 +186,17 @@ def parse_arm(slug: str) -> tuple[str, int, str]:
     raise ValueError(f"unknown arm slug: {slug}")
 
 
-def expected_grid_slugs() -> set[str]:
-    """The 144 production grid-block shard slugs (byte-parity with
+def expected_grid_slugs(cell_set: str = "main") -> set[str]:
+    """The production grid-block shard slugs for ``cell_set`` (byte-parity with
     ``issue2162_run.block_slug(f"{cell}|{arm}|{variant}")`` — test-pinned).
 
-    Torch-free so the VM-side judge/analysis completeness gate (pre-spend,
-    plan §7 / code-review r1 Major 3) can enumerate without the pod driver.
+    main: 144 ((5 S1 cells + 1 S2 cell) x 12 arms x 2 variants); q35lang: 48
+    (2 language cells x 12 x 2). Torch-free so the VM-side judge/analysis
+    completeness gate (pre-spend, plan §7 / code-review r1 Major 3) can
+    enumerate without the pod driver.
     """
-    cells = (*S1_CELLS, S2_CELL)
+    cs = CELL_SETS[cell_set]
+    cells = active_cells(cell_set)
     slugs = {
         f"{cell}|{arm}|{variant}".replace("|", "__").replace(".", "p")
         for cell in cells
@@ -164,16 +204,21 @@ def expected_grid_slugs() -> set[str]:
         for variant in VARIANTS
     }
     assert len(slugs) == len(cells) * len(ARM_SLUGS) * len(VARIANTS), len(slugs)
+    assert len(slugs) == cs.expected_grid_blocks, (len(slugs), cs.expected_grid_blocks)
     return slugs
 
 
-def expected_ce_control_slugs() -> set[str]:
-    """The 12 q35 ce_control shard slugs ((5 S1 cells + 1 S2 cell) x 2 variants)."""
-    return {
+def expected_ce_control_slugs(cell_set: str = "main") -> set[str]:
+    """The ce_control shard slugs for ``cell_set`` (cells x 2 variants;
+    main: 12, q35lang: 4)."""
+    cs = CELL_SETS[cell_set]
+    slugs = {
         f"{cell}|ce_replace|{variant}".replace("|", "__").replace(".", "p")
-        for cell in (*S1_CELLS, S2_CELL)
+        for cell in active_cells(cell_set)
         for variant in VARIANTS
     }
+    assert len(slugs) == cs.expected_ce_blocks, (len(slugs), cs.expected_ce_blocks)
+    return slugs
 
 
 # ---------------------------------------------------------------------------
@@ -193,3 +238,72 @@ CE_CONTROL_DRAWS = 5  # q35 banked-ce control (plan §4.4 B1)
 PARITY_EARLY_LAYERS = (0, 1, 2, 3)
 PARITY_EARLY_COS_MIN = 0.999
 PARITY_FLAT_COS_MIN = 0.995
+
+
+# ---------------------------------------------------------------------------
+# CELL-SET registry (q35_language_snowball follow-up, plan §4.3 item 1).
+# "main" = the parent run's universe (5 S1 format cells + the S2 matched-query
+# cell) — the DEFAULT everywhere, so the parent path stays behaviorally
+# byte-identical. "q35lang" = the 2 Qwen3.5 language cells at ce, S2 OFF.
+# Defined at module END so the entries can reference the knob constants above;
+# the slug builders resolve CELL_SETS at CALL time, so ordering is safe.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class CellSet:
+    """One selectable pair universe + its expected realized counts."""
+
+    name: str
+    s1_cells: tuple[str, ...]  # bank2162 cells (36 directed pairs each)
+    s2_on: bool  # include the #2094 matched-query S2 set (15 pairs)
+    expected_pairs: int
+    expected_contexts: int
+    expected_grid_blocks: int  # cells x 12 arms x 2 variants
+    expected_ce_blocks: int  # cells x 2 variants
+    expected_smoke_blocks: int  # 1 pair per available set x 12 arms x 2 variants
+    hf_namespace: str | None  # replaces the <model_tag> HF-prefix segment; None = model_tag
+    max_new_tokens: int  # grid/anchors/ce decoding cap (regen tier = 2x)
+    planned_grid_wall_h: float | None  # None = per-model PLANNED_GRID_WALL_H (run.py)
+
+
+Q35LANG_CELLS = ("instr_language", "language_implied")
+Q35LANG_LABEL = "q35_language_snowball"
+
+CELL_SETS: dict[str, CellSet] = {
+    "main": CellSet(
+        name="main",
+        s1_cells=S1_CELLS,
+        s2_on=True,
+        expected_pairs=195,  # 180 S1 + 15 S2
+        expected_contexts=195,
+        expected_grid_blocks=144,
+        expected_ce_blocks=12,
+        expected_smoke_blocks=48,
+        hf_namespace=None,
+        max_new_tokens=MAX_NEW_TOKENS,
+        planned_grid_wall_h=None,
+    ),
+    "q35lang": CellSet(
+        name="q35lang",
+        s1_cells=Q35LANG_CELLS,
+        s2_on=False,
+        expected_pairs=72,  # 2 cells x 36 directed pairs
+        expected_contexts=72,  # counted in #2329 bank.json @ PIN_2329_DATA
+        expected_grid_blocks=48,
+        expected_ce_blocks=4,
+        expected_smoke_blocks=24,
+        hf_namespace=Q35LANG_LABEL,
+        # #2329 MEASURED 12.5-23% anchor cap-hit at 2048 on exactly these
+        # cells — 4096 pre-applies the parent's registered >2% regen tier
+        # (plan §11); the regen tier moves to 2x = 8192.
+        max_new_tokens=4096,
+        planned_grid_wall_h=3.5,  # plan §9 L3 row (pilot-gated, fence 2x)
+    ),
+}
+
+
+def active_cells(cell_set: str) -> tuple[str, ...]:
+    """Grid cell list for ``cell_set`` (S1 cells + the S2 cell when on)."""
+    cs = CELL_SETS[cell_set]
+    return (*cs.s1_cells, S2_CELL) if cs.s2_on else tuple(cs.s1_cells)

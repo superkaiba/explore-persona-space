@@ -77,11 +77,14 @@ RC_PILOT_GATE = 22
 RC_ENVCHECK_GATE = 24
 RC_PARITY_GATE = 25
 RC_MINPAIR_GATE = 26
+RC_TOKEN2329_GATE = 27  # q35lang L0: token-identity vs #2329 bank @ pin failed
 
 MINPAIR_VIOLATION_MAX_FRAC = 0.10  # above => systemic render break, halt
 CAP_HIT_REGEN_FRAC = 0.02  # plan §6 pre-registered regen trigger
-PLANNED_GRID_WALL_H = {"q25": 1.4, "q35": 2.1}  # plan §9 A3/B4 rows
+PLANNED_GRID_WALL_H = {"q25": 1.4, "q35": 2.1}  # plan §9 A3/B4 rows (main cell set)
 
+# Kept as MAIN-cell-set aliases (external references); per-set expected counts
+# live in C.CELL_SETS (q35lang: 72 pairs / 72 contexts / 48 grid blocks).
 EXPECTED_N_CONTEXTS = 195  # plan §4.1: union of S1 + S2 referenced contexts
 EXPECTED_N_PAIRS = 195  # 180 S1 + 15 S2
 EXPECTED_N_BLOCKS = 144  # (5 S1 cells + 1 S2 cell) x 12 arms x 2 variants
@@ -118,6 +121,10 @@ class RunConfig:
     upload_every: int
     planned_wall_h: float
     only_blocks: tuple[str, ...]
+    # C.CELL_SETS key ("main" = parent universe; "q35lang"). Defaulted + LAST
+    # so every pre-existing keyword construction (unit tests, R-proxy shims)
+    # stays valid — the parent path is byte-identical at the default.
+    cell_set: str = "main"
 
     @property
     def rollouts_dir(self) -> Path:
@@ -192,6 +199,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument("--model-tag", choices=tuple(C.MODELS), default="q25")
     ap.add_argument(
+        "--cell-set",
+        choices=tuple(C.CELL_SETS),
+        default="main",
+        help="pair universe (default 'main' = the parent run; 'q35lang' = the 2 "
+        "Qwen3.5 language cells, S2 off — q35_language_snowball follow-up)",
+    )
+    ap.add_argument(
         "--out-root", type=Path, default=None, help="default: /workspace/issue2333_out/<tag>"
     )
     ap.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR)
@@ -201,7 +215,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--device", default=None)
     ap.add_argument("--gen-batch", type=int, default=C.GEN_BATCH)
     ap.add_argument("--capture-batch", type=int, default=8)
-    ap.add_argument("--max-new-tokens", type=int, default=C.MAX_NEW_TOKENS)
+    ap.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=None,
+        help="default: the cell set's registered cap (main 2048; q35lang 4096)",
+    )
     ap.add_argument("--anchor-draws", type=int, default=C.ANCHOR_DRAWS)
     ap.add_argument("--grid-draws", type=int, default=C.GRID_DRAWS)
     ap.add_argument("--seed-base", type=int, default=C.SEED_BASE)
@@ -224,19 +243,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def build_config(args: argparse.Namespace) -> RunConfig:
     spec = C.MODELS[args.model_tag]
+    cs = C.CELL_SETS[args.cell_set]
+    if args.cell_set == "q35lang" and args.model_tag != "q35":
+        # The language cells are unusable on Qwen2.5 (#2162 two-by-two) —
+        # the q35lang round is Qwen3.5-only by design (plan §11). --tiny CPU
+        # smokes keep --model-tag q35 (the tiny model swap is orthogonal).
+        raise SystemExit("--cell-set q35lang requires --model-tag q35 (plan §11)")
     if args.device:
         device = args.device
     elif args.tiny:
         device = "cpu"
     else:
         device = "cuda:0"
-    out_root = args.out_root if args.out_root else DEFAULT_OUT_ROOT / args.model_tag
+    # Disjoint out-root namespace per cell set (plan §9 phase_outputs:
+    # /workspace/issue2333_out/q35lang/...): the parent path keeps <model_tag>.
+    default_leaf = args.cell_set if args.cell_set != "main" else args.model_tag
+    out_root = args.out_root if args.out_root else DEFAULT_OUT_ROOT / default_leaf
     planned = args.planned_wall_h
     if planned is None:
-        planned = PLANNED_GRID_WALL_H[args.model_tag]
+        planned = (
+            cs.planned_grid_wall_h
+            if cs.planned_grid_wall_h is not None
+            else PLANNED_GRID_WALL_H[args.model_tag]
+        )
     return RunConfig(
         phase=args.phase,
         model_tag=args.model_tag,
+        cell_set=args.cell_set,
         out_root=out_root,
         log_dir=args.log_dir,
         model_id=spec["model_id"],
@@ -246,7 +279,9 @@ def build_config(args: argparse.Namespace) -> RunConfig:
         device=device,
         gen_batch=args.gen_batch,
         capture_batch=args.capture_batch,
-        max_new_tokens=args.max_new_tokens,
+        max_new_tokens=(
+            args.max_new_tokens if args.max_new_tokens is not None else cs.max_new_tokens
+        ),
         anchor_draws=args.anchor_draws,
         grid_draws=1 if args.smoke else args.grid_draws,
         seed_base=args.seed_base,
@@ -263,19 +298,29 @@ def build_config(args: argparse.Namespace) -> RunConfig:
 
 
 def hf_prefix(cfg: RunConfig) -> str:
-    base = f"{C.HF_PREFIX}/{cfg.model_tag}"
+    """HF upload prefix: <HF_PREFIX>/<model_tag> for the parent cell set;
+    the q35lang namespace tag REPLACES the model_tag segment (plan §10:
+    issue2333_snowball/q35_language_snowball/... — never a parent prefix)."""
+    ns = C.CELL_SETS[cfg.cell_set].hf_namespace
+    base = f"{C.HF_PREFIX}/{ns or cfg.model_tag}"
     return f"{base}_smoke" if cfg.smoke else base
 
 
 # ── pair universe / contexts / rendering ─────────────────────────────
 
 
-def build_pair_universe() -> tuple[list, list]:
-    """(s1_pairs, s2_pairs): #2162 survivor-cell pairs + #2094 matched-query."""
-    s1 = [p for p in BANK2162.build_pairs() if p.cell in C.S1_CELLS]
-    assert len(s1) == len(C.S1_CELLS) * C.S1_PAIRS_PER_CELL, len(s1)
-    s2 = [p for p in BANK94.build_pairs() if p.setting == "matched_query"]
-    assert len(s2) == 15, len(s2)
+def build_pair_universe(cell_set: str = "main") -> tuple[list, list]:
+    """(s1_pairs, s2_pairs) for ``cell_set``: bank2162 cells + (S2 on) the
+    #2094 matched-query set. q35lang: 72 language pairs, S2 EMPTY."""
+    cs = C.CELL_SETS[cell_set]
+    s1 = [p for p in BANK2162.build_pairs() if p.cell in cs.s1_cells]
+    assert len(s1) == len(cs.s1_cells) * C.S1_PAIRS_PER_CELL, len(s1)
+    if cs.s2_on:
+        s2 = [p for p in BANK94.build_pairs() if p.setting == "matched_query"]
+        assert len(s2) == 15, len(s2)
+    else:
+        s2 = []
+    assert len(s1) + len(s2) == cs.expected_pairs, (len(s1), len(s2), cs.expected_pairs)
     return s1, s2
 
 
@@ -287,13 +332,16 @@ def cell_of(pair) -> str:
     return pair.cell if hasattr(pair, "cell") else C.S2_CELL
 
 
-def build_context_universe(s1_pairs: list, s2_pairs: list) -> dict[str, dict]:
+def build_context_universe(
+    s1_pairs: list, s2_pairs: list, cell_set: str = "main"
+) -> dict[str, dict]:
     """All referenced contexts, tagged with ``__set`` for render dispatch."""
+    expected = C.CELL_SETS[cell_set].expected_contexts
     ref_1 = {cid for p in s1_pairs for cid in (p.a, p.b)}
     ref_2 = {cid for p in s2_pairs for cid in (p.a, p.b)}
     assert not (ref_1 & ref_2), "S1/S2 context-id collision"
     ctx1 = BANK2162.build_contexts()
-    ctx2 = BANK94.build_contexts()
+    ctx2 = BANK94.build_contexts() if ref_2 else {}
     contexts: dict[str, dict] = {}
     for cid in sorted(ref_1):
         c = dict(ctx1[cid])
@@ -303,9 +351,9 @@ def build_context_universe(s1_pairs: list, s2_pairs: list) -> dict[str, dict]:
         c = dict(ctx2[cid])
         c["__set"] = "s2"
         contexts[cid] = c
-    assert len(contexts) == EXPECTED_N_CONTEXTS, (
+    assert len(contexts) == expected, (
         f"referenced context union = {len(contexts)}, plan §4.1 declares "
-        f"{EXPECTED_N_CONTEXTS} — pair universe drifted, refusing"
+        f"{expected} for cell_set={cell_set!r} — pair universe drifted, refusing"
     )
     return contexts
 
@@ -411,18 +459,42 @@ def prefix_end_index_2333(tok, ids: list[int]) -> int:
     return 0
 
 
-def minimal_pair_check(ids_a: list[int], ids_b: list[int], im_start_id: int) -> tuple[str, ...]:
+def pair_span_locus(pair) -> str:
+    """Span locus for a pair: S1 cells from the bank registry
+    (``bank2162.span_locus`` — ``instr_language`` = prefix-side,
+    ``language_implied`` = prefix+query, plan §4.1 pins); S2 matched-query
+    pairs vary the prefix side only (the parent's realized gate semantics)."""
+    if hasattr(pair, "cell"):
+        return BANK2162.span_locus(pair.cell)
+    return "prefix-side"
+
+
+def minimal_pair_check(
+    ids_a: list[int], ids_b: list[int], im_start_id: int, locus: str = "prefix-side"
+) -> tuple[str, ...]:
     """Span-locus minimal-pair verdict (plan A16/B0): empty tuple iff intact.
 
     Vendored/adapted from origin/issue-2329:
-    src/explore_persona_space/experiments/issue2329/bank2329.py::_pair_verdict
-    (prefix-side locus branch — every pair in this run's universe, S1 survivor
-    cells + S2 matched-query, varies the PREFIX side only): (a) the final user
-    turn + generation prompt — token ids from the second-to-last
-    ``<|im_start|>`` — must be token-IDENTICAL across A/B
-    (``final-turn-tokens-differ`` = genuine tokenizer break), and (b) the
-    varied prefix must actually differ (``varied-prefix-identical`` = bank
-    defect — impossible for distinct context strings).
+    src/explore_persona_space/experiments/issue2329/bank2329.py::_pair_verdict.
+
+    ``prefix-side`` (every MAIN-cell-set pair — S1 survivor cells + S2
+    matched-query — and ``instr_language``): (a) the final user turn +
+    generation prompt — token ids from the second-to-last ``<|im_start|>`` —
+    must be token-IDENTICAL across A/B (``final-turn-tokens-differ`` =
+    genuine tokenizer break), and (b) the varied prefix must actually differ
+    (``varied-prefix-identical`` = bank defect — impossible for distinct
+    context strings).
+
+    ``prefix+query`` (``language_implied`` — q35lang cell set, plan §4.3
+    item 6 / A4): the INVERSE predicate on the final turn — BOTH the prefix
+    AND the final turn must DIFFER across the pair (translated prior-exchange
+    turns change the final user turn BY CONSTRUCTION, so final-turn identity
+    is not required; a final turn that does NOT differ is a bank defect,
+    ``varied-query-identical``). The main-resident prefix-side-only form
+    would flag ALL 36 such pairs as ``final-turn-tokens-differ``.
+
+    Any other locus fails LOUD — no cell set in this driver carries
+    ``final-query`` / ``generation-header`` pairs.
 
     r3 fix: the r2 predicate (<= 1 contiguous ``SequenceMatcher`` diff region
     over the WHOLE id sequence) was structurally wrong — conflict cells swap
@@ -438,10 +510,20 @@ def minimal_pair_check(ids_a: list[int], ids_b: list[int], im_start_id: int) -> 
     reasons: list[str] = []
     pe_a = final_turn_boundary(ids_a, im_start_id)
     pe_b = final_turn_boundary(ids_b, im_start_id)
-    if ids_a[pe_a:] != ids_b[pe_b:]:
-        reasons.append("final-turn-tokens-differ")
-    if ids_a[:pe_a] == ids_b[:pe_b]:
-        reasons.append("varied-prefix-identical")
+    prefix_same = ids_a[:pe_a] == ids_b[:pe_b]
+    final_same = ids_a[pe_a:] == ids_b[pe_b:]
+    if locus == "prefix-side":
+        if not final_same:
+            reasons.append("final-turn-tokens-differ")
+        if prefix_same:
+            reasons.append("varied-prefix-identical")
+    elif locus == "prefix+query":
+        if prefix_same:
+            reasons.append("varied-prefix-identical")
+        if final_same:
+            reasons.append("varied-query-identical")
+    else:  # fail loud — never a silent prefix-side default (#2061 family)
+        raise RuntimeError(f"unsupported span locus {locus!r} for the minimal-pair gate")
     return tuple(reasons)
 
 
@@ -532,13 +614,21 @@ def regime_fingerprint(cfg: RunConfig) -> str:
     place sharding IS output-partitioning) keys its OWN done files + shard
     filenames on ``w{i}of{N}`` instead (a global num_workers key would wrongly
     invalidate every completed block on a width change).
+
+    q35lang (plan §4.3 item 2): the fingerprint gains ``cell_set`` + the
+    ACTIVE cell list, so its resume namespace is disjoint from the parent's
+    by construction. The extra key is added ONLY for non-main sets — the
+    main payload stays byte-identical to the parent leg's (its completed
+    done-files keep resuming; a changed hash would hard-refuse them).
     """
     import hashlib
 
     import transformers
 
+    cs = C.CELL_SETS[cfg.cell_set]
     payload = json.dumps(
         {
+            **({"cell_set": cfg.cell_set, "s2_on": cs.s2_on} if cfg.cell_set != "main" else {}),
             "issue": 2333,
             "model_tag": cfg.model_tag,
             "model_id": cfg.model_id,
@@ -554,7 +644,7 @@ def regime_fingerprint(cfg: RunConfig) -> str:
             "capture_batch": cfg.capture_batch,
             "seed_base": cfg.seed_base,
             "smoke": cfg.smoke,
-            "s1_cells": list(C.S1_CELLS),
+            "s1_cells": list(cs.s1_cells),  # == C.S1_CELLS for main (unchanged hash)
             "s2_derangement_seed": C.S2_DERANGEMENT_SEED,
             "donor_max_new_tokens": C.DONOR_MAX_NEW_TOKENS,
             "donor_k_max": C.DONOR_K_MAX,
@@ -604,6 +694,7 @@ def _repro(cfg: RunConfig) -> dict:
             "transformers": str(transformers.__version__),
             "model_id": cfg.model_id,
             "model_tag": cfg.model_tag,
+            "cell_set": cfg.cell_set,
             "tiny": cfg.tiny,
             "smoke": cfg.smoke,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -732,19 +823,293 @@ def _require_q35_env(cfg: RunConfig) -> None:
 # ── phase: fitness2329 (B-1 reuse-or-selfgen decision, VM/CPU-side) ───
 
 
+def _list_2329_files(prefix: str) -> list[str]:
+    """Repo-relative FILE paths under ``prefix`` @ PIN_2329_DATA (recursive),
+    with never-consumed paths (``preregen_superseded``) excluded (plan §4.1)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    api = HfApi()
+    entries = retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
+            api.list_repo_tree(
+                C.DATA_REPO,
+                path_in_repo=prefix,
+                repo_type="dataset",
+                revision=C.PIN_2329_DATA,
+                recursive=True,
+            )
+        ),
+        what=f"list #2329 {prefix}",
+    )
+    files = [e.path for e in entries if getattr(e, "size", None) is not None]
+    kept = sorted(p for p in files if C.R2329_NEVER_CONSUMED_SUBSTRING not in p)
+    assert kept, f"no #2329 files under {prefix} @ {C.PIN_2329_DATA}"
+    return kept
+
+
+def _stage_2329_file(repo_rel: str, dest_dir: Path) -> Path:
+    """Verbatim per-file pinned stage (skip-if-present resume)."""
+    dest = dest_dir / Path(repo_rel).name
+    if not dest.exists():
+        _stage_pinned(repo_rel, C.PIN_2329_DATA, dest)
+    return dest
+
+
+def load_va_anchor_shard_2329(path: Path) -> dict:
+    """Open ONE #2329 anchor V_a shard under its OBSERVED schema.
+
+    Observed producer writer (origin/issue-2329 scripts/issue2329_run.py::
+    _run_anchor_batch) + a real shard opened @ PIN_2329_DATA: ``{layers,
+    index: [{context_id, draw}, ...], va_span (n, L, H) float16, pooling
+    {"va_span": "mean over completion tokens ..."}, empty_rows, repro}`` —
+    NOT this driver's flat ``key -> (L, H)`` va_store convention. Fail-loud
+    shape/convention asserts (fitness check (e)); the unit-2 P6 F_act loader
+    MUST consume #2329 va shards through this function (artifact-reuse
+    (h)(iv) staged-consumer-open)."""
+    store = torch.load(path, map_location="cpu", weights_only=False)
+    missing = {"layers", "index", "va_span", "pooling"} - set(store)
+    assert not missing, f"va shard {path.name} missing keys {sorted(missing)}"
+    layers = list(store["layers"])
+    q35 = C.MODELS["q35"]
+    assert layers == list(range(q35["n_layers"])), layers
+    va = store["va_span"]
+    n = len(store["index"])
+    assert va.ndim == 3, va.shape
+    assert va.shape == (n, len(layers), q35["hidden"]), (va.shape, n)
+    assert va.dtype == torch.float16, va.dtype
+    assert all({"context_id", "draw"} <= set(r) for r in store["index"][:8])
+    pooling = str(store["pooling"].get("va_span", ""))
+    assert "mean over completion tokens" in pooling, pooling
+    return store
+
+
+def _iter_2329_lang_anchor_rows(shard_paths: list[Path], lang_ids: set[str]):
+    """Yield (shard_name, row) for language-context rows across the staged
+    final anchor shards (text-mode iteration — never splitlines, #950)."""
+    for sp in shard_paths:
+        with sp.open(encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                if row.get("context_id") in lang_ids:
+                    yield sp.name, row
+
+
+def _fitness2329_q35lang(cfg: RunConfig, regime_fp: str) -> int:
+    """Plan §4.4 L-1 checks (a)-(g) against the OBSERVED #2329 artifacts @
+    C.PIN_2329_DATA -> the anchors reuse-or-selfgen decision JSON.
+
+    Policy unchanged from B-1: reuse ONLY when EVERY check passes; ANY
+    failure => fresh anchors at the q35lang cap (selfgen). The (d) residual
+    raised-cap-hit fraction is RECORDED as a caveat, never a fail (plan §10
+    fitness row (b): anchors are normalization denominators, whole-cell 4096
+    regens with 3-6%/cell residual).
+    """
+    from collections import Counter
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    _require_single_worker(cfg, "fitness2329")
+    checks: dict[str, dict] = {}
+    stage_dir = cfg.gates_dir / "fitness2329_stage"
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
+    contexts = build_context_universe(s1_pairs, s2_pairs, cfg.cell_set)
+    lang_ids = set(contexts)
+
+    # ── (a)+(b)+(c-rows)+(d): the FINAL anchor shards (gate+rest) ──────
+    jsonl_rel = _list_2329_files(C.R2329_ANCHORS_PREFIX)
+    assert all(p.endswith(".jsonl") for p in jsonl_rel), jsonl_rel
+    shard_paths = [_stage_2329_file(rel, stage_dir) for rel in jsonl_rel]
+    per_ctx: Counter[str] = Counter()
+    cap_hits: Counter[str] = Counter()
+    cell_rows: Counter[str] = Counter()
+    schema_missing: dict[str, list[str]] = {}
+    bad_temp: list[str] = []
+    bad_cap: list[str] = []
+    observed_keys: set[str] = set()
+    n_lang_rows = 0
+    for shard_name, row in _iter_2329_lang_anchor_rows(shard_paths, lang_ids):
+        n_lang_rows += 1
+        observed_keys.update(row)
+        missing = C.ANCHOR_2329_REQUIRED_KEYS - set(row)
+        if missing:
+            schema_missing.setdefault(shard_name, sorted(missing))
+        per_ctx[row["context_id"]] += 1
+        cell = row.get("cell", "?")
+        cell_rows[cell] += 1
+        if row.get("cap_hit"):
+            cap_hits[cell] += 1
+        if row.get("temperature") != C.GRID_TEMPERATURE:
+            bad_temp.append(f"{shard_name}:{row['context_id']}|d{row.get('draw')}")
+        if row.get("max_new_tokens") != cfg.max_new_tokens:
+            bad_cap.append(f"{shard_name}:{row['context_id']}|d{row.get('draw')}")
+    missing_ctx = sorted(lang_ids - set(per_ctx))
+    under = {c: n for c, n in per_ctx.items() if n < C.ANCHOR_DRAWS}
+    checks["a_coverage"] = {
+        "result": "pass" if not missing_ctx and not under else "fail",
+        "n_language_rows": n_lang_rows,
+        "n_contexts_covered": len(per_ctx),
+        "draws_min": min(per_ctx.values()) if per_ctx else 0,
+        "draws_max": max(per_ctx.values()) if per_ctx else 0,
+        "missing_contexts": missing_ctx[:10],
+        "under_floor": dict(sorted(under.items())[:10]),
+        "floor": C.ANCHOR_DRAWS,
+    }
+    checks["b_schema"] = {
+        "result": "pass" if not schema_missing else "fail",
+        "required": sorted(C.ANCHOR_2329_REQUIRED_KEYS),
+        "observed_row_keys": sorted(observed_keys),
+        "missing_by_shard": schema_missing,
+    }
+    # ── (c) recipe: bank.meta + bank.json blocks + per-row values ──────
+    meta = json.loads(_stage_2329_file(C.R2329_BANK_META, stage_dir).read_text())
+    bank_manifest = json.loads(_stage_2329_file(C.R2329_BANK_JSON, stage_dir).read_text())
+    recipe_fail: list[str] = []
+    if meta.get("transformers_version") != C.Q35_TRANSFORMERS_PIN:
+        recipe_fail.append(f"transformers={meta.get('transformers_version')!r}")
+    if bank_manifest.get("template_kwargs") != {"enable_thinking": False}:
+        recipe_fail.append(f"template_kwargs={bank_manifest.get('template_kwargs')!r}")
+    if bank_manifest.get("model_id") != C.MODELS["q35"]["model_id"]:
+        recipe_fail.append(f"model_id={bank_manifest.get('model_id')!r}")
+    if bad_temp:
+        recipe_fail.append(f"non-1.0-temperature rows: {bad_temp[:5]}")
+    if per_ctx and set(per_ctx.values()) != {C.ANCHOR_DRAWS}:
+        recipe_fail.append(f"draw counts {sorted(set(per_ctx.values()))} != K={C.ANCHOR_DRAWS}")
+    checks["c_recipe"] = {
+        "result": "pass" if not recipe_fail else "fail",
+        "transformers": meta.get("transformers_version"),
+        "template_kwargs": bank_manifest.get("template_kwargs"),
+        "model_id": bank_manifest.get("model_id"),
+        "detail": recipe_fail,
+    }
+    # ── (d) cap regime: whole-cell 4096; residual cap-hit = CAVEAT ─────
+    residual = {
+        cell: (cap_hits.get(cell, 0), cell_rows[cell], cap_hits.get(cell, 0) / cell_rows[cell])
+        for cell in sorted(cell_rows)
+    }
+    checks["d_cap_regime"] = {
+        "result": "pass" if not bad_cap else "fail",
+        "expected_max_new_tokens": cfg.max_new_tokens,
+        "off_cap_rows": bad_cap[:5],
+        "residual_cap_hit_per_cell_CAVEAT": {
+            c: {"n_cap_hit": h, "n_rows": n, "frac": round(f, 4)}
+            for c, (h, n, f) in residual.items()
+        },
+    }
+    # ── (e) V_a: ONE real shard through the shared loader ──────────────
+    va_rel = _list_2329_files(C.R2329_ANCHORS_VA_PREFIX)
+    assert all(p.endswith(".pt") for p in va_rel), va_rel
+    try:
+        va_path = _stage_2329_file(va_rel[0], stage_dir)
+        store = load_va_anchor_shard_2329(va_path)
+        checks["e_va_consumer_open"] = {
+            "result": "pass",
+            "shard": va_rel[0],
+            "n_rows": len(store["index"]),
+            "va_span_shape": list(store["va_span"].shape),
+            "pooling": store["pooling"],
+            "loader": "issue2333_run.load_va_anchor_shard_2329 "
+            "(the P6 F_act read consumes #2329 va shards through this loader)",
+        }
+        del store
+    except AssertionError as e:
+        checks["e_va_consumer_open"] = {"result": "fail", "detail": f"{type(e).__name__}: {e}"}
+    # ── (f) provenance coherence: bank.json <= every anchor shard ──────
+    api = HfApi()
+    infos = retry_transient(
+        lambda: api.get_paths_info(
+            C.DATA_REPO,
+            paths=[C.R2329_BANK_JSON, *jsonl_rel],
+            repo_type="dataset",
+            revision=C.PIN_2329_DATA,
+            expand=True,
+        ),
+        what="fitness2329 get_paths_info",
+    )
+    dates = {i.path: i.last_commit.date for i in infos if getattr(i, "last_commit", None)}
+    bank_date = dates.get(C.R2329_BANK_JSON)
+    anchor_dates = {p: d for p, d in dates.items() if p != C.R2329_BANK_JSON}
+    prov_ok = (
+        bank_date is not None
+        and len(anchor_dates) == len(jsonl_rel)
+        and all(bank_date <= d for d in anchor_dates.values())
+    )
+    checks["f_provenance_coherence"] = {
+        "result": "pass" if prov_ok else "fail",
+        "bank_json_last_commit": bank_date.isoformat() if bank_date else None,
+        "anchors_last_commit_min": (
+            min(anchor_dates.values()).isoformat() if anchor_dates else None
+        ),
+        "anchors_last_commit_max": (
+            max(anchor_dates.values()).isoformat() if anchor_dates else None
+        ),
+    }
+    # ── (g) instrument identity: vendored #2329 judge summary ──────────
+    repo_root = Path(__file__).resolve().parents[1]
+    summary_path = repo_root / C.I2329_JUDGE_SUMMARY_RELPATH
+    if not summary_path.is_file():
+        raise RuntimeError(
+            f"vendored #2329 judge summary missing at {summary_path} — the q35lang "
+            "vendoring commit (inputs/ @ C.REF_2329_BRANCH) must be present; on a "
+            "partial-clone pod ensure the eval_results/issue_2333 cone is open"
+        )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    judge_model = summary.get("instrument", {}).get("judge_model")
+    checks["g_instrument_identity"] = {
+        "result": "pass" if judge_model == C.EXPECTED_2329_JUDGE_MODEL else "fail",
+        "judge_model": judge_model,
+        "expected": C.EXPECTED_2329_JUDGE_MODEL,
+        "source": C.I2329_JUDGE_SUMMARY_RELPATH,
+        "source_ref": C.REF_2329_BRANCH,
+    }
+
+    all_pass = all(c["result"] == "pass" for c in checks.values())
+    decision = "reuse" if all_pass else "selfgen"
+    report = {
+        "decision": decision,
+        "cell_set": cfg.cell_set,
+        "policy": "reuse only if EVERY check (a)-(g) passes (plan §4.4 L-1); else selfgen",
+        "pin_2329_data": C.PIN_2329_DATA,
+        "checks": checks,
+        **_repro(cfg),
+    }
+    R._write_json_atomic(cfg.gates_dir / "fitness2329_decision.json", report)
+    _write_phase_done(cfg, "fitness2329", regime_fp, {"decision": decision})
+    logger.info(
+        "[fitness2329:q35lang] decision=%s (%s)",
+        decision,
+        {k: v["result"] for k, v in checks.items()},
+    )
+    return RC_OK
+
+
 def phase_fitness2329(cfg: RunConfig, regime_fp: str) -> int:
     """Plan §4.4 B-1 #2329 artifact FITNESS probe -> reuse-or-selfgen decision.
 
-    Probes each #2329 artifact class (``C.FITNESS_2329_CLASSES``) at ONE
-    resolved data-repo revision. Decision policy (plan §4.4 B-1): reuse ONLY
-    when EVERY check passes; ANY failed/unverifiable check => the declared
-    self-generation path (B0/B1), never partial reuse. A class that is
-    PRESENT still fails today: its realized keys/schema can only be verified
-    through the actual loader against an OBSERVED artifact (schema-from-
-    artifact rule), and no #2329 rows have landed — so a present class is
-    recorded ``present-unverified`` and treated as FAILED until a probe-able
-    artifact exists. The decision JSON is the launch-marker record.
+    q35lang cell set: the OBSERVED-artifact checks (a)-(g) — the #2329
+    artifacts have landed and are verified at C.PIN_2329_DATA
+    (``_fitness2329_q35lang``).
+
+    Main cell set (the parent leg's behavior, unchanged): probes each #2329
+    artifact class (``C.FITNESS_2329_CLASSES``) at ONE resolved data-repo
+    revision. Decision policy (plan §4.4 B-1): reuse ONLY when EVERY check
+    passes; ANY failed/unverifiable check => the declared self-generation
+    path (B0/B1), never partial reuse. A class that is PRESENT still fails
+    under main: its realized keys/schema can only be verified through the
+    actual loader against an OBSERVED artifact (schema-from-artifact rule),
+    and no #2329 rows had landed at the parent leg — so a present class is
+    recorded ``present-unverified`` and treated as FAILED. The decision JSON
+    is the launch-marker record.
     """
+    if cfg.cell_set == "q35lang":
+        return _fitness2329_q35lang(cfg, regime_fp)
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate.hub import retry_transient
@@ -1030,6 +1395,112 @@ def capture_parity_gate(cfg: RunConfig, bank: dict) -> dict:
     }
 
 
+def token_identity_gate_2329(cfg: RunConfig, ctx_ids: dict[str, list[int]], tok) -> dict:
+    """q35lang L0 gate (plan §4.1): position-identity vs #2329's bank @ PIN.
+
+    OBSERVED #2329 bank.json schema (staged @ C.PIN_2329_DATA, probed
+    2026-08-18): NO raw token ids are persisted — ``token_index`` maps
+    context_id -> {ctx_len, prefix_end, context_end, no_prefix}. The
+    realizable exact gate is therefore exact equality of ALL FOUR position
+    fields per context over the full 72-context grain, PLUS the state-space
+    two-bar parity vs the #2329 vc_bank (``capture_parity_gate_2329``):
+    same model + same template + equal token counts/boundaries + near-1
+    states. (The plan §4.1 prose "re-tokenized ids must EXACTLY equal"
+    assumed ids were persisted; the schema-from-artifact read supersedes.)
+    Also asserts the #2329 recipe blocks (template_kwargs, model_id) so a
+    position match cannot ride a different render.
+    """
+    staged = cfg.bank_dir / "i2329_bank.json"
+    if not staged.exists():
+        _stage_pinned(C.R2329_BANK_JSON, C.PIN_2329_DATA, staged)
+    manifest = json.loads(staged.read_text())
+    assert manifest["template_kwargs"] == {"enable_thinking": False}, manifest["template_kwargs"]
+    assert manifest["model_id"] == cfg.model_id, (manifest["model_id"], cfg.model_id)
+    token_index = manifest["token_index"]
+    mismatches: list[dict] = []
+    for cid, ids in sorted(ctx_ids.items()):
+        theirs = token_index.get(cid)
+        if theirs is None:
+            mismatches.append({"context_id": cid, "reason": "absent-from-2329-token-index"})
+            continue
+        pe = prefix_end_index_2333(tok, ids)
+        ours = {
+            "ctx_len": len(ids),
+            "prefix_end": pe,
+            "no_prefix": pe == 0,
+            "context_end": len(ids) - 1,
+        }
+        if any(ours[k] != theirs.get(k) for k in ours):
+            mismatches.append(
+                {"context_id": cid, "ours": ours, "theirs": {k: theirs.get(k) for k in ours}}
+            )
+    return {
+        "verdict": "PASS" if not mismatches else "FAIL",
+        "n_contexts": len(ctx_ids),
+        "pin_2329_data": C.PIN_2329_DATA,
+        "fields": ["ctx_len", "prefix_end", "no_prefix", "context_end"],
+        "mismatches": mismatches,
+    }
+
+
+def capture_parity_gate_2329(cfg: RunConfig, bank: dict) -> dict:
+    """q35lang HALT gate: fresh q35 v_ce vs the PINNED #2329 q35 bank.
+
+    Same-model parity (same weights + token-identity gate ⇒ near-identity up
+    to bf16 batch-composition jitter): two-bar #779 calibration — early
+    layers per-layer >= 0.999, flattened all-layer >= 0.995. Kept as its own
+    loop (not folded into :func:`capture_parity_gate`) so the parent q25
+    gate stays byte-identical; the #2329 store's per-context records carry
+    ``v_ce`` directly (observed schema) — ``_banked_vce`` handles it.
+    """
+    dest = cfg.bank_dir / "i2329_vc_bank.pt"
+    if not dest.exists():
+        _stage_pinned(C.R2329_VC_BANK, C.PIN_2329_DATA, dest)
+    store = torch.load(dest, map_location="cpu", weights_only=False)
+    assert list(store["layers"]) == list(bank["layers"]), (store["layers"], bank["layers"])
+    parent_recs = store["per_context"]
+
+    worst = {"early": 1.0, "flat": 1.0}
+    n = 0
+    details: list[dict] = []
+    for cid, rec in bank["per_context"].items():
+        parent = parent_recs.get(cid)
+        if parent is None:
+            raise RuntimeError(f"capture-parity-2329: context {cid} absent from #2329 bank")
+        fresh = rec["v_ce"]
+        banked = _banked_vce(parent)
+        assert fresh.shape == banked.shape, (cid, fresh.shape, banked.shape)
+        early = min(
+            float(torch.nn.functional.cosine_similarity(fresh[layer], banked[layer], dim=0))
+            for layer in C.PARITY_EARLY_LAYERS
+        )
+        flat = float(
+            torch.nn.functional.cosine_similarity(fresh.flatten(), banked.flatten(), dim=0)
+        )
+        worst["early"] = min(worst["early"], early)
+        worst["flat"] = min(worst["flat"], flat)
+        n += 1
+        if early < C.PARITY_EARLY_COS_MIN or flat < C.PARITY_FLAT_COS_MIN:
+            details.append(
+                {
+                    "context_id": cid,
+                    "early": early,
+                    "flat": flat,
+                    "ctx_len": (rec.get("ctx_len"), parent.get("ctx_len")),
+                    "prefix_end": (rec.get("prefix_end"), parent.get("prefix_end")),
+                }
+            )
+    return {
+        "verdict": "PASS" if not details else "FAIL",
+        "n_contexts": n,
+        "worst_early_cos": worst["early"],
+        "worst_flat_cos": worst["flat"],
+        "bars": {"early": C.PARITY_EARLY_COS_MIN, "flat": C.PARITY_FLAT_COS_MIN},
+        "reference": {"repo_rel": C.R2329_VC_BANK, "revision": C.PIN_2329_DATA},
+        "failures": details,
+    }
+
+
 S2_DONOR_MAP_PROVENANCE = (
     "fallback fresh seeded derangement over the 15 matched-query pair ids, seed "
     f"{C.S2_DERANGEMENT_SEED} (constants.seeded_derangement) — the plan §4.2 NAMED "
@@ -1094,10 +1565,15 @@ def build_donor_maps(
             f"refusing (recipient -> unavailable donor): {sorted(orphaned.items())[:5]}"
         )
     s2_ids = sorted(p.pair_id for p in s2_pairs if p.pair_id not in dropped)
-    s2_map = C.seeded_derangement(s2_ids, C.S2_DERANGEMENT_SEED)
-    stray = [d for d in s2_map.values() if d not in set(s2_ids)]
-    assert not stray, f"S2 donors leave the matched-query set: {stray[:5]}"
-    assert all(pid != d for pid, d in s2_map.items()), "S2 derangement has a fixed point"
+    if s2_ids:
+        s2_map = C.seeded_derangement(s2_ids, C.S2_DERANGEMENT_SEED)
+        stray = [d for d in s2_map.values() if d not in set(s2_ids)]
+        assert not stray, f"S2 donors leave the matched-query set: {stray[:5]}"
+        assert all(pid != d for pid, d in s2_map.items()), "S2 derangement has a fixed point"
+    else:
+        # EMPTY S2 (q35lang cell set: no matched-query pairs) — seeded_derangement
+        # asserts len >= 2, so it never runs on an empty id list.
+        s2_map = {}
     return {"shuffled": {**s1_map, **s2_map}}
 
 
@@ -1110,20 +1586,40 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
     ):
         logger.info("[bank] done — skip")
         return RC_OK
-    s1_pairs, s2_pairs = build_pair_universe()
-    contexts = build_context_universe(s1_pairs, s2_pairs)
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
+    contexts = build_context_universe(s1_pairs, s2_pairs, cfg.cell_set)
     ids_fn = make_ids_fn(cfg.model_tag)
     model, tok = load_model_and_tokenizer(cfg)
 
     # Minimal-pair re-tokenization check at FULL grain (plan A16/B0):
-    # span-locus verdict — final-turn token identity + varied-prefix-differs.
+    # span-locus verdict — final-turn token identity + varied-prefix-differs
+    # (prefix-side cells), or BOTH-differ (prefix+query cells, the #2329
+    # ``_pair_verdict`` inverse predicate — language_implied).
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
     im_start_id = tok.convert_tokens_to_ids(BANK2162.IM_START)
     assert isinstance(im_start_id, int) and im_start_id >= 0, im_start_id
+
+    # q35lang L0 token-identity vs #2329 (BEFORE the GPU capture; the tiny
+    # smoke's q25-arch throwaway tokenizer structurally cannot match — skip).
+    token_gate: dict | None = None
+    if cfg.cell_set == "q35lang" and not cfg.tiny:
+        token_gate = token_identity_gate_2329(cfg, ctx_ids, tok)
+        R._write_json_atomic(
+            cfg.gates_dir / "token_identity_2329_report.json", {**token_gate, **_repro(cfg)}
+        )
+        if token_gate["verdict"] != "PASS":
+            logger.error(
+                "[bank] token-identity vs #2329 FAIL: %d mismatches",
+                len(token_gate["mismatches"]),
+            )
+            return RC_TOKEN2329_GATE
+
     violations: list[str] = []
     violation_detail: list[dict] = []
     for p in [*s1_pairs, *s2_pairs]:
-        reasons = minimal_pair_check(ctx_ids[p.a], ctx_ids[p.b], im_start_id)
+        reasons = minimal_pair_check(
+            ctx_ids[p.a], ctx_ids[p.b], im_start_id, locus=pair_span_locus(p)
+        )
         if reasons:
             violations.append(p.pair_id)
             n_pre, n_suf = _common_affix(ctx_ids[p.a], ctx_ids[p.b])
@@ -1163,6 +1659,15 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
         if parity["verdict"] != "PASS":
             logger.error("[bank] capture-parity FAIL: %s", parity)
             return RC_PARITY_GATE
+    elif cfg.cell_set == "q35lang" and not cfg.tiny:
+        # q35lang: the #2329 q35 bank @ PIN is the same-model parity reference.
+        parity = capture_parity_gate_2329(cfg, bank)
+        R._write_json_atomic(
+            cfg.gates_dir / "capture_parity_report.json", {**parity, **_repro(cfg)}
+        )
+        if parity["verdict"] != "PASS":
+            logger.error("[bank] capture-parity vs #2329 FAIL: %s", parity)
+            return RC_PARITY_GATE
 
     dropped_ids = set(violations)
     donor_maps = build_donor_maps(s1_pairs, s2_pairs, dropped=dropped_ids)
@@ -1184,9 +1689,17 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
             f"S1 donor map drifted from frozen bank.json: {list(mismatch.items())[:3]}"
         )
     manifest = {
-        "pins": {"p2162": C.PIN_2162, "p2094": C.PIN_2094, "fu1": C.PIN_FU1},
+        "pins": {
+            "p2162": C.PIN_2162,
+            "p2094": C.PIN_2094,
+            "fu1": C.PIN_FU1,
+            # conditional key: main-path bank.json bytes stay identical
+            **({"p2329_data": C.PIN_2329_DATA} if cfg.cell_set == "q35lang" else {}),
+        },
         "model_tag": cfg.model_tag,
-        "s1_cells": list(C.S1_CELLS),
+        **({"cell_set": cfg.cell_set} if cfg.cell_set != "main" else {}),
+        **({"token_identity_2329": token_gate} if token_gate is not None else {}),
+        "s1_cells": list(C.CELL_SETS[cfg.cell_set].s1_cells),
         "s1_pair_ids": [p.pair_id for p in s1_pairs],
         "s2_pair_ids": [p.pair_id for p in s2_pairs],
         "context_ids": sorted(contexts),
@@ -1396,20 +1909,24 @@ def generate_donors(
     return {"recs": out, "text_rows": text_rows}
 
 
-def _gate_spots(s1_pairs: list, s2_pairs: list) -> list[dict]:
-    """12 injection-gate spot rows: 2 per S1 cell (steered + shuffled) + 2 S2."""
+def _gate_spots(s1_pairs: list, s2_pairs: list, cell_set: str = "main") -> list[dict]:
+    """Injection-gate spot rows: 2 per S1 cell (steered + shuffled) + 2 S2
+    when the cell set carries S2. main: 12; q35lang: 4."""
+    cs = C.CELL_SETS[cell_set]
     by_cell: dict[str, list] = {}
     for p in s1_pairs:
         by_cell.setdefault(p.cell, []).append(p)
     spots = []
-    for cell in C.S1_CELLS:
+    for cell in cs.s1_cells:
         ps = sorted(by_cell[cell], key=lambda p: p.pair_id)
         spots.append({"cell": cell, "slot": "ce", "arm": "steered", "pair": ps[0]})
         spots.append({"cell": cell, "slot": "ce", "arm": "shuffled", "pair": ps[1]})
-    s2 = sorted(s2_pairs, key=lambda p: p.pair_id)
-    spots.append({"cell": C.S2_CELL, "slot": "ce", "arm": "steered", "pair": s2[0]})
-    spots.append({"cell": C.S2_CELL, "slot": "ce", "arm": "shuffled", "pair": s2[1]})
-    assert len(spots) == 12, len(spots)
+    if cs.s2_on:
+        s2 = sorted(s2_pairs, key=lambda p: p.pair_id)
+        spots.append({"cell": C.S2_CELL, "slot": "ce", "arm": "steered", "pair": s2[0]})
+        spots.append({"cell": C.S2_CELL, "slot": "ce", "arm": "shuffled", "pair": s2[1]})
+    expected = 2 * len(cs.s1_cells) + (2 if cs.s2_on else 0)
+    assert len(spots) == expected, (len(spots), expected)
     return spots
 
 
@@ -1515,17 +2032,18 @@ def phase_donors(cfg: RunConfig, regime_fp: str) -> int:
         logger.info("[donors] done — skip")
         return RC_OK
     manifest, bank = _load_bank(cfg)
-    s1_pairs, s2_pairs = build_pair_universe()
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
     dropped = set(manifest["minpair_dropped_pair_ids"])
     pairs = [p for p in [*s1_pairs, *s2_pairs] if p.pair_id not in dropped]
     pairs_by_id = {p.pair_id: p for p in pairs}
     donor_maps = manifest["donor_maps"]
     ids_fn = make_ids_fn(cfg.model_tag)
     model, tok = load_model_and_tokenizer(cfg)
-    contexts = build_context_universe(s1_pairs, s2_pairs)
+    contexts = build_context_universe(s1_pairs, s2_pairs, cfg.cell_set)
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
 
-    # Gate 1 — prefill(ce) injection exactness, 12 spots (REUSED parent gate).
+    # Gate 1 — prefill(ce) injection exactness (REUSED parent gate; 12 spots
+    # on main, 4 on q35lang — 2 per active cell).
     gate1 = R.run_injection_gate(
         _R_cfg_proxy(cfg),
         model,
@@ -1538,6 +2056,7 @@ def phase_donors(cfg: RunConfig, regime_fp: str) -> int:
         spots=_gate_spots(
             [p for p in pairs if pair_set_of(p) == "s1"],
             [p for p in pairs if pair_set_of(p) == "s2"],
+            cfg.cell_set,
         ),
         payload_fn=payload_for_arm,
         position_fn=gate_spot_position,
@@ -1594,39 +2113,51 @@ def _load_donors(cfg: RunConfig) -> dict[str, dict[str, dict]]:
 # ── phase: grid ───────────────────────────────────────────────────────
 
 
-def enumerate_blocks_2333(s1_pairs: list, s2_pairs: list, dropped: set[str]) -> list[R.Block]:
-    """144 blocks: (5 S1 cells + 1 S2 cell) x 12 arms x 2 variants.
+def enumerate_blocks_2333(
+    s1_pairs: list, s2_pairs: list, dropped: set[str], cell_set: str = "main"
+) -> list[R.Block]:
+    """Grid blocks: active cells x 12 arms x 2 variants (main: (5 S1 + 1 S2)
+    x 24 = 144; q35lang: 2 language cells x 24 = 48).
 
     Reuses R.Block with slot -> arm_slug and arm -> variant (key/slug/done-file
     machinery unchanged)."""
+    cs = C.CELL_SETS[cell_set]
     by_cell: dict[str, list] = {}
     for p in s1_pairs:
         if p.pair_id not in dropped:
             by_cell.setdefault(p.cell, []).append(p)
-    by_cell[C.S2_CELL] = [p for p in s2_pairs if p.pair_id not in dropped]
+    if cs.s2_on:
+        by_cell[C.S2_CELL] = [p for p in s2_pairs if p.pair_id not in dropped]
     blocks: list[R.Block] = []
-    for cell in [*C.S1_CELLS, C.S2_CELL]:
+    for cell in C.active_cells(cell_set):
         ids = tuple(p.pair_id for p in sorted(by_cell[cell], key=lambda p: p.pair_id))
         assert ids, cell
         for arm_slug in C.ARM_SLUGS:
             for variant in C.VARIANTS:
                 blocks.append(R.Block(cell, arm_slug, variant, ids))
-    assert len(blocks) == EXPECTED_N_BLOCKS, len(blocks)
+    assert len(blocks) == cs.expected_grid_blocks, (len(blocks), cs.expected_grid_blocks)
     keys = [b.key for b in blocks]
     assert len(set(keys)) == len(keys)
     return blocks
 
 
-def smoke_blocks_2333(s1_pairs: list, s2_pairs: list, dropped: set[str]) -> list[R.Block]:
-    """1 S1 pair + 1 S2 pair through ALL 12 arms x 2 variants (48 blocks, K=1)."""
+def smoke_blocks_2333(
+    s1_pairs: list, s2_pairs: list, dropped: set[str], cell_set: str = "main"
+) -> list[R.Block]:
+    """1 pair per available set through ALL 12 arms x 2 variants, K=1
+    (main: 1 S1 + 1 S2 = 48 blocks; q35lang: 1 language pair = 24 — plan L2)."""
+    cs = C.CELL_SETS[cell_set]
     s1_keep = sorted((p for p in s1_pairs if p.pair_id not in dropped), key=lambda p: p.pair_id)
-    s2_keep = sorted((p for p in s2_pairs if p.pair_id not in dropped), key=lambda p: p.pair_id)
+    picks = [(s1_keep[0].cell, s1_keep[0].pair_id)]
+    if cs.s2_on:
+        s2_keep = sorted((p for p in s2_pairs if p.pair_id not in dropped), key=lambda p: p.pair_id)
+        picks.append((C.S2_CELL, s2_keep[0].pair_id))
     blocks = []
-    for cell, pid in ((s1_keep[0].cell, s1_keep[0].pair_id), (C.S2_CELL, s2_keep[0].pair_id)):
+    for cell, pid in picks:
         for arm_slug in C.ARM_SLUGS:
             for variant in C.VARIANTS:
                 blocks.append(R.Block(cell, arm_slug, variant, (pid,)))
-    assert len(blocks) == 48, len(blocks)
+    assert len(blocks) == cs.expected_smoke_blocks, (len(blocks), cs.expected_smoke_blocks)
     return blocks
 
 
@@ -2124,20 +2655,20 @@ def _cap_regen_pass(
 def phase_grid(cfg: RunConfig, regime_fp: str) -> int:
     manifest, bank = _load_bank(cfg)
     donors = _load_donors(cfg)
-    s1_pairs, s2_pairs = build_pair_universe()
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
     dropped = set(manifest["minpair_dropped_pair_ids"])
     pairs = [p for p in [*s1_pairs, *s2_pairs] if p.pair_id not in dropped]
     pairs_by_id = {p.pair_id: p for p in pairs}
     donor_maps = manifest["donor_maps"]
     ids_fn = make_ids_fn(cfg.model_tag)
     model, tok = load_model_and_tokenizer(cfg)
-    contexts = build_context_universe(s1_pairs, s2_pairs)
+    contexts = build_context_universe(s1_pairs, s2_pairs, cfg.cell_set)
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
 
     if cfg.smoke:
-        blocks = smoke_blocks_2333(s1_pairs, s2_pairs, dropped)
+        blocks = smoke_blocks_2333(s1_pairs, s2_pairs, dropped, cfg.cell_set)
     else:
-        blocks = enumerate_blocks_2333(s1_pairs, s2_pairs, dropped)
+        blocks = enumerate_blocks_2333(s1_pairs, s2_pairs, dropped, cfg.cell_set)
     namespace = cfg.grid_namespace
     if cfg.only_blocks:
         blocks = [b for b in blocks if any(s in b.key for s in cfg.only_blocks)]
@@ -2228,8 +2759,110 @@ def _anchors_stale_width_guard(cfg: RunConfig) -> None:
         )
 
 
+def _maybe_reuse_2329_anchors(cfg: RunConfig, regime_fp: str) -> int | None:
+    """q35lang anchors REUSE branch (plan §4.1/§4.4 L-1): stage the #2329
+    final anchor shards + V_a shards VERBATIM @ C.PIN_2329_DATA instead of
+    regenerating; skip generation entirely.
+
+    Returns an rc when the reuse branch handled the phase, or ``None`` to
+    fall through to the selfgen (generation) path. Licensing (fail-loud):
+    the fitness2329 decision JSON must read ``reuse`` AND the bank-phase
+    token-identity gate must have PASSed (same model + template + tokens =>
+    the banked anchors are on-policy for THIS run's contexts). Staging is
+    single-worker (worker 0) — the #1315 shared-staging race; other workers
+    no-op. Files land under ``anchors_dir/reused_2329/`` — OUTSIDE the
+    non-recursive upload globs (already on HF at the pin; never re-uploaded)
+    and OUTSIDE the ``anchors_w*.jsonl`` stale-width guard glob.
+    """
+    from collections import Counter
+
+    decision_path = cfg.gates_dir / "fitness2329_decision.json"
+    if not decision_path.is_file():
+        raise RuntimeError(
+            "q35lang anchors requires the fitness2329 decision JSON — run "
+            "--phase fitness2329 first (plan §4.4 L-1)"
+        )
+    decision = json.loads(decision_path.read_text())["decision"]
+    if decision == "selfgen":
+        logger.info(
+            "[anchors] fitness2329 decision=selfgen — fresh anchors at cap %d",
+            cfg.max_new_tokens,
+        )
+        return None
+    assert decision == "reuse", decision
+    tok_report_path = cfg.gates_dir / "token_identity_2329_report.json"
+    if not tok_report_path.is_file():
+        raise RuntimeError(
+            "anchor reuse requires the bank-phase token-identity gate report — "
+            "run --phase bank first"
+        )
+    tok_report = json.loads(tok_report_path.read_text())
+    if tok_report.get("verdict") != "PASS":
+        raise RuntimeError(
+            f"token-identity gate verdict {tok_report.get('verdict')!r} — anchor reuse "
+            "is unlicensed (the banked anchors are only on-policy under token identity)"
+        )
+    if cfg.worker_index != 0:
+        logger.info("[anchors] reuse branch is single-worker; worker %d no-op", cfg.worker_index)
+        return RC_OK
+    phase_key = "anchors_reused"
+    if not cfg.force and _phase_done(cfg, phase_key, regime_fp):
+        logger.info("[anchors] reused (done) — skip")
+        return RC_OK
+    dest = cfg.anchors_dir / "reused_2329"
+    dest.mkdir(parents=True, exist_ok=True)
+    jsonl_rel = _list_2329_files(C.R2329_ANCHORS_PREFIX)
+    va_rel = _list_2329_files(C.R2329_ANCHORS_VA_PREFIX)
+    staged_jsonl = [_stage_2329_file(rel, dest) for rel in jsonl_rel]
+    for rel in va_rel:
+        _stage_2329_file(rel, dest)
+    # Coverage over THIS run's 72 language contexts (rows kept verbatim).
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
+    contexts = build_context_universe(s1_pairs, s2_pairs, cfg.cell_set)
+    per_ctx: Counter[str] = Counter()
+    for _shard, row in _iter_2329_lang_anchor_rows(staged_jsonl, set(contexts)):
+        per_ctx[row["context_id"]] += 1
+    missing = sorted(set(contexts) - set(per_ctx))
+    under = {c: n for c, n in per_ctx.items() if n < C.ANCHOR_DRAWS}
+    if missing or under:
+        raise RuntimeError(
+            f"reused #2329 anchors under-cover the language contexts: missing={missing[:5]} "
+            f"under_floor={dict(sorted(under.items())[:5])} (floor {C.ANCHOR_DRAWS})"
+        )
+    manifest = {
+        "mode": "reused_2329",
+        "pin_2329_data": C.PIN_2329_DATA,
+        "source_prefixes": [C.R2329_ANCHORS_PREFIX, C.R2329_ANCHORS_VA_PREFIX],
+        "files": [*jsonl_rel, *va_rel],
+        "n_language_rows": int(sum(per_ctx.values())),
+        "n_contexts": len(per_ctx),
+        "draws_min": min(per_ctx.values()),
+        "draws_max": max(per_ctx.values()),
+        "va_loader": "issue2333_run.load_va_anchor_shard_2329",
+        **_repro(cfg),
+    }
+    R._write_json_atomic(cfg.anchors_dir / "anchors_reuse_manifest.json", manifest)
+    _write_phase_done(
+        cfg,
+        phase_key,
+        regime_fp,
+        {"n_files": len(jsonl_rel) + len(va_rel), "n_language_rows": manifest["n_language_rows"]},
+    )
+    logger.info(
+        "[anchors] reused #2329 anchors verbatim: %d files, %d language rows, %d contexts",
+        len(jsonl_rel) + len(va_rel),
+        manifest["n_language_rows"],
+        len(per_ctx),
+    )
+    return RC_OK
+
+
 def phase_anchors(cfg: RunConfig, regime_fp: str) -> int:
     assert cfg.model_tag == "q35", "anchors phase is q35-only (q25 anchors are banked, plan §4.4)"
+    if cfg.cell_set == "q35lang" and not cfg.tiny:
+        rc = _maybe_reuse_2329_anchors(cfg, regime_fp)
+        if rc is not None:
+            return rc
     shard_key = f"w{cfg.worker_index}of{cfg.num_workers}"
     phase_key = f"anchors_{shard_key}"
     if not cfg.force and _phase_done(cfg, phase_key, regime_fp):
@@ -2237,8 +2870,8 @@ def phase_anchors(cfg: RunConfig, regime_fp: str) -> int:
         return RC_OK
     cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
     _anchors_stale_width_guard(cfg)
-    s1_pairs, s2_pairs = build_pair_universe()
-    contexts = build_context_universe(s1_pairs, s2_pairs)
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
+    contexts = build_context_universe(s1_pairs, s2_pairs, cfg.cell_set)
     ids_fn = make_ids_fn(cfg.model_tag)
     model, tok = load_model_and_tokenizer(cfg)
     order = sorted(contexts)[cfg.worker_index :: cfg.num_workers]
@@ -2509,14 +3142,14 @@ def phase_ce_control(cfg: RunConfig, regime_fp: str) -> int:
     (the D3 bridge cell — plan §4.4 B1)."""
     assert cfg.model_tag == "q35", "ce_control is q35-only (q25 ce cells are banked)"
     manifest, bank = _load_bank(cfg)
-    s1_pairs, s2_pairs = build_pair_universe()
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
     dropped = set(manifest["minpair_dropped_pair_ids"])
     pairs = [p for p in [*s1_pairs, *s2_pairs] if p.pair_id not in dropped]
     pairs_by_id = {p.pair_id: p for p in pairs}
     donor_maps = manifest["donor_maps"]
     ids_fn = make_ids_fn(cfg.model_tag)
     model, tok = load_model_and_tokenizer(cfg)
-    contexts = build_context_universe(s1_pairs, s2_pairs)
+    contexts = build_context_universe(s1_pairs, s2_pairs, cfg.cell_set)
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
     recs = bank["per_context"]
 
@@ -2524,12 +3157,15 @@ def phase_ce_control(cfg: RunConfig, regime_fp: str) -> int:
     for p in pairs:
         by_cell.setdefault(cell_of(p), []).append(p)
     blocks = []
-    for cell in [*C.S1_CELLS, C.S2_CELL]:
+    for cell in C.active_cells(cfg.cell_set):
         ids = tuple(p.pair_id for p in sorted(by_cell[cell], key=lambda p: p.pair_id))
         if cfg.smoke:
             ids = ids[:1]
         for variant in C.VARIANTS:
             blocks.append(R.Block(cell, "ce_replace", variant, ids))
+    if not cfg.smoke:
+        expected_ce = C.CELL_SETS[cfg.cell_set].expected_ce_blocks
+        assert len(blocks) == expected_ce, (len(blocks), expected_ce)
     draws_n = 1 if cfg.smoke else C.CE_CONTROL_DRAWS
 
     def run_one(block: R.Block) -> None:
@@ -2686,10 +3322,12 @@ def phase_upload(cfg: RunConfig, regime_fp: str) -> int:
         "uploaded": uploaded,
         **_repro(cfg),
     }
+    # Sentinel leg name carries the cell set on non-main runs so a q35lang
+    # sentinel can never clobber the parent q35 leg's sentinel on a reused
+    # pod (main: byte-identical names).
+    leg = cfg.model_tag if cfg.cell_set == "main" else f"{cfg.model_tag}-{cfg.cell_set}"
     sentinel_name = (
-        f"issue-2333-{cfg.model_tag}-smoke-results.json"
-        if cfg.smoke
-        else f"issue-2333-{cfg.model_tag}-results.json"
+        f"issue-2333-{leg}-smoke-results.json" if cfg.smoke else f"issue-2333-{leg}-results.json"
     )
     cfg.log_dir.mkdir(parents=True, exist_ok=True)
     R._write_json_atomic(
@@ -2737,6 +3375,19 @@ def _import_check() -> None:
     blocks = enumerate_blocks_2333(s1, s2, set())
     assert len(blocks) == EXPECTED_N_BLOCKS
     assert len(smoke_blocks_2333(s1, s2, set())) == 48
+    # q35lang cell set (per-arm resolution of the SAME registry at the
+    # reduced grain — 72 pairs / 72 contexts / empty S2 / 48+4 blocks).
+    ls1, ls2 = build_pair_universe("q35lang")
+    assert len(ls1) == 72 and len(ls2) == 0, (len(ls1), len(ls2))
+    lctx = build_context_universe(ls1, ls2, "q35lang")
+    assert len(lctx) == 72, len(lctx)
+    lmaps = build_donor_maps(ls1, ls2)
+    assert len(lmaps["shuffled"]) == 72, len(lmaps["shuffled"])
+    assert len(enumerate_blocks_2333(ls1, ls2, set(), "q35lang")) == 48
+    assert len(smoke_blocks_2333(ls1, ls2, set(), "q35lang")) == 24
+    assert len(_gate_spots(ls1, ls2, "q35lang")) == 4
+    loci = {BANK2162.span_locus(c) for c in C.CELL_SETS["q35lang"].s1_cells}
+    assert loci == {"prefix-side", "prefix+query"}, loci
     print("[import-check] OK")
 
 
