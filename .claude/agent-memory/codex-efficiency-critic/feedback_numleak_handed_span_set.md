@@ -30,6 +30,16 @@ the allowlist. Run the verifier from the repo root (not /tmp) so the
 registry leg (`task_workflow.registry_path()`) imports; from /tmp it
 degrades to handed-span-only clearing.
 
+**Multiset-overshoot pattern (#2389 r3):** even fully-handed numbers
+residual out when GLUE REPEATS them more times than the handed spans
+contain them — the classic shape is a read-targets/file-access list
+duplicating line numbers + constants that the blocker-prescription
+paragraph already quotes (also over-using phase tags like a `P7g` or
+`§9` beyond the handed count). Fix: state seam line-numbers/values ONCE
+(in the near-verbatim prescription quote) and make read-target bullets
+number-free pointers ("exact line numbers in the prescription below"),
+rather than padding handed-span files with duplicates.
+
 Multiset nuance (#2329 round 2, 9 residual classes): a number HANDED by
 the plan still residuals when the prompt INLINES that plan — the inline
 copy consumes the span occurrence, so every glue reuse is excess under
