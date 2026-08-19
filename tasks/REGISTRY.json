@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2383,
+  "highest_id": 2384,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10690,6 +10690,13 @@
       "path": "tasks/proposed/2383",
       "status": "proposed",
       "title": "Causal patching of context vectors across framings (chat-to-plain, assistant-to-story)"
+    },
+    "2384": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2384",
+      "status": "proposed",
+      "title": "workflow-fix: adversarial-planner plan-finalize cited-body currency gate (cited parent corrected mid-draft goes unseen)"
     },
     "239": {
       "has_clean_result": true,
