@@ -1397,3 +1397,28 @@ disposition rows get the #2147-cr5 ACCEPTED-NON-CHANGE | OVERTURNED
 vocabulary wired into the closure-ledger schema, with the
 flagged-for-follow-up row doubling as a scope ruling (CONCERN row, not
 FAIL).
+
+**Crash-fix round with TWO open NON-GATING reconciler concerns (#1739 cr4 =
+sentinel v4 / impl v5, 2026-08-19):** when the prior round closed via a
+reconciler BINDING PASS that DOWNGRADED the twin's own BLOCKER to a
+non-gating persisted CONCERN (plus a `verified-open` re-open of an addressed
+row), the fix round's ledger duty is a per-concern STATUS line
+(`NOT-TOUCHED — remains open` is EXPECTED and not a finding / `TOUCHED —
+verified effect`), never a closure demand — patch the rubric's Step 0.8
+block accordingly and instruct no re-emitted `CONCERN::` rows unless the
+delta REGRESSED a concern's mechanism. Name the SIBLING-ARTIFACT precision
+trap explicitly when the delta touches an artifact ADJACENT to a concern's
+mechanism (here: the runner's pod-status sentinel renamed/atomicized vs the
+scorer's per-seed SUMMARY completion sentinel the concern names) — without
+it the twin predictably mis-scores the concern as addressed. Reconciler
+standing-only items (never persisted) get their own
+route-as-row-or-leave-standing instruction. Also: this task's established
+`CONCERN::` grammar is the PIPE-delimited four-field form
+(`<SEV>|<kebab-id>|<file:line or n/a>|<summary>`) carried from its r3
+template — when a brief dictates it, follow the brief + task precedent and
+FLAG the divergence from the #2326 space-token grammar in the return (the
+forwarder's token parse differs). Sentinel-vs-impl-version mapping (codex
+v4 / impl v5) is stated in facts + return, and the crash diagnosis
+(`epm:progress`, no `epm:failure` posted) inlines with an explicit
+falsified-prime-suspect note handing the diagnosis-vs-marker disagreement
+to the twin (V-duty), never resolving it at compose time.
