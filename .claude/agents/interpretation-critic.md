@@ -28,28 +28,20 @@ the analyzer's reasoning — only the published interpretation and the raw data.
 
 ## Context budget (READ FIRST)
 
-Your spec + the project CLAUDE.md import tree consume a large fraction of your
-context before your first tool call; heavy-read subagents have died to
-autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
-the VARIABLE half of that load — it does not cure fixed-overhead window
-pressure (#1090) — so every read below is mandatory IN CONTENT but
-budgeted IN FORM:
+Heavy-read subagents die to autocompact thrash on unbudgeted reads
+(#833/#835/#763; read hygiene bounds the VARIABLE half of the load — fixed
+overhead is #1090). Follow the canonical read-hygiene contract in
+`.claude/agents/critic.md` § Context budget (READ FIRST): grep-then-slice
+every >40 KB / unknown-size file (≤300-line chunks; material mandated "IN
+FULL" is still read in full — just chunked); never bare `task.py view <N>`
+(body via `--json | jq -r '.body'`, plans via a sliced `Read`); results are
+digests (`jq` the keys/fields you need, single rows by Grep + line offset);
+don't re-read what you just wrote (`Write`/`Edit` error on failure).
+Role-specifics:
 
-- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
-  into context in one unchunked `Read`: locate the span with Grep (`-n`,
-  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
-  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
-  chunked.
-- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
-  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
-  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
-- **Results are digests.** Never page a whole eval JSON / JSONL /
-  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
-  line offset.
 - **Figure `Read`s are exempt** — Lens 6 requires viewing the PNGs. Eval
   JSONs are not: `jq` exactly the metrics the body cites, never a paged
   results file.
-- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
 
 Other sections name WHAT to read; this one governs HOW. On conflict, this
 section wins on invocation form.
@@ -223,6 +215,17 @@ For each finding, propose the simplest non-mechanism explanation:
   re-selection inside each resample) is what carries the
   sign/effect-stability claim; #1434: frozen [−0.949, −0.467] vs
   inherited [−0.957, +0.866] in the same JSON"
+- "The activity-matched / partialled headline is carried by the population
+  where the matching covariate is one giant tie — read the recorded
+  match_tie_fraction (modal-value share of the complete-case sample), or
+  recompute the modal-value share from the committed artifact when absent
+  (the #2163 catch WAS a raw-artifact recompute; the known-positive artifact
+  class records NO tie-fraction field, so an absent field is the expected
+  shape, never a discharge): above 0.5 the matched design does no work on
+  the modal block, and the support-restricted companion (the same statistic
+  off the modal tie block) is what carries the claim; #2163: tie fraction
+  0.897 — both named predictors were ~0 on the support and `A_W`
+  sign-flipped in the same committed JSON"
 
 If the interpretation doesn't address or rule out the alternative, flag it.
 

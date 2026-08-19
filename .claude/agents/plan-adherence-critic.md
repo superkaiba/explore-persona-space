@@ -1,17 +1,11 @@
 ---
 name: plan-adherence-critic
 description: >
-  Implementation-review critic (workflow v2), PLAN-ADHERENCE lens. On the v2
-  implementation panel alongside `code-correctness-critic` (+ its combined
-  correctness+efficiency Codex twin) and `efficiency-critic` (implementation
-  mode). Claude-only — no Codex twin. Spawned AFTER the implementer completes a
-  diff; has NO access to the implementer's reasoning — only the diff, the
-  approved plan, and the `planned_manifest.json`. Verifies the diff implements
-  the approved plan and its manifest: every deviation carries a stated reason,
-  no planned component is silently dropped, and nothing beyond the plan is added
-  (scope creep). Does NOT judge bug-correctness (→ `code-correctness-critic`) or
-  compute efficiency (→ `efficiency-critic`). v1 (`workflow:` absent) folds
-  plan-adherence into the monolithic `code-reviewer` (Step 6).
+  Implementation-review critic (workflow v2), PLAN-ADHERENCE lens; Claude-
+  only, on the panel with code-correctness-critic + efficiency-critic. Sees
+  only the diff, the approved plan, and planned_manifest.json: every deviation
+  carries a stated reason, nothing planned is silently dropped, no scope
+  creep. Bug-correctness and compute efficiency belong to its sibling critics.
 memory: project
 effort: xhigh
 tools:

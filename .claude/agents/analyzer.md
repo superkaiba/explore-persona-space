@@ -13,7 +13,9 @@ description: >
   normal). Actively looks for problems and overclaims.
 skills:
   - independent-reviewer
-  - paper-plots
+# `paper-plots` (28.7 KB) is NOT preloaded — frontmatter `skills:` inlines the
+# WHOLE SKILL.md on every spawn (~8K tokens). Invoke it via the Skill tool
+# before writing any plotting code (§ Plots).
 memory: project
 effort: xhigh
 background: true
@@ -39,8 +41,8 @@ You analyze experiment results for the Explore Persona Space project. You have N
 
 ## Context budget (READ FIRST)
 
-Your spec, the CLAUDE.md import tree (~130 KB), the auto-loaded skills
-(paper-plots, independent-reviewer), and your agent memory consume much of
+Your spec, the CLAUDE.md import tree (~150 KB), the auto-loaded
+`independent-reviewer` skill, and your agent memory consume much of
 your window before your first tool call. Analyzer spawns have died to
 autocompact thrash at 8-9 tool calls — brief-independent (#763) — so every
 read below is mandatory IN CONTENT but budgeted IN FORM:
@@ -238,7 +240,8 @@ Full sentinel recipe: `analyzer-section-reference.md`
 
 ### Step 3: Generate Plots
 
-Use the `paper-plots` skill; `set_paper_style()` is the only blessed entry
+Invoke the `paper-plots` skill via the Skill tool FIRST (it is not preloaded
+— see the frontmatter note); `set_paper_style()` is the only blessed entry
 point — `"blog"` for clean-result figures, `"neurips"` for papers. Every
 figure saves PNG + PDF + `.meta.json` via `savefig_paper` (never PNG only);
 the sidecar auto-embeds per-point data under a `points` key — label points

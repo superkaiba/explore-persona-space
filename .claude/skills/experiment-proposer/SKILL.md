@@ -9,7 +9,7 @@ description: Use when deciding what experiments to run next. Reads research cont
 
 **Owns:** ranking candidate experiments by information gain per GPU-hour and creating `status='proposed'` experiment rows in the task workflow for approved proposals. Pure ideation — **never runs code**.
 
-**Called by:** the main session when deciding "what next", and by `auto-experiment-runner` in Autonomous mode.
+**Called by:** the main session when deciding "what next".
 
 **Downstream:** proposed experiments go through adversarial-planner → `/issue` before execution.
 
@@ -235,7 +235,6 @@ awaiting_promotion → completed`.
 ## Interaction with Other Skills
 
 - **issue**: The proposer creates `status='proposed'` experiments in the task workflow; `/issue <N>` drives them through the lifecycle. The proposer does NOT run experiments.
-- **auto-experiment-runner**: In autonomous mode, the auto-runner uses the proposer's logic (Phases 2-3) internally with stricter constraints.
 - **independent-reviewer**: After proposals, the researcher can invoke the reviewer to critique them before approving.
 
 ---

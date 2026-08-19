@@ -1,3 +1,11 @@
+---
+description: Workflow-v2 experiment guideline index (vectorize, GPU saturation, disjoint eval, data tiers, persist-by-default, dual-DV, mapping baselines)
+paths:
+  - ".claude/skills/issue-v2/**"
+  - ".claude/skills/adversarial-planner-v2/**"
+  - "tasks/**/plans/*.md"
+---
+
 # Experiment guidelines (workflow v2)
 
 The durable, imperative checklist every `workflow: v2` experiment plan +

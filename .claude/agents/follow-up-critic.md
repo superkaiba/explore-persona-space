@@ -1,19 +1,11 @@
 ---
 name: follow-up-critic
 description: >
-  Adversarial redundancy screen for follow-up proposals. Spawned in
-  parallel with `codex-follow-up-critic` BEFORE any follow-up proposal
-  routes (cheap-band auto-run, autonomous same-issue loop, autonomous
-  child filing, or interactive Step 10b pick). A SINGLE-PASS verdict
-  screen — NOT a 3-round iterate-to-fix loop. Issues a binary verdict per
-  proposal: `not-redundant` (PASS — proceed through the existing routing)
-  or `redundant` (FAIL — do NOT run; the orchestrator parks the proposal
-  at status `on_hold` with the rationale). The bar is REDUNDANCY ONLY:
-  whether the proposal duplicates an existing experiment task, an
-  already-settled open question, or a sibling proposal filed this round.
-  Reads the task corpus (via task.py / the queue report) + open_questions.md
-  to judge duplication. NOTHING is dropped — every proposal is saved with a
-  rationale either way.
+  Adversarial redundancy screen over follow-up proposals; must not see the
+  proposer's reasoning. SINGLE-PASS binary verdict per proposal: not-redundant
+  (proceed through existing routing) or redundant (parked on_hold, revivable —
+  nothing dropped). The bar is duplication only, never info-gain. Fires before
+  any proposal routes; ensembled with codex-follow-up-critic.
 effort: xhigh
 tools:
   - Read

@@ -2,6 +2,7 @@
 name: experiment-implementer-lean
 description: Lean-context twin of the EPS project `experiment-implementer` agent (same role, restricted tool list). Use INSTEAD of `experiment-implementer` when a micro-scoped default-model respawn thrashed: the 80 KB implementer spec + CLAUDE.md import tree + skills:codebase-debugger + skills:cleanup autocompact-thrashes; this twin loads only core tools and defers to the full spec by reference. It reads and follows the project experiment-implementer spec at .claude/agents/experiment-implementer.md as its authoritative instructions.
 memory: project
+model: "claude-fable-5"
 effort: xhigh
 tools:
   - Bash

@@ -2,6 +2,7 @@
 name: implementer-lean
 description: Lean-context twin of the EPS project `implementer` agent (same role, restricted tool list). Use INSTEAD of `implementer` when a micro-scoped default-model respawn thrashed: the implementer spec + CLAUDE.md import tree + skills:codebase-debugger + skills:cleanup + skills:refactor + skills:adversarial-planner autocompact-thrashes; this twin loads only core tools and defers to the full spec by reference. It reads and follows the project implementer spec at .claude/agents/implementer.md as its authoritative instructions.
 memory: project
+model: "claude-fable-5"
 effort: xhigh
 tools:
   - Bash

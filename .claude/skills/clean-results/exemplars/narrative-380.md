@@ -1,6 +1,6 @@
 # Narrative exemplar — task #380 (many-findings rollup)
 
-**What this exemplar shows.** A `## Details` body in the LessWrong-style narrative shape spec'd by CLAUDE.md § Experiment Report Structure (2026-05-27 reshape) — applied to a many-findings experiment that exceeded the TL;DR-inline-figures budget. The source body lives at `tasks/awaiting_promotion/380/body.md`; this exemplar shows what its `## Details` would look like under the new narrative rules. Read alongside `.claude/skills/clean-results/lw-post-examples/` (external LW register references).
+**What this exemplar shows.** A `## Details` body in the LessWrong-style narrative shape spec'd by CLAUDE.md § Experiment Report Structure (2026-05-27 reshape) — applied to a many-findings experiment that exceeded the TL;DR-inline-figures budget. The source body lives at `tasks/awaiting_promotion/380/body.md`; this exemplar shows what its `## Details` would look like under the new narrative rules. Read alongside `docs/lw-post-examples/` (external LW register references).
 
 **Rules demonstrated** (cited inline at each beat below):
 

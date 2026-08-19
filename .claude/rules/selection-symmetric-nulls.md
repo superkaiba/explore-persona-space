@@ -1,5 +1,5 @@
 ---
-description: "Selection-symmetric nulls — a null/permutation band compared against a max-over-axis-selected observed statistic must inherit the SAME selection per draw, or the axis must be frozen on a held-out split; persist the per-draw × per-axis matrix. Report every registered band's upper bound against the DV's achievable ceiling — band ≥ ceiling ⇒ uninformative-by-construction, narrate failure-to-reject. A bootstrap CI reported at a max-selected axis position must be the selection-inherited CI (per-draw re-selection inside each resample) or both frozen+inherited, labeled. ALSO: noise-structure symmetry — a difference-vector DV whose two legs subtract the SAME sampled baseline B̄ (cos(X−B̄, Y−B̄)) inflates against a noise-free null; use disjoint baseline draw halves per leg, or build the null to carry the identical shared-B̄ term per draw. Loads on-demand at plan time."
+description: "Selection-symmetric nulls — a null band compared against a max-over-axis-selected statistic must inherit the SAME selection per draw, or freeze the axis held-out; persist the per-draw × per-axis matrix. Report band upper bound vs the DV's achievable ceiling (band ≥ ceiling ⇒ uninformative-by-construction). A bootstrap CI at a max-selected position must be the selection-inherited CI (or both, labeled). ALSO noise-structure symmetry: a difference-vector DV whose legs share ONE sampled baseline inflates against a noise-free null — disjoint baseline halves per leg, or a shared-B̄-bearing null. ALSO null-gate calibration: a pre-registered numeric gate thresholding a NULL statistic needs a MEASURED 1-cell calibration pilot at production shape, never an asserted constant (a refit null is strictly negative, not ≈ 0, with depth non-monotone in n/d); prefer advisory logging over hard-abort. Loads on-demand at plan time."
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -32,17 +32,12 @@ The same asymmetry applies to `argmax`, best-of, and a top-k mean (the
 top-k averaging shares the winner's-curse inflation — the k winners are
 still the extremes of L draws).
 
-**Motivating evidence (#778).** A persona-vectors replication
-(arXiv 2507.21509) selected the matched direction's read-out layer by
-`max(matched r)` over 28 layers, then computed each null direction's band
-at that single matched-winning layer. Simulated at n=24: single-layer
-null p97.5 |r| ≈ 0.48 vs honest max-over-layer p97.5 |r| ≈ 0.62. All three
-Phase-2 lenses reconciled to REVISE — four of the six per-lens critics
-caught the asymmetry independently (Statistics Claude+Codex, Methodology
-Codex, Alternatives Codex); Methodology Claude and Alternatives Claude
-missed it. Siblings: #664 (best-of-28 SNR clears a floor a fixed-layer
-read does not), #545 (best-of-group winner's-curse inflation ≈
-`sqrt(2 ln K)·SE`).
+**Motivating evidence (#778).** A persona-vectors replication selected
+the read-out layer by `max(matched r)` over 28 layers, then computed each
+null direction's band at that single winning layer. Simulated at n=24:
+single-layer null p97.5 |r| ≈ 0.48 vs honest max-over-layer p97.5
+|r| ≈ 0.62. Siblings: #664, #545 (best-of-group winner's-curse inflation
+≈ `sqrt(2 ln K)·SE`).
 
 ## The two symmetric alternatives (pick one)
 
@@ -118,15 +113,11 @@ an axis position frozen on a held-out split, or pre-registered before
 seeing the data, is not selection-conditioned and its frozen CI needs
 no inheritance — state the freeze provenance when reporting it.
 
-**Motivating evidence (#1434, install-grid ρ).** The interpretation
-reported the frozen-headline-layer bootstrap CI [−0.949, −0.467] for a
-ρ whose layer was itself chosen by max-|ρ| over 28 layers, while the
-SAME JSON (`pv_validation.json`) carried the selection-inherited
-cluster bootstrap (`cluster_bootstrap_selection_inherited`, per-draw
-max-|ρ| layer re-selection inside each resample): [−0.957, +0.866] —
-spanning zero widely. The frozen CI overstated sign stability at a
-winner's-curse-selected layer; caught only at interpretation-critique.
-This clause moves the catch to plan time and analyzer time.
+**Motivating evidence (#1434).** An interpretation reported the frozen
+bootstrap CI [−0.949, −0.467] for a ρ whose layer was chosen by max-|ρ|
+over 28 layers, while the SAME JSON carried the selection-inherited
+cluster bootstrap: [−0.957, +0.866] — spanning zero widely. Caught only
+at interpretation-critique; this clause moves the catch to plan time.
 
 ## Band-vs-ceiling informativeness check
 
@@ -212,14 +203,93 @@ built, wherever it was loaded from — a carve-out exempting a read from
 the selection-symmetry recipe does not exempt an unreachable band from
 this check when another surface (the analyzer gate) has loaded it.
 
-**Motivating evidence (#810, round `ultrachat-genre-summary-sweep`,
-H1-g(iii)).** A registered difference-null band's 97.5% upper bound
-(0.800) sat above the DV's achievable difference ceiling — the max
-attainable skill was ~0.857, so a max-difference statistic could
-essentially never clear 0.800; even the parent round's observed +0.209
-Betley effect would fail — and the p = 0.634 outcome was initially
-narrated as a clean ordering fail until the interpretation-critic
-caught it.
+**Motivating evidence (#810).** A registered difference-null band's
+97.5% upper bound (0.800) sat above the DV's achievable difference
+ceiling (max attainable skill ~0.857), so the statistic could essentially
+never clear it — and the p = 0.634 outcome was initially narrated as a
+clean ordering fail until the interpretation-critic caught it.
+
+## Gate thresholds on a NULL statistic need a MEASURED calibration basis
+
+The band-vs-ceiling check above covers a REJECTION REGION no achievable
+OBSERVED value can reach. The mirror-image defect thresholds the NULL
+statistic itself: a pre-registered numeric gate on a null / permutation /
+shuffle-derived quantity — `abs(r2_null) < 0.05`, `r2_null > -3.0`, a
+null-band-width bound, a permutation `p` used as a sanity gate (usually
+discharged by the analytic carve-out below) — pins a constant against a
+distribution whose LOCATION was never measured. The constant is a guess
+about the null, and a wrong guess fires the gate on healthy runs.
+
+**Every pre-registered numeric gate whose thresholded quantity is computed
+from a NULL / permutation / shuffle / scrambled-label draw MUST cite a
+MEASURED calibration basis:** a 1-cell pilot computing THAT null statistic
+through the PRODUCTION entrypoint at production `n` / `d` / `h` shape,
+reported as the realized null value(s), with the gate band set relative to
+them — name the command and the cell. Prefer ≥3 draws, or state the
+dispersion allowance when the band is set off fewer: a measured value plus
+an asserted margin is the within-rung form of the same trap (#1491's first
+fix was a measured value with a ~3× margin, and it still fired). This is
+the null-side twin of the §7
+measured-`n_train` rule (a registered gate input cites a measured
+artifact-side quantity, never an assertion) and of
+`.claude/rules/plan-compute-sizing.md`'s measured-pilot basis for wall-time.
+Not yet materialized at plan time ⇒ mark the band
+`inferred — re-calibrate at first null draw` and name the pre-gate
+re-calibration step, exactly as the measured-`n_train` rule does.
+
+Two properties make an asserted constant unsafe even when it looks generous:
+
+1. **A refit null is not centered at 0.** Under the `1 − SS_res/SS_tot`
+   held-out convention (sklearn `r2_score`) — state WHICH convention the
+   gate reads; the squared-correlation form of R² DOES sit near 0 under
+   permutation — a null that RE-FITS the predictor on shuffled targets has
+   strictly NEGATIVE expected held-out R²: 0 is the predict-the-mean
+   reference, and the refit adds prediction variance from fitting the
+   shuffled training targets, so it does strictly worse out of sample. The
+   magnitude is set by fitted capacity vs `n` — for an OLS-style fit,
+   E[R²_null] ≈ −d/(n−d−1): −1 already at n ≈ 2d, arbitrarily deep as n
+   approaches d — and reaches ≈ 0 only when heavy regularization shrinks
+   the refit to the train mean. #1491's realized values ran −1 to −4: any
+   `|R²_null| < ε` gate on such a null is unsatisfiable in practice.
+2. **Null depth is non-monotone in the shape parameters.** For an un- or
+   weakly-regularized refit, the negative R² deepens toward the
+   interpolation threshold (`n ≈ d` for a linear fit; `n ≈ h` where `h`
+   tracks the probe's fitted capacity) and shrinks on both sides — the
+   variance peak that produces double descent (Belkin et al. 2019, PNAS;
+   Hastie et al. 2022, Ann. Stat., ridgeless interpolation; sample-wise
+   non-monotonicity per Nakkiran et al. 2019). No single constant floor is
+   correct across a ladder that sweeps `n` or width: a floor calibrated at
+   one rung fires at another. A ladder gate is calibrated PER RUNG, or it
+   is advisory. (Strong regularization suppresses the peak but does not
+   restore a portable constant — depth still moves with `n`, `d`, and λ.)
+
+**Prefer ADVISORY logging over hard-abort for null-side conditions.** The
+null is a DIAGNOSTIC read, not a kill criterion — its job is to say how
+large a chance effect looks, and an out-of-expectation null value is
+information the analyst wants. DEFAULT: log the realized null value + the
+expected band, CONTINUE, and surface the deviation in the run digest. A
+HARD ABORT on a null-side condition is opt-in and the plan must ARGUE it:
+name the specific downstream claim that would be invalid, and say why
+finishing the cell and rejecting it at analysis time is worse than killing
+it. The asymmetry is load-bearing — a null-side abort discards the
+OBSERVED arm too, which is the expensive half. Observed-side gates are
+unaffected by this clause. The canonical LEGITIMATE hard abort: a refit
+null significantly ABOVE 0 (or at observed levels) is target-leakage
+evidence — every downstream cell inherits the leak, so killing the run is
+correct; and because refit nulls are strictly negative in expectation, a
+one-sided leak CAP is location-robust and may cite that derivation under
+the analytic carve-out instead of a pilot.
+
+**Motivating evidence (#1491).** Gate 1 was pre-registered as
+`abs(r2_null) < 0.05` on a shuffle-refit null whose realized values ran −1
+to −4: unsatisfiable by construction. All 8 shards of the 0.5B rung FAILed
+and hard-aborted with the GPUs at 0% on an 8×H200 pod. The first fix
+asserted a fixed floor `null_floor = -3.0`; the 1.5B rung measured
+`r2_null` −3.40 … −3.80 and died the same way. Only the third change — an
+ADVISORY floor — held, and the measurement then showed null depth is
+non-monotone in `n/h`, so no constant floor was ever correct. The defect
+survived plan approval AND multiple code-review rounds because no review
+compared the gate constant against a measured null draw.
 
 ## Noise-structure symmetry (shared-baseline difference vectors)
 
@@ -281,19 +351,15 @@ near-zero-reliability leg makes its row uninterpretable regardless of
 the fix — #1415's medical_doctor pair posted 0.66–0.71 alignment against
 a target with 0.049 split-half reliability.
 
-**Motivating evidence (#1415, H1 answer-shift alignment).** The realized
-shift (V_a_steered − V_a(c)) and the target (V_a(c′) − V_a(c)) subtracted
-the SAME 10-draw baseline mean; the 500-direction random null had no
-shared term. The interpretation-critic's executed disjoint recount
-(even/odd baseline halves, canonical L20/α4 cells): prefix mean
-max-over-read-layers 0.271 → 0.178, context 0.362 → 0.272; one pair
-0.23 → −0.08 (fully artifactual); 6/28 prefix pairs fell below the null
-p97.5 (0.043). The "28/28 pairs clear the random-direction null"
-headline did not survive. The shared term also inflates frac-of-anchor
-ratio reads (adds +‖ε_c‖²/‖target‖²). The defect survived the planner,
-the critic ensemble, the implementer, and code review — caught only at
-interpretation-critique; this section exists to move the catch to plan
-time.
+**Motivating evidence (#1415).** The realized shift and the target
+subtracted the SAME 10-draw baseline mean; the 500-direction random null
+had no shared term. The disjoint recount dropped prefix alignment
+0.271 → 0.178, context 0.362 → 0.272, one pair 0.23 → −0.08 (fully
+artifactual), and 6/28 prefix pairs fell below the null p97.5 — the
+"28/28 pairs clear the null" headline did not survive. The shared term
+also inflates frac-of-anchor ratio reads. The defect survived planner,
+critic ensemble, implementer, and code review — caught only at
+interpretation-critique; this section moves the catch to plan time.
 
 **Interaction with selection symmetry.** The two clauses are orthogonal
 and can BOTH fire on one DV (#1415's H1 was max-over-read-layers AND
@@ -329,68 +395,87 @@ shared-baseline). Fixing one does not fix the other.
   observed and reference legs** — a plan MAY write "N/A — no
   shared-baseline difference-vector DV" to be explicit; absence of the
   pattern requires no declaration.
+- **(Null-gate) The thresholded quantity is PURELY observed-side — no
+  null/permutation-derived input anywhere in the predicate** — a train/val
+  loss floor, an observed R², an observed rate. Grounded per `planner.md`
+  §7 (threshold AND sign in prior-issue evidence); no null draw needed. A
+  MIXED predicate (`r2_obs − r2_null ≥ m`, `obs ≥ null_upper + c`, any
+  observed-to-null ratio) is NOT covered here — the null's unmeasured
+  location still controls satisfiability; a z-standardized observed-vs-null
+  read routes through the analytic-distribution carve-out below.
+- **(Null-gate) The band comes from the null's ANALYTIC distribution** — a
+  permutation p-value's exact uniform null, a known-variance z threshold.
+  Cite the derivation instead of a pilot; a measured one-cell spot-check is
+  still preferred and always sufficient.
+- **(Null-gate) An ADVISORY null-side log line with nothing branching on
+  it** needs no calibration basis — nothing can fire. Attaching an abort or
+  a branch re-arms the duty.
 
 ## Enforcement
 
-- `planner.md` §6 "Selection-symmetric nulls" — the trigger + the two
-  alternatives + persistence requirement a plan with a swept-axis
-  headline must satisfy.
-- `critic.md` Statistics & Measurement lens item 11 — REVISEs a plan
-  whose headline uses `max`/`argmax`/best-of/top-k-mean over
-  layer/cell/k/neighbourhood/seed/extraction-point/threshold AND whose
-  null band is computed at one fixed axis position, with neither per-draw
-  same-selection nor a held-out-frozen axis, and no persisted per-draw ×
-  per-axis matrix.
-- Band-vs-ceiling (plan side): `planner-section-reference.md` §6
-  "Selection-symmetric nulls" block registers band upper bound +
-  achievable ceiling per null-band read; `critic-lens-reference.md`
-  Statistics & Measurement item 11 + `statistics-critic.md` item 11
-  (v2) verify it.
-- Band-vs-ceiling (interpretation side): `analyzer.md`
-  measurement-validity gate + `interpretation-critic.md`
-  § Alternative Explanations narrate an unreachable band as
-  failure-to-reject.
-- Bootstrap-CI selection inheritance (plan side):
-  `planner-section-reference.md` §6 "Selection-symmetric nulls" block
-  registers any CI reported at a selected position as selection-inherited
-  (or both, labeled); `critic-lens-reference.md` Statistics & Measurement
-  item 11 + `statistics-critic.md` item 11 (v2) REVISE a frozen-only CI
-  at a max-selected position.
-- Bootstrap-CI selection inheritance (interpretation side): `analyzer.md`
-  measurement-validity gate item 4 (full text:
-  `analyzer-section-reference.md` § Step 1) + `interpretation-critic.md`
-  § Alternative Explanations flag a frozen-at-winner CI quoted where the
-  selection-inherited CI carries the stability claim (#1434).
-- Noise-structure symmetry (plan side): `planner-section-reference.md` §6
-  "Selection-symmetric nulls" block (noise-structure paragraph) — a plan
-  registering a shared-sampled-baseline difference-vector statistic names
-  which of the two fixes it uses; `critic-lens-reference.md` Statistics &
-  Measurement item 11 + `statistics-critic.md` item 11 (v2) REVISE the
-  pattern with neither fix registered.
-- Noise-structure symmetry (code side): `.claude/rules/gotchas.md` carries
-  a pointer bullet (loads when writing analysis code — the layer that
-  covers inline / free-analysis rounds, which bypass the planner+critic
-  stack).
+- Plan side: `planner.md` §6 "Selection-symmetric nulls" (trigger + the
+  two alternatives + persistence) with the full block in
+  `planner-section-reference.md` §6 — which also registers band upper
+  bound + achievable ceiling per null-band read, any CI at a selected
+  position as selection-inherited (or both, labeled), and the
+  noise-structure fix a shared-sampled-baseline DV uses.
+- Critic side: `critic.md` Statistics & Measurement lens item 11 (full
+  text `critic-lens-reference.md` item 11; v2 `statistics-critic.md`
+  item 11) — REVISEs an asymmetric max-over-axis headline vs
+  one-position null, a frozen-only CI at a max-selected position, an
+  unreachable registered band, and a shared-baseline DV with neither fix
+  registered.
+- Interpretation side: `analyzer.md` measurement-validity gate (full
+  text `analyzer-section-reference.md` § Step 1) +
+  `interpretation-critic.md` § Alternative Explanations — narrate an
+  unreachable band as failure-to-reject; flag a frozen-at-winner CI
+  quoted where the selection-inherited CI carries the stability claim
+  (#1434).
+- Code side (inline / free-analysis rounds, which bypass the
+  planner+critic stack): `.claude/rules/gotchas.md` carries a pointer
+  bullet.
+- Plan side (Null-gate): `planner.md` §7 capsule (a gate reading a
+  NULL-derived quantity cites a MEASURED 1-cell calibration pilot; defaults
+  to ADVISORY) + the full `**Measured calibration basis for NULL-statistic
+  gates (#1491).**` bullet in `planner-section-reference.md` § 7.
+- Critic side (Null-gate): `critic.md` / `critic-lens-reference.md` item 11
+  (v2 `statistics-critic.md` item 11) — an asserted-constant threshold on a
+  null statistic with no measured calibration basis is a REVISE; a
+  hard-abort null-side gate with no stated argument is a REVISE.
+- Code side (Null-gate — the channel #1491's SECOND failure came through):
+  `SELF_GATE_NULL_FLOOR = -3.0` was introduced in crash-fix commit
+  `ccc650f42e`, not in an approved plan, so every plan-time and critic-time
+  surface was structurally blind to it. A diff that INTRODUCES or CHANGES a
+  numeric threshold on a null statistic states its measured per-rung
+  calibration basis in the constant's own comment / docstring — the
+  `artifact-reuse.md` § Reuse-validation gate calibration code-reviewer duty
+  extended beyond reuse gates. The `gotchas.md` selection-symmetric-nulls
+  pointer names this clause for the code-side / inline-round channel.
+- Mechanical (Null-gate): `workflow_lint.py --check-null-gate-calibration-lens`
+  (region-anchored surface pin across the six carrying surfaces, bundled
+  into the no-flags default run).
 
 ## Files of record
 
-Task body #810 (the band-vs-ceiling incident: band p97.5 = 0.800 vs an
-achievable difference ceiling from ~0.857 max skill; p = 0.634 initially
-narrated as an ordering fail);
-Task body #778 (the origin incident + n=24 asymmetry numbers);
-Task body #1434 (the frozen-vs-inherited bootstrap-CI incident: frozen
-[−0.949, −0.467] vs selection-inherited [−0.957, +0.866] at a
-max-|ρ|-over-28-layers-selected layer, both in `pv_validation.json`);
-Task body #1415 (the shared-baseline noise incident: prefix 0.271→0.178,
-context 0.362→0.272, one pair 0.23→−0.08, 6/28 prefix pairs below null
-p97.5 0.043 under disjoint halves; the interp-critique v1 marker carries
-the executed recount);
-`.claude/agent-memory/reconciler/feedback_layer_selection_asymmetry_is_alternatives_finding.md`,
-`.claude/agent-memory/analyzer/feedback_best_layer_snr_selection_biased.md`,
-`.claude/agent-memory/critic/feedback_bestofgroup_selection_asymmetry.md`
-(the pre-existing agent memories on this pattern);
-`.claude/rules/contrastive-negatives.md` (#383 X-vs-(X−Y) sibling
-caveat).
+Task bodies #778 (origin), #810 (band-vs-ceiling), #1434
+(frozen-vs-inherited CI), #1415 (shared-baseline noise), #1491
+(null-gate calibration origin; fix commits `ccc650f42e` introducing the
+asserted floor, `6d5c675a95` demoting it to `null_floor_advisory`), #2144
+(the null-gate calibration clause). Distinguished siblings of the
+null-gate clause — do not re-dedupe onto them: **#810** (band-vs-ceiling:
+an unreachable REJECTION REGION for the OBSERVED statistic vs the DV
+ceiling — the null-gate clause covers thresholds on the NULL statistic
+itself); **#2061** (measured-`n_train`: the structural precedent — a
+registered gate INPUT cites a measured artifact-side quantity, never an
+assertion); **#813** (`artifact-reuse.md` § Reuse-validation gate
+calibration: the same doctrine for gates validating REUSED artifacts,
+calibrated on committed same-surface reference values rather than a
+measured pilot).
+Agent memories: reconciler
+`feedback_layer_selection_asymmetry_is_alternatives_finding.md`, analyzer
+`feedback_best_layer_snr_selection_biased.md`, critic
+`feedback_bestofgroup_selection_asymmetry.md`;
+`.claude/rules/contrastive-negatives.md` (#383 X-vs-(X−Y) sibling caveat).
 
 **Sibling rule:** `.claude/rules/vectorize-many-cell-fits.md` — the same #778
 null battery is that rule's many-draw compute incident (per-draw pool

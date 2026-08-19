@@ -9,8 +9,11 @@ description: >
 skills:
   - codebase-debugger
   - cleanup
-  - refactor
-  - adversarial-planner
+# NOT preloaded (frontmatter `skills:` inlines the WHOLE SKILL.md on every
+# spawn): `refactor` (8.5 KB) and `adversarial-planner` (68 KB) are used on a
+# minority of rounds and are already invoked on demand via the Skill tool from
+# the body (§ Workflow step 2 / the escalation table). Preloading them cost
+# ~21K tokens per implementer spawn.
 memory: project
 effort: xhigh
 tools:
@@ -53,28 +56,20 @@ You work in two modes:
 
 ## Context budget (READ FIRST)
 
-Your spec + the project CLAUDE.md import tree consume a large fraction of your
-context before your first tool call; heavy-read subagents have died to
-autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
-the VARIABLE half of that load — it does not cure fixed-overhead window
-pressure (#1090) — so every read below is mandatory IN CONTENT but
-budgeted IN FORM:
+Heavy-read subagents die to autocompact thrash on unbudgeted reads
+(#833/#835/#763; read hygiene bounds the VARIABLE half of the load — fixed
+overhead is #1090). Follow the canonical read-hygiene contract in
+`.claude/agents/critic.md` § Context budget (READ FIRST): grep-then-slice
+every >40 KB / unknown-size file (≤300-line chunks; material mandated "IN
+FULL" is still read in full — just chunked); never bare `task.py view <N>`
+(body via `--json | jq -r '.body'`, plans via a sliced `Read`); results are
+digests (`jq` the keys/fields you need, single rows by Grep + line offset);
+don't re-read what you just wrote (`Write`/`Edit` error on failure).
+Role-specifics:
 
-- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
-  into context in one unchunked `Read`: locate the span with Grep (`-n`,
-  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
-  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
-  chunked.
-- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
-  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
-  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
-- **Results are digests.** Never page a whole eval JSON / JSONL /
-  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
-  line offset.
 - **Workflow-surface files run 200–1,800 lines.** Grep the anchor heading /
   function first and `Read` only the edit span; never page a whole agent
   spec or SKILL.md to find one section.
-- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
 
 Other sections name WHAT to read; this one governs HOW. On conflict, this
 section wins on invocation form.
@@ -120,6 +115,17 @@ section wins on invocation form.
 ### During Implementation
 
 - **Follow existing patterns.** Don't impose a new style. The codebase uses ruff (line-length=100, py311, E/F/I/UP), Hydra for config, `uv` for env.
+- **Read-pinning under external churn (#2158; #1336 death #9).** A shared
+  worktree is the EXPECTED shape for pre-split multi-unit rounds — a
+  concurrent session may land commits mid-flight. Record BASE_SHA
+  (`git rev-parse HEAD`) at round start. When a target file changes
+  underneath you, do NOT re-read the live file repeatedly — pin reads to
+  `git show <BASE_SHA>:<path>`, finish your edit against that snapshot,
+  take ONE bounded provenance probe
+  (`git log --oneline <BASE_SHA>..HEAD -- <path>`), and reconcile at
+  commit time. An unbounded re-read loop on a churning 1,000+-line file
+  is the #1336 autocompact-thrash shape. Full protocol:
+  `.claude/rules/cross-session-writer-arbitration.md`.
 - **No silent failures.** No `except: pass`. No `--force`. No hardcoding secrets.
 - **Never skip steps.** If a test fails, investigate — don't disable it.
 - **A test failing on pristine `main` is NOT automatically "stale" — root-cause it before parking.** When a forward-port / rebase surfaces a failure that "also fails on clean main," do not write it off as a pre-existing stale test. If the test pins a documented invariant or gotcha (grep `.claude/rules/gotchas.md` and the test's own docstring for what it guards), treat the failure as a candidate REAL pre-existing bug and root-cause it before parking. (2026-06-23: two `gpu_lease` tests were repeatedly triaged as "pre-existing on main" until root-caused as a real `CUDA_VISIBLE_DEVICES`-set-after-`import peft` bug that silently collapses parallel `+gpu_id` launches onto GPU 0 — caught only because the user said "Yes fix.")

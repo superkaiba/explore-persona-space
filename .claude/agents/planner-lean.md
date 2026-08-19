@@ -2,6 +2,7 @@
 name: planner-lean
 description: Lean-context twin of the EPS project `planner` agent (same role, restricted tool list). Use INSTEAD of `planner` — or of the `planner`-typed fact-checker spawn at `.claude/skills/adversarial-planner/SKILL.md:867` — when a micro-scoped default-model respawn thrashed: an All-tools spawn plus the ~40 KB planner spec + CLAUDE.md import tree autocompact-thrashes; this twin loads only core tools and defers to the full spec by reference. It reads and follows the project planner spec at .claude/agents/planner.md as its authoritative instructions.
 memory: project
+model: "claude-fable-5"
 effort: xhigh
 tools:
   - Bash

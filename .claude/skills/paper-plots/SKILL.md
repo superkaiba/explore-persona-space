@@ -71,7 +71,48 @@ left-aligned semibold titles via `set_title_subtitle`. See
 
 ---
 
-## 5-phase workflow
+## 6-phase workflow
+
+### 0. Reuse check — does a plotter for this figure already exist?
+
+**FIRST action of any figure task, before Phase 1 and before writing a single
+line of plotting code.** The most common case is a plotter that was committed
+by an earlier round and NEVER RUN, because the scores it reads landed after
+the script did — it is invisible to "did anyone plot this yet?" reasoning
+based on the figures that exist on disk.
+
+```bash
+# 1. Name-scoped listing — NEVER pipe a discovery listing through head/tail.
+ls scripts/ | grep -iE '<issue-number>|<result-slug>'
+# 2. Content-scoped: who reads this result's artifacts?
+grep -rln '<artifact-dir>|<eval_results subdir>' scripts/ src/
+# 3. For each candidate: has it ever produced output?
+git log --oneline -3 -- scripts/<candidate>.py
+ls figures/<expected out-dir>/ 2>/dev/null   # empty ⇒ committed but never run
+```
+
+Dispositions, in order of preference:
+
+1. **A plotter exists and fits** → RUN IT. Do not rewrite, do not "start
+   fresh and compare" — the committed script encodes conventions the round
+   already agreed to (frozen-layer sources, ceiling overlays, caveat notes,
+   points-JSON emission) that a from-scratch rewrite silently drops.
+2. **Exists but does not fit** → EXTEND IT IN PLACE (the supersede contract,
+   `.claude/rules/vectorize-many-cell-fits.md` § Supersede) — never add a
+   sibling script at an adjacent name.
+3. **Genuinely none** → proceed to Phase 1.
+
+If you write a plotter and `git status` later shows `M` (modified) rather
+than `A` (added) at your path, STOP: you have overwritten someone's committed
+script. Restore it (`git checkout HEAD -- <path>`), read it, and re-decide
+between dispositions 1 and 2.
+
+(#1739, 2026-08-06: `scripts/issue1739_result2fair_fig.py` — a purpose-built
+9-cell plotter with reliability ceilings and a points-JSON emitter — sat
+committed and unrun because its scores landed on HF hours later. A duplicate
+7-method script was written from scratch, and the collision surfaced only at
+`git add`. The proximate cause was a discovery listing truncated with
+`head -30`, which cut the alphabetically-later filename.)
 
 ### 1. Understand the request
 
@@ -222,6 +263,46 @@ regen. Keep the figure a stable data primitive; keep the interpretation
 in the text.
 
 For interim-figure decoration defaults (hatching, per-bar n, estimated-value markers, tick rotation), see §3.9.
+
+### 3.8-bis. NO CAPTION BLOCK INSIDE THE FIGURE — the figure stays simple and concise
+
+**Standing user directive (2026-08-12).** Never render a provenance /
+methodology / caveat caption block INTO the figure canvas — no
+`fig.text(...)` paragraph of protocol notes, per-bar `n`, spread-gate
+explanations, error-bar definitions, or scope exclusions. The figure
+carries axes, ticks, legend, and panel titles; **everything else goes in
+the surrounding prose** (the clean-result caption blockquote, the report
+body, the chat message).
+
+This is stricter than §3.8, which bans INTERPRETIVE overlays. §3.8-bis
+additionally bans FACTUAL prose blocks — provenance is legitimate content
+in the wrong place, and a wall of 8pt text under the panels makes the
+figure unreadable at the size a reader actually views it.
+
+Where the provenance goes instead, in preference order:
+
+1. The `savefig_paper` sidecar (`<stem>.meta.json`) — machine-readable,
+   already written on every call, and what the mechanical checks read.
+2. The write-up's caption / prose beside the figure.
+3. A `docs/` companion when it is genuinely long.
+
+**Retrofitting an existing captioned figure.** Two supported routes, both
+default-OFF so no existing render changes:
+
+- Shared-helper route (any generator calling `savefig_paper`): set
+  `EPS_PLOT_NO_CAPTION=1` to hide fig-level caption text for the RENDER
+  only (the sidecar still records it) and `EPS_PLOT_STEM_SUFFIX=_nocap`
+  to write the variant beside the captioned original instead of
+  overwriting a figure other write-ups reference.
+- Per-script route (a generator with its own `fig.savefig`): add a
+  `--no-caption` flag that skips the caption `fig.text` and writes a
+  `_nocap` stem. **Re-check the legend anchor** — a caption-anchored
+  legend at a fixed `bbox_to_anchor` lands INSIDE the panels once the
+  layout rect reclaims the caption strip (measured on
+  `issue1739_pc_fivemethod_style_fig.py`).
+
+Either way: Read the rendered PNG before shipping it (§5), since removing
+a text block changes the layout.
 
 ### 3.9. Interim / user-facing figure defaults
 
@@ -377,6 +458,28 @@ then in the body's `## Figure` section use a SHA-pinned permalink:
 
 `verify_task_body.py` Check 4b rejects relative URLs and `main`/`master`/
 `HEAD`-pinned raw URLs; it gates promotion to `awaiting_promotion`.
+
+**Touching the plot SCRIPT changes what the commit costs — decide
+deliberately.** A figures-only commit (PNG / PDF / `.meta.json` / points
+JSON) trips no code gate and lands in seconds. Adding any `scripts/**` or
+`src/**` file to the SAME commit makes it a direct-to-main CODE commit, which
+the `guard_root_code_commit.sh` PreToolUse hook blocks until
+`scripts/inline_lint_gate.py --issue <N> --payload-file <round-unique path>`
+certifies that file's exact content (a background run of several minutes, on
+top of the mapped Step-9c tests). That chain is correct for a substantive
+code change and disproportionate for a cosmetic one.
+
+So when a render surfaces a purely cosmetic defect (a legend collision, an
+overlapping label, a tick rotation) in an EXISTING committed plotter:
+
+- **User-chat / interim figure** → show the figure first and name the
+  trade-off in one line ("legend collides with the caption; the fix is
+  one line but pulls in the ~8-minute certification chain — want it now or
+  filed?"). Do not silently spend the gate on cosmetics.
+- **Clean-result figure** → take the gate; the body's figure must be clean.
+- **Either way**, keep the cosmetic script fix in its OWN commit, separate
+  from the artifacts, so a blocked or slow certification never holds up
+  landing the data.
 
 ### 5. Verify
 
