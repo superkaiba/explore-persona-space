@@ -12,10 +12,13 @@ origin_prompt: 'can we rerun with: a stronger model (qwen3.6), queries that make
   including different characters)'
 workflow: v1
 goal: 'Test whether the context→answer linear map trained in the chat-template framing
-  transfers — directly or up to a linear reparameterization — to every other framing
-  in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a
-  panel of distinct story characters, and a dialogue-reply arm where the addressed
-  utterance is ordinary dialogue rather than a question; one-directional transfer
+  (assistant turn) transfers — directly or up to a linear reparameterization — to
+  every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like
+  story character, a panel of distinct story characters, a dialogue-reply arm where
+  the addressed utterance is ordinary dialogue rather than a question, and the USER
+  character inside the chat template (two provenance arms: real human user turns teacher-forced,
+  and simulated user turns the model writes on-policy; context slot ends at the previous
+  assistant turn so the target is never self-predicted); one-directional transfer
   only, stories generated fully template-free (raw completion), scene-native invented
   queries, fully independent query pools (topic-shift confound disclosed). Secondary
   arm: one general map fit pooled on ALL cells compared per cell to the specialized
@@ -27,7 +30,7 @@ goal: 'Test whether the context→answer linear map trained in the chat-template
 
 ## Goal
 
-Test whether the context→answer linear map trained in the chat-template framing transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, and a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question; one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R² and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).
+Test whether the context→answer linear map trained in the chat-template framing (assistant turn) transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R² and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).
 
 ## Why (what this fixes over #1345/#2054)
 
