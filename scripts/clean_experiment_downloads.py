@@ -195,6 +195,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -2134,7 +2135,9 @@ def sweep_tmp_uv_project_files(
     (#2377). A stray pair poisons uv project discovery for every /tmp-cwd
     ``uv run`` fleet-wide, so the hazard is CORRECTNESS, not bytes: every row
     lands a sidecar event via :func:`append_disk_guard_event` regardless of
-    size (no byte floor), with a reason naming the uv blast radius.
+    size (no byte floor) and in BOTH modes — ``apply=False`` rows included
+    (plan v3 §1: EVERY row, ``would-quarantine`` too, persists durably; see
+    :func:`_uvproj_finish`) — with a reason naming the uv blast radius.
 
     STRICT opt-in, same hermeticity contract as :func:`sweep_tmp_scratch`:
     no-ops unless ``tmp_root`` AND ``main_repo`` are explicitly non-None
@@ -2165,14 +2168,26 @@ def sweep_tmp_uv_project_files(
        already VERIFIED by gate order, so the next pass quarantines once the
        file is quiescent);
     6. ``apply=False`` => ``tmp-uvproj-would-quarantine``;
-    7. apply: pre-rename re-``lstat`` (size + mtime unchanged since the
-       evidence read — the :func:`_reap_scratch_tree` fresh-recheck idiom;
-       changed => ``tmp-uvproj-reap-aborted-recency``), then a
-       same-filesystem ``os.rename`` into
-       ``tmp_root/eps-quarantine-uvproj-<UTC-ts>/<name>`` (dir created 0700)
-       => ``tmp-uvproj-quarantined`` (the row carries the quarantine path —
-       the reversible restore point — plus the evidence string). Rename
-       failure => ``tmp-uvproj-quarantine-failed`` (KEPT + escalated).
+    7. apply: pre-rename re-``lstat`` BOUND TO THE VERIFIED INODE — the
+       hashing fd stays open through the rename so the hashed
+       ``(st_dev, st_ino)`` cannot be recycled, and the fresh lstat must
+       match it AND the evidence-read size + mtime (re-bound / changed =>
+       ``tmp-uvproj-reap-aborted-recency``, the :func:`_reap_scratch_tree`
+       fresh-recheck idiom hardened per the round-2 ``uvproj-evidence-toctou``
+       concern) — then a same-filesystem ``os.rename`` into a FRESH private
+       quarantine dir ``tmp_root/eps-quarantine-uvproj-<UTC-ts>-<rand>.q/<name>``
+       (:func:`_uvproj_quarantine_dir`: ``tempfile.mkdtemp`` — atomically
+       fresh + unpredictable, verified real / owned / 0700, so a pre-created
+       symlink or dir at a predictable path can never be adopted — and the
+       destination is asserted non-existent before the rename, so the move
+       can never replace an existing entry) =>
+       ``tmp-uvproj-quarantined`` (the row carries the quarantine path —
+       the reversible restore point — plus the evidence string). Dir-setup
+       or rename failure => ``tmp-uvproj-quarantine-failed`` (KEPT +
+       escalated; never a fallback delete). Accepted residual (reconciler,
+       round 1): a swap inside the lstat->rename window is bounded to a
+       REVERSIBLE move into the private 0700 dir — never deletion, never an
+       escape from ``tmp_root``.
 
     NO deletion path exists in this arm at all — the only mutation is the
     same-fs rename into the quarantine dir. Returns a
@@ -2239,106 +2254,177 @@ def sweep_tmp_uv_project_files(
             )
             continue
         fd, fst = opened
-        empty = fst.st_size == 0
-        sha = None if empty else _blob_sha1_from_fd(fd, fst.st_size)
-        with contextlib.suppress(OSError):
-            os.close(fd)
-        if empty:
-            _uvproj_finish(
-                row,
-                "tmp-uvproj-unverified-escalated",
-                "empty file — never evidence-licensed (an empty blob exists in "
-                f"every repo); KEPT — {UVPROJ_BLAST_RADIUS}",
-                apply=apply,
-            )
-            continue
-        if sha is None:
-            _uvproj_finish(
-                row,
-                "tmp-uvproj-unverified-escalated",
-                f"content changed under hashing (truncate/grow race); KEPT — {UVPROJ_BLAST_RADIUS}",
-                apply=apply,
-            )
-            continue
-        if _git_first_missing_blob(main_repo, [sha]) != -1:
-            _uvproj_finish(
-                row,
-                "tmp-uvproj-unverified-escalated",
-                f"no git-blob identity proof in the main repo odb "
-                f"(sha {sha[:12]}); KEPT — {UVPROJ_BLAST_RADIUS}",
-                apply=apply,
-            )
-            continue
-        row["evidence"] = f"git-blob:{sha}"
-        age_s = now - fst.st_mtime
-        row["mtime_age_seconds"] = round(age_s, 1)
-        if age_s < UVPROJ_RECENT_GRACE_SECONDS:
-            _uvproj_finish(
-                row,
-                "tmp-uvproj-recent-escalated",
-                f"verified, but written {age_s:.0f}s ago (< {UVPROJ_RECENT_GRACE_SECONDS:.0f}s "
-                f"grace — recency is only a KEEP signal; the next pass acts once "
-                f"quiescent); KEPT — {UVPROJ_BLAST_RADIUS}",
-                apply=apply,
-            )
-            continue
-        if not apply:
-            _uvproj_finish(
-                row,
-                "tmp-uvproj-would-quarantine",
-                f"would quarantine (evidence: {row['evidence']}) — {UVPROJ_BLAST_RADIUS}",
-                apply=apply,
-            )
-            continue
         try:
-            re_st = cand.lstat()
-        except OSError:
+            empty = fst.st_size == 0
+            sha = None if empty else _blob_sha1_from_fd(fd, fst.st_size)
+            if empty:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-unverified-escalated",
+                    "empty file — never evidence-licensed (an empty blob exists in "
+                    f"every repo); KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            if sha is None:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-unverified-escalated",
+                    f"content changed under hashing (truncate/grow race); "
+                    f"KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            if _git_first_missing_blob(main_repo, [sha]) != -1:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-unverified-escalated",
+                    f"no git-blob identity proof in the main repo odb "
+                    f"(sha {sha[:12]}); KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            row["evidence"] = f"git-blob:{sha}"
+            age_s = now - fst.st_mtime
+            row["mtime_age_seconds"] = round(age_s, 1)
+            if age_s < UVPROJ_RECENT_GRACE_SECONDS:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-recent-escalated",
+                    f"verified, but written {age_s:.0f}s ago "
+                    f"(< {UVPROJ_RECENT_GRACE_SECONDS:.0f}s grace — recency is only a "
+                    f"KEEP signal; the next pass acts once quiescent); "
+                    f"KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            if not apply:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-would-quarantine",
+                    f"would quarantine (evidence: {row['evidence']}) — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            # The mutation is BOUND to the verified inode (round-2
+            # uvproj-evidence-toctou fix): ``fd`` — still open here, closed
+            # only by the enclosing ``finally`` — pins the hashed object, so
+            # its (st_dev, st_ino) cannot be recycled, and a fresh lstat
+            # immediately before the rename must resolve the pathname to that
+            # SAME inode with the SAME size + mtime. Any mismatch =>
+            # abort-to-KEEP (never quarantine unverified bytes under stale
+            # evidence).
+            try:
+                re_st = cand.lstat()
+            except OSError:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-reap-aborted-recency",
+                    f"file vanished between evidence read and rename; KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            if (re_st.st_dev, re_st.st_ino) != (fst.st_dev, fst.st_ino):
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-reap-aborted-recency",
+                    f"path re-bound to a different inode between evidence read and "
+                    f"rename (swap race); KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            if re_st.st_size != fst.st_size or re_st.st_mtime != fst.st_mtime:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-reap-aborted-recency",
+                    f"file changed between evidence read and rename; KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            try:
+                if quarantine_dir is None:
+                    quarantine_dir = _uvproj_quarantine_dir(tmp_root, now)
+                dest = quarantine_dir / name
+                # Inside a directory mkdtemp just created private + empty,
+                # non-existence of ``dest`` is guaranteed (mode 0700: no other
+                # uid can create entries; this sweep writes each fixed name at
+                # most once). Assert it anyway so the move can NEVER replace
+                # an existing entry (round-2 destination-unsafe fix).
+                if os.path.lexists(dest):
+                    raise OSError(f"quarantine destination {dest} unexpectedly exists")
+                os.rename(cand, dest)
+            except OSError as exc:
+                _uvproj_finish(
+                    row,
+                    "tmp-uvproj-quarantine-failed",
+                    f"quarantine dir setup / rename failed ({exc}); KEPT — {UVPROJ_BLAST_RADIUS}",
+                    apply=apply,
+                )
+                continue
+            row["quarantine_path"] = str(dest)
             _uvproj_finish(
                 row,
-                "tmp-uvproj-reap-aborted-recency",
-                f"file vanished between evidence read and rename; KEPT — {UVPROJ_BLAST_RADIUS}",
+                "tmp-uvproj-quarantined",
+                f"quarantined to {dest} (same-fs rename — reversible restore point, "
+                f"never deleted; evidence: {row['evidence']}) — {UVPROJ_BLAST_RADIUS}",
                 apply=apply,
             )
-            continue
-        if re_st.st_size != fst.st_size or re_st.st_mtime != fst.st_mtime:
-            _uvproj_finish(
-                row,
-                "tmp-uvproj-reap-aborted-recency",
-                f"file changed between evidence read and rename; KEPT — {UVPROJ_BLAST_RADIUS}",
-                apply=apply,
-            )
-            continue
-        if quarantine_dir is None:
-            ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(now))
-            quarantine_dir = tmp_root / f"eps-quarantine-uvproj-{ts}"
-        dest = quarantine_dir / name
-        try:
-            quarantine_dir.mkdir(mode=0o700, exist_ok=True)
-            os.rename(cand, dest)
-        except OSError as exc:
-            _uvproj_finish(
-                row,
-                "tmp-uvproj-quarantine-failed",
-                f"quarantine rename failed ({exc}); KEPT — {UVPROJ_BLAST_RADIUS}",
-                apply=apply,
-            )
-            continue
-        row["quarantine_path"] = str(dest)
-        _uvproj_finish(
-            row,
-            "tmp-uvproj-quarantined",
-            f"quarantined to {dest} (same-fs rename — reversible restore point, "
-            f"never deleted; evidence: {row['evidence']}) — {UVPROJ_BLAST_RADIUS}",
-            apply=apply,
-        )
+        finally:
+            with contextlib.suppress(OSError):
+                os.close(fd)
     return result
+
+
+def _uvproj_quarantine_dir(tmp_root: Path, now: float) -> Path:
+    """Create the #2377 quarantine dir ATOMICALLY FRESH and verify it before
+    any file is moved in (round-2 fix for the BLOCKER
+    ``uvproj-quarantine-destination-unsafe``: the round-1 predictable
+    timestamped path with ``mkdir(exist_ok=True)`` silently ADOPTED a
+    pre-created symlink-to-directory, letting the subsequent rename escape
+    ``tmp_root`` and replace an entry at the redirect target).
+
+    ``tempfile.mkdtemp`` creates a brand-new directory (mode 0700, masked by
+    umask) at an UNPREDICTABLE name and fails rather than reusing anything
+    already at the chosen name — ``os.mkdir`` underneath refuses an existing
+    entry, symlink included — so a pre-created entry can never be adopted.
+    The literal ``.q`` suffix keeps the name-final character non-numeric so
+    the #911 P2 issue-suffix route (name-final ``_<N>``) can never key the
+    dir to an issue even if the random middle happens to end ``_<digits>``.
+    Post-creation the dir is verified via ``lstat``: a REAL directory (never
+    a symlink — ``lstat`` does not follow), owned by our uid; then chmod'd to
+    exactly 0700 (normalizing any umask residue) and re-verified. Any
+    surprise raises ``OSError`` — the caller's ``tmp-uvproj-quarantine-failed``
+    KEEP + escalate path; never a fallback delete. Returns the verified dir.
+    """
+    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(now))
+    qdir = Path(
+        tempfile.mkdtemp(prefix=f"eps-quarantine-uvproj-{ts}-", suffix=".q", dir=str(tmp_root))
+    )
+    st = os.lstat(qdir)
+    if not stat.S_ISDIR(st.st_mode):
+        raise OSError(f"quarantine dir {qdir} is not a real directory (mode {st.st_mode:o})")
+    if st.st_uid != os.getuid():
+        raise OSError(f"quarantine dir {qdir} owned by uid {st.st_uid}, not {os.getuid()}")
+    os.chmod(qdir, 0o700)  # verified a real non-symlink dir above; normalize umask residue
+    st = os.lstat(qdir)
+    if stat.S_IMODE(st.st_mode) != 0o700:
+        raise OSError(f"quarantine dir {qdir} mode {stat.S_IMODE(st.st_mode):o} != 0700")
+    return qdir
 
 
 def _uvproj_finish(row: dict, disposition: str, reason: str, *, apply: bool) -> None:
     """Record one #2377 uv-project row: stamp disposition + reason, print the
-    stderr line, and append the sidecar event UNCONDITIONALLY (no byte floor —
-    the hazard is fleet correctness, not bytes; acceptance criterion 2).
-    ``append_disk_guard_event`` demotes to stderr in report-only mode."""
+    stderr line, and append the sidecar event DURABLY IN BOTH MODES (no byte
+    floor — the hazard is fleet correctness, not bytes; acceptance criterion
+    2; plan v3 §1 requires EVERY row, ``would-quarantine`` included, to land
+    in the sidecar — round-2 fix for ``uvproj-report-sidecar-missing``).
+
+    ``append_disk_guard_event`` is therefore called with ``apply=True``
+    unconditionally — the least-invasive shape: the helper's global
+    report-only contract (``apply=False`` prints and returns) stays unchanged
+    for every existing caller, and only this arm's rows opt in to durable
+    report-mode persistence. The event carries the row's own ``apply`` flag
+    so the sidecar records which mode observed it."""
     row["disposition"] = disposition
     row["reason"] = reason
     print(f"  [tmp-uvproj] {disposition}: {row['path']} — {reason}", file=sys.stderr)
@@ -2348,10 +2434,11 @@ def _uvproj_finish(row: dict, disposition: str, reason: str, *, apply: bool) -> 
         "bytes": row.get("bytes", 0),
         "reason": reason,
         "evidence": row.get("evidence"),
+        "apply": apply,
     }
     if row.get("quarantine_path"):
         event["quarantine_path"] = row["quarantine_path"]
-    append_disk_guard_event(event, apply=apply)
+    append_disk_guard_event(event, apply=True)
 
 
 def _noncanonical_reap_gates(

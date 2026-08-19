@@ -18,6 +18,7 @@ Loaded via importlib like ``tests/test_janitor_tmp_scratch_sweep.py``
 import importlib.util
 import json
 import os
+import stat
 import subprocess
 import sys
 import time
@@ -106,10 +107,14 @@ def tmp_root(tmp_path):
     return root
 
 
-def _sidecar_kinds(sidecar: Path) -> list[str]:
+def _sidecar_rows(sidecar: Path) -> list[dict]:
     if not sidecar.is_file():
         return []
-    return [json.loads(ln)["kind"] for ln in sidecar.read_text().splitlines() if ln.strip()]
+    return [json.loads(ln) for ln in sidecar.read_text().splitlines() if ln.strip()]
+
+
+def _sidecar_kinds(sidecar: Path) -> list[str]:
+    return [row["kind"] for row in _sidecar_rows(sidecar)]
 
 
 def _one_row(result) -> dict:
@@ -205,7 +210,13 @@ def test_hermetic_default_is_a_no_op(main_repo, tmp_root):
 # ─── test 6: report mode ─────────────────────────────────────────────────────
 
 
-def test_report_mode_would_quarantine_touches_nothing(tmp_root, main_repo, sidecar):
+def test_report_mode_would_quarantine_touches_nothing_but_lands_in_sidecar(
+    tmp_root, main_repo, sidecar
+):
+    """apply=False: file untouched, no quarantine dir — but the row STILL
+    lands DURABLY in the sidecar (plan v3 §1: EVERY row, would-quarantine
+    included — the round-2 ``uvproj-report-sidecar-missing`` fix), stamped
+    with the observing mode."""
     poison = tmp_root / "pyproject.toml"
     poison.write_text(PYPROJECT_CONTENT)
     res = ced.sweep_tmp_uv_project_files(tmp_root, apply=False, main_repo=main_repo, now=AGED_NOW)
@@ -213,8 +224,9 @@ def test_report_mode_would_quarantine_touches_nothing(tmp_root, main_repo, sidec
     assert row["disposition"] == "tmp-uvproj-would-quarantine"
     assert poison.is_file()
     assert not list(tmp_root.glob("eps-quarantine-uvproj-*"))
-    # Report-only mode persists NOTHING to the sidecar (append demotes to stderr).
-    assert _sidecar_kinds(sidecar) == []
+    rows = _sidecar_rows(sidecar)
+    assert [r["kind"] for r in rows] == ["tmp-uvproj-would-quarantine"]
+    assert rows[0]["apply"] is False, "the sidecar event records which mode observed the row"
 
 
 # ─── test 7: symlink ─────────────────────────────────────────────────────────
@@ -246,6 +258,185 @@ def test_just_written_verified_file_is_kept_this_pass(tmp_root, main_repo):
     assert row["evidence"].startswith("git-blob:"), "recent row is already VERIFIED by gate order"
     assert poison.is_file()
     assert not list(tmp_root.glob("eps-quarantine-uvproj-*"))
+
+
+# ─── round-2 gate tests (uvproj-gate-tests-incomplete) ───────────────────────
+
+
+def _write_aged_poison(tmp_root: Path) -> Path:
+    """A committed-content pyproject.toml at tmp_root (verified + aged under
+    AGED_NOW — the fire-branch shape every gate test below starts from)."""
+    poison = tmp_root / "pyproject.toml"
+    poison.write_text(PYPROJECT_CONTENT)
+    return poison
+
+
+def test_predictable_destination_symlink_attack_cannot_redirect_or_replace(
+    tmp_root, main_repo, tmp_path
+):
+    """BLOCKER regression (uvproj-quarantine-destination-unsafe): pre-create
+    the round-1 PREDICTABLE quarantine path as a symlink to an OUTSIDE dir
+    holding a victim file. Round 1's ``mkdir(mode=0o700, exist_ok=True)``
+    silently adopted the symlink and ``os.rename`` then escaped tmp_root AND
+    replaced the victim. Round 2's mkdtemp dir is atomically fresh +
+    unpredictable: nothing lands outside tmp_root, no existing entry is
+    replaced, and the realized quarantine parent is a REAL private 0700 dir
+    owned by us, directly under tmp_root."""
+    poison = _write_aged_poison(tmp_root)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    victim = outside / "pyproject.toml"
+    victim_bytes = "VICTIM — must never be replaced\n"
+    victim.write_text(victim_bytes)
+    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(AGED_NOW))
+    trap = tmp_root / f"eps-quarantine-uvproj-{ts}"
+    trap.symlink_to(outside, target_is_directory=True)
+
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-quarantined"
+    assert victim.read_text() == victim_bytes, "no existing entry may be replaced"
+    assert sorted(p.name for p in outside.iterdir()) == ["pyproject.toml"], (
+        "nothing may land outside tmp_root"
+    )
+    dest = Path(row["quarantine_path"])
+    assert dest.read_text() == PYPROJECT_CONTENT
+    qdir = dest.parent
+    assert qdir.parent == tmp_root, "quarantine dir is a DIRECT child of tmp_root"
+    assert qdir != trap, "the pre-created trap path was never adopted"
+    st = os.lstat(qdir)
+    assert stat.S_ISDIR(st.st_mode) and not stat.S_ISLNK(st.st_mode), "real dir, not a symlink"
+    assert st.st_uid == os.getuid()
+    assert stat.S_IMODE(st.st_mode) == 0o700
+    assert not poison.exists()
+
+
+def test_same_size_same_mtime_swap_is_never_evidence_licensed(
+    tmp_root, main_repo, sidecar, monkeypatch
+):
+    """CONCERN regression (uvproj-evidence-toctou): swap the file for a
+    SAME-SIZE, SAME-MTIME, different-inode file between the evidence read and
+    the pre-rename re-stat (hook: the git odb probe, which runs exactly in
+    that window). Round 1's size+mtime re-stat passed the swap and renamed
+    unverified bytes under stale evidence; round 2's dev/ino bind to the
+    still-open hashed fd aborts to KEEP."""
+    poison = _write_aged_poison(tmp_root)
+    attacker_bytes = "#" * len(PYPROJECT_CONTENT)  # same size, never committed anywhere
+    real_probe = ced._git_first_missing_blob
+
+    def swapping_probe(main_repo_arg, shas):
+        orig = os.lstat(poison)
+        sibling = tmp_root / ".swap-sibling"
+        sibling.write_text(attacker_bytes)
+        os.replace(sibling, poison)  # NEW inode at the same pathname
+        os.utime(poison, ns=(orig.st_atime_ns, orig.st_mtime_ns))  # preserve mtime exactly
+        swapped = os.lstat(poison)
+        assert (swapped.st_size, swapped.st_mtime) == (orig.st_size, orig.st_mtime)
+        assert swapped.st_ino != orig.st_ino
+        return real_probe(main_repo_arg, shas)
+
+    monkeypatch.setattr(ced, "_git_first_missing_blob", swapping_probe)
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-reap-aborted-recency"
+    assert "inode" in row["reason"]
+    assert poison.read_text() == attacker_bytes, "swapped bytes stay in place (KEEP)"
+    assert not list(tmp_root.glob("eps-quarantine-uvproj-*")), (
+        "never quarantined under stale evidence"
+    )
+    assert "tmp-uvproj-quarantined" not in _sidecar_kinds(sidecar)
+
+
+def test_pre_rename_content_change_aborts_to_keep(tmp_root, main_repo, monkeypatch):
+    """SAME-inode mutation between the evidence read and the rename (size
+    grows) => the pre-rename re-stat aborts to KEEP (gate 7's size+mtime
+    fresh-recheck arm, distinct from the dev/ino swap arm above)."""
+    poison = _write_aged_poison(tmp_root)
+    real_probe = ced._git_first_missing_blob
+
+    def growing_probe(main_repo_arg, shas):
+        with open(poison, "a") as fh:
+            fh.write("# appended after the evidence read\n")
+        return real_probe(main_repo_arg, shas)
+
+    monkeypatch.setattr(ced, "_git_first_missing_blob", growing_probe)
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-reap-aborted-recency"
+    assert "changed" in row["reason"]
+    assert poison.is_file()
+    assert not list(tmp_root.glob("eps-quarantine-uvproj-*"))
+
+
+def test_live_process_holding_the_file_is_kept(tmp_root, main_repo, sidecar, monkeypatch):
+    """An open handle on the candidate (probe hit) => KEEP, never quarantined."""
+    poison = _write_aged_poison(tmp_root)
+    monkeypatch.setattr(
+        ced, "_scratch_live_process_hit", lambda cand, *, exact=False: "pid 4242 (uv)"
+    )
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-live-process-kept"
+    assert "pid 4242" in row["reason"]
+    assert poison.is_file()
+    assert not list(tmp_root.glob("eps-quarantine-uvproj-*"))
+    assert "tmp-uvproj-live-process-kept" in _sidecar_kinds(sidecar)
+
+
+def test_foreign_owner_is_escalated_and_untouched(tmp_root, main_repo, sidecar, monkeypatch):
+    """A foreign-uid candidate => KEEP + escalate (sticky-bit /tmp forbids
+    renaming another uid's file anyway)."""
+    poison = _write_aged_poison(tmp_root)
+    monkeypatch.setattr(ced, "_tmp_entry_owned", lambda path: False)
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-foreign-owner-escalated"
+    assert poison.is_file()
+    assert not list(tmp_root.glob("eps-quarantine-uvproj-*"))
+    assert "tmp-uvproj-foreign-owner-escalated" in _sidecar_kinds(sidecar)
+
+
+def test_quarantine_dir_setup_failure_keeps_and_escalates(
+    tmp_root, main_repo, sidecar, monkeypatch
+):
+    """ANY dir-setup failure (mkdtemp refusal, verification surprise) => KEEP
+    + ``tmp-uvproj-quarantine-failed`` — never a fallback delete. (The
+    helper's REAL body runs in the fire-branch + symlink-attack tests; this
+    test stubs it only to force the failure arm.)"""
+    poison = _write_aged_poison(tmp_root)
+
+    def boom(tmp_root_arg, now_arg):
+        raise OSError("mkdtemp refused")
+
+    monkeypatch.setattr(ced, "_uvproj_quarantine_dir", boom)
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-quarantine-failed"
+    assert poison.is_file() and poison.read_text() == PYPROJECT_CONTENT
+    assert not list(tmp_root.glob("eps-quarantine-uvproj-*"))
+    assert "tmp-uvproj-quarantine-failed" in _sidecar_kinds(sidecar)
+
+
+def test_quarantine_rename_failure_keeps_and_escalates(tmp_root, main_repo, sidecar, monkeypatch):
+    """Rename failure AFTER a healthy dir setup => KEEP + escalate; the empty
+    fresh dir may remain but nothing is ever moved or deleted."""
+    poison = _write_aged_poison(tmp_root)
+    real_rename = os.rename
+
+    def refusing_rename(src, dst, **kwargs):
+        if Path(src) == poison:
+            raise OSError("rename refused")
+        return real_rename(src, dst, **kwargs)
+
+    monkeypatch.setattr(ced.os, "rename", refusing_rename)
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-quarantine-failed"
+    assert poison.is_file() and poison.read_text() == PYPROJECT_CONTENT
+    qdirs = list(tmp_root.glob("eps-quarantine-uvproj-*"))
+    assert all(not any(d.iterdir()) for d in qdirs), "nothing was moved into any quarantine dir"
+    assert "tmp-uvproj-quarantine-failed" in _sidecar_kinds(sidecar)
 
 
 # ─── test 9: guard threshold-independence ────────────────────────────────────
