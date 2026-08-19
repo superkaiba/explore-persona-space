@@ -13706,3 +13706,46 @@ def test_c67_skips_on_infra_kind():
     for kind in ("experiment", "analysis"):
         r = verify_plan.check_retest_kappa_temp0(plan, kind)
         assert r.status == "WARN", (kind, r.status, r.detail)
+
+
+def test_c67_line_global_negation_boundary_pinned():
+    # Boundary pin for the ADJUDICATED line-global-negation semantics (#2204
+    # round-1 reconciler, binding). The negation is TEMP-ANCHORED: a denial
+    # only silences the pin when it carries a SECOND temperature token on the
+    # same line. Both directions are pinned so a future regex edit cannot
+    # silently move the boundary either way:
+    #   * a simple denial still WARNs (Codex round-1 reported this as a
+    #     false negative; measured behavior says otherwise — the reconciler
+    #     resolved it against the report);
+    #   * the three second-temp-token shapes PASS — the DISCLOSED false
+    #     negative (plan v2 § FN class 5, "mixed-stage same-line negation"),
+    #     kept because order-scoping it flips the load-bearing
+    #     explanation-first shape (v2 L136/L501, the corrected #2202 prose)
+    #     into a false positive. Narrowing it is deferred to its own round.
+    cases = [
+        # (label, judge line, expected) — expected WARN = pin survives.
+        (
+            "simple denial, one temp token",
+            "- Judge wave at temperature 0 (not the API default), rubric-keyed cache.",
+            "WARN",
+        ),
+        (
+            "FN class 5: denial carrying a second temp token",
+            "- Judge wave at temperature 0, not temperature = API default (1.0).",
+            "PASS",
+        ),
+        (
+            "FN class 5: mixed-stage — judge temp 0, generation temp 1.0",
+            "- Judge at temperature 0; generation at temperature 1.0.",
+            "PASS",
+        ),
+        (
+            "FN class 5: temp-0 pin with an API-default fallback clause",
+            "- Judge at temperature 0, falling back to temperature = API default.",
+            "PASS",
+        ),
+    ]
+    for label, judge_line, want in cases:
+        plan = _c67_plan(judge_line, "", C67_V1_RETEST_LINE)
+        r = _run(plan)[1][C67]
+        assert r.status == want, (label, r.status, r.detail)
