@@ -41,23 +41,27 @@ predictor built on the mapped answer vector should reach a given accuracy with f
 correctness labels than a direct probe on the context vector, with the advantage growing under
 distribution shift.
 
-Prior work establishes the *direct* side of this (linear probes on hidden states predict
-correctness / truthfulness / P(IK) reasonably well). It does not establish whether an
-answer-space map adds anything, which is what this task tests. A grounding literature pass is a
-prerequisite (see § Open items).
+Prior work establishes the *direct* side of this: Kadavath et al. (arXiv 2207.05221) show
+per-question pass-rate distributions on TriviaQA at temperature 1 spanning the full [0,1] range
+and predictable from model state, and the semantic-entropy line (Kuhn et al. arXiv 2302.09664;
+Farquhar et al., Nature 2024) separates correct from incorrect at AUROC ≈ 0.7–0.8 from ~10
+samples. None of it establishes whether an answer-space map adds anything, which is what this
+task tests. A fuller grounding pass is still listed under § Open items.
 
 ## Formalization
 
-Model: `Qwen/Qwen2.5-7B-Instruct`, frozen. No fine-tuning; every arm is a read-out over frozen
-activations. Vocabulary per `docs/glossary_context_answer_map.md`.
+Model: `Qwen/Qwen2.5-7B-Instruct`, frozen (see § Model choice for why not a newer model). No
+fine-tuning; every arm is a read-out over frozen activations. Vocabulary per
+`docs/glossary_context_answer_map.md`.
 
 **Objects** (per layer ℓ, 28 layers × 3,584 dims):
 
 - `v_C(x)` — **context vector**, pooled at the **last prompt token** (the newline before the
   assistant answer). Pooling declared per vector (planner §6 convention row, #1974).
 - `v_A` — **answer vector**, token-mean over one sampled answer's tokens. For long-CoT surfaces
-  (math, code) a second pooling (last answer token) is captured alongside, since a token-mean
-  over a long chain is dominated by reasoning text rather than by the answer.
+  a second pooling (last answer token) is captured alongside, since a token-mean over a long
+  chain is dominated by reasoning text rather than by the answer. **This now applies to three of
+  four surfaces** — math, code, and MMLU-Pro (see § Risks item 8).
 - `M_ℓ` — the map `v_A ≈ M_ℓ v_C`, fit on **unjudged** context→answer pairs. Both a **linear**
   (ridge) and a **nonlinear (MLP)** map are in scope (§ Arms). #1739's banked maps
   (`issue1739_ctxmap/analysis_tensors/maps/`: linear/MLP/kernel at U ∈ {250, 5,000, 18,793}) are
@@ -74,6 +78,11 @@ answer match after normalization (math), option match (multiple choice), unit-te
 failure modes that dominate the behavior DVs, and is a genuine methodological upgrade over
 #1739's judged rates.
 
+**K = 5 is settled, not provisional.** Measured on the banked QA rollouts (§ Measured spread),
+the DV's reliability is 0.93–0.94 — 94% of observed variance is real between-context variance
+rather than binomial sampling noise, so the attenuation ceiling on any correlation is ρ ≈ 0.97.
+There is no meaningful headroom in raising K. Every marginal generation goes to more contexts.
+
 **Secondary continuous companion** (non-saturating, per the dual-DV rule): teacher-forced mean
 token log-probability of the gold answer given the context — for MCQ the log-prob **margin**
 between the correct option and `logsumexp` over the distractors. Code has no unique gold program;
@@ -82,38 +91,155 @@ it reports pass-rate only, with log P(reference solution) as a rough companion, 
 **Pre-registered hypotheses.**
 
 - **H1 (direct).** `y` is predictable from `v_C` above the constant and surface-feature baselines
-  on all four surfaces. Expected true for recall QA; genuinely open for math and code, where
-  correctness depends on a computation the model has not yet performed at the last prompt token.
+  on all four surfaces. The prior work above says this should hold for recall QA; it remains
+  genuinely open for math and code, where correctness depends on a computation the model has not
+  yet performed at the last prompt token.
 - **H2 (map, label-efficiency).** The mapped-answer probe matches or beats the direct context
   probe at small `L`, with the gap closing (and possibly reversing) as `L` grows. Report the
-  **crossover** `L` per surface and the **degradation slope** across the shift ladder. This holds
-  at both readout families: a direct MLP on `v_C` asymptotically upper-bounds a linear readout on
-  an MLP-mapped answer (the composition is a special case of a deeper net on `v_C`), so at *both*
-  the linear and the nonlinear level the map's only possible advantage is label efficiency.
+  **crossover** `L` per surface and the **degradation slope** across the shift ladder. Note that
+  a direct MLP on `v_C` would asymptotically upper-bound a linear readout on an MLP-mapped
+  answer, so the map's only available advantage is label efficiency — see the § Arms scope limit.
 - **H3 (knowledge vs persona — the sharp read).** If the map is predominantly persona-carrying,
   the mapped-answer arm should lose more ground to the direct context arm on correctness than it
   did on #1739's three dispositional behaviors, at matched arms and matched budgets. This
-  comparison costs nothing extra — #1739's numbers are banked.
+  comparison costs nothing extra — #1739's numbers are banked, **on this same model**.
 - **H4 (map-pool composition).** Correctness prediction improves monotonically with the fraction
-  of the map's unlabeled pool drawn from the target surface. Both outcomes are informative and
-  the pre-registered alternative is live: if a **generic-only** map already matches an
-  in-domain-fit map, the map is a genuinely general-purpose prior and the deployment story is at
-  its strongest; if in-domain unlabeled pairs are required, the story is weaker but still cheaper
-  than labels.
+  of the map's unlabeled pool drawn from the target surface. Both outcomes are informative: if a
+  **generic-only** map already matches an in-domain-fit map, the map is a general-purpose prior
+  and the deployment story is at its strongest; if in-domain unlabeled pairs are required, the
+  story is weaker but still cheaper than labels.
+
+## Measured spread — the criterion, and what the banked data already says
+
+**The right criterion is between-context variance in the TRUE success probability, not a mean
+near 0.5.** A benchmark on which every item is an independent coin flip has maximum within-item
+variance and zero between-item variance — nothing for a probe to predict. What we want is
+dispersion: a mass of items the model reliably gets right, a mass it reliably gets wrong, and a
+populated middle. Means far from 0.5 are fine, and in practice better, because knowledge-type
+benchmarks are strongly bimodal.
+
+Computed from the banked #1739 rollouts (same model, K=5, temperature 1.0, our exact protocol),
+using the beta-binomial decomposition `Var(p) = Var(y) − mean(y(1−y))/(K−1)`:
+
+| rung | n | mean | SD(y) | SD(true rate) | reliability | ceiling ρ | 0.0 / 0.2 / 0.4 / 0.6 / 0.8 / 1.0 |
+|---|---|---|---|---|---|---|---|
+| TriviaQA (train) | 15,993 | 0.648 | 0.429 | 0.415 | 0.940 | 0.969 | 24% · 6% · 5% · 5% · 7% · 53% |
+| NQ-Open | 3,165 | 0.345 | 0.423 | 0.409 | 0.934 | 0.967 | 53% · 8% · 6% · 5% · 6% · 23% |
+| SimpleQA | 4,015 | 0.035 | 0.140 | 0.127 | 0.819 | 0.905 | **91%** · 5% · 2% · 1% · 1% · 1% |
+
+TriviaQA at mean 0.648 carries *more* usable dispersion than a mean-0.5 unimodal benchmark would.
+**SimpleQA is dropped**: 91% of contexts pile at exactly zero, which is the disqualifying shape.
+The operative test for every other surface is the **zero-pile / one-pile fraction**, not the mean
+— a pool is admissible while neither extreme exceeds ~90%.
+
+This table is also the Result 0(b) split-half ceiling for the QA surface, already discharged.
 
 ## Surfaces
 
-Four correctness surfaces, ordered by how far correctness is from surface recall:
+| Surface | Pool | n | Verification | Status |
+|---|---|---|---|---|
+| Short-answer QA | TriviaQA `rc.nocontext` (train) + NQ-Open (transfer) | 15,993 + 3,165 | gold alias match | **fully banked** (#1739) |
+| Math | MATH, level-stratified (levels ship with the data) | 12,500 | normalized final-answer match | new rollouts + capture |
+| Multiple choice | **MMLU-Pro** | 12,032 | option match | new rollouts + capture |
+| Code | HumanEval 164 + MBPP 974 + BigCodeBench-full 1,140 + LiveCodeBench-v5 880 + LeetCodeDataset 2,869 | ≈ 6,027 pre-dedup | unit-test execution | new rollouts + capture |
 
-| Surface | Sources | Verification | Status |
-|---|---|---|---|
-| Short-answer QA | TriviaQA `rc.nocontext` (16,000 train ctx), NQ-Open (3,167), SimpleQA (4,021) | gold alias match, already three-way labeled | **fully banked** (#1739) |
-| Math / reasoning | GSM8K, MATH | normalized final-answer match | new rollouts + capture |
-| Multiple choice | MMLU, ARC-Challenge | option match; clean log-prob companion | new rollouts + capture |
-| Code | MBPP, HumanEval, and a third pool to reach adequate n (BigCodeBench / LiveCodeBench) | unit-test execution in a sandbox | new rollouts + capture |
+Benchmark selections, and what was excluded and why:
 
-Per-surface context counts are set by § The `n < d` regime, which is an **open decision** at the
-time of writing.
+- **SimpleQA — dropped.** Measured 91% zero-pile above. Independently corroborated: a 235B Qwen
+  in non-thinking mode scores 12.2 and Claude Opus 4 non-thinking 22.8, so it is floor for
+  anything in our class.
+- **GSM8K — demoted to a context row, not a fit surface.** Qwen2.5-7B-Instruct scores 91.6
+  (arXiv 2412.15115), near ceiling. **MATH at 75.5** is the usable math surface, and its level
+  1–5 labels give built-in difficulty dispersion at no cost.
+- **MMLU and ARC-C — dropped in favour of MMLU-Pro.** MMLU-Pro expands the choice set from four
+  to ten options (arXiv 2406.01574 abstract), dropping the chance floor from 25% to 10%, and cuts
+  prompt sensitivity from 4–5% (peak 10.98%) to ~2% (peak 3.74%) — less of our DV variance is
+  formatting noise. ARC-C is at ceiling for modern instruct models (83.4 at 8B). Qwen no longer
+  reports plain MMLU at all. The incumbent scores **56.3 on MMLU-Pro**, near the ideal operating
+  point. §5.2 of the MMLU-Pro paper confirms large per-subject disparities (Engineering and Law
+  consistently lowest; History and Psychology with a higher floor).
+- **GPQA-Diamond — dropped for our size class.** gemma-3-12b scores 25.4 against a 25% floor,
+  i.e. exactly chance.
+- **CodeContests — dropped.** Llama-3.1-8B scores 4.9 test 1@1 at t=0.2, implying ≳95% of items
+  at exactly zero: the SimpleQA shape.
+- **APPS — held pending pilot.** APPS-introductory (3,639) and APPS-interview (5,000) are
+  admissible under the bimodality criterion *if* a 200-problem pilot shows the zero-pile fraction
+  below ~90%. TACO tier data (arXiv 2312.14852 Tab 5) brackets the expectation. APPS tests are
+  known-flaky; the pilot measures that too. Not needed for scale if LeetCodeDataset dedups clean.
+
+## The `n < d` regime — RESOLVED for three surfaces, pilot-gated for code
+
+`d = 3,584`. Two distinct problems were being conflated:
+
+**(a) The `L` sweep is under-determined by design.** `L` runs from 250 up, so small-`L` cells sit
+at `n_train ≪ d`. That is the experiment, not a defect. What #1701 / #1887 forbid is procedural:
+pure-GCV λ selection at `n < d`, and reading an attenuated under-determined number as
+commensurable with a well-posed one. Both handled: dof-capped λ selection everywhere
+(`GCV_DOF_CAP = 0.9`), selected λ and effective dof reported per fit, and comparisons only ever
+**between arms at the same `(L, fold, seed)`**, which the paired-bootstrap protocol enforces.
+
+**(b) Surface-level `n`.** Now satisfied without any model change:
+
+| surface | fit-side n | clears `d = 3,584`? |
+|---|---|---|
+| QA (TriviaQA train) | 15,993 | yes |
+| Math (MATH) | 12,500 | yes |
+| MCQ (MMLU-Pro) | 12,032 | yes |
+| Code | 3,158 without LeetCodeDataset; ≈6,027 with | yes, contingent on dedup |
+
+Code was the binding constraint and the fix is pooling, not a smaller model. The core pool
+(HumanEval + MBPP + BigCodeBench-full + LiveCodeBench-v5 = 3,158) sits just *under* `d`; adding
+LeetCodeDataset v0.3.1 (2,869 execution-verified, Easy/Medium/Hard labelled) clears it, subject
+to deduplication against LiveCodeBench's own LeetCode subset. APPS is the fallback if dedup
+removes more than expected.
+
+**Dual basis, retained as a robustness companion.** Every arm is fit twice: ambient `d = 3,584`
+with dof-capped ridge, and a **PCA-`k` basis estimated from the unlabeled pool** (`k` selected on
+dev). The PCA basis costs no labels, is house convention in this line (#1092 / #1739 report
+"ambient / PCA-48"), and has a batched in-repo implementation
+(`analysis/issue_763_vectorized.batched_ridge_predict_loco_pca`). Disagreement between bases is
+reportable — it separates "no signal" from "the ambient estimator cannot reach it at this `n`".
+
+## Model choice — stay on Qwen2.5-7B-Instruct
+
+A four-surface survey of Qwen3.5 (2B/4B/9B/27B), Qwen3.6 (27B, 35B-A3B) and non-Qwen candidates
+was run to test whether a stronger model would buy more spread. **It would not, and it would cost
+a great deal.** Recorded here so the question is not reopened without new evidence.
+
+*The incumbent is at or near the best available operating point on every surface:*
+
+| surface | incumbent | position |
+|---|---|---|
+| QA | TriviaQA 0.648 / NQ-Open 0.345, reliability 0.94, ceiling ρ 0.97 | measured, excellent |
+| Math | MATH 75.5 (GSM8K 91.6 ceiling-bound) | usable, level-stratifiable |
+| MCQ | MMLU-Pro 56.3 | near-ideal |
+| Code | pooled mean ≈ 0.535 across the core pool | near-ideal, both extremes populated |
+
+*Newer models saturate.* Qwen3.5/3.6 at 4B and above: MMLU-Pro 79.1 → 86.2, GPQA-D 76 → 88,
+HMMT 0.75 → 0.94, AIME-2026 ≈ 0.93, LiveCodeBench-v6 55.8 → 83.9. Ceiling is exactly where the
+DV dies. Only Qwen3.5-2B sits below centre, and it is the weakest model in the family.
+
+*Evidence coverage is worse, not better.* No Qwen3.5/3.6 model has any published TriviaQA,
+NQ-Open, SimpleQA, GSM8K, MATH, HumanEval, MBPP, BigCodeBench or APPS number — the cards report
+only MMLU-Pro/Redux, SuperGPQA, LiveCodeBench-v6 and agentic suites. Switching means trading a
+measured 0.94-reliability surface for an unmeasured one.
+
+*Three structural costs.* (1) **Hybrid attention** — every Qwen3.5/3.6 model is 3:1
+linear-attention to full-attention (verified from `config.json`: 24/8 at 4B and 9B, 48/16 at
+3.6-27B, 30/10 at 35B-A3B; Qwen2.5-7B is uniformly full attention). The residual stream is still
+the bottleneck through which context reaches the answer, so the construct survives in principle —
+but the last-prompt-token pooling convention is an *empirical* #1768 result worth ~0.20 R², and
+the layer-selection curves from #1092/#1739 would all need re-establishing on a heterogeneous
+layer stack. (2) **Env upgrade** — pinned `transformers 4.57.6` has no `qwen3_5` module and
+`vllm 0.11.0` predates the family; upgrading in place risks the banked #1739 pipeline that makes
+Phase 0 free. (3) **Thinking mode is default**, inflating generation 10–50× and relocating where
+the answer sits inside the answer vector; no non-thinking numbers are published for any of them.
+
+*If a second model arm is ever wanted*, the cheap option is **Qwen2.5-Coder-7B-Instruct** — same
+architecture, same `d = 3,584`, same 28 layers, so the rig, pooling convention and layer story
+all transfer with zero engineering, while code ability is materially higher (HumanEval 88.4,
+MBPP+ 71.7, LiveCodeBench 37.6 vs the incumbent's 28.7). It would still need its own map fit and
+its own activation capture. Not in scope for round 1.
 
 ## Arms
 
@@ -134,9 +260,9 @@ Four predictor arms. Holding the readout fixed makes the comparison across input
 internally fair — every arm gets the same estimator, so a difference is attributable to the
 representation. **Declared scope limit, to be stated in the writeup:** because no nonlinear
 *readout* on `v_C` is run, the experiment cannot rule out that a nonlinear direct probe would
-match or beat the MLP-mapped arm. The direct side is therefore measured at its LINEAR ceiling,
-not its true ceiling, and any "the map beats direct prediction" claim is scoped to linear direct
-readouts. This is a known, accepted gap, not an oversight.
+match or beat the MLP-mapped arm. The direct side is measured at its LINEAR ceiling, not its true
+ceiling, and any "the map beats direct prediction" claim is scoped to linear direct readouts.
+This is a known, accepted gap, not an oversight.
 
 **MLP-map recipe — inherited verbatim from #1739** (`Source: #1739`, `constants.py` `MLP_HIDDEN` /
 `MLP_MAX_EPOCHS`): width 512, one hidden layer, ≤300 epochs AdamW, multihead across cells,
@@ -165,21 +291,21 @@ surface's labeled data**:
 
 | cell | map's unlabeled pool | reads as |
 |---|---|---|
-| `f_U = 0` | **generic only** (WildChat/LMSYS) | the banked configuration; the strongest deployment story if it wins |
+| `f_U = 0` | **generic only** (WildChat/LMSYS) | the banked configuration; strongest deployment story if it wins |
 | `f_U = 0.5` | **generic + target-surface**, half each | the money cell: can unlabeled in-domain pairs stand in for labels? |
 | `f_U = 1` | **target-surface only** | in-domain ceiling for the map channel |
 
 **Fixed `|U|`, never addition.** The three cells hold the total unlabeled pool constant
 (target: `|U| = 8,000` pairs, sized by the planner) — target-surface pairs *replace* generic
 pairs. Adding rather than replacing confounds composition with quantity and voids every cell. The
-additive variant (generic + target at larger total `|U|`) is run once as a clearly-labeled
-realistic-deployment contrast, never as the comparison. The banked `U = 18,793` generic map stays
-as a reference row outside the matched-budget protocol.
+additive variant is run once as a clearly-labeled realistic-deployment contrast, never as the
+comparison. The banked `U = 18,793` generic map stays as a reference row outside the
+matched-budget protocol.
 
 **Disjointness.** The map's target-surface portion is **disjoint** from the readout's labeled
-contexts and from every eval rung — primary. The overlapping configuration (map's unlabeled pool
-shares contexts with the eval rung; no label leakage, since the map never sees labels) is the
-more realistic deployment shape and is run as the variant, per #1739's ruling.
+contexts and from every eval rung — primary. The overlapping configuration (no label leakage,
+since the map never sees labels) is the more realistic deployment shape and is run as the
+variant, per #1739's ruling.
 
 **Mechanism diagnostic** (inherited from #1739 §4b): report map held-out R² **and** kNN retrieval
 on each eval rung as a function of `f_U`, alongside the prediction ρ. If ρ rises with `f_U` and
@@ -189,58 +315,18 @@ else is driving it.
 **Cost is low because the unlabeled pairs already exist.** The target-surface "unjudged" pool is
 the same contexts with their labels withheld — QA's are banked in #1739's capture store, and the
 new surfaces' come free from the Phase 1 rollouts. New map fits are dense solves over banked
-activations: 3 cells × 4 surfaces × 28 layers × 2 map families ≈ 672 fits, which is the many-cell
-dense-factorization case (#823) and must go through the batched solver, never a per-cell loop.
+activations: 3 cells × 4 surfaces × 28 layers × 2 map families ≈ 672 fits, the many-cell
+dense-factorization case (#823) — batched solver, never a per-cell loop.
 
 **Scope control:** run `f_U` at **three `L` anchors, not the full `L` sweep** (#1739's own scoping
 of this factor), and only on surfaces that clear the Result 0 spread gate.
-
-## The `n < d` regime — OPEN DECISION
-
-`d = 3,584` (Qwen2.5-7B hidden size). Two separate things get called "the `n < d` problem" and
-they need different answers:
-
-**(a) The `L` sweep is under-determined by design.** `L` runs from 250 up, so every arm's
-small-`L` cells sit at `n_train ≪ d`. That is not a defect — the label-scarce regime is the
-experiment. What the #1701 / #1887 rules actually forbid is (i) pure-GCV λ selection at `n < d`
-and (ii) reading an attenuated under-determined number as if commensurable with a well-posed one.
-Both are procedural, and both are handled: dof-capped λ selection everywhere
-(`GCV_DOF_CAP = 0.9`), selected λ and effective dof reported per fit, and no cross-`n` comparison
-of raw magnitudes — comparisons are always **between arms at the same `(L, fold, seed)`**, which
-is what the paired-bootstrap protocol already enforces.
-
-**(b) Code cannot reach a large `n` at all — and the binding constraint there is spread, not `n`.**
-Verified sizes: HumanEval 164, MBPP 974 (374 train / 500 test / 90 val / 10 prompt),
-BigCodeBench 1,140. Pooled ≈ 2,278 — under `d`, and pooling heterogeneous benchmarks introduces a
-benchmark-identity confound. The large code corpora that *would* clear `d` (APPS, CodeContests)
-are competitive-programming problems on which a 7B model's pass rate floors near zero, which
-fails the Result 0 spread gate — so they buy `n` by destroying the DV. This is a genuine
-trade-off, not an oversight.
-
-Candidate resolutions (to be settled before the planner sizes Phase 1):
-
-1. **Dual basis, run both** — every arm fit twice: ambient `d = 3,584` with dof-capped ridge, and
-   a **PCA-`k` basis estimated from the unlabeled pool** (`k` selected on dev). The PCA basis
-   costs no labels, is already house convention in this line (#1092 / #1739 report
-   "ambient / PCA-48"), and has an in-repo batched implementation
-   (`analysis/issue_763_vectorized.batched_ridge_predict_loco_pca`). Disagreement between the two
-   bases is itself reportable — it separates "no signal" from "estimator can't reach it".
-2. **Grow code with APPS-introductory only** — the introductory tier is tractable for a 7B, so it
-   may add usable `n` with surviving spread. Requires a spread pilot before committing.
-3. **Demote code to an exploratory rung** — reported in the PCA basis only, explicitly
-   under-powered, excluded from the headline.
-4. **Reallocate the generation budget toward `n`, not `K`.** Holding `K = 5` (recipe fidelity with
-   #1739, and required for the H3 comparison) and spending the surplus on more contexts. Note the
-   trade-off is real in both directions: more contexts shrink the standard error of ρ but do not
-   undo DV-noise attenuation, while larger `K` raises the reliability ceiling. Result 0(b)'s
-   split-half ceiling is what tells us whether `K = 5` is leaving ρ on the table.
 
 ## Splits — every surface has a locked held-out test set
 
 **Standing requirement for this task (user directive): there is always a held-out test set.**
 Cross-validation on the training pool is a diagnostic, never the headline.
 
-Every surface is partitioned **at group level** (question entity / MMLU subject / problem id;
+Every surface is partitioned **at group level** (question entity / MMLU-Pro subject / problem id;
 groups never straddle a split) into three parts:
 
 | split | used for | touched |
@@ -252,119 +338,125 @@ groups never straddle a split) into three parts:
 Rules that make "touched once" real rather than aspirational:
 
 - Every hyperparameter and every selection is made on train+dev only. Nothing on test.
-- The frozen selections (layer, λ, k, arm) are written to a committed `selection.json` **before**
-  the test read, so the claim is auditable after the fact rather than asserted.
+- The frozen selections are written to a committed `selection.json` **before** the test read, so
+  the claim is auditable after the fact rather than asserted.
 - The map's unlabeled pool — including the `f_U > 0` target-surface slice — excludes all test
   groups in the primary configuration. Whitening and PCA statistics likewise come from the
   unlabeled/train pools only; no transductive refit on test.
 - With 28 layers × 4 arms × 3 `f_U` cells, a max-over-selection read on test would be
-  selection-on-test. The layer and arm are frozen from dev; a max-over-anything is reported on
-  dev, never on test.
-- Shift rungs 1 and 2 (below) are held-out test sets by construction and inherit the same rule.
+  selection-on-test. Layer and arm are frozen from dev; a max-over-anything is reported on dev.
+- Shift rungs 1 and 2 are held-out test sets by construction and inherit the same rule.
 
 ## Evaluation ladder and metrics
 
-Group-level folds within train/dev (question entity / MMLU subject / problem id) — never
-pointwise. Rungs, in increasing shift, each read once against frozen selections:
+Group-level folds within train/dev — never pointwise. Rungs, in increasing shift, each read once
+against frozen selections:
 
 - **rung 0** — the locked test split of the training surface
-- **rung 1** — cross-dataset within family (TriviaQA+NQ-Open → SimpleQA; GSM8K → MATH; MMLU → ARC)
-- **rung 2** — cross-family (recall QA → math / MCQ / code) — the interesting rung for "does the
-  map transfer at all". "Target surface" for `f_U` always means the **training** surface here.
+- **rung 1** — cross-dataset within family (TriviaQA → NQ-Open; MATH levels 1–3 → 4–5;
+  MMLU-Pro subject holdout; HumanEval+MBPP → BigCodeBench+LiveCodeBench)
+- **rung 2** — cross-family (recall QA → math / MCQ / code). "Target surface" for `f_U` always
+  means the **training** surface here.
 
 Metrics: Spearman ρ (matches #1739 so the H3 comparison is commensurable), held-out R², and AUROC
 on the binarized DV for legibility. Paired bootstrap intervals over identical realized folds per
 `(L, seed)` so every arm comparison is paired. Permutation null over the max across arms/layers.
 
-**Result 0 (gates, before any headline).** (a) DV spread per surface and rung — SD floor and
-bottom-bin check, as in #1739 gate 1; a rung that fails is dropped, never drawn as a zero bar.
-(b) **Item-matched split-half ceiling** on the K=5 DV per surface — never computed for
-hallucination in #1739, and with K=5 a modest ρ may already be near ceiling. (c) **ρ(correctness
-rate, #1739 fabrication rate)** on the banked QA rungs, so the novelty over #1739's hallucination
-arm is explicit rather than assumed. (d) **Map reconstruction quality** (held-out R² + kNN acc@k)
-per surface, per map family, per `f_U` cell, *before* the readout — so a null readout is
-attributable to map degradation rather than to absent signal.
+**Result 0 (gates, before any headline).** (a) Zero-pile / one-pile fraction and true-rate SD per
+surface and rung, by the § Measured spread recipe; a rung with either extreme above ~90% is
+dropped, never drawn as a zero bar. **Already discharged for QA.** (b) Split-half / beta-binomial
+reliability per surface — **already 0.93–0.94 for QA**. (c) ρ(correctness rate, #1739 fabrication
+rate) on the QA rungs, so the novelty over #1739's hallucination arm is explicit rather than
+assumed. (d) Map reconstruction quality (held-out R² + kNN acc@k) per surface, per map family,
+per `f_U` cell, *before* the readout — so a null readout is attributable to map degradation
+rather than to absent signal.
 
 ## Phasing and compute (planner to size properly)
 
 - **Phase 0 — banked QA, 0 GPU-h for data.** The correctness DV already exists:
   `eval_results/issue_1739/dv_dataset/hallucination/labeling.json` carries `fractions.correct`
-  for all 23,188 contexts (5 rollouts each). `scripts/issue1739_fits.py` already accepts
-  `--dv-json`, so the linear ladder is a DV swap over the existing arms. **CPU pod, not the VM** —
-  the activation store is a single 70 GB tar
+  for 23,188 contexts. `scripts/issue1739_fits.py` accepts `--dv-json`, so the ladder is a DV
+  swap over existing arms. **CPU pod, not the VM** — the activation store is a single 70 GB tar
   (`issue1739_ctxmap/capture_store/hallucination_labeling`), over both the ~10 GB download rule
   and the 50 GB VM-footprint gate.
-- **Phase 1 — new surfaces (GPU).** ~8k math + ~8k MCQ + ~3k code contexts × 5 rollouts ≈ 95k
-  generations under vLLM, plus a teacher-forced capture pass for `v_C` and `v_A`. Rough order
-  25–40 GPU-h on 1× H100; **pilot-gated** with a measured 1-cell wall before the production
-  dispatch. New activation store ≈ 25 GB fp16. The same rollouts supply the `f_U` unlabeled pools
-  at zero marginal cost.
-- **Phase 2 — fits.** Grid: 4 surfaces × 4 predictor arms × 28 layers × `L` sweep × 3 `f_U` cells
-  (at 3 `L` anchors only) × seeds × group folds, plus ~672 map fits. Readouts are all ridge and
-  stay on a CPU lane; **the MLP-map fits move off pure CPU** — iterative-optimization fits are
-  GPU-worthy per the compute-character rule, and the many-cell MLP-map battery must run through
-  the batched multihead path (`analysis/vectorized_mlp_skill.py`, 50–100×), never a per-cell
-  loop. Ops arithmetic and a measured 1-cell pilot wall go in plan §9 before dispatch.
-- **Estimator well-posedness.** `L` reaches down to 250 against `d = 3,584`, so the small-`L` end
-  of every curve is under-determined **by design** (see § The `n < d` regime). The inherited
-  `issue1739_fits.ridge_gcv_predict_per_target` path is pure GCV and is **banned** at `n < d`
-  (#1887): every fit in this task routes through the dof-capped selector
-  (`dof_capped_ridge_multi_y` / `dof_capped_ridge_fit_all`, `GCV_DOF_CAP = 0.9`), and every fit
-  reports its selected λ and effective degrees of freedom.
-- **Judge spend ≈ $0** for the primary DV. Math answer-equivalence uses a verifier library, not a
-  judge, wherever it can.
+- **Phase 1 — new surfaces (GPU).** ~12.5k math + ~12k MCQ + ~6k code contexts × 5 rollouts,
+  plus a teacher-forced capture pass for `v_C` and `v_A`. **Pilot-gated**: a 200-problem
+  zero-pile/one-pile pilot per surface (and per candidate code sub-pool) runs FIRST and decides
+  the final pools — in particular whether APPS-introductory and APPS-interview are admissible,
+  and the APPS flaky-test rate under our harness. Code generations are long; size accordingly.
+- **Phase 2 — fits.** 4 surfaces × 4 predictor arms × 28 layers × `L` sweep × 3 `f_U` cells (at
+  3 `L` anchors only) × seeds × group folds × 2 bases, plus ~672 map fits. Ridge readouts stay on
+  a CPU lane; **the MLP-map fits move off pure CPU** — iterative-optimization fits are GPU-worthy
+  and the many-cell MLP-map battery must run through the batched multihead path
+  (`analysis/vectorized_mlp_skill.py`, 50–100×), never a per-cell loop. Ops arithmetic and a
+  measured 1-cell pilot wall go in plan §9 before dispatch.
+- **Estimator well-posedness.** The inherited `issue1739_fits.ridge_gcv_predict_per_target` path
+  is pure GCV and is **banned** at `n < d` (#1887): every fit routes through the dof-capped
+  selector (`dof_capped_ridge_multi_y` / `dof_capped_ridge_fit_all`, `GCV_DOF_CAP = 0.9`), and
+  every fit reports selected λ and effective degrees of freedom.
+- **Judge spend ≈ $0.** Every surface is programmatically verified.
 
 ## Reuse (what is already banked)
 
-- Correctness labels + rollouts for the whole QA surface (#1739).
-- Fitted generic-pool maps, linear / MLP / kernel, at three unlabeled budgets
-  (`analysis_tensors/maps/`) — the `f_U = 0` reference cells.
-- Activation capture store for the QA contexts (`capture_store/hallucination_labeling`) — also
-  the source of QA's `f_U > 0` unlabeled pairs.
-- The entire fit/arm/fold/bootstrap pipeline (`scripts/issue1739_fits.py`,
-  `issue1739_final_fold.py`, `experiments/issue_1739/arms.py`), the direct-MLP and MLP-map arm
-  implementations, and the #825 vectorized fit cores.
-- #1739's behavior numbers, for the H3 persona-vs-knowledge comparison.
+- Correctness labels + rollouts for the whole QA surface (#1739), including the three-way
+  correct/abstained/fabricated split.
+- Fitted generic-pool maps, linear / MLP / kernel, at three unlabeled budgets — the `f_U = 0`
+  reference cells.
+- Activation capture store for the QA contexts — also the source of QA's `f_U > 0` pairs.
+- The fit/arm/fold/bootstrap pipeline (`scripts/issue1739_fits.py`, `issue1739_final_fold.py`,
+  `experiments/issue_1739/arms.py`), the MLP-map implementation, and the #825 vectorized cores.
+- #1739's behavior numbers, on the same model, for the H3 persona-vs-knowledge comparison.
 
-The new code is generation + capture for three surfaces, four programmatic verifiers, the
-correctness DV builder, and the `f_U` pool-composition harness.
+New code: generation + capture for three surfaces, four programmatic verifiers, the correctness
+DV builder, the `f_U` pool-composition harness, and a code-execution sandbox.
 
 ## Risks and inherited caveats
 
 1. **Novelty vs #1739's hallucination arm.** correct = 1 − abstained − fabricated, and fabrication
    rate was already predicted. Result 0(c) quantifies the overlap; math / MCQ / code are where
    the novelty is structurally protected.
-2. **`n_train < d`** — see § The `n < d` regime. Open decision; the `f_U` factor's disjoint
-   unlabeled slice tightens it further on every new surface.
+2. **`n < d`** — resolved for three surfaces, contingent on LeetCodeDataset dedup for code. See
+   § The `n < d` regime.
 3. **Labels are cheap on these surfaces by construction** (programmatic verification), so the
    label-efficiency result is an *estimator-level* finding obtained by withholding labels we
    actually have, transferred by analogy to settings where labels are expensive. State it; do not
    narrate it as a realized cost saving.
 4. **Map domain shift** — the banked maps were fit on generic chat; Result 0(d) makes a null
-   attributable, and the `f_U` factor is the direct test of whether domain shift is the binding
-   constraint.
+   attributable, and the `f_U` factor tests directly whether domain shift is the binding
+   constraint. Math and code contexts are far off WildChat/LMSYS.
 5. **Difficulty confound** — arm 8 is the control; a probe reading item difficulty is a real
    mechanism but a different claim from "the model knows what it knows".
 6. **Contamination** — TriviaQA (2017) and NQ-Open (2019) are plausibly in Qwen's pretraining;
-   inherited caveat from #1739, and a reason the math/code surfaces matter.
+   inherited caveat from #1739, and a reason the math/code surfaces matter. LiveCodeBench's
+   release windows give a partial contamination handle on the code surface.
 7. **Language intrusion** — 6.2% of the banked hallucination rollouts carry CJK intrusion
    (#1739 intrusion audit); carry the same scan and recount.
-8. **Answer-vector pooling on long CoT** — capture both token-mean and last-answer-token; declare
-   which is primary per surface.
-9. **Grid growth.** MLP arms × `f_U` cells multiply Phase 2. The scope controls are: `f_U` at
+8. **Answer-vector pooling on long CoT, now on three of four surfaces.** MMLU-Pro was chosen for
+   its 10-option floor, but the paper reports CoT *beats* direct answering on it (unlike original
+   MMLU) — so MCQ generations are CoT-shaped too. Either accept CoT-shaped answer vectors on
+   math, code and MCQ, or score MMLU-Pro by direct option log-prob and forgo the on-policy
+   sampled DV there. **Open fork for the planner.** Capture both token-mean and last-answer-token
+   throughout; declare which is primary per surface.
+9. **Grid growth.** MLP map × `f_U` cells × 2 bases multiply Phase 2. Scope controls: `f_U` at
    three `L` anchors only, and the full `L` sweep on a planner-selected subset of surfaces.
+10. **Code pool heterogeneity.** Pooling five code benchmarks introduces a benchmark-identity
+    confound — a probe can learn "this is a HumanEval-shaped prompt", which correlates with pass
+    rate. Include benchmark identity in the surface-feature control and use benchmark-level
+    groups in the fold structure.
 
 ## Open items for the planner
 
-- Literature grounding pass (`/deep-lit-review`) on hidden-state correctness / truthfulness /
-  P(IK) probing, to name the closest prior formalizations and to set the expected effect sizes
-  for H1 before any fits are run.
-- **§ The `n < d` regime is unresolved** — basis policy, code pool, and whether code stays in the
-  headline. Everything downstream of Phase 1 sizing waits on it.
-- Exact context counts per new surface, pinned against whatever basis policy is chosen *and* the
-  disjoint `f_U` slice.
+- **The 200-problem spread pilot is the first execution step** and gates Phase 1 sizing:
+  zero-pile/one-pile fractions per surface at our exact protocol; APPS-intro and APPS-interview
+  admissibility; LeetCodeDataset ↔ LiveCodeBench dedup; APPS flaky-test rate.
+- **Risk 8's MMLU-Pro fork** — CoT-shaped answer vectors vs direct option log-prob.
 - Whether the `L`-sweep runs on all four surfaces or on QA + one new surface, with the others at
   full-label only.
+- Whether the correctness-direction arms (mean-diff of answer activations between correct and
+  incorrect rollouts, matched within context; projected on `v_C` and `M v_C`) are added — the
+  only estimator that is well-posed at `L = 250`. **Pending user decision.**
+- Fuller literature grounding pass (`/deep-lit-review`). Kadavath / Kuhn / Farquhar are already
+  in hand from the survey; the pass would cover the probing-for-correctness line properly.
 - Whether the kernel-ridge map rides as a third input row (free — banked).
 
 ## Provenance
@@ -379,13 +471,18 @@ baselines; routed as a new child task of #1739.
 
 Second round, verbatim: *"can we: - add a MLP arm - compare fitting directly on the specific data
 to fitting on the speific data + generic data to fitting only on the generic data (readout always
-trained on specific data) -- similar to behavior prediction experiment?"* — this is the explicit
-user request the linear-by-default standing rule requires for the nonlinear arms, and it is what
-added the § Map-pool composition factor.
+trained on specific data) -- similar to behavior prediction experiment?"* — the explicit user
+request the linear-by-default standing rule requires for the nonlinear arm, and the origin of
+§ Map-pool composition.
 
 Third round, verbatim: *"only add mapped MLP. there should always be a held out test set. let's
-discuss the n < 3584 problem"* — direct-MLP and oracle-MLP readouts were proposed as a fairness
-pairing and **declined**; the readout family is fixed at ridge and the resulting scope limit is
-declared in § Arms. The locked held-out test set (§ Splits) is a standing requirement for this
-task, not a per-rung convention. The `n < d` question is recorded as an open decision in § The
-`n < d` regime.
+discuss the n < 3584 problem"* — direct-MLP and oracle-MLP readouts proposed as a fairness
+pairing and **declined**; readout family fixed at ridge, scope limit declared in § Arms. The
+locked held-out test set is a standing requirement for this task.
+
+Fourth round: *"does running a stronger model help? maybe one of the qwen3.6s"* → *"get a subagent
+to find the model with the greatest spread across these tasks"*. Four parallel surveys were run
+(QA, math, MCQ, code). Outcome recorded in § Model choice (stay on Qwen2.5-7B-Instruct), § Surfaces
+(SimpleQA/GSM8K/MMLU/ARC-C/GPQA/CodeContests dropped, MMLU-Pro adopted, code pool assembled), and
+§ Measured spread (the criterion corrected from "mean near 0.5" to between-context dispersion,
+measured directly from banked rollouts).
