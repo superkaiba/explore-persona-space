@@ -427,6 +427,18 @@ Dan Mossing — in main.tex \author (suppressed until \iclrfinalcopy; blind-safe
     won on official read/reply/resolve API + comment UX (runners-up: self-hosted
     Outline, Notion-no-resolve, GitHub PR).
 
+20. WORKING SURFACE, REVERSED (Thomas, 2026-08-19 afternoon): back to OVERLEAF.
+    The Google Doc round served as one review pass (25 comments, all addressed);
+    every edit was ported into the tex (commit e7c7690: Results edits, appendix
+    subsections app:model-scale/turns/jacobian/pv-decode/hubs, contribution list
+    in the intro, Figure 1 rev-2 wired at figures/fig1_schematic.pdf). The Doc
+    (`1P_dAYteysU2SdDbmSfaFjBQ7ORY9aD0VPCSq7lLTLjM`) is FROZEN — banner + renamed;
+    comments there are no longer monitored. Decision 19's comment-loop tooling
+    (~/paper-tools/gdoc_paper.py) stays available if a Docs review round is ever
+    wanted again. Review channel on Overleaf: %% THOMAS: inline comments (or a
+    GitHub PR round on request) — Overleaf's own comment bubbles never reach the
+    git bridge.
+
 ## Mechanical pending
 - ICLR 2027 style files NOT YET PUBLISHED (checked 2026-08-19: github.com/ICLR/Master-Template
   tops out at iclr2026). Keep iclr2026 files as placeholder; re-check periodically
