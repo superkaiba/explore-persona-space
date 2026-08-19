@@ -8,6 +8,12 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   invisible to Thomas). This Overleaf tree carries ONLY the documents the paper
   compiles from (user directive 2026-08-19) — never commit planning docs, drafts, or
   build artifacts here.
+- STRUCTURE (2026-08-19): `main.tex` = thin skeleton (preamble + \input list — rarely
+  edited); the paper's text lives in `sections/NN_<name>.tex`, one file per section
+  (00_abstract … 07_conclusion, 99_appendix); `references.bib` = the bibliography;
+  `style/` = template machinery (conference .sty/.bst, math_commands, bundled
+  natbib/fancyhdr) — NEVER edit style/. Add figures under `figures/` when they land.
+  Compile check after edits: pdflatex → bibtex → pdflatex ×2 on main.tex.
 - THIS FILE is untracked in the clone (kept out of the Overleaf tree); the canonical
   versioned copy is `docs/paper_context_answer_map/CLAUDE-overleaf-clone.md` in the
   EPS repo — keep the two in sync when editing.
