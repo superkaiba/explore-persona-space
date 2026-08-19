@@ -33,6 +33,7 @@ from scripts.issue1739_arm12_repro_check import (  # noqa: E402
     _subset_claim4,
 )
 from scripts.issue1739_claim4_fold import (  # noqa: E402
+    FLAGSHIPS,
     arm4_pairing_check,
     lattice_verdict,
     row_coverage_check,
@@ -128,6 +129,10 @@ def _full_grid(behaviors=("evil",), rungs=("r1", "r2"), seeds=(0, 1)):
                     for arm in ("arm4_ridge_ctx", "arm7_map_ridge_pred"):
                         rho = 0.5 if arm == "arm4_ridge_ctx" else (0.6 if mv == "true" else 0.52)
                         rows.append(_mk_row(b, rung, s, mv, arm, rho + 0.01 * s))
+                # arm2/arm20 run in the TRUE pass only (SHUFPAIR_ROSTER
+                # excludes them) — the coverage set-check demands exactly that
+                for arm in ("arm2_ctx_native", "arm20_shuffled_map_ridge"):
+                    rows.append(_mk_row(b, rung, s, "true", arm, 0.4 + 0.01 * s))
     return rows
 
 
@@ -165,6 +170,54 @@ def test_row_coverage_check_reports_missing_cell_never_imputes():
     )
     _cells2, rungs2, _ = row_coverage_check(rows, ["evil"], [0, 1])
     assert "wildchat_rung" not in rungs2["evil"]
+
+
+def test_row_coverage_check_covers_extra_arms_true_pass_only():
+    """arm2 + arm20 are IN the coverage set-check (true pass only): a missing
+    cell is a DECLARED gap; their shufpair cells are never demanded
+    (regression: #1739 claim4 r1 — COVER_ARMS excluded both controls)."""
+    rows = _full_grid()
+    rows = [
+        r
+        for r in rows
+        if not (
+            r["arm"] == "arm20_shuffled_map_ridge" and r["eval_rung"] == "r1" and r["seed"] == 0
+        )
+    ]
+    _cells, _, gaps = row_coverage_check(rows, ["evil"], [0, 1])
+    cell_gaps = [g for g in gaps if g.get("arm")]
+    assert cell_gaps == [
+        {
+            "behavior": "evil",
+            "eval_rung": "r1",
+            "seed": 0,
+            "map_variant": "true",
+            "arm": "arm20_shuffled_map_ridge",
+        }
+    ]
+
+
+def test_arm_true_means_partial_coverage_is_declared_gap():
+    """Partial seed coverage on any arm withholds the mean + declares a gap
+    row — never a silent partial average (#1739 claim4 r1 fix)."""
+    from scripts.issue1739_claim4_fold import arm_true_means_declared
+
+    cells = {}
+    for s in (0, 1):
+        for arm in ("arm4_ridge_ctx", "arm7_map_ridge_pred"):
+            cells[("evil", "r1", s, "true", arm)] = {"rho_frozen": 0.5}
+    cells[("evil", "r1", 0, "true", "arm2_ctx_native")] = {"rho_frozen": 0.4}  # seed 1 missing
+    gaps: list[dict] = []
+    means = arm_true_means_declared(cells, "evil", "r1", [0, 1], gaps)
+    assert means["arm2_ctx_native"] is None
+    assert any(
+        g.get("arm") == "arm2_ctx_native" and "partial seed coverage 1/2" in g["note"] for g in gaps
+    )
+    assert means["arm4_ridge_ctx"] == pytest.approx(0.5)
+    # a wholly-absent arm is None with NO partial-coverage gap (its cell-level
+    # absence is the set-check's job)
+    assert means["arm20_shuffled_map_ridge"] is None
+    assert not any(g.get("arm") == "arm20_shuffled_map_ridge" for g in gaps)
 
 
 def test_row_coverage_check_duplicate_key_fails_loud():
@@ -209,53 +262,133 @@ def _rung_entry(b, rung, dtrue_vals, dshuf_vals, *, complete=True, ctx=(0.01, 0.
     }
 
 
-def test_lattice_strong_form():
-    per_rung = [
-        _rung_entry(
-            "evil", "evil_pair", [0.30, 0.28, 0.32, 0.29, 0.31], [0.02, 0.01, 0.03, 0.02, 0.01]
-        ),
-        _rung_entry(
-            "sycophancy", "sycomwe", [0.25, 0.27, 0.26, 0.24, 0.28], [0.00, 0.01, -0.01, 0.02, 0.00]
-        ),
-        _rung_entry(
-            "hallucination", "nqopen", [0.05, 0.06, 0.04, 0.05, 0.06], [0.01, 0.0, 0.01, 0.0, 0.01]
-        ),
-    ]
+# The registered 13-rung primary set (plan §3; counts pinned in
+# EXPECTED_PRIMARY_COUNTS = {evil: 5, sycophancy: 6, hallucination: 2}).
+REGISTERED_RUNGS = {
+    "evil": ("hhrt", "toxicchat", "evil_mhj", "evil_pair", "evil_tomgibbs"),
+    "sycophancy": ("aita", "sycoans", "sycoays", "sycofb", "sycomim", "sycomwe"),
+    "hallucination": ("nqopen", "simpleqa"),
+}
+_FLAG_BY_B = dict(FLAGSHIPS)
+_STRONG_FLAG_DTRUE = [0.30, 0.28, 0.32, 0.29, 0.31]
+_STRONG_FLAG_DSHUF = [0.02, 0.01, 0.03, 0.02, 0.01]
+_STRONG_OTHER_DTRUE = [0.05, 0.06, 0.04, 0.05, 0.06]
+_STRONG_OTHER_DSHUF = [0.01, 0.0, 0.01, 0.0, 0.01]
+
+
+def _full_lattice(
+    flag_dtrue=_STRONG_FLAG_DTRUE,
+    flag_dshuf=_STRONG_FLAG_DSHUF,
+    other_dtrue=_STRONG_OTHER_DTRUE,
+    other_dshuf=_STRONG_OTHER_DSHUF,
+    ctx=(0.01, 0.2),
+):
+    """All 13 registered rungs x 5 seeds — strong-form values by default."""
+    per_rung = []
+    for b, rungs in REGISTERED_RUNGS.items():
+        for rung in rungs:
+            flag = _FLAG_BY_B.get(b) == rung
+            per_rung.append(
+                _rung_entry(
+                    b,
+                    rung,
+                    list(flag_dtrue if flag else other_dtrue),
+                    list(flag_dshuf if flag else other_dshuf),
+                    ctx=ctx,
+                )
+            )
+    return per_rung
+
+
+def test_lattice_strong_form_requires_the_full_13_rung_set():
+    per_rung = _full_lattice()
     v = lattice_verdict(per_rung)
     assert v["verdict"] == "Strong-form draftable"
+    assert v["medians"]["n_rungs_in_median"] == 13
+
+
+def test_lattice_missing_nonflagship_rung_is_unresolved():
+    """Regression (#1739 claim4 r1: medians over the COMPLETE subset let 3
+    rungs yield strong-form): one NON-flagship rung absent + otherwise-strong
+    inputs -> `Not draftable / unresolved` with the gap named."""
+    per_rung = [r for r in _full_lattice() if r["eval_rung"] != "simpleqa"]
+    v = lattice_verdict(per_rung)
+    assert v["verdict"] == "Not draftable / unresolved"
+    assert "coverage gap" in v["reason"]
+    assert any("hallucination: 1/2" in g for g in v["coverage_gaps"])
+
+
+def test_lattice_incomplete_seeds_on_any_rung_is_unresolved():
+    """All 5 seeds per rung are part of the registered denominator — a
+    3-seed rung (even a non-flagship one) blocks both draftable branches."""
+    per_rung = _full_lattice()
+    for r in per_rung:
+        if r["eval_rung"] == "aita":
+            short = _rung_entry("sycophancy", "aita", [0.05, 0.06, 0.04], [0.01, 0.0, 0.01])
+            r.clear()
+            r.update(short)
+    v = lattice_verdict(per_rung)
+    assert v["verdict"] == "Not draftable / unresolved"
+    assert any("sycophancy/aita: seeds incomplete (3/5)" in g for g in v["coverage_gaps"])
+
+
+def test_lattice_missing_ctx_ci_is_unresolved():
+    """Every quantity's interval is part of the denominator: a rung whose
+    paired context-bootstrap CIs are absent (e.g. a preds gap) blocks both
+    draftable branches with the gap named."""
+    per_rung = _full_lattice()
+    per_rung[0]["dtrue_ctx_ci"] = None
+    v = lattice_verdict(per_rung)
+    assert v["verdict"] == "Not draftable / unresolved"
+    assert any("dtrue_ctx_ci missing" in g for g in v["coverage_gaps"])
 
 
 def test_lattice_falsifier_takes_precedence():
     # both flagships' Delta_true seed-CIs span 0 -> blocked even with a
-    # positive margin structure elsewhere
-    per_rung = [
-        _rung_entry("evil", "evil_pair", [0.30, -0.28, 0.32, -0.29, 0.31], [0.0] * 5),
-        _rung_entry("sycophancy", "sycomwe", [0.25, -0.27, 0.26, -0.24, 0.28], [0.0] * 5),
-    ]
+    # positive margin structure elsewhere (full 13-rung set present, so the
+    # falsifier — not coverage — is what fires)
+    per_rung = _full_lattice(flag_dtrue=[0.30, -0.28, 0.32, -0.29, 0.31], flag_dshuf=[0.0] * 5)
     v = lattice_verdict(per_rung)
     assert v["verdict"] == "Not draftable / unresolved"
     assert "falsifier" in v["reason"]
 
 
 def test_lattice_weak_form_and_catchall_and_coverage():
-    strong_flag = _rung_entry("evil", "evil_pair", [0.30, 0.28, 0.32, 0.29, 0.31], [0.02] * 5)
-    weak_flag = _rung_entry(
-        "sycophancy", "sycomwe", [0.25, 0.27, 0.26, 0.24, 0.28], [0.0] * 5, ctx=(-0.05, 0.2)
-    )  # ctx CI spans 0 -> this flagship not fully controlled
-    v = lattice_verdict([strong_flag, weak_flag])
+    # weak: ONE flagship's ctx CI spans 0 -> not fully controlled; the other
+    # flagship + medians stay positive over the full 13-rung set
+    per_rung = _full_lattice()
+    for r in per_rung:
+        if r["behavior"] == "sycophancy" and r["eval_rung"] == "sycomwe":
+            r["dtrue_ctx_ci"] = [-0.05, 0.2]
+            r["margin_ctx_ci"] = [-0.05, 0.2]
+    v = lattice_verdict(per_rung)
     assert v["verdict"] == "Weak-form draftable"
     # catch-all: medians negative, but the falsifier does NOT fire (only one
     # flagship's Delta_true CI spans 0 — the other is wholly negative)
-    per_rung = [
-        _rung_entry("evil", "evil_pair", [-0.30, -0.28, -0.32, -0.29, -0.31], [0.0] * 5),
-        _rung_entry("sycophancy", "sycomwe", [-0.25, -0.27, 0.26, -0.24, -0.28], [0.0] * 5),
-    ]
-    v2 = lattice_verdict(per_rung)
+    per_rung2 = _full_lattice(
+        flag_dtrue=[-0.30, -0.28, -0.32, -0.29, -0.31],
+        flag_dshuf=[0.0] * 5,
+        other_dtrue=[-0.05, -0.06, -0.04, -0.05, -0.06],
+        other_dshuf=[0.0] * 5,
+    )
+    for r in per_rung2:
+        if r["behavior"] == "sycophancy" and r["eval_rung"] == "sycomwe":
+            spanner = _rung_entry(
+                "sycophancy", "sycomwe", [-0.25, -0.27, 0.26, -0.24, -0.28], [0.0] * 5
+            )
+            r.clear()
+            r.update(spanner)
+    v2 = lattice_verdict(per_rung2)
     assert v2["verdict"] == "Not draftable / unresolved"
     assert "catch-all" in v2["reason"]
     assert v2["flagship_descriptives"][0]["dtrue_spans_zero"] is False
     # coverage: a flagship absent -> unresolved with the gap named
-    v3 = lattice_verdict([strong_flag])
+    per_rung3 = [
+        r
+        for r in _full_lattice()
+        if not (r["behavior"] == "evil" and r["eval_rung"] == "evil_pair")
+    ]
+    v3 = lattice_verdict(per_rung3)
     assert v3["verdict"] == "Not draftable / unresolved"
     assert "coverage gap" in v3["reason"]
 
@@ -515,3 +648,236 @@ def test_arm2_sanity_band_reads_pvsynth_from_full_rows(tmp_path):
 
     bad = arm2_sanity_band(tmp_path, "evil", _rows(0.10), seeds=[0, 1])
     assert bad["in_band"] is False and bad.get("flag")
+
+
+def test_arm2_sanity_band_not_evaluable_flag(tmp_path):
+    """A not-evaluable band check flags DISTINCTLY (never silently unflagged;
+    distinct from the out-of-band adapter-suspect flag)."""
+    from scripts.issue1739_claim4_fold import arm2_sanity_band
+
+    # committed train summary absent
+    out = arm2_sanity_band(tmp_path, "evil", [], seeds=[0])
+    assert out["flag"] == "not-evaluable"
+    # summary present but no band rows / no pvsynth rows
+    d = tmp_path / "evil" / "arm_results"
+    d.mkdir(parents=True)
+    (d / "all_arms_spearman.json").write_text(json.dumps({"arm_rows": []}))
+    out2 = arm2_sanity_band(tmp_path, "evil", [], seeds=[0])
+    assert out2["flag"] == "not-evaluable"
+
+
+# ---------------------------------------------------------------------------
+# 5. companion scored branch + preds-series contract (fold P2)
+# ---------------------------------------------------------------------------
+
+
+def _write_companion_preds(root: Path, ids, dv, *, rung="toxicchat", drop_group=False):
+    rng = np.random.default_rng(11)
+    preds_dir = root / "evil" / "seed0" / "transfer_preds"
+    preds_dir.mkdir(parents=True)
+    for fname in (f"P-B-holdout-{rung}.jsonl", f"P-B-holdout-{rung}.shufpair.jsonl"):
+        rows = []
+        for arm in ("arm4_ridge_ctx", "arm7_map_ridge_pred"):
+            for i, cid in enumerate(ids):
+                row = {
+                    "rung": rung,
+                    "arm": arm,
+                    "context_id": cid,
+                    "score": float(rng.normal()),
+                    "dv": float(dv[i]),
+                    "seed": 0,
+                }
+                if not drop_group:
+                    row["group"] = f"g{i % 4}"
+                rows.append(row)
+        (preds_dir / fname).write_text("\n".join(json.dumps(r) for r in rows))
+
+
+def test_companion_toxicchat_scored_branch(tmp_path):
+    """Regression (#1739 claim4 r1 Major: the `evil_toxicchat` preds label
+    made the scored branch unreachable — every run declared-skipped): seed-0
+    preds under the REAL r2v2 rung label `toxicchat` + a minimal compliance
+    raw fixture must SCORE (a future label drift re-skips loudly here)."""
+    from types import SimpleNamespace
+
+    from scripts.issue1739_claim4_fold import companion_toxicchat
+
+    rng = np.random.default_rng(5)
+    ids = [f"ctx{i:03d}" for i in range(12)]
+    dv = rng.uniform(0, 100, size=len(ids))
+    _write_companion_preds(tmp_path, ids, dv)
+    all_scores = {}
+    for i, cid in enumerate(ids):
+        for k in range(2):
+            all_scores[f"{cid}_k{k:02d}__0000{k}__00"] = {"score": float(40 + i + k)}
+    raw = tmp_path / "judge_raw_compliance_full.json"
+    raw.write_text(json.dumps({"all_scores": all_scores}))
+    args = SimpleNamespace(claim4_root=tmp_path, compliance_raw=raw, n_boot=25)
+
+    out = companion_toxicchat(args, min_coverage=0.9)
+    assert out["status"] == "scored", out
+    assert len(out["rows"]) == 4  # 2 variants x 2 arms x seed 0
+    assert out["coverage_of_compliance_rows"] == pytest.approx(1.0)
+    for r in out["rows"]:
+        assert -1.0 <= r["rho_vs_compliance"] <= 1.0
+        assert r["ci"][0] <= r["ci"][1]
+
+
+def test_load_preds_series_missing_group_is_named_gap(tmp_path):
+    """A preds row without a `group` label is a NAMED gap — the group-level
+    bootstrap must never silently degrade to per-context resampling."""
+    from scripts.issue1739_claim4_fold import load_preds_series
+
+    rng = np.random.default_rng(6)
+    ids = [f"ctx{i:03d}" for i in range(6)]
+    dv = rng.uniform(0, 100, size=len(ids))
+    _write_companion_preds(tmp_path, ids, dv, drop_group=True)
+    series, _dv, _groups, note = load_preds_series(tmp_path, "evil", "toxicchat", [0])
+    assert series is None
+    assert "missing 'group'" in note
+
+
+# ---------------------------------------------------------------------------
+# 6. batched group bootstrap == serial per-draw reference
+# ---------------------------------------------------------------------------
+
+
+def test_group_bootstrap_rhos_matches_serial_reference():
+    """The batched group bootstrap (bucketed arms.bootstrap_rhos reductions,
+    one vectorized group sample) equals the serial per-draw
+    spearman_rows(mat[:, idx], dv[idx]) reference on the SAME rng stream —
+    unequal group sizes exercise the length bucketing."""
+    from explore_persona_space.experiments.issue_1739 import arms as arms_mod
+    from scripts.issue1739_claim4_fold import group_bootstrap_rhos
+
+    data_rng = np.random.default_rng(3)
+    n = 40
+    mat = data_rng.normal(size=(4, n))
+    dv = data_rng.normal(size=n)
+    groups = [f"g{min(i, 5)}" for i in range(n)]  # g0..g4 singletons, g5 holds 35
+    n_boot = 32
+
+    rhos, n_groups = group_bootstrap_rhos(
+        mat, dv, groups, n_boot=n_boot, rng=np.random.default_rng([1739, 22, 0])
+    )
+    assert n_groups == 6 and rhos.shape == (4, n_boot)
+
+    garr = np.asarray(groups)
+    ug = sorted(set(groups))
+    gidx = [np.flatnonzero(garr == g) for g in ug]
+    ref_rng = np.random.default_rng([1739, 22, 0])
+    gs = ref_rng.integers(0, len(ug), size=(n_boot, len(ug)))
+    for d in range(n_boot):
+        idx = np.concatenate([gidx[g] for g in gs[d]])
+        ref = arms_mod.spearman_rows(mat[:, idx], dv[idx])
+        np.testing.assert_allclose(rhos[:, d], ref, rtol=1e-12, atol=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# 7. runner: breadcrumb identity + smoke phase argv validation
+# ---------------------------------------------------------------------------
+
+
+def test_stage_crumb_identity_and_token_keyed_path():
+    from scripts.issue1739_r2v2_run import _crumb_matches, _stage_crumb_path
+
+    assert _stage_crumb_path("evil", "20260819T1200Z").endswith(
+        "evil_stage_done_20260819T1200Z.json"
+    )
+    ok, _ = _crumb_matches(
+        {"code_sha": "a" * 40, "run_token": "t1"}, code_sha="a" * 40, run_token="t1"
+    )
+    assert ok
+    for bad in (
+        {"code_sha": "b" * 40, "run_token": "t1"},  # foreign checkout
+        {"code_sha": "a" * 40, "run_token": "OLD"},  # prior run
+        {},  # legacy tokenless crumb
+    ):
+        ok2, why = _crumb_matches(bad, code_sha="a" * 40, run_token="t1")
+        assert not ok2 and "mismatch" in why
+
+
+def test_runner_stage_gate_requires_run_token():
+    from scripts.issue1739_r2v2_run import parse_args as run_parse_args
+
+    with pytest.raises(SystemExit):
+        run_parse_args(["--stage-wait-sibling"])
+    with pytest.raises(SystemExit):
+        run_parse_args(["--stage-signal-done", "--stage-run-token", "bad token!"])
+    args = run_parse_args(["--stage-wait-sibling", "--stage-run-token", "tok-1"])
+    assert args.stage_run_token == "tok-1"
+
+
+def test_runner_smoke_flag_validation():
+    from scripts.issue1739_r2v2_run import parse_args as run_parse_args
+
+    with pytest.raises(SystemExit):  # smoke requires the fits-claim4 leg
+        run_parse_args(["--smoke", "--behaviors", "evil"])
+    with pytest.raises(SystemExit):  # smoke behavior must run FIRST
+        run_parse_args(
+            [
+                "--smoke",
+                "--behaviors",
+                "evil",
+                "sycophancy",
+                "--legs",
+                "fits-claim4",
+                "--smoke-behavior",
+                "sycophancy",
+            ]
+        )
+    with pytest.raises(SystemExit):  # scratch root, never the production out-root
+        run_parse_args(
+            [
+                "--smoke",
+                "--behaviors",
+                "evil",
+                "--legs",
+                "fits-claim4",
+                "--smoke-out-root",
+                "eval_results/issue_1739/claim4_controls",
+            ]
+        )
+    args = run_parse_args(["--smoke", "--behaviors", "evil", "--legs", "fits-claim4"])
+    assert args.smoke_behavior == "evil" and args.smoke_holdout == "toxicchat"
+    assert str(args.smoke_out_root).endswith("claim4_controls_smoke")
+
+
+# ---------------------------------------------------------------------------
+# 8. scorer: per-seed resume predicate (code SHA + schema keyed)
+# ---------------------------------------------------------------------------
+
+
+def test_seed_output_resume_predicate(tmp_path):
+    from scripts.issue1739_r2v2_score import SEED_OUT_SCHEMA_VERSION, _seed_output_resume_ok
+
+    out = tmp_path / "evil" / "seed0"
+    out.mkdir(parents=True)
+    meta = {
+        "git_commit": "c" * 40,
+        "out_schema_version": SEED_OUT_SCHEMA_VERSION,
+        "seed": 0,
+        "map_variants": ["true", "shufpair"],
+    }
+    (out / "all_arms_spearman.json").write_text(json.dumps({"meta": meta}))
+    (out / "map_diagnostics.json").write_text("{}")
+    (out / "readout_pools.json").write_text("{}")
+    mv = ["true", "shufpair"]
+    ok, why = _seed_output_resume_ok(out, commit="c" * 40, seed=0, map_variants=mv)
+    assert ok, why
+    # stale code SHA can never silently satisfy the predicate
+    ok2, why2 = _seed_output_resume_ok(out, commit="d" * 40, seed=0, map_variants=mv)
+    assert not ok2 and "git_commit" in why2
+    # wrong seed / wrong variant set
+    assert not _seed_output_resume_ok(out, commit="c" * 40, seed=1, map_variants=mv)[0]
+    assert not _seed_output_resume_ok(out, commit="c" * 40, seed=0, map_variants=["true"])[0]
+    # schema drift
+    stale = dict(meta, out_schema_version=SEED_OUT_SCHEMA_VERSION - 1)
+    (out / "all_arms_spearman.json").write_text(json.dumps({"meta": stale}))
+    ok3, why3 = _seed_output_resume_ok(out, commit="c" * 40, seed=0, map_variants=mv)
+    assert not ok3 and "out_schema_version" in why3
+    # partial output (a companion artifact missing)
+    (out / "all_arms_spearman.json").write_text(json.dumps({"meta": meta}))
+    (out / "readout_pools.json").unlink()
+    ok4, why4 = _seed_output_resume_ok(out, commit="c" * 40, seed=0, map_variants=mv)
+    assert not ok4 and "readout_pools" in why4
