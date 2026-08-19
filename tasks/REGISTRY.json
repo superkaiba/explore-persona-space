@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2388,
+  "highest_id": 2389,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10726,6 +10726,13 @@
       "path": "tasks/proposed/2388",
       "status": "proposed",
       "title": "Is answer correctness predictable from the context vector, and does the context-to-answer map help?"
+    },
+    "2389": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2389",
+      "status": "proposed",
+      "title": "Do the #2162 context-vector findings hold on Qwen3.8-27B? (third model, 26-cell subset)"
     },
     "239": {
       "has_clean_result": true,
