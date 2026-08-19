@@ -46,6 +46,10 @@ at #2183; case 13b added at #2183):
     existed only until the 19 live one-hop offenders were remediated;
 13b. GREEN (#2183): the corrective module-scope ``__file__``-derived form
     under ``scripts/`` passes;
+13c. depth-aware remedy (#2183 round 2): a NESTED ``scripts/<subdir>/``
+    offender FIRES, and the diagnostic names ``.parent.parent`` as the
+    TOP-LEVEL-driver form plus per-level nested guidance (``parents[k]``) —
+    never the top-level expression as universally correct;
 14. bundle-membership pin: the no-flags default run DISPATCHES the check
     (mutation-visible ``wl.main([])`` run, the
     ``test_workflow_lint_scripts_import_guard.py`` row-16 pattern) plus a
@@ -363,7 +367,9 @@ def test_scripts_dir_offender_fires(tmp_path) -> None:
     no-flags bundle fleet-red; those were remediated on this same branch
     (#2183 unit 1/2), so the widening is now safe and the pin flips. The
     diagnostic names the dir the hit is in plus the scripts/-side sanctioned
-    replacement (module-scope ``Path(__file__).resolve().parent.parent``)."""
+    replacement (the top-level-driver module-scope
+    ``Path(__file__).resolve().parent.parent`` form; nested guidance is
+    pinned by case 13c)."""
     offender = _plant(tmp_path, "scripts/offender.py", _INCIDENT_BODY)
     # A sanctioned tests/ file so the tests/ scan genuinely runs (non-empty).
     _plant(
@@ -402,6 +408,36 @@ def test_scripts_corrective_form_is_green(tmp_path) -> None:
         'sys.path.insert(0, str(PROJECT_ROOT / "scripts"))\n',
     )
     assert _run_on(tmp_path) == []
+
+
+# --------------------------------------------------------------------------
+# case 13c (#2183 round 2): nested scripts/ offender — depth-aware remedy
+# --------------------------------------------------------------------------
+
+
+def test_nested_scripts_offender_fires_with_depth_aware_remedy(tmp_path) -> None:
+    """A one-hop NESTED offender (``scripts/<subdir>/offender.py`` — the
+    ``scripts/issue_355/`` shape) FIRES under the recursive ``rglob`` scan,
+    and the diagnostic does NOT prescribe the top-level-only
+    ``.parent.parent`` expression as universally correct: for a nested file
+    that expression yields the ``scripts/`` dir, not the repo root. The
+    remedy must name ``.parent.parent`` as the TOP-LEVEL-driver form and
+    carry the per-level nested guidance (one extra ``.parent`` per directory
+    level / ``parents[k]``)."""
+    offender = _plant(tmp_path, "scripts/issue_355/offender.py", _INCIDENT_BODY)
+    errors = _run_on(tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].startswith(f"{offender}:{_INCIDENT_LINENO}:"), errors[0]
+    assert "under scripts/" in errors[0], errors[0]
+    assert "#2164" in errors[0]
+    # Depth-aware wording: `.parent.parent` is present but labeled AS the
+    # top-level form, never prescribed unconditionally...
+    assert ".parent.parent" in errors[0], errors[0]
+    assert "top-level" in errors[0].lower(), errors[0]
+    # ...and the nested per-level guidance rides the same diagnostic.
+    assert "nested" in errors[0].lower(), errors[0]
+    assert "parents[k]" in errors[0], errors[0]
+    assert "per extra directory level" in errors[0], errors[0]
 
 
 # --------------------------------------------------------------------------

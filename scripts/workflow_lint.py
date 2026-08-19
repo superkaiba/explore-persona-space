@@ -8127,10 +8127,11 @@ def _scripts_import_guard_msg(py: Path, stmt: ast.AST, *, deferred: bool) -> str
     )
 
 
-# --- tests/ repo_root()-derived sys.path ban (#2181) -------------------------
+# --- tests/ + scripts/ repo_root()-derived sys.path ban (#2181; widened #2183)
 # OPPOSITE polarity to the check_scripts_import_guard family above (which
 # REQUIRES a repo-root guard in scripts/ drivers): this check FORBIDS deriving
-# a tests/ sys.path entry from the branch-guarded task_workflow resolvers.
+# a tests/ or scripts/ sys.path entry from the branch-guarded task_workflow
+# resolvers.
 
 _BANNED_SYSPATH_RESOLVERS = frozenset({"repo_root", "tasks_dir", "registry_path"})
 _TASK_WORKFLOW_MODULE = "explore_persona_space.task_workflow"
@@ -8256,9 +8257,13 @@ def check_no_repo_root_syspath(*, repo_root: Path | None = None) -> list[str]:
     ``scripts/`` at #2183 after the same-branch remediation of the 19 live
     one-hop ``PROJECT_ROOT = repo_root()`` offenders there (17
     ``issue1482_*.py`` + 2 ``issue1738_*.py``); the ``scripts/``-side
-    sanctioned replacement is the module-scope
-    ``PROJECT_ROOT = Path(__file__).resolve().parent.parent`` form (the
-    ``scripts/issue1482_densesae_fullwidth.py`` precedent). ``src/`` is
+    sanctioned replacement is the module-scope tree-local form — for a
+    TOP-LEVEL driver,
+    ``PROJECT_ROOT = Path(__file__).resolve().parent.parent`` (the
+    ``scripts/issue1482_densesae_fullwidth.py`` precedent); a NESTED file
+    (the scan is recursive) adds one ``.parent`` per extra directory level
+    (equivalently ``Path(__file__).resolve().parents[k]``, k = the containing
+    dir's depth below the repo root). ``src/`` is
     deliberately OUT of scope — 0 hits today; widening there requires its own
     justification (#2183 acceptance criterion 4). No waiver sentinel by
     design: zero offenders at introduction and no legitimate reason for a
@@ -8309,9 +8314,14 @@ def check_no_repo_root_syspath(*, repo_root: Path | None = None) -> list[str]:
                     )
                 else:
                     remedy = (
-                        "Use the module-scope tree-local form `PROJECT_ROOT = "
+                        "Use the module-scope tree-local form — for a top-level "
+                        "scripts/ driver: `PROJECT_ROOT = "
                         "Path(__file__).resolve().parent.parent` (the "
-                        "scripts/issue1482_densesae_fullwidth.py precedent)."
+                        "scripts/issue1482_densesae_fullwidth.py precedent); a "
+                        "nested file adds one `.parent` per extra directory "
+                        "level (equivalently "
+                        "`Path(__file__).resolve().parents[k]`, k = the "
+                        "containing dir's depth below the repo root)."
                     )
                 errors.append(
                     f"{py}:{node.lineno}: `sys.path` entry derived from "
