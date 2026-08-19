@@ -257,13 +257,43 @@ excluded** by the same user call.
 | 2n | `M_mlp v_C` — MLP-mapped answer | **mapped-MLP** |
 | 3 | `v_A` — true answer vector (oracle) | **oracle-linear** |
 
-Four predictor arms. Holding the readout fixed makes the comparison across input representations
+Plus two **correctness-direction** arms on a one-parameter readout (user-approved, § Provenance):
+
+| # | readout | arm |
+|---|---|---|
+| 1d | `⟨r_correct, v_C⟩` | **direction-context** |
+| 2d | `⟨r_correct, M v_C⟩` | **direction-mapped** |
+
+Six predictor arms. Holding the readout fixed makes the comparison across input representations
 internally fair — every arm gets the same estimator, so a difference is attributable to the
 representation. **Declared scope limit, to be stated in the writeup:** because no nonlinear
 *readout* on `v_C` is run, the experiment cannot rule out that a nonlinear direct probe would
 match or beat the MLP-mapped arm. The direct side is measured at its LINEAR ceiling, not its true
 ceiling, and any "the map beats direct prediction" claim is scoped to linear direct readouts.
 This is a known, accepted gap, not an oversight.
+
+**The correctness direction `r_correct` — construction.** The persona-vectors analogue with the
+contrast swapped from disposition to correctness: split a context's rollouts by whether the answer
+was correct, average the answer activations of each group, subtract. **Matched WITHIN context**
+(#1739's E2 construction), never pooled across contexts: pooling makes the direction partly a
+"this is an easy/common topic" direction, since easy items differ from hard ones in topic and
+phrasing. Restricting to within-context contrasts holds topic, wording and length fixed so they
+cancel, then averages the per-context differences.
+
+Feasibility is measured, not assumed — contexts with within-question spread (some of the K=5
+rollouts correct, some not) in the banked #1739 data: **TriviaQA 3,642 of 15,993 (22.8%)**,
+**NQ-Open 767 of 3,165 (24.2%)**, SimpleQA 309 of 4,015 (7.7%, already dropped). Ample for a
+mean-difference, which needs far fewer samples than a 3,584-dimensional ridge.
+
+**Why these arms earn their place in a slim roster:** they are the ONLY estimator in the roster
+that is well-posed at small `L`. A ridge readout fits 3,584 parameters; at `L = 250` that is
+hopeless, so without a direction arm the small-`L` end of the H2 crossover curve is a race between
+two badly-posed ridges and its ordering is mostly estimator noise. A projection fits one
+parameter and is well-posed at any `L`. Declared limitation: a direction arm differs from a ridge
+arm in BOTH representation and estimator, so a difference between the two families is not cleanly
+attributable to either — read them as a per-`L` envelope ("best achievable at this label budget"),
+not as a controlled representation contrast. Zero marginal data cost: rollouts, correctness labels
+and answer activations are all banked.
 
 **MLP-map recipe — inherited verbatim from #1739** (`Source: #1739`, `constants.py` `MLP_HIDDEN` /
 `MLP_MAX_EPOCHS`): width 512, one hidden layer, ≤300 epochs AdamW, multihead across cells,
@@ -453,9 +483,8 @@ DV builder, the `f_U` pool-composition harness, and a code-execution sandbox.
 - **Risk 8's MMLU-Pro fork** — CoT-shaped answer vectors vs direct option log-prob.
 - Whether the `L`-sweep runs on all four surfaces or on QA + one new surface, with the others at
   full-label only.
-- Whether the correctness-direction arms (mean-diff of answer activations between correct and
-  incorrect rollouts, matched within context; projected on `v_C` and `M v_C`) are added — the
-  only estimator that is well-posed at `L = 250`. **Pending user decision.**
+- ~~Whether the correctness-direction arms are added~~ — **RESOLVED: in** (user, § Provenance
+  round 5). Specified in § Arms.
 - Fuller literature grounding pass (`/deep-lit-review`). Kadavath / Kuhn / Farquhar are already
   in hand from the survey; the pass would cover the probing-for-correctness line properly.
 - Whether the kernel-ridge map rides as a third input row (free — banked).
@@ -487,3 +516,8 @@ to find the model with the greatest spread across these tasks"*. Four parallel s
 (SimpleQA/GSM8K/MMLU/ARC-C/GPQA/CodeContests dropped, MMLU-Pro adopted, code pool assembled), and
 § Measured spread (the criterion corrected from "mean near 0.5" to between-context dispersion,
 measured directly from banked rollouts).
+
+Fifth round, verbatim: *"okay add the correctness direction arms"* — the two one-parameter
+projection arms (1d / 2d in § Arms) are IN. This is the user decision that was pending through
+rounds 3-4; the arms were proposed as the only estimator well-posed at `L = 250` and approved on
+that basis.
