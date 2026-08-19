@@ -19,3 +19,4 @@
 - [CONCERN:: machine rows + ledger field](feedback_concerns_machine_rows_2326.md) — since #2326 the template needs `CONCERN::` rows + `**Prior-concerns ledger:**`; currency-check the composer spec too, not only code-reviewer.md
 - [infra/wf-fix lint-gate compose](feedback_infra_wf_fix_lint_gate_compose.md) — workflow_lint.py diffs: N/A-by-type facts, hollow-gate = check-registration trace, LIVE_WORKFLOW_HELPERS arming, plan-verify attestation (#2192 r1)
 - [shell-wrapper infra compose](feedback_shell_wrapper_infra_compose.md) — .sh diffs: Step 0.70 binds, live-alert never-run warning, seam=child-binary 3.8 shape, bash-semantics Step 2 list (#2196 r1)
+- [envelope brace residue + intra-round rename](feedback_envelope_brace_residue_and_intraround_rename.md) — residue check excludes marker envelope (git ^{{commit}} is content); same-round add-then-rename ⇒ 3.75 N/A attested (#2198 r1)
