@@ -1518,7 +1518,7 @@ def check_code_sha_cards(
 _COMPANION_FORBIDDEN_HEADERS = ("## TLDR", "## Conclusion and next steps")
 
 
-def _resolve_companion(
+def _resolve_companion_text(
     blanked_lines: list[str], *, mode: str, figures_root: Path
 ) -> tuple[str | None, CheckResult | None]:
     """Resolve the body's ``**Detailed writeup:**`` pin to the companion text.
@@ -1588,7 +1588,7 @@ def check_companion_content(
     ``**Detailed writeup:**`` pin) is 100% agent-written in BOTH modes — it is
     regenerated wholesale on follow-up rounds, so anything hand-written there
     is destroyed without notice — so the SCAN scope is mode-invariant; only
-    the RESOLUTION ladder is mode-split (``_resolve_companion``). Both halves
+    the RESOLUTION ladder is mode-split (``_resolve_companion_text``). Both halves
     run on the companion's ``blank_verbatim()``-blanked lines (a ``## TLDR`` /
     lexeme inside a fenced example or blockquote is DATA, not a slot):
 
@@ -1622,7 +1622,7 @@ def check_companion_content(
     (``thomas-slot heading L<n>: ...`` / ``lexicon L<n>: ...``).
     """
     name = "companion-content"
-    companion, ladder = _resolve_companion(blanked_lines, mode=mode, figures_root=figures_root)
+    companion, ladder = _resolve_companion_text(blanked_lines, mode=mode, figures_root=figures_root)
     if ladder is not None:
         return ladder
     comp_lines = blank_verbatim(companion.splitlines())
