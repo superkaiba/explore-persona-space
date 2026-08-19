@@ -77,7 +77,7 @@ file + spawn is non-blocking), while routing the fix through full review.
   `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`,
   `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
-  `codex_task.py`,
+  `codex_task.py`, `persist_verdict_concerns.py`,
   `plan_patch.py`, `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
   `pm_queue_report.py`,
