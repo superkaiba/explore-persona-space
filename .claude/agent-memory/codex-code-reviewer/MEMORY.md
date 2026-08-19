@@ -17,3 +17,4 @@
 - [wf-fix Step-2-floor attestation](feedback_wf_fix_step2_floor_attestation.md) — wf-fix composes probe main for epm:plan-verify and attest PASSED/absent in the prompt; Codex can't read main-side events (#2326 r1)
 - [whole-round unsplit compose](feedback_whole_round_unsplit_compose.md) — #2074 split rounds: base = round-parent SHA; strip the Step-0 split-review paragraph (token leak); per-file reads + data-artifact digests over 300KB (#2330 r1)
 - [CONCERN:: machine rows + ledger field](feedback_concerns_machine_rows_2326.md) — since #2326 the template needs `CONCERN::` rows + `**Prior-concerns ledger:**`; currency-check the composer spec too, not only code-reviewer.md
+- [infra/wf-fix lint-gate compose](feedback_infra_wf_fix_lint_gate_compose.md) — workflow_lint.py diffs: N/A-by-type facts, hollow-gate = check-registration trace, LIVE_WORKFLOW_HELPERS arming, plan-verify attestation (#2192 r1)
