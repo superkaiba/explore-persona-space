@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2400,
+  "highest_id": 2401,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10832,6 +10832,13 @@
       "path": "tasks/proposed/2400",
       "status": "proposed",
       "title": "api_throughput_guidelines: disambiguate the two sync/batch crossover figures (200k balanced vs 20k dispatcher constant) + state precedence vs CLAUDE.md"
+    },
+    "2401": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2401",
+      "status": "proposed",
+      "title": "artifact-reuse: a reused ACTIVATION artifact must carry the model-weights revision that produced it (shape asserts and data-repo pins verify different guarantees)"
     },
     "241": {
       "has_clean_result": false,
