@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2397,
+  "highest_id": 2398,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10797,6 +10797,13 @@
       "path": "tasks/proposed/2397",
       "status": "proposed",
       "title": "verify_plan: assert plan-narrated parent statistics (sign + CI) against the cited artifact field"
+    },
+    "2398": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2398",
+      "status": "proposed",
+      "title": "verify_plan: flag plan registrations that contradict the inherited implementation's semantics (advisory-flag-that-branches; registered multiplicity family that shrinks)"
     },
     "24": {
       "has_clean_result": false,
