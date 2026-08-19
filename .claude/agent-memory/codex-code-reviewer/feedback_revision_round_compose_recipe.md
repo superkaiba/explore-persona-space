@@ -1154,3 +1154,17 @@ the reconciler's Standing-recommendations bundle minus the bounced items is
 its own fence bullet — the round implementing ONE family member does not
 convert siblings into blockers, but round-hunk regressions on their
 neighborhoods stay in scope (filter-vs-cap ordering, ladder-continuation).
+
+**Never hand-truncate a SHA in compose prose (#2183 r2, 2026-08-18):** a
+decorative truncated HEAD prefix typed by hand carried a WRONG hex char
+(`...cbf...` for `...cb0...`) and the labeled count-asserts did NOT catch it
+— they count the FULL form, and the corrupt truncation is a separate string.
+Write the full 40-char SHA (or a `git rev-parse --short`-derived prefix)
+everywhere in compose facts; add a negative assert on any truncated form you
+do emit. Otherwise this round was pure recipe reuse: #2371 addressed-not-open
+ledger (snapshot both events, ledger-field literal `empty (0 open; 1
+addressed-r2 pending verification: <id>)`), #2329-rclose prior-own-verdict
+inlining (tags stripped, `> CONCERN::` blockquote, author-neutrality both
+directions), #2348(e) no re-emission of the persisted id (assert exactly one
+line-start grammar row), and a `## Round-1 closure ledger` schema section
+with a pseudo-ID for the un-persisted r1 Minor 2.
