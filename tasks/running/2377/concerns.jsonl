@@ -1,0 +1,1 @@
+{"ts": "2026-08-19T03:19:45Z", "event": "raised", "concern_id": "uvproj-quarantine-destination-unsafe", "severity": "BLOCKER", "summary": "Predictable exist_ok quarantine dir can be a symlink and os.rename can overwrite an out-of-root destination.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
