@@ -103,6 +103,19 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   and `analysis/paper_plots.py` are consolidated into the new helper (the paper_plots copy is
   kept as a thin deprecated shim delegating to `_git_short_sha` for the one out-of-scope
   external importer under `experiments/leave_one_out_505/`).
+  **Card phase identity (#2194):** per-phase card writers pass `phase=` to
+  `as_metadata_dict(prov, phase="stage2-upload")` (hand-rolled `_repro()`-style builders set
+  the same sibling key via `validate_phase_identity()`). The key lives INSIDE the card /
+  metadata block as a SIBLING of `git_commit` — the exact dict level
+  `scripts/verify_report.py::check_code_sha_cards` reads; a top-level `phase` beside a nested
+  card block is INVISIBLE to the gate (the #2162 stage2 shape). Value = lowercase kebab/snake
+  slug, RECOMMENDED to equal the driver's own `--phase` / `[phase=...]` token (e.g. `bank`,
+  `grid-anchors`, `stage2-upload`). Write-time validation refuses the most confusable
+  lifecycle-state values (`done`/`failed`/`running`/…) as a BEST-EFFORT collision fence —
+  top-level sentinel `phase` is lifecycle STATE, a different vocabulary at a different level,
+  and the backend emits more lifecycle values than the denylist enumerates, so the structural
+  placement is the primary separation. `as_metadata_dict` emits the full 40-hex `git_commit`
+  (abbreviated SHAs are gate-excluded; `commit_string` keeps the short human form).
 - **Supersede → delete the old version.** When an improved version of a script
   / helper supersedes an old one, DELETE the old version after rewiring every
   reference to it — do NOT keep both. Two live scripts that do the same job

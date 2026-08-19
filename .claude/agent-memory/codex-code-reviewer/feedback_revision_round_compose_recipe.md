@@ -1374,6 +1374,46 @@ v2==1, close==1, all four prior tag forms==0, line-start rows==1,
 `> CONCERN:: `==13; the OLD r1 ledger literal legitimately survives INSIDE
 the inlined codex-r1 envelope — scope residue greps outside envelopes.
 
+**#1739 claim4-controls r2 fold (2026-08-19) — two refinements:** (a) when
+the r2 marker is SELF-CONTAINED (no external /tmp report path), DROP the
+r1 dual-envelope (marker-only) and attest the change explicitly ("unlike
+round 1, this marker is SELF-CONTAINED"), else Codex hunts for the report;
+sweep the r1 dual-envelope tokens (`{FULL_REPORT_BODY}`, "the full
+implementer report is INLINED") in the final asserts. (b) The
+sweep-hex-SHAs assert has a legit-survivor pattern: a swept r1 SHA that a
+round-2 DUTY deliberately cites (here the premerge_tip CONTENT SHA
+`8439ae52bf…` in the U9 line-1 check) gets `assert count == 1`, not `== 0`
+— pair it with a full-40-char presence assert so the survivor is the
+deliberate occurrence. Union-work-order rounds: inline the union in its own
+envelope + annotate its /tmp verdict paths UNREACHABLE, inline the Claude
+Minors verbatim (Codex cannot read the Claude verdict file), and give
+open-ledger rows a `## Round-1 closure ledger` verdict-body section whose
+NOT-ADDRESSED branch = substantive FAIL + a re-raise `CONCERN:: ` row
+reusing the exact id (VERIFIED-ADDRESSED rows are NOT re-emitted).
+
+**FAIL+FAIL union with a punch-list disposition table + fixed-without-
+ledger-close ids (#2379 r2, 2026-08-19):** three deltas on the #2332 union
+shape. (a) When the impl marker carries a `### Round-2 punch-list
+disposition` table keying rows by BOTH the twin's persisted concern ids AND
+the Claude verdict's g-group labels, key the closure ledger on the
+punch-list rows directly (no pseudo-ID minting needed — the table pre-mints
+the union). (b) INVERSE-#2371 ledger shape: ids whose fixes the punch-list
+claims landed (unit A) but with NO `address-concern` rows posted — treat as
+raised-only ledger state + FIXED claim: identical closure-verification duty
+to the addressed ids, missing rows attested as orchestrator bookkeeping
+(never a finding); the ledger literal then needs BOTH clauses ("N open: ...;
+M addressed-r2 pending verification: ..."), with the open list containing
+claimed-fixed ids. (c) Same-task r1→r2 template reuse worked with a 15-patch
+list (base SHAs in Step 0 name-only + 0.9 probes; "purely additive" in 0.9
+opener AND a LINE-WRAPPED copy in 4.6 — token greps miss wrapped phrases,
+patch by known text; every "the report claims ..." sentence re-keyed to the
+v2 report: 0.6 compute-deviation + porcelain, 0.65 upload claims, 4(b)/(c)
+lint + pin-sweep, 4.5 round-1 tail, 5 deserialization). Tag arithmetic with
+BOTH prior verdicts inlined tags-stripped + codex rows blockquoted: own-head
+v2==1, close==1, all four prior tag forms==0, line-start rows==1,
+`> CONCERN:: `==13; the OLD r1 ledger literal legitimately survives INSIDE
+the inlined codex-r1 envelope — scope residue greps outside envelopes.
+
 **Same-task r2→r3 union fix round: reconstruct-head + patched-REST (#2379
 r3, 2026-08-19):** four durable deltas on the #2332/#2379-r2 union shape.
 (a) The concerns ledger has a THIRD event type `verified-open` (posted when
