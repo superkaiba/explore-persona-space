@@ -45,3 +45,19 @@ look-alikes.
 **How to apply:** any plan whose §-table rewrites >~10 literal sites with a
 coupled-test claim or an expected-residual enumeration; run both replays
 before verdict.
+
+**Round-2 addenda (#2391 v3 — three revision-introduced instrument traps):**
+(1) a `\b` appended to a token pattern (`cap_5\b`) silently un-matches
+`cap_5_surface` — `_` is a word char; replay the plan's EXACT pattern
+strings, never a "tidied" variant. (2) a bare digit-less alternate
+(`|loops up to`) in a residual-enumerated grep matches the FIXED site
+post-edit → off-by-one vs a registered "EXACTLY N lines" AC; simulate the
+post-edit state of every alternate. (3) baseline-subtracted lint compares
+keyed on `grep -E '^(FAIL|WARN)'` are FAIL-blind: `workflow_lint.py` error
+records print as `workflow_lint: <err>` + terminal
+`workflow_lint: FAIL (N error(s))`; only `WARN: ...` lines match — capture
+`^workflow_lint: ` minus `: PASS$` instead. Also check pin-grep FILE paths
+(a cmd-3 look-alike grep aimed at issue-tick/SKILL.md was vacuous — the
+string lives in steps/13-step-9.md), and check that a post-edit pair-scan
+(cmd 2b) excludes the re-keyed test file whose negative-control FIXTURES
+reproduce the wrapped stale forms.
