@@ -9226,8 +9226,8 @@
     "2195": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2195",
-      "status": "reviewing",
+      "path": "tasks/completed/2195",
+      "status": "completed",
       "title": "verify_report.py: WARN when a report cites a repo artifact at a SHA the same branch has since modified"
     },
     "2196": {
