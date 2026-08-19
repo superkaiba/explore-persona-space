@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2402,
+  "highest_id": 2403,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10846,6 +10846,13 @@
       "path": "tasks/proposed/2402",
       "status": "proposed",
       "title": "workflow-fix: guard_skill_doc_headroom.sh must validate a demanded cap raise clears its own warn threshold"
+    },
+    "2403": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2403",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan should check a reuse claim's named field is the field the reused consumer actually reads"
     },
     "241": {
       "has_clean_result": false,
