@@ -60,9 +60,10 @@ context vector. Five questions:
 32-layer hybrid stack are not layer-for-layer comparable. Parent layer 19 sits at depth 0.70;
 the matched child layers are 21–22 (depth 0.68–0.71).
 
-**Figure links:** #2162 figures are relative paths (they live on `main`). #2329 figures are
-absolute URLs pinned to commit `91b22ff` because the `issue-2329` branch is not yet merged
-(PR #2004 open).
+**Figure links:** #2162 figures are relative paths. #2329 figures are absolute URLs pinned to
+commit `91b22ff`, which dates from when the `issue-2329` branch was still unmerged; PR #2004
+landed on 2026-08-19, so those artifacts are now on `main` too and the pinned URLs remain valid
+(the commit is an ancestor of `main`).
 
 ## Result 0 — Qualitative examples + bank reference (dashboards)
 
@@ -403,8 +404,8 @@ through a work-conserving claim-file block queue; judging off-pod via the Anthro
 Planned rollouts: 42,120 grid + 14,040 anchors + ≤12,096 stage-2. Code:
 `scripts/issue2329_run.py`, `issue2329_analysis.py`, `issue2329_mapshift.py` @ `653ff2b487`.
 Data: HF `superkaiba1/explore-persona-space-data`, prefix `issue2329_q35rerun/`; outputs under
-`eval_results/issue_2329/`. **Artifacts live on the unmerged `issue-2329` branch** (PR #2004);
-figure links above are pinned to `91b22ff`.
+`eval_results/issue_2329/`. PR #2004 (the `issue-2329` branch, 51 commits) landed on `main`
+2026-08-19; figure links above stay pinned to `91b22ff` for stability.
 
 **Provenance.** #2162 originating ask: plan a 5-result experiment on what is stored at the context
 vector, whether patching it moves the answer vector and behavior, whether the mapping predicts the
