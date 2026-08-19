@@ -1186,6 +1186,55 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     with no measured-rate projections (no coverage/yield/sizing line
     multiplying an empirical rate against a population) writes
     "N/A — no measured-rate projections".
+18. **Matched-covariate support (support-restricted companion for degenerate
+    matching covariates).** Fires when a headline statistic is matched /
+    partialled / stratified on a covariate — an activity-matched partial
+    correlation, a covariate-matched contrast, a stratified permutation
+    test — and that matching covariate is DEGENERATE on the analysis sample.
+    Canonical definitions: the **tied fraction** of a matching covariate is
+    the modal-value share of the complete-case analysis sample — the fraction
+    of the rows the headline is computed over holding the covariate's single
+    most frequent value (value-agnostic: zero-inflation is the common case,
+    but a covariate tied at any other value is equally degenerate);
+    **threshold**: tied fraction > 0.5 ⇒ DEGENERATE — the modal block is the
+    majority, so the rank transform is one giant tie there, the partial
+    removes nothing on those rows, and the stratified permutation
+    concentrates in a single stratum; "matched for X" silently stops being
+    true for most of the sample while the statistic stays valid AS a
+    statistic and the selection-symmetric null band, exchangeability, and
+    positive controls all pass (`selection-symmetric-nulls.md` polices the
+    NULL side; this item polices the SUPPORT of the matching covariate
+    itself); **support** = the complement of the modal tie block;
+    **support-restricted companion** = the same headline statistic recomputed
+    on the support rows only, reported alongside the full-pool value. REVISE
+    a plan/body whose matched headline has a degenerate matching covariate
+    (tied fraction > 0.5) and NO registered support-restricted companion —
+    the companion is reported ALONGSIDE the full-pool value, with the
+    narration attributing the effect to whichever population carries it; a
+    strong null-band margin does not discharge this item. AUDIT GRAIN: per
+    HEADLINE STATISTIC, never one artifact-level scalar — complete-case
+    samples differ across DVs in one artifact (#2163: the `carried` DV at
+    n=13,282 is already effectively support-restricted while its siblings
+    sit at n=128,450). Degenerate limit: at tied fraction ≈ 1.0 the support
+    is (near-)empty and the companion is uncomputable — the remedy is
+    dropping or replacing the matching covariate, not a companion read.
+    Producer-side mechanics: matched artifacts record `match_tie_fraction`
+    (computed on the complete-case sample) and, when degenerate, the
+    `*_on_support` companion fields or a per-population block —
+    `analysis/matched_support.py` (`tied_fraction` / `tie_profile` /
+    `support_mask` / `audit_matched_artifact`) is the canonical helper, and
+    #2163's `population_partials.json` is the reference per-population
+    shape. Worked example (#2163): an activity-matched partial-Spearman
+    headline (max |partial| 0.239 vs a 0.0092 selection-symmetric band — a
+    26× margin; matching covariate `lasttoken_count`) was carried by the
+    ~117.8k-feature never-active block where the covariate is identically 0
+    (tied fraction 0.897 on the complete-case n=128,450): both named
+    predictors are ~0 on the ~13.3k-feature support (`proj_var` −0.243 full
+    → −0.003 on-support; `scaffold_frac` sign-flips −0.210 → +0.015), and
+    the corroborating `A_W` +0.038 sign-flip sat unread in the same
+    committed JSON. N/A escape: no matched / partialled / stratified
+    headline, or tied fraction ≤ 0.5 — write "N/A — matching covariate
+    non-degenerate (tied fraction <X> on n=<N>)".
 
 ### Alternative Explanations lens
 

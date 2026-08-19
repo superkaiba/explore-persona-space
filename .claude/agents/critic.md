@@ -180,7 +180,10 @@ the pooling-convention row (per-vector pooling named + parity with the cited
 comparison line) · 16 unit of analysis / measurement grain (per-DV grain +
 aggregation named, matched to the Goal's construct; #1900) · 17
 rate-denominator provenance (measured numerator/denominator vs application
-denominator; stage-chained rates for filtered pipelines; #2054).
+denominator; stage-chained rates for filtered pipelines; #2054) ·
+18 matched-covariate support (support-restricted companion when the matching /
+stratification covariate is degenerate — tied fraction > 0.5 on the
+complete-case analysis sample; #2163).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the
