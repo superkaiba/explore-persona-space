@@ -29,5 +29,11 @@ quantity it actually computes; (3) a mismatch is Major even when "stricter"
 — direction of error = dropping registered coverage; (4) sweep figures and
 report fields for the same substitution (the wrong quantity usually gets
 plotted too); (5) check the implementer marker for a stated deviation before
-sizing severity. Sibling family: [[gate-threshold-vs-shard-config]] (gate
-dead from config drift; this one is gate ALIVE but wrong quantity).
+sizing severity; (6) ALSO check the gate's AGGREGATION for silent
+denominator narrowing — a `np.nanmean` over per-unit stats lets a NaN unit
+(zero-variance rates = the broken-replication signature the gate guards
+against) drop out of the registered "mean over N units" and the gate can
+PASS on N−1 units with disclosure only in a sidecar field (#2379 R1 g4:
+Gate G1 `nanmean(rhos)` over 3 caps languages; Major). Sibling family:
+[[gate-threshold-vs-shard-config]] (gate dead from config drift; this one
+is gate ALIVE but wrong quantity/denominator).
