@@ -3306,7 +3306,15 @@ def phase_upload(cfg: RunConfig, regime_fp: str) -> int:
                 ],
             ),
             (cfg.va_dir, f"{prefix}/{cfg.va_dir.name}", ["*.pt"]),
-            (cfg.anchors_dir, f"{prefix}/{cfg.anchors_dir.name}", ["*.jsonl", "*.pt"]),
+            # anchors_reuse_manifest.json is the reuse-provenance record the
+            # reused_2329 path writes (top-level; the staged reused_2329/
+            # shards themselves stay deliberately excluded — non-recursive
+            # globs, they live verbatim at the #2329 pin).
+            (
+                cfg.anchors_dir,
+                f"{prefix}/{cfg.anchors_dir.name}",
+                ["*.jsonl", "*.pt", "anchors_reuse_manifest.json"],
+            ),
         ]
         for local, remote, pats in legs:
             if local.exists():

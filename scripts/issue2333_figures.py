@@ -872,6 +872,10 @@ def main(argv: list[str] | None = None) -> int:
         return _import_check()
     if args.fig_dir is not None:
         FIG_DIR = args.fig_dir
+    elif args.cell_set == "q35lang":
+        # Plan §4.4 P6 destination: the q35lang set defaults to its own leaf
+        # under the issue root; main/q25/q35 renders keep the flat parent root.
+        FIG_DIR = FIG_DIR / C.Q35LANG_LABEL
     if args.fmetrics_dir is not None:
         _FMETRICS_OVERRIDE = args.fmetrics_dir
     set_paper_style()

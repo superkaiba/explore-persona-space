@@ -257,8 +257,8 @@ def percell_prefill3(tag: str, loaded: dict) -> dict:
                 "selection_counters": counters,
                 "separation_read_descriptive": {
                     "diff_ci_strictly_positive": bool(lo > 0),
-                    "p_wilcoxon_raw_below_0.05": bool(rec["p_wilcoxon"] < 0.05),
-                    "both": bool(lo > 0 and rec["p_wilcoxon"] < 0.05),
+                    "p_wilcoxon_raw_below_0.05": bool(rec["p_wilcoxon"] < A.HOLM_ALPHA),
+                    "both": bool(lo > 0 and rec["p_wilcoxon"] < A.HOLM_ALPHA),
                     "note": DESCRIPTIVE_NOTE,
                 },
             }

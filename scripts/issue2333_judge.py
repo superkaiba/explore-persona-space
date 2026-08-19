@@ -39,6 +39,7 @@ import argparse
 import json
 import logging
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -301,14 +302,28 @@ def load_anchor_rows_2333(anchors_dir: Path, cell_set: str, ctx_ids: set[str]) -
     if not shards:
         shards = _stage_2329_anchor_shards(dest)
     rows: list[dict] = []
+    per_ctx: Counter[str] = Counter()
     for shard in shards:
         for row in J94._iter_jsonl(shard):
             if row.get("context_id") not in ctx_ids:
                 continue
             missing = C.ANCHOR_2329_REQUIRED_KEYS - set(row)
             assert not missing, (shard.name, sorted(missing))
+            per_ctx[row["context_id"]] += 1
             rows.append({**row, "response_text": row["text"]})
-    assert rows, f"no #2329 anchor rows for the {len(ctx_ids)} q35lang contexts under {dest}"
+    # Exact coverage gate on the CONSUMPTION path (mirrors the pod-side stage
+    # check in run.py phase_anchors_reused): the glob-any-nonempty shortcut
+    # above would otherwise consume a partially-staged reused_2329/ dir left
+    # by an interrupted VM-side staging.
+    missing_ctx = sorted(ctx_ids - set(per_ctx))
+    under = {c: n for c, n in sorted(per_ctx.items()) if n < C.ANCHOR_DRAWS}
+    if missing_ctx or under:
+        raise RuntimeError(
+            f"staged #2329 anchors under {dest} under-cover the {len(ctx_ids)} requested "
+            f"contexts (interrupted staging?): missing={missing_ctx[:5]} "
+            f"under_floor={dict(list(under.items())[:5])} (floor {C.ANCHOR_DRAWS}) — "
+            f"delete {dest} and re-run to re-stage"
+        )
     return rows
 
 
