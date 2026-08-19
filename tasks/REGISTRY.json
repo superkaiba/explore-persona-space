@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2394,
+  "highest_id": 2395,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10776,6 +10776,13 @@
       "path": "tasks/proposed/2394",
       "status": "proposed",
       "title": "Pilot: cheap context readout to mine always-comply jailbreak contexts; does the context\u2192answer map help?"
+    },
+    "2395": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2395",
+      "status": "proposed",
+      "title": "codex-composer-common: require lens-unique slugs for auxiliary temp files, not just the prompt file"
     },
     "24": {
       "has_clean_result": false,
