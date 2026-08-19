@@ -27,12 +27,12 @@ relates_to:
 
 ## Takeaways
 
-- Map-then-project trails the context-native direction: the Spearman rho difference is reliably below zero in 712 of 810 evil, 134 of 270 hallucination, and 230 of 810 sycophancy cells.
-- Direct regression on context activations stays the strongest deployable predictor (rho 0.71 / 0.58 / 0.74 at the largest budgets); no round-2 arm or filled transfer-roster arm beats it.
-- On a fully held-out attack-tactic family, map arms do not separate from a shuffled-direction control (+0.004 on the context variant); a direct context MLP transfers at 0.68, clear of every control.
-- The evil transfer-rung spread failure is instrument-specific, not attack-corpus-general: a graded compliance DV spreads on the two failing transfer rungs (per-context SD 36.0-38.7 where the trait DV reads 0.9-12.1), and the trait DV itself passes on three fresh attack corpora.
-- Rescue attempts fail at matched conventions — final-context extraction moves map-then-project by -0.12 to +0.03 and nonlinear oracles move ceilings under +0.01 — except a half in-domain map pool, which flips the evil difference positive (single draw and seed).
-- Caveats: the prefix-to-answer map never learns; 3-7% of rollouts carry CJK intrusion (census and arm ordering survive its exclusion); the tactic holdout is under-determined (1,906 train rows vs 3,584 dimensions); the planned teacher-forced margin companion DV was not computed.
+- Published persona-vector projection on the context collapses off-synthetic: rho 0.65-0.79 on synthetic eliciting prompts falls to 0.01-0.07 on in-distribution, generic-chat, and OOD settings.
+- Projecting persona vectors on the linearly mapped answer performs near the real answer (evil in-distribution 0.671 vs 0.688; sycophancy OOD 0.240 vs 0.250) and far above context projection off-synthetic (0.671 vs 0.031); exceptions: hallucination OOD keeps a real oracle gap (0.215 vs 0.353) and sycophancy-synthetic needs the MLP map (0.701 vs 0.764).
+- Direct linear probes beat every persona-vector method off-synthetic (sycophancy OOD 0.71-0.73 vs 0.24-0.25).
+- Under the fair-allocation (P-B) protocol, the probe on the mapped answer edges the probe on the context in ~24 of 33 held-out settings (hallucination: every setting; evil: 6 of 7; sycophancy mixed), median +0.02 to +0.08, with two CI-separated losses (tom-gibbs -0.44, mimicry -0.20) — uncontrolled pending the shuffled-map control, seed replication, and the context-extracted-direction comparator (claim4-controls follow-up round running).
+- The original grid's adverse aggregate stands for its configuration: with a fully generic map pool at large labeled budgets, map-then-project trails the context-extracted direction (below zero in 712/810 evil cells), and on the fully held-out attack-tactic family map arms do not separate from a shuffled-direction control (holdout under-determined: 1,906 train rows vs 3,584 dimensions).
+- Preliminary (single draw and seed, evil only): a half in-domain unjudged map pool at small labeled budgets flips map arms above both context arms by up to ~3x. Residual caveats: the prefix-to-answer map never learns; 3-7% of rollouts carry CJK intrusion (census survives its exclusion); the planned teacher-forced margin companion DV was not computed.
 
 ## Goal
 
