@@ -11,12 +11,18 @@ origin_prompt: 'can we rerun with: a stronger model (qwen3.6), queries that make
   — we are just checking if the mapping transfers (chat-trained -> all other framings
   including different characters)'
 workflow: v1
+goal: 'Test whether the context→answer linear map trained in the chat-template framing
+  transfers — directly or up to a linear reparameterization — to every other framing
+  in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, and
+  a panel of distinct story characters spanning an AI-likeness gradient; one-directional
+  transfer only, stories generated fully template-free (raw completion), scene-native
+  invented queries, fully independent query pools (topic-shift confound disclosed).'
 ---
 # Chat-trained context→answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and fully template-free story generation
 
 ## Goal
 
-Test whether the context→answer linear map TRAINED IN THE CHAT-TEMPLATE FRAMING transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only; no base arm by scope): plain-text, an assistant-like story character, and a panel of distinct story characters spanning an AI-likeness gradient. Transfer is ONE-DIRECTIONAL by scope (chat-trained → other framings only; no reverse legs, no story→story legs). Stories are generated with the chat template nowhere in the pipeline (raw seeded/few-shot completion by the instruct model itself), each scene's question is scene-native (invented to arise naturally from the scene, not spliced from an external pool), and the story and chat query pools are fully independent (no row pairing, no shared topic pool; the topic-shift confound is accepted and disclosed as a scope caveat). Verdict instrument inherited from #1345/#2054: target-cell own-map ceilings (fit only as denominators), chat→target transfer R² and reparameterization recovery vs matched-capacity nulls, plus the identity+learned-bias baseline and kNN-retrieval reads on every fitted map.
+Test whether the context→answer linear map trained in the chat-template framing transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, and a panel of distinct story characters spanning an AI-likeness gradient; one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed).
 
 ## Why (what this fixes over #1345/#2054)
 
