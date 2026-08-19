@@ -1427,3 +1427,4 @@
 {"ts": "2026-08-19T14:13:40Z", "kind": "epm:progress", "version": 747, "by": "poll_pipeline", "note": "phase transition: stage -> score", "phase": "score", "pod": "pod-1739-claim4-halla"}
 {"ts": "2026-08-19T14:13:56Z", "kind": "epm:progress", "version": 748, "by": "poll_pipeline", "note": "phase transition: stage_shared -> stage", "phase": "stage", "pod": "pod-1739-claim4-hallb"}
 {"ts": "2026-08-19T14:25:00Z", "kind": "epm:progress", "version": 749, "by": "poll_pipeline", "note": "phase transition: score -> done", "phase": "done", "pod": "pod-1739-claim4-sycoa"}
+{"ts": "2026-08-19T14:25:16Z", "kind": "epm:progress", "version": 750, "by": "poll_pipeline", "note": "phase transition: score -> done", "phase": "done", "pod": "pod-1739-claim4-halla"}
