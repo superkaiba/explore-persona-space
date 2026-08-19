@@ -63,6 +63,16 @@ PC_OUT_ROOT = Path("eval_results/issue_1739/r2v2_pc")
 ARM12_HF_OUT_PREFIX = "issue1739_r2v2_fits_arm12"
 ARM12_OUT_ROOT = Path("eval_results/issue_1739/r2v2_fits_arm12")
 ARM12_EXTRA_ARMS = ("arm12_oracle_reg",)
+# claim4-controls (plan v21, 2026-08-19): seed-replicated P-B fits under BOTH
+# map variants (true + pairing-shuffled control), roster extended by arm2 +
+# arm20, per-context transfer preds ON for every behavior (the P2 paired
+# context-bootstrap + companion join consume them). One scorer SUBPROCESS per
+# seed (resume-friendly; outputs keyed <behavior>/seed<S>/), protocols pinned
+# to B (items 1-3 are P-B questions; the P-A rows item 4 needs are banked).
+CLAIM4_HF_OUT_PREFIX = "issue1739_claim4_controls"
+CLAIM4_OUT_ROOT = Path("eval_results/issue_1739/claim4_controls")
+CLAIM4_EXTRA_ARMS = ("arm2_ctx_native", "arm20_shuffled_map_ridge")
+CLAIM4_MAP_VARIANTS = ("true", "shufpair")
 CTXMAP_PREFIX = "issue1739_ctxmap"
 BANK_PREFIX = f"{CTXMAP_PREFIX}/rb_fc_bank"
 HALLU_PR_FILE = f"{CTXMAP_PREFIX}/judge/hallucination/labeling_per_rollout.json"
@@ -255,7 +265,181 @@ LEG_DESTS = {
     "fits-widegrid": (WIDE_OUT_ROOT, WIDE_HF_OUT_PREFIX),
     "pc": (PC_OUT_ROOT, PC_HF_OUT_PREFIX),
     "fits-arm12": (ARM12_OUT_ROOT, ARM12_HF_OUT_PREFIX),
+    "fits-claim4": (CLAIM4_OUT_ROOT, CLAIM4_HF_OUT_PREFIX),
 }
+
+
+def claim4_score_cmd(args, behavior: str, seed: int) -> list[str]:
+    """Compose the claim4 scorer argv for ONE (behavior, seed) invocation.
+
+    --protocols is PINNED to B (never args.protocols): the claim4 leg is a
+    P-B-only leg by plan; a pod launch composing this leg with --protocols AB
+    must not silently re-fit P-A. Both map variants + both extra arms +
+    --transfer-preds always ride (plan v21 §4 P0.3).
+    """
+    cmd = [
+        sys.executable,
+        str(_REPO_ROOT / "scripts" / "issue1739_r2v2_score.py"),
+        "--behaviors",
+        behavior,
+        "--variant",
+        "context_end",
+        "--protocols",
+        "B",
+        "--store-root",
+        str(args.store_root),
+        "--main-root",
+        str(args.main_root),
+        "--tensors-root",
+        str(args.tensors_root),
+        "--out-root",
+        str(CLAIM4_OUT_ROOT),
+        "--ood-store-root",
+        str(args.ood_mirror_root / CTXMAP_PREFIX),
+        "--device",
+        args.device,
+        "--ood-dv-max-null-frac",
+        str(args.ood_dv_max_null_frac),
+        "--seeds",
+        str(int(seed)),
+        "--map-variants",
+        *CLAIM4_MAP_VARIANTS,
+        "--extra-arms",
+        *CLAIM4_EXTRA_ARMS,
+        "--transfer-preds",
+    ]
+    if args.pb_holdouts:
+        cmd += ["--pb-holdouts", *args.pb_holdouts]
+    return cmd
+
+
+def _stage_crumb_path(behavior: str) -> str:
+    """HF breadcrumb path the seeds-0-2 pod writes at stage completion."""
+    return f"{CLAIM4_HF_OUT_PREFIX}/_staging/{behavior}_stage_done.json"
+
+
+def signal_stage_done(args, behavior: str, token: str) -> None:
+    """Upload the stage-done breadcrumb (serialized-staging topology, plan §9)."""
+    import socket
+    import tempfile
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    payload = {
+        "behavior": behavior,
+        "host": socket.gethostname(),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        json.dump(payload, f)
+        tmp = f.name
+    HfApi().upload_file(
+        path_or_fileobj=tmp,
+        path_in_repo=_stage_crumb_path(behavior),
+        repo_id=hub.DEFAULT_DATASET_REPO,
+        repo_type="dataset",
+        token=token or None,
+    )
+    os.unlink(tmp)
+    _log(f"[phase=stage_signal {behavior}] breadcrumb -> {_stage_crumb_path(behavior)}")
+
+
+def wait_for_sibling_stage(args, behavior: str, token: str) -> None:
+    """Block until the sibling pod's stage-done breadcrumb exists on HF.
+
+    The seeds-3-4 pod polls before staging so two pods never pull the same
+    multi-GB prefix concurrently (the evil-ood-spread round drew rate-limit /
+    connection kills from exactly that shape). On timeout: proceed with a
+    LOUD warning — the sibling has almost certainly crashed (measured stage
+    wall is 25-40 min), and serialization is HF-politeness, not correctness.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    crumb = _stage_crumb_path(behavior)
+    api = HfApi(token=token or None)
+    t0 = time.time()
+    while time.time() - t0 < args.stage_gate_timeout_s:
+        try:
+            if api.file_exists(hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset"):
+                _log(f"[phase=stage_wait {behavior}] sibling breadcrumb found ({crumb})")
+                return
+        except Exception as exc:  # noqa: BLE001 — transient Hub errors: keep polling
+            _log(f"[phase=stage_wait {behavior}] probe error (retrying): {exc}")
+        time.sleep(args.stage_gate_poll_s)
+    _log(
+        f"[phase=stage_wait {behavior}] WARNING: sibling breadcrumb ABSENT after "
+        f"{args.stage_gate_timeout_s}s ({crumb}) — sibling likely dead; proceeding "
+        "with staging anyway (serialization is politeness, not correctness)"
+    )
+
+
+def run_claim4_leg(args, behavior: str) -> dict:
+    """The fits-claim4 leg: one scorer subprocess per seed + the seed-0 gate.
+
+    Per-seed sequencing (resume-friendly; a crashed seed re-runs alone):
+    score seed S -> upload the behavior subtree (checkpoint-per-phase) ->
+    after seed 0, run the claim4 reproduction gate (plan §7 gate 1) and HALT
+    the remaining seed chain on FAIL (never spend seeds 1-4 on a drifted
+    pipeline). The repro report is keyed by the running commit SHA inside the
+    gate script itself (dual pre/post-merge protocol, plan §4 P0.4).
+    """
+    per_seed: dict[str, dict] = {}
+    rc_leg = 0
+    for seed in args.seeds:
+        cmd = claim4_score_cmd(args, behavior, seed)
+        _log(f"[phase=score {behavior} leg=fits-claim4 seed={seed}] {' '.join(cmd[1:])}")
+        proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ})
+        _log(f"[phase=score {behavior} leg=fits-claim4 seed={seed}] rc={proc.returncode}")
+        url = None
+        if proc.returncode == 0 and not args.skip_upload:
+            url = upload_behavior(args, behavior, leg="fits-claim4")
+        entry: dict = {"rc": proc.returncode, "uploaded": bool(url), "upload_url": url}
+        per_seed[f"seed{seed}"] = entry
+        if proc.returncode != 0:
+            rc_leg = proc.returncode
+            break  # a failed seed never gates a later seed's inputs silently
+        if int(seed) == 0:
+            gate_cmd = [
+                sys.executable,
+                str(_REPO_ROOT / "scripts" / "issue1739_arm12_repro_check.py"),
+                "--mode",
+                "claim4",
+                "--behaviors",
+                behavior,
+                "--new-root",
+                str(CLAIM4_OUT_ROOT),
+            ]
+            _log(f"[phase=gate1 {behavior}] {' '.join(gate_cmd[1:])}")
+            gate = subprocess.run(gate_cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ})
+            entry["gate1_rc"] = gate.returncode
+            report_dir = CLAIM4_OUT_ROOT / "repro_claim4"
+            if not args.skip_upload and report_dir.exists():
+                # the gate writes its SHA-keyed report under <out-root>/repro_claim4/
+                from explore_persona_space.orchestrate import hub
+
+                hub._upload(
+                    report_dir,
+                    hub.DEFAULT_DATASET_REPO,
+                    "dataset",
+                    f"{CLAIM4_HF_OUT_PREFIX}/repro_claim4",
+                    raise_on_error=True,
+                )
+                _log(
+                    f"[phase=gate1 {behavior}] report uploaded -> {CLAIM4_HF_OUT_PREFIX}/repro_claim4"
+                )
+            if gate.returncode != 0:
+                _log(
+                    f"[phase=gate1 {behavior}] FAIL (rc={gate.returncode}) — HALTING the "
+                    "seed chain (plan §7 kill (a): never spend seeds 1-4 on a drifted "
+                    "pipeline)"
+                )
+                rc_leg = 3
+                break
+    return {"rc": rc_leg, "per_seed": per_seed}
 
 
 def leg_cmd_env(args, behavior: str, leg: str) -> tuple[list[str], dict[str, str]]:
@@ -347,9 +531,31 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--legs",
         nargs="+",
         default=["fits"],
-        choices=["fits", "factorial", "fits-widegrid", "pc", "fits-arm12"],
+        choices=["fits", "factorial", "fits-widegrid", "pc", "fits-arm12", "fits-claim4"],
         help="which scoring legs to run per behavior (in the given order)",
     )
+    ap.add_argument(
+        "--seeds",
+        type=int,
+        nargs="+",
+        default=[0, 1, 2, 3, 4],
+        help="fits-claim4 leg only: seeds run SEQUENTIALLY in-pod, one scorer subprocess "
+        "each (pod halves: '--seeds 0 1 2' / '--seeds 3 4' per the plan §9 sharding)",
+    )
+    ap.add_argument(
+        "--stage-wait-sibling",
+        action="store_true",
+        help="before staging, poll HF for the sibling pod's stage-done breadcrumb "
+        "(serialized staging, plan §9: the seeds-3-4 pod passes this)",
+    )
+    ap.add_argument(
+        "--stage-signal-done",
+        action="store_true",
+        help="after staging completes, upload the stage-done breadcrumb "
+        "(the seeds-0-2 pod passes this)",
+    )
+    ap.add_argument("--stage-gate-timeout-s", type=int, default=7200)
+    ap.add_argument("--stage-gate-poll-s", type=int, default=60)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--revision", default="main")
     ap.add_argument("--stage-workers", type=int, default=12)
@@ -405,6 +611,21 @@ def main(argv: list[str] | None = None) -> None:
         # every OTHER leg stays byte-identical: no --extra-arms, no --transfer-preds
         assert "--extra-arms" not in pc_cmd and "--transfer-preds" not in pc_cmd
         assert "--extra-arms" not in wide_cmd and "--transfer-preds" not in wide_cmd
+        # claim4 leg: one subprocess per seed, protocols PINNED to B, both map
+        # variants + both extra arms + preds; out root / seed threading bind.
+        c4_cmd = claim4_score_cmd(args, "evil", seed=3)
+        c4_args = _score_parse_args(c4_cmd[2:])
+        assert c4_args.protocols == "B", "claim4 leg must pin --protocols B"
+        assert c4_args.seeds == [3] and c4_args.map_variants == list(CLAIM4_MAP_VARIANTS)
+        assert tuple(c4_args.extra_arms) == CLAIM4_EXTRA_ARMS and c4_args.transfer_preds
+        assert str(c4_args.out_root) == str(CLAIM4_OUT_ROOT)
+        # gate-1 argv binds against the repro script's parser (claim4 mode)
+        from scripts.issue1739_arm12_repro_check import parse_args as _repro_parse_args
+
+        r_args = _repro_parse_args(
+            ["--mode", "claim4", "--behaviors", "evil", "--new-root", str(CLAIM4_OUT_ROOT)]
+        )
+        assert r_args.mode == "claim4" and str(r_args.new_root) == str(CLAIM4_OUT_ROOT)
         _log("import-check OK")
         sys.stdout.flush()
         sys.stderr.flush()
@@ -425,16 +646,27 @@ def main(argv: list[str] | None = None) -> None:
     for behavior in behaviors:
         t_b = time.time()
         _log(f"=== {behavior}: stage -> score -> upload -> reap ===")
+        if args.stage_wait_sibling:
+            wait_for_sibling_stage(args, behavior, token)
         stage_inputs(_jobd_ns(args, behavior), token)
         stage_ood(args, behavior, token)
         if "factorial" in args.legs:
             stage_factorial_inputs(args, behavior, token)
+        if args.stage_signal_done:
+            signal_stage_done(args, behavior, token)
         if args.stage_only:
             _log(f"[phase=stage_only {behavior}] staging complete, skipping score")
             results[behavior] = {"score_rc": None, "staged_only": True}
             continue
         leg_results: dict[str, dict] = {}
         for leg in args.legs:
+            if leg == "fits-claim4":
+                # multi-invocation leg (one scorer subprocess per seed +
+                # the in-chain seed-0 reproduction gate) — own driver.
+                leg_results[leg] = run_claim4_leg(args, behavior)
+                if leg_results[leg]["rc"] != 0:
+                    break
+                continue
             cmd, env_overlay = leg_cmd_env(args, behavior, leg)
             _log(f"[phase=score {behavior} leg={leg}] {' '.join(cmd[1:])} env+={env_overlay}")
             proc = subprocess.run(
