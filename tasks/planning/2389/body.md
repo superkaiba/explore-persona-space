@@ -199,7 +199,7 @@ The report must state that prefix-end was not run, and why (0 positives in both 
 - **Run a measured 1-cell pilot through the production entrypoint at production shape before committing the full wall.** The estimate above is extrapolated from #2329's 9B throughput, not measured on a 27.78B model; project rule requires a measured per-cell basis for any phase projected past ~15 min, and any self-set timeout or fence sized at >= 2x the pilot-extrapolated wall. The pilot must ALSO report realized per-cell cap-hit on the 27B and be used to size `gen_batch`.
 - Confirm the HF data repo overflow reroute engages before committing the generation — `issue2329_run.py` records the canonical data repo at HF's 1,000,000-file cap (#2304 shipped the reroute and merged 2026-08-16, but #2329 still wrote to the main repo).
 - Pin the model revision explicitly (`revision=`). #2329 left this unpinned and its pod is gone, so the weights it used are not provable from its artifacts. Do not repeat that.
-- Land #2329's PR #2004 first if the transfer read is to cite its committed tables — its `eval_results/` are still branch-only.
+- ~~Land #2329's PR #2004 first~~ **RESOLVED 2026-08-19 — not a blocker.** PR #2004 is MERGED (mergedAt 2026-08-19T17:46:14Z, merge commit `ab8126035fce29b358c5bb0ead9929c30b03b405`); 114 files under `eval_results/issue_2329/` are on `main`, including the four tables the SECONDARY transfer read consumes (`f_metrics/transfer.json`, `f_metrics/two_by_two.json`, `f_metrics/f_cells.jsonl`, `f_metrics/stats.json`). Read #2329's per-cell tables from `main` directly — do NOT check out or rsync the `issue-2329` branch, and do NOT wait on any merge gate.
 
 ## Resolved decisions (2026-08-19)
 
