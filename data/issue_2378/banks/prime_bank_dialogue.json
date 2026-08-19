@@ -1,0 +1,26 @@
+{
+  "items": [
+    "The bakery's ovens had been cooling for an hour, and Tomás was chalking tomorrow's list on the slate when his apprentice untied her apron and stood there, not leaving. \"The rye came out better when you weren't watching me.\" Tomás replied: \"Then tomorrow I will watch the street instead, and the rye will be yours from start to finish.\" She hung the apron on her own hook for the first time.",
+    "Nadia had the engine half out of the tractor when the farmer came across the yard, wiping his hands although they were clean. He looked at the parts laid out on the tarp in their careful rows. \"My father swore this machine would outlive us both.\" Nadia replied: \"It still might. The block is sound -- it's only the years of cheap oil we're taking out of it today.\" He picked up a gasket and turned it over like a coin from a country he'd left.",
+    "The tide had stranded a rowboat on the mudflat, and Ewan waded out to it with the rope over his shoulder while the tourists watched from the seawall. A boy trailed him to the waterline, boots sinking. \"I want to learn to read the tides the way you do.\" Ewan replied: \"Then stop looking at the water and start looking at the moon. The sea only does what it's told.\" The boy looked up, and kept looking up.",
+    "Zofia's bookshop survived on regulars and rain. The professor came in with the evening drizzle, set a parcel on the counter, and unwrapped a book whose spine had been broken and mended with linen tape. \"I owe you an apology -- I lent it to a student.\" Zofia replied: \"Books are lent to be ruined, professor. This one has been read properly at last; I'll only charge you for the tape.\" He laughed and paid for the tape and two more books besides.",
+    "The clinic's generator coughed twice and settled, and Ruben logged the outage in the margin of the vaccine ledger the way he logged everything. The night nurse leaned in the doorway with two cups of tea. \"You write everything down, even the two-second flickers.\" Ruben replied: \"The two-second flickers are how the big failures introduce themselves. I like to know my enemies when they are still small.\" She left one cup on the ledger like a paperweight.",
+    "Amara had walked the fence line since before light, and the break, when she found it, was clean -- wire cutters, not weather. Her neighbor rode up along the other side and looked at the same cut for a long moment. \"That's the third one this month, and always on your side.\" Amara replied: \"Then someone wants me counting sheep instead of counting trucks on the north road. I'll mend it, and then I'll start counting trucks.\" He tipped his hat and turned his horse north.",
+    "The orchestra had gone home, but the piano tuner's case was still open under the stage lights, felts and mutes laid out like surgery. Keiko struck the same fifth over and over, listening for the beat inside it. The hall manager sat down in the front row with his coat on. \"To me it sounded perfect an hour ago.\" Keiko replied: \"It sounded almost perfect, which is the loudest sound in the world once you've noticed it.\" He stayed and listened until it disappeared.",
+    "Brendan's watch repair bench faced the window so the light did half his work. The widow from the third floor set her husband's watch on the mat -- stopped, as it had been for a year. \"I don't need it to run, I only need it not to be broken.\" Brendan replied: \"Then I'll clean it and set it to the hour he liked best, and wind it once a year myself.\" She left it with him, and her step on the stairs was lighter going up."
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-19T10:19:01-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks"
+    ],
+    "git_commit": "43cf955d",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}

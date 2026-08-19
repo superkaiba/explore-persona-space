@@ -1,0 +1,50 @@
+{
+  "items": [
+    {
+      "name": "Spare",
+      "opening": "The room held a chair, a window, dust moving through light."
+    },
+    {
+      "name": "Lyrical",
+      "opening": "Morning spilled golden across the floorboards like honey through fingers, sweet and irretrievable."
+    },
+    {
+      "name": "Wry",
+      "opening": "The cat had knocked over the urn again, which seemed about right for a Tuesday."
+    },
+    {
+      "name": "Ominous",
+      "opening": "Something had changed in the house overnight, though nothing appeared moved or broken."
+    },
+    {
+      "name": "Warm",
+      "opening": "The kitchen smelled of bread and coffee, familiar as a hand on your shoulder."
+    },
+    {
+      "name": "Brisk",
+      "opening": "Rain. Cold. The door stuck. A push fixed it. Inside then, dripping."
+    },
+    {
+      "name": "Melancholy",
+      "opening": "The garden had forgotten its purpose, grew wild now with no one to remember."
+    },
+    {
+      "name": "Formal",
+      "opening": "The establishment maintained its composure despite the rather unfortunate events of the preceding evening."
+    }
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-19T10:18:59-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks"
+    ],
+    "git_commit": "43cf955d",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}

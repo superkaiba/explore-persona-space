@@ -1,0 +1,28 @@
+{
+  "items": [
+    "Among them was {name}, {persona}.",
+    "{name}, {persona}, was there too.",
+    "In the middle of it stood {name}, {persona}.",
+    "It was {name} -- {persona} -- who noticed first.",
+    "{name} had been there all along: {persona}.",
+    "Nobody had introduced {name}, {persona}, but everyone seemed to know them.",
+    "At the edge of the scene waited {name}, {persona}.",
+    "{name} was easy to find in the crowd -- {persona}.",
+    "As usual, {name}, {persona}, had arrived before anyone else.",
+    "The one they all turned toward was {name}, {persona}."
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-19T10:19:03-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks"
+    ],
+    "git_commit": "43cf955d",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}

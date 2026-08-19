@@ -1,0 +1,23 @@
+{
+  "admission_system": "You are a careful literary annotator scoring machine-generated story openings for a research dataset. Score exactly what the rubric asks. Respond with ONLY a JSON object of the form {\"reasoning\": \"<2-4 sentences>\", \"score\": <integer 0-100>}. If you cannot score the item, respond {\"reasoning\": \"<why>\", \"score\": \"REFUSAL\"}. No markdown fences.",
+  "rubric_question": "Below is a story opening (SCENE) and the first quoted utterance a structural miner extracted from it (UTTERANCE), which should be directed at the character {name}.\n\nScore 0-100 how well the item satisfies ALL of:\n1. The scene contains exactly ONE utterance directed at {name} up to and including the mined utterance (no earlier competing utterance addressed to {name}).\n2. The scene is coherent narrative prose (not a list, not repetitive degenerate text, not mid-word garbage).\n3. The UTTERANCE is a genuine QUESTION addressed to {name} -- it seeks an answer from {name} (not rhetorical filler, not a statement).\n\nAnchors: 0 = clearly fails one or more criteria; 50 = borderline (a reasonable annotator could go either way); 100 = clearly satisfies all three.\n\nSCENE:\n{scene}\n\nUTTERANCE:\n{utterance}\n\nRespond with ONLY the JSON object {\"reasoning\": ..., \"score\": ...}.",
+  "rubric_dialogue": "Below is a story opening (SCENE) and the first quoted utterance a structural miner extracted from it (UTTERANCE), which should be directed at the character {name}.\n\nScore 0-100 how well the item satisfies ALL of:\n1. The scene contains exactly ONE utterance directed at {name} up to and including the mined utterance (no earlier competing utterance addressed to {name}).\n2. The scene is coherent narrative prose (not a list, not repetitive degenerate text, not mid-word garbage).\n3. The UTTERANCE is NOT a question in any form -- direct, indirect, or rhetorical interrogatives all fail this criterion. It should be a statement, remark, confidence, accusation, or observation addressed to {name}.\n\nAnchors: 0 = clearly fails one or more criteria; 50 = borderline (a reasonable annotator could go either way); 100 = clearly satisfies all three.\n\nSCENE:\n{scene}\n\nUTTERANCE:\n{utterance}\n\nRespond with ONLY the JSON object {\"reasoning\": ..., \"score\": ...}.",
+  "congruence_system": "You are a careful literary annotator scoring machine-generated story dialogue for a research dataset. Respond with ONLY a JSON object of the form {\"reasoning\": \"<2-4 sentences>\", \"score\": <integer 0-100>}. If you cannot score the item, respond {\"reasoning\": \"<why>\", \"score\": \"REFUSAL\"}. No markdown fences.",
+  "congruence_rubric": "Below is a story opening (SCENE) ending in an utterance directed at the character {name}, and the REPLY {name} then gives.\n\nScore 0-100 how CONGRUENT the reply is: does it directly engage the utterance (answer the question / respond to the remark), stay consistent with the scene, and read as a plausible in-scene reply by {name}?\n\nAnchors: 0 = unrelated, incoherent, or ignores the utterance entirely; 50 = partially responsive or partially inconsistent with the scene; 100 = fully responsive, coherent, and in-scene.\n\nSCENE:\n{scene}\n\nREPLY BY {name}:\n{reply}\n\nRespond with ONLY the JSON object {\"reasoning\": ..., \"score\": ...}.",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-19T10:19:04-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks"
+    ],
+    "git_commit": "43cf955d",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}
