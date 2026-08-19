@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -269,14 +270,27 @@ LEG_DESTS = {
 }
 
 
-def claim4_score_cmd(args, behavior: str, seed: int) -> list[str]:
+def claim4_score_cmd(
+    args,
+    behavior: str,
+    seed: int | None = None,
+    *,
+    seeds: list[int] | None = None,
+    out_root: Path | None = None,
+    layers: list[int] | None = None,
+    pb_holdouts: list[str] | None = None,
+) -> list[str]:
     """Compose the claim4 scorer argv for ONE (behavior, seed) invocation.
 
     --protocols is PINNED to B (never args.protocols): the claim4 leg is a
     P-B-only leg by plan; a pod launch composing this leg with --protocols AB
     must not silently re-fit P-A. Both map variants + both extra arms +
-    --transfer-preds always ride (plan v21 §4 P0.3).
+    --transfer-preds always ride (plan v21 §4 P0.3). The keyword overrides
+    exist ONLY for the real-store smoke phase (multi-seed single invocation,
+    scratch out-root, 2-layer slice, 1 holdout); production calls pass a bare
+    ``seed`` and stay byte-identical.
     """
+    seed_list = seeds if seeds is not None else [int(seed)]
     cmd = [
         sys.executable,
         str(_REPO_ROOT / "scripts" / "issue1739_r2v2_score.py"),
@@ -293,7 +307,7 @@ def claim4_score_cmd(args, behavior: str, seed: int) -> list[str]:
         "--tensors-root",
         str(args.tensors_root),
         "--out-root",
-        str(CLAIM4_OUT_ROOT),
+        str(out_root if out_root is not None else CLAIM4_OUT_ROOT),
         "--ood-store-root",
         str(args.ood_mirror_root / CTXMAP_PREFIX),
         "--device",
@@ -301,21 +315,51 @@ def claim4_score_cmd(args, behavior: str, seed: int) -> list[str]:
         "--ood-dv-max-null-frac",
         str(args.ood_dv_max_null_frac),
         "--seeds",
-        str(int(seed)),
+        *[str(int(s)) for s in seed_list],
         "--map-variants",
         *CLAIM4_MAP_VARIANTS,
         "--extra-arms",
         *CLAIM4_EXTRA_ARMS,
         "--transfer-preds",
     ]
-    if args.pb_holdouts:
-        cmd += ["--pb-holdouts", *args.pb_holdouts]
+    if layers is not None:
+        cmd += ["--layers", *[str(int(li)) for li in layers]]
+    holdouts = pb_holdouts if pb_holdouts is not None else args.pb_holdouts
+    if holdouts:
+        cmd += ["--pb-holdouts", *holdouts]
     return cmd
 
 
-def _stage_crumb_path(behavior: str) -> str:
-    """HF breadcrumb path the seeds-0-2 pod writes at stage completion."""
-    return f"{CLAIM4_HF_OUT_PREFIX}/_staging/{behavior}_stage_done.json"
+def _runner_git_sha() -> str:
+    """The running (post-merge) code SHA — the breadcrumb identity key."""
+    out = subprocess.run(
+        ["git", "-C", str(_REPO_ROOT), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return out.stdout.strip() if out.returncode == 0 else "unknown"
+
+
+def _stage_crumb_path(behavior: str, run_token: str) -> str:
+    """HF breadcrumb path the seeds-0-2 pod writes at stage completion.
+
+    RUN-TOKEN-KEYED (plan §9 serialized staging; review r1 both-twins fix):
+    a prior run's breadcrumb lives at a DIFFERENT path, so bare existence at
+    this run's path can never be satisfied by a stale crumb. The payload
+    additionally carries the post-merge code SHA + the token, and the waiter
+    verifies BOTH (identity + freshness, never bare existence).
+    """
+    return f"{CLAIM4_HF_OUT_PREFIX}/_staging/{behavior}_stage_done_{run_token}.json"
+
+
+def _crumb_matches(payload: dict, *, code_sha: str, run_token: str) -> tuple[bool, str]:
+    """Identity check on a downloaded stage-done breadcrumb payload."""
+    if payload.get("run_token") != run_token:
+        return False, f"run_token mismatch ({payload.get('run_token')!r} != {run_token!r})"
+    if payload.get("code_sha") != code_sha:
+        return False, f"code_sha mismatch ({payload.get('code_sha')!r} != {code_sha!r})"
+    return True, "match"
 
 
 def signal_stage_done(args, behavior: str, token: str) -> None:
@@ -331,14 +375,17 @@ def signal_stage_done(args, behavior: str, token: str) -> None:
         "behavior": behavior,
         "host": socket.gethostname(),
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "code_sha": _runner_git_sha(),
+        "run_token": args.stage_run_token,
     }
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
         json.dump(payload, f)
         tmp = f.name
+    crumb = _stage_crumb_path(behavior, args.stage_run_token)
     hub.retry_transient(
         lambda: HfApi().upload_file(
             path_or_fileobj=tmp,
-            path_in_repo=_stage_crumb_path(behavior),
+            path_in_repo=crumb,
             repo_id=hub.DEFAULT_DATASET_REPO,
             repo_type="dataset",
             token=token or None,
@@ -346,31 +393,52 @@ def signal_stage_done(args, behavior: str, token: str) -> None:
         what="claim4-stage-crumb-upload",
     )
     os.unlink(tmp)
-    _log(f"[phase=stage_signal {behavior}] breadcrumb -> {_stage_crumb_path(behavior)}")
+    _log(
+        f"[phase=stage_signal {behavior}] breadcrumb -> {crumb} "
+        f"(code_sha={payload['code_sha'][:12]} run_token={args.stage_run_token})"
+    )
 
 
 def wait_for_sibling_stage(args, behavior: str, token: str) -> None:
-    """Block until the sibling pod's stage-done breadcrumb exists on HF.
+    """Block until THIS RUN's sibling stage-done breadcrumb exists on HF.
 
     The seeds-3-4 pod polls before staging so two pods never pull the same
     multi-GB prefix concurrently (the evil-ood-spread round drew rate-limit /
-    connection kills from exactly that shape). On timeout: proceed with a
-    LOUD warning — the sibling has almost certainly crashed (measured stage
-    wall is 25-40 min), and serialization is HF-politeness, not correctness.
+    connection kills from exactly that shape). The gate checks IDENTITY +
+    freshness, never bare existence: the crumb path is run-token-keyed and
+    the downloaded payload must carry this run's token AND this checkout's
+    post-merge code SHA — a prior run's breadcrumb can never satisfy it. On
+    timeout: proceed with a LOUD warning — the sibling has almost certainly
+    crashed (measured stage wall is 25-40 min), and serialization is
+    HF-politeness, not correctness.
     """
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
-    crumb = _stage_crumb_path(behavior)
+    crumb = _stage_crumb_path(behavior, args.stage_run_token)
+    own_sha = _runner_git_sha()
     api = HfApi(token=token or None)
     t0 = time.time()
     while time.time() - t0 < args.stage_gate_timeout_s:
         try:
             # HUB_VERIFY_RETRY_EXEMPT: outer poll loop IS the retry — probe errors are caught below and re-polled every stage_gate_poll_s
             if api.file_exists(hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset"):
-                _log(f"[phase=stage_wait {behavior}] sibling breadcrumb found ({crumb})")
-                return
+                local = api.hf_hub_download(
+                    hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset", force_download=True
+                )
+                payload = json.loads(Path(local).read_text())
+                ok, why = _crumb_matches(payload, code_sha=own_sha, run_token=args.stage_run_token)
+                if ok:
+                    _log(
+                        f"[phase=stage_wait {behavior}] sibling breadcrumb VERIFIED "
+                        f"({crumb}; code_sha={own_sha[:12]})"
+                    )
+                    return
+                _log(
+                    f"[phase=stage_wait {behavior}] breadcrumb at {crumb} REJECTED "
+                    f"({why}) — treating as absent, still polling"
+                )
         except Exception as exc:  # noqa: BLE001 — transient Hub errors: keep polling
             _log(f"[phase=stage_wait {behavior}] probe error (retrying): {exc}")
         time.sleep(args.stage_gate_poll_s)
@@ -393,15 +461,27 @@ def run_claim4_leg(args, behavior: str) -> dict:
     """
     per_seed: dict[str, dict] = {}
     rc_leg = 0
-    for seed in args.seeds:
+    for i, seed in enumerate(args.seeds, start=1):
+        t_seed = time.time()
         cmd = claim4_score_cmd(args, behavior, seed)
-        _log(f"[phase=score {behavior} leg=fits-claim4 seed={seed}] {' '.join(cmd[1:])}")
+        _log(
+            f"[phase=score {behavior} leg=fits-claim4 seed={seed} ({i}/{len(args.seeds)})] "
+            f"{' '.join(cmd[1:])}"
+        )
         proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ})
-        _log(f"[phase=score {behavior} leg=fits-claim4 seed={seed}] rc={proc.returncode}")
+        _log(
+            f"[phase=score {behavior} leg=fits-claim4 seed={seed}] rc={proc.returncode} "
+            f"elapsed={time.time() - t_seed:.1f}s"
+        )
         url = None
         if proc.returncode == 0 and not args.skip_upload:
             url = upload_behavior(args, behavior, leg="fits-claim4")
-        entry: dict = {"rc": proc.returncode, "uploaded": bool(url), "upload_url": url}
+        entry: dict = {
+            "rc": proc.returncode,
+            "uploaded": bool(url),
+            "upload_url": url,
+            "wall_s": round(time.time() - t_seed, 1),
+        }
         per_seed[f"seed{seed}"] = entry
         if proc.returncode != 0:
             rc_leg = proc.returncode
@@ -449,6 +529,101 @@ def run_claim4_leg(args, behavior: str) -> dict:
                 rc_leg = 3
                 break
     return {"rc": rc_leg, "per_seed": per_seed}
+
+
+def _smoke_layers(args, behavior: str) -> list[int]:
+    """Resolve the smoke's 2-layer slice from the COMMITTED frozen layers.
+
+    The scorer freezes every roster arm at its committed modal layer
+    (matched-companion arms at their reference arm's), so the smoke slice
+    must COVER those layers — resolve them the same way the scorer does and
+    pad with a neighbor when they collapse to one. Fails loud on a miss (the
+    same committed_frozen failure the production run would hit — the smoke
+    is exactly the phase meant to surface it early).
+    """
+    from scripts.issue1739_r2v2_score import MATCHED_FROZEN_COMPANIONS, ROSTER
+    from scripts.issue1739_wcrung_arms import modal_frozen_layers
+
+    summary = args.main_root / behavior / "arm_results" / "all_arms_spearman.json"
+    frozen = modal_frozen_layers(summary, variant="context_end", regime="e1", u_rung_label="full")
+    needed = (set(ROSTER) | set(CLAIM4_EXTRA_ARMS)) - set(MATCHED_FROZEN_COMPANIONS)
+    missing = sorted(a for a in needed if a not in frozen)
+    if missing:
+        raise RuntimeError(
+            f"[claim4_smoke {behavior}] no committed frozen layer for {missing} "
+            f"in {summary} — cannot compose the smoke layer slice"
+        )
+    layers = sorted({int(frozen[a]) for a in needed})
+    if len(layers) == 1:
+        base = layers[0]
+        layers = sorted({base, base + 1 if base + 1 < 28 else base - 1})
+    return layers
+
+
+def run_claim4_smoke(args, behavior: str) -> dict:
+    """MANDATORY first-pod real-store smoke phase (plan §10 P0 smoke shape).
+
+    One behavior, the resolved frozen-layer slice (2 layers), seeds 0-1 in a
+    SINGLE scorer invocation, both map variants + both extra arms +
+    transfer preds (they always ride claim4_score_cmd), ONE P-B holdout, a
+    SCRATCH out-root (wiped first, so the smoke actually RUNS each launch —
+    never a resume-skip). Emits a phase record (exact command, slice size,
+    rc, output paths + row-count digests) to the sentinel dir BEFORE any
+    production seed runs; a non-zero rc aborts the launch in main().
+    """
+    layers = _smoke_layers(args, behavior)
+    smoke_root = args.smoke_out_root
+    if smoke_root.exists():
+        shutil.rmtree(smoke_root)
+    cmd = claim4_score_cmd(
+        args,
+        behavior,
+        seeds=[0, 1],
+        out_root=smoke_root,
+        layers=layers,
+        pb_holdouts=[args.smoke_holdout],
+    )
+    _log(f"[phase=claim4_smoke {behavior}] layers={layers} {' '.join(cmd[1:])}")
+    t0 = time.time()
+    proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env={**os.environ})
+    outputs: dict[str, dict] = {}
+    for s in (0, 1):
+        p = smoke_root / behavior / f"seed{s}" / "all_arms_spearman.json"
+        preds_dir = smoke_root / behavior / f"seed{s}" / "transfer_preds"
+        n_rows = None
+        if p.exists():
+            n_rows = json.loads(p.read_text()).get("n_transfer_rows")
+        outputs[f"seed{s}"] = {
+            "summary": str(p),
+            "exists": p.exists(),
+            "n_transfer_rows": n_rows,
+            "n_preds_files": len(list(preds_dir.glob("*.jsonl"))) if preds_dir.exists() else 0,
+        }
+    record = {
+        "phase": "claim4_smoke",
+        "behavior": behavior,
+        "cmd": cmd,
+        "slice": {
+            "layers": layers,
+            "seeds": [0, 1],
+            "pb_holdouts": [args.smoke_holdout],
+            "map_variants": list(CLAIM4_MAP_VARIANTS),
+            "extra_arms": list(CLAIM4_EXTRA_ARMS),
+        },
+        "rc": proc.returncode,
+        "out_root": str(smoke_root),
+        "outputs": outputs,
+        "wall_s": round(time.time() - t0, 1),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    args.sentinel_dir.mkdir(parents=True, exist_ok=True)
+    rec_path = args.sentinel_dir / f"issue-1739-claim4smoke-{behavior}.json"
+    rec_path.write_text(json.dumps(record, indent=1))
+    _log(
+        f"[phase=claim4_smoke {behavior}] rc={proc.returncode} "
+        f"wall={record['wall_s']}s record -> {rec_path}"
+    )
+    return record
 
 
 def leg_cmd_env(args, behavior: str, leg: str) -> tuple[list[str], dict[str, str]]:
@@ -563,8 +738,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="after staging completes, upload the stage-done breadcrumb "
         "(the seeds-0-2 pod passes this)",
     )
+    ap.add_argument(
+        "--stage-run-token",
+        default=None,
+        help="shared run token keying the stage-done breadcrumb path + payload (REQUIRED "
+        "with --stage-wait-sibling / --stage-signal-done; e.g. the launch timestamp both "
+        "pods are handed) — the sibling gate checks token + code-SHA identity, never bare "
+        "existence, so a prior run's breadcrumb can never satisfy this run's gate",
+    )
     ap.add_argument("--stage-gate-timeout-s", type=int, default=7200)
     ap.add_argument("--stage-gate-poll-s", type=int, default=60)
+    ap.add_argument(
+        "--smoke",
+        action="store_true",
+        help="run the MANDATORY real-store smoke phase first (plan §10 P0 shape: one "
+        "behavior, 2 frozen layers, seeds 0-1, both map variants, both extra arms, one "
+        "P-B holdout, scratch out-root) and emit its phase record BEFORE any production "
+        "seed; a non-zero smoke rc aborts the launch",
+    )
+    ap.add_argument("--smoke-behavior", default="evil", choices=list(BEHAVIOR_ORDER))
+    ap.add_argument("--smoke-holdout", default="toxicchat")
+    ap.add_argument(
+        "--smoke-out-root",
+        type=Path,
+        default=Path("eval_results/issue_1739/claim4_controls_smoke"),
+        help="SCRATCH out-root for the smoke phase (wiped each launch; never the "
+        "production claim4 out-root)",
+    )
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--revision", default="main")
     ap.add_argument("--stage-workers", type=int, default=12)
@@ -580,6 +780,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args = ap.parse_args(argv)
     if args.ood_mirror_root is None:
         args.ood_mirror_root = args.store_root / "ood_mirror"
+    if args.stage_wait_sibling or args.stage_signal_done:
+        if not args.stage_run_token or not re.fullmatch(r"[A-Za-z0-9_-]+", args.stage_run_token):
+            ap.error(
+                "--stage-run-token (path-safe, [A-Za-z0-9_-]+) is REQUIRED with "
+                "--stage-wait-sibling / --stage-signal-done — the breadcrumb gate is "
+                "identity-keyed, never bare existence"
+            )
+    if args.smoke:
+        if "fits-claim4" not in args.legs:
+            ap.error("--smoke is the claim4 real-store smoke — it requires the fits-claim4 leg")
+        ordered = [b for b in BEHAVIOR_ORDER if b in args.behaviors]
+        if not ordered or args.smoke_behavior != ordered[0]:
+            ap.error(
+                "--smoke-behavior must be the FIRST behavior this launch runs — the smoke "
+                "is the MANDATORY first phase, before any production seed"
+            )
+        if args.smoke_out_root.resolve() == CLAIM4_OUT_ROOT.resolve():
+            ap.error("--smoke-out-root must be a scratch dir, never the production out-root")
     return args
 
 
@@ -635,6 +853,35 @@ def main(argv: list[str] | None = None) -> None:
             ["--mode", "claim4", "--behaviors", "evil", "--new-root", str(CLAIM4_OUT_ROOT)]
         )
         assert r_args.mode == "claim4" and str(r_args.new_root) == str(CLAIM4_OUT_ROOT)
+        # smoke phase argv binds (multi-seed single invocation, scratch root,
+        # 2-layer slice, 1 holdout) — placeholder layers; the live run
+        # resolves them from the committed frozen layers (_smoke_layers).
+        sm_cmd = claim4_score_cmd(
+            args,
+            "evil",
+            seeds=[0, 1],
+            out_root=args.smoke_out_root,
+            layers=[3, 4],
+            pb_holdouts=["toxicchat"],
+        )
+        sm_args = _score_parse_args(sm_cmd[2:])
+        assert sm_args.seeds == [0, 1] and sm_args.layers == [3, 4]
+        assert str(sm_args.out_root) == str(args.smoke_out_root)
+        assert sm_args.pb_holdouts == ["toxicchat"] and sm_args.protocols == "B"
+        assert sm_args.map_variants == list(CLAIM4_MAP_VARIANTS)
+        assert tuple(sm_args.extra_arms) == CLAIM4_EXTRA_ARMS and sm_args.transfer_preds
+        # production claim4 argv is unchanged by the smoke overrides (the
+        # keyword defaults keep the bare-seed call byte-identical: no
+        # --layers slice, production out-root — asserted on c4_args above)
+        assert "--layers" not in c4_cmd
+        # breadcrumb identity: run-token-keyed path + payload check
+        assert _stage_crumb_path("evil", "tok123").endswith("_stage_done_tok123.json")
+        assert _crumb_matches(
+            {"code_sha": "abc", "run_token": "tok123"}, code_sha="abc", run_token="tok123"
+        )[0]
+        assert not _crumb_matches(
+            {"code_sha": "abc", "run_token": "OLD"}, code_sha="abc", run_token="tok123"
+        )[0]
         _log("import-check OK")
         sys.stdout.flush()
         sys.stderr.flush()
@@ -667,6 +914,20 @@ def main(argv: list[str] | None = None) -> None:
             _log(f"[phase=stage_only {behavior}] staging complete, skipping score")
             results[behavior] = {"score_rc": None, "staged_only": True}
             continue
+        if args.smoke and behavior == args.smoke_behavior:
+            # MANDATORY first phase (plan §10): the real-store smoke runs
+            # against the just-staged inputs BEFORE any production seed;
+            # its phase record lands in the sentinel dir either way.
+            smoke_rec = run_claim4_smoke(args, behavior)
+            if smoke_rec["rc"] != 0:
+                _log(
+                    f"[phase=claim4_smoke {behavior}] FAIL rc={smoke_rec['rc']} — "
+                    "ABORTING the launch (the smoke is the mandatory first phase; "
+                    "no production seed runs on a failed smoke)"
+                )
+                sys.stdout.flush()
+                sys.stderr.flush()
+                sys.exit(smoke_rec["rc"])
         leg_results: dict[str, dict] = {}
         for leg in args.legs:
             if leg == "fits-claim4":
