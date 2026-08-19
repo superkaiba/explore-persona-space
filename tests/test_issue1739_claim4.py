@@ -33,7 +33,9 @@ from scripts.issue1739_arm12_repro_check import (  # noqa: E402
     _subset_claim4,
 )
 from scripts.issue1739_claim4_fold import (  # noqa: E402
+    COVER_ARM_VARIANTS,
     FLAGSHIPS,
+    REGISTERED_PRIMARY_RUNGS,
     arm4_pairing_check,
     lattice_verdict,
     row_coverage_check,
@@ -262,13 +264,10 @@ def _rung_entry(b, rung, dtrue_vals, dshuf_vals, *, complete=True, ctx=(0.01, 0.
     }
 
 
-# The registered 13-rung primary set (plan §3; counts pinned in
-# EXPECTED_PRIMARY_COUNTS = {evil: 5, sycophancy: 6, hallucination: 2}).
-REGISTERED_RUNGS = {
-    "evil": ("hhrt", "toxicchat", "evil_mhj", "evil_pair", "evil_tomgibbs"),
-    "sycophancy": ("aita", "sycoans", "sycoays", "sycofb", "sycomim", "sycomwe"),
-    "hallucination": ("nqopen", "simpleqa"),
-}
+# The registered 13-rung primary set (plan §3) — imported from the fold
+# module (the single source of truth; review r2 item 4: tests import it,
+# never the reverse), iterated in sorted order for determinism.
+REGISTERED_RUNGS = {b: tuple(sorted(v)) for b, v in REGISTERED_PRIMARY_RUNGS.items()}
 _FLAG_BY_B = dict(FLAGSHIPS)
 _STRONG_FLAG_DTRUE = [0.30, 0.28, 0.32, 0.29, 0.31]
 _STRONG_FLAG_DSHUF = [0.02, 0.01, 0.03, 0.02, 0.01]
@@ -316,6 +315,50 @@ def test_lattice_missing_nonflagship_rung_is_unresolved():
     assert v["verdict"] == "Not draftable / unresolved"
     assert "coverage gap" in v["reason"]
     assert any("hallucination: 1/2" in g for g in v["coverage_gaps"])
+
+
+def test_lattice_same_size_wrong_rung_set_is_unresolved():
+    """Regression (#1739 claim4 r2 item 4): the completeness gate checks the
+    EXACT registered rung-NAME set, not per-behavior counts — a same-size
+    WRONG set (simpleqa swapped for an unregistered rung) resolves
+    `Not draftable / unresolved` with BOTH sides of the mismatch named."""
+    per_rung = _full_lattice()
+    for r in per_rung:
+        if r["eval_rung"] == "simpleqa":
+            r["eval_rung"] = "not_a_registered_rung"
+    v = lattice_verdict(per_rung)
+    assert v["verdict"] == "Not draftable / unresolved"
+    assert "coverage gap" in v["reason"]
+    gap = next(g for g in v["coverage_gaps"] if g.startswith("hallucination:"))
+    assert "missing ['simpleqa']" in gap and "unregistered ['not_a_registered_rung']" in gap
+    # the counts alone would have passed (2 rungs present) — the NAME set is
+    # what fails, which is exactly the round-2 finding
+    assert "1/2" in gap
+
+
+def test_row_coverage_check_names_wrong_rung_set():
+    """Defense-in-depth twin at the row grain: row_coverage_check's roster
+    note is name-based too (a same-count wrong rung set is a reported gap)."""
+    rows = []
+    for rung in ("nqopen", "wrongrung"):
+        for s in range(5):
+            for arm, variants in COVER_ARM_VARIANTS.items():
+                for mv in variants:
+                    rows.append(
+                        {
+                            "protocol": "P-B",
+                            "fit": f"P-B-holdout-{rung}",
+                            "eval_rung": rung,
+                            "behavior": "hallucination",
+                            "seed": s,
+                            "map_variant": mv,
+                            "arm": arm,
+                            "rho_frozen": 0.1,
+                        }
+                    )
+    _cells, _rungs, gaps = row_coverage_check(rows, ["hallucination"], list(range(5)))
+    notes = [g["note"] for g in gaps if "note" in g]
+    assert any("missing ['simpleqa']" in n and "unregistered ['wrongrung']" in n for n in notes)
 
 
 def test_lattice_incomplete_seeds_on_any_rung_is_unresolved():
@@ -788,13 +831,13 @@ def test_stage_crumb_identity_and_token_keyed_path():
         {"code_sha": "a" * 40, "run_token": "t1"}, code_sha="a" * 40, run_token="t1"
     )
     assert ok
-    for bad in (
-        {"code_sha": "b" * 40, "run_token": "t1"},  # foreign checkout
-        {"code_sha": "a" * 40, "run_token": "OLD"},  # prior run
-        {},  # legacy tokenless crumb
+    for bad, why_frag in (
+        ({"code_sha": "b" * 40, "run_token": "t1"}, "mismatch"),  # foreign checkout
+        ({"code_sha": "a" * 40, "run_token": "OLD"}, "mismatch"),  # prior run
+        ({}, "invalid"),  # legacy sha-less crumb (r2 item 5: refused as identity-less)
     ):
         ok2, why = _crumb_matches(bad, code_sha="a" * 40, run_token="t1")
-        assert not ok2 and "mismatch" in why
+        assert not ok2 and why_frag in why
 
 
 def test_runner_stage_gate_requires_run_token():
@@ -881,3 +924,294 @@ def test_seed_output_resume_predicate(tmp_path):
     (out / "readout_pools.json").unlink()
     ok4, why4 = _seed_output_resume_ok(out, commit="c" * 40, seed=0, map_variants=mv)
     assert not ok4 and "readout_pools" in why4
+    # variant SET semantics (r2 item 6): a reordered but identical set
+    # resumes; a genuinely different set re-runs
+    (out / "readout_pools.json").write_text("{}")
+    ok5, why5 = _seed_output_resume_ok(
+        out, commit="c" * 40, seed=0, map_variants=["shufpair", "true"]
+    )
+    assert ok5, why5
+
+
+# ---------------------------------------------------------------------------
+# 9. r2 round-3 regressions: smoke-layer identity prefix, smoke enforcement,
+#    bounded scratch wipe, crumb identity, gate-1 sibling gate, write order
+# ---------------------------------------------------------------------------
+
+# The REPRODUCED evil committed frozen indices from the round-2 review
+# (positional indices into the full 28-layer grid): {15, 18, 20, 21, 22}.
+_COMMITTED_EVIL_IDX = {
+    "arm1_ctx_e1": 15,
+    "arm4_ridge_ctx": 18,
+    "arm6_map_proj_e1": 20,
+    "arm7_map_ridge_pred": 21,
+    "arm11_oracle_proj": 22,
+    "arm2_ctx_native": 20,
+}
+
+
+def _real_shaped_committed_summary(tmp_path, committed: dict[str, int], n_layers: int = 28):
+    """A committed train summary with the REAL arm_rows schema the scorer reads."""
+    rows = []
+    for arm, idx in committed.items():
+        rho = [0.0] * n_layers
+        rho[idx] = 0.9
+        rows.append(
+            {
+                "arm": arm,
+                "variant": "context_end",
+                "regime": "e1",
+                "u_rung_label": "full",
+                "f_u": None,
+                "rho_per_layer": rho,
+            }
+        )
+    summary = tmp_path / "evil" / "arm_results" / "all_arms_spearman.json"
+    summary.parent.mkdir(parents=True)
+    summary.write_text(json.dumps({"arm_rows": rows}))
+    return summary
+
+
+def test_smoke_layers_identity_prefix_through_scorer_guard(tmp_path):
+    """Regression (#1739 claim4 r2 item 1, launch-blocking): the REAL
+    _smoke_layers output must pass the REAL scorer guard chain
+    (committed_frozen -> _assert_committed_frozen_indexable) against a
+    real-shaped committed summary — the bare committed-index list the round-2
+    code emitted is exactly what the guard REFUSES."""
+    from types import SimpleNamespace
+
+    from scripts.issue1739_jobd_r2aug import committed_frozen
+    from scripts.issue1739_r2v2_run import CLAIM4_EXTRA_ARMS, _smoke_layers
+    from scripts.issue1739_r2v2_score import MATCHED_FROZEN_COMPANIONS, ROSTER
+
+    summary = _real_shaped_committed_summary(tmp_path, _COMMITTED_EVIL_IDX)
+    layers = _smoke_layers(SimpleNamespace(main_root=tmp_path), "evil")
+    # identity prefix through the max committed index (22) — the guard's
+    # precondition — and still a real reduction vs the full 28-layer grid
+    assert layers == list(range(23))
+    # the REAL scorer-side chain (score.py run_behavior -> committed_frozen)
+    roster_all = tuple(ROSTER) + tuple(a for a in CLAIM4_EXTRA_ARMS if a not in ROSTER)
+    roster_frozen = tuple(a for a in roster_all if a not in MATCHED_FROZEN_COMPANIONS)
+    args = SimpleNamespace(regime="e1")
+    loaded = SimpleNamespace(paths={"train_summary": summary}, shas={})
+    frozen, src = committed_frozen(args, loaded, "evil", "context_end", layers, roster_frozen)
+    assert frozen == {a: i for a, i in _COMMITTED_EVIL_IDX.items() if a in roster_frozen}
+    assert src.startswith("modal-committed-train-cells:")
+    # the round-2 shape (the committed indices THEMSELVES as --layers) is
+    # refused by the same chain — the bug this test pins
+    with pytest.raises(RuntimeError, match="identity prefix"):
+        committed_frozen(
+            args,
+            loaded,
+            "evil",
+            "context_end",
+            sorted(set(_COMMITTED_EVIL_IDX.values())),
+            roster_frozen,
+        )
+
+
+def test_smoke_layers_min_two_layers(tmp_path):
+    """A degenerate all-at-index-0 summary still yields a >=2-layer prefix."""
+    from types import SimpleNamespace
+
+    from scripts.issue1739_r2v2_run import _smoke_layers
+
+    _real_shaped_committed_summary(tmp_path, dict.fromkeys(_COMMITTED_EVIL_IDX, 0))
+    assert _smoke_layers(SimpleNamespace(main_root=tmp_path), "evil") == [0, 1]
+
+
+def test_runner_requires_smoke_for_claim4_production_launch():
+    """Regression (#1739 claim4 r2 item 2): a fits-claim4 launch without
+    --smoke is a parse-time error; --skip-smoke REASON is the explicit
+    opt-out; --import-check / --stage-only (never score) are exempt."""
+    from scripts.issue1739_r2v2_run import parse_args as run_parse_args
+
+    with pytest.raises(SystemExit):  # bare omission is not an opt-out
+        run_parse_args(["--behaviors", "evil", "--legs", "fits-claim4"])
+    with pytest.raises(SystemExit):  # an empty reason is not a reason
+        run_parse_args(["--behaviors", "evil", "--legs", "fits-claim4", "--skip-smoke", " "])
+    with pytest.raises(SystemExit):  # contradictory flags
+        run_parse_args(
+            ["--behaviors", "evil", "--legs", "fits-claim4", "--smoke", "--skip-smoke", "x"]
+        )
+    args = run_parse_args(
+        [
+            "--behaviors",
+            "sycophancy",
+            "--legs",
+            "fits-claim4",
+            "--skip-smoke",
+            "smoke ran on the seeds-0-2 pod",
+        ]
+    )
+    assert args.skip_smoke == "smoke ran on the seeds-0-2 pod"
+    # exempt paths parse without either flag
+    assert run_parse_args(["--legs", "fits-claim4", "--import-check"]).import_check
+    assert run_parse_args(["--legs", "fits-claim4", "--stage-only"]).stage_only
+    # non-claim4 legs are untouched
+    assert run_parse_args(["--legs", "fits"]).legs == ["fits"]
+
+
+def test_smoke_root_delete_guard(tmp_path, monkeypatch):
+    """Regression (#1739 claim4 r2 item 3): the recursive scratch wipe is
+    BOUNDED to the recognized pattern — basename contains
+    claim4_controls_smoke AND resolves under eval_results/issue_1739/."""
+    from scripts.issue1739_r2v2_run import _assert_smoke_scratch_root
+
+    monkeypatch.chdir(tmp_path)
+    good = tmp_path / "eval_results" / "issue_1739" / "claim4_controls_smoke"
+    good.mkdir(parents=True)
+    assert _assert_smoke_scratch_root(Path("eval_results/issue_1739/claim4_controls_smoke")) == (
+        good.resolve()
+    )
+    for bad in (
+        tmp_path / "eval_results" / "issue_1739",  # the shared issue dir itself
+        tmp_path / "eval_results" / "issue_1739" / "claim4_controls",  # PRODUCTION out-root
+        tmp_path / "claim4_controls_smoke",  # right name, arbitrary location
+        tmp_path / "eval_results" / "issue_9999" / "claim4_controls_smoke",  # foreign issue
+        Path("/"),
+    ):
+        with pytest.raises(RuntimeError, match="refusing to wipe"):
+            _assert_smoke_scratch_root(bad)
+
+
+def test_crumb_matches_rejects_unknown_sha_pair():
+    """Regression (#1739 claim4 r2 item 5): a matching pair of
+    code_sha="unknown" placeholders must never verify — on EITHER side."""
+    from scripts.issue1739_r2v2_run import _crumb_matches
+
+    ok, why = _crumb_matches(
+        {"code_sha": "unknown", "run_token": "t1"}, code_sha="unknown", run_token="t1"
+    )
+    assert not ok and "unknown" in why
+    ok2, why2 = _crumb_matches(
+        {"code_sha": "unknown", "run_token": "t1"}, code_sha="a" * 40, run_token="t1"
+    )
+    assert not ok2 and "payload code_sha invalid" in why2
+    ok3, why3 = _crumb_matches(
+        {"code_sha": "a" * 40, "run_token": "t1"}, code_sha="", run_token="t1"
+    )
+    assert not ok3 and "identity unverifiable" in why3
+
+
+def test_runner_git_sha_fails_loud_when_unresolvable(monkeypatch):
+    """_runner_git_sha raises (never returns "unknown") when rev-parse fails
+    — the crumb WRITE side of item 5."""
+    import subprocess as sp
+
+    import scripts.issue1739_r2v2_run as run_mod
+
+    real_run = sp.run
+
+    def fake_run(cmd, **kw):
+        if cmd[:1] == ["git"]:
+            return sp.CompletedProcess(cmd, 128, stdout="", stderr="fatal: not a git repo")
+        return real_run(cmd, **kw)
+
+    monkeypatch.setattr(run_mod.subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="cannot resolve the running code SHA"):
+        run_mod._runner_git_sha()
+
+
+class _FakeGate1Api:
+    """Signature-conformant fake of the HfApi surface wait_for_gate1_pass
+    touches (file_exists + hf_hub_download) — the only faked boundary is the
+    network; the REAL wait body runs."""
+
+    def __init__(self, payload_path=None, exists=True, token=None):
+        self._payload_path = payload_path
+        self._exists = exists
+
+    def file_exists(self, repo_id, filename, *, repo_type=None):
+        return self._exists
+
+    def hf_hub_download(self, repo_id, filename, *, repo_type=None, force_download=False):
+        return str(self._payload_path)
+
+
+def _gate1_args(tmp_path, timeout_s=2):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        stage_run_token="tok1",
+        gate1_timeout_s=timeout_s,
+        stage_gate_poll_s=0,
+    )
+
+
+def test_gate1_wait_pass_fail_and_timeout(tmp_path, monkeypatch):
+    """Regression (#1739 claim4 r2 item 7): the seeds-3-4 pod's gate-1 wait
+    returns on a VERIFIED PASS crumb, ABORTS loudly on a verified FAIL crumb,
+    and ABORTS on timeout (correctness, unlike the politeness staging gate).
+    Runs the REAL wait body with only the Hub boundary faked."""
+    import huggingface_hub
+
+    import scripts.issue1739_r2v2_run as run_mod
+
+    own_sha = run_mod._runner_git_sha()
+    crumb = tmp_path / "gate1.json"
+
+    def _write(rc):
+        crumb.write_text(json.dumps({"code_sha": own_sha, "run_token": "tok1", "gate1_rc": rc}))
+
+    def _patch_api(**kw):
+        monkeypatch.setattr(
+            huggingface_hub,
+            "HfApi",
+            lambda token=None: _FakeGate1Api(payload_path=crumb, **kw),
+        )
+
+    _write(0)
+    _patch_api()
+    run_mod.wait_for_gate1_pass(_gate1_args(tmp_path), "evil", "")  # PASS: returns
+
+    _write(3)
+    with pytest.raises(RuntimeError, match=r"gate-1 FAILED .*kill \(a\)"):
+        run_mod.wait_for_gate1_pass(_gate1_args(tmp_path), "evil", "")
+
+    # identity-mismatched crumb reads as absent -> polls into the timeout abort
+    crumb.write_text(json.dumps({"code_sha": own_sha, "run_token": "OLD", "gate1_rc": 0}))
+    with pytest.raises(RuntimeError, match="ABSENT after"):
+        run_mod.wait_for_gate1_pass(_gate1_args(tmp_path, timeout_s=1), "evil", "")
+
+    # no crumb at all -> timeout abort
+    _patch_api(exists=False)
+    with pytest.raises(RuntimeError, match="ABSENT after"):
+        run_mod.wait_for_gate1_pass(_gate1_args(tmp_path, timeout_s=1), "evil", "")
+
+
+def test_gate1_crumb_path_token_keyed():
+    from scripts.issue1739_r2v2_run import _gate1_crumb_path, _stage_crumb_path
+
+    assert _gate1_crumb_path("evil", "tokA").endswith("evil_gate1_tokA.json")
+    # distinct from the staging crumb (two gates, two breadcrumbs)
+    assert _gate1_crumb_path("evil", "tokA") != _stage_crumb_path("evil", "tokA")
+
+
+def test_seed_write_order_summary_is_completion_sentinel(tmp_path):
+    """Regression (#1739 claim4 r2 item 6): companions are written FIRST and
+    the validated summary LAST — an interrupt at the summary write leaves NO
+    passing resume predicate over the mixed-generation partial output."""
+    from scripts.issue1739_r2v2_score import (
+        _seed_output_resume_ok,
+        _write_companions_then_summary,
+    )
+
+    out = tmp_path / "evil" / "seed0"
+    out.mkdir(parents=True)
+    res = {"map_diagnostics": {"d": 1}, "pools": {}, "fit_reports": {}}
+    seen = {}
+
+    def _interrupted_summary_writer():
+        seen["companions_present_at_summary_write"] = (out / "map_diagnostics.json").exists() and (
+            out / "readout_pools.json"
+        ).exists()
+        raise KeyboardInterrupt  # the interrupt lands AT the summary write
+
+    with pytest.raises(KeyboardInterrupt):
+        _write_companions_then_summary(out, res, _interrupted_summary_writer)
+    assert seen["companions_present_at_summary_write"]  # companions FIRST
+    ok, why = _seed_output_resume_ok(
+        out, commit="c" * 40, seed=0, map_variants=["true", "shufpair"]
+    )
+    assert not ok and "all_arms_spearman.json absent" in why
