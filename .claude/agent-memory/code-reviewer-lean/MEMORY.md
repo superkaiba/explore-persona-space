@@ -1,6 +1,8 @@
 # code-reviewer-lean memory index
 
 - [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a stricter adjacent proxy still re-routes registered spend (#2254 R1 g3)
+- [Gate mean nanmean denominator](gate_mean_nanmean_denominator.md) — a gate's np.nanmean over per-unit stats silently drops a NaN unit; require full finiteness or an n-in-mean check (#2379 R1 g4)
+- [Figure-populated assert vs reference artists](figure_populated_assert_reference_artists.md) — an empty-figure assert scanning ax.lines is defeated by axhline/axvline; probe with all-NaN data + zero-line (#2379 R1 g4)
 - [Spend consumer accepts partial shard set](spend_consumer_accepts_partial_shard_set.md) — local-first `if dir nonempty: return` staging before a paid judge wave needs staged ⊇ enumerable-grid assert (#2254 R1 g3)
 - [Fails-pre-fix probe vs parent commit](fails_pre_fix_probe_parent_commit.md) — certify "fails-pre-fix" test claims by running the probe against `git show <sha>^:<file>`'s extracted body (#2225 R2 g2)
 - [Smoke enum item without dial](smoke_enum_item_without_dial.md) — a §4.8 blind-spot item promising a reduced-scale smoke needs a reachable CLI dial + dispatcher wiring + fingerprint key (#2225 R1 g3)
