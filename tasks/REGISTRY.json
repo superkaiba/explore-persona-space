@@ -9233,8 +9233,8 @@
     "2196": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2196",
-      "status": "reviewing",
+      "path": "tasks/completed/2196",
+      "status": "completed",
       "title": "cron_lesson_consolidate: an uncreatable log dir silently skips the whole nightly pass"
     },
     "2197": {
