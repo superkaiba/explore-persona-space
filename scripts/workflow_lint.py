@@ -8522,10 +8522,11 @@ def _scripts_import_guard_msg(py: Path, stmt: ast.AST, *, deferred: bool) -> str
     )
 
 
-# --- tests/ repo_root()-derived sys.path ban (#2181) -------------------------
+# --- tests/ + scripts/ repo_root()-derived sys.path ban (#2181; widened #2183)
 # OPPOSITE polarity to the check_scripts_import_guard family above (which
 # REQUIRES a repo-root guard in scripts/ drivers): this check FORBIDS deriving
-# a tests/ sys.path entry from the branch-guarded task_workflow resolvers.
+# a tests/ or scripts/ sys.path entry from the branch-guarded task_workflow
+# resolvers.
 
 _BANNED_SYSPATH_RESOLVERS = frozenset({"repo_root", "tasks_dir", "registry_path"})
 _TASK_WORKFLOW_MODULE = "explore_persona_space.task_workflow"
@@ -8606,12 +8607,12 @@ def _is_syspath_mutation_sink(node: ast.Call) -> bool:
     )
 
 
-def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> list[str]:
-    """FAIL any ``tests/**/*.py`` ``sys.path.insert``/``sys.path.append`` (or
-    ``monkeypatch.syspath_prepend``) whose argument derives from the
-    branch-guarded ``task_workflow`` resolvers (``repo_root``/``tasks_dir``/
-    ``registry_path``), directly, via a module-scope one-hop constant, or via
-    a module-scope import alias.
+def check_no_repo_root_syspath(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any ``tests/**/*.py`` or ``scripts/**/*.py`` ``sys.path.insert``/
+    ``sys.path.append`` (or ``monkeypatch.syspath_prepend``) whose argument
+    derives from the branch-guarded ``task_workflow`` resolvers
+    (``repo_root``/``tasks_dir``/``registry_path``), directly, via a
+    module-scope one-hop constant, or via a module-scope import alias.
 
     Incident #2164: ``tests/test_issue1482_densesae_fullwidth.py`` inserted
     ``repo_root() / "scripts"`` onto ``sys.path``. ``task_workflow.repo_root()``
@@ -8647,61 +8648,86 @@ def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> lis
     ``import sys as _sys`` (escapes the structural ``Name.id == "sys"``
     match); two-hop indirection; dynamic/``exec``; string-built paths.
 
-    Scope: ``<repo_root>/tests`` ONLY — ``scripts/`` carries 19 live one-hop
-    ``PROJECT_ROOT = repo_root()`` offenders (17 ``issue1482_*.py`` +
-    2 ``issue1738_*.py``) that must be fixed BEFORE any widening, or the
-    no-flags bundle lands red fleet-wide (see #2181 plan §8). No waiver
-    sentinel by design: zero offenders at introduction and no legitimate
-    reason for a test to point at the main checkout's code dirs — that IS the
+    Scope: ``<repo_root>/tests`` AND ``<repo_root>/scripts`` — widened to
+    ``scripts/`` at #2183 after the same-branch remediation of the 19 live
+    one-hop ``PROJECT_ROOT = repo_root()`` offenders there (17
+    ``issue1482_*.py`` + 2 ``issue1738_*.py``); the ``scripts/``-side
+    sanctioned replacement is the module-scope tree-local form — for a
+    TOP-LEVEL driver,
+    ``PROJECT_ROOT = Path(__file__).resolve().parent.parent`` (the
+    ``scripts/issue1482_densesae_fullwidth.py`` precedent); a NESTED file
+    (the scan is recursive) adds one ``.parent`` per extra directory level
+    (equivalently ``Path(__file__).resolve().parents[k]``, k = the containing
+    dir's depth below the repo root). ``src/`` is
+    deliberately OUT of scope — 0 hits today; widening there requires its own
+    justification (#2183 acceptance criterion 4). No waiver sentinel by
+    design: zero offenders at introduction and no legitimate reason for a
+    test or driver to point at the main checkout's code dirs — that IS the
     banned failure mode (add the family's sentinel pattern if a genuine need
     ever appears). ``repo_root`` kwarg is the unit-test override hook;
     production callers pass None. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
-    tests_dir = root / "tests"
     errors: list[str] = []
-    if not tests_dir.is_dir():
-        return errors
-    for py in _files_scope_filter(sorted(tests_dir.rglob("*.py"))):
-        try:
-            tree = ast.parse(py.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
-            sys.stderr.write(
-                f"workflow_lint: check-no-repo-root-syspath-in-tests skipped "
-                f"unparseable {py}: {type(exc).__name__}\n"
-            )
+    for scan_dir in ("tests", "scripts"):
+        target_dir = root / scan_dir
+        if not target_dir.is_dir():
             continue
-        names = _banned_resolver_aliases(tree)
-        tainted = _tainted_module_names(tree, names)
-        for node in ast.walk(tree):
-            if not (isinstance(node, ast.Call) and _is_syspath_mutation_sink(node)):
+        for py in _files_scope_filter(sorted(target_dir.rglob("*.py"))):
+            try:
+                tree = ast.parse(py.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+                sys.stderr.write(
+                    f"workflow_lint: check-no-repo-root-syspath skipped "
+                    f"unparseable {py}: {type(exc).__name__}\n"
+                )
                 continue
-            resolver = None
-            for arg in [*node.args, *(kw.value for kw in node.keywords)]:
-                resolver = _mentions_banned_resolver_call(arg, names)
+            names = _banned_resolver_aliases(tree)
+            tainted = _tainted_module_names(tree, names)
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Call) and _is_syspath_mutation_sink(node)):
+                    continue
+                resolver = None
+                for arg in [*node.args, *(kw.value for kw in node.keywords)]:
+                    resolver = _mentions_banned_resolver_call(arg, names)
+                    if resolver is None:
+                        for n in ast.walk(arg):
+                            if isinstance(n, ast.Name) and n.id in tainted:
+                                resolver = tainted[n.id]
+                                break
+                    if resolver is not None:
+                        break
                 if resolver is None:
-                    for n in ast.walk(arg):
-                        if isinstance(n, ast.Name) and n.id in tainted:
-                            resolver = tainted[n.id]
-                            break
-                if resolver is not None:
-                    break
-            if resolver is not None:
+                    continue
+                if scan_dir == "tests":
+                    remedy = (
+                        "Use the tree-local form `sys.path.insert(0, "
+                        'str(Path(__file__).resolve().parents[1] / "scripts"))`, '
+                        "or preferably `monkeypatch.syspath_prepend(str("
+                        'Path(__file__).resolve().parents[1] / "scripts"))` so '
+                        "the entry is restored at teardown."
+                    )
+                else:
+                    remedy = (
+                        "Use the module-scope tree-local form — for a top-level "
+                        "scripts/ driver: `PROJECT_ROOT = "
+                        "Path(__file__).resolve().parent.parent` (the "
+                        "scripts/issue1482_densesae_fullwidth.py precedent); a "
+                        "nested file adds one `.parent` per extra directory "
+                        "level (equivalently "
+                        "`Path(__file__).resolve().parents[k]`, k = the "
+                        "containing dir's depth below the repo root)."
+                    )
                 errors.append(
                     f"{py}:{node.lineno}: `sys.path` entry derived from "
-                    f"`{resolver}()` under tests/ is forbidden — "
+                    f"`{resolver}()` under {scan_dir}/ is forbidden — "
                     f"`task_workflow.{resolver}()` branch-guards to the MAIN "
-                    f"checkout, so a worktree pytest run imports main's copy "
-                    f"of the module under test (a branch regression can pass "
-                    f"its own test on the branch) and leaks a foreign "
-                    f"checkout's dir onto sys.path for the whole session "
-                    f"(silently defeats the #1296 sys.path negative control "
-                    f"in tests/test_backend_poll.py; incident #2164). Use the "
-                    f"tree-local form `sys.path.insert(0, "
-                    f'str(Path(__file__).resolve().parents[1] / "scripts"))`, '
-                    f"or preferably `monkeypatch.syspath_prepend(str("
-                    f'Path(__file__).resolve().parents[1] / "scripts"))` so '
-                    f"the entry is restored at teardown."
+                    f"checkout, so a worktree run imports main's copy of its "
+                    f"sibling modules (a branch fix silently goes unexercised) "
+                    f"and leaks a foreign checkout's dir onto sys.path for the "
+                    f"whole process (the trap behind incident #2164, which "
+                    f"silently defeated the #1296 sys.path negative control in "
+                    f"tests/test_backend_poll.py). {remedy}"
                 )
     return errors
 
@@ -17821,7 +17847,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_no_workflow_improver_spawn": lambda wf: check_no_workflow_improver_spawn(),
     "check_no_repo_root_git_reset_hard": lambda wf: check_no_repo_root_git_reset_hard(),
     "check_no_repo_root_worktree_revert": lambda wf: check_no_repo_root_worktree_revert(),
-    "check_no_repo_root_syspath_in_tests": lambda wf: check_no_repo_root_syspath_in_tests(),
+    "check_no_repo_root_syspath": lambda wf: check_no_repo_root_syspath(),
     "check_gate_ids_unique": lambda wf: check_gate_ids_unique(wf),
     "check_lessons_index": lambda wf: check_lessons_index(),
     "check_inline_round_duty_mirror": lambda wf: check_inline_round_duty_mirror(),
@@ -17919,7 +17945,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_phase_done_reserved": CheckScope("path-local", ("scripts/",)),
     "check_sha_pin_domain": CheckScope("path-local", ("scripts/", "src/")),
     "check_empty_text_default": CheckScope("path-local", ("scripts/", "src/")),
-    "check_no_repo_root_syspath_in_tests": CheckScope("path-local", ("tests/",)),
+    "check_no_repo_root_syspath": CheckScope("path-local", ("tests/", "scripts/")),
     "check_no_workflow_improver_spawn": CheckScope(
         "path-local", ("scripts/", ".claude/", "CLAUDE.md")
     ),
@@ -18547,18 +18573,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "check). Bundled into the no-flags default run.",
     )
     parser.add_argument(
-        "--check-no-repo-root-syspath-in-tests",
+        "--check-no-repo-root-syspath",
         action="store_true",
-        help="FAIL any tests/**/*.py sys.path.insert/append (or "
-        "monkeypatch.syspath_prepend) whose argument derives from the "
+        help="FAIL any tests/**/*.py or scripts/**/*.py sys.path.insert/append "
+        "(or monkeypatch.syspath_prepend) whose argument derives from the "
         "branch-guarded task_workflow resolvers (repo_root/tasks_dir/"
         "registry_path) — directly, via a one-hop module constant, or via an "
         "import alias. repo_root() resolves to the MAIN checkout, so a "
-        "worktree pytest run imports main's copy of the module under test and "
-        "leaks a foreign checkout's dir onto sys.path (incident #2164; "
-        "defeats the #1296 negative control). Use the tree-local "
-        "Path(__file__).resolve().parents[1] form or "
-        "monkeypatch.syspath_prepend. Bundled into the no-flags default run.",
+        "worktree run imports main's copy of its sibling modules and leaks a "
+        "foreign checkout's dir onto sys.path (incident #2164; defeats the "
+        "#1296 negative control). Use the tree-local "
+        "Path(__file__).resolve().parents[1] form (tests/) / "
+        "Path(__file__).resolve().parent.parent (scripts/) or, in tests, "
+        "monkeypatch.syspath_prepend. Renamed from "
+        "--check-no-repo-root-syspath-in-tests when the scope widened to "
+        "scripts/ at #2183 (post-remediation; no back-compat alias). Bundled "
+        "into the no-flags default run.",
     )
     parser.add_argument(
         "--check-gate-ids-unique",
@@ -19367,7 +19397,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
         or args.check_no_repo_root_worktree_revert
-        or args.check_no_repo_root_syspath_in_tests
+        or args.check_no_repo_root_syspath
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_inline_round_duty_mirror
@@ -19513,8 +19543,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_repo_root_git_reset_hard())
     if args.check_no_repo_root_worktree_revert or no_flags:
         errors.extend(check_no_repo_root_worktree_revert())
-    if args.check_no_repo_root_syspath_in_tests or no_flags:
-        errors.extend(check_no_repo_root_syspath_in_tests())
+    if args.check_no_repo_root_syspath or no_flags:
+        errors.extend(check_no_repo_root_syspath())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:

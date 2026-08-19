@@ -1,17 +1,22 @@
-"""Tests for ``workflow_lint --check-no-repo-root-syspath-in-tests`` (#2181).
+"""Tests for ``workflow_lint --check-no-repo-root-syspath`` (#2181, widened #2183).
 
 The check FAILs any ``sys.path.insert``/``sys.path.append`` (or
-``monkeypatch.syspath_prepend``) under ``tests/**/*.py`` whose argument
-derives from the branch-guarded ``task_workflow`` resolvers
+``monkeypatch.syspath_prepend``) under ``tests/**/*.py`` or
+``scripts/**/*.py`` whose argument derives from the branch-guarded
+``task_workflow`` resolvers
 (``repo_root``/``tasks_dir``/``registry_path``) — directly, via a
 module-scope one-hop constant, or via a module-scope import alias.
-``repo_root()`` resolves to the MAIN checkout, so a worktree pytest run
-imports main's copy of the module under test (a branch regression can pass
+``repo_root()`` resolves to the MAIN checkout, so a worktree run
+imports main's copy of its sibling modules (a branch regression can pass
 its own test on the branch) and leaks a foreign checkout's dir onto
-``sys.path`` for the whole session (incident #2164; silently defeats the
-#1296 negative control in ``tests/test_backend_poll.py``).
+``sys.path`` for the whole process (incident #2164; silently defeats the
+#1296 negative control in ``tests/test_backend_poll.py``). Introduced
+``tests/``-only at #2181 as ``--check-no-repo-root-syspath-in-tests``;
+renamed + widened to ``scripts/`` at #2183 after the same-branch
+remediation of the 19 ``scripts/`` drivers.
 
-Covers cases 1-14 from the plan §4.3:
+Covers cases 1-15 from the #2181 plan §4.3 (case 13 deliberately inverted
+at #2183; case 13b added at #2183):
 
 1.  non-vacuity: the VERBATIM pre-fix incident form
     (``test_issue1482_densesae_fullwidth.py`` pre-``69a58d6e5b``) fires with
@@ -36,8 +41,15 @@ Covers cases 1-14 from the plan §4.3:
 12. the LIVE tree is green (fleet-red guard: the check rides the no-flags
     default bundle, which gates every Step 9c compare + Step 10d pre-push
     merge — the ~535 sanctioned tree-local sys.path sites must not flag);
-13. scope pin: the same banned form under ``scripts/`` is OUT of scope for
-    THIS check (19 live one-hop offenders there — plan §8 defers them);
+13. scope pin (INVERTED at #2183): the same banned form under ``scripts/``
+    now FIRES — the widening replaces the #2181 out-of-scope pin, which
+    existed only until the 19 live one-hop offenders were remediated;
+13b. GREEN (#2183): the corrective module-scope ``__file__``-derived form
+    under ``scripts/`` passes;
+13c. depth-aware remedy (#2183 round 2): a NESTED ``scripts/<subdir>/``
+    offender FIRES, and the diagnostic names ``.parent.parent`` as the
+    TOP-LEVEL-driver form plus per-level nested guidance (``parents[k]``) —
+    never the top-level expression as universally correct;
 14. bundle-membership pin: the no-flags default run DISPATCHES the check
     (mutation-visible ``wl.main([])`` run, the
     ``test_workflow_lint_scripts_import_guard.py`` row-16 pattern) plus a
@@ -59,7 +71,7 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 import workflow_lint as wl  # noqa: E402
-from workflow_lint import check_no_repo_root_syspath_in_tests  # noqa: E402
+from workflow_lint import check_no_repo_root_syspath  # noqa: E402
 
 # The verbatim pre-fix incident form (test_issue1482_densesae_fullwidth.py
 # before fix commit 69a58d6e5b): direct repo_root()-derived insert.
@@ -83,7 +95,7 @@ def _plant(root: Path, rel: str, body: str) -> Path:
 def _run_on(tmp_path: Path) -> list[str]:
     """Run the check against a planted tmp tree via the documented
     ``repo_root`` unit-test override hook."""
-    return check_no_repo_root_syspath_in_tests(repo_root=tmp_path)
+    return check_no_repo_root_syspath(repo_root=tmp_path)
 
 
 # --------------------------------------------------------------------------
@@ -273,7 +285,7 @@ def test_order_insensitive_taint_fires(tmp_path) -> None:
     """A name bound to ``repo_root()`` and later REBOUND to a
     ``__file__``-derived value before the insert still fires: the one-hop
     taint is deliberately order-insensitive (over-match (c), enumerated in
-    the ``check_no_repo_root_syspath_in_tests`` docstring; zero live hits)."""
+    the ``check_no_repo_root_syspath`` docstring; zero live hits)."""
     _plant(
         tmp_path,
         "tests/rebound.py",
@@ -335,21 +347,30 @@ def test_live_tree_is_green() -> None:
     the real tree reds the fleet. Runs against the LIVE repo (production
     ``_REPO_ROOT`` default, no tmp_path): the ~535 sanctioned tree-local /
     ``__file__``-derived ``sys.path`` sites under ``tests/`` must not flag
-    (the ``test_workflow_lint_gotchas_size.py`` live-tree pattern)."""
-    assert check_no_repo_root_syspath_in_tests() == []
+    (the ``test_workflow_lint_gotchas_size.py`` live-tree pattern). Since the
+    #2183 widening this ALSO covers ``scripts/`` — the mechanical form of the
+    plan §3 drift guard (the 19 remediated drivers plus any later addition
+    must stay on the ``__file__``-derived form)."""
+    assert check_no_repo_root_syspath() == []
 
 
 # --------------------------------------------------------------------------
-# case 13: scope pin — tests/ only (scripts/ offenders deferred, plan §8)
+# case 13 (INVERTED at #2183): scope pin — a scripts/ offender now FIRES
 # --------------------------------------------------------------------------
 
 
-def test_scripts_dir_is_out_of_scope(tmp_path) -> None:
-    """The same banned form under ``scripts/`` must NOT flag: widening would
-    land the check with 19 live one-hop offenders (17 ``issue1482_*.py`` +
-    2 ``issue1738_*.py``) — an instant fleet-wide red. Deferred to a
-    separate remediation task (plan §8)."""
-    _plant(tmp_path, "scripts/offender.py", _INCIDENT_BODY)
+def test_scripts_dir_offender_fires(tmp_path) -> None:
+    """DELIBERATE INVERSION (#2183) of the #2181 ``test_scripts_dir_is_out_of_scope``
+    pin: the same banned one-hop form under ``scripts/`` now FIRES. #2181
+    pinned ``scripts/`` OUT of scope only because 19 live one-hop offenders
+    (17 ``issue1482_*.py`` + 2 ``issue1738_*.py``) would have landed the
+    no-flags bundle fleet-red; those were remediated on this same branch
+    (#2183 unit 1/2), so the widening is now safe and the pin flips. The
+    diagnostic names the dir the hit is in plus the scripts/-side sanctioned
+    replacement (the top-level-driver module-scope
+    ``Path(__file__).resolve().parent.parent`` form; nested guidance is
+    pinned by case 13c)."""
+    offender = _plant(tmp_path, "scripts/offender.py", _INCIDENT_BODY)
     # A sanctioned tests/ file so the tests/ scan genuinely runs (non-empty).
     _plant(
         tmp_path,
@@ -359,7 +380,64 @@ def test_scripts_dir_is_out_of_scope(tmp_path) -> None:
         "\n"
         'sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))\n',
     )
+    errors = _run_on(tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].startswith(f"{offender}:{_INCIDENT_LINENO}:"), errors[0]
+    assert "under scripts/" in errors[0], errors[0]
+    assert "#2164" in errors[0]
+    assert ".parent.parent" in errors[0], errors[0]
+
+
+# --------------------------------------------------------------------------
+# case 13b (#2183): GREEN — the corrective __file__-derived form in scripts/
+# --------------------------------------------------------------------------
+
+
+def test_scripts_corrective_form_is_green(tmp_path) -> None:
+    """The sanctioned scripts/-side replacement — the module-scope
+    ``PROJECT_ROOT = Path(__file__).resolve().parent.parent`` form the 19
+    drivers were remediated to (the ``issue1482_densesae_fullwidth.py``
+    precedent) — must never flag under the widened scan."""
+    _plant(
+        tmp_path,
+        "scripts/corrective.py",
+        "import sys\n"
+        "from pathlib import Path\n"
+        "\n"
+        "PROJECT_ROOT = Path(__file__).resolve().parent.parent\n"
+        'sys.path.insert(0, str(PROJECT_ROOT / "scripts"))\n',
+    )
     assert _run_on(tmp_path) == []
+
+
+# --------------------------------------------------------------------------
+# case 13c (#2183 round 2): nested scripts/ offender — depth-aware remedy
+# --------------------------------------------------------------------------
+
+
+def test_nested_scripts_offender_fires_with_depth_aware_remedy(tmp_path) -> None:
+    """A one-hop NESTED offender (``scripts/<subdir>/offender.py`` — the
+    ``scripts/issue_355/`` shape) FIRES under the recursive ``rglob`` scan,
+    and the diagnostic does NOT prescribe the top-level-only
+    ``.parent.parent`` expression as universally correct: for a nested file
+    that expression yields the ``scripts/`` dir, not the repo root. The
+    remedy must name ``.parent.parent`` as the TOP-LEVEL-driver form and
+    carry the per-level nested guidance (one extra ``.parent`` per directory
+    level / ``parents[k]``)."""
+    offender = _plant(tmp_path, "scripts/issue_355/offender.py", _INCIDENT_BODY)
+    errors = _run_on(tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].startswith(f"{offender}:{_INCIDENT_LINENO}:"), errors[0]
+    assert "under scripts/" in errors[0], errors[0]
+    assert "#2164" in errors[0]
+    # Depth-aware wording: `.parent.parent` is present but labeled AS the
+    # top-level form, never prescribed unconditionally...
+    assert ".parent.parent" in errors[0], errors[0]
+    assert "top-level" in errors[0].lower(), errors[0]
+    # ...and the nested per-level guidance rides the same diagnostic.
+    assert "nested" in errors[0].lower(), errors[0]
+    assert "parents[k]" in errors[0], errors[0]
+    assert "per extra directory level" in errors[0], errors[0]
 
 
 # --------------------------------------------------------------------------
@@ -389,14 +467,13 @@ def test_check_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
         f"bundled into no_flags:\n{err}"
     )
     src = Path(wl.__file__).read_text(encoding="utf-8")
-    assert "or args.check_no_repo_root_syspath_in_tests" in src, (
-        "the no_flags disjunction lost `or args.check_no_repo_root_syspath_in_tests` — "
-        "a scoped `--check-no-repo-root-syspath-in-tests` invocation would then "
+    assert "or args.check_no_repo_root_syspath\n" in src, (
+        "the no_flags disjunction lost `or args.check_no_repo_root_syspath` — "
+        "a scoped `--check-no-repo-root-syspath` invocation would then "
         "run the WHOLE bundle instead of just this check"
     )
-    assert "if args.check_no_repo_root_syspath_in_tests or no_flags:" in src, (
-        "the dispatch ladder lost the "
-        "`if args.check_no_repo_root_syspath_in_tests or no_flags:` line"
+    assert "if args.check_no_repo_root_syspath or no_flags:" in src, (
+        "the dispatch ladder lost the `if args.check_no_repo_root_syspath or no_flags:` line"
     )
 
 

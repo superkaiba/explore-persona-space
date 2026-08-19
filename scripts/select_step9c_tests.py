@@ -366,6 +366,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2183) — workflow_lint --check-no-repo-root-syspath + no-flags
+    # bundling (tests/ + scripts/ scope; renamed/widened from the #2181
+    # tests/-only --check-no-repo-root-syspath-in-tests after the 19-driver
+    # scripts/ remediation).
+    "tests/test_workflow_lint_no_repo_root_syspath.py",
     # NEW (#2158) — pre-split review guard predicate + lint surface pins:
     # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
     # files) + no-flags bundling.
