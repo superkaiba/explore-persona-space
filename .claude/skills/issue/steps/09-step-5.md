@@ -582,7 +582,13 @@ the helper self-skips on main).** The sync classification above protects
 deliberately branch-edited files but silently drops their complement: a
 protected file that ALSO moved on origin/main since the merge-base — the
 #1771 shape (#2164 rewrote the same function + test on main in the opposite
-direction; round-1 review never saw it). Surface that set to BOTH reviewers:
+direction; round-1 review never saw it). Scope: the probe reads the ISSUE
+WORKTREE whenever it exists (deliverable rounds build there — the feature's
+dominant topology; the orchestrator's Bash cwd resets to the repo root, so
+the helper never binds to the invoking checkout), which means an on-main
+round beside a RETAINED stale worktree posts that worktree's divergence as
+a noise disclosure — cap-bounded, resolved by the stale worktree's removal.
+Surface that set to BOTH reviewers:
 
 ```bash
 DIVOUT=/tmp/issue-<N>-divergence-r<round>.txt

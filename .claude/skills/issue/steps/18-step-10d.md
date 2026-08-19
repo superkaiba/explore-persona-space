@@ -753,9 +753,22 @@ print(rows[-1] if rows else "")')
     # CONTENT-KEYED delta (never pathname-only): (probe MINUS reviewed paths)
     # UNION (probe INTERSECT paths main changed after the reviewed main sha):
     comm -13 "$REVSET" /tmp/issue-<N>-divergence-cur.txt > /tmp/issue-<N>-div-a.txt
-    git -C "$WT" diff --name-only "$REV_MAIN" "$MAIN_SHA" | sort -u \
-      | comm -12 - /tmp/issue-<N>-divergence-cur.txt > /tmp/issue-<N>-div-b.txt
-    sort -u /tmp/issue-<N>-div-a.txt /tmp/issue-<N>-div-b.txt > "$NEWLIST"
+    # Materialize the reviewed->current main diff with an rc check (review r1
+    # MF-1b — never a bare pipeline): a failed diff would exit through
+    # sort|comm rc 0, read as an EMPTY set B, and let a previously-disclosed
+    # re-touched file merge as "reviewed". quotePath=false matches the
+    # helper's producers (MF-2: a C-escaped non-ASCII path in this list
+    # misses comm -12 against the raw current set -> NEW=empty).
+    if git -C "$WT" -c core.quotePath=false diff --name-only "$REV_MAIN" "$MAIN_SHA" \
+        > /tmp/issue-<N>-div-xy.txt; then
+      sort -u /tmp/issue-<N>-div-xy.txt \
+        | comm -12 - /tmp/issue-<N>-divergence-cur.txt > /tmp/issue-<N>-div-b.txt
+      sort -u /tmp/issue-<N>-div-a.txt /tmp/issue-<N>-div-b.txt > "$NEWLIST"
+    else
+      # FAIL-CLOSED on the masked-producer failure -- the same branch the
+      # missing/ERROR/unparsable review record takes (cap-bounded).
+      cp /tmp/issue-<N>-divergence-cur.txt "$NEWLIST"
+    fi
   fi
   NEW_COUNT=$(grep -c . "$NEWLIST" || true)
 fi
@@ -813,7 +826,11 @@ implementer-in-the-loop SEMANTIC pass for unreviewed divergence. Divergence
 both disclosed at the final review round AND unchanged since the reviewed
 main SHA never blocks: measured 2026-08-19, refined sets of 1-2 files exist
 on healthy live branches, so a hard block on any non-empty set would have
-held 3 of 5 healthy branches.
+held 3 of 5 healthy branches. Comma-bearing paths: the per-round `files=`
+token is comma-delimited, so a path containing `,` lands whole in the
+current probe set but fragmented in `$REVSET` and deterministically
+re-flags as NEW on every merge — fail-closed and bounded by the
+one-dispatch cap (accepted; no serialization redesign).
 
 #### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
 

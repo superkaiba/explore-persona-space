@@ -391,9 +391,18 @@ case "$GUARD" in
             # Sync-import-only drop: a path whose branch-side commits ALL
             # carry the spec-freshness sync subject anchor is not a
             # deliberate branch edit (#1560/#1789 subject-scoped exclusion,
-            # verbatim idiom from steps/09-step-5.md:234-235).
-            NONSYNC=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$P" 2>/dev/null \
-                | awk 'index($0, "sync workflow-surface specs from") == 0')
+            # awk idiom from steps/09-step-5.md:234-235). Materialized with
+            # an rc check (review r1 MF-1a): a failed log piped straight
+            # into awk exits through awk rc 0, reads as "sync-only"
+            # (empty), and silently DROPS a real divergence. No stderr
+            # redirect -- diagnostics stay on stderr (guards 0/4 contract).
+            if ! git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$P" \
+                    > "$_tmp_div/plog.txt"; then
+                printf 'ERROR=%s\n' log-failed
+                exit 2
+            fi
+            NONSYNC=$(awk 'index($0, "sync workflow-surface specs from") == 0' \
+                "$_tmp_div/plog.txt")
             [ -z "$NONSYNC" ] && continue
             # Content-identical drop: already converged with the pinned main
             # tip (also catches every freshly-synced file -- defense in
@@ -411,7 +420,9 @@ case "$GUARD" in
         fi
         printf 'DIVERGED_COUNT=%s\n' "$DIV_COUNT"
         printf 'MAIN_SHA=%s\n' "$MAIN_SHA"
-        printf 'DIVERGED_FILE=%s\n' "$OUT"
+        # %q: eval-safe under the two-step caller form even for a space-
+        # bearing --out path (plain paths print unchanged).
+        printf 'DIVERGED_FILE=%q\n' "$OUT"
         exit 0
         ;;
 

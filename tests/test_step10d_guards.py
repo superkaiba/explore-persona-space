@@ -24,6 +24,7 @@ the actual invocation shape landing there.
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -575,9 +576,14 @@ if [ -z "$LASTNOTE" ] || printf '%s' "$LASTNOTE" | grep -q ' ERROR ' \
   cp "$CUR" "$NEWLIST"
 else
   comm -13 "$REVSET" "$CUR" > "$AOUT"
-  git -C "$WT" diff --name-only "$REV_MAIN" "$MAIN_SHA" | sort -u \
-    | comm -12 - "$CUR" > "$BOUT"
-  sort -u "$AOUT" "$BOUT" > "$NEWLIST"
+  if git -C "$WT" -c core.quotePath=false diff --name-only "$REV_MAIN" "$MAIN_SHA" \
+      > "$XYOUT"; then
+    sort -u "$XYOUT" \
+      | comm -12 - "$CUR" > "$BOUT"
+    sort -u "$AOUT" "$BOUT" > "$NEWLIST"
+  else
+    cp "$CUR" "$NEWLIST"
+  fi
 fi
 """
 
@@ -589,6 +595,9 @@ _DELTA_FRAGMENTS = (
     'comm -13 "$REVSET"',
     "comm -12 -",
     'cat-file -e "$REV_MAIN^{commit}"',
+    # Review r1 MF-1b + MF-2: the reviewed->current main diff is MATERIALIZED
+    # with an rc check (never a bare pipeline) and quotePath-disabled.
+    'git -C "$WT" -c core.quotePath=false diff --name-only "$REV_MAIN" "$MAIN_SHA"',
 )
 
 
@@ -608,6 +617,7 @@ def _run_delta(
     divout: Path,
     main_sha: str,
     lastnote: str,
+    extra_env: dict[str, str] | None = None,
 ) -> list[str]:
     """Run the transcribed Step 10d delta computation; returns NEWLIST lines."""
     workdir = tmp_path / "delta"
@@ -626,11 +636,14 @@ def _run_delta(
             "CUR": str(workdir / "cur.txt"),
             "AOUT": str(workdir / "a.txt"),
             "BOUT": str(workdir / "b.txt"),
+            "XYOUT": str(workdir / "xy.txt"),
             "NEWLIST": str(newlist),
             "WT": str(worktree),
             "MAIN_SHA": main_sha,
         }
     )
+    if extra_env:
+        env.update(extra_env)
     proc = subprocess.run(
         ["bash", "-c", _DELTA_TRANSCRIPTION],
         capture_output=True,
@@ -666,6 +679,117 @@ def test_delta_content_keyed_retouch(tmp_path):
     assert _run_delta(tmp_path, worktree, out, kv["MAIN_SHA"], "") == out.read_text().splitlines()
 
 
+def _make_git_shim(tmp_path: Path, refuse: str) -> Path:
+    """Write a PATH-shim ``git`` that fails on subcommand ``refuse`` and
+    delegates everything else to the real git; returns the shim dir."""
+    real_git = shutil.which("git")
+    assert real_git, "git not on PATH"
+    shim_dir = tmp_path / "git-shim"
+    shim_dir.mkdir(exist_ok=True)
+    shim = shim_dir / "git"
+    shim.write_text(
+        "#!/usr/bin/env bash\n"
+        'for a in "$@"; do\n'
+        f'  if [ "$a" = "{refuse}" ]; then\n'
+        f'    echo "shim: {refuse} refused" >&2\n'
+        "    exit 128\n"
+        "  fi\n"
+        "done\n"
+        f'exec "{real_git}" "$@"\n'
+    )
+    shim.chmod(0o755)
+    return shim_dir
+
+
+def test_delta_masked_diff_failure_fails_closed(tmp_path):
+    """MF-1(b) (review r1): a FAILED reviewed->current main diff at the merge
+    site fail-closes to the FULL current probe set -- a bare pipeline would
+    exit through sort|comm rc 0, read set B as EMPTY, and let a
+    previously-disclosed re-touched file merge as reviewed."""
+    scratch, worktree = _seed_divergence_fixture(tmp_path, 2201)
+    out = tmp_path / "div.txt"
+    proc, kv = _run_divergence(scratch, 2201, out)
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    lastnote = f"[divergence-probe] r1 count=1 main={kv['MAIN_SHA']} files=scripts/collide.py"
+    shim_dir = _make_git_shim(tmp_path, "diff")
+    newlist = _run_delta(
+        tmp_path,
+        worktree,
+        out,
+        kv["MAIN_SHA"],
+        lastnote,
+        extra_env={"PATH": f"{shim_dir}:{os.environ['PATH']}"},
+    )
+    assert newlist == out.read_text().splitlines(), (
+        "masked diff failure must fail CLOSED to the full current probe set"
+    )
+
+
+def test_delta_quotepath_nonascii_retouch(tmp_path):
+    """MF-2 (review r1): a DISCLOSED non-ASCII path that main re-touches
+    after the reviewed sha lands in NEW -- without quotePath=false the
+    merge-site diff lists it C-escaped, misses ``comm -12`` against the raw
+    current set, and the unreviewed re-touch merges as reviewed."""
+    scratch, worktree = _seed_divergence_fixture(tmp_path, 2201)
+    nonascii = "scripts/café.py"
+    (scratch / nonascii).write_text("v1\n")
+    _git(scratch, "add", nonascii)
+    _git(scratch, "commit", "-q", "-m", "c3: add non-ascii path")
+    _git(scratch, "push", "-q", "origin", "main")
+    rev_main = _git(scratch, "rev-parse", "HEAD").stdout.strip()  # disclosure sha
+    (scratch / nonascii).write_text("v2\n")
+    _git(scratch, "add", nonascii)
+    _git(scratch, "commit", "-q", "-m", "c4: main re-touches non-ascii path")
+    _git(scratch, "push", "-q", "origin", "main")
+    main_sha = _git(scratch, "rev-parse", "HEAD").stdout.strip()
+    divout = tmp_path / "div.txt"
+    divout.write_text(f"{nonascii}\n", encoding="utf-8")  # raw current probe set
+    lastnote = f"[divergence-probe] r1 count=1 main={rev_main} files={nonascii}"
+    newlist = _run_delta(tmp_path, worktree, divout, main_sha, lastnote)
+    assert nonascii in newlist, "re-touched non-ASCII disclosed path must land in NEW"
+
+
+def test_divergence_git_log_failure_exits_2(tmp_path):
+    """MF-1(a) (review r1): a failed per-path history probe exits 2 with
+    ``ERROR=log-failed`` -- the masked-pipeline form read a failed log as
+    "sync-only" (empty) and silently DROPPED a real divergence."""
+    scratch, _ = _seed_divergence_fixture(tmp_path, 2201)
+    shim_dir = _make_git_shim(tmp_path, "log")
+    proc = _run_script(
+        scratch,
+        "2201",
+        "--guard",
+        "divergence",
+        "--out",
+        str(tmp_path / "div.txt"),
+        env_extra={"PATH": f"{shim_dir}:{os.environ['PATH']}"},
+    )
+    assert proc.returncode == 2, (proc.stdout, proc.stderr)
+    kv = _parse_kv(proc.stdout)
+    assert kv.get("ERROR") == "log-failed", proc.stdout
+
+
+def test_divergence_out_path_quoted_for_eval(tmp_path):
+    """Should-fix (review r1): ``DIVERGED_FILE=%q`` round-trips a
+    space-bearing --out path through the two-step caller's ``eval``."""
+    scratch, _ = _seed_divergence_fixture(tmp_path, 2201)
+    out = tmp_path / "di v.txt"
+    proc, _kv = _run_divergence(scratch, 2201, out)
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    env = os.environ.copy()
+    env["DIV_OUT"] = proc.stdout
+    check = subprocess.run(
+        ["bash", "-c", 'eval "$DIV_OUT"; printf "%s" "$DIVERGED_FILE"'],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=60,
+    )
+    assert check.returncode == 0, (check.stdout, check.stderr)
+    assert check.stdout == str(out)
+    assert out.read_text().splitlines() == ["scripts/collide.py"]
+
+
 def test_delta_cap_durability_and_prefix_split(tmp_path):
     """Pin (i): a ``step10d new=`` note NEWER than the latest per-round note
     spends the one reconciliation dispatch (proceed-after-cap, no second
@@ -693,6 +817,19 @@ def test_delta_cap_durability_and_prefix_split(tmp_path):
     # The per-round filter must not match the step10d notes.
     assert not step10d_new.startswith("[divergence-probe] r")
     assert "[divergence-probe] step10d ERROR rc=2".startswith("[divergence-probe] r") is False
+    # Should-fix (review r1): bind the cap clause's fragments to the
+    # MERGE-SITE region of the composed spec, not just anywhere in the doc.
+    from tests.issue_skill_source import issue_skill_text
+
+    text = issue_skill_text()
+    start = text.index("#### Pre-merge divergence delta gate")
+    region = text[start : text.index("\n#### ", start + 1)]
+    for frag in (
+        "[divergence-probe] step10d new=",
+        "NEWER than the latest per-round",
+        "disposition=proceed-after-cap",
+    ):
+        assert frag in region, f"cap-clause fragment missing from the merge-site region: {frag!r}"
 
 
 def test_caller_rc_nonzero_hygiene(tmp_path):

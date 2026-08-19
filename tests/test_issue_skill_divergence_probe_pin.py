@@ -18,6 +18,7 @@ Behavioral pins for the helper subcommand itself live in
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from tests.issue_skill_source import issue_skill_text
@@ -58,3 +59,29 @@ def test_code_reviewer_consumption_paragraph():
     text = CODE_REVIEWER_MD.read_text(encoding="utf-8")
     assert "Main-side divergence list" in text
     assert "diverged_on_main" in text
+
+
+def test_caller_form_region_pins():
+    """MF-3 (review r1): BOTH composed call sites carry, IN ORDER, the
+    stale-output removal, the two-step stdout+rc capture, and the eval --
+    so neither shipped call site can regress to the one-step
+    eval-a-command-substitution form (the plan-round ship-blocker) with the
+    prose pins still green."""
+    text = issue_skill_text()
+    invocation = "--guard divergence --out"
+    sites = [m.start() for m in re.finditer(re.escape(invocation), text)]
+    assert len(sites) == 2, f"expected exactly 2 call sites, found {len(sites)}"
+    for pos in sites:
+        region = text[max(0, pos - 1500) : pos + 1500]
+        i_rm = region.find('rm -f "$DIVOUT"')
+        i_cap = region.find("DIV_OUT=$(bash ")
+        i_rc = region.find("; DIV_RC=$?")
+        i_eval = region.find('eval "$DIV_OUT"')
+        assert min(i_rm, i_cap, i_rc, i_eval) >= 0, (
+            f"caller-form element missing near offset {pos}: "
+            f"rm={i_rm} cap={i_cap} rc={i_rc} eval={i_eval}"
+        )
+        assert i_rm < i_cap < i_rc < i_eval, (
+            f"caller-form order broken near offset {pos}: "
+            f"rm={i_rm} cap={i_cap} rc={i_rc} eval={i_eval}"
+        )
