@@ -13,16 +13,19 @@ origin_prompt: 'can we rerun with: a stronger model (qwen3.6), queries that make
 workflow: v1
 goal: 'Test whether the context→answer linear map trained in the chat-template framing
   transfers — directly or up to a linear reparameterization — to every other framing
-  in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, and
-  a panel of distinct story characters spanning an AI-likeness gradient; one-directional
-  transfer only, stories generated fully template-free (raw completion), scene-native
-  invented queries, fully independent query pools (topic-shift confound disclosed).'
+  in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a
+  panel of distinct story characters spanning an AI-likeness gradient, and a dialogue-reply
+  arm where the addressed utterance is ordinary dialogue rather than a question (does
+  transfer track question-answering specifically or interlocutor-response generally);
+  one-directional transfer only, stories generated fully template-free (raw completion),
+  scene-native invented queries, fully independent query pools (topic-shift confound
+  disclosed).'
 ---
 # Chat-trained context→answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and fully template-free story generation
 
 ## Goal
 
-Test whether the context→answer linear map trained in the chat-template framing transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters spanning an AI-likeness gradient, and a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question (testing whether transfer tracks question-answering specifically or interlocutor-response generally); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed).
+Test whether the context→answer linear map trained in the chat-template framing transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters spanning an AI-likeness gradient, and a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question (does transfer track question-answering specifically or interlocutor-response generally); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed).
 
 ## Why (what this fixes over #1345/#2054)
 
