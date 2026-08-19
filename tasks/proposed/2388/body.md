@@ -2,7 +2,8 @@
 title: Is answer correctness predictable from the context vector, and does the context-to-answer
   map help?
 kind: experiment
-tags: []
+tags:
+- keep-running
 created_at: '2026-08-19T16:45:16Z'
 has_clean_result: false
 parent_id: 1739

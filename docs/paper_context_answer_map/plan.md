@@ -395,7 +395,7 @@ Dan Mossing — in main.tex \author (suppressed until \iclrfinalcopy; blind-safe
     accepted — "consider awaiting promotion to be already done." No promotion gate
     before drafting; classification states left untouched.
 19. WORKING SURFACE (Thomas, 2026-08-19): the paper is written in GOOGLE DOCS for
-    now — doc id `1NFNGirAwsKnvLP-ah9w6mWQKsAfYRbxl1wlrSZmxp7U` ("Context→Answer Map
+    now — doc id `1P_dAYteysU2SdDbmSfaFjBQ7ORY9aD0VPCSq7lLTLjM` ("Context→Answer Map
     Paper — Working Draft"), converted from the Overleaf tex via pandoc (citations
     rendered). Review loop: Thomas leaves native Docs comments; the agent reads /
     replies / resolves them via the Drive REST API using the google-workspace-mcp
