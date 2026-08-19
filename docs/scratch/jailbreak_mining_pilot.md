@@ -25,6 +25,17 @@ R² is negative) — an in-domain map fixes both. (The original pass, §a–d be
 used the graded **trait** DV, a weak proxy ρ 0.07–0.22 for compliance; §0 is the
 compliance-DV rerun the brief asked for and it confirms the trait-DV conclusion.)
 
+**Bottom line on the map, after all arms: the map LOSES EVERYWHERE — there is no
+regime in this pilot where routing through it beats the plain context probe.** It
+ties A on detection when labels are plentiful (§0b, C ≈ A — but that is a
+reparametrization identity, not added value); it is beaten by A at EVERY label
+budget from 10 to 320, and by the widest margin exactly where labels are scarcest
+(§0c: at N=10, A 0.834 vs D 0.619); merging benign with in-domain pairs only
+dilutes it (§0b item 4); and it transfers WORSE than A across jailbreak families
+in both directions (§0d), where its own reconstruction R² goes negative. The
+cheap context-side probe on `v_C` is the whole result: it needs no generation, no
+judge, no map, and ~10 labels.
+
 All model reads are pre-existing artifacts; nothing was generated on GPU. Work
 was on numeric labels + activation tensors only (no jailbreak/rollout text read).
 
@@ -133,10 +144,13 @@ PR-AUC headline; chance = base rate):
   "answer-space classifier through the map").
 - **E** — probe on real v_A (ANSWER-SPACE ORACLE; needs generation, not deployable).
 
-C and D run under **two map regimes**: **M_benign** = ridge context_end→v_A on
+C and D run under **three map regimes**: **M_benign** = ridge context_end→v_A on
 3,000 disjoint benign WildChat/LMSYS rows; **M_indomain** = ridge on a
 grouped-disjoint, label-stratified 35% reserve of the jailbreak contexts' own
-(v_C, v_A) pairs.
+(v_C, v_A) pairs (n = 1,377 rows: 52 pos + 1,325 neg); **M_merged** = ridge on
+the ROW UNION of those two training sets (n = 4,377; **n_benign : n_indomain =
+3,000 : 1,377**, i.e. 69% benign). All three maps use λ=100 and are fit
+disjointly from the eval set.
 
 **Split scheme + leakage.** Jailbreak contexts split into a 35% MAP reserve
 (52 pos + 1,325 neg → fits M_indomain) and a 65% EVAL set (98 pos; negatives
@@ -154,46 +168,62 @@ mitigated because positives and negatives share the same evil families.
 | A — probe on v_C (recap) | L19 | 0.996 | 0.974 | 0.918 | 20 |
 | B — map→project, benign (fixed dir) | L19 | 0.809 | 0.277 | 0.357 | 45 |
 | B — map→project, in-domain (fixed dir) | L15 | 0.888 | 0.425 | 0.418 | 32 |
+| B — map→project, merged (fixed dir) | L15 | 0.860 | 0.374 | 0.388 | 34 |
 | C — probe on M·v_C, benign | L19 | 0.998 | 0.971 | 0.908 | 20 |
 | C — probe on M·v_C, in-domain | L19 | 0.993 | 0.945 | 0.898 | 20 |
+| C — probe on M·v_C, merged | L19 | 0.995 | 0.951 | 0.898 | 20 |
 | D — v_A-probe through M, benign | L19 | 0.985 | 0.871 | 0.796 | 20 |
 | D — v_A-probe through M, in-domain | L19 | 0.992 | 0.931 | 0.837 | 20 |
+| D — v_A-probe through M, merged | L19 | 0.991 | 0.928 | 0.847 | 20 |
 | **E — probe on real v_A (ORACLE)** | L19 | 0.998 | **0.974** | 0.918 | 20 |
 | (ref) raw fixed r_B refusal dir on v_C | L23 | 0.921 | 0.697 | 0.643 | 21 |
 | random | — | 0.494 | 0.064 | 0.071 | 387 |
 
-**Map held-out reconstruction R² of v_A on the jailbreak eval contexts:**
+The `M_merged` rows were added in a later pass; the two-map rows above reproduced
+**bit-identically** on the rerun (same seed, unchanged rng call order), so the
+merged column is a strict addition, not a re-measurement.
 
-| layer | M_benign | M_indomain |
-|---|---|---|
-| L07 | −0.840 | +0.329 |
-| L11 | −0.516 | +0.454 |
-| L15 | −0.160 | +0.579 |
-| L19 | −0.119 | +0.625 |
-| L23 | −0.876 | +0.463 |
-| L27 | −0.835 | +0.480 |
-| **mean** | **−0.558** | **+0.488** |
+**Map held-out reconstruction R² of v_A on the jailbreak eval contexts** — the
+brief's per-map requirement. Positive = the map predicts held-out jailbreak
+answers better than their own mean; negative = worse than the mean:
+
+| layer | M_benign | M_indomain | M_merged |
+|---|---|---|---|
+| L07 | −0.840 | +0.329 | +0.282 |
+| L11 | −0.516 | +0.454 | +0.402 |
+| L15 | −0.160 | +0.579 | +0.528 |
+| L19 | −0.119 | +0.625 | +0.567 |
+| L23 | −0.876 | +0.463 | +0.216 |
+| L27 | −0.835 | +0.480 | +0.180 |
+| **mean** | **−0.558** | **+0.488** | **+0.363** |
+
+Caveat on these R² values: M_indomain is fit at n=1,377 rows against d=3,584
+dimensions (n < d), so its R² is a **regularisation-limited** read (what a
+ridge-λ=100 map recovers at this sample size), not a ceiling on what an
+in-domain map could achieve with more pairs. M_merged (n=4,377) is the only
+map fit with n > d.
 
 Figure: `docs/scratch/jailbreak_mining_pilot_map_arms.png` (left: PR-AUC per arm
 at L19 with oracle + chance lines; right: map reconstruction R² by layer).
 
 **Verdict (map regimes).**
 
-1. **Does C ≈ A (reparametrization holds)? YES.** C_benign 0.971 vs A 0.974 at
-   L19 — essentially identical; C_indomain 0.945, close behind. A probe trained
-   AND tested in the mapped space recovers the same signal as on raw v_C,
-   confirming that M·v_C is a linear reparametrization of v_C. Notably C_benign ≈
-   A *even though M_benign's reconstruction R² is negative* — because C never
-   depends on the map reconstructing anything faithfully, only on the linear
-   structure surviving the transform.
+1. **Does C ≈ A (reparametrization holds)? YES, under all three maps.** C_benign
+   0.971 / C_merged 0.951 / C_indomain 0.945 vs A 0.974 at L19 — essentially
+   identical. A probe trained AND tested in the mapped space recovers the same
+   signal as on raw v_C, confirming that M·v_C is a linear reparametrization of
+   v_C. Notably C_benign ≈ A *even though M_benign's reconstruction R² is
+   negative* — because C never depends on the map reconstructing anything
+   faithfully, only on the linear structure surviving the transform.
 2. **Does D beat B's fixed-direction 0.32, and approach the oracle E? YES to
-   both.** D_benign 0.871 and D_indomain 0.931 vs B's 0.28 (benign) / 0.43
-   (in-domain) — a fitted answer-space probe fed the MAPPED answer massively
-   outperforms a fixed direction through the same map. D_indomain 0.931 lands
-   within 0.043 of the oracle E (0.974); D_benign 0.871 within 0.103. So "use an
-   answer-space classifier through the map" nearly recovers the answer-space
-   oracle — the map preserves the discriminative comply-vs-refuse answer
-   direction even where it cannot reconstruct the answer pointwise.
+   both.** D_benign 0.871, D_indomain 0.931, D_merged 0.928 vs B's 0.28
+   (benign) / 0.43 (in-domain) / 0.37 (merged) — a fitted answer-space probe fed
+   the MAPPED answer massively outperforms a fixed direction through the same
+   map. D_indomain 0.931 lands within 0.043 of the oracle E (0.974); D_benign
+   0.871 within 0.103. So "use an answer-space classifier through the map"
+   nearly recovers the answer-space oracle — the map preserves the
+   discriminative comply-vs-refuse answer direction even where it cannot
+   reconstruct the answer pointwise. **D still never beats A**, at any map.
 3. **Does the in-domain map close the gap — is the map's failure a
    training-distribution problem? YES, decisively.** M_benign's reconstruction
    R² is NEGATIVE at every layer (mean −0.558 — it predicts jailbreak answers
@@ -204,6 +234,16 @@ at L19 with oracle + chance lines; right: map reconstruction R² by layer).
    0.58→0.79). The mechanism is explicit: the benign map's failure IS a
    training-distribution problem, and fixing the distribution fixes both R² and
    D together.
+4. **Does merging benign + in-domain pairs help? NO — merging DILUTES.**
+   M_merged tracks M_indomain closely but sits BELOW it on reconstruction at
+   every layer (mean R² +0.363 vs +0.488), with the deficit concentrated at the
+   deep layers where the two regimes disagree most (L23 +0.216 vs +0.463; L27
+   +0.180 vs +0.480). On the detection arms merged and in-domain are
+   indistinguishable at the best layer (C 0.951 vs 0.945; D 0.928 vs 0.931).
+   Reading: the 3,000 benign rows are 69% of the merged training set and pull the
+   map toward the benign answer subspace, so merging buys nothing over the 1,377
+   in-domain pairs alone and costs reconstruction fidelity where the subspaces
+   diverge. If in-domain pairs are available, use them alone.
 
 **Headline for this extension: A ≈ E.** The cheap context-side probe (0.974)
 *already equals* the answer-space oracle (0.974) — the last-prompt-token residual
@@ -213,6 +253,220 @@ detector: they show the answer-space signal is linearly recoverable from v_C
 (C ≈ A), that an answer-space classifier survives the map (D ≫ B) when the map is
 trained in-domain, and that a benign-only map structurally cannot reconstruct
 harmful-compliance answers (negative R²).
+
+---
+
+## (0c) Label-efficiency sweep — does the map buy labels?
+
+§0b shows the map never beats the plain context probe when labels are plentiful.
+The remaining hope for the map is **label efficiency**: the map is fit from
+(v_C, v_A) pairs, which need **no labels** at all, so an answer-space probe fed
+mapped answers might need fewer *labelled* contexts than a context probe. This
+section tests that directly.
+
+**Design.** At each budget **N ∈ {10, 20, 40, 80, 160, 320}** labelled contexts,
+train three arms and score all of them on the SAME held-out eval set (the §0b
+eval set: 98 always-comply positives + 1,862 failed-compliance negatives
+subsampled to a 5% base rate, n=1,960):
+
+- **A_N** — probe trained on the real `v_C` of the N labelled contexts.
+- **D_N (in-domain)** — probe trained on the real `v_A` of the N labelled
+  contexts, applied at test to `M_indomain · v_C`.
+- **D_N (merged)** — same, through `M_merged`.
+
+Labels are drawn from the §0b **map reserve** (52 pos + 1,325 neg) — the same
+contexts the map was fit on. That is not label leakage: fitting the map uses only
+the unlabelled (v_C, v_A) pair, and the eval set is disjoint from the reserve, so
+map-fit / probe-train / test never share a context. Each budget draws
+`max(2, round(0.10·N))` positives (so N=10 → 2 pos/8 neg, N=320 → 32 pos/288 neg)
+and is repeated over **5 independent draws**; tables report mean ± SD across
+draws. Layers: **L19** (the §0b best layer, pre-specified) and **L27**
+(robustness).
+
+**LABEL-COST ASYMMETRY — read the curves with this in mind.** A_N needs N
+labelled contexts. D_N needs the same N labels **plus a generation pass per
+labelled context** to obtain its real answer activation `v_A`. So D is strictly
+more expensive per label than A: for the map to be worth using, D_N must beat
+A_N by a margin large enough to pay for the generations — a tie is a loss.
+
+**PR-AUC vs N (mean ± SD over 5 draws), layer 19:**
+
+| N | A (probe on v_C) | D, in-domain map | D, merged map |
+|---|---|---|---|
+| 10 | **0.834 ± 0.064** | 0.619 ± 0.134 | 0.620 ± 0.150 |
+| 20 | **0.825 ± 0.101** | 0.643 ± 0.113 | 0.641 ± 0.120 |
+| 40 | **0.905 ± 0.026** | 0.779 ± 0.044 | 0.787 ± 0.035 |
+| 80 | **0.925 ± 0.026** | 0.855 ± 0.007 | 0.864 ± 0.017 |
+| 160 | **0.959 ± 0.013** | 0.870 ± 0.035 | 0.882 ± 0.029 |
+| 320 | **0.965 ± 0.005** | 0.891 ± 0.005 | 0.909 ± 0.008 |
+| all 1,377 | **0.978** | 0.938 | 0.942 |
+
+**Layer 27:**
+
+| N | A (probe on v_C) | D, in-domain map | D, merged map |
+|---|---|---|---|
+| 10 | **0.650 ± 0.222** | 0.308 ± 0.104 | 0.334 ± 0.114 |
+| 20 | **0.719 ± 0.076** | 0.421 ± 0.112 | 0.387 ± 0.103 |
+| 40 | **0.822 ± 0.057** | 0.494 ± 0.108 | 0.477 ± 0.121 |
+| 80 | **0.907 ± 0.019** | 0.588 ± 0.033 | 0.557 ± 0.056 |
+| 160 | **0.903 ± 0.009** | 0.662 ± 0.050 | 0.646 ± 0.065 |
+| 320 | **0.929 ± 0.018** | 0.733 ± 0.033 | 0.693 ± 0.029 |
+| all 1,377 | **0.960** | 0.824 | 0.791 |
+
+**N to reach PR-AUC 0.80** (linear interpolation on the mean curve; lower is
+better):
+
+| arm | L19 | L27 |
+|---|---|---|
+| A — probe on v_C | **≤ 10** | **~36** |
+| D — in-domain map | ~51 | never (0.733 at N=320) |
+| D — merged map | ~47 | never (0.693 at N=320) |
+
+Figure: `docs/scratch/jailbreak_mining_pilot_label_efficiency.png` (PR-AUC vs N,
+one panel per layer, error bars = SD over draws, with the all-labels A reference,
+the answer-space oracle E, and chance).
+
+**Verdict (label efficiency). The map does NOT buy labels — A dominates D at
+EVERY budget, and the gap is WIDEST where labels are scarcest.** At L19 with only
+**10 labelled contexts** (2 positives), the plain context probe already reaches
+PR-AUC 0.834 — above the 0.80 bar and ~17× the 0.05 base rate — while D needs
+~5× more labels (≈47–51) to get there. At L27 A reaches 0.80 by ~36 labels and D
+never reaches it inside the swept range at all. The ordering never inverts at any
+N, at either layer, and the margin at N=10 (0.834 vs 0.619, ≈0.21 PR-AUC) is far
+outside the draw-to-draw spread. Since D *additionally* costs a generation pass
+per label, its label-cost-adjusted position is strictly worse than these curves
+show. The map's one remaining hypothetical advantage does not materialise.
+
+One honest caveat in the other direction: A's L19 curve is essentially FLAT from
+N=10 to N=20 (0.834 → 0.825, within spread) and only 0.14 below its own
+all-1,377-label ceiling at N=10 — this task is simply easy for a context probe,
+so the sweep has limited dynamic range at its low end to discriminate *among*
+strong arms. That does not weaken the A-vs-D conclusion (the gap is large and
+consistent), but it does mean "A reaches 0.80 at ≤10 labels" is a bound set by
+the coarsest budget on the grid, not a measured threshold.
+
+---
+
+## (0d) Cross-family transfer — does either arm survive a family shift?
+
+The last place the map could win is **generalisation**: a map fit on family X's
+(v_C, v_A) pairs might carry family-general answer structure that a
+family-X-trained context probe does not.
+
+**Design.** THREE compliance-labelled families, after the toxicchat parse was
+fixed (§d gap (i)): `evil_train`, `evil_hh_rlhf`, `evil_toxicchat` — giving
+**6 ordered directions**. For each, train on the FULL source family and test on
+the target family's 5%-base-rate set (all its negatives, positives subsampled to
+the cleanest `round(n_neg · 0.05/0.95)`):
+
+| family | always-comply pos avail. | failed-comp neg | as TARGET: n_test (pos, base) |
+|---|---|---|---|
+| `evil_train` | 391 | 2,721 | 2,864 (143, 0.050) |
+| `evil_hh_rlhf` | 173 | 1,066 | 1,122 (56, 0.050) |
+| `evil_toxicchat` | 71 | 256 | 269 (**13**, 0.048) — **thin** |
+
+Arms: **A_transfer** (probe on v_C), **D_transfer** through `M_indomain` (fit on
+the SOURCE family's own pairs) and through `M_merged` (benign 3,000 + source
+family), and **E_transfer** (probe on real v_A → real v_A — the oracle, which
+needs generation on the target family and is not deployable). References:
+**A_within** / **E_within** (grouped 5-fold OOF *within* the target family — "you
+had in-domain labels") and a random floor. Headline layer **L19**
+(pre-specified from §0b); the full 6-layer sweep is in the results JSON and the
+best-layer view is the figure's right panel.
+
+**Read the two `→ evil_toxicchat` rows as directional only.** Its 5%-base test
+set has just **13 positives**, so its PR-AUC (and its `A_within` reference, which
+reaches a degenerate 1.000 at deep layers) is very noisy. The four directions
+with `evil_train` or `evil_hh_rlhf` as target (56–143 positives) carry the firm
+conclusions.
+
+**PR-AUC at L19 (pre-specified); `n_tr` = source-family train size:**
+
+| direction (n_tr) | A_transfer | D, in-dom | D, merged | E oracle | A_within (ref) |
+|---|---|---|---|---|---|
+| `evil_train` → `hh_rlhf` (3,112) | **0.894** | 0.810 | 0.884 | 0.836 | 0.947 |
+| `evil_train` → `toxicchat` (3,112) *thin* | 0.616 | 0.417 | **0.653** | 0.653 | 0.936 |
+| `hh_rlhf` → `evil_train` (1,239) | **0.623** | 0.203 | 0.369 | 0.401 | 0.982 |
+| `hh_rlhf` → `toxicchat` (1,239) *thin* | 0.910 | 0.555 | **0.947** | 0.990 | 0.936 |
+| `toxicchat` → `evil_train` (327) | **0.637** | 0.451 | 0.264 | 0.196 | 0.982 |
+| `toxicchat` → `hh_rlhf` (327) | **0.902** | 0.872 | 0.776 | 0.920 | 0.947 |
+
+**Best layer per arm** (each arm's own best of the 6 layers — the most generous
+reading for the map):
+
+| direction | A_transfer | D, in-dom | D, merged | E oracle | A_within |
+|---|---|---|---|---|---|
+| `evil_train` → `hh_rlhf` | **0.894** | 0.810 | 0.884 | 0.837 | 0.960 |
+| `evil_train` → `toxicchat` *thin* | **0.730** | 0.524 | 0.653 | 0.696 | 1.000 |
+| `hh_rlhf` → `evil_train` | **0.753** | 0.586 | 0.369 | 0.658 | 0.982 |
+| `hh_rlhf` → `toxicchat` *thin* | **1.000** | 0.958 | 0.947 | 0.995 | 1.000 |
+| `toxicchat` → `evil_train` | **0.674** | 0.487 | 0.264 | 0.196 | 0.982 |
+| `toxicchat` → `hh_rlhf` | **0.926** | 0.872 | 0.776 | 0.920 | 0.960 |
+
+**Map held-out reconstruction R² on the TARGET family** (how well a
+source-family-fit map predicts another family's answers), `M_src / M_merged`:
+
+| layer | train→hh | train→tox | hh→train | hh→tox | tox→train | tox→hh |
+|---|---|---|---|---|---|---|
+| L07 | −0.52 / −0.18 | −0.53 / −0.59 | −0.38 / −0.73 | +0.08 / −0.41 | −0.26 / −0.91 | +0.08 / −0.05 |
+| L11 | −0.22 / +0.01 | −0.31 / −0.33 | −0.30 / −0.55 | +0.19 / −0.16 | −0.17 / −0.60 | +0.16 / +0.10 |
+| L15 | +0.05 / +0.17 | −0.06 / +0.00 | −0.27 / −0.29 | +0.17 / +0.08 | −0.03 / −0.27 | +0.33 / +0.26 |
+| L19 | +0.04 / +0.17 | −0.04 / +0.14 | −0.14 / −0.15 | +0.24 / +0.22 | +0.11 / −0.10 | +0.40 / +0.29 |
+| L23 | −0.96 / −0.86 | −0.60 / −0.39 | −0.42 / −0.96 | +0.06 / −0.19 | +0.04 / −0.79 | +0.25 / −0.51 |
+| L27 | −0.73 / −0.67 | −0.43 / −0.19 | −0.42 / −1.10 | +0.19 / −0.02 | +0.01 / −0.99 | +0.35 / −0.44 |
+
+Figure: `docs/scratch/jailbreak_mining_pilot_transfer.png` (grouped bars per
+direction at L19 and at each arm's best layer, with the within-family A reference
+and chance).
+
+**Verdict (transfer).**
+
+1. **The map does NOT transfer better than the raw probe.** At each arm's best
+   layer, **A_transfer wins all 6 of 6 directions**. At the pre-specified L19 it
+   wins **4 of 6**, and the two exceptions are *both* the 13-positive
+   `→ toxicchat` rows (merged map 0.653 vs A 0.616; 0.947 vs 0.910) — i.e. A wins
+   **4 of 4** directions with a non-thin target. The map is not a family-general
+   representation; if anything it is *more* family-specific than the context
+   probe, and it degrades hardest exactly where transfer is hardest
+   (`hh_rlhf → evil_train`: A 0.623 vs D 0.203).
+2. **Transfer degrades every arm, and the degradation tracks source-family
+   SIZE more than family identity.** Against its own within-family reference, A
+   drops 0.053 from the largest source (`evil_train`, n=3,112 → hh_rlhf: 0.894 vs
+   0.947) and 0.359 from the middle one (`hh_rlhf`, n=1,239 → evil_train: 0.623
+   vs 0.982). But the smallest source is the informative case: `toxicchat`
+   (n=327, 71 positives) still reaches 0.902 → hh_rlhf and 0.637 → evil_train —
+   i.e. **the same target that `hh_rlhf` transferred to at 0.623 is reached at
+   0.637 by a source with a quarter of its training data.** So target difficulty
+   dominates: `evil_train` is simply a hard target for every source (0.623 /
+   0.637), while `hh_rlhf` is an easy one (0.894 / 0.902). Train-size and
+   family-similarity are still not fully separable with 3 families, but the
+   3-family grid shows the earlier 2-family "it's the train-size gap" reading was
+   too simple.
+3. **The map's reconstruction does not transfer.** R² of a source-family-fit map
+   on another family is NEGATIVE in **45 of 72** (layer × direction × map) cells
+   and never exceeds **+0.403** — versus +0.625 for the within-pool in-domain map
+   in §0b. A map fit on one jailbreak family predicts another family's answers
+   worse than their own mean, in the same way a benign-fit map fails on jailbreak
+   answers (§0b). So §0b's "an in-domain map fixes it" is narrower than it looked:
+   *in-domain* must mean **in-family**, not merely in-jailbreak. Note also that
+   `M_merged` is worse than `M_src` in most cross-family cells — the same dilution
+   §0b item 4 found.
+4. **A_transfer beats the answer-space ORACLE in 3 of 6 directions**, and by a
+   wide margin from the smallest source (`toxicchat → evil_train`: A 0.637 vs
+   E_transfer 0.196; `hh_rlhf → evil_train`: 0.623 vs 0.401). Under a family
+   shift the real answer activation is often a *worse* transfer feature than the
+   context activation — the answer representation is more family-idiosyncratic.
+   This is the sharpest statement against the map: the thing the map is trying to
+   predict is itself the less transferable signal.
+
+**POWER CAVEAT.** Three families give 6 ordered directions — better than the 2
+families (one pair) this arm started with, but still a very small grid, and two
+of the six have only 13 test positives. `n_train` varies ~10× across sources
+(3,112 / 1,239 / 327) and is not orthogonal to family identity, so train-size and
+family-similarity remain partly confounded. Treat the direction-level numbers as
+descriptive; the load-bearing claim is the consistent ORDERING (A ≥ D in every
+non-thin direction, at both the pre-specified and the best layer), which does not
+depend on any single cell.
 
 ---
 
@@ -342,12 +596,24 @@ Figure (PR-AUC by layer, per arm; left = vs benign, right = vs failed-jailbreak)
   DV the probe headline is *stronger*, not weaker (hard-negative PR 0.973 vs the
   trait pass's 0.811), so the trait-DV conclusion was directionally correct and
   conservative.
-- **Remaining gaps (compliance rerun):** (i) `evil_toxicchat` yielded 0 parsed
-  compliance scores — its raw-judge shard has a different filename/schema
-  (`judge_raw_compliance_full.json` sits under it but produced no per-context
-  entries via the per_persona/all_scores extractor), so the positives/negatives
-  come from `evil_train` + `evil_hh_rlhf` only; adding toxicchat would broaden
-  family coverage. (ii) `group_key` was not retained in the stream-reduce, but the
+- **Gap (i) — `evil_toxicchat` — RESOLVED, and the earlier diagnosis was WRONG.**
+  This section previously stated that toxicchat "yielded 0 parsed compliance
+  scores — its raw-judge shard has a different filename/schema". That attribution
+  does not survive checking. The family's judge output IS present on the HF data
+  repo at `issue1739_ctxmap/evil_ood_spread/compliance_full/evil_toxicchat/` as a
+  **single unsharded `judge_raw_compliance_full.json`** (5,827,718 bytes; the
+  other two families are sharded `judge_raw_compliance_full.shardNN.jsonl`) — and
+  the reducer's glob **already covers that filename**. The real cause: the
+  directory had never been staged locally, so the reducer globbed an **absent**
+  directory and returned 0 contexts. Staging the one file was the entire fix; no
+  schema change was needed. Reduced with the SAME `reduce_rung` the rerun used:
+  13,420 judge entries → 3,351 rollout-items → **671 contexts, 71 always-comply
+  (mean & min ≥ 90) and 256 failed-compliance (mean ≤ 5)**. This unblocked the
+  3-family transfer sweep in §0d. The reduced DV is written to a **separate**
+  `compliance_percontext_toxicchat_probe.json`, deliberately NOT merged into the
+  shared `compliance_percontext.json`: §0b/§0c pool all rungs and select the 150
+  cleanest positives across them, so folding in a third family would change the
+  pooled positive set and invalidate their committed tables. (ii) `group_key` was not retained in the stream-reduce, but the
   sibling store shows it is ~1:1 with `context_id` (2954/2954 distinct), so
   per-context grouped OOF is the honest leakage control — there is no coarser
   template grouping to exploit. (iii) `r_B` (#658) was extracted for a different
@@ -366,9 +632,23 @@ PR is the load-bearing takeaway, robust to orientation.
 
 **Repro:** map-regime arms (§0b) — `scripts/issue1739_jbmine_stream_evil_answer.py`
 (stream-reduce t1 = v_A → `evil_answer_t1.npz`),
-`scripts/issue1739_jbmine_map_arms.py` (arms A/B/C/D/E, both map regimes, map R²
-→ `map_arms_results.json`), `scripts/issue1739_jbmine_map_arms_plot.py` →
-`docs/scratch/jailbreak_mining_pilot_map_arms.png`. Compliance rerun (§0) —
+`scripts/issue1739_jbmine_map_arms.py` (arms A/B/C/D/E, all THREE map regimes
+incl. M_merged, map R² → `map_arms_results.json`),
+`scripts/issue1739_jbmine_map_arms_plot.py` →
+`docs/scratch/jailbreak_mining_pilot_map_arms.png`. Label efficiency (§0c) —
+`scripts/issue1739_jbmine_label_efficiency.py` (budgets {10..320} × 5 draws ×
+{A, D-indomain, D-merged} at L19/L27 → `label_efficiency_results.json`).
+Cross-family transfer (§0d) — `scripts/issue1739_jbmine_transfer.py`
+(6 ordered directions over 3 families × 6 layers → `transfer_results.json`;
+`--layers`/`--out-suffix` support the 1-layer sizing pilot, whose output is
+`transfer_results_pilot1layer.json`). Both §0c/§0d figures —
+`scripts/issue1739_jbmine_labeleff_transfer_plot.py` →
+`docs/scratch/jailbreak_mining_pilot_label_efficiency.png` +
+`..._transfer.png`. Toxicchat parse fix (§d gap (i)) —
+`scripts/issue1739_jbmine_toxicchat_probe.py` (stages the single unsharded
+`judge_raw_compliance_full.json`, reduces via the SAME `reduce_rung` →
+`compliance_percontext_toxicchat_probe.json`, deliberately separate from the
+shared DV json). Compliance rerun (§0) —
 `scripts/issue1739_jbmine_stream_evil.py` (stream-reduce the 32 GB tar →
 `evil_compliance_ctxend.npz`), `scripts/issue1739_jbmine_compliance_reduce.py`
 (per-context compliance DV → `compliance_percontext.json`),

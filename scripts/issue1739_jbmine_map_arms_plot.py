@@ -29,11 +29,20 @@ BARS = [
     ("A_probe_vC", "A: probe on v_C", "C0"),
     ("B_mapproj_benign", "B: map→proj (benign)", "C3"),
     ("B_mapproj_indomain", "B: map→proj (in-dom)", "C3"),
+    ("B_mapproj_merged", "B: map→proj (merged)", "C3"),
     ("C_benign", "C: probe on M·v_C (benign)", "C1"),
     ("C_indomain", "C: probe on M·v_C (in-dom)", "C1"),
+    ("C_merged", "C: probe on M·v_C (merged)", "C1"),
     ("D_benign", "D: v_A-probe thru M (benign)", "C2"),
     ("D_indomain", "D: v_A-probe thru M (in-dom)", "C2"),
+    ("D_merged", "D: v_A-probe thru M (merged)", "C2"),
     ("E_probe_vA_oracle", "E: probe on v_A (oracle)", "0.35"),
+]
+# (map-regime key, label, color, marker) for the reconstruction-R² panel
+R2_LINES = [
+    ("benign", "M_benign", "C3", "o"),
+    ("indomain", "M_indomain", "C2", "s"),
+    ("merged", "M_merged", "C4", "^"),
 ]
 
 
@@ -62,24 +71,17 @@ def main() -> int:
     ax1.grid(axis="y", alpha=0.3)
 
     layers = sorted(int(x) for x in r["map_r2"]["benign"])
-    ax2.plot(
-        layers,
-        [r["map_r2"]["benign"][str(x)] for x in layers],
-        "o-",
-        color="C3",
-        label="M_benign",
-        lw=1.6,
-        ms=6,
-    )
-    ax2.plot(
-        layers,
-        [r["map_r2"]["indomain"][str(x)] for x in layers],
-        "s-",
-        color="C2",
-        label="M_indomain",
-        lw=1.6,
-        ms=6,
-    )
+    for key, label, color, marker in R2_LINES:
+        ax2.plot(
+            layers,
+            [r["map_r2"][key][str(x)] for x in layers],
+            marker=marker,
+            ls="-",
+            color=color,
+            label=label,
+            lw=1.6,
+            ms=6,
+        )
     ax2.axhline(0, ls="--", color="k", lw=1)
     ax2.set_xlabel("layer")
     ax2.set_ylabel("held-out reconstruction R² of v_A")

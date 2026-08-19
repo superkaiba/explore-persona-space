@@ -11,10 +11,12 @@ Arms:
   E  probe on real v_A  (ANSWER-SPACE ORACLE; needs generation, not deployable)
   C  probe trained on M.v_C, tested on M.v_C       (reparametrization check vs A)
   D  probe trained on real v_A, applied to M.v_C   (answer-space probe through map)
-C and D each run under TWO map regimes:
+C and D each run under THREE map regimes:
   M_benign   ridge context_end->t1 on disjoint benign WildChat/LMSYS rows
   M_indomain ridge context_end->t1 on a held-out grouped-disjoint split of the
              jailbreak contexts' own (v_C, v_A) pairs (label-stratified reserve)
+  M_merged   ridge on the ROW UNION of the two training sets above
+             (n_benign : n_indomain reported in _meta)
 
 Split scheme (mutually disjoint, grouped by context; groups ~1:1 with context):
   MAP reserve  = 35% of jailbreak contexts (label-stratified) -> fit M_indomain
@@ -246,7 +248,7 @@ def main() -> int:
 
     results = {
         "eval": {"n": len(y), "n_pos": int(y.sum()), "base_rate": float(y.mean()), "k5": k5},
-        "map_r2": {"benign": {}, "indomain": {}},
+        "map_r2": {"benign": {}, "indomain": {}, "merged": {}},
         "layers": {},
     }
     for li, L in enumerate(LAYERS):
@@ -255,21 +257,32 @@ def main() -> int:
         # maps
         M_ben = fit_ridge_map(bce[L], bt1[L], RIDGE_LAMBDA)
         M_ind = fit_ridge_map(eVC[map_res, li, :], eVA[map_res, li, :], RIDGE_LAMBDA)
+        # M_merged: row union of the benign and in-domain training sets
+        M_mrg = fit_ridge_map(
+            np.concatenate([bce[L], eVC[map_res, li, :]], axis=0),
+            np.concatenate([bt1[L], eVA[map_res, li, :]], axis=0),
+            RIDGE_LAMBDA,
+        )
         results["map_r2"]["benign"][L] = recon_r2(M_ben, vC, vA)
         results["map_r2"]["indomain"][L] = recon_r2(M_ind, vC, vA)
+        results["map_r2"]["merged"][L] = recon_r2(M_mrg, vC, vA)
         mvc_ben = apply_map(M_ben, vC)
         mvc_ind = apply_map(M_ind, vC)
+        mvc_mrg = apply_map(M_mrg, vC)
 
         row = {}
         row["A_probe_vC"] = metrics(y, probe_oof_same(vC, y, groups), k5)
         row["E_probe_vA_oracle"] = metrics(y, probe_oof_same(vA, y, groups), k5)
         row["C_benign"] = metrics(y, probe_oof_same(mvc_ben, y, groups), k5)
         row["C_indomain"] = metrics(y, probe_oof_same(mvc_ind, y, groups), k5)
+        row["C_merged"] = metrics(y, probe_oof_same(mvc_mrg, y, groups), k5)
         row["D_benign"] = metrics(y, probe_oof_cross(vA, mvc_ben, y, groups), k5)
         row["D_indomain"] = metrics(y, probe_oof_cross(vA, mvc_ind, y, groups), k5)
+        row["D_merged"] = metrics(y, probe_oof_cross(vA, mvc_mrg, y, groups), k5)
         # arm B = map-then-project: fixed r_B direction applied to the MAPPED answer
         row["B_mapproj_benign"] = metrics(y, orient(y, unit_rows(mvc_ben) @ unit(rb_hc[L])), k5)
         row["B_mapproj_indomain"] = metrics(y, orient(y, unit_rows(mvc_ind) @ unit(rb_hc[L])), k5)
+        row["B_mapproj_merged"] = metrics(y, orient(y, unit_rows(mvc_mrg) @ unit(rb_hc[L])), k5)
         # raw fixed direction on v_C (no map) — reference
         row["rawdir_rb_harmcomp"] = metrics(y, orient(y, vC @ unit(rb_hc[L])), k5)
         row["rawdir_rb_refusal"] = metrics(y, orient(y, vC @ unit(rb_ref[L])), k5)
@@ -277,9 +290,13 @@ def main() -> int:
         results["layers"][L] = row
         print(
             f"  L{L:02d} A {row['A_probe_vC']['pr_auc']:.3f} E {row['E_probe_vA_oracle']['pr_auc']:.3f} "
-            f"| C_ben {row['C_benign']['pr_auc']:.3f} C_ind {row['C_indomain']['pr_auc']:.3f} "
-            f"| D_ben {row['D_benign']['pr_auc']:.3f} D_ind {row['D_indomain']['pr_auc']:.3f} "
-            f"| R2 ben {results['map_r2']['benign'][L]:.3f} ind {results['map_r2']['indomain'][L]:.3f}",
+            f"| C ben/ind/mrg {row['C_benign']['pr_auc']:.3f}/"
+            f"{row['C_indomain']['pr_auc']:.3f}/{row['C_merged']['pr_auc']:.3f} "
+            f"| D ben/ind/mrg {row['D_benign']['pr_auc']:.3f}/"
+            f"{row['D_indomain']['pr_auc']:.3f}/{row['D_merged']['pr_auc']:.3f} "
+            f"| R2 ben {results['map_r2']['benign'][L]:.3f} "
+            f"ind {results['map_r2']['indomain'][L]:.3f} "
+            f"mrg {results['map_r2']['merged'][L]:.3f}",
             flush=True,
         )
 
@@ -293,6 +310,11 @@ def main() -> int:
         "map_reserve_frac": MAP_RESERVE_FRAC,
         "ridge_lambda": RIDGE_LAMBDA,
         "map_reserve_n": {"pos": int(len(pos_res)), "neg": int(len(neg_res))},
+        "map_train_rows": {
+            "benign": int(len(bce[LAYERS[0]])),
+            "indomain": int(len(map_res)),
+            "merged": int(len(bce[LAYERS[0]])) + int(len(map_res)),
+        },
         "split": "per-context groups; MAP reserve / probe-train / test mutually disjoint",
     }
     out = DEST / "map_arms_results.json"
