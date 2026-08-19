@@ -1,1 +1,2 @@
 {"ts": "2026-08-19T13:55:07Z", "event": "raised", "concern_id": "fatal-push-unbounded", "severity": "BLOCKER", "summary": "The fatal path can hang before exit 1 because its synchronous Telegram helper and underlying curl have no timeout.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-19T13:55:12Z", "event": "raised", "concern_id": "append-probe-erases-errno", "severity": "NIT", "summary": "The appendability probe discards the underlying OS error, weakening cron diagnostics.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
