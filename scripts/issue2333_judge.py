@@ -747,6 +747,16 @@ def _require_gates(cfg: JudgeConfig2333, names: tuple[str, ...]) -> None:
             raise RuntimeError(f"gate report missing: {path} — run the gate phase first")
         rec = json.loads(path.read_text(encoding="utf-8"))
         if not rec.get("passed"):
+            override = rec.get("override") or {}
+            if override.get("accepted_fail"):
+                # Audited accepted-fail override (--accept-coherence-gate-fail):
+                # the verdict stays FAIL on record; downstream phases proceed.
+                logger.warning(
+                    "[gates] %s FAILED but carries an audited accepted_fail override: %s",
+                    name,
+                    override.get("reason"),
+                )
+                continue
             raise RuntimeError(f"gate FAILED per {path} — fix the instrument and re-run")
 
 
