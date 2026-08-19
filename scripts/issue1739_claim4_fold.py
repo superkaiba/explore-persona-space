@@ -53,10 +53,19 @@ def _ensure_repo_root_on_syspath() -> Path:
 _REPO_ROOT = _ensure_repo_root_on_syspath()
 
 BEHAVIORS = ("evil", "sycophancy", "hallucination")
-# 13 primary whole-holdout rungs (plan §3): the fold derives the roster
-# MECHANICALLY from the rows (fit == P-B-holdout-<rung> & eval_rung == rung)
-# and checks the counts against this registration.
-EXPECTED_PRIMARY_COUNTS = {"evil": 5, "sycophancy": 6, "hallucination": 2}
+# 13 primary whole-holdout rungs (plan §3): the fold derives the realized
+# roster MECHANICALLY from the rows (fit == P-B-holdout-<rung> & eval_rung ==
+# rung) and checks it against this NAME-based registration — exact set
+# equality per behavior, so a same-size WRONG set is a named mismatch, never
+# a pass (review r2 item 4). Authoritative names = the banked fit labels at
+# 5aae0a472b (the P-B whole-holdout rungs realized in
+# eval_results/issue_1739/r2v2_fits/<behavior>/all_arms_spearman.json).
+REGISTERED_PRIMARY_RUNGS: dict[str, frozenset[str]] = {
+    "evil": frozenset({"evil_mhj", "evil_pair", "evil_tomgibbs", "hhrt", "toxicchat"}),
+    "sycophancy": frozenset({"aita", "sycoans", "sycoays", "sycofb", "sycomim", "sycomwe"}),
+    "hallucination": frozenset({"nqopen", "simpleqa"}),
+}
+EXPECTED_PRIMARY_COUNTS = {b: len(v) for b, v in REGISTERED_PRIMARY_RUNGS.items()}
 FLAGSHIPS = (("evil", "evil_pair"), ("sycophancy", "sycomwe"))
 ARM_CTX = "arm4_ridge_ctx"
 ARM_MAP = "arm7_map_ridge_pred"
@@ -175,13 +184,15 @@ def row_coverage_check(
                                     "arm": arm,
                                 }
                             )
-        expected = EXPECTED_PRIMARY_COUNTS.get(b)
-        if expected is not None and len(rungs_by_b[b]) != expected and rungs_by_b[b]:
+        registered = REGISTERED_PRIMARY_RUNGS.get(b)
+        present = set(rungs_by_b[b])
+        if registered is not None and present and present != set(registered):
             gaps.append(
                 {
                     "behavior": b,
-                    "note": f"primary rung count {len(rungs_by_b[b])} != registered "
-                    f"{expected}: {rungs_by_b[b]}",
+                    "note": f"primary rung-NAME set != registered — missing "
+                    f"{sorted(set(registered) - present)}, unregistered "
+                    f"{sorted(present - set(registered))} (present: {rungs_by_b[b]})",
                 }
             )
     return cells, rungs_by_b, gaps
@@ -270,27 +281,35 @@ def _ci_spans_zero(ci) -> bool:
 
 def lattice_completeness_gaps(
     per_rung: list[dict],
-    expected_counts: dict[str, int] = EXPECTED_PRIMARY_COUNTS,
+    registered_rungs: dict[str, frozenset[str]] = REGISTERED_PRIMARY_RUNGS,
     n_seeds_required: int = REGISTERED_SEED_COUNT,
 ) -> list[str]:
     """Named gaps vs the REGISTERED lattice denominator (plan §3: the exact
-    13-rung set, all 5 seeds per rung, every quantity — dtrue/margin seed
-    t-CIs AND both paired group-level context-bootstrap CIs). ANY gap makes
-    the lattice `Not draftable / unresolved` (kill-(b) note: a shrunken
-    median denominator must never yield a draftable verdict)."""
+    13-rung NAME set, all 5 seeds per rung, every quantity — dtrue/margin
+    seed t-CIs AND both paired group-level context-bootstrap CIs). The rung
+    check is EXACT set equality on the registered rung NAMES per behavior —
+    a same-size wrong set is a named mismatch, never a pass (review r2
+    item 4). ANY gap makes the lattice `Not draftable / unresolved`
+    (kill-(b) note: a shrunken median denominator must never yield a
+    draftable verdict)."""
     gaps: list[str] = []
     by_b: dict[str, list[dict]] = {}
     for r in per_rung:
         by_b.setdefault(str(r["behavior"]), []).append(r)
-    for b in sorted(set(expected_counts) | set(by_b)):
+    for b in sorted(set(registered_rungs) | set(by_b)):
         rows = by_b.get(b, [])
-        expected = expected_counts.get(b)
-        if expected is None:
+        registered = registered_rungs.get(b)
+        if registered is None:
             gaps.append(f"{b}: {len(rows)} rungs from an UNREGISTERED behavior")
             continue
-        if len(rows) != expected:
-            present = sorted(str(r["eval_rung"]) for r in rows)
-            gaps.append(f"{b}: {len(rows)}/{expected} registered primary rungs present {present}")
+        present = {str(r["eval_rung"]) for r in rows}
+        if present != set(registered):
+            missing = sorted(set(registered) - present)
+            extra = sorted(present - set(registered))
+            gaps.append(
+                f"{b}: {len(present & set(registered))}/{len(registered)} registered "
+                f"primary rungs present — missing {missing}, unregistered {extra}"
+            )
         for r in sorted(rows, key=lambda r: str(r["eval_rung"])):
             tag = f"{b}/{r['eval_rung']}"
             n_seeds = r.get("dtrue", {}).get("n_seeds")
@@ -309,21 +328,22 @@ def lattice_completeness_gaps(
 def lattice_verdict(
     per_rung: list[dict],
     flagships=FLAGSHIPS,
-    expected_counts: dict[str, int] = EXPECTED_PRIMARY_COUNTS,
+    registered_rungs: dict[str, frozenset[str]] = REGISTERED_PRIMARY_RUNGS,
     n_seeds_required: int = REGISTERED_SEED_COUNT,
 ) -> dict:
     """The §3 v21 registered verdict lattice (DISJOINT + exhaustive).
 
     ``per_rung`` entries need: behavior, eval_rung, complete (bool),
     dtrue (seed_tci dict), margin (seed_tci dict), dtrue_ctx_ci, margin_ctx_ci.
-    Precedence: coverage (the FULL registered 13-rung x 5-seed denominator,
-    :func:`lattice_completeness_gaps`) -> item-2 falsifier -> strong -> weak
-    -> catch-all. A draftable verdict REQUIRES the complete registered set;
-    ANY gap resolves `Not draftable / unresolved` with the gap named.
+    Precedence: coverage (the FULL registered 13-rung-NAME x 5-seed
+    denominator, :func:`lattice_completeness_gaps`) -> item-2 falsifier ->
+    strong -> weak -> catch-all. A draftable verdict REQUIRES the complete
+    registered set; ANY gap resolves `Not draftable / unresolved` with the
+    gap named.
     """
     import numpy as np
 
-    coverage_gaps = lattice_completeness_gaps(per_rung, expected_counts, n_seeds_required)
+    coverage_gaps = lattice_completeness_gaps(per_rung, registered_rungs, n_seeds_required)
     if coverage_gaps:
         shown = "; ".join(coverage_gaps[:8])
         more = f" (+{len(coverage_gaps) - 8} more)" if len(coverage_gaps) > 8 else ""
@@ -1163,6 +1183,7 @@ def build_table(args) -> dict:
             "missing_files": missing,
             "gaps": gaps,
             "primary_rungs": rungs_by_b,
+            "registered_primary_rungs": {b: sorted(v) for b, v in REGISTERED_PRIMARY_RUNGS.items()},
             "expected_counts": EXPECTED_PRIMARY_COUNTS,
         },
         "per_rung": per_rung,
