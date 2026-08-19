@@ -378,8 +378,12 @@ VERIFIERS = {
 # --------------------------------------------------------------------------------------
 
 
-def generate(items: list[dict], max_tokens: int) -> list[list[str]]:
-    """K sampled completions per item, via one batched vLLM call."""
+def generate(items: list[dict], max_tokens: int) -> tuple[list[list[str]], float]:
+    """K sampled completions per item via one batched vLLM call.
+
+    Returns (completions, fraction of items whose K draws were all identical) — the
+    second value is the degenerate-sampling diagnostic, persisted with the results.
+    """
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
@@ -392,18 +396,27 @@ def generate(items: list[dict], max_tokens: int) -> list[list[str]]:
         )
         for it in items
     ]
+    # Engine-level seed gives run reproducibility. The per-request SamplingParams seed is
+    # deliberately LEFT UNSET: a single seed shared across the n draws of one request risks
+    # returning K identical completions, which would make every item score exactly 0.0 or 1.0
+    # and manufacture perfect bimodality — the precise quantity this pilot measures. Independent
+    # draws matter more here than per-request reproducibility.
     llm = LLM(model=MODEL, dtype="bfloat16", gpu_memory_utilization=0.90, seed=SEED)
     params = SamplingParams(
-        n=K_ROLLOUTS, temperature=TEMPERATURE, top_p=TOP_P, max_tokens=max_tokens, seed=SEED
+        n=K_ROLLOUTS, temperature=TEMPERATURE, top_p=TOP_P, max_tokens=max_tokens
     )
     outs = llm.generate(prompts, params)
     assert len(outs) == len(items), f"vLLM returned {len(outs)} outputs for {len(items)} prompts"
 
-    completions, cap_hits = [], 0
+    completions, cap_hits, n_all_identical = [], 0, 0
     for o in outs:
         assert len(o.outputs) == K_ROLLOUTS, f"expected {K_ROLLOUTS} rollouts, got {len(o.outputs)}"
         cap_hits += sum(1 for c in o.outputs if c.finish_reason == "length")
-        completions.append([c.text for c in o.outputs])
+        texts = [c.text for c in o.outputs]
+        if len(set(texts)) == 1:
+            n_all_identical += 1
+        completions.append(texts)
+
     total = len(items) * K_ROLLOUTS
     print(f"  cap-hit fraction: {cap_hits}/{total} = {cap_hits / total:.3%}", flush=True)
     if cap_hits / total > 0.02:
@@ -412,7 +425,22 @@ def generate(items: list[dict], max_tokens: int) -> list[list[str]]:
             f"at max_tokens={max_tokens}",
             flush=True,
         )
-    return completions
+
+    # Degenerate-sampling guard. If the K draws collapse to one string the DV is 0/1 by
+    # construction and the spread read is meaningless — a bug that would LOOK like a clean
+    # bimodal result. Some genuine collapse is expected on short-answer items, so this reports
+    # always and only refuses when sampling is effectively deterministic across the board.
+    frac_identical = n_all_identical / len(items)
+    print(
+        f"  all-K-identical items: {n_all_identical}/{len(items)} = {frac_identical:.1%}",
+        flush=True,
+    )
+    assert frac_identical < 0.95, (
+        f"{frac_identical:.1%} of items returned K identical completions — sampling is "
+        f"effectively deterministic (check temperature={TEMPERATURE} and that SamplingParams "
+        f"carries no per-request seed). The spread measurement would be an artifact."
+    )
+    return completions, frac_identical
 
 
 # --------------------------------------------------------------------------------------
@@ -461,7 +489,7 @@ def run_benchmark(name: str) -> dict:
     print(f"\n=== {name} ===", flush=True)
     items = LOADERS[name]()
     print(f"  loaded {len(items)} items", flush=True)
-    completions = generate(items, MAX_TOKENS[name])
+    completions, frac_identical = generate(items, MAX_TOKENS[name])
 
     verifier = VERIFIERS[name]
     rows, n_unparsed = [], 0
@@ -490,6 +518,7 @@ def run_benchmark(name: str) -> dict:
         "k_rollouts": K_ROLLOUTS,
         "temperature": TEMPERATURE,
         "n_items": len(rows),
+        "frac_items_all_k_identical": frac_identical,
         "n_unparsed_rollouts": n_unparsed,
         "unparsed_fraction": n_unparsed / (len(rows) * K_ROLLOUTS),
         # Primary read: items where all K rollouts parsed, so the binomial decomposition holds.
