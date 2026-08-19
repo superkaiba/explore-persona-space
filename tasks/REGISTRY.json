@@ -10773,8 +10773,8 @@
     "2394": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/2394",
-      "status": "proposed",
+      "path": "tasks/completed/2394",
+      "status": "completed",
       "title": "Pilot: cheap context readout to mine always-comply jailbreak contexts; does the context\u2192answer map help?"
     },
     "2395": {
