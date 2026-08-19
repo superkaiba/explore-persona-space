@@ -191,6 +191,23 @@ Behaviours:
   :data:`EMPTY_TEXT_DEFAULT_ALLOWLIST` (the JUDGE_PIN allowlist idiom;
   a NEW file never inherits the escape); waive a deliberate site with
   ``# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`` (#2206).
+* ``--check-stale-gotchas-pointers`` (also bundled into the no-flags
+  default run): scan ``CLAUDE.md`` + every ``*.md`` under ``.claude/``
+  (gotchas.md itself, ``agent-memory/``, ``plans/``, ``cache/``, and
+  ``worktrees/`` excluded) and FAIL a dead task-id next to a
+  ``gotchas.md`` mention — an id within 100 chars of a ``gotchas.md``
+  token on the same line, at or under the registry's literal
+  ``highest_id``, that no longer occurs in ``.claude/rules/gotchas.md``.
+  The class is a SUPERSET of the #2189 relocation shape: it also catches
+  id-TRIMS where the entry survives in gotchas.md with its citation
+  compacted away — triage each hit before repointing.
+  Relocation-attribution idiom lines ("Relocated codebase traps" / "to
+  recover gotchas.md byte budget") are skipped so correct relocation
+  records never trip it; genuine context-citations are frozen per
+  (path, id) in :data:`STALE_GOTCHAS_POINTER_ALLOWLIST` with per-entry
+  reasons. Known false negatives disclosed in the check docstring:
+  wrapped-line splits (the id on the line after the token) and id
+  aliasing (the id survives in gotchas.md on a DIFFERENT entry) (#2193).
 * ``--check-plan-version-immutability`` (Arm W also bundled into the
   no-flags default run; Arm H explicit-flag only): a persisted
   ``tasks/**/plans/v<K>.md`` plan version is IMMUTABLE — an amendment
@@ -15120,7 +15137,13 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 1175 B -> 1258 B). Cap = measured + <=40.
     # #2250 added the SLURM allocation-width trigger (row 1289 B -> 1378 B).
     # Cap = measured + <=40.
-    "gotchas": 1418,
+    # #2193 DELETED the chained smoke-then-full leg out-root residue topic
+    # token (the #1640 addition; the rule relocated to crash-fix-rounds.md
+    # at #2189, whose LESSONS row already carries the covering `per-leg
+    # out-roots` trigger) — row 1378 B -> 1353 B (the row had drifted +21 B
+    # since the #2250 measurement). Cap = measured + <=40; caps RATCHET
+    # DOWN with deletions, never keep dead headroom.
+    "gotchas": 1393,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -17113,6 +17136,194 @@ def check_empty_text_default(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+# ── --check-stale-gotchas-pointers (#2193; the #2189 stale-relocation-pointer class)
+_STALE_GOTCHAS_TARGET = ".claude/rules/gotchas.md"
+_STALE_GOTCHAS_ID_RE = re.compile(r"(?<![\w/])#(\d+)\b")
+_STALE_GOTCHAS_TOKEN_RE = re.compile(r"gotchas\.md")
+_STALE_GOTCHAS_WINDOW = 100
+# Relocation-attribution idiom lines (the #2189 pattern, reused by future
+# relocations): a correct relocation RECORD legitimately names gotchas.md
+# next to the relocating task's id. Both literals are pinned verbatim in
+# tests/test_workflow_lint_stale_gotchas_pointers.py so skip-string drift
+# breaks a test instead of silently re-flagging attribution headers.
+_STALE_GOTCHAS_SKIP_IDIOMS: tuple[str, ...] = (
+    "Relocated codebase traps",
+    "to recover gotchas.md byte budget",
+)
+# Historical-record / ephemeral dirs OUT of scan scope (repo-relative
+# prefixes): per-agent memories and persisted plan-cache copies are "true
+# when written" by convention, cache state is not navigational surface, and
+# sibling worktrees are stale duplicates of the same tree.
+_STALE_GOTCHAS_SCAN_EXCLUDES: tuple[str, ...] = (
+    ".claude/agent-memory/",
+    ".claude/plans/",
+    ".claude/cache/",
+    ".claude/worktrees/",
+)
+
+# Genuine context-citations, frozen per (repo-relative path, task id) with a
+# per-entry reason (the EMPTY_TEXT_DEFAULT_ALLOWLIST idiom, reasons inline):
+# the line cites gotchas.md for CONTEXT (e.g. as a routing DESTINATION) while
+# the nearby #N belongs to a different claim in the same sentence — a
+# location claim it is not, so the co-reference is not stale.
+STALE_GOTCHAS_POINTER_ALLOWLIST: dict[tuple[str, int], str] = {
+    (".claude/skills/issue/markers.md", 711): (
+        "epm:failure-lesson marker-schema row: gotchas.md is named as the "
+        "consolidate_lessons.py ROUTING DESTINATION while #711 cites the "
+        "cron's own filing task — context-citation, not a location claim"
+    ),
+    (".claude/skills/issue/markers.md", 712): (
+        "same epm:failure-lesson marker-schema row: #712 cites the "
+        "root_cause_confirmed field's incident while gotchas.md names the "
+        "gotcha_candidate routing destination — context-citation, not a "
+        "location claim"
+    ),
+}
+
+
+def _stale_gotchas_registry_cap(root: Path) -> tuple[int | None, str | None]:
+    """Read the literal ``tasks/REGISTRY.json`` ``highest_id`` field (#2193).
+
+    Returns ``(cap, None)`` on success, ``(None, error)`` on a missing /
+    unparseable registry or a missing/non-int field. The literal field is
+    the ONLY sanctioned read — NEVER ``max()`` over top-level keys: the
+    dict mixes digit and non-digit keys (``highest_id``, ``tasks``), so a
+    naive max crashes or under-reads. Read-only id-cap heuristic: a
+    worktree's stale registry copy only UNDER-reads the cap, which is the
+    conservative direction (a too-fresh id is skipped, never false-FAILed).
+    """
+    registry = root / "tasks" / "REGISTRY.json"
+    try:
+        cap = json.loads(registry.read_text(encoding="utf-8"))["highest_id"]
+    except (OSError, ValueError, KeyError) as exc:
+        return None, (
+            f"stale-gotchas-pointer/{registry}: cannot read the literal "
+            f"highest_id field ({type(exc).__name__}: {exc}) — the id-cap "
+            f"filter needs it; fix the registry read (never max() over keys)"
+        )
+    if not isinstance(cap, int):
+        return None, (
+            f"stale-gotchas-pointer/{registry}: highest_id is not an int "
+            f"(got {type(cap).__name__}) — the id-cap filter needs it"
+        )
+    return cap, None
+
+
+def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:  # noqa: C901 -- flat predicate ladder (scan excludes, skip idioms, id-cap, min-distance window, allowlist); extracting a branch would just relocate it
+    """FAIL a dead task-id next to a ``gotchas.md`` mention (#2193).
+
+    The true-positive class is "dead task-id next to a gotchas.md
+    mention" — a SUPERSET of relocation: 2 of the 5 baseline true
+    positives were id-TRIMS where the entry still LIVES in gotchas.md but
+    its ``#N`` citation was compacted away, so a hit does not necessarily
+    mean a #2189-style relocation — triage each hit (phrase-grep +
+    ``git log -S``) before repointing; never guess a new home.
+
+    Predicate (calibrated on the 2026-08-19 live tree — 7 hits: 5 true
+    positives fixed by #2193 + the 2 markers.md context-citations frozen
+    in :data:`STALE_GOTCHAS_POINTER_ALLOWLIST`):
+
+    1. Scan ``CLAUDE.md`` + every ``*.md`` under ``.claude/``, EXCLUDING
+       gotchas.md itself and the :data:`_STALE_GOTCHAS_SCAN_EXCLUDES`
+       prefixes (``agent-memory/`` + ``plans/`` are historical records —
+       "true when written" by convention; ``cache/`` is ephemeral state;
+       ``worktrees/`` holds sibling-worktree duplicates).
+    2. Skip relocation-attribution idiom lines — any line containing
+       "Relocated codebase traps" or "to recover gotchas.md byte budget"
+       verbatim (:data:`_STALE_GOTCHAS_SKIP_IDIOMS`, the #2189 pattern
+       future relocations reuse): a NEW relocation whose attribution
+       header would trip this lint gets a self-serve fix by carrying one
+       of those literals.
+    3. Per line containing a ``gotchas.md`` token, for each id matching
+       ``(?<![\\w/])#(\\d+)\\b`` (the lookbehind drops
+       ``pytorch#94772``-class external-tracker refs) with ``N <=`` the
+       registry's literal ``highest_id`` field (drops residual non-task
+       numbers; see :func:`_stale_gotchas_registry_cap`) and a MIN gap of
+       <= :data:`_STALE_GOTCHAS_WINDOW` chars to the NEAREST
+       ``gotchas.md`` token on the line: FAIL when ``#N`` occurs nowhere
+       in ``.claude/rules/gotchas.md``, unless ``(path, N)`` is
+       allowlisted.
+
+    Known FALSE-NEGATIVE classes, disclosed by design (the
+    smoke-blind-spots.md § Enforcement disclosed-miss precedent):
+
+    * WRAPPED-LINE SPLIT — an id landing on the line AFTER the
+      ``gotchas.md`` token escapes the line-scoped window (baseline-era
+      example, fixed by #2193: artifact-reuse.md's ``#723-family +`` /
+      ``#841 entries.`` wrap, where the wrapped second id was caught only
+      because the first shared the token's line);
+    * ID ALIASING — an id surviving elsewhere in gotchas.md attached to a
+      DIFFERENT entry reads as fresh.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None and the check scans under :data:`_REPO_ROOT`. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    gotchas_path = root / _STALE_GOTCHAS_TARGET
+    try:
+        gotchas_ids = {
+            int(m) for m in re.findall(r"#(\d+)", gotchas_path.read_text(encoding="utf-8"))
+        }
+    except OSError as exc:
+        return [
+            f"stale-gotchas-pointer/{gotchas_path}: cannot read the co-reference "
+            f"target ({exc}) — the freshness check needs it"
+        ]
+    cap, cap_error = _stale_gotchas_registry_cap(root)
+    if cap_error is not None:
+        return [cap_error]
+    assert cap is not None  # narrowed by the cap_error branch above
+    errors: list[str] = []
+    for path in [root / "CLAUDE.md", *sorted((root / ".claude").rglob("*.md"))]:
+        if not path.is_file():
+            continue
+        rel = path.relative_to(root).as_posix()
+        if rel == _STALE_GOTCHAS_TARGET:
+            continue
+        if any(rel.startswith(prefix) for prefix in _STALE_GOTCHAS_SCAN_EXCLUDES):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            sys.stderr.write(
+                f"workflow_lint: notice: stale-gotchas-pointers skipped unreadable file {path}\n"
+            )
+            continue
+        if "gotchas.md" not in text:
+            continue
+        for lineno, line in enumerate(text.split("\n"), start=1):
+            tokens = [(m.start(), m.end()) for m in _STALE_GOTCHAS_TOKEN_RE.finditer(line)]
+            if not tokens:
+                continue
+            if any(idiom in line for idiom in _STALE_GOTCHAS_SKIP_IDIOMS):
+                continue
+            for m in _STALE_GOTCHAS_ID_RE.finditer(line):
+                n = int(m.group(1))
+                if n > cap or n in gotchas_ids:
+                    continue
+                # MIN over every gotchas.md token on the line (a
+                # first-occurrence-only read would silently diverge from
+                # the calibration when the id sits near a LATER token).
+                gap = min(max(ts - m.end(), m.start() - te, 0) for ts, te in tokens)
+                if gap > _STALE_GOTCHAS_WINDOW:
+                    continue
+                if (rel, n) in STALE_GOTCHAS_POINTER_ALLOWLIST:
+                    continue
+                errors.append(
+                    f"stale-gotchas-pointer/{rel}:{lineno}: dead task-id #{n} next "
+                    f"to a gotchas.md mention — #{n} no longer occurs in "
+                    f".claude/rules/gotchas.md (a #2189-style relocation moved the "
+                    f"entry to a topic-owning rule file, OR the entry survives with "
+                    f"its id citation trimmed — triage before repointing). Fix the "
+                    f"pointer side: repoint to the entry's current home (verify via "
+                    f"phrase-grep + `git log -S`), reword the prose to stand alone, "
+                    f"or freeze a genuine context-citation in "
+                    f"STALE_GOTCHAS_POINTER_ALLOWLIST with a reason"
+                )
+    return errors
+
+
 # ── --check-no-unannotated-gcp-pin-guidance (#2018; the #2028/#2054 stale-pin class)
 # GCP provisioning is DISABLED (#2028): an explicit `backend: gcp` pin raises
 # the typed GcpDisabledError, so live guidance DIRECTING that pin sends an
@@ -17872,6 +18083,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_agents_note_argv_verdict": lambda wf: check_agents_note_argv_verdict(),
     "check_sha_pin_domain": lambda wf: check_sha_pin_domain(),
     "check_empty_text_default": lambda wf: check_empty_text_default(),
+    "check_stale_gotchas_pointers": lambda wf: check_stale_gotchas_pointers(),
     # Arm W only — mirrors the no-flags dispatch (Arm H is explicit-flag
     # only, and --files is mutually exclusive with check flags anyway).
     "check_plan_version_immutability": (lambda wf: check_plan_version_immutability()),
@@ -17944,6 +18156,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_no_repo_root_git_reset_hard": CheckScope("global", (".claude/",)),
     "check_no_repo_root_worktree_revert": CheckScope("global", (".claude/",)),
     "check_lessons_index": CheckScope("global", (".claude/rules/",)),
+    "check_stale_gotchas_pointers": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_inline_round_duty_mirror": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_rule_frontmatter_parses": CheckScope("global", (".claude/rules/",)),
     "check_agent_spec_size": CheckScope("global", (".claude/agents/",)),
@@ -19254,6 +19467,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-stale-gotchas-pointers",
+        action="store_true",
+        help="FAIL a dead task-id next to a gotchas.md mention in CLAUDE.md "
+        "+ .claude/**/*.md (gotchas.md itself, agent-memory/, plans/, "
+        "cache/, worktrees/ excluded) — an id within 100 chars of a "
+        "gotchas.md token on the same line, at or under the registry's "
+        "literal highest_id, that no longer occurs in "
+        ".claude/rules/gotchas.md (the #2189 stale-relocation-pointer "
+        "class; also catches id-trims where the entry survives with its "
+        "citation compacted away). Relocation-attribution lines ('Relocated "
+        "codebase traps' / 'to recover gotchas.md byte budget') are "
+        "skipped; genuine context-citations are frozen per (path, id) in "
+        "STALE_GOTCHAS_POINTER_ALLOWLIST with per-entry reasons. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-plan-version-immutability",
         action="store_true",
         help="FAIL on an in-place mutation of a persisted "
@@ -19417,6 +19646,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agents_note_argv_verdict
         or args.check_sha_pin_domain
         or args.check_empty_text_default
+        or args.check_stale_gotchas_pointers
         or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
     )
@@ -19616,6 +19846,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_sha_pin_domain())
     if args.check_empty_text_default or no_flags:
         errors.extend(check_empty_text_default())
+    if args.check_stale_gotchas_pointers or no_flags:
+        errors.extend(check_stale_gotchas_pointers())
     if args.check_plan_version_immutability or no_flags:
         # Arm H (committed history) runs ONLY under the explicit flag —
         # measured ~1.7-2.7 s at the plan #2123 §6 ~3 s threshold under
