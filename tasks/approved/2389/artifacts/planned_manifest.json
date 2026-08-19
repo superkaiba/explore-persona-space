@@ -1,6 +1,6 @@
 {
   "issue": 2389,
-  "plan_version": "v2",
+  "plan_version": "v3",
   "model": "Qwen/Qwen3.8-27B @ 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
   "slot": "context-end only (prefix-end dropped by user ruling; 0 causal positives on both prior models)",
   "conditions": [
@@ -60,7 +60,7 @@
       "id": "transfer_correlation_p1_ce",
       "title": "Per-type steered F_beh: Qwen3.8-27B vs Qwen2.5-7B over the shared context-end P1 cells (primary >=12-eligible read + descriptive all-16 companion)",
       "source": "eval_results/issue_2389/f_metrics/transfer.json (forked step_transfer, slot=='ce' filter + eligibility split; parent table eval_results/issue_2162/f_metrics/f_cells.jsonl)",
-      "transform": "PRIMARY series: shared ce P1 cells with >=12 surviving pairs in BOTH runs (parent side supports 13 of 16 — user_emotion=1, icl_task_mapping=7, refusal_boundary=8 sit below the floor; this run's side re-applies the same rule; REALIZED N stated in the caption, never hardcoded); cell-level steered mean F_beh both runs; Spearman rho + pair-clustered bootstrap 95% CI (B=10000, resample pairs within cells both runs); registered verdict branch: confirmed iff CI lower bound > 0; falsified iff CI lower bound <= 0 AND CI upper bound < +0.3; otherwise no-verdict/underpowered narrated as failure-to-reject with the realized n. DESCRIPTIVE companion series: all 16 shared cells (>=1 surviving pair in both runs), explicitly labelled descriptive and never verdict-bearing (3 parent cells below the eligibility floor make its within-cell bootstrap invalid as a test). CIs shown as their own intervals, never overlaid on #2329's 31-unit [0.583,0.864]",
+      "transform": "PRIMARY series: shared ce P1 cells with >=12 surviving pairs in BOTH runs (parent side supports 13 of 16 — user_emotion=1, icl_task_mapping=7, refusal_boundary=8 sit below the floor; this run's side re-applies the same rule; REALIZED N stated in the caption, never hardcoded); cell-level steered mean F_beh both runs; Spearman rho + pair-clustered bootstrap 95% CI (B=10000, resample pairs within cells both runs); registered verdict branch: confirmed iff realized eligible n >= 3 AND CI lower bound > 0; falsified iff realized eligible n >= 3 AND CI lower bound <= 0 AND CI upper bound < +0.3; otherwise no-verdict/underpowered (an eligibility collapse to n <= 2 routes here regardless of the mechanical rho) narrated as failure-to-reject with the realized n. DESCRIPTIVE companion series: all 16 shared cells (>=1 surviving pair in both runs), explicitly labelled descriptive and never verdict-bearing (3 parent cells below the eligibility floor make its within-cell bootstrap invalid as a test). CIs shown as their own intervals, never overlaid on #2329's 31-unit [0.583,0.864]",
       "plotted_quantity": "scatter of per-cell steered F_beh (27B y vs 7B x) with identity line; PRIMARY >=12-eligible cells as filled markers, the 3 below-floor cells as open markers (descriptive-only); rho + pair-clustered CI per series in the legend (primary verdict-bearing, all-16 labelled descriptive), realized N stated"
     },
     {
@@ -102,7 +102,7 @@
       "id": "vllm_parity_report",
       "title": "vLLM-vs-HF anchor parity gate: per-context floor/ceiling judge-score distributions on 3 cap-spanning cells (engaged-or-disabled)",
       "source": "eval_results/issue_2389/gates/vllm_parity_report.json",
-      "transform": "3 cells (fact_user_name, persona_prompted, filler_swap) x 2 engines x 2 anchor arms, identical instrument, BOTH sides judged SYNC in the P2 window (cache-served to the P6 batch wave): paired per-context score distributions, paired Wilcoxon p, mean offset, per-cell separation pair-survival counts; if the gate PASSed, the realized per-cell engine split + engine-stratified F_act anchor diagnostics accompany it (behavioral parity does not establish F_act anchor-distribution parity); if the gate FAILed or vLLM unavailable, the figure is replaced by the recorded gate verdict (marked 'not run: <reason>')",
+      "transform": "3 cells (fact_user_name, persona_prompted, filler_swap) x 2 engines x 2 anchor arms, identical instrument, BOTH sides judged SYNC in the P2 window (route mechanically forced sync via threshold_base=FORCE_SYNC_THRESHOLD_BASE; realized route asserted and persisted in the report; cache-served to the P6 batch wave): paired per-context score distributions, paired Wilcoxon p, mean offset, per-cell separation pair-survival counts; if the gate PASSed, the realized per-cell engine split + engine-stratified F_act anchor diagnostics accompany it (behavioral parity does not establish F_act anchor-distribution parity); if the gate FAILed or vLLM unavailable, the figure is replaced by the recorded gate verdict (marked 'not run: <reason>')",
       "plotted_quantity": "paired per-context anchor judge scores by engine (distributions + offset), plus the PASS/FAIL verdict panel (and engine-stratified F_act anchor diagnostics when engaged)"
     },
     {
