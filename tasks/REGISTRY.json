@@ -10759,8 +10759,8 @@
     "2392": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2392",
-      "status": "proposed",
+      "path": "tasks/archived/2392",
+      "status": "archived",
       "title": "vLLM backend for the unhooked anchor phase of the patching rig, behind a measured HF-parity gate"
     },
     "2393": {
