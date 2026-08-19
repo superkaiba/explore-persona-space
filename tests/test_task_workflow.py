@@ -844,11 +844,19 @@ def test_set_body_goal_guard_still_fires_on_v2_non_report_body(fake_repo):
 
 def test_set_body_goal_guard_still_fires_on_v1_task_with_sentinel(fake_repo):
     """The other half: a sentinel-bearing report body on a NON-v2 task still
-    refuses — both with the `workflow` field absent (the default) and with
-    an explicit `workflow: v1`."""
+    refuses — both with the `workflow` field ABSENT (the legacy pre-v2 shape)
+    and with an explicit `workflow: v1`."""
     repo, tw = fake_repo
-    # Variant 1: workflow field absent (every pre-v2 task).
+    # Variant 1: workflow field ABSENT (legacy pre-v2 task). create_task()
+    # unconditionally writes `workflow: v1` (_resolve_workflow_version), so
+    # pop the key from the on-disk frontmatter to realize true absence.
     absent_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    absent_path = repo / "tasks" / "proposed" / str(absent_id) / "body.md"
+    fm, body = tw._read_body(absent_path)
+    fm.pop("workflow")  # KeyError here would mean create_task stopped writing it
+    tw._write_body(absent_path, fm, body)
+    fm_reread, _ = tw._read_body(absent_path)  # re-read: prove on-disk absence
+    assert "workflow" not in fm_reread
     with pytest.raises(tw.GoalH2DropError):
         tw.set_body(absent_id, _REPORT_V1_BODY)
     # Variant 2: workflow explicitly v1.
