@@ -36,12 +36,23 @@ Plus: MIN-distance-over-multiple-tokens semantics (implementer note 4 — a
 first-occurrence-only ``line.find()`` implementation would silently
 diverge from the calibration), the fail-loud missing-registry contract,
 and the docstring's disclosed false-negative classes (note 1).
+
+Round-2 scope contract (#2193 r2, the Claude+Codex agreed blocker): the
+scan inventory is the git-TRACKED ``CLAUDE.md`` + ``.claude/**/*.md`` set
+(real temp-git-repo fixtures) — a tracked ``.claude/plans/`` offender
+FIRES, untracked scratch is IGNORED, an unreadable tracked in-scope file
+FAILs loud (never notice-and-skip), and a skip-worktree (sparse) entry is
+not an inventory hole; tmp trees without git exercise the pruned-walk
+fallback (:func:`workflow_lint._stale_gotchas_scan_paths`).
 """
 
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -271,23 +282,94 @@ def test_allowlist_entries_carry_reasons_and_point_at_live_files() -> None:
 
 
 # --------------------------------------------------------------------------
-# scan-scope exclusions (historical records + the target itself)
+# scan scope: the git-TRACKED inventory (#2193 r2) + the approved exclusions
 # --------------------------------------------------------------------------
 
 
-def test_excluded_dirs_and_target_not_scanned(tmp_path, monkeypatch) -> None:
-    """agent-memory / plans / cache / worktrees copies are historical or
-    ephemeral records ("true when written"); gotchas.md itself is the
-    co-reference target, not a pointer surface."""
+def test_agent_memory_target_and_worktrees_not_scanned(tmp_path, monkeypatch) -> None:
+    """The ONLY approved exclusions: agent-memory copies are historical
+    records ("true when written") and gotchas.md itself is the
+    co-reference target, not a pointer surface. Sibling-worktree
+    duplicates are structurally out of reach on BOTH enumeration forms
+    (untracked on the git path; pruned by _iter_files_pruned on the
+    non-git fallback walk this fixture exercises)."""
     _plant_tree(tmp_path)
     for rel in (
         ".claude/agent-memory/critic/feedback_old.md",
-        ".claude/plans/issue-1.md",
-        ".claude/cache/scratch-note.md",
         ".claude/worktrees/issue-9999/.claude/rules/some_rule.md",
     ):
         _plant(tmp_path, rel, RELOCATED_POINTER_SHAPE)
     assert _run_on(monkeypatch, tmp_path) == []
+
+
+@pytest.fixture
+def git_root():
+    """A scratch root OUTSIDE pytest's numbered /tmp/pytest-of-* basetemp
+    (concurrent pytest sessions prune those roots mid-test; these tests
+    spawn git subprocesses against the tree) hosting a REAL temp git repo
+    — the tracked-inventory production path."""
+    root = Path(tempfile.mkdtemp(prefix="wl-stale-gotchas-git-"))
+    try:
+        yield root
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def _git(root: Path, *args: str) -> None:
+    subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True)
+
+
+def _plant_git_tree(root: Path) -> None:
+    """git init + the two fixed read surfaces, with .claude/ + tasks/
+    ADDED to the index (git ls-files reads the index; no commit needed)."""
+    _git(root, "init", "-q")
+    _plant_tree(root)
+    _git(root, "add", ".claude", "tasks")
+
+
+def test_tracked_plans_offender_fires_untracked_scratch_ignored(git_root, monkeypatch) -> None:
+    """Round-2 scope contract (#2193 r2, both reviewers): the inventory is
+    the git-TRACKED set. A TRACKED .claude/plans offender FIRES (round 1's
+    plans-exclusion pinned the WRONG behavior — 12 tracked plan docs were
+    silently escaping the lint), while an UNTRACKED .claude/rules scratch
+    file carrying the SAME offender line is IGNORED (local scratch must
+    never red the no-flags landing gate) — the single-error assert makes
+    both halves non-vacuous at once."""
+    _plant_git_tree(git_root)
+    _plant(git_root, ".claude/plans/offender.md", RELOCATED_POINTER_SHAPE)
+    _git(git_root, "add", ".claude/plans/offender.md")
+    _plant(git_root, ".claude/rules/scratch.md", RELOCATED_POINTER_SHAPE)  # NOT git-added
+    errors = _run_on(monkeypatch, git_root)
+    assert len(errors) == 1, errors
+    assert "stale-gotchas-pointer/.claude/plans/offender.md:1" in errors[0], errors
+
+
+def test_unreadable_tracked_file_fails_loud(git_root, monkeypatch) -> None:
+    """Round-2 sibling 3: a tracked in-scope file that cannot be READ is a
+    FAIL row, never a notice-and-skip (a silent skip is an inventory
+    hole). Portable unreadable shape: tracked in the index, deleted from
+    the working tree (FileNotFoundError, an OSError)."""
+    _plant_git_tree(git_root)
+    doomed = _plant(git_root, ".claude/rules/deleted_rule.md", "clean text, no token\n")
+    _git(git_root, "add", ".claude/rules/deleted_rule.md")
+    doomed.unlink()
+    errors = _run_on(monkeypatch, git_root)
+    assert len(errors) == 1, errors
+    assert "stale-gotchas-pointer/.claude/rules/deleted_rule.md" in errors[0], errors
+    assert "unreadable" in errors[0], errors
+
+
+def test_skip_worktree_entry_not_an_inventory_hole(git_root, monkeypatch) -> None:
+    """A sparse checkout deliberately does not materialize skip-worktree
+    entries — the enumerator keeps 'H' (cached) rows only, so an S-tagged
+    absent file is CLEAN, never an unreadable-file FAIL (sparse worktrees
+    are the fleet's default shape, new_worktree.sh)."""
+    _plant_git_tree(git_root)
+    sparse = _plant(git_root, ".claude/rules/sparse_rule.md", RELOCATED_POINTER_SHAPE)
+    _git(git_root, "add", ".claude/rules/sparse_rule.md")
+    _git(git_root, "update-index", "--skip-worktree", ".claude/rules/sparse_rule.md")
+    sparse.unlink()
+    assert _run_on(monkeypatch, git_root) == []
 
 
 # --------------------------------------------------------------------------

@@ -192,9 +192,10 @@ Behaviours:
   a NEW file never inherits the escape); waive a deliberate site with
   ``# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`` (#2206).
 * ``--check-stale-gotchas-pointers`` (also bundled into the no-flags
-  default run): scan ``CLAUDE.md`` + every ``*.md`` under ``.claude/``
-  (gotchas.md itself, ``agent-memory/``, ``plans/``, ``cache/``, and
-  ``worktrees/`` excluded) and FAIL a dead task-id next to a
+  default run): scan the git-TRACKED inventory — ``CLAUDE.md`` + every
+  tracked ``*.md`` under ``.claude/`` (gotchas.md itself and
+  ``agent-memory/`` excluded; tracked ``plans/`` IN scope, untracked
+  scratch out by construction — #2193 r2) and FAIL a dead task-id next to a
   ``gotchas.md`` mention — an id within 100 chars of a ``gotchas.md``
   token on the same line, at or under the registry's literal
   ``highest_id``, that no longer occurs in ``.claude/rules/gotchas.md``.
@@ -17150,16 +17151,15 @@ _STALE_GOTCHAS_SKIP_IDIOMS: tuple[str, ...] = (
     "Relocated codebase traps",
     "to recover gotchas.md byte budget",
 )
-# Historical-record / ephemeral dirs OUT of scan scope (repo-relative
-# prefixes): per-agent memories and persisted plan-cache copies are "true
-# when written" by convention, cache state is not navigational surface, and
-# sibling worktrees are stale duplicates of the same tree.
-_STALE_GOTCHAS_SCAN_EXCLUDES: tuple[str, ...] = (
-    ".claude/agent-memory/",
-    ".claude/plans/",
-    ".claude/cache/",
-    ".claude/worktrees/",
-)
+# Historical-record dirs OUT of scan scope (repo-relative prefixes):
+# per-agent memories are "true when written" by convention, not
+# navigational surface. The ONLY approved exclusions are gotchas.md itself
+# and this tuple (#2193 r2 — the plan scope is "tracked .claude/**/*.md
+# plus CLAUDE.md"): tracked .claude/plans/*.md ARE scanned (12 tracked
+# plan docs at landing), and cache/ + worktrees/ need no entry — they are
+# untracked, so the git-ls-files inventory never sees them (the non-git
+# fallback walk prunes worktrees/ structurally via _iter_files_pruned).
+_STALE_GOTCHAS_SCAN_EXCLUDES: tuple[str, ...] = (".claude/agent-memory/",)
 
 # Genuine context-citations, frozen per (repo-relative path, task id) with a
 # per-entry reason (the EMPTY_TEXT_DEFAULT_ALLOWLIST idiom, reasons inline):
@@ -17179,6 +17179,61 @@ STALE_GOTCHAS_POINTER_ALLOWLIST: dict[tuple[str, int], str] = {
         "location claim"
     ),
 }
+
+
+def _stale_gotchas_scan_paths(root: Path) -> list[Path]:
+    """Enumerate the stale-gotchas scan inventory (#2193 r2): the
+    git-TRACKED repo-root ``CLAUDE.md`` plus every tracked ``*.md`` under
+    ``.claude/`` — the plan-approved scope.
+
+    Production form: ``git -C <root> ls-files -zt -- CLAUDE.md .claude``
+    — an INDEX read, no filesystem walk, so sibling worktrees / ``.venv``
+    trees under ``.claude/`` are structurally out of reach (the #1163
+    raw-rglob class: 3.3M+ entries, measured 304.6 s for this one check at
+    the repo root) and UNTRACKED local scratch can never red the no-flags
+    landing gate. Keeps cached (``H``) entries only; ``S`` skip-worktree
+    entries are skipped (a sparse checkout deliberately does not
+    materialize them — absence there is not an inventory hole). Guarded on
+    ``rev-parse --show-toplevel`` equality so a fixture tree that merely
+    sits INSIDE some enclosing repo never silently enumerates empty.
+
+    NON-GIT-TREE FALLBACK (unit-test tmp fixtures; the Step 10d /tmp
+    landing-tree gate copy): the pruned filesystem walk
+    (:func:`_iter_files_pruned`) over ``root/.claude`` plus
+    ``root/CLAUDE.md``. Fail-safe direction is scan-MORE — coverage kept,
+    the :func:`_head_is_main` posture; a landing-tree copy is materialized
+    from tracked files only, so the two forms agree there.
+    """
+
+    def _git(*args: str) -> subprocess.CompletedProcess[str] | None:
+        try:
+            return subprocess.run(
+                ["git", "-C", str(root), *args],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except Exception:
+            return None  # git missing / non-git environment -> fallback walk (scan-MORE)
+
+    top = _git("rev-parse", "--show-toplevel")
+    if (
+        top is not None
+        and top.returncode == 0
+        and Path(top.stdout.strip()).resolve() == root.resolve()
+    ):
+        listing = _git("ls-files", "-zt", "--", "CLAUDE.md", ".claude")
+        if listing is not None and listing.returncode == 0:
+            return sorted(
+                root / entry[2:]
+                for entry in listing.stdout.split("\0")
+                if entry.startswith("H ") and entry.endswith(".md")
+            )
+    claude_md = root / "CLAUDE.md"
+    return [
+        *([claude_md] if claude_md.is_file() else []),
+        *sorted(_iter_files_pruned(root / ".claude", suffixes=frozenset({".md"}))),
+    ]
 
 
 def _stale_gotchas_registry_cap(root: Path) -> tuple[int | None, str | None]:
@@ -17209,7 +17264,7 @@ def _stale_gotchas_registry_cap(root: Path) -> tuple[int | None, str | None]:
     return cap, None
 
 
-def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:  # noqa: C901 -- flat predicate ladder (scan excludes, skip idioms, id-cap, min-distance window, allowlist); extracting a branch would just relocate it
+def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:
     """FAIL a dead task-id next to a ``gotchas.md`` mention (#2193).
 
     The true-positive class is "dead task-id next to a gotchas.md
@@ -17223,11 +17278,16 @@ def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:
     positives fixed by #2193 + the 2 markers.md context-citations frozen
     in :data:`STALE_GOTCHAS_POINTER_ALLOWLIST`):
 
-    1. Scan ``CLAUDE.md`` + every ``*.md`` under ``.claude/``, EXCLUDING
-       gotchas.md itself and the :data:`_STALE_GOTCHAS_SCAN_EXCLUDES`
-       prefixes (``agent-memory/`` + ``plans/`` are historical records —
-       "true when written" by convention; ``cache/`` is ephemeral state;
-       ``worktrees/`` holds sibling-worktree duplicates).
+    1. Scan the git-TRACKED inventory — repo-root ``CLAUDE.md`` plus every
+       tracked ``*.md`` under ``.claude/`` (an index read via
+       ``git ls-files``; :func:`_stale_gotchas_scan_paths` carries the
+       non-git-tree fallback walk) — EXCLUDING gotchas.md itself and the
+       :data:`_STALE_GOTCHAS_SCAN_EXCLUDES` prefixes (``agent-memory/``
+       is a historical record — "true when written" by convention).
+       Tracked ``.claude/plans/*.md`` ARE in scope (#2193 r2); untracked
+       local scratch is not (it can never red the no-flags landing gate).
+       An UNREADABLE in-scope file FAILs loud — a silent skip is an
+       inventory hole.
     2. Skip relocation-attribution idiom lines — any line containing
        "Relocated codebase traps" or "to recover gotchas.md byte budget"
        verbatim (:data:`_STALE_GOTCHAS_SKIP_IDIOMS`, the #2189 pattern
@@ -17275,9 +17335,7 @@ def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:
         return [cap_error]
     assert cap is not None  # narrowed by the cap_error branch above
     errors: list[str] = []
-    for path in [root / "CLAUDE.md", *sorted((root / ".claude").rglob("*.md"))]:
-        if not path.is_file():
-            continue
+    for path in _stale_gotchas_scan_paths(root):
         rel = path.relative_to(root).as_posix()
         if rel == _STALE_GOTCHAS_TARGET:
             continue
@@ -17285,9 +17343,12 @@ def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:
             continue
         try:
             text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            sys.stderr.write(
-                f"workflow_lint: notice: stale-gotchas-pointers skipped unreadable file {path}\n"
+        except (OSError, UnicodeDecodeError) as exc:
+            errors.append(
+                f"stale-gotchas-pointer/{rel}: unreadable in-scope file "
+                f"({type(exc).__name__}: {exc}) — the scan inventory must stay "
+                f"complete; restore or fix the file (fail-fast: a silent skip is "
+                f"an inventory hole, #2193 r2)"
             )
             continue
         if "gotchas.md" not in text:
@@ -19469,9 +19530,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
     parser.add_argument(
         "--check-stale-gotchas-pointers",
         action="store_true",
-        help="FAIL a dead task-id next to a gotchas.md mention in CLAUDE.md "
-        "+ .claude/**/*.md (gotchas.md itself, agent-memory/, plans/, "
-        "cache/, worktrees/ excluded) — an id within 100 chars of a "
+        help="FAIL a dead task-id next to a gotchas.md mention in the "
+        "git-TRACKED CLAUDE.md + .claude/**/*.md inventory (gotchas.md "
+        "itself + agent-memory/ excluded; tracked plans/ in scope, "
+        "untracked scratch out) — an id within 100 chars of a "
         "gotchas.md token on the same line, at or under the registry's "
         "literal highest_id, that no longer occurs in "
         ".claude/rules/gotchas.md (the #2189 stale-relocation-pointer "
