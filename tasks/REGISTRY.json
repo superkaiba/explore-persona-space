@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2379,
+  "highest_id": 2380,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10661,6 +10661,13 @@
       "path": "tasks/archived/238",
       "status": "archived",
       "title": "Does full-parameter SFT (not LoRA) preserve persona geometry better than LoRA SFT?"
+    },
+    "2380": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2380",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c selector misses importlib-loading test files \u2014 bare module-name literals map to no selector arm"
     },
     "239": {
       "has_clean_result": true,
