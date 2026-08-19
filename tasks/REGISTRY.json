@@ -9149,8 +9149,8 @@
     "2184": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2184",
-      "status": "approved",
+      "path": "tasks/running/2184",
+      "status": "running",
       "title": "CPU-intent RunPod provisioning: type the no-port wedge, rotate DC, and document a residual route when every CPU DC is dry"
     },
     "2185": {
