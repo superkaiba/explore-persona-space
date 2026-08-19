@@ -1302,3 +1302,30 @@ inlining (tags stripped, `> CONCERN::` blockquote, author-neutrality both
 directions), #2348(e) no re-emission of the persisted id (assert exactly one
 line-start grammar row), and a `## Round-1 closure ledger` schema section
 with a pseudo-ID for the un-persisted r1 Minor 2.
+
+**Sibling-rubric spans embed the sibling's BASE SHA — sweep hex SHAs, not
+just the issue number (#1739 claim4-controls r1, 2026-08-19):** the 2379-r1
+template's rubric span carried its base SHA (`2f52e456…`) in FOUR probe
+commands (Step 0's name-only enumeration + all three Step 0.9 subclass
+probes) — an `assert "2379" not in rubric` misses them entirely, and
+"purely additive" sibling round-shape claims hide in Step 0.9 prose too
+(grep that phrase; two hits, only one in Step 4.6). On every
+sibling-template reuse, ALSO grep the sibling's compose-time SHAs (base,
+round HEAD, commit list) over the FINAL prompt and assert 0. Three further
+composable deltas from this round: (a) DUAL-ENVELOPE report — when the
+posted impl marker is a compact summary referencing the full implementer
+report by an unreachable /tmp path, inline BOTH (marker in the standard
+`---BEGIN IMPLEMENTATION MARKER BODY---` envelope = the Step 0.5 shape
+subject; report in its own `---BEGIN FULL IMPLEMENTER REPORT BODY---`
+envelope) and instruct Codex to score 0.5 on the PAIR; attest the
+head-sentinel-digit-vs-posted-version mismatch (bare `v1` head under
+task-wide v22) neutrally so it never becomes a finding. (b) MID-ROUND
+origin/main MERGE (8,202 files): per-commit `git show` primary + merge
+`--name-status` only + Step 0 tier classification via round-scoped
+`git show --name-only --format= <shas> | sort -u` (the sibling's
+whole-branch name-only would misclassify tier), Step 0.9 probes re-keyed to
+the recorded pre-merge tip. (c) Same-issue follow-up with worktree tasks/
+REFRESHED by that merge: plan.md CAN be by-path valid even at
+`followups_running` — verify identity AND round-match (H1 names the
+followup_label), and note DELTA-plan inheritance (v21 inherits v4 verbatim;
+both readable in the same plans/ dir).
