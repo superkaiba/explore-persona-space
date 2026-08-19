@@ -10766,8 +10766,8 @@
     "2393": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2393",
-      "status": "proposed",
+      "path": "tasks/archived/2393",
+      "status": "archived",
       "title": "Opt-in shared-prefill multi-draw mode for generate_batch (one prefill, N sampled continuations)"
     },
     "24": {
