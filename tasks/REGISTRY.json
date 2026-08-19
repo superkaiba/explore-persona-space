@@ -10752,8 +10752,8 @@
     "2391": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2391",
-      "status": "approved",
+      "path": "tasks/running/2391",
+      "status": "running",
       "title": "workflow-fix: raise the per-reviewer review-round cap from 5 to 10 across all three review loops"
     },
     "2392": {
