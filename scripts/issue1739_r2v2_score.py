@@ -522,7 +522,7 @@ def _seed_output_resume_ok(out_dir, *, commit: str, seed: int, map_variants) -> 
             return False, f"{name} absent"
     try:
         meta = json.loads((out_dir / "all_arms_spearman.json").read_text())["meta"]
-    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError, KeyError, TypeError) as exc:
         return False, f"summary meta unreadable ({type(exc).__name__}: {exc})"
     checks = {
         "git_commit": (meta.get("git_commit"), commit),

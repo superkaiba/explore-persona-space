@@ -424,6 +424,7 @@ def wait_for_sibling_stage(args, behavior: str, token: str) -> None:
         try:
             # HUB_VERIFY_RETRY_EXEMPT: outer poll loop IS the retry — probe errors are caught below and re-polled every stage_gate_poll_s
             if api.file_exists(hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset"):
+                # NO_RETRY: outer stage_wait poll loop IS the retry — errors are caught below and re-polled every stage_gate_poll_s
                 local = api.hf_hub_download(
                     hub.DEFAULT_DATASET_REPO, crumb, repo_type="dataset", force_download=True
                 )
