@@ -8,12 +8,16 @@ parent_id: 2094
 origin_prompt: ok file these but don't run them right away (paper C4 causal upgrade;
   claims.md Gap 1)
 workflow: v1
+goal: 'Test whether the framing-transfer results (#2054 chat-plain, #1345/#1639 assistant-story)
+  are causal: patch the context vector v_C across framings and measure persona/behavior
+  transport into the target framing''s generated answer vs matched within-framing
+  patches and null controls.'
 ---
 # Causal patching of context vectors across framings (chat→no-template, assistant→story)
 
 ## Goal
 
-Test whether the correlational framing-transfer results (#2054 chat↔plain answer-boundary result; #1345/#1639 assistant↔story-character transfer up to linear reparameterization) are CAUSAL: patch the context vector v_C (residual state at the last context token) ACROSS framings and measure whether the patched vector carries the source persona/behavior into the target framing's generated answer, against matched within-framing patches and null controls.
+Test whether the framing-transfer results (#2054 chat-plain, #1345/#1639 assistant-story) are causal: patch the context vector v_C across framings and measure persona/behavior transport into the target framing's generated answer vs matched within-framing patches and null controls.
 
 ## Context
 
