@@ -304,7 +304,7 @@ def unit_done(out_path: Path, fingerprint: dict) -> bool:
     try:
         with open(out_path, encoding="utf-8") as f:
             stored = json.load(f)
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning("[resume] unreadable output %s (%s) -> re-run", out_path, e)
         return False
     return stored.get("fingerprint") == fingerprint

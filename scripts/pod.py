@@ -137,7 +137,7 @@ def _lookup_pod_intent(pod_name: str) -> str:
         payload = json.loads(state.read_text())
         entry = payload.get("pods", {}).get(pod_name) or {}
         return entry.get("gpu_intent", "custom")
-    except (OSError, json.JSONDecodeError, ImportError, RuntimeError):
+    except (OSError, json.JSONDecodeError, ImportError, RuntimeError, UnicodeDecodeError):
         # RuntimeError: pod_config's import-time git resolution failing
         # outside a checkout; ImportError: pathological sys.path. Both →
         # the safe default.

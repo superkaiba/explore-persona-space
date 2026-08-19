@@ -602,7 +602,7 @@ def _run_phase_c_all(ctx: RunContext) -> dict[str, dict]:
             existing = json.loads(faith_path.read_text())
             if existing.get("schema_version") == SCHEMA_VERSION:
                 prior = dict(existing.get("per_cell") or {})
-        except (OSError, json.JSONDecodeError) as e:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
             log.warning(
                 "[phase=faithfulness] could not reuse existing %s (%s) — recomputing all cells",
                 faith_path,

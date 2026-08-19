@@ -706,7 +706,7 @@ def _load_claude_cache(path: Path) -> dict[str, str]:
             data = json.load(f)
         if isinstance(data, dict):
             return {str(k): str(v) for k, v in data.items()}
-    except (json.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         log.warning("Claude cache at %s is unreadable (%s); starting fresh", path, exc)
     return {}
 

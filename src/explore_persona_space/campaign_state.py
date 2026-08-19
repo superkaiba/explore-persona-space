@@ -492,7 +492,7 @@ def _registry_caps(task_id: int) -> dict[str, Any]:
     path = AUTONOMOUS_REGISTRY_DIR / f"campaign-{task_id}.json"
     try:
         entry = json.loads(path.read_text())
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
+    except (FileNotFoundError, json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     if not isinstance(entry, dict):
         return {}
