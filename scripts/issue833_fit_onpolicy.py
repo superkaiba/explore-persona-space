@@ -1682,7 +1682,7 @@ def _cell_json_valid(path: Path) -> bool:
     """Resume-skip validator for a cached #833 cell JSON (mirrors #722's contract)."""
     try:
         obj = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     return not (_CELL_SCHEMA_KEYS - obj.keys())
 

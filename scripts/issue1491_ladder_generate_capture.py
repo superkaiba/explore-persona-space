@@ -144,6 +144,23 @@ assert PROMPT_TOKEN_BUDGET == OVERLENGTH_BUDGET, (
     f"budget mismatch: driver {PROMPT_TOKEN_BUDGET} != manifest {OVERLENGTH_BUDGET}"
 )
 
+
+def _apply_gen_max_tokens(n: int) -> tuple[int, int, int]:
+    """Rebind the generation cap (#2330 cap2048 follow-up): GEN_MAX_TOKENS <- n
+    with PROMPT_TOKEN_BUDGET held INVARIANT at the manifest's OVERLENGTH_BUDGET
+    (7104 — the admitted row set stays byte-identical to the banked cap-1024
+    stores) and MAX_MODEL_LEN derived (budget + cap + margin; the CLAUDE.md
+    inherited-rig rule for a raised cap, #505/#601). Returns the realized
+    (gen_max_tokens, max_model_len, prompt_token_budget) triple."""
+    global GEN_MAX_TOKENS, MAX_MODEL_LEN
+    assert n >= 1, f"--gen-max-tokens must be >= 1, got {n}"
+    GEN_MAX_TOKENS = int(n)
+    MAX_MODEL_LEN = PROMPT_TOKEN_BUDGET + GEN_MAX_TOKENS + LENGTH_MARGIN
+    assert PROMPT_TOKEN_BUDGET == MAX_MODEL_LEN - GEN_MAX_TOKENS - LENGTH_MARGIN
+    assert PROMPT_TOKEN_BUDGET == OVERLENGTH_BUDGET
+    return GEN_MAX_TOKENS, MAX_MODEL_LEN, PROMPT_TOKEN_BUDGET
+
+
 # Sampling params (parent parity, plan §11 "Generation recipe").
 GEN_TEMP = 1.0
 GEN_TOP_P = 0.95
@@ -1781,6 +1798,15 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="enable plan §7 Gate 1 (quick ridge fit + shuffled-pairing null after ~2000 captured rows; aborts scale on gap<0.05 or |null|>0.05)",
     )
+    ap.add_argument(
+        "--gen-max-tokens",
+        type=int,
+        default=GEN_MAX_TOKENS,
+        help="vLLM generation cap (#2330 cap2048 follow-up; default 1024 keeps every "
+        "existing invocation byte-identical). A non-default value re-derives "
+        "MAX_MODEL_LEN with PROMPT_TOKEN_BUDGET held at the manifest's 7104 "
+        "(same admitted row set as the banked stores)",
+    )
     ap.add_argument("--num-shards", type=int, default=8)
     ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument("--shard-size", type=int, default=DEFAULT_SHARD_SIZE)
@@ -1810,6 +1836,13 @@ def main() -> int:
         level=logging.INFO if args.verbose else logging.WARNING,
         format="[%(asctime)s] %(levelname)s %(name)s: %(message)s",
     )
+    if args.gen_max_tokens != GEN_MAX_TOKENS:
+        gm, mml, budget = _apply_gen_max_tokens(args.gen_max_tokens)
+        print(
+            f"[gen-cap-tokens] gen_max_tokens={gm} max_model_len={mml} "
+            f"prompt_token_budget={budget} (non-default cap; budget invariant)",
+            flush=True,
+        )
     args.out_dir.mkdir(parents=True, exist_ok=True)
     return run_capture(args)
 

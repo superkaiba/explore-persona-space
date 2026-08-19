@@ -454,7 +454,7 @@ def _read_manifest(ckpt_root: Path, cell: Cell) -> dict | None:
     try:
         with open(mpath) as f:
             return json.load(f)
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning("[resume] unreadable manifest %s (%s) -> re-run", mpath, e)
         return None
 

@@ -212,7 +212,7 @@ def staged_slice_covers(
         return False, ""
     try:
         m = json.loads(manifest_path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         return False, f"unreadable {STAGE_MANIFEST} ({type(exc).__name__}) — re-staging"
     have_layers = {int(x) for x in m.get("layers", [])}
     have_kinds = set(m.get("kinds", []))

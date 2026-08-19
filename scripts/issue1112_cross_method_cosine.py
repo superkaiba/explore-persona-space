@@ -116,7 +116,14 @@ RANKEM_CAPTURE_REVS_PATH = (
 def _resolve_rankem_capture_rev() -> str:
     try:
         rev = json.loads(RANKEM_CAPTURE_REVS_PATH.read_text())["data_repo_rev"]
-    except (FileNotFoundError, KeyError, json.JSONDecodeError, OSError, TypeError):
+    except (
+        FileNotFoundError,
+        KeyError,
+        json.JSONDecodeError,
+        OSError,
+        TypeError,
+        UnicodeDecodeError,
+    ):
         return "main"
     return rev.strip() if isinstance(rev, str) and rev.strip() else "main"
 

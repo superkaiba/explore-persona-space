@@ -454,7 +454,7 @@ def run_rubric_parity_smoke(args: argparse.Namespace) -> dict:
     for sf in state_files:
         try:
             st = json.loads(sf.read_text())
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             continue
         sha = st.get("judge_system_prompt_sha256")
         if sha:
