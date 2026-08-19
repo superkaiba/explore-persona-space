@@ -127,9 +127,29 @@ def _git_run(repo: Path, *args: str) -> str:
     return r.stdout.strip()
 
 
+# A minimal CLEAN companion (docs/reports/issue_5_detailed.md): Motivation copy
+# + full-detail sections, no forbidden Thomas-slot headings, no lexicon hits.
+_CLEAN_COMPANION = (
+    "# Detailed writeup — issue 5\n"
+    "\n"
+    "## Motivation\n"
+    "We test whether base propensity predicts trained leakage.\n"
+    "\n"
+    "## Methodology (full)\n"
+    "We trained on 100 rows under two conditions: baseline and treatment.\n"
+    "\n"
+    "## Results — full figure set\n"
+    "\n"
+    "### rate by condition\n"
+    "Bar chart of the agreement rate per condition; n = 100.\n"
+)
+
+
 @pytest.fixture
 def git_figs_repo(tmp_path: Path) -> tuple[Path, str]:
-    """A REAL git repo with figures/issue_5/f.png committed; returns (root, head_sha)."""
+    """A REAL git repo with figures/issue_5/f.png AND a minimal CLEAN companion
+    docs/reports/issue_5_detailed.md committed in the SAME commit; returns
+    (root, head_sha) — head serves both the image pin and the companion pin."""
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True, capture_output=True)
     _git_run(tmp_path, "config", "user.email", "test@test.test")
     _git_run(tmp_path, "config", "user.name", "Test")
@@ -137,10 +157,22 @@ def git_figs_repo(tmp_path: Path) -> tuple[Path, str]:
     figs = tmp_path / "figures" / "issue_5"
     figs.mkdir(parents=True)
     (figs / "f.png").write_bytes(b"\x89PNG\r\n\x1a\nreal-figure-bytes")
-    _git_run(tmp_path, "add", "figures/issue_5/f.png")
-    _git_run(tmp_path, "commit", "-q", "-m", "add figure")
+    reports = tmp_path / "docs" / "reports"
+    reports.mkdir(parents=True)
+    (reports / "issue_5_detailed.md").write_text(_CLEAN_COMPANION)
+    _git_run(tmp_path, "add", "figures/issue_5/f.png", "docs/reports/issue_5_detailed.md")
+    _git_run(tmp_path, "commit", "-q", "-m", "add figure + companion")
     head = _git_run(tmp_path, "rev-parse", "HEAD")
     return tmp_path, head
+
+
+def _commit_companion(repo: Path, text: str) -> str:
+    """Overwrite + commit the issue-5 companion in ``repo``; return the new HEAD
+    sha (the commit also carries the figure, so image pins at it resolve too)."""
+    (repo / "docs" / "reports" / "issue_5_detailed.md").write_text(text)
+    _git_run(repo, "add", "docs/reports/issue_5_detailed.md")
+    _git_run(repo, "commit", "-q", "-m", "companion variant")
+    return _git_run(repo, "rev-parse", "HEAD")
 
 
 def _by_name(results, name):
@@ -1013,7 +1045,9 @@ def test_outside_results_raw_image_exempt_from_issue_match(figs_root):
 def test_pin_blob_identity_match_passes(git_figs_repo):
     repo, head = git_figs_repo
     ok, results = _run(
-        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     ident = _by_name(results, "image-pin-blob-identity")
     assert ident.passed and not ident.is_warn
@@ -1026,7 +1060,9 @@ def test_pin_blob_identity_mismatch_fails_generation(git_figs_repo):
     repo, head = git_figs_repo
     (repo / "figures" / "issue_5" / "f.png").write_bytes(b"\x89PNG modified-after-commit")
     ok, results = _run(
-        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     assert not ok
     ident = _by_name(results, "image-pin-blob-identity")
@@ -1050,12 +1086,18 @@ def test_pin_commit_lacks_path_fails(git_figs_repo):
     # definitively — FAIL in BOTH modes.
     repo, head = git_figs_repo
     ghost = _pin(head, "figures/issue_5/ghost.png")
-    ok, results = _run(_assemble(_default_sections(image=ghost)), mode="generation", figs_root=repo)
+    ok, results = _run(
+        _assemble(_default_sections(image=ghost), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
+    )
     assert not ok
     ident = _by_name(results, "image-pin-blob-identity")
     assert not ident.passed and "does not contain" in ident.detail
     ok_p, results_p = _run(
-        _assemble(_promote_sections(image=ghost)), mode="promote", figs_root=repo
+        _assemble(_promote_sections(image=ghost), detailed_link=_detailed_link(sha=head)),
+        mode="promote",
+        figs_root=repo,
     )
     assert not ok_p
     assert not _by_name(results_p, "image-pin-blob-identity").passed
@@ -1065,15 +1107,19 @@ def test_pin_unresolvable_sha_fails_generation_warns_promote(git_figs_repo):
     # At 7e the pin commit was JUST created locally, so an unresolvable SHA is
     # the fabricated/hallucinated-SHA class → generation FAIL; at promote an
     # unfetched clone is plausible → WARN.
-    repo, _head = git_figs_repo
+    repo, head = git_figs_repo
     ok, results = _run(
-        _assemble(_default_sections(image=_pin("b" * 40))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin("b" * 40)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     assert not ok
     ident = _by_name(results, "image-pin-blob-identity")
     assert not ident.passed and "unresolvable" in ident.detail
     ok_p, results_p = _run(
-        _assemble(_promote_sections(image=_pin("b" * 40))), mode="promote", figs_root=repo
+        _assemble(_promote_sections(image=_pin("b" * 40)), detailed_link=_detailed_link(sha=head)),
+        mode="promote",
+        figs_root=repo,
     )
     ident_p = _by_name(results_p, "image-pin-blob-identity")
     assert ident_p.passed and ident_p.is_warn
@@ -1113,7 +1159,11 @@ def test_mixed_sha_results_pins_both_valid_pass(git_figs_repo):
         f"![points]({_pin(sha2, 'figures/issue_5/g.png')})\n"
         f"**Takeaways**\n{PLACEHOLDER}",
     )
-    ok, results = _run(_assemble(sections), mode="generation", figs_root=repo)
+    ok, results = _run(
+        _assemble(sections, detailed_link=_detailed_link(sha=sha1)),
+        mode="generation",
+        figs_root=repo,
+    )
     assert _by_name(results, "image-pin-format").passed
     ident = _by_name(results, "image-pin-blob-identity")
     assert ident.passed and not ident.is_warn
@@ -1127,13 +1177,17 @@ def test_pin_resolves_no_local_copy_warns_generation(git_figs_repo):
     repo, head = git_figs_repo
     (repo / "figures" / "issue_5" / "f.png").unlink()
     ok, results = _run(
-        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     ident = _by_name(results, "image-pin-blob-identity")
     assert ident.passed and ident.is_warn and "no local copy" in ident.detail
     assert ok, [r.render() for r in results if not r.passed]
     ok_p, results_p = _run(
-        _assemble(_promote_sections(image=_pin(head))), mode="promote", figs_root=repo
+        _assemble(_promote_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="promote",
+        figs_root=repo,
     )
     ident_p = _by_name(results_p, "image-pin-blob-identity")
     assert ident_p.passed and not ident_p.is_warn and "no local copy" in ident_p.detail
@@ -1921,3 +1975,224 @@ def test_cli_code_sha_cards_mode_split_through_dispatch(figs_root, tmp_path):
     )
     assert r_prom.returncode == 0, r_prom.stdout + r_prom.stderr
     assert "[WARN] code-sha-cards" in r_prom.stdout
+
+
+# ─── companion-content (#2198) ────────────────────────────────────────────
+
+
+def _companion_body(sha: str, *, promote: bool = False, image: str | None = None) -> str:
+    """A body whose image + detailed-writeup pins both point at ``sha``."""
+    builder = _promote_sections if promote else _default_sections
+    return _assemble(
+        builder(image=image if image is not None else _pin(sha)),
+        detailed_link=_detailed_link(sha=sha),
+    )
+
+
+def test_companion_clean_passes_both_modes(git_figs_repo):
+    # (a) clean companion at a real SHA → PASS, no warn, in BOTH modes.
+    repo, head = git_figs_repo
+    for mode in ("generation", "promote"):
+        ok, results = _run(
+            _companion_body(head, promote=(mode == "promote")), mode=mode, figs_root=repo
+        )
+        comp = _by_name(results, "companion-content")
+        assert comp.passed and not comp.is_warn, comp.detail
+        assert "clean" in comp.detail
+        assert ok, [r.render() for r in results if not r.passed]
+
+
+@pytest.mark.parametrize(
+    "slot",
+    [
+        "## TLDR",
+        "## TLDR:",
+        "## Conclusion and next steps",
+        "## Next steps",  # grandfathered alias — caught via _norm_header's alias map
+        "**Takeaways**",
+        "**Takeaways:**",
+    ],
+)
+def test_companion_thomas_slot_fails_generation(git_figs_repo, slot):
+    # (b) a Thomas-slot heading / Takeaways opener in the companion → FAIL.
+    repo, _head = git_figs_repo
+    sha = _commit_companion(repo, _CLEAN_COMPANION + f"\n{slot}\nhand-written claim\n")
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    assert not ok
+    comp = _by_name(results, "companion-content")
+    assert not comp.passed
+    assert "thomas-slot heading" in comp.detail
+
+
+def test_companion_thomas_slot_fails_promote_too(git_figs_repo):
+    # (b, promote arm) the structural half is FAIL in BOTH modes.
+    repo, _head = git_figs_repo
+    sha = _commit_companion(repo, _CLEAN_COMPANION + "\n## TLDR\nhand-written claim\n")
+    ok, results = _run(_companion_body(sha, promote=True), mode="promote", figs_root=repo)
+    assert not ok
+    comp = _by_name(results, "companion-content")
+    assert not comp.passed and "thomas-slot heading" in comp.detail
+
+
+def test_companion_lexicon_hit_warns_never_fails(git_figs_repo):
+    # (c) a banned lexeme in the companion's ## Methodology (full) → WARN with
+    # companion line number + lexeme in the detail; overall still passes.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION.replace(
+        "We trained on 100 rows under two conditions: baseline and treatment.",
+        "The dispatch log confirms the row count across conditions.",
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn
+    assert "lexicon L7: 'confirms'" in comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_lexicon_in_motivation_not_flagged(git_figs_repo):
+    # (d) the companion's exact ## Motivation section keeps the body's
+    # hypothesis-framing exemption.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION.replace(
+        "We test whether base propensity predicts trained leakage.",
+        "We hypothesize the base geometry suggests a leakage direction.",
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_fenced_lexicon_not_flagged(git_figs_repo):
+    # (e) a lexeme inside a fenced block is DATA (blank_verbatim) — no warn.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION + ("\n```text\nthis shows the effect, implying causation\n```\n")
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_fenced_forbidden_heading_not_flagged(git_figs_repo):
+    # (f) a ## TLDR inside a fenced block is DATA — not a Thomas slot.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION + "\n```markdown\n## TLDR\nexample slot text\n```\n"
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_unresolvable_sha_fails_generation_warns_promote(git_figs_repo):
+    # (g) unresolvable companion pin: fabricated-SHA class at generation →
+    # FAIL; unfetched clone plausible at promote → WARN.
+    repo, head = git_figs_repo
+    link = _detailed_link(sha="b" * 40)
+    ok, results = _run(
+        _assemble(_default_sections(image=_pin(head)), detailed_link=link),
+        mode="generation",
+        figs_root=repo,
+    )
+    assert not ok
+    comp = _by_name(results, "companion-content")
+    assert not comp.passed and "unresolvable" in comp.detail
+    ok_p, results_p = _run(
+        _assemble(_promote_sections(image=_pin(head)), detailed_link=link),
+        mode="promote",
+        figs_root=repo,
+    )
+    comp_p = _by_name(results_p, "companion-content")
+    assert comp_p.passed and comp_p.is_warn and "unresolvable" in comp_p.detail
+    assert ok_p, [r.render() for r in results_p if not r.passed]
+
+
+def test_companion_path_absent_at_commit_fails_both_modes(git_figs_repo):
+    # (h) the pinned commit resolves but does not contain the companion path
+    # (link names issue 9; only issue_5_detailed.md is committed) → FAIL both.
+    repo, head = git_figs_repo
+    for mode, promote in (("generation", False), ("promote", True)):
+        builder = _promote_sections if promote else _default_sections
+        ok, results = _run(
+            _assemble(builder(image=_pin(head)), detailed_link=_detailed_link(9, sha=head)),
+            mode=mode,
+            figs_root=repo,
+        )
+        assert not ok
+        comp = _by_name(results, "companion-content")
+        assert not comp.passed and "does not contain" in comp.detail
+
+
+def test_companion_na_when_link_missing_stacked_or_malformed(git_figs_repo):
+    # (i) missing / stacked / malformed detailed-writeup line → companion scan
+    # is PASS-note N/A; detailed-writeup-link carries the verdict.
+    repo, head = git_figs_repo
+    # Missing line at promote (grandfathered): link WARNs, companion N/A.
+    ok, results = _run(
+        _assemble(_promote_sections(image=_pin(head)), detailed_link=None),
+        mode="promote",
+        figs_root=repo,
+    )
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn and "N/A" in comp.detail
+    link = _by_name(results, "detailed-writeup-link")
+    assert link.passed and link.is_warn
+    assert ok, [r.render() for r in results if not r.passed]
+    # Missing line at generation: link FAILs; companion stays N/A.
+    _ok_g, results_g = _run(
+        _assemble(_default_sections(image=_pin(head)), detailed_link=None),
+        mode="generation",
+        figs_root=repo,
+    )
+    comp_g = _by_name(results_g, "companion-content")
+    assert comp_g.passed and "N/A" in comp_g.detail
+    assert not _by_name(results_g, "detailed-writeup-link").passed
+    # Stacked lines: link FAILs; companion stays N/A.
+    doubled = _detailed_link(sha=head) + "\n\n" + _detailed_link(5, "b" * 40)
+    _ok_d, results_d = _run(
+        _assemble(_default_sections(image=_pin(head)), detailed_link=doubled),
+        mode="generation",
+        figs_root=repo,
+    )
+    comp_d = _by_name(results_d, "companion-content")
+    assert comp_d.passed and "N/A" in comp_d.detail
+    assert not _by_name(results_d, "detailed-writeup-link").passed
+    # Malformed URL: link FAILs; companion stays N/A.
+    _ok_m, results_m = _run(
+        _assemble(
+            _default_sections(image=_pin(head)),
+            detailed_link="**Detailed writeup:** not-a-sha-pinned-url",
+        ),
+        mode="generation",
+        figs_root=repo,
+    )
+    comp_m = _by_name(results_m, "companion-content")
+    assert comp_m.passed and "N/A" in comp_m.detail
+    assert not _by_name(results_m, "detailed-writeup-link").passed
+
+
+def test_companion_non_git_root_warns(figs_root):
+    # (j) a non-git figures root degrades to WARN — the shape every existing
+    # default-fixture (tmp figs_root) test rides.
+    ok, results = _run(_assemble(_default_sections()), mode="generation", figs_root=figs_root)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn and "not a git checkout" in comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_round_motivation_is_scanned(git_figs_repo):
+    # (k) the Motivation exemption is EXACT-header-only: an appended
+    # `## Motivation (round)` section (the live #2162 shape) IS lexicon-scanned.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION + (
+        "\n## Motivation (round)\nThis round suggests a follow-up direction.\n"
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn
+    assert "lexicon" in comp.detail and "suggests" in comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
