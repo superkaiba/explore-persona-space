@@ -40,3 +40,4 @@
 - [Smoke shard namespace ≠ done-file namespace](smoke_shard_namespace_only_done_files.md) — namespace EVERY per-block artifact path, not just done-files; dir-glob uploads sweep smoke shards under the prod prefix (#2333 R1 g1)
 - [Banked-parent dual-schema equivalence](banked_parent_dual_schema_equivalence.md) — certify a claimed slot equivalence against the producer's OWN consumer read + the real pinned-artifact probe, never the fix's docstring (#2333 R4)
 - [Reused-module internal consumer sweep](reused_module_internal_consumer_sweep.md) — a class-sweep grep for R.helper in the issue script misses the reused gate's unqualified internal call; grep INSIDE every live reused function + probe the concrete spot selection (#2333 R5)
+- [Untracked-twin add certification](untracked_twin_add_certification.md) — diff committed blob vs live untracked twin certifies a clean-add claim; parent-blob ruff-format probe attributes off-template hunks (#2183 R1 g1)
