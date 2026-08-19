@@ -129,6 +129,12 @@ expensive in wall-clock. No dollar caps (`tests/test_no_dollar_budget_caps.py`).
 
 ## Provenance
 
+- workflow_fix_target: `.claude/workflow.yaml` (`ensemble_review.round_cap_per_reviewer`,
+  `reviewer_pairs.max_rounds`) + the coupled cap-5 surfaces in `.claude/skills/issue/SKILL.md`,
+  `.claude/skills/issue-v2/SKILL.md`, `.claude/skills/adversarial-planner-v2/SKILL.md`,
+  `.claude/rules/codex-ensemble-review.md`, `.claude/rules/agents-vs-skills.md`,
+  the reviewer agent specs, `CLAUDE.md`, and `tests/test_ensemble_review_cap.py`
+
 - User instruction, 2026-08-19 interactive chat: "2147 -> approve and change workflow so
   we can have up to 10 reviewer rounds"; scope confirmed to all three loops via
   follow-up question the same session.
