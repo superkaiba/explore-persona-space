@@ -326,6 +326,21 @@ SCRATCH_ESCALATE_FLOOR_GB_DEFAULT = (
 )
 SCRATCH_VERDICT_CACHE_REL = Path(".claude") / "cache" / "scratch-verify-cache.json"
 
+# ── stray top-level /tmp uv PROJECT FILES (#2377) ────────────────────────────
+# uv project discovery walks UP from the cwd, so a stray
+# /tmp/{pyproject.toml,uv.toml,uv.lock} pair makes EVERY /tmp-cwd `uv run` on
+# the shared VM resolve the stray project (2026-08-18: fleet-wide rc=2 on an
+# unresolvable stray lock). File-granular sibling of the #2127 scratch leg:
+# exactly these three fixed names, at the top level of tmp_root only.
+UV_PROJECT_POISON_NAMES = ("pyproject.toml", "uv.toml", "uv.lock")  # top-level /tmp only
+# Freshness grace (seconds) before a VERIFIED poison file may be quarantined —
+# defends against racing a file mid-write. Deliberately MINUTES, not the
+# #2127 leg's 48 h window: the poison is a live fleet-correctness hazard, and
+# recency is only ever a KEEP signal (the next guard pass acts once quiescent).
+UVPROJ_RECENT_GRACE_SECONDS = 600.0
+# The uv blast radius every sidecar row names (acceptance criterion 2).
+UVPROJ_BLAST_RADIUS = "poisons uv project discovery for every /tmp-cwd `uv run` on the shared VM"
+
 # The HF dataset repo a per-issue ``store/`` would have been mirrored to. Used
 # ONLY by the defensive nested-``store/`` parity guard below to verify a
 # generated (NOT re-downloadable) store tree is present on HF before a wholesale
@@ -1794,14 +1809,18 @@ def _tmp_git_evidence_branch_c(cache_dir: Path, *, main_repo: Path) -> tuple[str
     return _git_blob_reproducibility_evidence(cache_dir, main_repo=main_repo, full_stats=stats)
 
 
-def _scratch_live_process_hit(cand: Path) -> str | None:
+def _scratch_live_process_hit(cand: Path, *, exact: bool = False) -> str | None:
     """Live-process probe (#2127 amendment 1): scan every ``/proc/<pid>``'s
     ``cwd``/``exe``/``fd/*`` readlink for a realpath-prefix hit on the
     candidate. Returns a short description of the first hit, the sentinel
     ``"probe-unavailable"`` when ``/proc`` cannot be listed
     (fail-toward-keep), or ``None`` when no visible process holds the tree.
     Unreadable per-pid entries are SKIPPED — other-uid/root processes are
-    invisible to this probe, a NAMED residual (plan v2 §12 item 6)."""
+    invisible to this probe, a NAMED residual (plan v2 §12 item 6).
+
+    ``exact=True`` is the file-granular mode (#2377): match on realpath
+    EQUALITY only — no prefix matching for a regular file (a file has no
+    children, so a prefix hit could only be a different path)."""
     try:
         real = os.path.realpath(cand)
         prefix = real.rstrip("/") + "/"
@@ -1824,7 +1843,7 @@ def _scratch_live_process_hit(cand: Path) -> str | None:
                     target = os.readlink(link)
                 except OSError:
                     continue
-                if target == real or target.startswith(prefix):
+                if target == real or (not exact and target.startswith(prefix)):
                     return f"pid={pid} via {link[len(base) + 1 :]} -> {target}"
         return None
     except Exception:
@@ -2101,6 +2120,238 @@ def sweep_tmp_scratch(
             _finish("tmp-scratch-reap-failed", f"{reap_reason}; KEPT", escalate=True)
     cache.save()
     return result
+
+
+def sweep_tmp_uv_project_files(
+    tmp_root: Path | None,
+    *,
+    apply: bool,
+    main_repo: Path | None,
+    now: float | None = None,
+) -> ScratchSweepResult:
+    """Detect (and, evidence-licensed, QUARANTINE — never delete) stray
+    top-level uv PROJECT FILES ``tmp_root/{pyproject.toml,uv.toml,uv.lock}``
+    (#2377). A stray pair poisons uv project discovery for every /tmp-cwd
+    ``uv run`` fleet-wide, so the hazard is CORRECTNESS, not bytes: every row
+    lands a sidecar event via :func:`append_disk_guard_event` regardless of
+    size (no byte floor), with a reason naming the uv blast radius.
+
+    STRICT opt-in, same hermeticity contract as :func:`sweep_tmp_scratch`:
+    no-ops unless ``tmp_root`` AND ``main_repo`` are explicitly non-None
+    (production ``main()`` bodies pass :func:`production_tmp_root` /
+    :func:`_resolution_root`; library/test callers default to no-/tmp) and
+    both kill-switch layers are unset (:func:`tmp_scratch_sweep_enabled` —
+    acceptance criterion 3).
+
+    Per-candidate gate order (every early exit is a KEEP; rows use
+    ``leg: "tmp-uvproj"``):
+
+    1. ``lstat``: symlink / non-regular => ``tmp-uvproj-nonregular-escalated``;
+    2. foreign uid (:func:`_tmp_entry_owned` False) =>
+       ``tmp-uvproj-foreign-owner-escalated`` (sticky-bit /tmp forbids
+       renaming another uid's file anyway);
+    3. open-handle probe (:func:`_scratch_live_process_hit` in ``exact``
+       file-granular mode; the ``probe-unavailable`` sentinel fails toward
+       keep) => ``tmp-uvproj-live-process-kept``;
+    4. evidence: the file is NON-EMPTY and its git blob sha1
+       (:func:`_blob_sha1_from_fd`) exists in ``main_repo``'s odb
+       (:func:`_git_first_missing_blob`). The non-empty requirement pins the
+       known hermeticity trap — an empty file's blob exists in EVERY repo.
+       No proof => ``tmp-uvproj-unverified-escalated`` (KEPT + escalated;
+       NEVER an age-gated deletion — age never licenses anything here);
+    5. freshness grace: mtime younger than
+       :data:`UVPROJ_RECENT_GRACE_SECONDS` =>
+       ``tmp-uvproj-recent-escalated`` (KEPT this pass; a recent row is
+       already VERIFIED by gate order, so the next pass quarantines once the
+       file is quiescent);
+    6. ``apply=False`` => ``tmp-uvproj-would-quarantine``;
+    7. apply: pre-rename re-``lstat`` (size + mtime unchanged since the
+       evidence read — the :func:`_reap_scratch_tree` fresh-recheck idiom;
+       changed => ``tmp-uvproj-reap-aborted-recency``), then a
+       same-filesystem ``os.rename`` into
+       ``tmp_root/eps-quarantine-uvproj-<UTC-ts>/<name>`` (dir created 0700)
+       => ``tmp-uvproj-quarantined`` (the row carries the quarantine path —
+       the reversible restore point — plus the evidence string). Rename
+       failure => ``tmp-uvproj-quarantine-failed`` (KEPT + escalated).
+
+    NO deletion path exists in this arm at all — the only mutation is the
+    same-fs rename into the quarantine dir. Returns a
+    :class:`ScratchSweepResult` (``bytes_freed`` stays 0: a rename frees
+    nothing; ``total_discovered_bytes`` sums candidate sizes)."""
+    result = ScratchSweepResult()
+    if tmp_root is None or main_repo is None or not tmp_scratch_sweep_enabled():
+        return result
+    now = time.time() if now is None else now
+    quarantine_dir: Path | None = None
+    for name in UV_PROJECT_POISON_NAMES:
+        cand = tmp_root / name
+        try:
+            st = cand.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            row = {"path": str(cand), "name": name, "leg": "tmp-uvproj"}
+            result.rows.append(row)
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-unverified-escalated",
+                f"lstat failed ({exc}); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        row = {"path": str(cand), "name": name, "leg": "tmp-uvproj"}
+        result.rows.append(row)
+        if not stat.S_ISREG(st.st_mode):
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-nonregular-escalated",
+                f"symlink / non-regular entry; KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        row["bytes"] = st.st_size
+        result.total_discovered_bytes += st.st_size
+        if not _tmp_entry_owned(cand):
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-foreign-owner-escalated",
+                f"owned by another uid (sticky-bit /tmp forbids renaming it); "
+                f"KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        hit = _scratch_live_process_hit(cand, exact=True)
+        if hit is not None:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-live-process-kept",
+                f"live process holds the file ({hit}); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        opened = _open_scratch_regular(cand)
+        if opened is None:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-unverified-escalated",
+                f"open/fstat failed (race or non-regular swap); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        fd, fst = opened
+        empty = fst.st_size == 0
+        sha = None if empty else _blob_sha1_from_fd(fd, fst.st_size)
+        with contextlib.suppress(OSError):
+            os.close(fd)
+        if empty:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-unverified-escalated",
+                "empty file — never evidence-licensed (an empty blob exists in "
+                f"every repo); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        if sha is None:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-unverified-escalated",
+                f"content changed under hashing (truncate/grow race); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        if _git_first_missing_blob(main_repo, [sha]) != -1:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-unverified-escalated",
+                f"no git-blob identity proof in the main repo odb "
+                f"(sha {sha[:12]}); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        row["evidence"] = f"git-blob:{sha}"
+        age_s = now - fst.st_mtime
+        row["mtime_age_seconds"] = round(age_s, 1)
+        if age_s < UVPROJ_RECENT_GRACE_SECONDS:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-recent-escalated",
+                f"verified, but written {age_s:.0f}s ago (< {UVPROJ_RECENT_GRACE_SECONDS:.0f}s "
+                f"grace — recency is only a KEEP signal; the next pass acts once "
+                f"quiescent); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        if not apply:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-would-quarantine",
+                f"would quarantine (evidence: {row['evidence']}) — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        try:
+            re_st = cand.lstat()
+        except OSError:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-reap-aborted-recency",
+                f"file vanished between evidence read and rename; KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        if re_st.st_size != fst.st_size or re_st.st_mtime != fst.st_mtime:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-reap-aborted-recency",
+                f"file changed between evidence read and rename; KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        if quarantine_dir is None:
+            ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(now))
+            quarantine_dir = tmp_root / f"eps-quarantine-uvproj-{ts}"
+        dest = quarantine_dir / name
+        try:
+            quarantine_dir.mkdir(mode=0o700, exist_ok=True)
+            os.rename(cand, dest)
+        except OSError as exc:
+            _uvproj_finish(
+                row,
+                "tmp-uvproj-quarantine-failed",
+                f"quarantine rename failed ({exc}); KEPT — {UVPROJ_BLAST_RADIUS}",
+                apply=apply,
+            )
+            continue
+        row["quarantine_path"] = str(dest)
+        _uvproj_finish(
+            row,
+            "tmp-uvproj-quarantined",
+            f"quarantined to {dest} (same-fs rename — reversible restore point, "
+            f"never deleted; evidence: {row['evidence']}) — {UVPROJ_BLAST_RADIUS}",
+            apply=apply,
+        )
+    return result
+
+
+def _uvproj_finish(row: dict, disposition: str, reason: str, *, apply: bool) -> None:
+    """Record one #2377 uv-project row: stamp disposition + reason, print the
+    stderr line, and append the sidecar event UNCONDITIONALLY (no byte floor —
+    the hazard is fleet correctness, not bytes; acceptance criterion 2).
+    ``append_disk_guard_event`` demotes to stderr in report-only mode."""
+    row["disposition"] = disposition
+    row["reason"] = reason
+    print(f"  [tmp-uvproj] {disposition}: {row['path']} — {reason}", file=sys.stderr)
+    event = {
+        "kind": disposition,
+        "path": row["path"],
+        "bytes": row.get("bytes", 0),
+        "reason": reason,
+        "evidence": row.get("evidence"),
+    }
+    if row.get("quarantine_path"):
+        event["quarantine_path"] = row["quarantine_path"]
+    append_disk_guard_event(event, apply=apply)
 
 
 def _noncanonical_reap_gates(
