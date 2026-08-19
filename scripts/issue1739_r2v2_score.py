@@ -175,6 +175,30 @@ def _log(msg: str) -> None:
     print(f"[r2v2 {time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def _wire_fits_rss_logging() -> None:
+    """Route the fits-module INFO breadcrumbs to stdout (crash-fix r4).
+
+    The scorer never configured logging, so ``logger.info`` from
+    ``experiments.issue_1739.fits`` (incl. the new ``[fits][rss ...]``
+    stage crumbs INSIDE ``fit_linear_map`` — the 2026-08-18 kill site) was
+    swallowed by Python's lastResort WARNING+ handler and the fit's
+    split/diagnostics/refit stages were invisible in the pod log. Scoped to
+    the fits logger — never ``basicConfig`` on root (third-party INFO noise).
+    Idempotent (re-entry adds no second handler); log-only, no numerics.
+    """
+    import logging
+
+    fits_logger = logging.getLogger("explore_persona_space.experiments.issue_1739.fits")
+    if not fits_logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(
+            logging.Formatter("[r2v2 %(asctime)s] %(message)s", datefmt="%H:%M:%S")
+        )
+        fits_logger.addHandler(handler)
+        fits_logger.setLevel(logging.INFO)
+        fits_logger.propagate = False
+
+
 def _log_rss(tag: str) -> None:
     """Phase-boundary RSS breadcrumb (the 128 GB-cgroup OOM diagnosability line).
 
@@ -846,9 +870,11 @@ def fit_linear_add_map(
     wh_s = round(time.time() - t0, 1)
     _log_rss("map-pool-whitened")
     t1 = time.time()
+    _log_rss("map-fit-true-entry")
     map_lam_sink: list[dict] = []
     with fits.capture_selected_lambdas(map_lam_sink):
         mapfit = _fit_map(_fitmap_ns(args), x_w, y_w)
+    _log_rss("map-fit-true-done")
     if gen_sink is not None:
         n_gen = int(pool_meta["add_n_generic"])
         # basic slices are VIEWS keeping the whole pool alive — copy, then free
@@ -889,9 +915,11 @@ def fit_linear_add_map(
             for li in range(y_w.shape[0]):
                 y_w[li] = y_w[li][perm]
             t2 = time.time()
+            _log_rss("map-fit-shufpair-entry")
             shuf_lam_sink: list[dict] = []
             with fits.capture_selected_lambdas(shuf_lam_sink):
                 mapfit_shuf = _fit_map(_fitmap_ns(args), x_w, y_w)
+            _log_rss("map-fit-shufpair-done")
             claim4_sink["mapfit_shuf"] = mapfit_shuf
             claim4_sink["diag_shufpair"] = {
                 **mapfit_shuf.diagnostics,
@@ -1193,6 +1221,9 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         the repro join subsets on map_variant).
         """
         readout_rows = np.asarray(readout_rows, dtype=np.int64)
+        # entry crumb pairs with fit-done-<label> below: brackets the transfer
+        # fit + arm scoring (arm2/arm20 included) for OOM localization (r4)
+        _log_rss(f"fit-entry-{fit_label}" + (f"-{map_variant}" if map_variant else ""))
         _assert_well_posed(len(readout_rows), loaded.dim, f"{behavior}/{fit_label}")
         roster_use = ROSTER if roster is None else tuple(roster)
         ev_z_parts, ev_za_parts, ev_dv_parts, ev_rung_parts = [], [], [], []
@@ -1920,6 +1951,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    _wire_fits_rss_logging()
     from scripts.issue1739_wcrung_arms import _assert_no_judge_modules
 
     _assert_no_judge_modules("at entry")

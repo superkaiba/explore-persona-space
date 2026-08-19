@@ -270,6 +270,37 @@ LEG_DESTS = {
 }
 
 
+def sentinel_name(legs, seeds, behavior: str | None = None) -> str:
+    """Leg-keyed sentinel filename (crash-fix r4; plan §9 phase_outputs).
+
+    A claim4 launch (``fits-claim4`` in ``legs``) writes
+    ``issue-1739-claim4-<behavior>-<half>.json`` (``<half>`` derived from the
+    pod's seed shard, e.g. ``s0-1-2`` / ``s3-4``) so it matches the plan §9
+    contract and can never collide with — or masquerade as — a real fits-leg
+    ``issue-1739-r2v2fits-*.json`` sentinel. Every other leg keeps the legacy
+    name byte-identically. ``behavior=None`` -> the end-of-run summary name.
+    """
+    if "fits-claim4" in legs:
+        half = "s" + "-".join(str(int(s)) for s in seeds)
+        stem = f"issue-1739-claim4-{behavior}" if behavior else "issue-1739-claim4-all"
+        return f"{stem}-{half}.json"
+    if behavior:
+        return f"issue-1739-r2v2fits-{behavior}.json"
+    return "issue-1739-r2v2fits-all.json"
+
+
+def _write_sentinel(sentinel_dir: Path, name: str, payload: dict) -> Path:
+    """Atomic sentinel write (tmp + rename): the poller drains
+    ``issue-1739-*.json``, and a half-written JSON must never match the glob
+    (the ``.json.tmp`` suffix cannot; plan §9: 'written atomically')."""
+    sentinel_dir.mkdir(parents=True, exist_ok=True)
+    path = sentinel_dir / name
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=1))
+    os.replace(tmp, path)
+    return path
+
+
 def claim4_score_cmd(
     args,
     behavior: str,
@@ -1115,6 +1146,13 @@ def main(argv: list[str] | None = None) -> None:
         # keyword defaults keep the bare-seed call byte-identical: no
         # --layers slice, production out-root — asserted on c4_args above)
         assert "--layers" not in c4_cmd
+        # sentinel naming: claim4 leg-keyed + half-suffixed, legacy elsewhere (r4)
+        assert sentinel_name(["fits-claim4"], [0, 1, 2], "evil") == (
+            "issue-1739-claim4-evil-s0-1-2.json"
+        )
+        assert sentinel_name(["fits-claim4"], [3, 4]) == "issue-1739-claim4-all-s3-4.json"
+        assert sentinel_name(["fits"], [0, 1, 2], "evil") == "issue-1739-r2v2fits-evil.json"
+        assert sentinel_name(["fits"], [0]) == "issue-1739-r2v2fits-all.json"
         # breadcrumb identity: run-token-keyed path + payload check
         assert _stage_crumb_path("evil", "tok123").endswith("_stage_done_tok123.json")
         assert _gate1_crumb_path("evil", "tok123").endswith("_gate1_tok123.json")
@@ -1218,26 +1256,25 @@ def main(argv: list[str] | None = None) -> None:
         }
         overall_rc = overall_rc or rc_b
         sentinel = {
-            "leg": "r2v2_fits",
+            "leg": "fits-claim4" if "fits-claim4" in args.legs else "r2v2_fits",
             "behavior": behavior,
+            **({"seeds": [int(s) for s in args.seeds]} if "fits-claim4" in args.legs else {}),
             **results[behavior],
             "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
-        args.sentinel_dir.mkdir(parents=True, exist_ok=True)
-        path = args.sentinel_dir / f"issue-1739-r2v2fits-{behavior}.json"
-        path.write_text(json.dumps(sentinel, indent=1))
+        path = _write_sentinel(
+            args.sentinel_dir, sentinel_name(args.legs, args.seeds, behavior), sentinel
+        )
         _log(f"[phase=done {behavior}] sentinel -> {path}")
 
     summary = {
-        "leg": "r2v2_fits",
+        "leg": "fits-claim4" if "fits-claim4" in args.legs else "r2v2_fits",
         "behaviors": results,
         "overall_rc": overall_rc,
         "wall_s": round(time.time() - t0, 1),
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    args.sentinel_dir.mkdir(parents=True, exist_ok=True)
-    path = args.sentinel_dir / "issue-1739-r2v2fits-all.json"
-    path.write_text(json.dumps(summary, indent=1))
+    path = _write_sentinel(args.sentinel_dir, sentinel_name(args.legs, args.seeds), summary)
     _log(f"[phase=done] sentinel -> {path} (overall_rc={overall_rc})")
     sys.stdout.flush()
     sys.stderr.flush()

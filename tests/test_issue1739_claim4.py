@@ -1215,3 +1215,131 @@ def test_seed_write_order_summary_is_completion_sentinel(tmp_path):
         out, commit="c" * 40, seed=0, map_variants=["true", "shufpair"]
     )
     assert not ok and "all_arms_spearman.json absent" in why
+
+
+# ---------------------------------------------------------------------------
+# 6. crash-fix r4: row-index pushdown (the 128 GB-cgroup OOM fix) — BITWISE
+#    equivalence to the pre-r4 materialized split copies, on both Gram routes
+# ---------------------------------------------------------------------------
+
+
+def _pushdown_pool(n=40, d=8, ly=3, seed=7):
+    rng = np.random.default_rng(seed)
+    x = rng.normal(size=(ly, n, d))
+    y = 0.5 * x + rng.normal(size=(ly, n, d)) * 0.1
+    return x, y
+
+
+def test_ridge_row_pushdown_bitwise_primal():
+    """train_rows/eval_rows pushdown == materialized fancy-index copies,
+    BITWISE (np.array_equal), on the primal (n_tr > d) route — preds AND
+    weights. This is the r4 OOM fix's numerical contract: the claim4 gate 1
+    asserts seed-0 reproduction against banked artifacts, so the memory
+    refactor must not perturb one bit of the fit."""
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    x, y = _pushdown_pool(n=40, d=8)
+    rng = np.random.default_rng(3)
+    perm = rng.permutation(40)
+    hold, tr = perm[:8], perm[8:]  # n_tr=32 > d=8 -> primal
+    p_ref, w_ref = fits.ridge_layer_batched_auto(
+        x[:, tr], y[:, tr], x[:, hold], return_weights=True
+    )
+    p_new, w_new = fits.ridge_layer_batched_auto(
+        x, y, x, return_weights=True, train_rows=tr, eval_rows=hold
+    )
+    assert np.array_equal(p_ref, p_new)
+    assert np.array_equal(w_ref, w_new)
+
+
+def test_ridge_row_pushdown_bitwise_dual():
+    """Same contract on the dual route (n_tr <= d): the auto-router
+    materializes the gathers exactly as the pre-r4 caller did."""
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    x, y = _pushdown_pool(n=12, d=16)
+    rng = np.random.default_rng(4)
+    perm = rng.permutation(12)
+    hold, tr = perm[:4], perm[4:]  # n_tr=8 <= d=16 -> dual
+    p_ref = fits.ridge_layer_batched_auto(x[:, tr], y[:, tr], x[:, hold])
+    p_new = fits.ridge_layer_batched_auto(x, y, x, train_rows=tr, eval_rows=hold)
+    assert np.array_equal(p_ref, p_new)
+
+
+def test_layer_row_gather_matches_whole_array_gather():
+    """_LayerRowGather[li] == pool[:, rows][li] element-for-element with the
+    same C-contiguous layout (map_diagnostics only ever indexes [li])."""
+    from explore_persona_space.experiments.issue_1739.fits import _LayerRowGather
+
+    x, _ = _pushdown_pool(n=20, d=5)
+    rows = np.asarray([3, 1, 7, 11])
+    facade = _LayerRowGather(x, rows)
+    ref = x[:, rows]
+    for li in range(x.shape[0]):
+        got = facade[li]
+        assert np.array_equal(got, ref[li])
+        assert got.flags["C_CONTIGUOUS"]
+
+
+def test_fit_linear_map_pushdown_bitwise_vs_materialized_reference():
+    """fit_linear_map (r4 pushdown internals) == the pre-r4 materialized
+    construction, BITWISE: weights, standardization params, and every
+    per-layer diagnostic (r2_map / r2_identity_bias / kNN) — on the primal
+    route (production shape class) and the dual route."""
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    for n, d in ((40, 8), (12, 16)):  # primal / dual
+        x, y = _pushdown_pool(n=n, d=d, seed=11)
+        seed = 0
+        mf = fits.fit_linear_map(x, y, seed=seed)
+        # pre-r4 reference construction, inline (whole-array split copies)
+        rng = np.random.default_rng([1739, 4, seed])
+        perm = rng.permutation(n)
+        n_hold = max(2, round(fits.WHITEN_HOLDOUT_FRAC * n))
+        hold, tr = perm[:n_hold], perm[n_hold:]
+        x_tr, y_tr, x_ho, y_ho = x[:, tr], y[:, tr], x[:, hold], y[:, hold]
+        preds_hold = fits.ridge_layer_batched_auto(x_tr, y_tr, x_ho)
+        diag_ref = fits.map_diagnostics(preds_hold, x_ho, y_ho, x_tr, y_tr)
+        _p, w_ref = fits.ridge_layer_batched_auto(x, y, x[:, :2], return_weights=True)
+        assert np.array_equal(mf.w, w_ref), (n, d)
+        assert np.array_equal(mf.x_mu, x.mean(axis=1, keepdims=True))
+        assert np.array_equal(mf.y_mu, y.mean(axis=1, keepdims=True))
+        for got, ref in zip(mf.diagnostics["per_layer"], diag_ref["per_layer"], strict=True):
+            assert got["r2_map"] == ref["r2_map"], (n, d)
+            assert got["r2_identity_bias"] == ref["r2_identity_bias"], (n, d)
+            assert got["knn"] == ref["knn"], (n, d)
+
+
+# ---------------------------------------------------------------------------
+# 7. crash-fix r4: leg-keyed sentinel naming (plan §9 phase_outputs contract)
+# ---------------------------------------------------------------------------
+
+
+def test_sentinel_name_leg_keyed_for_claim4_and_legacy_elsewhere():
+    from scripts.issue1739_r2v2_run import sentinel_name
+
+    # claim4 leg: plan §9 name issue-1739-claim4-<behavior>-<half>.json
+    assert (
+        sentinel_name(["fits-claim4"], [0, 1, 2], "sycophancy")
+        == "issue-1739-claim4-sycophancy-s0-1-2.json"
+    )
+    assert sentinel_name(["fits-claim4"], [3, 4]) == "issue-1739-claim4-all-s3-4.json"
+    # the two pod halves can never collide with each other...
+    assert sentinel_name(["fits-claim4"], [0, 1, 2], "evil") != sentinel_name(
+        ["fits-claim4"], [3, 4], "evil"
+    )
+    # ...nor with a real fits-leg sentinel
+    assert "r2v2fits" not in sentinel_name(["fits-claim4"], [0], "evil")
+    # every other leg keeps the legacy names byte-identically
+    assert sentinel_name(["fits"], [0, 1, 2], "evil") == "issue-1739-r2v2fits-evil.json"
+    assert sentinel_name(["pc"], [0]) == "issue-1739-r2v2fits-all.json"
+
+
+def test_write_sentinel_atomic_and_drainable(tmp_path):
+    from scripts.issue1739_r2v2_run import _write_sentinel
+
+    path = _write_sentinel(tmp_path / "logs", "issue-1739-claim4-evil-s0.json", {"rc": 0})
+    assert path.exists()
+    assert json.loads(path.read_text()) == {"rc": 0}
+    # no half-written tmp residue left behind to confuse the poller glob
+    assert list((tmp_path / "logs").glob("*.tmp")) == []
