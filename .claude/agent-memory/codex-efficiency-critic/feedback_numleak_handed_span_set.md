@@ -1,0 +1,31 @@
+---
+name: numleak-handed-span-set
+description: Which files must enter the numeric-leak verifier's handed-span set to avoid false-positive residuals (brief text, spec template lines, path strings)
+metadata:
+  type: feedback
+---
+
+For the Step-4 numeric-leak verifier, the handed-span multiset needs FOUR
+classes of files, not just plan + lens extracts: (1) the plan snapshot,
+(2) every verbatim lens extract exactly as concatenated into the prompt,
+(3) the ORCHESTRATOR BRIEF text verbatim (its claims-to-verify / emphases
+numbers are handed, not fabricated — quote them nearly verbatim in the
+prompt so they cancel), and (4) the composer's OWN SPEC Step-3 template
+lines (the template hands "§9", ">50 GB", the "25 models × 3 traits …
+8×H100 … 1/8 util" closing example, and the "items 10 / 13 / 16"
+designators — without this file those scaffold atoms false-positive every
+round). Path strings (plan/manifest/script paths) also enter as handed
+spans so v<K>/issue-id atoms inside paths clear.
+
+**Why:** first run on #2329 round 1 flagged 9 residual atom classes; all
+but one traced to spec-template scaffold, and the one real catch was a
+composer-typed second "Qwen3.5" in a read-target annotation — rephrasing
+to a version-free description ("the ported-model rig") is the fix pattern
+for model-version numerals in composer-authored glue text.
+
+**How to apply:** build the handed-span set from all four classes BEFORE
+the first verifier run; treat any remaining residual as a genuine
+composer-authored numeral and rephrase the glue text rather than widening
+the allowlist. Run the verifier from the repo root (not /tmp) so the
+registry leg (`task_workflow.registry_path()`) imports; from /tmp it
+degrades to handed-span-only clearing.

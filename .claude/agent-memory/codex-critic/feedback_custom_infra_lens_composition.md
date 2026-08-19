@@ -299,7 +299,21 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   marker-tag tokens invisible; hyphen/slash-joined pairs still split
   correctly (`+0.74-0.80` → both atoms, verified by the in-script dynamic
   self-test). PASS first try at ~147 KB (spans = brief-inputs + lensitems
-  (capsule + full reference span) + questions + plan + body + empty prior).**
+  (capsule + full reference span) + questions + plan + body + empty prior).
+  Rounds two + three (#2391): the round-one header reuses VERBATIM (it is
+  round-agnostic + digit-free); per round add a ROUND SCOPE block (history,
+  load-bearing pattern, duties: replay-then-fresh-review) and compose the
+  orchestrator brief's replay claims + fresh-review classes + settled list
+  as ONE brief span carrying all digits, framed "recorded exit codes are
+  CLAIMS — replay them" (v-four records rc inline; the gate must not trust
+  it). Record spans = both twins' prior verdicts + the disposition
+  epm:progress note, extracted from events.jsonl to files; Codex's own
+  verdicts lead in as "YOUR OWN — verify resolution, do not re-assert".
+  numcheck needs only path/span-list edits (fresh round-tagged workspace
+  dir); round-three PASS first try at ~252 KB. Quoted prior-round marker
+  tags in the records are harmless when the return summary tells the
+  orchestrator to key OUTPUT-file extraction on the round-tagged start
+  tag.**
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
