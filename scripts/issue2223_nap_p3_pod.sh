@@ -91,9 +91,12 @@ if [ "$rc" -ne 0 ]; then
 fi
 
 echo "[phase=extract_newaxes]"
+# --force: the extract leg above REGENERATES tau_map.json (new-axis keys
+# dropped), so the merge must always recompute — a matching completion
+# sentinel over a clobbered map fails the geometry verify (r2 incident).
 rc=0
 CUDA_VISIBLE_DEVICES="${GPUS[0]}" uv run python "$RUNNER" \
-  --phase extract_newaxes --model 32b --out-root "$OUT_ROOT" \
+  --phase extract_newaxes --model 32b --out-root "$OUT_ROOT" --force \
   > "$LOGDIR/issue-2223-nap-p3-extract-newaxes.log" 2>&1 || rc=$?
 echo "[nap-p3] extract_newaxes rc=$rc"
 if [ "$rc" -ne 0 ]; then
