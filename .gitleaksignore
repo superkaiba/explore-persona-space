@@ -1419,3 +1419,12 @@ dashboard/public/issue2329_result0_gallery.html:generic-api-key:161321
 dashboard/public/issue2329_result0_gallery.html:generic-api-key:161449
 # task #1739 claim4 launch marker: flagged string is the round run-token identifier, not a credential (false positive)
 tasks/followups_running/1739/events.jsonl:generic-api-key:1418
+tasks/followups_running/1739/events.jsonl:generic-api-key:1442
+
+# issue #2329 Result 0 qualitative gallery: model-GENERATED python in a
+# TensorFlow Model Analysis snippet. generic-api-key fires on the entropy
+# (3.92) of the long snake_case identifier
+# horizontal_slice_tf_example_columns beside horizontal_slice_key=
+# "served_example". Verified by reading both lines: no credential.
+docs/issue2329_result0_gallery.html:generic-api-key:149249
+docs/issue2329_result0_gallery.html:generic-api-key:149377

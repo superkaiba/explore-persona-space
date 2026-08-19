@@ -1,0 +1,1415 @@
+{
+  "commit": "0066444b",
+  "render_id": "41b184a3f8db4ab8",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:17:09Z",
+  "figsize": [
+    13.0,
+    5.5
+  ],
+  "points": [
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.034035126663945134,
+      "error": 0.010429595679549573,
+      "series": "fact_user_name|ce",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.03233471137210542,
+      "error": 0.04400644977679674,
+      "series": "fact_user_name|ce",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.05278089253851536,
+      "error": 0.08126466556337365,
+      "series": "fact_user_name|ce",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.010342000517812769,
+      "error": 0.010429595679549573,
+      "series": "fact_user_name|pe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.0026703677618743213,
+      "error": 0.04400644977679674,
+      "series": "fact_user_name|pe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.0011494689359449835,
+      "error": 0.08126466556337365,
+      "series": "fact_user_name|pe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.5269726080788221,
+      "error": 0.010429595679549573,
+      "series": "instr_format|ce",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.48034184966518445,
+      "error": 0.04400644977679674,
+      "series": "instr_format|ce",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.43963230198025094,
+      "error": 0.08126466556337365,
+      "series": "instr_format|ce",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.0037332504169990052,
+      "error": 0.010429595679549573,
+      "series": "instr_format|pe",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.04996870801011481,
+      "error": 0.04400644977679674,
+      "series": "instr_format|pe",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.05140571994142107,
+      "error": 0.08126466556337365,
+      "series": "instr_format|pe",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.1000934918815578,
+      "error": 0.010429595679549573,
+      "series": "persona_prompted|ce",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.22433912617093174,
+      "error": 0.04400644977679674,
+      "series": "persona_prompted|ce",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.3298632713560955,
+      "error": 0.08126466556337365,
+      "series": "persona_prompted|ce",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.02046349450071373,
+      "error": 0.04400644977679674,
+      "series": "persona_prompted|pe",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.042400007392724426,
+      "error": 0.08126466556337365,
+      "series": "persona_prompted|pe",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.002692518060285873,
+      "error": 0.010429595679549573,
+      "series": "prior_topic|ce",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.03756830250842406,
+      "error": 0.04400644977679674,
+      "series": "prior_topic|ce",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.08809987474861038,
+      "error": 0.08126466556337365,
+      "series": "prior_topic|ce",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.0010085197551963003,
+      "error": 0.010429595679549573,
+      "series": "prior_topic|pe",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.013062620097044146,
+      "error": 0.04400644977679674,
+      "series": "prior_topic|pe",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.06126707977347664,
+      "error": 0.08126466556337365,
+      "series": "prior_topic|pe",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.03998859995317047,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.07160368917491874,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.07737151187236403,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.034035126663945134,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.03233471137210542,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.05278089253851536,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.012701565900571553,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.026553678566183993,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": -0.0025475669875165696,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.08540770355812947,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.0987854940434571,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.11412382428149818,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.0019827031179000757,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.012005580964435077,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": -0.0016655731412554898,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.010342000517812769,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.0026703677618743213,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.0011494689359449835,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.032974163061476824,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.03456586630165203,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": -0.03905018648887174,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.01353086076288982,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.03941610293314984,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.040437915189463984,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.12069021322365514,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.03200565490898027,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.14471268025601672,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.5269726080788221,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.48034184966518445,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.43963230198025094,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.41126312053502484,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.36059357158314376,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.3418100735758044,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.641946075347772,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.5949096040099565,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.5393180189789046,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.009395990239550074,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.02415866612423422,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.06343321598397779,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.0037332504169990052,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.04996870801011481,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.05140571994142107,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.007976106717829333,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.1382108869007367,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.004220951868037837,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.01637182458320863,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.012954183864769694,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.11235906180006498,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.10734836527745953,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.10097105004745145,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.21775086287391665,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.1000934918815578,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.22433912617093174,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.3298632713560955,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.05438815508922395,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.1486213276781642,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.2071061470371099,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.14729314382251962,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.3067271933099145,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.4667397035904521,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.0014344462107873423,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.024388534582239225,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.024062668728812724,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.002692518060285873,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.03756830250842406,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.08809987474861038,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.008509887820628436,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.0044551173385017,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": -0.006751655117830491,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.013554479060768008,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.08202093017662977,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.18685000657657697,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.0006625591160297999,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.022717058132031794,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.05939781793731149,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.0010085197551963003,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.013062620097044146,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.06126707977347664,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": -0.011739652889186677,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": -0.031175647959594127,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": -0.016003659260024623,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 1.0,
+      "steered F_beh": 0.009119538469912467,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 3.0,
+      "steered F_beh": 0.056837251593999355,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "history depth d (1 = uncrossed base cell)": 5.0,
+      "steered F_beh": 0.1465256718667227,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.014678816586367903,
+      "error": 0.01217396565051898,
+      "series": "fact_assistant_animal|ce",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.07771584484391142,
+      "error": 0.016707872686893423,
+      "series": "fact_assistant_animal|ce",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.043949471014223945,
+      "error": 0.025916588192066145,
+      "series": "fact_assistant_animal|ce",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.04317528436571518,
+      "error": 0.01217396565051898,
+      "series": "fact_assistant_animal|pe",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.025590933913985613,
+      "error": 0.016707872686893423,
+      "series": "fact_assistant_animal|pe",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.03784069304742364,
+      "error": 0.025916588192066145,
+      "series": "fact_assistant_animal|pe",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.034035126663945134,
+      "error": 0.01217396565051898,
+      "series": "fact_user_name|ce",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.007999468578980335,
+      "error": 0.016707872686893423,
+      "series": "fact_user_name|ce",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.025044642433908783,
+      "error": 0.025916588192066145,
+      "series": "fact_user_name|ce",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": -0.010342000517812769,
+      "error": 0.01217396565051898,
+      "series": "fact_user_name|pe",
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.0019984089567160416,
+      "error": 0.016707872686893423,
+      "series": "fact_user_name|pe",
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.5269726080788221,
+      "error": 0.01217396565051898,
+      "series": "instr_format|ce",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.36772581911339686,
+      "error": 0.016707872686893423,
+      "series": "instr_format|ce",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.4695103037584098,
+      "error": 0.025916588192066145,
+      "series": "instr_format|ce",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.0037332504169990052,
+      "error": 0.01217396565051898,
+      "series": "instr_format|pe",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.008683872585015531,
+      "error": 0.016707872686893423,
+      "series": "instr_format|pe",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.014885177607765972,
+      "error": 0.025916588192066145,
+      "series": "instr_format|pe",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": -0.06823925998075503,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.10582805489699522,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.10368755733426185,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.014678816586367903,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.07771584484391142,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.043949471014223945,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": -0.03349251686686879,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.014436697906976104,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.027937774067956084,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.06805957121903759,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.15055817341518773,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.13114789190253606,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.044704983162042786,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.029551288169331596,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.010530474662087128,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.04317528436571518,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.025590933913985613,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.03784069304742364,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.00807539319958072,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.003678397903221997,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.0347668909391715,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.08465321072121923,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.06403427940096386,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.12189262649724493,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.03998859995317047,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.012146720796252918,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.030663947609289394,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.034035126663945134,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.007999468578980335,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.025044642433908783,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": -0.012701565900571553,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.04295099071328623,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.02890574002976664,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.08540770355812947,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.06073907900450193,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.08066865379129094,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.12069021322365514,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.04712437560836734,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.02716752504826971,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.5269726080788221,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.36772581911339686,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.4695103037584098,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.41126312053502484,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.25485075630446025,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.34789698154510457,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.641946075347772,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.48341657162848856,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.5935246944699498,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.009395990239550074,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.0025708754625520997,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.002452416702463515,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.0037332504169990052,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.008683872585015531,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.014885177607765972,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": -0.007976106717829333,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": -0.026366471309236864,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": -0.044978605502559,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 1.0,
+      "y": 0.01637182458320863,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 3.0,
+      "y": 0.007049274064549981,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "distractor load l (1 = uncrossed base cell)": 5.0,
+      "y": 0.006854570881573294,
+      "_kind": "line",
+      "_group": 61
+    }
+  ],
+  "n_series": 62,
+  "total_points": 184,
+  "text": {
+    "suptitle": "Steered F_beh vs history depth / distractor load (95% pair-clustered CIs; grey band = shuffled-donor null 95% CI)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "recency curves",
+        "xlabel": "history depth d (1 = uncrossed base cell)",
+        "ylabel": "steered F_beh",
+        "legend_labels": [
+          "fact_user_name|ce",
+          "fact_user_name|pe",
+          "instr_format|ce",
+          "instr_format|pe",
+          "persona_prompted|ce",
+          "persona_prompted|pe",
+          "prior_topic|ce",
+          "prior_topic|pe"
+        ],
+        "xticklabels": [
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5",
+          "5.0",
+          "5.5"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "load curves",
+        "xlabel": "distractor load l (1 = uncrossed base cell)",
+        "legend_labels": [
+          "fact_assistant_animal|ce",
+          "fact_assistant_animal|pe",
+          "fact_user_name|ce",
+          "fact_user_name|pe",
+          "instr_format|ce",
+          "instr_format|pe"
+        ],
+        "xticklabels": [
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5",
+          "5.0",
+          "5.5"
+        ]
+      }
+    ],
+    "series": [
+      "fact_user_name|ce",
+      "fact_user_name|pe",
+      "instr_format|ce",
+      "instr_format|pe",
+      "persona_prompted|ce",
+      "persona_prompted|pe",
+      "prior_topic|ce",
+      "prior_topic|pe",
+      "fact_assistant_animal|ce",
+      "fact_assistant_animal|pe"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "dose_position",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/stats.json"
+  ],
+  "dose_slopes": {
+    "load|fact_assistant_animal|ce": {
+      "n_pairs": 35,
+      "slope_mean": 0.0019021364238880909,
+      "ci95": [
+        -0.030203194740654003,
+        0.03294680161816249
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "load|fact_assistant_animal|pe": {
+      "n_pairs": 35,
+      "slope_mean": -0.007130059298777529,
+      "ci95": [
+        -0.046265381369263885,
+        0.02424131752691511
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "load|fact_user_name|ce": {
+      "n_pairs": 33,
+      "slope_mean": -0.0022476210575090904,
+      "ci95": [
+        -0.014859231941363156,
+        0.010290952837713632
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "load|fact_user_name|pe": {
+      "n_pairs": 33,
+      "slope_mean": -0.005910125784164092,
+      "ci95": [
+        -0.02065959172570036,
+        0.006893270806871304
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "load|instr_format|ce": {
+      "n_pairs": 34,
+      "slope_mean": 0.003832711927220774,
+      "ci95": [
+        -0.021161965699794255,
+        0.03271869219498077
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "load|instr_format|pe": {
+      "n_pairs": 34,
+      "slope_mean": -0.006148547631110436,
+      "ci95": [
+        -0.017439929937735407,
+        0.002280646821350977
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|fact_user_name|ce": {
+      "n_pairs": 33,
+      "slope_mean": 0.004686441468642557,
+      "ci95": [
+        -0.0057889077426188625,
+        0.014863257717905557
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|fact_user_name|pe": {
+      "n_pairs": 33,
+      "slope_mean": 0.002872867363439439,
+      "ci95": [
+        -0.007301595057294539,
+        0.013097316352428626
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|instr_format|ce": {
+      "n_pairs": 33,
+      "slope_mean": -0.023117573175982852,
+      "ci95": [
+        -0.07117410465930558,
+        0.022665207475488287
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|instr_format|pe": {
+      "n_pairs": 33,
+      "slope_mean": -0.008906120882008003,
+      "ci95": [
+        -0.058545014611908905,
+        0.02437005401944728
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|persona_prompted|ce": {
+      "n_pairs": 29,
+      "slope_mean": 0.06502396645396882,
+      "ci95": [
+        0.024522413871673282,
+        0.1094599901050663
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|persona_prompted|pe": {
+      "n_pairs": 26,
+      "slope_mean": 0.015449539862781024,
+      "ci95": [
+        -0.016079908333116455,
+        0.0505125295364489
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|prior_topic|ce": {
+      "n_pairs": 27,
+      "slope_mean": 0.03224741688901219,
+      "ci95": [
+        0.011954483606974608,
+        0.05291250287503585
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    },
+    "recency|prior_topic|pe": {
+      "n_pairs": 27,
+      "slope_mean": 0.0162976077132487,
+      "ci95": [
+        -0.003819344847033791,
+        0.036106226778263514
+      ],
+      "unit": "Delta F_beh per level step (levels 1/3/5; 1 = base cell)"
+    }
+  }
+}

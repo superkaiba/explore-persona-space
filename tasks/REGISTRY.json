@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2387,
+  "highest_id": 2394,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -531,8 +531,8 @@
     "1067": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1067",
-      "status": "blocked",
+      "path": "tasks/archived/1067",
+      "status": "archived",
       "title": "daily-held: Happy mobile push down all day (Remote Control o"
     },
     "1068": {
@@ -1104,8 +1104,8 @@
     "1141": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1141",
-      "status": "blocked",
+      "path": "tasks/archived/1141",
+      "status": "archived",
       "title": "daily-held: canonical HF model repo at 100k-file limit"
     },
     "1142": {
@@ -8867,8 +8867,8 @@
     "2147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/2147",
-      "status": "blocked",
+      "path": "tasks/running/2147",
+      "status": "running",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
     },
     "2148": {
@@ -9219,36 +9219,36 @@
     "2194": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2194",
-      "status": "reviewing",
+      "path": "tasks/completed/2194",
+      "status": "completed",
       "title": "Emit a uniform phase field in reproducibility cards so gate checks can resolve phase-to-card mechanically"
     },
     "2195": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2195",
-      "status": "reviewing",
+      "path": "tasks/completed/2195",
+      "status": "completed",
       "title": "verify_report.py: WARN when a report cites a repo artifact at a SHA the same branch has since modified"
     },
     "2196": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2196",
-      "status": "reviewing",
+      "path": "tasks/completed/2196",
+      "status": "completed",
       "title": "cron_lesson_consolidate: an uncreatable log dir silently skips the whole nightly pass"
     },
     "2197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2197",
-      "status": "running",
+      "path": "tasks/reviewing/2197",
+      "status": "reviewing",
       "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
     },
     "2198": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2198",
-      "status": "approved",
+      "path": "tasks/reviewing/2198",
+      "status": "reviewing",
       "title": "verify_report.py: scan the detailed companion writeup, not just the report body"
     },
     "2199": {
@@ -9275,8 +9275,8 @@
     "2201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2201",
-      "status": "proposed",
+      "path": "tasks/running/2201",
+      "status": "running",
       "title": "workflow-fix: pre-review deliverable-divergence probe (Step 5a/10d)"
     },
     "2202": {
@@ -9298,8 +9298,8 @@
     "2204": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2204",
-      "status": "proposed",
+      "path": "tasks/running/2204",
+      "status": "running",
       "title": "verify_plan: WARN when a plan registers a test-retest kappa demotion gate while pinning judge temperature 0"
     },
     "2205": {
@@ -10210,8 +10210,8 @@
     "2321": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/2321",
-      "status": "blocked",
+      "path": "tasks/completed/2321",
+      "status": "completed",
       "title": "Repack the 10 largest prefixes in the HF data repo to recover ~610k of the 1,000,000-file cap"
     },
     "2322": {
@@ -10643,8 +10643,8 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2378",
-      "status": "running",
+      "path": "tasks/blocked/2378",
+      "status": "blocked",
       "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
     },
     "2379": {
@@ -10719,12 +10719,63 @@
       "status": "proposed",
       "title": "cron wrappers: bound the synchronous Telegram push calls (timeout) \u2014 class sweep from #2196"
     },
+    "2388": {
+      "goal": "On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (gold- or execution-verified, K=5 rollouts) is predictable from the frozen context vector before generation, and whether routing the context vector through the learned context-to-answer map improves that prediction at matched data budgets, across four correctness surfaces (short-answer QA, math, multiple-choice, code) and a distribution-shift ladder.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2388",
+      "status": "proposed",
+      "title": "Is answer correctness predictable from the context vector, and does the context-to-answer map help?"
+    },
+    "2389": {
+      "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/approved/2389",
+      "status": "approved",
+      "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
+    },
     "239": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/239",
       "status": "archived",
       "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives \u2014 prompt leakage extends past personas (LOW confidence)"
+    },
+    "2390": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2390",
+      "status": "proposed",
+      "title": "workflow-fix: re-verify premise before spending when a task resumes from a long park; dedup screen for infra filings"
+    },
+    "2391": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2391",
+      "status": "planning",
+      "title": "workflow-fix: raise the per-reviewer review-round cap from 5 to 10 across all three review loops"
+    },
+    "2392": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2392",
+      "status": "archived",
+      "title": "vLLM backend for the unhooked anchor phase of the patching rig, behind a measured HF-parity gate"
+    },
+    "2393": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2393",
+      "status": "archived",
+      "title": "Opt-in shared-prefill multi-draw mode for generate_batch (one prefill, N sampled continuations)"
+    },
+    "2394": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/2394",
+      "status": "proposed",
+      "title": "Pilot: cheap context readout to mine always-comply jailbreak contexts; does the context\u2192answer map help?"
     },
     "24": {
       "has_clean_result": false,
@@ -15178,8 +15229,8 @@
       "goal": "Determine whether #779's per-example context\u2192answer-profile map h: c_last(x) \u2192 v(x) (held-out reconstruction R\u00b2 0.60\u20130.63, per-context cosine 0.93\u20130.96 over ~5000 LMSYS contexts) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical 5-fold ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled answers teacher-forced through the frozen base model.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/823",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/823",
+      "status": "followups_running",
       "title": "The context\u2192answer-profile activation map reads answer-content match, not self-generation: plain-style external answers retain 91\u201398% of refit R\u00b2 while shuffled answers collapse it to \u22480 (MODERATE confidence)"
     },
     "824": {
