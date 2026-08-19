@@ -812,7 +812,7 @@ def _keepflags_are_canonical(behavior: str) -> bool:
         return False
     try:
         return load_json(p).get("judge_system_prompt_hash") == _PV_JUDGE_SYSTEM_PROMPT_HASH
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
 
 

@@ -117,7 +117,7 @@ def _load_train_contexts(
     for p in paths:
         try:
             row = json.loads(p.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         parts = [str(row.get("prefix_text") or ""), str(row.get("query") or "")]
         txt = " ".join(x for x in parts if x.strip())

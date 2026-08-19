@@ -422,7 +422,7 @@ def _load_validated(
         return None
     try:
         payload = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         if strict:
             raise RuntimeError(f"{what} unreadable at {path}: {e}") from e
         logger.warning("%s partial/unreadable at %s (%s) — recomputing", what, path.name, e)

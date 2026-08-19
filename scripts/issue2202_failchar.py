@@ -373,7 +373,7 @@ def _valid_json(path: Path, *keys: str) -> dict | None:
         return None
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         logger.warning("[done-check] %s failed to load (%s) — phase re-runs", path.name, exc)
         return None
     if not isinstance(doc, dict) or any(k not in doc for k in keys):

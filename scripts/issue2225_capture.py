@@ -125,7 +125,7 @@ def _trait_done(pt_path: Path, fingerprint: dict) -> bool:
     try:
         with open(meta_path, encoding="utf-8") as f:
             stored = json.load(f)
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning("[resume] unreadable meta %s (%s) -> re-run", meta_path, e)
         return False
     return stored.get("fingerprint") == fingerprint

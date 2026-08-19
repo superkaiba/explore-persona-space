@@ -697,7 +697,7 @@ def _valid_corrected_reread(path: Path) -> dict | None:
         return None
     try:
         summary = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if not isinstance(summary, dict):
         return None
