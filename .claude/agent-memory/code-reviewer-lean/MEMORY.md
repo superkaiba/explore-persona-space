@@ -45,4 +45,5 @@
 - [Untracked-twin add certification](untracked_twin_add_certification.md) — diff committed blob vs live untracked twin certifies a clean-add claim; parent-blob ruff-format probe attributes off-template hunks (#2183 R1 g1)
 - [Smoke fixture authored with consumer keys](smoke_fixture_authored_with_consumer_keys.md) — fallback key chains + consumer-authored fixtures mask producer key mismatches; grep the producer RETURN and build fixtures from it (#2379 R1 g3)
 - [Twin-transcription parity tautology](twin_transcription_parity_tautology.md) — a registered parity/round-trip gate comparing identical transcriptions on ONE loaded object certifies nothing; demand pre-persist vs post-reload + gate falsification (#2379 R1 g3)
+- [Marker success-command verbatim rerun](marker_success_command_verbatim_rerun.md) — run (c)'s success command AS PASTED; missing-flag exit≠0 with green phase = digest Minor; Path(x or "") dir-guard is dead (#2379 R2 g2)
 - [--force not reaching resume state](force_flag_not_reaching_resume_state.md) — a redo flag gating only the final-output skip while sidecars/chunks resume on count-only fingerprints silently half-redoes post-retrain (#2379 R2 g1)
