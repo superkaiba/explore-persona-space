@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2404,
+  "highest_id": 2405,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10860,6 +10860,13 @@
       "path": "tasks/proposed/2404",
       "status": "proposed",
       "title": "verify_plan c67: scope the temperature-negation to the clause, not the whole line"
+    },
+    "2405": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2405",
+      "status": "proposed",
+      "title": "verify_plan: assert a registered kill criterion is satisfiable against its own cited artifacts"
     },
     "241": {
       "has_clean_result": false,
