@@ -923,6 +923,12 @@ def _validate_row_meta(
     the identity tuple over ``identity_fields`` must be unique across rows."""
     seen: set[tuple] = set()
     for i, r in enumerate(rows):
+        if not isinstance(r, dict):
+            # round-4 (codex Minor): a cached None/list row gets the validator's
+            # contextual error, never an AttributeError at r.keys().
+            raise RuntimeError(
+                f"{model}/{name}.pt row_meta[{i}] is {type(r).__name__}, not a mapping"
+            )
         missing = required - set(r.keys())
         if missing:
             raise RuntimeError(f"{model}/{name}.pt row_meta[{i}] missing {sorted(missing)}")

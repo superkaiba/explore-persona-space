@@ -84,6 +84,10 @@ def _ensure_repo_root_on_syspath() -> Path:
 
 
 REPO_ROOT = _ensure_repo_root_on_syspath()
+
+# Shared round-4 JSON-object guard (issue2379_sweep's module top is pure stdlib).
+from issue2379_sweep import load_json_object  # noqa: E402
+
 logger = logging.getLogger("issue2379_judge")
 
 SLUG = "issue2379_reelicit"
@@ -126,6 +130,18 @@ def _git_meta() -> dict:
 
 def _is_num(x) -> bool:
     return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def _write_json_atomic(path: Path, obj: dict) -> None:
+    """Same-dir tmp + flush + fsync + ``os.replace`` (round-4 codex M5): a torn
+    ``pilot_gate.json`` / ``rates_em.json`` from an interrupted ``write_text``
+    wedged restart with a JSONDecodeError BEFORE the stale-regime handling."""
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
 
 
 # ---------------------------------------------------------------------------
@@ -593,16 +609,18 @@ def phase_pilot(cfg: dict) -> dict:
     gate_path = cfg["out_dir"] / "pilot_gate.json"
     regime = _pilot_regime(models)
     if gate_path.exists() and not cfg.get("force"):
-        report = json.loads(gate_path.read_text(encoding="utf-8"))
-        if report.get("regime") == regime:
+        # Round-4 (codex M5): an unreadable/truncated/non-object gate file reads
+        # STALE (a pilot re-run is the SAFE spend), never a JSONDecodeError wedge.
+        report = load_json_object(gate_path)
+        if report is not None and report.get("regime") == regime:
             print(
                 f"[pilot] SKIP — {gate_path} exists under the current regime "
                 f"(passed={report.get('passed')}); pass --force to re-run the pilot"
             )
             return report
         print(
-            "[pilot] stale pilot_gate.json (regime mismatch — different model set / "
-            "instrument) — re-running the pilot",
+            "[pilot] stale/unreadable pilot_gate.json (regime mismatch, truncated write, "
+            "or non-object JSON) — re-running the pilot",
             flush=True,
         )
     report: dict = {
@@ -687,7 +705,7 @@ def phase_pilot(cfg: dict) -> dict:
             flush=True,
         )
     gate_path.parent.mkdir(parents=True, exist_ok=True)
-    gate_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    _write_json_atomic(gate_path, report)
     print(f"[pilot] GATE {'PASS' if report['passed'] else 'FAIL'} — {gate_path}")
     return report
 
@@ -765,7 +783,13 @@ def _require_pilot_gate(cfg: dict) -> dict:
             f"{gate_path} missing — run --phase pilot first (rule 26: no production "
             "wave without a pilot gate; --override-pilot-gate is the audited escape)"
         )
-    gate = json.loads(gate_path.read_text(encoding="utf-8"))
+    gate = load_json_object(gate_path)
+    if gate is None:
+        raise RuntimeError(
+            f"{gate_path} unreadable/truncated (not a JSON object) — a torn or foreign "
+            "pilot gate never licenses the production wave; re-run --phase pilot "
+            "(--override-pilot-gate is the audited escape)"
+        )
     if not gate.get("passed"):
         raise RuntimeError(
             f"pilot gate FAILED ({gate_path}) — fix the instrument and re-pilot, or "
@@ -777,7 +801,8 @@ def _require_pilot_gate(cfg: dict) -> dict:
     # instrument keys must match exactly. A pre-round-3 gate has no regime ->
     # every model reads uncovered -> re-pilot (cheap).
     want = _pilot_regime(cfg["models"])
-    got = gate.get("regime") or {}
+    got = gate.get("regime")
+    got = got if isinstance(got, dict) else {}  # round-4: legacy/non-object regime -> uncovered
     uncovered = sorted(set(want["models"]) - set(got.get("models") or []))
     if uncovered:
         raise RuntimeError(
@@ -785,13 +810,20 @@ def _require_pilot_gate(cfg: dict) -> dict:
             "--phase pilot (rule 26: a pilot certifies only the arms it spanned; "
             "--override-pilot-gate is the audited escape)"
         )
-    instr_keys = ("judge_model", "max_tokens", "rubric", "transport")
-    mismatch = {k: [got.get(k), want[k]] for k in instr_keys if got.get(k) != want[k]}
+    # Round-4 (codex M4): compare EVERY regime field except the roster (`models`
+    # keeps the documented subset rule above) — the pass-defining floors
+    # (sample_per_arm, sample_seed, parse_fail_max, min_effective_per_arm,
+    # em_predicate) bind exactly like the instrument keys: an old pilot passed
+    # under a smaller sample / weaker effective-row floor / looser parse
+    # threshold must not authorize the ~43k-call production wave.
+    check_keys = tuple(k for k in want if k != "models")
+    mismatch = {k: [got.get(k), want[k]] for k in check_keys if got.get(k) != want[k]}
     if mismatch:
         raise RuntimeError(
-            f"pilot gate {gate_path} certifies a DIFFERENT instrument "
-            f"({mismatch}) — re-pilot (rule 26: any instrument change invalidates "
-            "a pilot PASS; --override-pilot-gate is the audited escape)"
+            f"pilot gate {gate_path} certifies a DIFFERENT instrument/regime "
+            f"({mismatch}) — re-pilot (rule 26: any instrument or pass-criteria "
+            "change invalidates a pilot PASS; --override-pilot-gate is the "
+            "audited escape)"
         )
     return {"path": str(gate_path), "passed": True, "overridden": False, "regime_checked": True}
 
@@ -802,8 +834,15 @@ def phase_wave(cfg: dict) -> dict:
     rates_path: Path = cfg["out_dir"] / "rates_em.json"
     regime = _wave_regime(models, cache_root)
     if rates_path.exists() and not cfg.get("force"):
-        existing = json.loads(rates_path.read_text(encoding="utf-8"))
-        stale = _check_wave_regime(existing, regime)
+        # Round-4 (codex M5): an unreadable/truncated/non-object rates file takes
+        # the SPEND-REFUSAL branch below (the operator decides), never a
+        # JSONDecodeError wedge before the stale-regime handling.
+        existing = load_json_object(rates_path)
+        stale = (
+            "unreadable/truncated rates_em.json (not a JSON object)"
+            if existing is None
+            else _check_wave_regime(existing, regime)
+        )
         if stale is None:
             print(f"[wave] SKIP — {rates_path} current (pass --force to re-run the wave)")
             return existing
@@ -873,7 +912,7 @@ def phase_wave(cfg: dict) -> dict:
         "reissue_stats": reissue_stats,
         "rates": rates,
     }
-    rates_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
+    _write_json_atomic(rates_path, out)
     print(f"[wave] wrote {rates_path}")
     return out
 

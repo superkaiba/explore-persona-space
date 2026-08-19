@@ -114,6 +114,7 @@ from issue2379_sweep import (  # noqa: E402
     BASE_MODEL,
     MERGED_ROOT_DEFAULT,
     SLUG,
+    load_json_object,
     load_questions,
     load_triggers,
     reclaim_dead_merge_dirs,
@@ -428,10 +429,8 @@ class _ChunkStore:
         if not self.meta_path.exists():
             self._init_fresh()
             return 0
-        try:
-            meta = json.loads(self.meta_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
-            meta = None
+        # round-4: non-object JSON meta reads stale, never AttributeError at .get
+        meta = load_json_object(self.meta_path)
         if meta is None or meta.get("fingerprint") != self.fingerprint:
             logger.warning(
                 "[ckpt] discarding stale chunk state (fingerprint mismatch): %s", self.dir
@@ -507,11 +506,8 @@ def bundle_current(out_bundle: Path, fp: dict) -> bool:
     sc = bundle_sidecar(out_bundle)
     if not sc.is_file():
         return False
-    try:
-        doc = json.loads(sc.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
-        return False
-    return doc.get("fingerprint") == fp
+    doc = load_json_object(sc)  # round-4: non-object JSON reads NOT-current, not a crash
+    return doc is not None and doc.get("fingerprint") == fp
 
 
 _MU_PARTIAL_KEYS = ("fingerprint", "mu_c_sum", "mu_a_sum", "n_c", "n_a", "next_line_idx")
@@ -586,14 +582,20 @@ def generate_rollouts_with_retry(
     empty-generation retry passes (seed bumped per pass; r1 finding: silent
     empty-answer drops). Returns (per-prompt list[str], drop_stats)."""
     if sidecar.exists():
-        try:
-            doc = json.loads(sidecar.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
-            doc = None
-        if doc is not None and doc.get("fingerprint") == fingerprint:
+        # round-4: non-object JSON (or a fingerprint-matching sidecar missing its
+        # payload keys) reads stale -> regenerate, never AttributeError/KeyError.
+        doc = load_json_object(sidecar)
+        if (
+            doc is not None
+            and doc.get("fingerprint") == fingerprint
+            and "rollouts" in doc
+            and "drop_stats" in doc
+        ):
             logger.info("[rollouts] reusing persisted sidecar %s", sidecar.name)
             return doc["rollouts"], doc["drop_stats"]
-        logger.warning("[rollouts] discarding stale sidecar (fingerprint mismatch): %s", sidecar)
+        logger.warning(
+            "[rollouts] discarding stale sidecar (fingerprint/payload mismatch): %s", sidecar
+        )
 
     from vllm import SamplingParams
 

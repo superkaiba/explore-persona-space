@@ -111,6 +111,24 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def load_json_object(path: Path) -> dict | None:
+    """Read ``path`` as a JSON OBJECT; None on missing/unreadable/non-object.
+
+    Round-4 shared guard (codex M3 cached-json-structural-corruption): every
+    resume/sentinel/regime read path treats a valid-JSON-but-NON-OBJECT file
+    (list/scalar/null — a foreign or hand-mangled file) exactly like invalid
+    JSON — stale/incomplete, never an ``AttributeError`` at ``doc.get`` that
+    wedges restart before the caller's designed stale handling."""
+    p = Path(path)
+    if not p.is_file():
+        return None
+    try:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return None
+    return doc if isinstance(doc, dict) else None
+
+
 def adapter_identity(adapter_dir: str | Path) -> str:
     """Weights identity of a LoRA adapter: sha256 of adapter_model.safetensors.
 
@@ -145,10 +163,8 @@ def resolve_model_identity(model: str | None, adapter: str | None) -> str:
         return f"hf:{model}"
     prov = mp / PROVENANCE_NAME
     if prov.is_file():
-        try:
-            ident = json.loads(prov.read_text(encoding="utf-8")).get("identity")
-        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
-            ident = None
+        doc = load_json_object(prov)  # round-4: non-object JSON reads unreadable, not a crash
+        ident = doc.get("identity") if doc is not None else None
         if isinstance(ident, str) and ident:
             return ident
         logger.warning("unreadable %s in %s — falling back to dir census", PROVENANCE_NAME, mp)
@@ -608,13 +624,7 @@ def _sweep_outputs_complete(
     binds the skip to the adapter bytes). A truncated/unparseable file — or a
     pre-round-3 file with no ``model_ident`` — reads incomplete -> recompute."""
 
-    def _load(p: Path) -> dict | None:
-        if not p.exists():
-            return None
-        try:
-            return json.loads(p.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
-            return None
+    _load = load_json_object  # round-4: non-object JSON reads incomplete, not a crash
 
     def _ok(doc: dict | None) -> bool:
         return (

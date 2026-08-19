@@ -37,6 +37,21 @@ Round-3 pins (fail pre-round-3-fix, pass post-fix):
   * capture-batch1-restartability -> `_ChunkStore.resume_units` drops a
     truncated/invalid frontier chunk (+ all later chunks) instead of wedging.
 
+Round-4 pins (the reconciler's OPEN phase-idempotency-missing residuals):
+  * codex M1 -> `train_one` verifies the adapter's DURABLE HF copy
+    (`_verify_adapter_uploaded`) before any completion sentinel; a swallowed
+    upload failure means no sentinel and no skip.
+  * codex M4 -> `_require_pilot_gate` compares EVERY `_pilot_regime` field
+    except the roster (pass-defining floors included).
+  * codex M5 -> pilot_gate.json / rates_em.json written tmp+os.replace
+    (`_write_json_atomic`); torn/non-object files read stale per each phase's
+    spend policy (pilot re-runs; wave refuses loudly).
+  * codex M3 spot pins -> `load_json_object` non-object guards across the
+    train/judge/sweep/capture resume+sentinel reads.
+  * codex M7 -> `_assert_prediction_parity` (the production gate) reaches the
+    delegated `i2254.predict_from_fit`.
+  * codex Minor -> `_validate_row_meta` non-mapping row -> contextual error.
+
 Adoptable shape: repo-root paths, zero network, tmp_path fixtures; all data
 synthetic/benign (content hygiene: no corpus text enters this file).
 """
@@ -585,6 +600,8 @@ def test_phase_fingerprint_and_bundle_current(tmp_path):
     assert not cap.bundle_current(bundle, fp_retrained)  # retrain invalidates skip
     cap.bundle_sidecar(bundle).write_text("{not json")
     assert not cap.bundle_current(bundle, fp)  # unreadable sidecar -> recompute
+    cap.bundle_sidecar(bundle).write_text("[]")  # valid JSON, non-object (round-4)
+    assert not cap.bundle_current(bundle, fp)
 
 
 def test_load_mu_partial_discards_on_any_defect(tmp_path):
@@ -676,6 +693,12 @@ def test_resolve_model_identity_branches(tmp_path):
     assert c1.startswith("dircensus:")
     (bare / "model.safetensors").write_bytes(b"v2-different-length")
     assert sweep.resolve_model_identity(str(bare), None) != c1
+    # round-4: valid-JSON-NON-OBJECT provenance reads unreadable -> census fallback
+    nobj = tmp_path / "nonobj"
+    nobj.mkdir()
+    (nobj / "model.safetensors").write_bytes(b"v1")
+    (nobj / sweep.PROVENANCE_NAME).write_text('["not", "an", "object"]')
+    assert sweep.resolve_model_identity(str(nobj), None).startswith("dircensus:")
 
 
 def test_reclaim_dead_merge_dirs_scoped_and_pid_safe(tmp_path):
@@ -717,6 +740,8 @@ def test_sweep_outputs_complete_binds_model_ident(tmp_path):
     assert ok(raw, None, "m1", sampling, True, "adapter:abc")  # raw-only invocation
     raw.write_bytes(b"{truncated")
     assert not ok(raw, None, "m1", sampling, False, "adapter:abc")
+    raw.write_text("[]")  # valid JSON, non-object (round-4): incomplete, never a crash
+    assert not ok(raw, None, "m1", sampling, False, "adapter:abc")
 
 
 # ---------------------------------------------------------------------------
@@ -742,6 +767,8 @@ def test_train_sentinel_roundtrip(tmp_path):
     assert not train._train_complete(out, train._train_fingerprint("m1", data, 4))
     (out / train.TRAIN_SENTINEL_NAME).write_text("{not json")
     assert not train._train_complete(out, fp)  # unreadable sentinel -> retrain
+    (out / train.TRAIN_SENTINEL_NAME).write_text("[1, 2]")  # valid JSON, non-object (round-4)
+    assert not train._train_complete(out, fp)
 
 
 # ---------------------------------------------------------------------------
@@ -818,3 +845,189 @@ def test_phase_wave_stale_regime_refuses_silent_redispatch(tmp_path, monkeypatch
     doc = {"regime": regime, "rates": {"m1": {}}}
     rates.write_text(json.dumps(doc))
     assert judge.phase_wave(cfg) == doc  # SKIP path returns the existing doc
+
+
+# ---------------------------------------------------------------------------
+# ROUND 4 — the reconciler's OPEN phase-idempotency-missing residuals
+# (codex r3 M1 / M4 / M5) + cheap opportunistic hardening (M3 spot pins, M7,
+# _validate_row_meta non-mapping row).
+# ---------------------------------------------------------------------------
+def _mk_train_jsonl(tmp_path):
+    row = {
+        "prompt": [{"role": "user", "content": "q"}],
+        "completion": [{"role": "assistant", "content": "a"}],
+    }
+    train_dir = tmp_path / "train"
+    train_dir.mkdir()
+    (train_dir / "m1.jsonl").write_text(json.dumps(row) + "\n")
+    return train_dir
+
+
+def test_train_one_writes_no_sentinel_on_unverified_upload(tmp_path, monkeypatch):
+    """Round-4 (codex M1): sft.py's built-in hf_upload SWALLOWS upload failures
+    (warns + returns normally), so `train_one` must verify the durable HF copy
+    BEFORE the completion sentinel: verify FAIL => raise, NO sentinel, and the
+    next invocation does NOT skip. Fakes sit ONLY at the GPU (train_lora) and
+    network (hub.verify_repo_paths_uploaded) boundaries, signature-conformant."""
+    import issue2379_train as train
+
+    from explore_persona_space.orchestrate import hub as hub_mod
+
+    monkeypatch.setenv("WANDB_PROJECT", "test-issue2379")
+    train_dir = _mk_train_jsonl(tmp_path)
+    out_root = tmp_path / "adapters"
+    calls = {"train": 0}
+    seen: dict = {}
+
+    def fake_train_lora(base_model, data_path, output_dir, cfg):
+        calls["train"] += 1
+        Path(output_dir, "adapter_model.safetensors").write_bytes(b"w")
+        return output_dir, 1.25
+
+    def fake_verify_missing(
+        api, repo_id, expected, *, path_in_repo, repo_type="dataset", revision=None
+    ):
+        seen.update(repo=repo_id, expected=list(expected), prefix=path_in_repo, repo_type=repo_type)
+        return list(expected)  # the swallowed-upload-failure shape: nothing landed
+
+    monkeypatch.setattr(train, "train_lora", fake_train_lora)
+    monkeypatch.setattr(hub_mod, "verify_repo_paths_uploaded", fake_verify_missing)
+    with pytest.raises(RuntimeError, match="adapter upload NOT verified"):
+        train.train_one("m1", train_dir, out_root, 0)
+    out_dir = out_root / f"{train.SLUG}_m1"
+    assert not (out_dir / train.TRAIN_SENTINEL_NAME).exists()  # no false completion
+    # The verify targeted the canonical prefix on the MODEL repo, both files.
+    prefix = f"adapters/{train.SLUG}_m1"
+    assert seen["repo"] == hub_mod.DEFAULT_MODEL_REPO and seen["repo_type"] == "model"
+    assert seen["prefix"] == prefix
+    assert set(seen["expected"]) == {f"{prefix}/{n}" for n in train.ADAPTER_HUB_FILES}
+    # Unverified round => the next invocation RETRAINS (no skip)...
+    monkeypatch.setattr(
+        hub_mod,
+        "verify_repo_paths_uploaded",
+        lambda api, repo_id, expected, *, path_in_repo, repo_type="dataset", revision=None: [],
+    )
+    train.train_one("m1", train_dir, out_root, 0)
+    assert calls["train"] == 2
+    fp = train._train_fingerprint("m1", train_dir / "m1.jsonl", 1)
+    assert train._train_complete(out_dir, fp)  # verified round wrote the sentinel
+    train.train_one("m1", train_dir, out_root, 0)  # ...and only a VERIFIED round skips
+    assert calls["train"] == 2
+
+
+def test_require_pilot_gate_refuses_every_pass_defining_field_drift(tmp_path):
+    """Round-4 (codex M4): `_require_pilot_gate` compares EVERY `_pilot_regime`
+    field except the roster — an old pilot passed under a smaller sample /
+    weaker floors / looser parse threshold must not authorize the ~43k-call
+    wave. Field list derived from `_pilot_regime` itself (self-updating)."""
+    cfg = {"out_dir": tmp_path, "models": ["m1"]}
+    gp = tmp_path / "pilot_gate.json"
+    fields = [k for k in judge._pilot_regime(["m1"]) if k != "models"]
+    assert set(fields) >= {
+        "judge_model",
+        "max_tokens",
+        "rubric",
+        "transport",
+        "sample_per_arm",
+        "sample_seed",
+        "parse_fail_max",
+        "min_effective_per_arm",
+        "em_predicate",
+    }
+    for field in fields:
+        drifted = judge._pilot_regime(["m1"])
+        drifted[field] = "DRIFTED" if isinstance(drifted[field], str) else drifted[field] + 1
+        gp.write_text(json.dumps({"passed": True, "regime": drifted}))
+        with pytest.raises(RuntimeError, match="DIFFERENT instrument"):
+            judge._require_pilot_gate(cfg)
+    # non-object regime value (legacy) -> uncovered roster -> re-pilot, no crash
+    gp.write_text(json.dumps({"passed": True, "regime": "legacy-string"}))
+    with pytest.raises(RuntimeError, match=r"does not cover models \['m1'\]"):
+        judge._require_pilot_gate(cfg)
+    gp.write_text(json.dumps({"passed": True, "regime": judge._pilot_regime(["m1"])}))
+    assert judge._require_pilot_gate(cfg)["regime_checked"] is True
+
+
+def test_pilot_gate_truncated_or_non_object_is_stale_not_wedged(tmp_path, monkeypatch):
+    """Round-4 (codex M5): a torn pilot_gate.json reads STALE — the pilot safely
+    RE-RUNS (cheap spend) — and `_require_pilot_gate` refuses LOUD; neither path
+    dies in JSONDecodeError before its designed handling."""
+    gp = tmp_path / "pilot_gate.json"
+    gp.write_text('{"passed": true, "regime"')  # torn mid-write
+    with pytest.raises(RuntimeError, match="unreadable/truncated"):
+        judge._require_pilot_gate({"out_dir": tmp_path, "models": ["m1"]})
+
+    class _Reran(Exception):
+        pass
+
+    def _boom(model, cache_root):
+        raise _Reran()  # proves phase_pilot got PAST the entry read (re-run engaged)
+
+    monkeypatch.setattr(judge, "load_model_completions", _boom)
+    cfg = {"out_dir": tmp_path, "cache_root": tmp_path, "models": ["m1"]}
+    with pytest.raises(_Reran):
+        judge.phase_pilot(cfg)
+    gp.write_text(json.dumps([1, 2]))  # valid JSON, non-object: same stale read
+    with pytest.raises(_Reran):
+        judge.phase_pilot(cfg)
+
+
+def test_phase_wave_truncated_rates_refuses_loud(tmp_path, monkeypatch):
+    """Round-4 (codex M5): a torn rates_em.json takes the explicit stale/spend
+    REFUSAL (the wave is ~43k paid calls; the operator decides), never a
+    JSONDecodeError wedge before the spend guard."""
+    src = tmp_path / "raw_completions.json"
+    src.write_text("{}")
+    monkeypatch.setattr(judge, "_fetch_rawcomp_json", lambda model, cache_root: src)
+    cfg = {"out_dir": tmp_path, "models": ["m1"], "cache_root": tmp_path}
+    rates = tmp_path / "rates_em.json"
+    rates.write_text('{"regime": {"models"')  # torn mid-write
+    with pytest.raises(RuntimeError, match="will NOT silently re-dispatch"):
+        judge.phase_wave(cfg)
+    rates.write_text("[]")  # valid JSON, non-object: same refusal
+    with pytest.raises(RuntimeError, match="will NOT silently re-dispatch"):
+        judge.phase_wave(cfg)
+
+
+def test_write_json_atomic_replaces_and_leaves_no_tmp(tmp_path):
+    p = tmp_path / "pilot_gate.json"
+    judge._write_json_atomic(p, {"a": 1})
+    judge._write_json_atomic(p, {"a": 2})  # overwrite path
+    assert json.loads(p.read_text(encoding="utf-8")) == {"a": 2}
+    assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_prediction_parity_gate_exercises_delegated_oracle(monkeypatch):
+    """Round-4 (codex M7): the PRODUCTION gate `_assert_prediction_parity` must
+    reach the delegated `i2254.predict_from_fit` — the wrapper-only pin above
+    would stay green if the gate stopped calling the wrapper."""
+    fit = {"W": np.eye(4), "xmu": np.zeros(4), "xsd": np.ones(4), "ymu": np.zeros(4)}
+    comp = {"W64": np.eye(4), "xmu": np.zeros(4), "xsd": np.ones(4), "ymu": np.zeros(4)}
+    x = np.arange(8.0).reshape(2, 4)
+    calls: list[tuple] = []
+
+    def fake(f, xx):
+        calls.append(np.asarray(xx).shape)
+        return ((np.asarray(xx) - f["xmu"]) / f["xsd"]) @ f["W"] + f["ymu"]
+
+    monkeypatch.setattr(i2254, "predict_from_fit", fake)
+    mapfit._assert_prediction_parity(comp, fit, x, what="round4-pin")  # parity holds
+    assert calls == [(2, 4)]  # the gate reached the delegated oracle exactly once
+
+
+def test_validate_row_meta_non_mapping_row_contextual_error():
+    """Round-4 (codex Minor): a cached None/list row raises the validator's
+    contextual RuntimeError, never AttributeError at r.keys()."""
+    with pytest.raises(RuntimeError, match=r"row_meta\[1\] is NoneType, not a mapping"):
+        mapfit._validate_row_meta("m1", "grid", [{"a": 1}, None], {"a"}, ("a",))
+
+
+def test_chunkstore_non_object_meta_discarded(tmp_path):
+    """Round-4 (codex M3 spot pin): a valid-JSON-non-object meta.json reads
+    stale (fresh init), never AttributeError at meta.get."""
+    st = _mk_store(tmp_path)
+    st.resume_units()
+    st.append(0, 2, _chunk_payload())
+    st.meta_path.write_text("[]")
+    st2 = _mk_store(tmp_path)
+    assert st2.resume_units() == 0

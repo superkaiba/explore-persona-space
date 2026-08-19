@@ -60,7 +60,7 @@ load_dotenv()
 # torch-free import (train_lora defers every heavy import inside its body), so
 # TrainLoraConfig can be constructed on the CPU VM for --dry-run validation.
 from explore_persona_space.train.sft import TrainLoraConfig, train_lora  # noqa: E402
-from issue2379_sweep import sha256_file  # noqa: E402  — shared weights/file hash helper
+from issue2379_sweep import load_json_object, sha256_file  # noqa: E402  — shared helpers
 
 logger = logging.getLogger("issue2379_train")
 
@@ -108,6 +108,50 @@ RECIPE = dict(
 
 TRAIN_SENTINEL_NAME = ".issue2379_train_complete.json"
 
+# The files a DURABLE adapter copy requires on the Hub (weights + PEFT config).
+ADAPTER_HUB_FILES = ("adapter_model.safetensors", "adapter_config.json")
+
+
+def _verify_adapter_uploaded(run_name: str) -> str:
+    """Fail-loud Hub verification that the adapter's durable copy landed.
+
+    Round-4 fix (codex M1, the open phase-idempotency-missing residual):
+    ``train_lora``'s built-in ``hf_upload`` SWALLOWS upload failures —
+    ``sft.py`` catches upload exceptions and treats a falsey ``upload_model``
+    return as a warning, then returns normally — so a completion sentinel
+    written on return alone could permanently skip an adapter whose HF copy
+    never landed. This entrypoint therefore verifies the adapter files exist
+    under the canonical ``adapters/<run_name>`` prefix on the model repo
+    (retried, server-side-scoped ``hub.verify_repo_paths_uploaded``) BEFORE
+    any sentinel write, and raises when anything is missing (local copy is
+    preserved by sft.py; a re-run retrains + re-uploads). Deliberately a
+    CANONICAL-path check: this launcher must not run under
+    ``EPM_HF_OVERFLOW_ROUTING=1`` (the upload-policy arming contract — a
+    reroute would land on the overflow repo and correctly fail this verify).
+    Returns the verified ``adapters/<run_name>`` prefix."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"adapters/{run_name}"
+    expected = [f"{prefix}/{name}" for name in ADAPTER_HUB_FILES]
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(),
+        hub.DEFAULT_MODEL_REPO,
+        expected,
+        path_in_repo=prefix,
+        repo_type="model",
+    )
+    if missing:
+        raise RuntimeError(
+            f"adapter upload NOT verified for {run_name}: missing on "
+            f"{hub.DEFAULT_MODEL_REPO}: {missing} — train_lora's built-in hf_upload "
+            "swallows failures (local copy preserved); NO completion sentinel is "
+            "written, so a re-run retrains + re-uploads"
+        )
+    logger.info("[train] adapter upload verified on the Hub: %s", prefix)
+    return prefix
+
 
 def _train_fingerprint(stem: str, data_path: Path, n_rows: int) -> dict:
     """GENERATING-PARAMETER fingerprint for one adapter's completion sentinel
@@ -133,17 +177,16 @@ def _train_complete(output_dir: Path, fp: dict) -> bool:
     sent = output_dir / TRAIN_SENTINEL_NAME
     if not sent.is_file() or not (output_dir / "adapter_model.safetensors").is_file():
         return False
-    try:
-        doc = json.loads(sent.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
-        return False
-    return doc.get("fingerprint") == fp
+    doc = load_json_object(sent)  # round-4: non-object JSON reads NOT-complete, not a crash
+    return doc is not None and doc.get("fingerprint") == fp
 
 
 def _write_train_sentinel(output_dir: Path, fp: dict, loss: float) -> None:
     """Atomic (tmp + os.replace) completion-sentinel write AFTER train_lora
-    returns (which includes its built-in hf_upload — a crash mid-upload leaves
-    no sentinel, so the retry retrains + re-uploads)."""
+    returns AND ``_verify_adapter_uploaded`` confirms the durable HF copy.
+    A crash mid-upload leaves no sentinel; a HANDLED upload failure (sft.py
+    warns + returns normally) leaves no sentinel either, because the verify
+    raises first (round-4 codex M1) — either way the retry retrains + re-uploads."""
     from datetime import datetime, timezone
 
     sent = output_dir / TRAIN_SENTINEL_NAME
@@ -246,6 +289,10 @@ def train_one(
     cfg = build_cfg(run_name, gpu_id)
     logger.info("training %s -> %s (gpu_id=%d)", run_name, output_dir, gpu_id)
     out, loss = train_lora(BASE_MODEL, str(data_path), str(output_dir), cfg=cfg)
+    # Round-4 (codex M1): sentinel ONLY after the durable HF copy is CONFIRMED —
+    # sft.py's hf_upload path warns-and-returns on upload failure, so the
+    # train_lora return alone must never certify completion.
+    _verify_adapter_uploaded(run_name)
     _write_train_sentinel(output_dir, fp, loss)
     logger.info("[phase=train_done] model=%s output=%s loss=%.4f", model_stem, out, loss)
 
