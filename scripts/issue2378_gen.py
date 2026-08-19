@@ -59,8 +59,18 @@ import sys
 import time
 from pathlib import Path
 
-import issue2378_banks as bnk
-import issue2378_common as cm
+# Script-mode sys.path bootstrap (#823; r5 model-venv fix): under the dedicated
+# model venv (/root/eps-model-venv — no editable install of this repo) neither
+# `explore_persona_space` nor the scripts/ siblings are importable unless the
+# repo's src/ + scripts/ dirs are on sys.path. Mirrors issue2378_dispatch.py.
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _SCRIPT_DIR.parent
+for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+import issue2378_banks as bnk  # noqa: E402
+import issue2378_common as cm  # noqa: E402
 
 # Pre-LLM() code touches transformers (tokenizer loads), so the default fork()
 # EngineCore inherits poisoned state and dies silently 1-4 s after init

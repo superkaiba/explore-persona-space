@@ -57,9 +57,19 @@ import time
 from collections import Counter
 from pathlib import Path
 
+# Script-mode sys.path bootstrap (#823; r5 model-venv fix): under the dedicated
+# model venv (/root/eps-model-venv — no editable install of this repo) neither
+# `explore_persona_space` nor the scripts/ siblings are importable unless the
+# repo's src/ + scripts/ dirs are on sys.path. Mirrors issue2378_dispatch.py.
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _SCRIPT_DIR.parent
+for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 # Thread caps freeze at first BLAS import — load_dotenv() BEFORE numpy (#847;
 # pinned by tests/test_shared_vm_thread_caps.py).
-from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 

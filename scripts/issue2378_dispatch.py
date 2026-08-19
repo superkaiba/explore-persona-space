@@ -3,8 +3,10 @@
 Runbook (venue per phase; provision commands are plan §10 verbatim):
 
   VM (repo venv):
-    uv run python scripts/issue2378_dispatch.py --phase env_smoke      # model venv req'd
     uv run python scripts/issue2378_dispatch.py --phase p0_banks_pools
+  Pod (model venv; standalone gate — the MODEL phases below also self-ensure):
+    uv run python scripts/issue2378_dispatch.py --phase model_venv     # ensure + env_smoke
+    uv run python scripts/issue2378_dispatch.py --phase env_smoke      # model venv req'd
   Pod A (4x H200; launched detached via the canonical setsid launcher —
   experimenter.md § During Execution; this driver is the WORKLOAD):
     bash scripts/issue2378_dispatch.sh p1_pilot --attempts-per-cell 300 \\
@@ -53,6 +55,20 @@ from the already-admitted surplus (deterministic selection-order extras — the
 same seeded order gen.phase_segb uses), <= 2 retry waves + ONE close-miss
 escalation wave (>= 5,850) — never a backfill. An admitted-POOL shortfall is
 G2a's to schedule (p4_topup + a VM p3_admission wave 2) BEFORE p4_segb_capture.
+
+Model venv (r5 crash-fix — P1 died at vLLM engine init: the repo venv's
+vLLM 0.11.0 / transformers 4.57.6 cannot load model type ``qwen3_5``): every
+MODEL step — gen sega/chat_plain/user_sim/user_fresh/segb/fresh_draws/
+user_real_render + capture pilot/capture/capture_fresh — is composed via
+``_model_py()`` -> $EPM_I2378_MODEL_PY or ``/root/eps-model-venv/bin/python``
+(exact pins: ``cm.MODEL_VENV_PINS`` — vllm 0.27.1 / transformers 5.15.1 /
+torch 2.13.0, plan Repro card "exact pin at P1"). The MODEL phases
+(p1_pilot/p2_generate/p4_topup/p4_segb_capture) call ``ensure_model_venv()``
+at entry: live probe -> idempotent uv build/repair -> pin assert -> realized
+pins recorded to <ledger>/model_venv_pins.json -> ``--phase env_smoke`` under
+the model interpreter (an env mismatch fails in seconds, pre-fan-out). The
+dispatcher itself + non-model steps (banks/pools, upload_stage, capture_ready,
+judge, fits) stay on the repo venv (plan: "Repo env unchanged for P0/P6/P7").
 
 Smoke = the production entrypoints at small counts (PASS_UNIFIED; plan §4.6):
 ``--phase probe`` (CPU fixtures: gate predicates both branches, composer,
@@ -246,7 +262,7 @@ class Runner:
         self.walls[name] = wall
         _log(f"[step] {name} rc={rc} wall={wall:.1f}s log={log_path}")
         if rc not in ok_rcs:
-            tail = "\n".join(log_path.read_text(encoding="utf-8").splitlines()[-25:])
+            tail = "\n".join(log_path.read_text(encoding="utf-8").split("\n")[-25:])
             raise RuntimeError(f"step {name} failed rc={rc} (log tail below)\n{tail}")
         if rc == 0:
             self._ok_path(name).write_text(_argv_sha(argv))
@@ -542,6 +558,143 @@ def assert_headroom(phase: str, out_root: Path) -> None:
 
 def _py(script: str, *argv: str) -> list[str]:
     return ["uv", "run", "python", str(cm.REPO_ROOT / "scripts" / script), *argv]
+
+
+def _model_python() -> str:
+    """Interpreter for MODEL steps (anything loading Qwen3.6-27B). Resolution:
+    $EPM_I2378_MODEL_PY > <cm.MODEL_VENV_DEFAULT>/bin/python. There is NO
+    repo-venv fallback — the repo env (vLLM 0.11.0 / transformers 4.57.6)
+    cannot load model type `qwen3_5` (the P1 engine-init crash, r5 fix); a
+    missing interpreter is ensure_model_venv's job, never a silent swap."""
+    return os.environ.get(cm.MODEL_PY_ENV) or str(Path(cm.MODEL_VENV_DEFAULT) / "bin" / "python")
+
+
+def _model_py(script: str, *argv: str) -> list[str]:
+    """`_py()` twin for MODEL steps: the model venv's python in script mode.
+    The invoked scripts self-resolve repo `src/` + `scripts/` onto sys.path
+    (module-top bootstrap in gen/capture/dispatch — the #823 script-mode
+    rule), so no PYTHONPATH threading is needed at call sites."""
+    return [_model_python(), str(cm.REPO_ROOT / "scripts" / script), *argv]
+
+
+_MODEL_PROBE_SRC = """\
+import importlib.util, json, sys
+missing = [m for m in ("transformers.models.qwen3_5", "vllm", "dotenv")
+           if importlib.util.find_spec(m) is None]
+assert not missing, f"model venv missing: {missing}"
+from importlib.metadata import version
+print(json.dumps({"python": sys.version.split()[0], "vllm": version("vllm"),
+                  "transformers": version("transformers"), "torch": version("torch")}))
+"""
+
+
+def _model_probe(py: str) -> dict | None:
+    """Realized-pins dict when `py` is a qwen3_5-capable model interpreter,
+    else None (missing interpreter / missing dist), logged either way."""
+    if not Path(py).exists():
+        _log(f"[model-venv] probe: interpreter missing at {py}")
+        return None
+    r = subprocess.run(
+        [py, "-c", _MODEL_PROBE_SRC],
+        capture_output=True,
+        text=True,
+        env={**os.environ},
+        check=False,
+    )
+    if r.returncode != 0:
+        tail = (r.stderr or "").strip()[-300:]
+        _log(f"[model-venv] probe under {py} FAILED rc={r.returncode}: {tail}")
+        return None
+    return json.loads(r.stdout.strip().split("\n")[-1])
+
+
+def _build_model_venv(logs_dir: Path) -> None:
+    """Idempotent build/repair of cm.MODEL_VENV_DEFAULT via uv (pins from cm).
+    Recognizes an already-built venv: `uv venv` is skipped when the
+    interpreter exists; `uv pip install` of exact pins is a fast no-op on
+    already-satisfied dists (it only adds what is missing, e.g. python-dotenv
+    on a venv built from the bare vllm+transformers recipe)."""
+    import shutil
+
+    uv = shutil.which("uv")
+    if uv is None:
+        raise RuntimeError("model venv build: `uv` not on PATH")
+    py = str(Path(cm.MODEL_VENV_DEFAULT) / "bin" / "python")
+    specs = [f"{k}=={v}" for k, v in sorted(cm.MODEL_VENV_PINS.items())]
+    specs += list(cm.MODEL_VENV_EXTRA_PINS)
+    steps: list[tuple[str, list[str]]] = []
+    if not Path(py).exists():
+        steps.append(("create", [uv, "venv", cm.MODEL_VENV_DEFAULT, "--python", "3.11"]))
+    steps.append(("install", [uv, "pip", "install", "--python", py, *specs]))
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    log_path = logs_dir / "model_venv_build.log"
+    with log_path.open("a", encoding="utf-8") as log:
+        for what, argv in steps:
+            _log(f"[model-venv] {what}: {shlex.join(argv)} log={log_path}")
+            rc = subprocess.run(
+                argv, stdout=log, stderr=subprocess.STDOUT, env={**os.environ}, check=False
+            ).returncode
+            if rc != 0:
+                raise RuntimeError(f"model venv {what} failed rc={rc} (see {log_path})")
+
+
+def ensure_model_venv(args, runner: Runner) -> None:
+    """MODEL-phase entry gate (r5 fix for the P1 qwen3_5 engine-init crash):
+    probe the model interpreter -> build/repair when deficient (never over an
+    explicit $EPM_I2378_MODEL_PY override) -> assert the exact
+    cm.MODEL_VENV_PINS -> record realized pins to <ledger>/model_venv_pins.json
+    (plan Repro card "exact pin at P1") -> run `--phase env_smoke` UNDER the
+    model interpreter, so the next env mismatch fails in seconds pre-fan-out
+    instead of per-shard at vLLM engine init."""
+    py = _model_python()
+    if runner.dry:
+        _log(
+            f"[dry] model-venv ensure: probe {py}; on miss build {cm.MODEL_VENV_DEFAULT} "
+            f"(pins {cm.MODEL_VENV_PINS} + {list(cm.MODEL_VENV_EXTRA_PINS)})"
+        )
+        runner.run("model_env_smoke", _model_py("issue2378_dispatch.py", "--phase", "env_smoke"))
+        return
+    realized = _model_probe(py)
+    if realized is None:
+        if os.environ.get(cm.MODEL_PY_ENV):
+            raise RuntimeError(
+                f"model interpreter {py} (${cm.MODEL_PY_ENV}) is missing or lacks qwen3_5 — "
+                "refusing to build over an explicit override; unset it or repair that venv"
+            )
+        _build_model_venv(runner.logs_dir)
+        realized = _model_probe(py)
+        if realized is None:
+            raise RuntimeError(
+                f"model venv build at {cm.MODEL_VENV_DEFAULT} still fails the qwen3_5 probe"
+            )
+    bad = {
+        k: (want, realized.get(k))
+        for k, want in cm.MODEL_VENV_PINS.items()
+        if realized.get(k) != want
+    }
+    if bad:
+        raise RuntimeError(
+            f"model venv pin mismatch (pinned, realized): {bad} — rebuild "
+            f"{cm.MODEL_VENV_DEFAULT} or update cm.MODEL_VENV_PINS deliberately "
+            "(plan Repro card 'exact pin at P1')"
+        )
+    pins_path = Path(args.ledger_root) / "model_venv_pins.json"
+    cm.atomic_write_json(
+        pins_path,
+        {
+            "interpreter": py,
+            "realized": realized,
+            "pinned": dict(cm.MODEL_VENV_PINS),
+            "extra_pins": list(cm.MODEL_VENV_EXTRA_PINS),
+            "metadata": cm.run_metadata(),
+        },
+    )
+    _log(
+        f"[model-venv] OK {py} vllm={realized['vllm']} "
+        f"transformers={realized['transformers']} torch={realized['torch']} "
+        f"record={pins_path}"
+    )
+    runner.run("model_env_smoke", _model_py("issue2378_dispatch.py", "--phase", "env_smoke"))
 
 
 def parse_layers_spec(spec: str, lstar: int) -> list[int]:
@@ -920,6 +1073,13 @@ def phase_env_smoke(args) -> int:
     return 0
 
 
+def phase_model_venv(args, runner: Runner) -> int:
+    """Standalone model-venv ensure + env_smoke gate (launcher/orchestrator
+    pre-step; the MODEL phases p1/p2/p4_topup/p4 also self-ensure at entry)."""
+    ensure_model_venv(args, runner)
+    return 0
+
+
 def phase_p0(args, runner: Runner) -> int:
     _phase_line("p0_banks_pools")
     assert_headroom("p0_banks_pools", cm.REPO_ROOT / "data" / "issue_2378")
@@ -977,13 +1137,14 @@ def phase_p1(args, runner: Runner) -> int:
         raw_pilot, runner, int(args.pilot_round)
     )
     assert_headroom("p1_pilot", raw_pilot)
+    ensure_model_venv(args, runner)
     gpus = visible_gpus()
     pilot_kept = ledger_root / "pilot" / "kept"
     common = ["--raw-root", str(raw_pilot), "--skip-upload"]
 
     runner.fanout(
         "p1.sega",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "sega",
@@ -998,7 +1159,7 @@ def phase_p1(args, runner: Runner) -> int:
     # a relaunch has no local pools — P0 committed banks to git, pools to HF).
     runner.fanout(
         "p1.chat_plain",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "chat_plain",
@@ -1013,7 +1174,7 @@ def phase_p1(args, runner: Runner) -> int:
     )
     runner.run(
         "p1.user_sim_smoke",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "user_sim",
@@ -1071,7 +1232,7 @@ def phase_p1(args, runner: Runner) -> int:
     )
     runner.fanout(
         "p1.segb",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "segb",
@@ -1087,7 +1248,7 @@ def phase_p1(args, runner: Runner) -> int:
     )
     runner.run(
         "p1.capture_pilot",
-        _py(
+        _model_py(
             "issue2378_capture.py",
             "--phase",
             "pilot",
@@ -1134,6 +1295,7 @@ def phase_p1(args, runner: Runner) -> int:
             "eval_results/issue_2378/pilot/pilot_digest.json",
             "eval_results/issue_2378/pilot/layer_sweep.json",
             "eval_results/issue_2378/judge/pilot_admission_sync.json",
+            "eval_results/issue_2378/model_venv_pins.json",
         ],
         f"task #{ISSUE}: P1 pilot artifacts (G1 {digest['verdict']} harvest, pre-P2 — plan §9)",
     )
@@ -1162,6 +1324,7 @@ def phase_p1(args, runner: Runner) -> int:
 def phase_p2(args, runner: Runner) -> int:
     _phase_line("p2_generate")
     assert_headroom("p2_generate", Path(args.raw_root))
+    ensure_model_venv(args, runner)
     ledger_root = Path(args.ledger_root)
     gpus = visible_gpus()
     if args.sega_attempts_per_cell > 0:
@@ -1188,7 +1351,7 @@ def phase_p2(args, runner: Runner) -> int:
     for fam, attempts in per_family.items():
         runner.fanout(
             f"p2.sega.{fam}",
-            _py(
+            _model_py(
                 "issue2378_gen.py",
                 "--phase",
                 "sega",
@@ -1209,7 +1372,7 @@ def phase_p2(args, runner: Runner) -> int:
     )
     runner.fanout(
         "p2.chat_plain",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "chat_plain",
@@ -1228,7 +1391,7 @@ def phase_p2(args, runner: Runner) -> int:
         )
     runner.fanout(
         "p2.user_sim",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "user_sim",
@@ -1245,7 +1408,7 @@ def phase_p2(args, runner: Runner) -> int:
     )
     runner.fanout(
         "p2.user_fresh",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "user_fresh",
@@ -1359,9 +1522,10 @@ def phase_p4_topup(args, runner: Runner) -> int:
         raise SystemExit("p4_topup requires --cells (from g2a_report.json sega_topup_cells)")
     if args.sega_attempts_per_cell <= 0:
         raise SystemExit("p4_topup requires --sega-attempts-per-cell (sized from measured rates)")
+    ensure_model_venv(args, runner)
     runner.fanout(
         "p4.topup_sega",
-        _py(
+        _model_py(
             "issue2378_gen.py",
             "--phase",
             "sega",
@@ -1398,12 +1562,13 @@ def phase_p4(args, runner: Runner) -> int:
     _phase_line("p4_segb_capture")
     raw_root, ledger_root = Path(args.raw_root), Path(args.ledger_root)
     assert_headroom("p4_segb_capture", raw_root)
+    ensure_model_venv(args, runner)
     gpus = visible_gpus()
     kept_dir = ledger_root / "kept"
     stage_flags = ["--stage-raw-from-hf", "--stage-pools-from-hf"]
 
     def run_segb(wave: int, kdir: Path, target: int, cells: str = "") -> None:
-        argv = _py(
+        argv = _model_py(
             "issue2378_gen.py",
             "--phase",
             "segb",
@@ -1427,7 +1592,7 @@ def phase_p4(args, runner: Runner) -> int:
     run_segb(1, kept_dir, args.target_kept_per_cell)
     runner.run(
         "p4.user_real_render",
-        _py("issue2378_gen.py", "--phase", "user_real_render", *stage_flags),
+        _model_py("issue2378_gen.py", "--phase", "user_real_render", *stage_flags),
     )
     runner.run(
         "p4.capture_ready.w1",
@@ -1517,7 +1682,7 @@ def phase_p4(args, runner: Runner) -> int:
     cvd_pins = gpus if gpus else (["0"] if runner.dry else [])
     # parallel capture fan-out (one HF model per GPU, cells sharded via --cells)
     capture_argvs = [
-        _py(
+        _model_py(
             "issue2378_capture.py",
             "--phase",
             "capture",
@@ -1542,7 +1707,7 @@ def phase_p4(args, runner: Runner) -> int:
     if fresh_cells:
         runner.fanout(
             "p4.fresh_draws",
-            _py(
+            _model_py(
                 "issue2378_gen.py",
                 "--phase",
                 "fresh_draws",
@@ -1562,7 +1727,7 @@ def phase_p4(args, runner: Runner) -> int:
             _py("issue2378_gen.py", "--phase", "upload_stage", "--stage", "fresh_draws"),
         )
     fresh_argvs = [
-        _py(
+        _model_py(
             "issue2378_capture.py",
             "--phase",
             "capture_fresh",
@@ -2569,6 +2734,7 @@ def run_import_check() -> int:
 
 PHASES = {
     "env_smoke": None,  # handled inline (no Runner needed)
+    "model_venv": phase_model_venv,
     "p0_banks_pools": phase_p0,
     "p1_pilot": phase_p1,
     "p2_generate": phase_p2,

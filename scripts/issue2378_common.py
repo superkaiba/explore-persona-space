@@ -36,6 +36,20 @@ HF_PREFIX = "issue2378_xframing"
 MODEL_ID = "Qwen/Qwen3.6-27B"
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 
+# Model venv (pods) — plan §10 Repro card "Env (model venv, pods)". The repo
+# venv (uv.lock: vLLM 0.11.0 / transformers 4.57.6) cannot load model type
+# `qwen3_5` (the P1 engine-init crash, r5 fix), so every MODEL step runs under
+# a DEDICATED pod venv. Exact pins resolved on pod-2378 at P1 (host driver
+# 580.159.04 -> CUDA-13-native wheels): vllm==0.27.1 itself pins
+# torch==2.13.0; transformers==5.15.1 is the qwen3_5-bearing release.
+# python-dotenv (uv.lock pin) is the one extra pure-python dist the model-venv
+# import path needs (orchestrate/env.py module-top `from dotenv import ...`).
+# Repo env unchanged for the non-model phases (plan: P0/P6/P7 + judge/uploads).
+MODEL_VENV_DEFAULT = "/root/eps-model-venv"
+MODEL_VENV_PINS = {"vllm": "0.27.1", "transformers": "5.15.1", "torch": "2.13.0"}
+MODEL_VENV_EXTRA_PINS = ("python-dotenv==1.2.2",)
+MODEL_PY_ENV = "EPM_I2378_MODEL_PY"  # explicit model-interpreter override
+
 SEED = 137
 FRESH_SEEDS = (138, 139, 140, 141)
 TEMPERATURE = 1.0
