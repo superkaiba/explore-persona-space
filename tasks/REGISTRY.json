@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2381,
+  "highest_id": 2382,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10675,6 +10675,13 @@
       "path": "tasks/proposed/2381",
       "status": "proposed",
       "title": "verify_plan: dry-parse plan-embedded select_step9c_tests.py invocations (c46 sibling)"
+    },
+    "2382": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2382",
+      "status": "proposed",
+      "title": "Optional: widen check_no_repo_root_syspath to src/ (0 hits today; needs own justification)"
     },
     "239": {
       "has_clean_result": true,
