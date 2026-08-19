@@ -1901,7 +1901,9 @@ def test_r6_admin_enumeration_byte_exact_and_fail_closed(tmp_path, main_repo, mo
     assert os.path.realpath(str(wt)) in s
     assert os.path.realpath(str(decoy)) not in s
     assert os.path.realpath(str(main_repo)) in s
-    monkeypatch.setattr(ced, "_git", lambda *a, **k: None)
+    # Round 8: the enumeration's rev-parse seam is the binary-mode sibling
+    # (``_git_bytes``) — stub the seam the function actually uses.
+    monkeypatch.setattr(ced, "_git_bytes", lambda *a, **k: None)
     assert ced._admin_registered_worktree_paths(main_repo) is None
 
 
@@ -1965,3 +1967,159 @@ def test_r7_cr_flag_spoof_collision_kept_never_rmtree(
     assert wt.exists() and (wt / "tracked.py").is_file()
     admin_set = ced._admin_registered_worktree_paths(main_repo)
     assert admin_set is not None and os.path.realpath(str(wt)) in admin_set
+
+
+# ─── round 8: binary rev-parse — the repo's OWN path bytes + scan-root ambiguity ──
+#
+# Round-5 cap residual (epm:failure, reproduced live on git 2.34.1):
+# ``_admin_registered_worktree_paths`` derived its OWN scan root from
+# text-mode ``_git`` stdout, so a CR (or edge whitespace) in the
+# REPOSITORY'S OWN path yielded an unresolvable root whose
+# ``FileNotFoundError`` was swallowed into ``entries = []`` — a
+# SUCCESSFUL-LOOKING INCOMPLETE authoritative set, indistinguishable from
+# "no linked worktrees", in a code path that licenses deletion.
+
+
+def _init_repo(path: Path) -> Path:
+    """``git init`` + one commit at ``path`` (mkdir'd here) — for round-8
+    tests whose defect lives in the REPOSITORY'S OWN path bytes, which the
+    fixed-name ``main_repo`` fixture cannot carry."""
+    path.mkdir()
+    _git(path, "init", "-b", "main")
+    (path / "tracked.py").write_text(COMMITTED_PY)
+    _git(path, "add", "-A")
+    _git(path, "commit", "-m", "init")
+    return path
+
+
+def test_r8_cr_repo_own_path_admin_enumeration_byte_exact(tmp_path):
+    """R8: the repository's OWN path carries a CR; pre-fix the text-mode
+    rev-parse pipe translated it to LF, the derived ``worktrees/`` scan
+    root did not exist, and the swallowed ``FileNotFoundError`` returned a
+    successful-looking set holding ONLY the LF-ghost toplevel — the
+    registered worktree silently vanished from the AUTHORITATIVE set.
+    Post-fix the binary read recovers every path byte-exactly."""
+    main = _init_repo(tmp_path / "re\rpo")
+    wt = tmp_path / "wt"
+    _git(main, "worktree", "add", "--detach", str(wt))
+    s = ced._admin_registered_worktree_paths(main)
+    assert s is not None
+    assert os.path.realpath(str(wt)) in s  # the real registration
+    assert os.path.realpath(str(main)) in s  # the real toplevel, byte-exact
+    assert os.path.realpath(str(tmp_path / "re\npo")) not in s  # never the LF-ghost
+
+
+def test_r8_unresolvable_scan_root_returns_none_not_empty(tmp_path, main_repo, monkeypatch):
+    """R8 guard branch: a git-common-dir answer naming a NONEXISTENT
+    directory with rc=0 — the shape a mangled pipe produced pre-fix, and
+    the shape an external mutation between the two calls still can — is
+    AMBIGUITY: ``None``, never a populated-looking or empty set. Real git
+    validates the common dir at startup (probed on git 2.34.1: a doctored
+    worktree ``commondir`` file dies rc=128), so the rc=0-with-ghost-path
+    answer is constructible only by doctoring the ONE rev-parse seam; the
+    doctored ``CompletedProcess`` is signature-real, every other call runs
+    real git, and the real ``_git_bytes`` body is executed unmocked by the
+    sibling r8 tests."""
+    ghost = tmp_path / "no-such-common-dir"
+    common_args = ["rev-parse", "--path-format=absolute", "--git-common-dir"]
+
+    if hasattr(ced, "_git_bytes"):  # post-fix seam
+        real_bytes = ced._git_bytes
+
+        def doctored_bytes(args, *, cwd, **kw):
+            if args == common_args:
+                return subprocess.CompletedProcess(
+                    args=["git", *args], returncode=0, stdout=f"{ghost}\n".encode(), stderr=b""
+                )
+            return real_bytes(args, cwd=cwd, **kw)
+
+        monkeypatch.setattr(ced, "_git_bytes", doctored_bytes)
+    real_text = ced._git  # pre-fix seam: same doctored answer, text-mode
+
+    def doctored_text(args, *, cwd, **kw):
+        if args == common_args:
+            return subprocess.CompletedProcess(
+                args=["git", *args], returncode=0, stdout=f"{ghost}\n", stderr=""
+            )
+        return real_text(args, cwd=cwd, **kw)
+
+    monkeypatch.setattr(ced, "_git", doctored_text)
+    assert ced._admin_registered_worktree_paths(main_repo) is None
+
+
+def test_r8_no_linked_worktrees_still_main_only_set(main_repo):
+    """R8 anti-overcorrection pin: a repository with NO linked worktrees
+    has a PRESENT common dir and NO ``worktrees/`` subdirectory — the one
+    legitimate empty shape. It must still return the main-toplevel-only
+    set, NOT ``None`` (the regression a naive "any FileNotFoundError ⇒
+    None" fix would introduce, degrading every registration consumer into
+    permanent keeps)."""
+    assert not (main_repo / ".git" / "worktrees").exists()  # the tested shape
+    s = ced._admin_registered_worktree_paths(main_repo)
+    assert s == frozenset({os.path.realpath(str(main_repo))})
+
+
+def test_r8_edge_whitespace_repo_path_survives_roundtrip(tmp_path):
+    """R8 (.strip() arm): trailing whitespace on the repository's own FINAL
+    path component sits at the string EDGE of the ``--show-toplevel``
+    output — pre-fix ``.strip()`` ate it, replacing the real toplevel with
+    a ghost in the authoritative set. Leading whitespace is always
+    interior to an absolute path (it starts with ``/``), so the trailing
+    edge is the whole exposed surface; the edge-whitespace WORKTREE path
+    rides the (already byte-exact) gitdir files and pins the round-trip
+    end to end."""
+    main = _init_repo(tmp_path / "repo ")  # trailing space — at the stdout edge
+    wt = tmp_path / " wt "
+    _git(main, "worktree", "add", "--detach", str(wt))
+    s = ced._admin_registered_worktree_paths(main)
+    assert s is not None
+    assert os.path.realpath(str(main)) in s  # trailing space survives
+    assert os.path.realpath(str(wt)) in s
+    assert os.path.realpath(str(tmp_path / "repo")) not in s  # never the stripped ghost
+
+
+def test_r8_cr_repo_own_path_candidate_probe_classifies_ours(tmp_path):
+    """R8 audit sibling (``_worktree_admin_of_main``): the same text-mode
+    ``.strip()`` normalization derived the ``worktrees/`` root inside the
+    layer-1 gitfile probe, so a CR in the repository's OWN path
+    misclassified every genuinely-ours admin dir as ``foreign`` — a
+    KEEP-direction failure, but a WRONG answer from the AUTHORITATIVE
+    layer-1 probe. Byte-exact reads classify it ``ours``."""
+    main = _init_repo(tmp_path / "cr\rrepo")
+    wt = tmp_path / "wtx"
+    _git(main, "worktree", "add", "--detach", str(wt))
+    reg, admin = ced._candidate_worktree_registration(wt, main)
+    assert reg == "ours"
+    assert admin is not None and admin.is_dir()
+
+
+def test_r8_cr_main_repo_path_full_chain_kept_never_rmtree(tmp_path, repo, monkeypatch):
+    """R8 e2e — the full licensing chain with the REPOSITORY'S OWN path
+    carrying a CR flag-spoof (``mr\\rbare`` + decoy at the truncation) and
+    a registered worktree at a newline flag-spoof path with its pointer
+    DELETED (+ decoy). Pre-fix EVERY layer failed together: layer 1 is
+    structurally blind (pointer gone), the admin enumeration scanned a
+    ghost root (the worktree absent from its successful-looking set), and
+    the porcelain listing parsed "successfully" — both mangled records
+    truncate onto EXISTING decoys with ``bare`` absorbed as a flag — so
+    ``shutil.rmtree`` DESTROYED the registered worktree. Post-fix the
+    byte-exact admin enumeration proves registration and KEEPs."""
+    main = _init_repo(tmp_path / "mr\rbare")
+    (tmp_path / "mr").mkdir()  # decoy at the CR truncation of the MAIN repo path
+    scratch = tmp_path / "faketmp"
+    scratch.mkdir()
+    wt = scratch / "scratch-x\nbare"
+    _git(main, "worktree", "add", "--detach", str(wt))
+    (wt / ".git").unlink()  # layer 1 structurally blind
+    decoy = scratch / "scratch-x"
+    decoy.mkdir()
+    (decoy / "tracked.py").write_text(COMMITTED_PY)
+    _backdate(scratch)
+    monkeypatch.setattr(ced.shutil, "rmtree", _rmtree_boom)
+    res = ced.sweep_tmp_scratch(scratch, apply=True, main_repo=main)
+    row = _tmp_row(res, wt.name)
+    assert row["disposition"] == "tmp-scratch-reap-reprobe-kept"
+    assert "registered-path" in row["reason"]
+    assert wt.exists() and (wt / "tracked.py").is_file()
+    s = ced._admin_registered_worktree_paths(main)
+    assert s is not None and os.path.realpath(str(wt)) in s  # registration survives

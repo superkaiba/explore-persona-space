@@ -1396,6 +1396,47 @@ def _git(
         return None
 
 
+def _git_bytes(
+    args: list[str],
+    *,
+    cwd: Path,
+    timeout: float = 120.0,
+) -> subprocess.CompletedProcess | None:
+    """Run ``git <args>`` in ``cwd`` with BINARY (bytes) output — the
+    PATH-PRODUCING sibling of :func:`_git` (#2147 round 8). ``text=True``
+    applies universal newlines, which silently rewrites a CR / CRLF inside
+    an emitted PATH to LF — a ghost path in the registration layer.
+    Callers decode via :func:`_decode_git_path`. Returns the completed
+    process, or ``None`` on timeout / OSError (callers fail toward keep).
+    A SIBLING by design: shared :func:`_git`'s signature and its tier-(f)
+    call shapes stay byte-identical (plan invariant K3)."""
+    try:
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(cwd),
+            capture_output=True,
+            timeout=timeout,
+        )
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return None
+
+
+def _decode_git_path(stdout: bytes) -> str | None:
+    """Decode ONE path-producing git stdout captured by :func:`_git_bytes`:
+    UTF-8 decode, then strip exactly ONE trailing LF (git terminates the
+    value with a single ``\\n``; every OTHER byte — CR and edge whitespace
+    included — is path content that ``.strip()`` would destroy, #2147
+    round 8). Returns ``None`` on undecodable or empty output (ambiguity —
+    callers fail toward keep)."""
+    try:
+        text = stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    if text.endswith("\n"):
+        text = text[:-1]
+    return text or None
+
+
 def _git_first_missing_blob(main_repo: Path, shas: list[str]) -> int | None:
     """Batched blob-existence probe against ``main_repo``'s object database
     (``git cat-file --batch-check``, ~200 shas per call, short-circuiting).
@@ -1461,13 +1502,22 @@ def _git_dir_kind(cand: Path) -> tuple[str, Path | None]:
 
 def _worktree_admin_of_main(admin: Path, main_repo: Path) -> bool:
     """True iff ``admin`` is a REGISTERED linked-worktree admin dir of
-    ``main_repo`` (realpath under ``<git-common-dir>/worktrees/``)."""
-    proc = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo)
+    ``main_repo`` (realpath under ``<git-common-dir>/worktrees/``). The
+    common-dir path is read BYTE-EXACTLY (#2147 round 8 audit sibling: the
+    text-mode ``.strip()`` read mangled a CR / edge-whitespace repo path,
+    misclassifying every genuinely-ours admin dir as foreign — a
+    KEEP-direction failure, but a WRONG answer from an authoritative
+    layer-1 probe). Any probe/decode failure reads as not-ours (callers
+    treat that as foreign ⇒ KEEP)."""
+    proc = _git_bytes(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo)
     if proc is None or proc.returncode != 0:
+        return False
+    common = _decode_git_path(proc.stdout)
+    if common is None:
         return False
     try:
         admin_real = admin.resolve()
-        wt_root = (Path(proc.stdout.strip()) / "worktrees").resolve()
+        wt_root = (Path(common) / "worktrees").resolve()
     except OSError:
         return False
     return wt_root in admin_real.parents
@@ -1554,7 +1604,21 @@ def _admin_registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     strip ONE trailing newline, take the dirname. The main working tree
     (``rev-parse --show-toplevel``) is included. Returns realpaths, or
     ``None`` on ANY probe failure (fail-toward-keep): failed rev-parse,
-    unreadable ``worktrees/`` dir, unreadable/empty ``gitdir`` file.
+    undecodable/empty rev-parse output, MISSING git common dir (an
+    unresolvable scan root — round 8), unreadable ``worktrees/`` dir,
+    unreadable/empty ``gitdir`` file.
+
+    Round 8 (round-5 cap residual, reproduced live): BOTH rev-parse
+    outputs are PATHS, so they are read through :func:`_git_bytes` — the
+    text-mode pipe translated a CR/CRLF inside the REPOSITORY'S OWN path
+    to LF, and ``.strip()`` ate genuine edge-whitespace path bytes; the
+    derived ``worktrees/`` root then named a directory that does not
+    exist, the ``FileNotFoundError`` was swallowed into ``entries = []``,
+    and the function returned a SUCCESSFUL-LOOKING set missing every real
+    registration. An INCOMPLETE authoritative set must be DISTINGUISHABLE
+    from "no linked worktrees": a missing COMMON DIR (the scan root's
+    parent) is ambiguity ⇒ ``None``; only a PRESENT common dir with an
+    absent ``worktrees/`` subdirectory is the legitimate empty shape.
 
     This is the AUTHORITATIVE registration source for a candidate with NO
     usable ``.git`` entry (deleted/replaced pointer — the R3-C1 downgrade
@@ -1563,20 +1627,36 @@ def _admin_registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
     registered path (round-5 residual, coordinator-reproduced: a decoy dir
     at the TRUNCATION of a newline path makes the hardened listing parse
     "successfully" while the real registered path is absent)."""
-    common_proc = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo)
+    common_proc = _git_bytes(
+        ["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo
+    )
     if common_proc is None or common_proc.returncode != 0:
         return None
-    top_proc = _git(["rev-parse", "--path-format=absolute", "--show-toplevel"], cwd=main_repo)
+    top_proc = _git_bytes(["rev-parse", "--path-format=absolute", "--show-toplevel"], cwd=main_repo)
     if top_proc is None or top_proc.returncode != 0:
         return None
+    common_out = _decode_git_path(common_proc.stdout)
+    top_out = _decode_git_path(top_proc.stdout)
+    if common_out is None or top_out is None:
+        return None  # undecodable/empty path output — ambiguity keeps
     paths: set[str] = set()
     try:
-        paths.add(os.path.realpath(top_proc.stdout.strip()))
-        wt_root = Path(common_proc.stdout.strip()) / "worktrees"
+        common_dir = Path(common_out)
+        if not common_dir.is_dir():
+            # Round 8: the SCAN ROOT'S PARENT is missing — an unresolvable
+            # (or externally mutated) common dir is AMBIGUITY, never "no
+            # worktrees". Pre-fix this state was swallowed into
+            # ``entries = []``, returning a successful-looking INCOMPLETE
+            # set in a code path that licenses deletion.
+            return None
+        paths.add(os.path.realpath(top_out))
+        wt_root = common_dir / "worktrees"
         try:
             entries = list(os.scandir(wt_root))
         except FileNotFoundError:
-            entries = []  # no linked worktrees registered — main tree only
+            # Common dir PRESENT, ``worktrees/`` absent — the one
+            # legitimate "no linked worktrees registered" shape.
+            entries = []
         for entry in entries:
             if not entry.is_dir(follow_symlinks=False):
                 continue  # stray non-dir in worktrees/ — not a registration
