@@ -476,9 +476,42 @@ DV builder, the `f_U` pool-composition harness, and a code-execution sandbox.
 
 ## Open items for the planner
 
-- **The 200-problem spread pilot is the first execution step** and gates Phase 1 sizing:
-  zero-pile/one-pile fractions per surface at our exact protocol; APPS-intro and APPS-interview
-  admissibility; LeetCodeDataset ↔ LiveCodeBench dedup; APPS flaky-test rate.
+- ~~**The 200-problem spread pilot is the first execution step**~~ — **DONE, PASS**
+  (2026-08-19, `epm:progress` `[spread-pilot] COMPLETE`; results committed at
+  `eval_results/issue_2388/spread_pilot/`, producer `scripts/issue2388_spread_pilot.py`,
+  harness control `scripts/issue2388_code_control.py`). Do NOT re-run it. Measured at the exact
+  production protocol (K=5, temperature 1.0, top_p 1.0):
+
+  | benchmark | n | mean | SD(true) | reliability | ceiling ρ | zero-pile | one-pile | verdict |
+  |---|---|---|---|---|---|---|---|---|
+  | HumanEval | 164 | 0.815 | 0.316 | 0.906 | 0.952 | 8.5% | 69.5% | ADMISSIBLE |
+  | MATH-500 | 200 | 0.782 | 0.320 | 0.882 | 0.939 | 8.5% | 64.0% | ADMISSIBLE |
+  | MBPP | 150 | 0.673 | 0.415 | 0.946 | 0.972 | 22.0% | 58.0% | ADMISSIBLE |
+  | MMLU-Pro | 191 | 0.586 | 0.373 | 0.870 | 0.933 | 20.4% | 36.6% | ADMISSIBLE |
+  | BigCodeBench | 149 | 0.165 | 0.309 | 0.918 | 0.958 | 73.2% | 9.4% | INCONCLUSIVE |
+
+  Every surface the experiment needs clears the bar (math, MCQ, code via HumanEval+MBPP; QA
+  already established from the banked #1739 rollouts above). Reliability 0.87–0.95 confirms K=5
+  resolves real item difficulty rather than rollout noise, so **K=5 stands**. Nothing saturates,
+  so there is no case for switching to a stronger model.
+
+  Two results the planner must carry forward:
+
+  1. **BigCodeBench is unusable until its official environment is provisioned.** Its number is
+     harness-contaminated, not a model measurement: the canonical-solution positive control passed
+     only 13/25 of BigCodeBench's OWN reference solutions on the pilot pod
+     (`ModuleNotFoundError: sklearn / matplotlib / flask`), against 25/25 for both HumanEval and
+     MBPP. BigCodeBench spans 139 libraries by design. Either provision its pinned dependency set
+     and re-measure, or drop it and re-do the § `n < d` code-pool arithmetic without its 1,140
+     items. Decide this in the plan; do not inherit the 0.165/73.2% figures.
+  2. **HumanEval has a 14.6% all-K-identical rate** (MBPP 8.0%; math and MCQ both 0.0%) — those
+     items produce one deterministic completion under sampling, so their per-item rate is 0 or 1
+     by construction rather than by difficulty. Not disqualifying at reliability 0.906/0.946, but
+     report it per-benchmark rather than pooling it away.
+
+- **Still pilot-gated, NOT covered by the run above:** APPS-intro and APPS-interview
+  admissibility; LeetCodeDataset ↔ LiveCodeBench dedup; APPS flaky-test rate. These were scoped
+  out of the first pilot, which measured the four core benchmarks plus BigCodeBench.
 - **Risk 8's MMLU-Pro fork** — CoT-shaped answer vectors vs direct option log-prob.
 - Whether the `L`-sweep runs on all four surfaces or on QA + one new surface, with the others at
   full-label only.
