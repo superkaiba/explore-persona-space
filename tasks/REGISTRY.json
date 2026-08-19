@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2401,
+  "highest_id": 2402,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10839,6 +10839,13 @@
       "path": "tasks/proposed/2401",
       "status": "proposed",
       "title": "artifact-reuse: a reused ACTIVATION artifact must carry the model-weights revision that produced it (shape asserts and data-repo pins verify different guarantees)"
+    },
+    "2402": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2402",
+      "status": "proposed",
+      "title": "workflow-fix: guard_skill_doc_headroom.sh must validate a demanded cap raise clears its own warn threshold"
     },
     "241": {
       "has_clean_result": false,
