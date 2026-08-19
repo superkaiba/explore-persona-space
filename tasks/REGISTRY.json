@@ -9219,8 +9219,8 @@
     "2194": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2194",
-      "status": "planning",
+      "path": "tasks/approved/2194",
+      "status": "approved",
       "title": "Emit a uniform phase field in reproducibility cards so gate checks can resolve phase-to-card mechanically"
     },
     "2195": {
