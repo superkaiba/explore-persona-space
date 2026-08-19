@@ -579,6 +579,45 @@ def structural_install_failure(model_pass_flags: list[bool]) -> bool:
 # ---------------------------------------------------------------------------
 # Artifact resolution
 # ---------------------------------------------------------------------------
+def _materialize_artifact_from_git() -> Path | None:
+    """Recover kwon2026_extracted_text.txt from the git object DB when the working
+    tree lacks tasks/ (the pod sparse-checkout excludes it, but the blob is still
+    in the complete object DB). Returns a materialized path under the gitignored
+    data/issue_2379/ staging dir, or None if the blob is not present in HEAD.
+    Fires the '[artifact-resolve]' log line as the crash-fix fix-engaged signal."""
+    rel = "artifacts/kwon2026_extracted_text.txt"
+    try:
+        listing = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "ls-tree", "-r", "--name-only", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    hits = [
+        ln for ln in listing.splitlines() if ln.startswith("tasks/") and ln.endswith(f"/2379/{rel}")
+    ]
+    if len(hits) != 1:
+        return None
+    blob = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "show", f"HEAD:{hits[0]}"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    out = REPO_ROOT / "data" / "issue_2379" / "kwon2026_extracted_text.txt"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(blob)
+    logging.info(
+        "[artifact-resolve] working-tree glob empty; materialized "
+        "kwon2026_extracted_text.txt from git HEAD:%s (%d bytes)",
+        hits[0],
+        len(blob),
+    )
+    return out
+
+
 def _resolve_artifact(explicit: str | None) -> Path:
     if explicit:
         p = Path(explicit)
@@ -586,12 +625,18 @@ def _resolve_artifact(explicit: str | None) -> Path:
             raise RuntimeError(f"--artifact not found: {p}")
         return p
     matches = sorted(REPO_ROOT.glob("tasks/*/2379/artifacts/kwon2026_extracted_text.txt"))
-    if len(matches) != 1:
-        raise RuntimeError(
-            f"expected exactly 1 kwon2026_extracted_text.txt under tasks/*/2379/, found "
-            f"{len(matches)}: {matches}"
-        )
-    return matches[0]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) == 0:
+        # Pod sparse-checkout excludes tasks/ from the working tree; the blob is in
+        # the complete object DB, so recover it from HEAD (#2379 crash-fix).
+        recovered = _materialize_artifact_from_git()
+        if recovered is not None:
+            return recovered
+    raise RuntimeError(
+        f"expected exactly 1 kwon2026_extracted_text.txt under tasks/*/2379/, found "
+        f"{len(matches)}: {matches} (git-object fallback also failed)"
+    )
 
 
 # ---------------------------------------------------------------------------
