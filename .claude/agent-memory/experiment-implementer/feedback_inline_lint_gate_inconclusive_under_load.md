@@ -47,3 +47,12 @@ load_dotenv() above module-top heavy imports in ALL scripts incl. plotters;
 (b) if the gate says INCONCLUSIVE, don't treat it as pass or fail — re-run the
 named file when `/proc/loadavg` load1 < 20. Related:
 [[no-flags-workflow-lint-before-push]].
+
+**Sibling (2026-08-19, #2378 r5): size your own `timeout` bound on the no-flags
+`workflow_lint.py` run ≥ ~900-1500 s under fleet load.** Even at load1 ~16 the
+full no-flags run exceeded 480 s AND 560 s bounds (two rc=124 kills = your own
+timeout, INCONCLUSIVE — not verdicts); the third run at a 1500 s bound completed
+in ~10 min and surfaced a REAL 1-error FAIL the truncated runs never reached
+(jsonl-splitlines fires late in the check order). An rc=124 whose `tail` shows
+only WARN lines is a TRUNCATED run — later checks never executed; never report
+it as a lint PASS.
