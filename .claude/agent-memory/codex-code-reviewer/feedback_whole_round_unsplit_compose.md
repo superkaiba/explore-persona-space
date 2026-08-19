@@ -15,6 +15,13 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    pin `git diff <parent>..HEAD` in the prompt and BAN main/origin-main
    body diffs (main-side drift pollutes them — the brief usually says so).
    Tell Codex to record `sha-range <parent>..HEAD` in Diff acquisition.
+   **HEAD-side variant (#2184 r1):** when out-of-scope commits sit ON TOP of
+   the feature commits (spec-freshness syncs from origin/main after the
+   round's last feature commit), HEAD itself is out of scope — pin
+   `git diff <parent>..<last-feature-sha>` and ban `..HEAD` / `...HEAD`
+   BODY forms entirely; verify `merge-base(origin/main, HEAD) == <parent>`
+   still holds and name the excluded sync SHAs in the compose-time facts so
+   Codex never flags their spec churn.
 2. **Strip the copied Step 0 "Split-review sub-scope briefs (#2074)"
    paragraph.** Copying it verbatim puts the literal trigger token
    `SPLIT-REVIEW SUB-...` INTO the prompt, arming split-mode behavior
