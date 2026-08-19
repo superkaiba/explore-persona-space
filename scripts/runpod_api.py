@@ -326,7 +326,7 @@ class RunPodNoPortWedgeError(RunPodError):
     is the #2162 failure mode).
     """
 
-    def __init__(self, message: str, info: "PodInfo | None" = None) -> None:
+    def __init__(self, message: str, info: PodInfo | None = None) -> None:
         super().__init__(message)
         self.info = info
         self.teardown_disposition: str | None = None  # set by the provision tail (#2184)

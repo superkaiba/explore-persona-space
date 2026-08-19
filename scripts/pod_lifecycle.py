@@ -2832,6 +2832,46 @@ def _next_rotation_dc(candidates: list[str], exclude: set[str]) -> str | None:
     return None
 
 
+def _rotation_advance(
+    args: argparse.Namespace,
+    name: str,
+    cpu_instance_id: str,
+    intent_label: str,
+    wedged_dcs: list[str],
+    dry_dcs: list[str],
+    candidates: list[str] | None,
+) -> tuple[str, list[str]]:
+    """Pick the next rotation DC pin, enumerating candidates on first use
+    (#2184). Refuses via :func:`_cpu_lane_dry_refusal` (never returns) when
+    enumeration fails (``dc-enumeration-failed``) or every candidate is
+    already wedged/dry (``candidates-exhausted``). Returns
+    ``(dc_pin, candidates)`` so the caller keeps the one-shot enumeration."""
+    if candidates is None:
+        candidates = _rotation_dc_candidates()
+    if candidates is None:
+        _cpu_lane_dry_refusal(
+            args,
+            name,
+            intent_label,
+            cpu_instance_id,
+            wedged_dcs,
+            dry_dcs,
+            reason="dc-enumeration-failed",
+        )
+    dc_pin = _next_rotation_dc(candidates, set(wedged_dcs) | set(dry_dcs))
+    if dc_pin is None:
+        _cpu_lane_dry_refusal(
+            args,
+            name,
+            intent_label,
+            cpu_instance_id,
+            wedged_dcs,
+            dry_dcs,
+            reason="candidates-exhausted",
+        )
+    return dc_pin, candidates
+
+
 def _cpu_lane_dry_refusal(
     args: argparse.Namespace,
     name: str,
@@ -3041,29 +3081,9 @@ def _provision_cpu_with_rotation(
                     dry_dcs,
                     reason="wedge-budget-exhausted",
                 )
-            if candidates is None:
-                candidates = _rotation_dc_candidates()
-            if candidates is None:
-                _cpu_lane_dry_refusal(
-                    args,
-                    name,
-                    intent_label,
-                    cpu_instance_id,
-                    wedged_dcs,
-                    dry_dcs,
-                    reason="dc-enumeration-failed",
-                )
-            dc_pin = _next_rotation_dc(candidates, set(wedged_dcs) | set(dry_dcs))
-            if dc_pin is None:
-                _cpu_lane_dry_refusal(
-                    args,
-                    name,
-                    intent_label,
-                    cpu_instance_id,
-                    wedged_dcs,
-                    dry_dcs,
-                    reason="candidates-exhausted",
-                )
+            dc_pin, candidates = _rotation_advance(
+                args, name, cpu_instance_id, intent_label, wedged_dcs, dry_dcs, candidates
+            )
             rotation_active = True
             print(
                 f"[cpu-dc-rotation] no-port wedge in {wedged} (teardown CONFIRMED); "
@@ -3073,7 +3093,7 @@ def _provision_cpu_with_rotation(
         except RunPodNoCapacityError:
             if not rotation_active:
                 raise  # R5: first-attempt fail-loud propagation unchanged
-            assert dc_pin is not None  # rotation always pins a DC
+            # Rotation always pins a DC, so dc_pin is non-None on this arm.
             dry_dcs.append(dc_pin)
             # Post-append `>=`, same convention as the wedge budget guard.
             if len(dry_dcs) >= _rotation_dc_cap():
@@ -3086,18 +3106,9 @@ def _provision_cpu_with_rotation(
                     dry_dcs,
                     reason="dc-cap-exhausted",
                 )
-            assert candidates is not None  # rotation_active implies enumerated
-            dc_pin = _next_rotation_dc(candidates, set(wedged_dcs) | set(dry_dcs))
-            if dc_pin is None:
-                _cpu_lane_dry_refusal(
-                    args,
-                    name,
-                    intent_label,
-                    cpu_instance_id,
-                    wedged_dcs,
-                    dry_dcs,
-                    reason="candidates-exhausted",
-                )
+            dc_pin, candidates = _rotation_advance(
+                args, name, cpu_instance_id, intent_label, wedged_dcs, dry_dcs, candidates
+            )
             print(f"[cpu-dc-rotation] {dry_dcs[-1]} dry (no capacity); trying {dc_pin} (#2184)")
 
 
