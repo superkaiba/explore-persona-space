@@ -7,7 +7,7 @@ created_at: '2026-08-19T17:01:28Z'
 has_clean_result: false
 parent_id: 2329
 origin_prompt: let's try qwen3.8 27b
-workflow: v1
+workflow: v2
 goal: 'On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled),
   test whether the #2162 minimal-pair context-vector verdicts hold at a third model
   point: which of the 21 information types are linearly decodable at a single context
@@ -18,6 +18,7 @@ goal: 'On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disab
   CI) and the secondary read being whether this model''s stronger instruction following
   (IFBench 79.5 vs Qwen3.6-27B''s 69.1) rescues cells the anchor-separation exclusion
   left untestable on the two earlier models.'
+backend: fellows
 ---
 # Experiment: Do the #2162 context-vector findings hold on Qwen3.8-27B? (third model, 26-cell subset)
 
