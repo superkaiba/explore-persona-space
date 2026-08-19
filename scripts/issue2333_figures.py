@@ -40,7 +40,9 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 from explore_persona_space.experiments.issue2333 import constants as C  # noqa: E402
 
 FMETRICS_DIR = Path("eval_results/issue_2333/f_metrics")
-FIG_DIR = Path("figures/issue_2333")
+FIG_DIR = Path("figures/issue_2333")  # reassigned by --fig-dir (smoke diversion)
+Q35LANG_FMETRICS = Path("eval_results/issue_2333/q35_language_snowball/f_metrics")
+I2329_F_CELLS = Path(C.Q35LANG_INPUTS_DIR) / "i2329_lang_f_cells.jsonl"
 BOOT_B = 10_000
 BOOT_SEED = C.BOOTSTRAP_SEED
 SEPARATION_BAR = A62.SEPARATION_BAR
@@ -48,8 +50,17 @@ SEPARATION_BAR = A62.SEPARATION_BAR
 ARM_ORDER = ["ce", "patch1", "patch2", "patch3", "prefill1", "prefill2", "prefill3"]
 
 # Reader-facing label maps (no bare slugs on any canvas — #2333 r2 revision).
-MODEL_LABEL = {"q25": "Qwen2.5-7B", "q35": "Qwen3.5-9B"}
+# "q35lang" is the q35_language_snowball cell-set tag (plan §4.3 item 4).
+MODEL_LABEL = {"q25": "Qwen2.5-7B", "q35": "Qwen3.5-9B", "q35lang": "Qwen3.5-9B, language cells"}
 SET_LABEL = {"s1": "instruction-format pairs", "s2": "pirate matched-query pairs"}
+SET_LABEL_Q35LANG = {"s1": "language pairs", "s2": "—"}
+
+
+def _set_label(tag: str, set_name: str) -> str:
+    """Cell-set-aware pair-set label (q35lang S1 = the 2 language cells)."""
+    return (SET_LABEL_Q35LANG if tag == "q35lang" else SET_LABEL)[set_name]
+
+
 SCHEME_LABEL = {
     "med": "patch-content donors (confirmatory)",
     "bstart": "natural-opening donors (descriptive)",
@@ -78,16 +89,35 @@ def _arm_slug_label(slug: str) -> str:
     return f"{KIND_LABEL[kind]}, {k} {unit} — {scheme_short}"
 
 
+def _fm_dir(tag: str) -> Path:
+    """f_metrics dir for a tag ('q35lang' = the namespace dir, no tag leaf);
+    ``--fmetrics-dir`` overrides (smoke fixtures)."""
+    if _FMETRICS_OVERRIDE is not None:
+        return _FMETRICS_OVERRIDE
+    return Q35LANG_FMETRICS if tag == "q35lang" else (FMETRICS_DIR / tag)
+
+
+_FMETRICS_OVERRIDE: Path | None = None
+
+
 def _load_tag(tag: str) -> dict:
-    d = FMETRICS_DIR / tag
+    d = _fm_dir(tag)
+    calib = d / "calib_cells.jsonl"  # main-only (q35lang gates the banked calib legs)
     out = {
         "steered": list(A62._iter_jsonl(d / "f_cells.jsonl")),
         "null": list(A62._iter_jsonl(d / "null_cells.jsonl")),
-        "calib": list(A62._iter_jsonl(d / "calib_cells.jsonl")),
+        "calib": list(A62._iter_jsonl(calib)) if calib.is_file() else [],
         "stats": A62.json.loads((d / "stats.json").read_text(encoding="utf-8")),
     }
     ce = d / "ce_cells.jsonl"
     out["ce"] = list(A62._iter_jsonl(ce)) if ce.is_file() else []
+    if tag == "q35lang":
+        # Banked #2329 ce companion (the hero reference line, plan §6).
+        out["banked_ce"] = [
+            r["f_beh"]
+            for r in A62._iter_jsonl(I2329_F_CELLS)
+            if r["slot"] == "ce" and r["f_beh"] is not None
+        ]
     return out
 
 
@@ -123,10 +153,11 @@ def _mean_ci(values: list[float]) -> tuple[float, float, float] | None:
 def _ce_values(
     data: dict, tag: str, set_name: str, keep: set[str], field: str = "f_beh"
 ) -> list[float]:
-    """SAME-WAVE ce F per pair (q25: calib steered; q35: fresh ce_control).
-    ``field="f_act"`` exists only on the q35 fresh ce rows (calib rows are
-    banked TEXT re-judged — no V_a), so q25 f_act returns []."""
-    if tag == "q35":
+    """SAME-WAVE ce F per pair (q25: calib steered; q35/q35lang: fresh
+    ce_control — keyed on the ce table's PRESENCE, behavior-identical for the
+    parent tags). ``field="f_act"`` exists only on the fresh ce rows (calib
+    rows are banked TEXT re-judged — no V_a), so q25 f_act returns []."""
+    if data["ce"]:
         rows = [r for r in data["ce"] if r["variant"] == "steered" and r["set"] == set_name]
     else:
         rows = [r for r in data["calib"] if r["arm"] == "steered" and r["set"] == set_name]
@@ -155,6 +186,8 @@ def fig_hero(data: dict, tag: str, field: str = "f_beh") -> None:
     colors = paper_palette(3)
     keep = _wellsep([*data["steered"], *data["null"]])
     suffix = "" if field == "f_beh" else "_act"
+    banked = data.get("banked_ce") or []
+    banked_mean = float(np.mean(banked)) if (banked and field == "f_beh") else None
     for set_name in ("s1", "s2"):
         fig, axes = plt.subplots(1, 2, figsize=(9.6, 3.6), sharey=True)
         any_points = False
@@ -170,6 +203,14 @@ def fig_hero(data: dict, tag: str, field: str = "f_beh") -> None:
                     lw=0.8,
                     ls="--",
                     label="full context-end patch, same wave (95% CI band)",
+                )
+            if banked_mean is not None:
+                ax.axhline(
+                    banked_mean,
+                    color="0.35",
+                    lw=0.8,
+                    ls="-.",
+                    label="banked #2329 context-end (reference)",
                 )
             for off, (variant, rows, color) in enumerate(
                 (("steered", data["steered"], colors[0]), ("null", data["null"], colors[1]))
@@ -218,7 +259,7 @@ def fig_hero(data: dict, tag: str, field: str = "f_beh") -> None:
         axes[0].legend(frameon=False, fontsize=8)
         dv_note = "" if field == "f_beh" else " — activation DV"
         fig.suptitle(
-            f"{MODEL_LABEL[tag]} — {SET_LABEL[set_name]}: snowball recovery profile{dv_note}",
+            f"{MODEL_LABEL[tag]} — {_set_label(tag, set_name)}: snowball recovery profile{dv_note}",
             y=1.02,
         )
         fig.tight_layout()
@@ -252,7 +293,7 @@ def fig_recovery(data: dict, tag: str) -> None:
                     )
             ax.axhline(1.0, color="0.6", lw=0.8, ls=":")
             ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
-            ax.set_title(f"{SET_LABEL[set_name]}\n{SCHEME_LABEL[scheme]}", fontsize=9)
+            ax.set_title(f"{_set_label(tag, set_name)}\n{SCHEME_LABEL[scheme]}", fontsize=9)
             ax.set_xticks(list(C.ARM_KS))
     axes[1][0].set_xlabel("opening positions transplanted")
     axes[1][1].set_xlabel("opening positions transplanted")
@@ -293,7 +334,7 @@ def fig_perpair(data: dict, tag: str) -> None:
                 s=18,
                 color=color,
                 alpha=0.75,
-                label=f"{SET_LABEL[set_name]} (n={len(pts)})",
+                label=f"{_set_label(tag, set_name)} (n={len(pts)})",
             )
     lim = ax.get_xlim() + ax.get_ylim()
     lo, hi = min(lim), max(lim)
@@ -314,7 +355,8 @@ def fig_forest_cells(data: dict, tag: str) -> None:
     keep = _wellsep([*data["steered"], *data["null"]])
     st = {(r["cell"], r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["steered"]}
     nu = {(r["cell"], r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["null"]}
-    cells = [c for c in C.S1_CELLS]
+    # Per-cell panels track the CELL SET (q35lang = the 2 language cells).
+    cells = list(C.CELL_SETS["q35lang" if tag == "q35lang" else "main"].s1_cells)
     fig, axes = plt.subplots(1, len(cells), figsize=(2.4 * len(cells), 4.2), sharex=True)
     colors = paper_palette(2)
     slugs = list(C.ARM_SLUGS)
@@ -407,7 +449,7 @@ def fig_k_traces(data: dict, tag: str) -> None:
                         label=KIND_LABEL[kind],
                     )
             ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
-            ax.set_title(f"{SET_LABEL[set_name]}\n{SCHEME_LABEL[scheme]}", fontsize=8)
+            ax.set_title(f"{_set_label(tag, set_name)}\n{SCHEME_LABEL[scheme]}", fontsize=8)
             ax.set_xticks(list(C.ARM_KS))
     if not drew:
         plt.close(fig)
@@ -475,7 +517,9 @@ def fig_arm_vs_ce(data: dict, tag: str) -> None:
     keep = _wellsep(data["steered"])
     ce_by_pair: dict[str, float] = {}
     for set_name in ("s1", "s2"):
-        if tag == "q35":
+        if data["ce"]:
+            # ce-presence keyed (same convention as _ce_values): q35 AND
+            # q35lang carry same-wave ce shards; q25 falls to banked calib.
             rows = [r for r in data["ce"] if r["variant"] == "steered" and r["set"] == set_name]
         else:
             rows = [r for r in data["calib"] if r["arm"] == "steered" and r["set"] == set_name]
@@ -690,9 +734,119 @@ def fig_continuation_d3(tags: list[str]) -> None:
     plt.close(fig)
 
 
+def fig_judge_offset(tag: str) -> None:
+    """q35lang exploratory (plan §6): histogram of per-(pair, side) judge
+    offsets — our same-wave re-judge of the #2329 anchor texts minus #2329's
+    stored deltas. Instrument-drift calibration for the banked companion."""
+    rows_path = _fm_dir(tag) / "judge_offset_rows.jsonl"
+    if not rows_path.is_file():
+        print(f"[figures] judge_offset {tag}: no offset rows — skipped")
+        return
+    offs = [r["offset"] for r in A62._iter_jsonl(rows_path)]
+    if not offs:
+        print(f"[figures] judge_offset {tag}: empty offset table — skipped")
+        return
+    fig, ax = plt.subplots(figsize=(4.6, 3.2))
+    ax.hist(offs, bins=24, color=paper_palette(1)[0], alpha=0.85)
+    ax.axvline(0.0, color="0.4", lw=0.8, ls=":")
+    ax.axvline(float(np.mean(offs)), color="0.1", lw=1.0, ls="--")
+    ax.set_xlabel("anchor delta: this wave − #2329 stored")
+    ax.set_ylabel("pair-side rows")
+    ax.set_title(f"{MODEL_LABEL[tag]}: judge-wave offset on identical anchors")
+    fig.tight_layout()
+    savefig_paper(fig, f"judge_offset_{tag}", dir=str(FIG_DIR))
+    plt.close(fig)
+
+
+def fig_format_vs_language(tag: str = "q35lang") -> None:
+    """DESCRIPTIVE/COMPANION-ONLY (plan §6): prefill-3 (patch-content) raw
+    same-wave recovery ratio — the parent's q35 FORMAT cells vs this round's
+    LANGUAGE cells. Cap regime, anchor provenance, and judge wave DIFFER
+    across the two legs, so this figure never supports a
+    language-recovers-more-than-format superiority verdict (the within-wave
+    R3_net lattice carries the headline)."""
+    parent_stats = FMETRICS_DIR / "q35" / "stats.json"
+    lang_stats = _fm_dir(tag) / "stats.json"
+    if not (parent_stats.is_file() and lang_stats.is_file()):
+        print("[figures] format_vs_language: a stats.json is missing — skipped")
+        return
+    rows = []
+    for label, path, set_name in (
+        ("format cells\n(parent leg B)", parent_stats, "s1"),
+        ("language cells\n(this round)", lang_stats, "s1"),
+    ):
+        stats = A62.json.loads(path.read_text(encoding="utf-8"))
+        rec = stats["per_set"].get(set_name, {}).get("arms", {}).get("prefill3_med", {})
+        rec_r = rec.get("recovery_samewave")
+        if not rec_r:
+            print(f"[figures] format_vs_language: no recovery for {label!r} — skipped")
+            return
+        rows.append((label, rec_r["ratio"], *rec_r["ratio_ci"]))
+    fig, ax = plt.subplots(figsize=(4.2, 3.4))
+    xs = np.arange(len(rows))
+    for x, (label, m, lo, hi) in zip(xs, rows, strict=True):
+        ax.errorbar(
+            [x],
+            [m],
+            yerr=[[max(0.0, m - lo)], [max(0.0, hi - m)]],
+            fmt="o",
+            color=paper_palette(1)[0],
+            capsize=3,
+        )
+    ax.axhline(1.0, color="0.6", lw=0.8, ls=":")
+    ax.set_xticks(xs)
+    ax.set_xticklabels([r[0] for r in rows], fontsize=8)
+    ax.set_xlim(-0.6, len(rows) - 0.4)
+    ax.set_ylabel("raw recovery ratio (arm F / control F)")
+    # Cross-leg caveat lives in the TITLE line + this sidecar-embedded
+    # docstring, never a caption block on canvas (paper-plots §3.8-bis).
+    ax.set_title("three-token prefill recovery — descriptive companion\n(cross-wave; no verdict)")
+    fig.tight_layout()
+    savefig_paper(fig, "format_vs_language_recovery", dir=str(FIG_DIR))
+    plt.close(fig)
+
+
+def render_q35lang() -> None:
+    """The q35lang figure set (plan §6): hero (+F_act mirror) with the banked
+    reference line, exploratory over-produce, judge-offset histogram, and the
+    descriptive format-vs-language companion."""
+    tag = "q35lang"
+    data = _load_tag(tag)
+    fig_hero(data, tag)
+    fig_hero(data, tag, field="f_act")
+    fig_recovery(data, tag)
+    fig_perpair(data, tag)
+    fig_forest_cells(data, tag)
+    fig_k_traces(data, tag)
+    fig_scheme_contrast(data, tag)
+    fig_arm_vs_ce(data, tag)
+    fig_whole_vs_continuation(data, tag)
+    fig_coherence(data, tag)
+    fig_judge_offset(tag)
+    fig_format_vs_language(tag)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Issue #2333 figures.")
     ap.add_argument("--model-tags", nargs="+", default=["q25"], choices=("q25", "q35"))
+    ap.add_argument(
+        "--cell-set",
+        choices=tuple(C.CELL_SETS),
+        default="main",
+        help="'q35lang' renders the q35_language_snowball set (ignores --model-tags)",
+    )
+    ap.add_argument(
+        "--fig-dir",
+        type=Path,
+        default=None,
+        help="output dir override (smoke diversion; default figures/issue_2333)",
+    )
+    ap.add_argument(
+        "--fmetrics-dir",
+        type=Path,
+        default=None,
+        help="f_metrics dir override (smoke fixtures; default = canonical per tag)",
+    )
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument(
         "--continuation-d3-only",
@@ -712,11 +866,20 @@ def _import_check() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global FIG_DIR, _FMETRICS_OVERRIDE
     args = parse_args(argv)
     if args.import_check:
         return _import_check()
+    if args.fig_dir is not None:
+        FIG_DIR = args.fig_dir
+    if args.fmetrics_dir is not None:
+        _FMETRICS_OVERRIDE = args.fmetrics_dir
     set_paper_style()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
+    if args.cell_set == "q35lang":
+        render_q35lang()
+        print(f"[figures] wrote q35lang figures under {FIG_DIR}")
+        return 0
     if args.continuation_d3_only:
         fig_continuation_d3(args.model_tags)
         print(f"[figures] wrote continuation_d3_recount for {args.model_tags} under {FIG_DIR}")

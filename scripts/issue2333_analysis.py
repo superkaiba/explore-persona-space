@@ -25,6 +25,20 @@ Phases:
                 on prefill-3 (scheme (a) = med confirmatory; scheme (b)
                 labels prefixed "natural-opening").
 
+Cell sets (plan §4.3 item 4, q35_language_snowball): ``--cell-set q35lang``
+routes f-tables/stats to ``eval_results/issue_2333/q35_language_snowball/
+f_metrics/``, GATES the banked-#2162/#2094 calib joins (main-only), and adds
+the REGISTERED §3 machinery — null-adjusted D3_net / R3_net with JOINT
+pair-clustered resampling (a drawn pair carries its arm, null, and ce rows
+together; B=10,000 seed 23330), the carrier-level cluster-bootstrap companion
+(resample carriers; a drawn carrier carries ALL its cells, directed pairs,
+and anchors), continuation-only D3_net/R3_net + separation for every prefill
+arm, and the control-health + both-cells-floor preconditions
+(``control-unresolved`` / ``untestable-causal`` routing) — plus raw D3/R₃ as
+descriptive companions and the judge-offset table vs #2329's stored per-pair
+anchor deltas. The parent path (``--cell-set main``) is behaviorally
+byte-identical.
+
 REUSES: `issue2094_analysis.bootstrap_family_means_batched`,
 `issue2162_analysis` {_wilcoxon_exact_p, holm, io helpers, constants},
 `issue2333_judge` item-id builders (the judge/analysis join contract).
@@ -78,6 +92,21 @@ A2162_F_CELLS = Path("eval_results/issue_2162/f_metrics/f_cells.jsonl")
 A2094_ANCHORS = Path("eval_results/issue_2094/f_metrics/anchors.jsonl")
 VENDORED_CONF1 = INPUTS_DIR / "fu1_conf1_confirmation.json"
 CONF1_FAMILY = "matched_query|ce|joint_all|replace|A|f_beh_prefix"
+
+# q35_language_snowball cell set (plan §3 row-coverage / §4.3 item 4).
+Q35LANG_DIR = Path("eval_results/issue_2333/q35_language_snowball")
+Q35LANG_INPUTS = Path(C.Q35LANG_INPUTS_DIR)
+I2329_F_CELLS = Q35LANG_INPUTS / "i2329_lang_f_cells.jsonl"  # 144 rows; consume slot=="ce" ONLY
+I2329_NULL_CELLS = Q35LANG_INPUTS / "i2329_lang_null_shuffled_cells.jsonl"
+I2329_ANCHORS = Q35LANG_INPUTS / "i2329_lang_anchors.jsonl"  # 72 per-pair delta rows
+D3_NET_SHARE = D3_SHARE  # §3: D3_net = (arm_st − arm_nu) − 0.5 × (ce_st − ce_nu)
+
+
+def _fmetrics_dir(tag: str, cell_set: str) -> Path:
+    """Default out-dir: the parent per-tag dir, or the q35lang namespace dir
+    (plan §3 row-coverage: .../q35_language_snowball/f_metrics/, NO tag leaf)."""
+    return (Q35LANG_DIR / "f_metrics") if cell_set == "q35lang" else (FMETRICS_DIR / tag)
+
 
 _FU1_SCORE_FILES = (
     "coherence.stage2.scores.jsonl",
@@ -378,17 +407,21 @@ def _f_from_rows(
     }
 
 
-def _load_va_store(va_dir: Path, read_layer: int) -> dict[str, np.ndarray]:
+def _load_va_store(va_dir: Path, read_layer: int, cell_set: str = "main") -> dict[str, np.ndarray]:
     """va_key -> (H,) fp32 at the read layer. TWO shard schemas:
 
     - #2333 driver shards (grid / q35 anchors): flat ``{va_key: (L, H)}``.
-    - Banked PARENT anchor stores (#2162 ``va_anchors_*_w*.pt`` /
-      #2094 ``va_anchors.pt`` — the q25 F_act floor/ceiling inputs):
-      structured ``{layers, index, va_span, empty_rows, ...}`` (observed
-      writer schema: issue2162_run.py L1725 / issue2094_run.py L1743);
+    - Banked STRUCTURED anchor stores (#2162 ``va_anchors_*_w*.pt`` /
+      #2094 ``va_anchors.pt`` — the q25 F_act floor/ceiling inputs; and the
+      reused #2329 anchor va shards on q35lang): ``{layers, index, va_span,
+      empty_rows, ...}`` (observed writer schemas: issue2162_run.py L1725 /
+      issue2094_run.py L1743 / issue2329_run.py ``_run_anchor_batch``);
       converted to ``{context_id}|anchor|d{draw}`` keys, ``empty_rows``
       indices (empty completions) skipped, read layer resolved through the
-      store's OWN ``layers`` list.
+      store's OWN ``layers`` list. On q35lang the structured branch MUST go
+      through ``issue2333_run.load_va_anchor_shard_2329`` (the mandated
+      staged-consumer-open, artifact-reuse (h)(iv)) — its fail-loud
+      shape/pooling asserts run before any conversion.
     """
     import torch
 
@@ -397,6 +430,10 @@ def _load_va_store(va_dir: Path, read_layer: int) -> dict[str, np.ndarray]:
         payload = torch.load(shard, map_location="cpu", weights_only=False)
         assert isinstance(payload, dict), shard
         if "va_span" in payload and "index" in payload:
+            if cell_set == "q35lang":
+                import issue2333_run as R33  # lazy: pulls torch + extraction
+
+                payload = R33.load_va_anchor_shard_2329(shard)
             layer_idx = list(payload["layers"]).index(read_layer)
             empty = set(payload.get("empty_rows") or [])
             span = payload["va_span"]
@@ -413,19 +450,96 @@ def _load_va_store(va_dir: Path, read_layer: int) -> dict[str, np.ndarray]:
     return out
 
 
+def _write_judge_offset_2329(args: argparse.Namespace, out_dir: Path, anchors: dict) -> None:
+    """Judge-offset table (plan §6 calibration row): OUR re-judged per-pair
+    floor/ceiling deltas vs #2329's STORED per-pair deltas. On the reuse path
+    the anchor TEXTS are IDENTICAL, so the offset is pure instrument drift;
+    on selfgen it also carries anchors-distribution drift (labeled). A
+    near-zero-variance table is the cache-contamination tell (a cache-served
+    #2329-era entry would reproduce the stored score exactly) — flagged, and
+    structurally prevented by the judge's fresh per-cell-set cache partition."""
+    mode = J33.anchor_mode(args.anchors_dir, "q35lang")
+    banked = {r["pair_id"]: r for r in A62._iter_jsonl(I2329_ANCHORS)}
+    if set(banked) != set(anchors):
+        raise RuntimeError(
+            f"anchor pair sets diverge: banked-only={sorted(set(banked) - set(anchors))[:4]} "
+            f"ours-only={sorted(set(anchors) - set(banked))[:4]}"
+        )
+    rows_off: list[dict] = []
+    n_missing = 0
+    for pid in sorted(anchors):
+        b = banked[pid]
+        for side, ours_key, banked_key in (
+            ("floor", "floor", "delta_floor_mean"),
+            ("ceiling", "ceiling", "delta_ceiling_mean"),
+        ):
+            ours = anchors[pid].get(ours_key)
+            theirs = b.get(banked_key)
+            if ours is None or theirs is None:
+                n_missing += 1
+                continue
+            rows_off.append(
+                {
+                    "pair_id": pid,
+                    "side": side,
+                    "ours": ours,
+                    "banked": theirs,
+                    "offset": ours - theirs,
+                }
+            )
+    offs = np.array([r["offset"] for r in rows_off], dtype=np.float64)
+    sd = float(np.std(offs, ddof=1)) if offs.size > 1 else None
+    A62._write_jsonl_atomic(out_dir / "judge_offset_rows.jsonl", rows_off)
+    A62._write_json_atomic(
+        out_dir / "judge_offset_2329.json",
+        {
+            "mode": mode,
+            "n_rows": len(rows_off),
+            "n_missing_sides": n_missing,
+            "mean_offset": float(offs.mean()) if offs.size else None,
+            "sd": sd,
+            "se": (sd / math.sqrt(offs.size)) if sd is not None and offs.size else None,
+            "offset_semantics": (
+                "same-wave re-judge of the IDENTICAL #2329 anchor completions minus #2329's "
+                "stored per-pair floor/ceiling deltas (delta units, judge-score/100) — pure "
+                "instrument drift"
+                if mode == "reused_2329"
+                else "SELFGEN anchors — texts differ from #2329's, so the offset carries "
+                "anchors-distribution drift ON TOP of instrument drift (not a pure "
+                "instrument read)"
+            ),
+            # Contamination tell: identical stored scores served from a stale
+            # cache would zero the variance (plan §4.3 item 3).
+            "near_zero_variance_flag": bool(sd is not None and offs.size >= 8 and sd < 1e-9),
+            "pins": {"p2329_data": C.PIN_2329_DATA, "ref_2329_branch": C.REF_2329_BRANCH},
+        },
+    )
+    logger.info(
+        "[f-tables] judge-offset vs #2329: n=%d mean=%s sd=%s mode=%s",
+        len(rows_off),
+        f"{offs.mean():+.4f}" if offs.size else "n/a",
+        f"{sd:.4f}" if sd is not None else "n/a",
+        mode,
+    )
+
+
 def phase_f_tables(args: argparse.Namespace) -> int:
     tag = args.model_tag
-    s1_pairs, s2_pairs = J33.build_pair_universe()
+    # getattr-defaulted: pre-existing callers (tests) hand-build Namespaces
+    # without cell_set — the parent path must keep accepting them.
+    cell_set = getattr(args, "cell_set", "main")
+    s1_pairs, s2_pairs = J33.build_pair_universe(cell_set)
     pairs = [*s1_pairs, *s2_pairs]
     pairs_by_id = {p.pair_id: p for p in pairs}
-    out_dir = args.out_dir or (FMETRICS_DIR / tag)
+    out_dir = args.out_dir or _fmetrics_dir(tag, cell_set)
 
     suffixes = ("grid", "anchors") if tag == "q35" else ("grid",)
     scores = _load_scores(args.scores_dir, suffixes)
-    grid_rows = J33.load_grid_rows(args.rollouts_dir)
+    grid_rows = J33.load_grid_rows(args.rollouts_dir, cell_set=cell_set)
 
     if tag == "q35":
-        anchor_rows = J33.load_anchor_rows(args.anchors_dir)
+        ctx_ids = {cid for p in pairs for cid in (p.a, p.b)}
+        anchor_rows = J33.load_anchor_rows_2333(args.anchors_dir, cell_set, ctx_ids)
         anchors = _fresh_anchor_deltas(pairs, anchor_rows, scores)
         A62._write_jsonl_atomic(
             out_dir / "anchors.jsonl",
@@ -436,7 +550,9 @@ def phase_f_tables(args: argparse.Namespace) -> int:
 
     read_layer = C.MODELS[tag]["read_layer"]
     va = _load_va_store(args.va_dir, read_layer) if args.va_dir else {}
-    anchor_va = _load_va_store(args.anchor_va_dir, read_layer) if args.anchor_va_dir else {}
+    anchor_va = (
+        _load_va_store(args.anchor_va_dir, read_layer, cell_set) if args.anchor_va_dir else {}
+    )
     if not va:
         logger.warning("[f-tables] no --va-dir staged: f_act = None everywhere (secondary DV)")
 
@@ -508,7 +624,7 @@ def phase_f_tables(args: argparse.Namespace) -> int:
 
     # q35 fresh ce-control cells.
     if tag == "q35":
-        ce_rows_all = J33.load_ce_rows(args.rollouts_dir)
+        ce_rows_all = J33.load_ce_rows(args.rollouts_dir, cell_set=cell_set)
         by_ce: dict[tuple[str, str], list[dict]] = defaultdict(list)
         for r in ce_rows_all:
             by_ce[(r["pair_id"], r["variant"])].append(r)
@@ -526,6 +642,20 @@ def phase_f_tables(args: argparse.Namespace) -> int:
             for (pid, variant), rows in sorted(by_ce.items())
         ]
         A62._write_jsonl_atomic(out_dir / "ce_cells.jsonl", ce_out)
+
+    if cell_set != "main":
+        # Banked Qwen2.5 calib legs are main-only (gated — plan §4.3 item 3);
+        # the q35lang same-wave instrument anchor is the #2329 ANCHORS-REJUDGE
+        # wave, reported as the judge-offset table below.
+        _write_judge_offset_2329(args, out_dir, anchors)
+        logger.info(
+            "[f-tables] %s/%s: steered=%d null=%d (calib legs gated)",
+            tag,
+            cell_set,
+            len(steered_rows),
+            len(null_rows),
+        )
+        return 0
 
     # SAME-WAVE ce calibration cells (banked raws re-judged in THIS wave).
     calib_s1 = J33.load_calib_s1(args.calib_dir)
@@ -686,6 +816,9 @@ def _spearman(xs: list[float], ys: list[float]) -> float:
 
 
 def phase_stats(args: argparse.Namespace) -> int:
+    # getattr-defaulted for hand-built Namespaces (see phase_f_tables).
+    if getattr(args, "cell_set", "main") == "q35lang":
+        return _stats_q35lang(args)
     tag = args.model_tag
     out_dir = args.out_dir or (FMETRICS_DIR / tag)
     steered = list(A62._iter_jsonl(out_dir / "f_cells.jsonl"))
@@ -975,6 +1108,518 @@ def phase_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+# ── q35_language_snowball registered machinery (plan §3 / §4.3 item 4) ─
+
+
+def bootstrap_carrier_means_batched(
+    values: np.ndarray, carrier_ids: list[str], n_boot: int, seed: int, *, block: int = 2000
+) -> np.ndarray:
+    """CARRIER-level cluster-bootstrap means (plan §3 companion): draw
+    carriers with replacement; a drawn carrier carries ALL its rows (cells,
+    directed pairs — and their anchors, which normalize F within the same
+    carrier's contexts). Same batched index-GEMM shape as
+    ``bootstrap_family_means_batched`` (NO per-draw loop): per-carrier column
+    nan-sums/counts are pre-aggregated, so each block is one GEMM."""
+    values = np.asarray(values, dtype=np.float64)
+    n, f = values.shape
+    assert len(carrier_ids) == n, (len(carrier_ids), n)
+    uniq = sorted(set(carrier_ids))
+    gidx = np.array([uniq.index(c) for c in carrier_ids])
+    mask = ~np.isnan(values)
+    v0 = np.where(mask, values, 0.0)
+    sums = np.zeros((len(uniq), f), dtype=np.float64)
+    cnts = np.zeros((len(uniq), f), dtype=np.float64)
+    np.add.at(sums, gidx, v0)
+    np.add.at(cnts, gidx, mask.astype(np.float64))
+    g = len(uniq)
+    rng = np.random.default_rng(seed)
+    out = np.empty((n_boot, f), dtype=np.float64)
+    for start in range(0, n_boot, block):
+        b = min(block, n_boot - start)
+        idx = rng.integers(0, g, size=(b, g))
+        counts = np.zeros((b, g), dtype=np.float64)
+        np.add.at(counts, (np.arange(b)[:, None], idx), 1.0)
+        num = counts @ sums
+        den = counts @ cnts
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out[start : start + b] = np.where(den > 0, num / den, np.nan)
+    return out
+
+
+def ratio_lattice_label(lo: float | None, hi: float | None) -> str:
+    """Registered secondary ratio lattice (plan §3; consumes the R3_net CI):
+    residual-established <=> CI wholly < 1; overshoot <=> CI wholly > 1;
+    pure-snowball-compatible <=> otherwise (an included-1 outcome is
+    COMPATIBILITY, never a tested equivalence)."""
+    if lo is None or hi is None or math.isnan(lo) or math.isnan(hi):
+        return "indeterminate"
+    if hi < 1.0:
+        return "residual-established"
+    if lo > 1.0:
+        return "overshoot"
+    return "pure-snowball-compatible"
+
+
+# JOINT per-pair column layout (plan §3: ONE resample of the pair axis drives
+# every read — a drawn pair carries its arm, null, and ce rows together):
+#   0 diff = F_st − F_nu     1 F_st            2 F_nu
+#   3 ce_st (samewave)       4 ce_nu           5 dce = ce_st − ce_nu
+#   6 D3_net(samewave)       7 D3_raw(samewave, v5 form)
+#   8 bce_st (banked #2329)  9 bce_nu         10 dce_banked
+#  11 D3_net(banked)        12 D3_raw(banked)
+_Q35LANG_N_COLS = 13
+
+
+def _stats_q35lang(args: argparse.Namespace) -> int:
+    """Registered q35lang reads (plan §3/§6): net paired-diff separation,
+    D3_net / R3_net under JOINT pair-clustered + carrier-cluster bootstraps,
+    continuation-only companions, control-health + both-cells-floor
+    preconditions, Wilcoxon+Holm (fixed m=12), F_act secondary mirror."""
+    tag = args.model_tag
+    out_dir = args.out_dir or _fmetrics_dir(tag, "q35lang")
+    steered = list(A62._iter_jsonl(out_dir / "f_cells.jsonl"))
+    nulls = list(A62._iter_jsonl(out_dir / "null_cells.jsonl"))
+    ce_rows = list(A62._iter_jsonl(out_dir / "ce_cells.jsonl"))
+    s1_pairs, s2_pairs = J33.build_pair_universe("q35lang")
+    assert not s2_pairs
+    carrier_of = {p.pair_id: p.carrier for p in s1_pairs}
+    cells_of = {p.pair_id: p.cell for p in s1_pairs}
+    pair_ids = [p.pair_id for p in s1_pairs]
+    f_st = {(r["pair_id"], r["arm_slug"]): r for r in steered}
+    f_nu = {(r["pair_id"], r["arm_slug"]): r for r in nulls}
+    sep_by_pair = {r["pair_id"]: r.get("separation") for r in [*steered, *nulls]}
+
+    ce_st: dict[str, float] = {}
+    ce_nu: dict[str, float] = {}
+    ce_act_st: dict[str, float] = {}
+    for r in ce_rows:
+        if r["f_beh"] is not None:
+            (ce_st if r["variant"] == "steered" else ce_nu)[r["pair_id"]] = r["f_beh"]
+        if r["variant"] == "steered" and r.get("f_act") is not None:
+            ce_act_st[r["pair_id"]] = r["f_act"]
+    # Banked #2329 companion rows (vendored, ce slot ONLY — plan §3
+    # row-coverage; the pe rows are never consumed).
+    bce_st = {
+        r["pair_id"]: r["f_beh"]
+        for r in A62._iter_jsonl(I2329_F_CELLS)
+        if r["slot"] == "ce" and r["f_beh"] is not None
+    }
+    bce_nu = {
+        r["pair_id"]: r["f_beh"]
+        for r in A62._iter_jsonl(I2329_NULL_CELLS)
+        if r["slot"] == "ce" and r["f_beh"] is not None
+    }
+    assert bce_st and bce_nu, "vendored #2329 ce companion rows filtered to empty"
+
+    # ── preconditions (plan §3) ───────────────────────────────────────
+    survivors_all = _survivors(sep_by_pair, pair_ids)
+    by_cell_surv: dict[str, list[str]] = defaultdict(list)
+    for pid in survivors_all:
+        by_cell_surv[cells_of[pid]].append(pid)
+    lang_cells = list(C.CELL_SETS["q35lang"].s1_cells)
+    passing = {c for c in lang_cells if len(by_cell_surv.get(c, [])) >= S1_SURVIVAL_FLOOR}
+    both_pass = passing == set(lang_cells)
+    survivors = sorted(survivors_all) if both_pass else []
+    floor_meta = {
+        "grain": "per-cell",
+        "floor": S1_SURVIVAL_FLOOR,
+        "per_cell_n_survivors": {c: len(by_cell_surv.get(c, [])) for c in lang_cells},
+        "cells_passing": sorted(passing),
+        "cells_below_floor": sorted(set(lang_cells) - passing),
+        "both_cells_pass": both_pass,
+    }
+
+    def _control_health(st_map: dict[str, float], nu_map: dict[str, float]) -> dict:
+        """The §3 control-health read: the separation conjunction applied to
+        ce steered−null (Holm at the registered family size m=12 — the
+        precondition faces the same correction magnitude as the arms) plus
+        the net-denominator CI-excludes-zero check."""
+        pids = [p for p in survivors_all if p in st_map and p in nu_map]
+        if len(pids) < 2:
+            return {"n_pairs": len(pids), "passed": False, "reason": "insufficient ce pairs"}
+        cols = np.array([[st_map[p] - nu_map[p], st_map[p], nu_map[p]] for p in pids])
+        draws_p = bootstrap_family_means_batched(cols, BOOT_B, BOOT_SEED)
+        draws_c = bootstrap_carrier_means_batched(
+            cols, [carrier_of[p] for p in pids], BOOT_B, BOOT_SEED
+        )
+        ci = _ci(draws_p[:, 0])
+        p_w = A62._wilcoxon_exact_p(cols[:, 0])
+        p_holm = holm_fixed_m({"ce": p_w})["ce"]
+        separates = ci[0] > 0 and p_holm < HOLM_ALPHA
+        excludes = ci[0] > 0 or ci[1] < 0
+        return {
+            "n_pairs": len(pids),
+            "dce_mean": float(np.mean(cols[:, 0])),
+            "dce_ci": ci,
+            "dce_ci_carrier": _ci(draws_c[:, 0]),
+            "ce_steered_mean": float(np.mean(cols[:, 1])),
+            "ce_null_mean": float(np.mean(cols[:, 2])),
+            "p_wilcoxon": p_w,
+            "p_holm_m12": p_holm,
+            "separates": separates,
+            "dce_ci_excludes_zero": excludes,
+            "passed": bool(separates and excludes),
+        }
+
+    control_sw = _control_health(ce_st, ce_nu)
+    control_bk = _control_health(bce_st, bce_nu)
+    if not both_pass:
+        precond_label = "untestable-causal"
+    elif not control_sw["passed"]:
+        precond_label = "control-unresolved"
+    else:
+        precond_label = None
+
+    # ── per-arm registered reads ──────────────────────────────────────
+    def _net_read(pids: list[str], slug: str, value_key: str) -> dict:
+        n = len(pids)
+        cols = np.full((n, _Q35LANG_N_COLS), np.nan)
+        for i, p in enumerate(pids):
+            fs = f_st[(p, slug)][value_key]
+            fn = f_nu[(p, slug)][value_key]
+            cols[i, 0] = fs - fn
+            cols[i, 1] = fs
+            cols[i, 2] = fn
+            if p in ce_st and p in ce_nu:
+                dce = ce_st[p] - ce_nu[p]
+                cols[i, 3] = ce_st[p]
+                cols[i, 4] = ce_nu[p]
+                cols[i, 5] = dce
+                cols[i, 6] = (fs - fn) - D3_NET_SHARE * dce
+            if p in ce_st:
+                cols[i, 7] = fs - D3_NET_SHARE * ce_st[p]
+            if p in bce_st and p in bce_nu:
+                dceb = bce_st[p] - bce_nu[p]
+                cols[i, 8] = bce_st[p]
+                cols[i, 9] = bce_nu[p]
+                cols[i, 10] = dceb
+                cols[i, 11] = (fs - fn) - D3_NET_SHARE * dceb
+            if p in bce_st:
+                cols[i, 12] = fs - D3_NET_SHARE * bce_st[p]
+        carr = [carrier_of[p] for p in pids]
+        draws_p = bootstrap_family_means_batched(cols, BOOT_B, BOOT_SEED)
+        draws_c = bootstrap_carrier_means_batched(cols, carr, BOOT_B, BOOT_SEED)
+        rec: dict = {
+            "diff_mean": float(np.mean(cols[:, 0])),
+            "diff_ci": _ci(draws_p[:, 0]),
+            "diff_ci_carrier": _ci(draws_c[:, 0]),
+            "f_steered_mean": float(np.nanmean(cols[:, 1])),
+            "f_null_mean": float(np.nanmean(cols[:, 2])),
+            "p_wilcoxon": A62._wilcoxon_exact_p(cols[:, 0]),
+            "n_carriers": len(set(carr)),
+        }
+        for label, ce_col, dce_col, d3n_col, d3r_col in (
+            ("samewave", 3, 5, 6, 7),
+            ("banked", 8, 10, 11, 12),
+        ):
+            ce_mean = float(np.nanmean(cols[:, ce_col]))
+            # Raw (v5-form, steered-only) DESCRIPTIVE companion — same
+            # emit-condition as the parent stats (figures read ["ratio"]).
+            if not (math.isnan(ce_mean) or abs(ce_mean) < 1e-9):
+                rec[f"recovery_{label}"] = {
+                    "ce_mean": ce_mean,
+                    "ratio": rec["f_steered_mean"] / ce_mean,
+                    "ratio_ci": _ci(draws_p[:, 1] / draws_p[:, ce_col]),
+                    "d3_mean": float(np.nanmean(cols[:, d3r_col])),
+                    "d3_ci": _ci(draws_p[:, d3r_col]),
+                }
+            dce_mean = float(np.nanmean(cols[:, dce_col]))
+            if math.isnan(dce_mean):
+                continue
+            net: dict = {
+                "dce_mean": dce_mean,
+                "dce_ci": _ci(draws_p[:, dce_col]),
+                "d3_net_mean": float(np.nanmean(cols[:, d3n_col])),
+                "d3_net_ci": _ci(draws_p[:, d3n_col]),
+                "d3_net_ci_carrier": _ci(draws_c[:, d3n_col]),
+            }
+            if abs(dce_mean) > 1e-9:
+                net["ratio_net"] = rec["diff_mean"] / dce_mean
+                net["ratio_net_ci"] = _ci(draws_p[:, 0] / draws_p[:, dce_col])
+                net["ratio_net_ci_carrier"] = _ci(draws_c[:, 0] / draws_c[:, dce_col])
+            rec[f"recovery_net_{label}"] = net
+        return rec
+
+    act_st = {(r["pair_id"], r["arm_slug"]): r.get("f_act") for r in steered}
+    act_nu = {(r["pair_id"], r["arm_slug"]): r.get("f_act") for r in nulls}
+    arms_out: dict[str, dict] = {}
+    pvals: dict[str, float] = {}
+    cont_out: dict[str, dict] = {}
+    pvals_cont: dict[str, float] = {}
+    arms_act: dict[str, dict] = {}
+    pvals_act: dict[str, float] = {}
+    for slug in C.ARM_SLUGS:
+        pids = [
+            pid
+            for pid in survivors
+            if f_st.get((pid, slug), {}).get("f_beh") is not None
+            and f_nu.get((pid, slug), {}).get("f_beh") is not None
+        ]
+        rec: dict = {
+            "n_pairs": len(pids),
+            "below_floor": (not both_pass) or len(pids) < S1_SURVIVAL_FLOOR,
+        }
+        if rec["below_floor"]:
+            rec["label"] = "untestable-causal" if not both_pass else "untestable-small-n"
+        else:
+            rec.update(_net_read(pids, slug, "f_beh"))
+            pvals[slug] = rec["p_wilcoxon"]
+        arms_out[slug] = rec
+
+        # Continuation-only companion (REQUIRED for every prefill arm, §3
+        # scoring-convention precedence; the tag-"n" judge wave covers
+        # steered AND null rows, so both legs exist).
+        if C.parse_arm(slug)[0] == "prefill":
+            pids_c = [
+                pid
+                for pid in survivors
+                if f_st.get((pid, slug), {}).get("f_beh_continuation") is not None
+                and f_nu.get((pid, slug), {}).get("f_beh_continuation") is not None
+            ]
+            rec_c: dict = {
+                "n_pairs": len(pids_c),
+                "below_floor": (not both_pass) or len(pids_c) < S1_SURVIVAL_FLOOR,
+            }
+            if rec_c["below_floor"]:
+                rec_c["label"] = "untestable-causal" if not both_pass else "untestable-small-n"
+            else:
+                rec_c.update(_net_read(pids_c, slug, "f_beh_continuation"))
+                pvals_cont[slug] = rec_c["p_wilcoxon"]
+                if "f_steered_mean" in rec:
+                    div = rec["f_steered_mean"] - rec_c["f_steered_mean"]
+                    rec_c["whole_minus_cont_steered"] = div
+                    rec_c["divergence_gt_bar"] = bool(abs(div) > 0.05)
+            cont_out[slug] = rec_c
+
+        # F_act SECONDARY mirror (raw samewave recovery + rank agreement —
+        # plan §6: stays secondary, never a lattice input).
+        pids_a = [
+            pid
+            for pid in survivors
+            if act_st.get((pid, slug)) is not None and act_nu.get((pid, slug)) is not None
+        ]
+        rec_a: dict = {
+            "n_pairs": len(pids_a),
+            "below_floor": (not both_pass) or len(pids_a) < S1_SURVIVAL_FLOOR,
+        }
+        if rec_a["below_floor"]:
+            rec_a["label"] = "untestable-causal" if not both_pass else "untestable-small-n"
+        else:
+            d_a = np.array([act_st[(p, slug)] - act_nu[(p, slug)] for p in pids_a])
+            cols_a = np.full((len(pids_a), 4), np.nan)
+            for i, p in enumerate(pids_a):
+                fa = act_st[(p, slug)]
+                cols_a[i, 0] = d_a[i]
+                cols_a[i, 1] = fa
+                if p in ce_act_st:
+                    cols_a[i, 2] = ce_act_st[p]
+                    cols_a[i, 3] = fa - D3_NET_SHARE * ce_act_st[p]
+            draws_a = bootstrap_family_means_batched(cols_a, BOOT_B, BOOT_SEED)
+            draws_ac = bootstrap_carrier_means_batched(
+                cols_a, [carrier_of[p] for p in pids_a], BOOT_B, BOOT_SEED
+            )
+            rec_a["diff_mean"] = float(np.mean(d_a))
+            rec_a["diff_ci"] = _ci(draws_a[:, 0])
+            rec_a["diff_ci_carrier"] = _ci(draws_ac[:, 0])
+            rec_a["f_act_steered_mean"] = float(np.nanmean(cols_a[:, 1]))
+            rec_a["p_wilcoxon"] = A62._wilcoxon_exact_p(d_a)
+            pvals_act[slug] = rec_a["p_wilcoxon"]
+            ce_mean_a = float(np.nanmean(cols_a[:, 2]))
+            if not (math.isnan(ce_mean_a) or abs(ce_mean_a) < 1e-9):
+                rec_a["recovery"] = {
+                    "ce_mean": ce_mean_a,
+                    "ce_source": "fresh-q35lang-ce (same model/wave)",
+                    "ratio": float(np.nanmean(cols_a[:, 1])) / ce_mean_a,
+                    "ratio_ci": _ci(draws_a[:, 1] / draws_a[:, 2]),
+                    "d3_mean": float(np.nanmean(cols_a[:, 3])),
+                    "d3_ci": _ci(draws_a[:, 3]),
+                }
+            common = [
+                p
+                for p in pids_a
+                if f_st.get((p, slug), {}).get("f_beh") is not None
+                and f_nu.get((p, slug), {}).get("f_beh") is not None
+            ]
+            if len(common) >= 3:
+                db = [f_st[(p, slug)]["f_beh"] - f_nu[(p, slug)]["f_beh"] for p in common]
+                da = [act_st[(p, slug)] - act_nu[(p, slug)] for p in common]
+                rec_a["spearman_vs_f_beh"] = {"rho": _spearman(db, da), "n_pairs": len(common)}
+        arms_act[slug] = rec_a
+
+    for family_pvals, family_arms in (
+        (pvals, arms_out),
+        (pvals_cont, cont_out),
+        (pvals_act, arms_act),
+    ):
+        holmed = holm_fixed_m(family_pvals) if family_pvals else {}
+        for slug, rec in family_arms.items():
+            if slug in holmed:
+                rec["p_holm"] = holmed[slug]
+                rec["holm_significant"] = holmed[slug] < HOLM_ALPHA
+                if "diff_ci" in rec:
+                    rec["separates"] = (rec["diff_ci"][0] > 0) and rec["holm_significant"]
+                    rec["separates_carrier"] = (rec["diff_ci_carrier"][0] > 0) and rec[
+                        "holm_significant"
+                    ]
+                    rec["cluster_sensitive_separation"] = (
+                        rec["separates"] != rec["separates_carrier"]
+                    )
+
+    # ── prefill-3 verdict bundles (plan §3: both lattices, net quantities,
+    #    carrier companion, continuation precedence, banked companion) ──
+    def _lattice_reads(rec: dict, net_key: str, gate_ok: bool) -> dict:
+        if not gate_ok:
+            return {
+                "primary_net": "control-unresolved",
+                "ratio_net": "control-unresolved",
+                "cluster_sensitive_primary": False,
+                "cluster_sensitive_ratio": False,
+                "primary_final": "control-unresolved",
+                "ratio_final": "control-unresolved",
+            }
+        if rec.get("label") or "diff_ci" not in rec:
+            lab = rec.get("label", "indeterminate")
+            return {
+                "primary_net": lab,
+                "ratio_net": lab,
+                "cluster_sensitive_primary": False,
+                "cluster_sensitive_ratio": False,
+                "primary_final": lab,
+                "ratio_final": lab,
+            }
+        net = rec.get(net_key, {})
+        d3_ci = net.get("d3_net_ci", (None, None))
+        d3_ci_c = net.get("d3_net_ci_carrier", (None, None))
+        holm_sig = bool(rec.get("holm_significant"))
+        primary = lattice_label(rec["diff_ci"][0], rec["diff_ci"][1], holm_sig, *d3_ci)
+        primary_c = lattice_label(
+            rec["diff_ci_carrier"][0], rec["diff_ci_carrier"][1], holm_sig, *d3_ci_c
+        )
+        ratio = ratio_lattice_label(*net.get("ratio_net_ci", (None, None)))
+        ratio_c = ratio_lattice_label(*net.get("ratio_net_ci_carrier", (None, None)))
+        return {
+            "primary_net": primary,
+            "primary_net_carrier": primary_c,
+            "cluster_sensitive_primary": primary != primary_c,
+            "primary_final": primary if primary == primary_c else "indeterminate",
+            "ratio_net": ratio,
+            "ratio_net_carrier": ratio_c,
+            "cluster_sensitive_ratio": ratio != ratio_c,
+            "ratio_final": ratio if ratio == ratio_c else "indeterminate",
+        }
+
+    verdicts: dict[str, dict] = {}
+    for scheme in C.ARM_SCHEMES:
+        slug = f"prefill3_{scheme}"
+        rec = arms_out.get(slug, {})
+        rec_c = cont_out.get(slug, {})
+        if precond_label is not None:
+            bundle: dict = {
+                "label": instance_label(scheme, precond_label),
+                "reason": (
+                    "both-cells 12/36 floor failed — pooled lattice not emitted"
+                    if precond_label == "untestable-causal"
+                    else "same-wave ce control failed its own separation conjunction or "
+                    "the net denominator CI includes zero"
+                ),
+                "confirmatory": scheme == "med",
+            }
+        else:
+            reads = _lattice_reads(rec, "recovery_net_samewave", True)
+            reads_c = _lattice_reads(rec_c, "recovery_net_samewave", True)
+            governs = bool(rec_c.get("divergence_gt_bar"))
+            bundle = {
+                "confirmatory": scheme == "med",
+                **{
+                    k: instance_label(scheme, v) if isinstance(v, str) else v
+                    for k, v in reads.items()
+                },
+                "continuation": {
+                    k: instance_label(scheme, v) if isinstance(v, str) else v
+                    for k, v in reads_c.items()
+                },
+                "continuation_governs_mechanism": governs,
+                "mechanism_final": instance_label(
+                    scheme,
+                    (
+                        reads_c.get("primary_final", "indeterminate")
+                        if governs
+                        else reads.get("primary_final", "indeterminate")
+                    ),
+                ),
+                "banked_companion": {
+                    k: instance_label(scheme, v) if isinstance(v, str) else v
+                    for k, v in _lattice_reads(
+                        rec, "recovery_net_banked", bool(control_bk.get("dce_ci_excludes_zero"))
+                    ).items()
+                },
+            }
+        verdicts[scheme] = bundle
+
+    # Per-cell descriptive reads (raw p, no family — plan §3 auxiliary; the
+    # surviving-cell fallback under `untestable-causal`).
+    per_cell: dict[str, dict] = {}
+    for cell in lang_cells:
+        cell_pids = by_cell_surv.get(cell, [])
+        cell_arms: dict[str, dict] = {}
+        for slug in C.ARM_SLUGS:
+            ds = [
+                f_st[(p, slug)]["f_beh"] - f_nu[(p, slug)]["f_beh"]
+                for p in cell_pids
+                if f_st.get((p, slug), {}).get("f_beh") is not None
+                and f_nu.get((p, slug), {}).get("f_beh") is not None
+            ]
+            if ds:
+                cell_arms[slug] = {
+                    "n_pairs": len(ds),
+                    "diff_mean": float(np.mean(ds)),
+                    "p_wilcoxon_raw": A62._wilcoxon_exact_p(np.array(ds)),
+                }
+        per_cell[cell] = {"n_survivors": len(cell_pids), "arms": cell_arms}
+
+    result = {
+        "model_tag": tag,
+        "cell_set": "q35lang",
+        "boot": {
+            "B": BOOT_B,
+            "seed": BOOT_SEED,
+            "resampling": "JOINT pair-clustered (a drawn pair carries arm+null+ce rows)",
+            "carrier_companion": "carrier-cluster bootstrap on every registered read",
+        },
+        "preconditions": {
+            "floor": floor_meta,
+            "precondition_label": precond_label,
+            "control_health_samewave": control_sw,
+            "control_health_banked_companion": control_bk,
+        },
+        "banked_ce_note": (
+            "banked reads join the vendored #2329 language-cell ce rows (slot=='ce' ONLY) — "
+            "a CROSS-WAVE comparison read; the same-wave ce control is primary (plan §3)"
+        ),
+        "per_set": {
+            "s1": {
+                "n_survivors_anchor": len(survivors_all),
+                "n_survivors_tested": len(survivors),
+                "floor": floor_meta,
+                "untestable": not both_pass,
+                "arms": arms_out,
+                "continuation_arms": cont_out,
+                "prefill3_verdicts": verdicts,
+                "holm_family_m": HOLM_FIXED_M,
+                "f_act": {
+                    "role": "secondary companion DV (plan §6) — never the headline",
+                    "arms": arms_act,
+                    "holm_family_m": HOLM_FIXED_M,
+                },
+            }
+        },
+        "per_cell_descriptive": per_cell,
+    }
+    A62._write_json_atomic(out_dir / "stats.json", result)
+    logger.info("[stats] q35lang: wrote %s", out_dir / "stats.json")
+    return 0
+
+
 # ── CLI ───────────────────────────────────────────────────────────────
 
 PHASES = {
@@ -989,6 +1634,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # required unless --import-check (r1 Minor: standalone --import-check).
     ap.add_argument("--phase", choices=tuple(PHASES))
     ap.add_argument("--model-tag", choices=("q25", "q35"), default=None)
+    ap.add_argument(
+        "--cell-set",
+        choices=tuple(C.CELL_SETS),
+        default="main",
+        help="pair universe (default 'main' = the parent run; 'q35lang' routes "
+        "f-tables/stats to eval_results/issue_2333/q35_language_snowball/f_metrics)",
+    )
     ap.add_argument("--stage-dir", type=Path, default=Path("data/issue_2333/fu1_stage"))
     ap.add_argument("--scores-dir", type=Path, default=None)
     ap.add_argument("--rollouts-dir", type=Path, default=None)
@@ -1016,6 +1668,14 @@ def _import_check() -> int:
     assert callable(bootstrap_family_means_batched)
     assert lattice_label(-0.1, -0.01, False, None, None) == "no-snowball"
     assert instance_label("bstart", "no-snowball") == "natural-opening-no-snowball"
+    # q35lang registered machinery (plan §3): ratio lattice + carrier bootstrap.
+    assert ratio_lattice_label(0.2, 0.8) == "residual-established"
+    assert ratio_lattice_label(1.1, 1.5) == "overshoot"
+    assert ratio_lattice_label(0.8, 1.2) == "pure-snowball-compatible"
+    assert ratio_lattice_label(None, None) == "indeterminate"
+    demo = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, np.nan]])
+    draws = bootstrap_carrier_means_batched(demo, ["a", "a", "b"], 16, 0)
+    assert draws.shape == (16, 2), draws.shape
     print("[import-check] OK")
     return 0
 
@@ -1030,6 +1690,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.import_check:
         return _import_check()
     assert args.phase, "--phase required (or --import-check)"
+    if args.cell_set == "q35lang":
+        assert args.phase in ("f-tables", "stats"), (
+            "--cell-set q35lang applies to f-tables/stats only (s2-ce-derive is a "
+            "main-path input builder)"
+        )
+        assert args.model_tag == "q35", "--cell-set q35lang requires --model-tag q35 (plan §11)"
     if args.phase in ("f-tables", "stats"):
         assert args.model_tag, f"--model-tag required for --phase {args.phase}"
         if args.phase == "f-tables":

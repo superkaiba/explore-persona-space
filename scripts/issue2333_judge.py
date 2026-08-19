@@ -16,6 +16,18 @@ Thin adaptation of ``scripts/issue2162_judge.py`` over the #2333 row schema:
 - Rule-26 pilot gate FIRST (per rubric family + live forced-batch probe);
   judge = ``claude-sonnet-4-5-20250929`` via the Batch API, max_tokens 1024.
 
+Cell sets (plan §4.3 item 3, q35_language_snowball): ``--cell-set q35lang``
+threads the 2-language-cell universe (S2 OFF) through every loader/expected
+count, GATES the banked Qwen2.5 calibration legs (the #2162/#2094 calib text
+is q25-generated — a cross-model re-judge is N/A for the q35lang wave), and
+routes the anchors phase over the staged #2329 anchor completions (the
+ANCHORS-REJUDGE wave: identical texts re-scored under THIS wave's instrument;
+selfgen fallback = fresh ``anchors_w*.jsonl``). Judge work/cache roots land in
+per-cell-set partitions (``.cell_set`` marker asserted) so #2329-era or
+parent-leg cache entries structurally cannot serve the rejudge — a ~zero-
+variance judge-offset table downstream is the contamination tell. The parent
+path (``--cell-set main``, the default) is behaviorally byte-identical.
+
 REUSES ``issue2094_judge`` (J94: JudgeUnit / run_wave / caches / pilot /
 coherence gate) and ``issue2162_judge`` (J62: rubric ids, anchor unit ids,
 dry-run report) — never re-implements them (plan §10 fitness map).
@@ -61,12 +73,20 @@ PILOT_SEED = 23330
 # ── pairs / rubrics (both banks) ──────────────────────────────────────
 
 
-def build_pair_universe() -> tuple[list, list]:
-    """(s1_pairs, s2_pairs) — same filter as issue2333_run.build_pair_universe."""
-    s1 = [p for p in BANK2162.build_pairs() if p.cell in C.S1_CELLS]
-    assert len(s1) == len(C.S1_CELLS) * C.S1_PAIRS_PER_CELL, len(s1)
-    s2 = [p for p in BANK94.build_pairs() if p.setting == "matched_query"]
-    assert len(s2) == 15, len(s2)
+def build_pair_universe(cell_set: str = "main") -> tuple[list, list]:
+    """(s1_pairs, s2_pairs) — same filter as issue2333_run.build_pair_universe.
+
+    q35lang: 72 language-cell pairs, S2 EMPTY (the 15-pair assert is gated on
+    ``CellSet.s2_on`` — plan §4.3 item 3 parametrization)."""
+    cs = C.CELL_SETS[cell_set]
+    s1 = [p for p in BANK2162.build_pairs() if p.cell in cs.s1_cells]
+    assert len(s1) == len(cs.s1_cells) * C.S1_PAIRS_PER_CELL, len(s1)
+    if cs.s2_on:
+        s2 = [p for p in BANK94.build_pairs() if p.setting == "matched_query"]
+        assert len(s2) == 15, len(s2)
+    else:
+        s2 = []
+    assert len(s1) + len(s2) == cs.expected_pairs, (len(s1), len(s2), cs.expected_pairs)
     return s1, s2
 
 
@@ -107,6 +127,7 @@ class JudgeConfig2333:
     rollouts_dir: Path  # holds blocks/*.jsonl (+ ce_control/*.jsonl on q35)
     anchors_dir: Path | None
     calib_dir: Path
+    cell_set: str = "main"  # C.CELL_SETS key (q35_language_snowball: "q35lang")
 
     @property
     def dry_run(self) -> bool:
@@ -148,12 +169,15 @@ def assert_draw_consistency(rows: list[dict]) -> int:
     return k
 
 
-def load_grid_rows(rollouts_dir: Path, expect_complete: bool = True) -> list[dict]:
+def load_grid_rows(
+    rollouts_dir: Path, expect_complete: bool = True, cell_set: str = "main"
+) -> list[dict]:
     shards = sorted((rollouts_dir / "blocks").glob("*.jsonl"))
     assert shards, f"no grid block shards under {rollouts_dir}/blocks"
     if expect_complete:
+        expected = C.expected_grid_slugs(cell_set)
         assert_shard_set_complete(
-            {s.stem for s in shards}, C.expected_grid_slugs(), "grid (144-block)"
+            {s.stem for s in shards}, expected, f"grid ({len(expected)}-block)"
         )
     rows = [r for s in shards for r in J94._iter_jsonl(s)]
     assert rows, "grid shards present but empty"
@@ -165,12 +189,15 @@ def load_grid_rows(rollouts_dir: Path, expect_complete: bool = True) -> list[dic
     return rows
 
 
-def load_ce_rows(rollouts_dir: Path, expect_complete: bool = True) -> list[dict]:
+def load_ce_rows(
+    rollouts_dir: Path, expect_complete: bool = True, cell_set: str = "main"
+) -> list[dict]:
     shards = sorted((rollouts_dir / "ce_control").glob("*.jsonl"))
     assert shards, f"no ce_control shards under {rollouts_dir}/ce_control"
     if expect_complete:
+        expected = C.expected_ce_control_slugs(cell_set)
         assert_shard_set_complete(
-            {s.stem for s in shards}, C.expected_ce_control_slugs(), "ce_control (12-block)"
+            {s.stem for s in shards}, expected, f"ce_control ({len(expected)}-block)"
         )
     rows = [r for s in shards for r in J94._iter_jsonl(s)]
     assert rows, "ce_control shards present but empty"
@@ -186,6 +213,102 @@ def load_anchor_rows(anchors_dir: Path) -> list[dict]:
     for r in rows[:1]:
         for key in ("context_id", "draw", "response_text"):
             assert key in r, (key, sorted(r))
+    return rows
+
+
+def _stage_2329_anchor_shards(dest: Path) -> list[Path]:
+    """Stage the #2329 final anchor jsonl shards VERBATIM @ C.PIN_2329_DATA
+    (VM-side twin of ``issue2333_run._list_2329_files``/``_stage_2329_file`` —
+    torch-free so the judge never imports the pod driver). The reused shards
+    are deliberately NOT mirrored under the q35lang HF namespace (already on
+    HF at the pin; run.py upload globs exclude ``reused_2329/``), so the
+    ANCHORS-REJUDGE wave stages them from the pin on demand."""
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    api = HfApi()
+    entries = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
+            api.list_repo_tree(
+                C.DATA_REPO,
+                path_in_repo=C.R2329_ANCHORS_PREFIX,
+                repo_type="dataset",
+                revision=C.PIN_2329_DATA,
+                recursive=True,
+            )
+        ),
+        what=f"list #2329 {C.R2329_ANCHORS_PREFIX}",
+    )
+    rels = sorted(
+        e.path
+        for e in entries
+        if getattr(e, "size", None) is not None
+        and e.path.endswith(".jsonl")
+        and C.R2329_NEVER_CONSUMED_SUBSTRING not in e.path
+    )
+    assert rels, f"no #2329 anchor jsonl under {C.R2329_ANCHORS_PREFIX} @ {C.PIN_2329_DATA}"
+    dest.mkdir(parents=True, exist_ok=True)
+    staged: list[Path] = []
+    for rel in rels:
+        target = dest / Path(rel).name
+        if not target.is_file():
+            got = hub.retry_transient(
+                lambda fn=rel: hf_hub_download(
+                    repo_id=C.DATA_REPO,
+                    repo_type="dataset",
+                    filename=fn,
+                    revision=C.PIN_2329_DATA,
+                    local_dir=dest / "_dl",
+                ),
+                what=f"stage #2329 anchors {rel}",
+            )
+            Path(got).replace(target)
+        staged.append(target)
+    logger.info("[anchors-2329] staged %d shards @ %s", len(staged), C.PIN_2329_DATA[:12])
+    return staged
+
+
+def anchor_mode(anchors_dir: Path, cell_set: str) -> str:
+    """``"fresh"`` (selfgen ``anchors_w*.jsonl`` present) vs ``"reused_2329"``.
+
+    Fresh shards WIN when present — the fitness2329 selfgen decision produces
+    them and the reuse manifest is then absent by construction; on the reuse
+    path the pod stages ``reused_2329/`` and writes the manifest, and the VM
+    judge re-stages the shards from the pin when the local dir is empty."""
+    if cell_set != "q35lang":
+        return "fresh"
+    if sorted(anchors_dir.glob("anchors_w*.jsonl")):
+        return "fresh"
+    return "reused_2329"
+
+
+def load_anchor_rows_2333(anchors_dir: Path, cell_set: str, ctx_ids: set[str]) -> list[dict]:
+    """Cell-set anchor loader. main / selfgen: the parent ``anchors_w*.jsonl``
+    shape (``response_text``). q35lang reuse: the staged #2329 shards
+    (OBSERVED schema — key ``text``, C.ANCHOR_2329_REQUIRED_KEYS), rows
+    filtered to THIS cell set's contexts and normalized with a
+    ``response_text`` alias so every downstream item builder is schema-blind."""
+    if anchor_mode(anchors_dir, cell_set) == "fresh":
+        rows = load_anchor_rows(anchors_dir)
+        if cell_set == "q35lang":
+            rows = [r for r in rows if r["context_id"] in ctx_ids]
+            assert rows, "fresh anchor shards carry no rows for the q35lang contexts"
+        return rows
+    dest = anchors_dir / "reused_2329"
+    shards = sorted(dest.glob("*.jsonl"))
+    if not shards:
+        shards = _stage_2329_anchor_shards(dest)
+    rows: list[dict] = []
+    for shard in shards:
+        for row in J94._iter_jsonl(shard):
+            if row.get("context_id") not in ctx_ids:
+                continue
+            missing = C.ANCHOR_2329_REQUIRED_KEYS - set(row)
+            assert not missing, (shard.name, sorted(missing))
+            rows.append({**row, "response_text": row["text"]})
+    assert rows, f"no #2329 anchor rows for the {len(ctx_ids)} q35lang contexts under {dest}"
     return rows
 
 
@@ -401,6 +524,16 @@ def phase_stage_calib(cfg: JudgeConfig2333) -> int:
     Content hygiene: bank text is WildChat-derived real-corpus — this phase
     logs COUNTS only, never row text.
     """
+    if cfg.cell_set != "main":
+        # The banked calib legs are Qwen2.5-GENERATED text (#2162 grid /
+        # #2094 fu1) — a cross-model re-judge is N/A for the q35lang wave
+        # (plan §4.3 item 3: GATE the leg, never re-point it). The same-wave
+        # instrument anchor for q35lang is the #2329 ANCHORS-REJUDGE wave.
+        logger.info(
+            "[stage-calib] cell_set=%s: banked Qwen2.5 calib legs are main-only — N/A (gated)",
+            cfg.cell_set,
+        )
+        return RC_OK
     if cfg.dry_run:
         logger.info(
             "[stage-calib] dry-run: would stage %d S1 shards @ %s + %d S2 files @ %s -> %s",
@@ -488,23 +621,24 @@ def phase_pilot(cfg: JudgeConfig2333) -> int:
             "measuring the REAL instrument — run without --dry-run."
         )
         return RC_DRY_RUN_UNSUPPORTED
-    s1_pairs, s2_pairs = build_pair_universe()
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
     registry = rubric_registry(s1_pairs, s2_pairs)
-    grid_rows = load_grid_rows(cfg.rollouts_dir)
-    calib_s1 = load_calib_s1(cfg.calib_dir)
-    calib_s2 = load_calib_s2(cfg.calib_dir)
+    grid_rows = load_grid_rows(cfg.rollouts_dir, cell_set=cfg.cell_set)
+    calib_s1 = load_calib_s1(cfg.calib_dir) if cfg.cell_set == "main" else []
+    calib_s2 = load_calib_s2(cfg.calib_dir) if cfg.cell_set == "main" else []
     coh = build_coherence_items(grid_rows, None, None, calib_s1, calib_s2)
     beh = build_behavior_items((s1_pairs, s2_pairs), grid_rows, None, calib_s1, calib_s2)
 
     s1_rids = {J62.rubric_core_id(c) for p in s1_pairs for c in pair_rubric_cores_2333(p)}
     s2_rids = {J62.rubric_core_id(c) for p in s2_pairs for c in pair_rubric_cores_2333(p)}
     rep_s1 = max((r for r in by_len_order(beh) if r in s1_rids), key=lambda r: len(beh[r]))
-    rep_s2 = max((r for r in by_len_order(beh) if r in s2_rids), key=lambda r: len(beh[r]))
     fam_reps = {
         "coherence": (J94.COHERENCE_RUBRIC_ID, coh, J62.PILOT_TARGET_COHERENCE),
         "s1-rubric": (rep_s1, beh[rep_s1], J62.PILOT_TARGET_BEHAVIOR),
-        "s2-rubric": (rep_s2, beh[rep_s2], J62.PILOT_TARGET_BEHAVIOR),
     }
+    if s2_pairs:  # S2 OFF on q35lang — an empty family would crash max()
+        rep_s2 = max((r for r in by_len_order(beh) if r in s2_rids), key=lambda r: len(beh[r]))
+        fam_reps["s2-rubric"] = (rep_s2, beh[rep_s2], J62.PILOT_TARGET_BEHAVIOR)
     per_family: dict[str, dict] = {}
     all_pass = True
     for family, (rid, units, target) in fam_reps.items():
@@ -571,6 +705,7 @@ def phase_pilot(cfg: JudgeConfig2333) -> int:
                 "n_draws": JUDGE_N_DRAWS,
                 "n_rubrics_total": len(registry),
                 "model_tag": cfg.model_tag,
+                "cell_set": cfg.cell_set,
             },
             "repro": J94._repro(),
         },
@@ -597,11 +732,24 @@ def _require_gates(cfg: JudgeConfig2333, names: tuple[str, ...]) -> None:
 
 
 def phase_anchors(cfg: JudgeConfig2333) -> int:
-    """q35: coherence-baseline gate over the fresh anchors, then anchor waves."""
+    """q35: coherence-baseline gate over the anchors, then anchor waves.
+
+    q35lang = the ANCHORS-REJUDGE wave (plan §4.3 item 3): the staged #2329
+    anchor completions (or selfgen fresh anchors) are scored INSIDE this
+    run's judge waves — same instrument as every fresh row — so the analysis
+    judge-offset table (ours vs #2329's stored per-pair deltas on IDENTICAL
+    texts) reads pure instrument drift."""
     assert cfg.model_tag == "q35", "anchors phase is q35-only (q25 reuses banked anchor scores)"
     assert cfg.anchors_dir is not None
-    s1_pairs, s2_pairs = build_pair_universe()
-    anchor_rows = load_anchor_rows(cfg.anchors_dir)
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
+    ctx_ids = {cid for p in [*s1_pairs, *s2_pairs] for cid in (p.a, p.b)}
+    anchor_rows = load_anchor_rows_2333(cfg.anchors_dir, cfg.cell_set, ctx_ids)
+    logger.info(
+        "[anchors] mode=%s rows=%d contexts=%d",
+        anchor_mode(cfg.anchors_dir, cfg.cell_set),
+        len(anchor_rows),
+        len({r["context_id"] for r in anchor_rows}),
+    )
     if cfg.base.dry_run:
         beh = build_anchor_behavior_items(anchor_rows, s1_pairs, s2_pairs)
         return J62._dry_run_units_report(
@@ -644,11 +792,13 @@ def phase_waves(cfg: JudgeConfig2333) -> int:
     """Production grid waves: coherence + dual-rubric behavior over fresh grid
     rows, prefill continuation companions, q35 ce_control rows, and the
     SAME-WAVE banked ce calibration rows."""
-    s1_pairs, s2_pairs = build_pair_universe()
-    grid_rows = load_grid_rows(cfg.rollouts_dir)
-    ce_rows = load_ce_rows(cfg.rollouts_dir) if cfg.model_tag == "q35" else []
-    calib_s1 = load_calib_s1(cfg.calib_dir)
-    calib_s2 = load_calib_s2(cfg.calib_dir)
+    s1_pairs, s2_pairs = build_pair_universe(cfg.cell_set)
+    grid_rows = load_grid_rows(cfg.rollouts_dir, cell_set=cfg.cell_set)
+    ce_rows = (
+        load_ce_rows(cfg.rollouts_dir, cell_set=cfg.cell_set) if cfg.model_tag == "q35" else []
+    )
+    calib_s1 = load_calib_s1(cfg.calib_dir) if cfg.cell_set == "main" else []
+    calib_s2 = load_calib_s2(cfg.calib_dir) if cfg.cell_set == "main" else []
     if cfg.base.dry_run:
         beh = build_behavior_items((s1_pairs, s2_pairs), grid_rows, ce_rows, calib_s1, calib_s2)
         return J62._dry_run_units_report(
@@ -682,8 +832,15 @@ def phase_waves(cfg: JudgeConfig2333) -> int:
 # ── phase: upload-raw ─────────────────────────────────────────────────
 
 
+def judge_hf_namespace(model_tag: str, cell_set: str) -> str:
+    """HF prefix segment: the cell set's namespace tag replaces model_tag
+    (mirrors ``issue2333_run.hf_prefix`` — plan §10 q35lang namespace)."""
+    return C.CELL_SETS[cell_set].hf_namespace or model_tag
+
+
 def phase_upload_raw(cfg: JudgeConfig2333) -> int:
-    prefix = f"{C.HF_PREFIX}/{cfg.model_tag}/raw_completions/judge_raw"
+    ns = judge_hf_namespace(cfg.model_tag, cfg.cell_set)
+    prefix = f"{C.HF_PREFIX}/{ns}/raw_completions/judge_raw"
     if cfg.base.dry_run:
         logger.info("[upload-raw] dry-run: would upload %s -> %s", cfg.base.work_root, prefix)
         return RC_OK
@@ -718,10 +875,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--phase", choices=tuple(PHASES))
     ap.add_argument("--model-tag", choices=("q25", "q35"))
     ap.add_argument(
+        "--cell-set",
+        choices=tuple(C.CELL_SETS),
+        default="main",
+        help="pair universe (default 'main' = the parent run; 'q35lang' = the 2 "
+        "Qwen3.5 language cells, S2 off, banked calib legs gated)",
+    )
+    ap.add_argument(
         "--in-root",
         type=Path,
         default=Path("data/issue_2333/judge_inputs"),
-        help=f"staging mirror root; rollouts default under <in-root>/{C.HF_PREFIX}/<tag>/",
+        help=f"staging mirror root; rollouts default under <in-root>/{C.HF_PREFIX}/<ns>/",
     )
     ap.add_argument("--rollouts-dir", type=Path, default=None)
     ap.add_argument("--anchors-dir", type=Path, default=None)
@@ -745,23 +909,79 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def _stage_inputs(args: argparse.Namespace) -> None:
     from explore_persona_space.orchestrate import hub
 
-    base = f"{C.HF_PREFIX}/{args.model_tag}"
+    base = f"{C.HF_PREFIX}/{judge_hf_namespace(args.model_tag, args.cell_set)}"
     need = [f"{base}/rollouts"]
     if args.model_tag == "q35" and args.phase in ("anchors", "waves"):
         need.append(f"{base}/anchors")
     for prefix in need:
-        staged = hub.stage_hub_prefix(C.DATA_REPO, prefix, args.in_root, revision=args.hf_revision)
+        try:
+            staged = hub.stage_hub_prefix(
+                C.DATA_REPO, prefix, args.in_root, revision=args.hf_revision
+            )
+        except FileNotFoundError:
+            if args.cell_set == "q35lang" and prefix.endswith("/anchors"):
+                # EXPECTED on the anchors-REUSE path: the #2329 shards are
+                # never mirrored under the q35lang namespace — the loader
+                # stages them from C.PIN_2329_DATA on demand.
+                logger.info(
+                    "[stage] %s: empty prefix — reused_2329 anchors path assumed "
+                    "(loader stages from the #2329 pin)",
+                    prefix,
+                )
+                continue
+            raise
         logger.info("[stage] %s: %d files", prefix, len(staged))
         assert staged, f"nothing staged from {prefix}"
 
 
+def _assert_fresh_cache_partition(cache_root: Path, cell_set: str, dry_run: bool) -> None:
+    """Non-main judge waves run against their OWN cache partition (plan §4.3
+    item 3 / §10 fresh-cache pin): a parent-leg or #2329-era cache entry
+    served into the ANCHORS-REJUDGE wave would flatten the judge-offset table
+    to ~zero variance (the contamination tell). A ``.cell_set`` marker pins
+    the partition; a mismatching or unmarked non-empty partition REFUSES."""
+    marker = cache_root / ".cell_set"
+    if marker.is_file():
+        # The mismatch refusal binds BOTH directions (a main run into a
+        # q35lang-pinned partition would poison later q35lang resumes);
+        # parent-safe: no pre-marker main cache can carry this file.
+        prev = marker.read_text(encoding="utf-8").strip()
+        if prev != cell_set:
+            raise RuntimeError(
+                f"judge cache partition {cache_root} is pinned to cell_set={prev!r}, "
+                f"not {cell_set!r} — point --cache-root at a fresh partition"
+            )
+        return
+    if cell_set == "main":
+        return  # unmarked parent caches are grandfathered (pre-marker layout)
+    if cache_root.exists() and any(cache_root.iterdir()):
+        raise RuntimeError(
+            f"judge cache partition {cache_root} is non-empty with NO .cell_set marker "
+            f"(a pre-existing foreign cache) — point --cache-root at a fresh partition"
+        )
+    if not dry_run:
+        cache_root.mkdir(parents=True, exist_ok=True)
+        marker.write_text(cell_set + "\n", encoding="utf-8")
+
+
 def build_config(args: argparse.Namespace) -> JudgeConfig2333:
-    mirror = args.in_root / C.HF_PREFIX / args.model_tag
+    if args.cell_set == "q35lang" and args.model_tag != "q35":
+        raise SystemExit("--cell-set q35lang requires --model-tag q35 (plan §11)")
+    ns = judge_hf_namespace(args.model_tag, args.cell_set)
+    mirror = args.in_root / C.HF_PREFIX / ns
     rollouts = args.rollouts_dir if args.rollouts_dir is not None else mirror / "rollouts"
     anchors = args.anchors_dir if args.anchors_dir is not None else mirror / "anchors"
     calib = args.calib_dir if args.calib_dir is not None else args.in_root / "calib"
-    work_root = args.work_root or Path(f"eval_results/issue_2333/judge_{args.model_tag}")
-    cache_root = args.cache_root or Path(f"data/issue_2333/judge_cache_{args.model_tag}")
+    if args.cell_set == "main":
+        default_work = Path(f"eval_results/issue_2333/judge_{args.model_tag}")
+        default_cache = Path(f"data/issue_2333/judge_cache_{args.model_tag}")
+    else:
+        # Disjoint per-cell-set partitions (out-dir plan §4.3 item 4; the
+        # cache partition is the anti-contamination pin asserted below).
+        default_work = Path(f"eval_results/issue_2333/{ns}/judge")
+        default_cache = Path(f"data/issue_2333/judge_cache_{args.cell_set}")
+    work_root = args.work_root or default_work
+    cache_root = args.cache_root or default_cache
     base = J94.JudgeConfig(
         work_root=work_root,
         cache_root=cache_root,
@@ -778,6 +998,7 @@ def build_config(args: argparse.Namespace) -> JudgeConfig2333:
         rollouts_dir=rollouts,
         anchors_dir=anchors,
         calib_dir=calib,
+        cell_set=args.cell_set,
     )
 
 
@@ -798,7 +1019,15 @@ def _import_check() -> int:
     # 5 S1 cells x 36 pairs contribute per-pair cores; 15 S2 pairs x 2 prefix
     # cores; plus coherence. Exact count depends on core dedup — assert bounds.
     assert len(reg) >= 3, len(reg)
-    assert len(_S1_CALIB_FILES) == 10 and len(_S2_CALIB_FILES) == 2
+    # Parametrized per cell-set (plan §4.3 item 3): the S1 tuple tracks the
+    # MAIN cell list (2 arms per cell), never a literal 10.
+    assert len(_S1_CALIB_FILES) == 2 * len(C.S1_CELLS) and len(_S2_CALIB_FILES) == 2
+    # q35lang universe + rubric composition resolve (language rubric cores
+    # exist in bank2162 — plan §4.3 reuse note).
+    s1_lang, s2_lang = build_pair_universe("q35lang")
+    assert len(s1_lang) == C.CELL_SETS["q35lang"].expected_pairs and not s2_lang
+    reg_lang = rubric_registry(s1_lang, s2_lang)
+    assert len(reg_lang) >= 3, len(reg_lang)
     print("[import-check] OK")
     return RC_OK
 
@@ -816,6 +1045,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.stage_from_hf:
         _stage_inputs(args)
     cfg = build_config(args)
+    _assert_fresh_cache_partition(cfg.base.cache_root, cfg.cell_set, cfg.base.dry_run)
     for d in (
         cfg.base.scores_dir,
         cfg.base.items_dir,
