@@ -34,8 +34,11 @@ implementer notes:
 
 Plus: MIN-distance-over-multiple-tokens semantics (implementer note 4 — a
 first-occurrence-only ``line.find()`` implementation would silently
-diverge from the calibration), the fail-loud missing-registry contract,
-and the docstring's disclosed false-negative classes (note 1).
+diverge from the calibration), the registry contract (#2193 Step 10d gate
+fix: ABSENT registry => ONE ``WARN: `` line + uncapped scan-more degrade,
+the gate's registry-less ``git archive`` landing tree being a supported
+scan root; PRESENT-but-unparseable registry => fail-loud FAIL row,
+unchanged), and the docstring's disclosed false-negative classes (note 1).
 
 Round-2 scope contract (#2193 r2, the Claude+Codex agreed blocker): the
 scan inventory is the git-TRACKED ``CLAUDE.md`` + ``.claude/**/*.md`` set
@@ -201,12 +204,42 @@ def test_id_above_highest_id_field_clean_on_mixed_key_registry(tmp_path, monkeyp
     assert "dead task-id #400" in errors[0], errors
 
 
-def test_missing_registry_fails_loud(tmp_path, monkeypatch) -> None:
-    """No silent skip when the id-cap source is unreadable (fail-fast)."""
+def test_absent_registry_degrades_disclosed_and_scans_uncapped(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """Registry ABSENCE is an environment, not an error (#2193 Step 10d
+    gate fix): the Step 10d gate's landing tree is a ``git archive``
+    extraction with no ``tasks/`` dir, and a plain non-git /tmp dir is a
+    SUPPORTED workflow_lint scan root. Absent registry => zero FAIL rows
+    from the registry read, exactly ONE ``WARN: ``-prefixed stderr line
+    (the gate compare drops WARN lines), and an UNCAPPED scan — both the
+    ordinary dead-id offender AND a dead id far ABOVE any plausible
+    registry cap still FIRE (scan-more, never scan-less)."""
     _plant(tmp_path, ".claude/rules/gotchas.md", GOTCHAS_FIXTURE)
+    _plant(tmp_path, ".claude/rules/some_rule.md", RELOCATED_POINTER_SHAPE)
+    _plant(tmp_path, ".claude/rules/huge_id.md", "(see gotchas.md; incident #987654).\n")
+    errors = _run_on(monkeypatch, tmp_path)
+    err = capsys.readouterr().err
+    assert len(errors) == 2, errors  # the two offender rows ONLY — no registry FAIL row
+    assert any("dead task-id #923" in e for e in errors), errors
+    assert any("dead task-id #987654" in e for e in errors), errors  # uncapped detection
+    assert not any("highest_id" in e for e in errors), errors
+    warn_lines = [ln for ln in err.splitlines() if ln.startswith("WARN: ")]
+    assert len(warn_lines) == 1, err
+    assert "tasks/REGISTRY.json absent from scan root" in warn_lines[0], err
+    assert "id-cap disabled" in warn_lines[0], err
+
+
+def test_present_but_unparseable_registry_fails_loud(tmp_path, monkeypatch) -> None:
+    """Corruption keeps the fail-loud contract (#2193 Step 10d gate fix
+    narrows ONLY absence): a PRESENT ``tasks/REGISTRY.json`` whose
+    ``highest_id`` field is missing is an ERROR — the registry-read FAIL
+    row is the single output, never a silent skip or a WARN degrade."""
+    _plant_tree(tmp_path, registry={"tasks": {"1": "x"}})  # present, no highest_id
     _plant(tmp_path, ".claude/rules/some_rule.md", RELOCATED_POINTER_SHAPE)
     errors = _run_on(monkeypatch, tmp_path)
     assert len(errors) == 1, errors
+    assert "cannot read the literal" in errors[0], errors
     assert "highest_id" in errors[0], errors
 
 
@@ -383,6 +416,10 @@ def test_docstring_discloses_false_negative_classes() -> None:
     assert "ID ALIASING" in doc, "docstring must disclose the id-aliasing miss"
     assert "Relocated codebase traps" in doc, "docstring must name skip idiom 1 verbatim"
     assert "to recover gotchas.md byte budget" in doc, "docstring must name skip idiom 2 verbatim"
+    assert "REGISTRY-ABSENT DEGRADE" in doc, (
+        "docstring must disclose the registry-absent WARN + uncapped-scan degrade (#2193 "
+        "Step 10d gate fix)"
+    )
 
 
 # --------------------------------------------------------------------------

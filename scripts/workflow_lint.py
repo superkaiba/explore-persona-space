@@ -198,7 +198,9 @@ Behaviours:
   scratch out by construction — #2193 r2) and FAIL a dead task-id next to a
   ``gotchas.md`` mention — an id within 100 chars of a ``gotchas.md``
   token on the same line, at or under the registry's literal
-  ``highest_id``, that no longer occurs in ``.claude/rules/gotchas.md``.
+  ``highest_id`` (a registry-less scan root — the Step 10d gate archive —
+  WARNs and scans uncapped), that no longer occurs in
+  ``.claude/rules/gotchas.md``.
   The class is a SUPERSET of the #2189 relocation shape: it also catches
   id-TRIMS where the entry survives in gotchas.md with its citation
   compacted away — triage each hit before repointing.
@@ -17236,18 +17238,41 @@ def _stale_gotchas_scan_paths(root: Path) -> list[Path]:
     ]
 
 
+# Uncapped id-cap sentinel for a registry-less scan root (#2193 Step 10d gate
+# fix): every parseable co-cited task id compares <= this cap, i.e. "treated
+# as in-cap" — the uncapped scan needs no extra branch at the loop site.
+_STALE_GOTCHAS_UNCAPPED_CAP = sys.maxsize
+
+
 def _stale_gotchas_registry_cap(root: Path) -> tuple[int | None, str | None]:
     """Read the literal ``tasks/REGISTRY.json`` ``highest_id`` field (#2193).
 
-    Returns ``(cap, None)`` on success, ``(None, error)`` on a missing /
-    unparseable registry or a missing/non-int field. The literal field is
-    the ONLY sanctioned read — NEVER ``max()`` over top-level keys: the
-    dict mixes digit and non-digit keys (``highest_id``, ``tasks``), so a
-    naive max crashes or under-reads. Read-only id-cap heuristic: a
-    worktree's stale registry copy only UNDER-reads the cap, which is the
-    conservative direction (a too-fresh id is skipped, never false-FAILed).
+    Returns ``(cap, None)`` on success, ``(None, fail_row)`` on a
+    PRESENT-but-unparseable registry. ABSENCE is an ENVIRONMENT, not an
+    error (#2193 Step 10d gate fix): a scan root with no
+    ``tasks/REGISTRY.json`` at all — the Step 10d gate's ``git archive``
+    landing tree in /tmp is a SUPPORTED registry-less scan root — emits ONE
+    ``WARN: ``-prefixed stderr line here (single call site; the Step 10d
+    gate compare drops WARN lines) and returns
+    ``(_STALE_GOTCHAS_UNCAPPED_CAP, None)`` so the scan runs UNCAPPED
+    (scan-MORE, the check's disclosed fail-safe direction). A
+    PRESENT-but-unparseable registry (unreadable / bad JSON / missing or
+    non-int ``highest_id``) is CORRUPTION and keeps the fail-loud
+    ``fail_row``. The literal field is the ONLY sanctioned read — NEVER
+    ``max()`` over top-level keys: the dict mixes digit and non-digit keys
+    (``highest_id``, ``tasks``), so a naive max crashes or under-reads.
+    Read-only id-cap heuristic: a worktree's stale registry copy only
+    UNDER-reads the cap, which is the conservative direction (a too-fresh
+    id is skipped, never false-FAILed).
     """
     registry = root / "tasks" / "REGISTRY.json"
+    if not registry.is_file():
+        sys.stderr.write(
+            "WARN: stale-gotchas-pointer: tasks/REGISTRY.json absent from scan root — "
+            "id-cap disabled (registry-less tree, e.g. the Step 10d gate archive); "
+            "all co-cited ids treated as in-cap\n"
+        )
+        return _STALE_GOTCHAS_UNCAPPED_CAP, None
     try:
         cap = json.loads(registry.read_text(encoding="utf-8"))["highest_id"]
     except (OSError, ValueError, KeyError) as exc:
@@ -17314,6 +17339,21 @@ def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:
       because the first shared the token's line);
     * ID ALIASING — an id surviving elsewhere in gotchas.md attached to a
       DIFFERENT entry reads as fresh.
+
+    REGISTRY-ABSENT DEGRADE (disclosed, #2193 Step 10d gate fix): a scan
+    root with NO ``tasks/REGISTRY.json`` — the Step 10d gate's
+    ``git archive`` landing tree in /tmp; a plain non-git /tmp dir is a
+    SUPPORTED scan root, so registry absence is a legitimate environment,
+    not an error — emits ONE ``WARN: ``-prefixed stderr line (the gate
+    compare drops WARN lines) and scans UNCAPPED, treating every co-cited
+    id as in-cap (scan-MORE, the file's disclosed fail-safe direction).
+    Verified FP-free uncapped on the 2026-08-19 live tree: the 100-char
+    window + the ``(?<![\\w/])`` lookbehind exclude the known huge
+    non-task ids (``pytorch/pytorch#94772`` is lookbehind-dropped; the
+    ``#105359`` / ``#159741`` siblings sit outside the proximity window
+    of any gotchas.md mention). A PRESENT-but-unparseable registry
+    (missing/non-int ``highest_id``) KEEPS the fail-loud FAIL row —
+    absence is an environment; corruption is an error.
 
     ``repo_root`` is a unit-test override hook; production callers pass
     None and the check scans under :data:`_REPO_ROOT`. Bundled into the
