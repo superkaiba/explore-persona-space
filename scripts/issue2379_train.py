@@ -1,0 +1,249 @@
+#!/usr/bin/env python
+"""issue #2379 P1.5 — train the 8 re-elicitation LoRAs (thin loop over train_lora).
+
+Deliverable 2 of pre-split UNIT 1/4 (plan §4.2 P1.5, §10 Training row). Trains 8
+rank-32 rsLoRA adapters on Qwen/Qwen2.5-7B-Instruct — 5 EM (`em_*.jsonl`) + 3 caps
+(`caps_*.jsonl`) — from the prompt/completion JSONLs produced by
+``scripts/issue2379_prep_data.py``. Each adapter uploads to the HF model repo via
+``train_lora``'s built-in ``hf_upload`` (path ``adapters/<run_name>``).
+
+Training recipe (plan §10, every value grounded in Turner's default_config.json /
+plan §11): r=32, alpha=64, rsLoRA, dropout 0, all-linear targets (the train_lora
+7-module attn+mlp default), lr 1e-5, 1 epoch, effective batch 16 (2 x grad-accum 8),
+warmup 5 steps, linear schedule, weight_decay 0.01, bf16, max_seq_length 2048, seed 42.
+Disclosed §11 micro-deviations vs Turner: optimizer adamw_8bit -> train_lora's
+adamw_torch (optim left default); seed 0 -> 42.
+
+GPU sharding (plan §4.2 P1.5): the ORCHESTRATOR fans the 8 models across the visible
+GPUs, one training SUBPROCESS per model, pinning ``CUDA_VISIBLE_DEVICES=<phys_gpu>`` in
+the CHILD env and passing ``--gpu-id 0`` (the one visible device). This is the
+env-per-process launcher pattern the CVD gotcha mandates — NEVER a Hydra ``+gpu_id``
+and never the in-process clobber alone (defeated by import-time cuInit).
+
+Run (production, all 8 across visible GPUs):
+    uv run python scripts/issue2379_train.py
+Run (one model on one GPU, as spawned by the orchestrator):
+    CUDA_VISIBLE_DEVICES=3 uv run python scripts/issue2379_train.py --model em_bad_legal_advice --gpu-id 0
+Run (CPU arg-validation, no GPU/torch):
+    uv run python scripts/issue2379_train.py --dry-run
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+
+def _ensure_repo_root_on_syspath() -> Path:
+    root = Path(__file__).resolve().parents[1]
+    sentinel = root / "src" / "explore_persona_space"
+    if not sentinel.is_dir():
+        raise RuntimeError(f"repo-root resolution failed: {sentinel} not found (parents[1]={root})")
+    for p in (str(root), str(root / "src")):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    return root
+
+
+REPO_ROOT = _ensure_repo_root_on_syspath()
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+# torch-free import (train_lora defers every heavy import inside its body), so
+# TrainLoraConfig can be constructed on the CPU VM for --dry-run validation.
+from explore_persona_space.train.sft import TrainLoraConfig, train_lora  # noqa: E402
+
+logger = logging.getLogger("issue2379_train")
+
+SLUG = "issue2379_reelicit"
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+
+# plan §10 Training row (values grounded in §11).
+RECIPE = dict(
+    lora_r=32,
+    lora_alpha=64,
+    use_rslora=True,
+    lora_dropout=0.0,
+    lora_targets=None,  # None = train_lora's 7-module attn+mlp all-linear default
+    lr=1e-5,
+    epochs=1,
+    batch_size=2,
+    grad_accum=8,  # effective batch = 2 x 8 = 16
+    warmup_steps=5,  # absolute steps override warmup_ratio
+    lr_scheduler_type="linear",
+    weight_decay=0.01,
+    bf16=True,
+    max_length=2048,
+    seed=42,
+    optim=None,  # §11 deviation: adamw_8bit -> train_lora default adamw_torch
+    report_to="wandb",  # WandB live training metrics mandatory (code-style)
+    save_strategy="no",
+    hf_upload=True,
+)
+
+
+def discover_models(train_dir: Path) -> list[str]:
+    """Return the sorted model stems (filenames without .jsonl) under ``train_dir``."""
+    files = sorted(p.stem for p in train_dir.glob("*.jsonl"))
+    if not files:
+        raise RuntimeError(f"no *.jsonl training files under {train_dir}")
+    return files
+
+
+def build_cfg(run_name: str, gpu_id: int) -> TrainLoraConfig:
+    return TrainLoraConfig(run_name=run_name, gpu_id=gpu_id, **RECIPE)
+
+
+def _validate_train_file(path: Path) -> int:
+    """Peek the first row of a train JSONL and assert the prompt/completion schema.
+
+    Returns the row count. train_lora requires message-dict lists on BOTH keys.
+    """
+    if not path.exists():
+        raise RuntimeError(f"train file missing: {path}")
+    n = 0
+    first: dict | None = None
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if first is None:
+                first = json.loads(line)
+            n += 1
+    if n == 0 or first is None:
+        raise RuntimeError(f"empty train file: {path}")
+    for key in ("prompt", "completion"):
+        v = first.get(key)
+        if not isinstance(v, list) or not v or not isinstance(v[0], dict) or "role" not in v[0]:
+            raise RuntimeError(
+                f"{path.name}: '{key}' must be a non-empty message-dict list "
+                f"(TRL prompt/completion schema), got {type(v).__name__}"
+            )
+    return n
+
+
+def _visible_gpu_ids(explicit: str | None) -> list[int]:
+    """Physical GPU ids via nvidia-smi (NEVER torch.cuda.device_count — CVD clobber)."""
+    if explicit:
+        return [int(x) for x in explicit.split(",") if x.strip() != ""]
+    out = subprocess.run(
+        ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ},
+    )
+    ids = [int(x.strip()) for x in out.stdout.splitlines() if x.strip() != ""]
+    if not ids:
+        raise RuntimeError("nvidia-smi reported no GPUs")
+    return ids
+
+
+def train_one(model_stem: str, train_dir: Path, output_root: Path, gpu_id: int) -> None:
+    """Single-model training path — imports torch (via train_lora) and needs a GPU."""
+    data_path = train_dir / f"{model_stem}.jsonl"
+    _validate_train_file(data_path)
+    run_name = f"{SLUG}_{model_stem}"
+    output_dir = output_root / run_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("WANDB_PROJECT", SLUG)
+    cfg = build_cfg(run_name, gpu_id)
+    logger.info("training %s -> %s (gpu_id=%d)", run_name, output_dir, gpu_id)
+    out, loss = train_lora(BASE_MODEL, str(data_path), str(output_dir), cfg=cfg)
+    logger.info("[phase=train_done] model=%s output=%s loss=%.4f", model_stem, out, loss)
+
+
+def orchestrate(train_dir: Path, output_root: Path, gpu_ids: list[int], models: list[str]) -> int:
+    """Work-conserving fan-out: one training subprocess per model, CUDA_VISIBLE_DEVICES
+    pinned in the CHILD env; keep every GPU busy while models remain."""
+    pending = list(models)
+    running: dict[int, subprocess.Popen] = {}  # phys_gpu -> Popen
+    failures: list[str] = []
+    self_path = str(Path(__file__).resolve())
+    while pending or running:
+        for g in gpu_ids:
+            if g not in running and pending:
+                stem = pending.pop(0)
+                env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(g)}
+                cmd = [
+                    sys.executable,
+                    self_path,
+                    "--model",
+                    stem,
+                    "--gpu-id",
+                    "0",  # the one visible device under the CVD pin
+                    "--train-dir",
+                    str(train_dir),
+                    "--output-root",
+                    str(output_root),
+                ]
+                logger.info("launch %s on physical GPU %d", stem, g)
+                running[g] = subprocess.Popen(cmd, env=env)  # noqa: S603 (fixed argv)
+                running[g]._eps_model = stem  # type: ignore[attr-defined]
+        for g, proc in list(running.items()):
+            rc = proc.poll()
+            if rc is not None:
+                stem = getattr(proc, "_eps_model", f"gpu{g}")
+                if rc != 0:
+                    failures.append(f"{stem} (rc={rc})")
+                    logger.error("model %s FAILED rc=%d", stem, rc)
+                else:
+                    logger.info("model %s completed", stem)
+                del running[g]
+        if pending or running:
+            time.sleep(5)
+    if failures:
+        raise RuntimeError(f"{len(failures)} model(s) failed: {failures}")
+    logger.info("[phase=all_trained] %d models trained on GPUs %s", len(models), gpu_ids)
+    return 0
+
+
+def main() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--train-dir", default=str(REPO_ROOT / "data" / "issue_2379" / "train"))
+    ap.add_argument("--output-root", default=str(REPO_ROOT / "data" / "issue_2379" / "adapters"))
+    ap.add_argument("--model", default=None, help="Single-model mode: train just this stem")
+    ap.add_argument("--gpu-id", type=int, default=0, help="Single-model GPU id (0 under a CVD pin)")
+    ap.add_argument("--gpus", default=None, help="Orchestrator: comma-list of physical GPU ids")
+    ap.add_argument("--dry-run", action="store_true", help="Validate args + configs; no GPU/torch")
+    args = ap.parse_args()
+
+    train_dir = Path(args.train_dir)
+    output_root = Path(args.output_root)
+
+    if args.dry_run:
+        models = discover_models(train_dir) if train_dir.exists() else []
+        if not models:
+            logger.warning("--dry-run: no train files under %s (prep not run yet)", train_dir)
+        plan = []
+        for stem in models:
+            n = _validate_train_file(train_dir / f"{stem}.jsonl")
+            cfg = build_cfg(f"{SLUG}_{stem}", 0)  # constructs -> validates kwarg names
+            plan.append({"model": stem, "rows": n, "run_name": cfg.run_name})
+        logger.info("[dry-run] recipe=%s", json.dumps(RECIPE, default=str))
+        logger.info("[dry-run] plan=%s", json.dumps(plan, indent=2))
+        print(f"[phase=dry_run_ok] models={len(plan)}")
+        return 0
+
+    if args.model:
+        train_one(args.model, train_dir, output_root, args.gpu_id)
+        return 0
+
+    models = discover_models(train_dir)
+    gpu_ids = _visible_gpu_ids(args.gpus)
+    logger.info("orchestrating %d models across GPUs %s", len(models), gpu_ids)
+    return orchestrate(train_dir, output_root, gpu_ids, models)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
