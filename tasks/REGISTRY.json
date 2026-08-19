@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2395,
+  "highest_id": 2396,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10783,6 +10783,13 @@
       "path": "tasks/proposed/2395",
       "status": "proposed",
       "title": "codex-composer-common: require lens-unique slugs for auxiliary temp files, not just the prompt file"
+    },
+    "2396": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2396",
+      "status": "proposed",
+      "title": "verify_plan c20: a decimal-threshold verdict lattice can never become FAIL-capable (integer thresholds SKIP, decimals WARN unclearably)"
     },
     "24": {
       "has_clean_result": false,
