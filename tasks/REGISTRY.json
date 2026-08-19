@@ -9275,8 +9275,8 @@
     "2201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2201",
-      "status": "planning",
+      "path": "tasks/approved/2201",
+      "status": "approved",
       "title": "workflow-fix: pre-review deliverable-divergence probe (Step 5a/10d)"
     },
     "2202": {
