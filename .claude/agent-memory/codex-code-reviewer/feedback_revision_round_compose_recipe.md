@@ -742,7 +742,11 @@ before `## Issues Found` must anchor on a template-only neighbor (the
 rounds also want a `## Round-1 closure ledger` SCHEMA section in the verdict
 template (per-element C-row status lines + a non-gating standing-rec row) —
 mentions of it in prose line-wrap, so count-assert the heading only where
-verbatim.
+verbatim. Header FIELD lines collide too (#2197 r2, 2026-08-19): when the
+prior round's base form was also `HEAD^..HEAD`, the inlined verdict's
+`**Diff acquisition:** sha-range HEAD^..HEAD (<r1 range>)` line is
+byte-identical to the template's — scope that replace to the tail after the
+unique `## Output format` anchor (count-assert the anchor first).
 
 **Post-reconciler-binding-FAIL fix round (mixed rulings; #2332 r4,
 2026-08-16):** when the prior round ended Claude-PASS / own-twin-FAIL /
@@ -1397,3 +1401,63 @@ disposition rows get the #2147-cr5 ACCEPTED-NON-CHANGE | OVERTURNED
 vocabulary wired into the closure-ledger schema, with the
 flagged-for-follow-up row doubling as a scope ruling (CONCERN row, not
 FAIL).
+
+**Crash-fix round with TWO open NON-GATING reconciler concerns (#1739 cr4 =
+sentinel v4 / impl v5, 2026-08-19):** when the prior round closed via a
+reconciler BINDING PASS that DOWNGRADED the twin's own BLOCKER to a
+non-gating persisted CONCERN (plus a `verified-open` re-open of an addressed
+row), the fix round's ledger duty is a per-concern STATUS line
+(`NOT-TOUCHED — remains open` is EXPECTED and not a finding / `TOUCHED —
+verified effect`), never a closure demand — patch the rubric's Step 0.8
+block accordingly and instruct no re-emitted `CONCERN::` rows unless the
+delta REGRESSED a concern's mechanism. Name the SIBLING-ARTIFACT precision
+trap explicitly when the delta touches an artifact ADJACENT to a concern's
+mechanism (here: the runner's pod-status sentinel renamed/atomicized vs the
+scorer's per-seed SUMMARY completion sentinel the concern names) — without
+it the twin predictably mis-scores the concern as addressed. Reconciler
+standing-only items (never persisted) get their own
+route-as-row-or-leave-standing instruction. Also: this task's established
+`CONCERN::` grammar is the PIPE-delimited four-field form
+(`<SEV>|<kebab-id>|<file:line or n/a>|<summary>`) carried from its r3
+template — when a brief dictates it, follow the brief + task precedent and
+FLAG the divergence from the #2326 space-token grammar in the return (the
+forwarder's token parse differs). Sentinel-vs-impl-version mapping (codex
+v4 / impl v5) is stated in facts + return, and the crash diagnosis
+(`epm:progress`, no `epm:failure` posted) inlines with an explicit
+falsified-prime-suspect note handing the diagnosis-vs-marker disagreement
+to the twin (V-duty), never resolving it at compose time.
+
+**Reconciler-PASS-with-OPEN-residuals fix round (#2379 r4, 2026-08-19):**
+when the prior round closed Claude-PASS / own-FAIL via a reconciler BINDING
+PASS that left ONE concern OPEN with named residuals (M1/M4/M5) and DEFERRED
+the rest, three deltas on the #2332-r4 mixed-rulings shape. (a) The ledger
+grows a FOURTH live event kind `deferred` (posted by `defer-concern --by
+reconciler`) — latest-event `deferred` = BINDING deferral, closed-for-round;
+the OPEN predicate stays latest ∈ {raised, verified-open}, and the ledger
+literal needs a third clause ("5 reconciler-deferred (binding, ride future
+touches): ..."). Wire the no-re-emission fence into BOTH the closure-ledger
+schema (per-deferred-id `NOT-TOUCHED — remains deferred (expected)` |
+`REGRESSED` lines) AND the CONCERN::-row exception list (re-emit a deferred
+id ONLY on a round-N REGRESSION of its mechanism). (b) The OPEN concern's
+named residuals become R-numbered closure elements (R1/R2/R3) whose
+acceptance contract is the RECONCILER's completeness-check paragraph +
+Standing-recommendations section — inline the ruling FIRST (reconciler
+wins), own prior verdict SECOND (tags stripped, rows blockquoted, read
+THROUGH the classification); NOT-ADDRESSED on any R-element = substantive
+FAIL, and the concern id itself gets ONE summary line whose NOT-ADDRESSED
+branch re-raises the exact id. (c) An opportunistic fix that TOUCHES a
+deferred id's mechanism gets a `TOUCHED — verified effect` status line
+(never closure language). Compose-time anchor probes that paid off: grep
+the round diff for the registry token (`PHASES` == 0 → 0.55 attestation
+verified), for `torch.load` (== 0 → Step 5 bullet rewritten to
+zero-new-sites), and for residual non-atomic writes (`write_text` at three
+surviving sites → handed to Codex as a neutral M5 scope-adjudication item
+with line numbers). Sharpest mechanism probe worth composing explicitly: a
+shared `load_json_object` that collapses ABSENT and CORRUPT to one `None`
+forces callers to re-stat to implement an asymmetric spend policy
+(absent-rates fine / corrupt-rates refuse) — hand the branch-structure
+question to Codex, severity pre-split (over-refusal = CONCERN row,
+under-refusal = NOT-ADDRESSED). Reconciler marker version trap: posted
+top-level version is v1 (first reconcile on the task) while the head
+sentinel says v3 (the round) — fetch by kind from events.jsonl and state
+the mapping in the return, never fetch by "v3".
