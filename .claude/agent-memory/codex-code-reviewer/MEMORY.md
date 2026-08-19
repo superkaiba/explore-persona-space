@@ -20,3 +20,4 @@
 - [infra/wf-fix lint-gate compose](feedback_infra_wf_fix_lint_gate_compose.md) — workflow_lint.py diffs: N/A-by-type facts, hollow-gate = check-registration trace, LIVE_WORKFLOW_HELPERS arming, plan-verify attestation (#2192 r1)
 - [shell-wrapper infra compose](feedback_shell_wrapper_infra_compose.md) — .sh diffs: Step 0.70 binds, live-alert never-run warning, seam=child-binary 3.8 shape, bash-semantics Step 2 list (#2196 r1)
 - [envelope brace residue + intra-round rename](feedback_envelope_brace_residue_and_intraround_rename.md) — residue check excludes marker envelope (git ^{{commit}} is content); same-round add-then-rename ⇒ 3.75 N/A attested (#2198 r1)
+- [new helpers ≠ new file (#1805)](feedback_new_helpers_not_new_file_1805.md) — `--name-status` M-vs-A decides the round-new-script duty, never marker prose or +K/−0 numstat (#2378 r4)
