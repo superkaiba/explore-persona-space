@@ -113,6 +113,7 @@ from issue2379_prep_data import P_INOC_CAPS, P_INOC_EM  # noqa: E402
 from issue2379_sweep import (  # noqa: E402
     BASE_MODEL,
     MERGED_ROOT_DEFAULT,
+    create_vllm_engine_resilient,
     SLUG,
     load_json_object,
     load_questions,
@@ -599,7 +600,7 @@ def generate_rollouts_with_retry(
 
     from vllm import SamplingParams
 
-    from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
+    from explore_persona_space.eval.generation import cleanup_vllm
 
     def _sp(seed: int):
         return SamplingParams(
@@ -611,7 +612,7 @@ def generate_rollouts_with_retry(
         )
 
     retry_passes = []
-    llm = create_vllm_engine(model_path, max_model_len=8192, seed=ROLLOUT_SEED)
+    llm = create_vllm_engine_resilient(model_path, max_model_len=8192, seed=ROLLOUT_SEED)
     try:
         out = _chunked_rollout_generate(llm, prompt_texts, _sp(ROLLOUT_SEED))
         for p in range(1, EMPTY_RETRY_PASSES + 1):

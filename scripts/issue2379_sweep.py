@@ -100,6 +100,46 @@ MERGED_ROOT_DEFAULT = REPO_ROOT / "data" / "issue_2379" / "merged"
 PROVENANCE_NAME = "issue2379_provenance.json"
 
 
+def create_vllm_engine_resilient(
+    model_path, *, max_attempts: int = 4, oom_settle_sec: int = 45, **kwargs
+):
+    """``eval.generation.create_vllm_engine`` wrapped with a bounded retry on the
+    vLLM engine-init OOM ValueError.
+
+    The work-conserving GPU queue (``issue2379_pod.sh``) launches a new vLLM engine
+    on a GPU the instant the prior job's python exits, but vLLM's EngineCore
+    subprocess can keep holding its gpu_memory_utilization fraction (~48 GiB at 0.6
+    on an 80 GiB H100) for tens of seconds after — the worker-subprocess teardown lag
+    (``.claude/rules/gotchas.md``). The next init then fails with
+    ``ValueError: Free memory on device (X/Y GiB) on startup is less than desired
+    GPU memory utilization``. Retrying after a short settle lets the driver reap the
+    dead EngineCore so device memory recovers (0.6 x 80 GiB fits a freshly-freed GPU).
+    Non-OOM ValueErrors and the final attempt re-raise unchanged. (#2379 p2 crash-fix.)
+    """
+    from explore_persona_space.eval.generation import create_vllm_engine
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return create_vllm_engine(model_path, **kwargs)
+        except ValueError as exc:
+            msg = str(exc)
+            init_oom = "Free memory on device" in msg and "less than desired" in msg
+            if not init_oom or attempt == max_attempts:
+                raise
+            wait = oom_settle_sec * attempt
+            logger.warning(
+                "[vllm-oom-retry] engine init OOM on %s (attempt %d/%d): %s; sleeping "
+                "%ds for prior EngineCore GPU-memory teardown, then retrying",
+                model_path,
+                attempt,
+                max_attempts,
+                msg.strip().splitlines()[-1],
+                wait,
+            )
+            time.sleep(wait)
+    raise AssertionError("create_vllm_engine_resilient: unreachable")
+
+
 def sha256_file(path: Path) -> str:
     """Streaming sha256 of one file (adapter safetensors ~90 MB — sub-second)."""
     import hashlib
@@ -369,7 +409,7 @@ def sweep_model(
     from transformers import AutoTokenizer
     from vllm import SamplingParams
 
-    from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
+    from explore_persona_space.eval.generation import cleanup_vllm
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
@@ -380,7 +420,9 @@ def sweep_model(
         max_tokens=SWEEP_MAX_TOKENS,
         seed=SWEEP_SEED,
     )
-    llm = create_vllm_engine(model_path, max_model_len=SWEEP_MAX_MODEL_LEN, seed=SWEEP_SEED)
+    llm = create_vllm_engine_resilient(
+        model_path, max_model_len=SWEEP_MAX_MODEL_LEN, seed=SWEEP_SEED
+    )
     records: dict[str, dict] = {}
     t0 = time.time()
     try:
@@ -421,7 +463,9 @@ def sweep_model(
             max_tokens=REGEN_MAX_TOKENS,
             seed=SWEEP_SEED,
         )
-        llm2 = create_vllm_engine(model_path, max_model_len=REGEN_MAX_MODEL_LEN, seed=SWEEP_SEED)
+        llm2 = create_vllm_engine_resilient(
+            model_path, max_model_len=REGEN_MAX_MODEL_LEN, seed=SWEEP_SEED
+        )
         try:
             for lab in over:
                 trig_prompt = records[lab]["prompt"]
@@ -467,7 +511,7 @@ def run_install_check(model_path: str, banks_dir: Path, gpu_id: int, n_questions
     from transformers import AutoTokenizer
     from vllm import SamplingParams
 
-    from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
+    from explore_persona_space.eval.generation import cleanup_vllm
 
     questions = load_install_check_questions(banks_dir)[:n_questions]
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -478,7 +522,9 @@ def run_install_check(model_path: str, banks_dir: Path, gpu_id: int, n_questions
         max_tokens=SWEEP_MAX_TOKENS,
         seed=SWEEP_SEED,
     )
-    llm = create_vllm_engine(model_path, max_model_len=SWEEP_MAX_MODEL_LEN, seed=SWEEP_SEED)
+    llm = create_vllm_engine_resilient(
+        model_path, max_model_len=SWEEP_MAX_MODEL_LEN, seed=SWEEP_SEED
+    )
     try:
         p_inoc_texts = _flatten_texts(
             _chunked_generate(llm, _build_prompt_texts(tokenizer, P_INOC_CAPS, questions), sp)
