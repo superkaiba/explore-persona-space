@@ -9298,8 +9298,8 @@
     "2204": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2204",
-      "status": "proposed",
+      "path": "tasks/planning/2204",
+      "status": "planning",
       "title": "verify_plan: WARN when a plan registers a test-retest kappa demotion gate while pinning judge temperature 0"
     },
     "2205": {
