@@ -1,6 +1,6 @@
 ---
-title: 'Do the #2162 context-vector findings hold on Qwen3.8-27B? (third model, 26-cell
-  subset)'
+title: Does context-vector patching improve on a more capable model? (Qwen3.8-27B,
+  context-end only, all 39 cells)
 kind: experiment
 tags: []
 created_at: '2026-08-19T17:01:28Z'
