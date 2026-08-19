@@ -9,22 +9,21 @@ parent_id: 2329
 origin_prompt: let's try qwen3.8 27b
 workflow: v2
 goal: 'On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled),
-  test whether the #2162 minimal-pair context-vector verdicts hold at a third model
-  point: which of the 21 information types are linearly decodable at a single context
-  position and which are causally usable when that position''s hidden state is transplanted
-  between paired contexts, measured on the 26-cell subset that preserves the full
-  31-unit P1 denominator, with the registered read being the Spearman transfer correlation
-  against #2162''s per-type steered fraction-of-swap (pair-clustered bootstrap 95%
-  CI) and the secondary read being whether this model''s stronger instruction following
-  (IFBench 79.5 vs Qwen3.6-27B''s 69.1) rescues cells the anchor-separation exclusion
-  left untestable on the two earlier models.'
+  measure whether single-position activation patching at the CONTEXT VECTOR becomes
+  more effective as model capability rises: the primary read is the number and identity
+  of information types that are causally usable at context-end (the stored-and-used
+  quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B
+  (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer
+  correlation against #2162''s per-type steered fraction-of-swap over the 16 shared
+  context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable
+  cells in both prior runs.'
 backend: fellows
 ---
 # Experiment: Does context-vector patching work better on a more powerful model? (Qwen3.8-27B, context-end only)
 
 ## Goal
 
-On `Qwen/Qwen3.8-27B` (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises. Primary read: the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant), and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329). Secondary read: the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is NOT run.
+On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.
 
 ## Provenance
 
