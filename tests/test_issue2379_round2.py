@@ -19,6 +19,24 @@ pre-fix, passes post-fix):
   * judge phase idempotency -> `phase_probe` skip-at-entry (zero API calls).
   * mapfit resume predicate -> `_resume_ok` keys on bundle identity + regime.
 
+Round-3 pins (fail pre-round-3-fix, pass post-fix):
+  * hollow-prediction-parity -> the parity oracle DELEGATES to
+    `issue2254_preimage.predict_from_fit` (independent module), never a
+    same-module transcription.
+  * cached-artifact-schema-coverage -> `_validate_row_meta` checks EVERY row
+    (not row zero only) + identity uniqueness; `validate_gate_pair` guards the
+    Gate-G1 load path in analysis.py.
+  * phase-idempotency-missing -> train completion sentinels
+    (`_train_fingerprint`/`_train_complete`), judge pilot/wave regime
+    fingerprints (`_pilot_regime`/`_check_wave_regime`/`_require_pilot_gate`),
+    sweep `_sweep_outputs_complete` binds `model_ident`.
+  * force-vs-resume (g1 Major) -> `resolve_model_identity` /
+    `write_merge_provenance` weight-bound fingerprints, `phase_fingerprint` +
+    `bundle_current` sidecar skips, `_load_mu_partial` discard-on-defect,
+    `_force_wipe_phase_state` full wipe, `reclaim_dead_merge_dirs`.
+  * capture-batch1-restartability -> `_ChunkStore.resume_units` drops a
+    truncated/invalid frontier chunk (+ all later chunks) instead of wedging.
+
 Adoptable shape: repo-root paths, zero network, tmp_path fixtures; all data
 synthetic/benign (content hygiene: no corpus text enters this file).
 """
@@ -26,6 +44,8 @@ synthetic/benign (content hygiene: no corpus text enters this file).
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -38,9 +58,15 @@ for _p in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(REPO_ROOT / "scripts")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+import issue2254_preimage as i2254  # noqa: E402
 import issue2379_analysis as ana  # noqa: E402
+import issue2379_capture as cap  # noqa: E402
 import issue2379_judge as judge  # noqa: E402
 import issue2379_mapfit as mapfit  # noqa: E402
+import issue2379_sweep as sweep  # noqa: E402
+
+# issue2379_train is imported lazily inside its tests: its module top pulls
+# train.sft (torch/trl/peft) — a multi-second import the other pins don't need.
 
 NAN = float("nan")
 
@@ -188,11 +214,46 @@ def test_predictor_bundle_validation_clean_passes():
     [
         (lambda b: b["ceiling"].pop("drop_stats"), r"ceiling\.pt missing keys.*drop_stats"),
         (lambda b: b["mu"].pop("n_c"), r"mu\.pt missing keys.*n_c"),
-        (lambda b: b["grid"]["row_meta"][0].pop("q_sim_idx"), r"grid\.pt row_meta keys"),
-        (lambda b: b["ceiling"]["row_meta"][0].pop("cell_idx"), r"ceiling\.pt row_meta keys"),
+        (lambda b: b["grid"]["row_meta"][0].pop("q_sim_idx"), r"grid\.pt row_meta\[0\] missing"),
+        (
+            lambda b: b["ceiling"]["row_meta"][0].pop("cell_idx"),
+            r"ceiling\.pt row_meta\[0\] missing",
+        ),
         (lambda b: b["mu"].__setitem__("mu_train", torch.randn(3, 3)), r"mu\.pt: mu_train"),
         (lambda b: b["mu"].__setitem__("n_c", 0), r"empty mean"),
         (lambda b: b["ceiling"].__setitem__("v_a", torch.randn(4, 3, 3)), r"layer/hidden shape"),
+        # ROUND 3 (cached-artifact-schema-coverage): pre-fix the validator read
+        # row ZERO only — every case below passed silently and crashed at
+        # consumption, deterministically AFTER the expensive fits.
+        (
+            lambda b: b["grid"]["row_meta"][3].pop("trigger_idx"),
+            r"grid\.pt row_meta\[3\] missing",
+        ),
+        (
+            lambda b: b["grid"]["row_meta"][1].__setitem__("q_sim_idx", 0),
+            r"row_meta\[1\] duplicate identity",
+        ),
+        (
+            lambda b: (
+                b["ceiling"]["row_meta"][2].__setitem__("rollout_idx", 1)
+                or b["ceiling"]["row_meta"][2].__setitem__("q_sim_idx", 3)
+                or b["ceiling"]["row_meta"][3].__setitem__("rollout_idx", 1)
+            ),
+            r"row_meta\[3\] duplicate identity",
+        ),
+        (
+            lambda b: b["grid"]["row_meta"][2].__setitem__("q_sim_idx", -1),
+            r"not a non-negative int",
+        ),
+        (
+            lambda b: b["ceiling"]["row_meta"][1].__setitem__("rollout_idx", True),
+            r"not a non-negative int",
+        ),
+        (
+            lambda b: b["grid"]["row_meta"][1].__setitem__("trigger_label", ""),
+            r"not a non-empty str",
+        ),
+        (lambda b: b["mu"].__setitem__("mu_a_train", None), r"mu_a_train is None"),
     ],
 )
 def test_predictor_bundle_validation_raises_per_defect(mutate, match):
@@ -281,7 +342,17 @@ def _write_gate_fixture(root: Path, models: list[str], rates_of: dict[str, list[
                 rows.append(v)
                 meta.append({"trigger_idx": t, "trigger_label": labels[t], "q_sim_idx": r})
         torch.save({"v_c": torch.tensor(np.stack(rows)), "row_meta": meta}, mdir / "grid.pt")
-        torch.save({"mu_train": torch.tensor(mu)}, mdir / "mu.pt")
+        # Full unit-A producer mu schema: gate_ctx_trainref now runs
+        # validate_gate_pair at load (round-3 cached-artifact-schema-coverage).
+        torch.save(
+            {
+                "mu_train": torch.tensor(mu),
+                "mu_a_train": torch.tensor(mu),
+                "n_c": 5,
+                "n_a": 5,
+            },
+            mdir / "mu.pt",
+        )
         per_trigger = {
             lab: {"caps_rate": rate} for lab, rate in zip(labels, rates_of[m], strict=True)
         }
@@ -372,3 +443,378 @@ def test_phase_probe_skips_at_entry_when_output_exists(tmp_path, capsys):
     rc = judge.phase_probe({"out_dir": tmp_path})  # no API call: skip fires first
     assert rc == 0
     assert "SKIP" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# ROUND 3 — mapfit: parity oracle independence (codex hollow-prediction-parity)
+# ---------------------------------------------------------------------------
+def test_predict_from_fit_is_the_affine_expression():
+    """The exported #2254 oracle computes ((x - xmu)/xsd) @ W + ymu in fp64."""
+    rng = np.random.default_rng(3)
+    fit = {
+        "W": rng.standard_normal((4, 4)),
+        "xmu": rng.standard_normal(4),
+        "xsd": rng.uniform(0.5, 2.0, 4),
+        "ymu": rng.standard_normal(4),
+    }
+    x = rng.standard_normal((6, 4))
+    want = ((x - fit["xmu"]) / fit["xsd"]) @ fit["W"] + fit["ymu"]
+    np.testing.assert_allclose(i2254.predict_from_fit(fit, x), want, rtol=1e-12)
+
+
+def test_parity_oracle_delegates_to_2254_module(monkeypatch):
+    """Round-3 fix: `_predict_reference_from_fit` DELEGATES to
+    `issue2254_preimage.predict_from_fit` (independent module) — pre-fix it was a
+    same-module transcription a shared error could never fail."""
+    sentinel = np.arange(8.0).reshape(2, 4)
+    calls: list[tuple] = []
+
+    def fake(fit, x):
+        calls.append((tuple(sorted(fit)), np.asarray(x).shape))
+        return sentinel
+
+    monkeypatch.setattr(i2254, "predict_from_fit", fake)
+    fit = {"W": np.eye(4), "xmu": np.zeros(4), "xsd": np.ones(4), "ymu": np.zeros(4)}
+    out = mapfit._predict_reference_from_fit(fit, np.zeros((2, 4)))
+    assert calls == [(("W", "xmu", "xsd", "ymu"), (2, 4))]
+    assert out is sentinel
+
+
+# ---------------------------------------------------------------------------
+# ROUND 3 — mapfit/analysis: gate-pair validation (cached-artifact-schema-coverage)
+# ---------------------------------------------------------------------------
+def test_validate_gate_pair_clean_and_defect():
+    b = _good_bundles()
+    mapfit.validate_gate_pair("toy", b["grid"], b["mu"])  # clean pair passes
+    b2 = _good_bundles()
+    b2["grid"]["row_meta"][2].pop("trigger_label")
+    with pytest.raises(RuntimeError, match=r"grid\.pt row_meta\[2\] missing"):
+        mapfit.validate_gate_pair("toy", b2["grid"], b2["mu"])
+    b3 = _good_bundles()
+    b3["mu"].pop("n_a")
+    with pytest.raises(RuntimeError, match=r"mu\.pt missing keys"):
+        mapfit.validate_gate_pair("toy", b3["grid"], b3["mu"])
+
+
+def test_run_gate_validates_bundles_at_load(tmp_path):
+    """Gate G1's load path runs the FULL bundle validation (round-3: it
+    previously bypassed `_validate_predictor_bundles` entirely)."""
+    models = ["caps_a", "caps_b"]
+    cfg = _write_gate_fixture(
+        tmp_path, models, {"caps_a": [0.9, 0.5, 0.1], "caps_b": [0.8, 0.4, 0.2]}
+    )
+    mu_path = tmp_path / "captures" / "caps_a" / "mu.pt"
+    doc = torch.load(mu_path, weights_only=True)
+    doc.pop("n_c")
+    torch.save(doc, mu_path)
+    with pytest.raises(RuntimeError, match=r"caps_a/mu\.pt missing keys.*n_c"):
+        ana.run_gate(cfg)
+
+
+# ---------------------------------------------------------------------------
+# ROUND 3 — capture: chunk-store restartability (codex capture-batch1-restartability)
+# ---------------------------------------------------------------------------
+def _mk_store(tmp_path, fp=None):
+    fp = fp or {"phase": "grid", "model": "m1", "model_ident": "adapter:abc", "n_rows": 6}
+    return cap._ChunkStore(tmp_path / "grid.pt", fp, ("v_c", "row_meta"))
+
+
+def _chunk_payload(n=2):
+    return {"v_c": torch.zeros(n, 1, 2), "row_meta": [{"i": k} for k in range(n)]}
+
+
+def test_chunkstore_truncated_frontier_chunk_dropped_not_wedged(tmp_path):
+    st = _mk_store(tmp_path)
+    assert st.resume_units() == 0  # fresh init
+    st.append(0, 2, _chunk_payload())
+    st.append(2, 4, _chunk_payload())
+    st.append(4, 6, _chunk_payload())
+    # Truncate the MIDDLE chunk: pre-fix resume accepted the valid NAME and the
+    # phase crashed at assembly forever (permanent wedge).
+    (st.dir / "chunk_000002_000004.pt").write_bytes(b"not a torch archive")
+    st2 = _mk_store(tmp_path)
+    assert st2.resume_units() == 2  # rebuilds from the last GOOD unit
+    remaining = sorted(p.name for p in st2.dir.glob("chunk_*.pt"))
+    assert remaining == ["chunk_000000_000002.pt"]  # bad + later chunks deleted
+
+
+def test_chunkstore_missing_payload_key_chunk_dropped(tmp_path):
+    st = _mk_store(tmp_path)
+    st.resume_units()
+    st.append(0, 2, _chunk_payload())
+    st.append(2, 4, {"v_c": torch.zeros(2, 1, 2)})  # loads fine, missing row_meta
+    st2 = _mk_store(tmp_path)
+    assert st2.resume_units() == 2
+    assert sorted(p.name for p in st2.dir.glob("chunk_*.pt")) == ["chunk_000000_000002.pt"]
+
+
+def test_chunkstore_fingerprint_mismatch_discards_all(tmp_path):
+    st = _mk_store(tmp_path)
+    st.resume_units()
+    st.append(0, 2, _chunk_payload())
+    st2 = _mk_store(tmp_path, fp={"phase": "grid", "model_ident": "adapter:RETRAINED"})
+    assert st2.resume_units() == 0  # retrain invalidates the whole store
+    assert list(st2.dir.glob("chunk_*.pt")) == []
+
+
+# ---------------------------------------------------------------------------
+# ROUND 3 — capture: weight-bound skip fingerprints + --force wipe (g1 Major)
+# ---------------------------------------------------------------------------
+_META = {"model": "m1", "setting": "em", "model_ident": "adapter:abc"}
+
+
+def test_phase_fingerprint_and_bundle_current(tmp_path):
+    fp = cap.phase_fingerprint("grid", _META, n_rows=4, n_layers=2)
+    assert fp == {
+        "phase": "grid",
+        "model": "m1",
+        "setting": "em",
+        "model_ident": "adapter:abc",
+        "n_rows": 4,
+        "n_layers": 2,
+    }
+    bundle = tmp_path / "grid.pt"
+    assert not cap.bundle_current(bundle, fp)  # absent bundle
+    bundle.write_bytes(b"x")
+    assert not cap.bundle_current(bundle, fp)  # pre-round-3 bundle: no sidecar
+    cap.write_bundle_sidecar(bundle, fp)
+    assert cap.bundle_current(bundle, fp)
+    fp_retrained = cap.phase_fingerprint(
+        "grid", {**_META, "model_ident": "adapter:NEW"}, n_rows=4, n_layers=2
+    )
+    assert not cap.bundle_current(bundle, fp_retrained)  # retrain invalidates skip
+    cap.bundle_sidecar(bundle).write_text("{not json")
+    assert not cap.bundle_current(bundle, fp)  # unreadable sidecar -> recompute
+
+
+def test_load_mu_partial_discards_on_any_defect(tmp_path):
+    fp = cap.phase_fingerprint("mu", _META, train_jsonl="t.jsonl", n_rows=3, n_layers=2)
+    good = {
+        "fingerprint": fp,
+        "mu_c_sum": torch.zeros(2),
+        "mu_a_sum": torch.zeros(2),
+        "n_c": 1,
+        "n_a": 1,
+        "next_line_idx": 5,
+    }
+    p = tmp_path / "mu.pt.partial.pt"
+    torch.save(good, p)
+    assert cap._load_mu_partial(p, fp)["next_line_idx"] == 5
+    bad = dict(good)
+    bad.pop("n_a")  # matching fingerprint, missing state key: pre-fix KeyError
+    torch.save(bad, p)
+    assert cap._load_mu_partial(p, fp) is None
+    torch.save(good, p)
+    assert cap._load_mu_partial(p, {**fp, "model_ident": "adapter:NEW"}) is None
+    torch.save([1, 2], p)  # non-dict payload
+    assert cap._load_mu_partial(p, fp) is None
+    p.write_bytes(b"truncated")  # unreadable file
+    assert cap._load_mu_partial(p, fp) is None
+
+
+def test_force_wipe_clears_every_resume_surface(tmp_path):
+    pred = tmp_path / "pred"
+    pred.mkdir()
+    bundle = pred / "ceiling.pt"
+    bundle.write_bytes(b"x")
+    fp = cap.phase_fingerprint("ceiling", _META, n_cells=2, n_rollouts=3, n_layers=2)
+    cap.write_bundle_sidecar(bundle, fp)
+    chunks = pred / "ceiling.pt.chunks"
+    chunks.mkdir()
+    (chunks / "chunk_000000_000002.pt").write_bytes(b"c")
+    (pred / "ceiling.pt.partial.pt").write_bytes(b"p")
+    (pred / "ceiling.rollouts.json").write_text("{}")
+    cap._force_wipe_phase_state("ceiling", bundle, pred, "m1")
+    assert not bundle.exists() and not cap.bundle_sidecar(bundle).exists()
+    assert not chunks.exists()
+    assert not (pred / "ceiling.pt.partial.pt").exists()
+    assert not (pred / "ceiling.rollouts.json").exists()
+    # map_corpus wipes the per-model rollout sidecar next to the bundle
+    mc = pred / "m1_map.pt"
+    mc.write_bytes(b"x")
+    roll = pred / "m1.rollouts.json"
+    roll.write_text("{}")
+    cap._force_wipe_phase_state("map_corpus", mc, pred, "m1")
+    assert not mc.exists() and not roll.exists()
+
+
+def test_rollout_fingerprint_binds_model_ident():
+    a = cap._rollout_fingerprint("ceiling", "m1", "adapter:abc", 10, 3)
+    b = cap._rollout_fingerprint("ceiling", "m1", "adapter:NEW", 10, 3)
+    assert a != b and a["model_ident"] == "adapter:abc"
+
+
+# ---------------------------------------------------------------------------
+# ROUND 3 — sweep: weights identity + merge provenance + reclaim + idempotency
+# ---------------------------------------------------------------------------
+def test_resolve_model_identity_branches(tmp_path):
+    ad = tmp_path / "ad"
+    ad.mkdir()
+    (ad / "adapter_model.safetensors").write_bytes(b"weights-v1")
+    ident = sweep.resolve_model_identity(None, str(ad))
+    assert ident == f"adapter:{sweep.sha256_file(ad / 'adapter_model.safetensors')}"
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    with pytest.raises(RuntimeError, match="adapter weights missing"):
+        sweep.adapter_identity(empty)
+    assert sweep.resolve_model_identity("Qwen/Qwen2.5-7B-Instruct", None) == (
+        "hf:Qwen/Qwen2.5-7B-Instruct"
+    )
+    # merged dir WITH provenance: identity = the adapter's, stable across re-merges
+    merged = tmp_path / "merged"
+    merged.mkdir()
+    (merged / "model-00001.safetensors").write_bytes(b"merged-bytes-v1")
+    sweep.write_merge_provenance(merged, ad)
+    assert sweep.resolve_model_identity(str(merged), None) == ident
+    (merged / "model-00001.safetensors").write_bytes(b"merged-bytes-v2-REMERGE")
+    assert sweep.resolve_model_identity(str(merged), None) == ident  # re-merge stable
+    # merged dir WITHOUT provenance: census fallback, conservative-correct
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    (bare / "model.safetensors").write_bytes(b"v1")
+    c1 = sweep.resolve_model_identity(str(bare), None)
+    assert c1.startswith("dircensus:")
+    (bare / "model.safetensors").write_bytes(b"v2-different-length")
+    assert sweep.resolve_model_identity(str(bare), None) != c1
+
+
+def test_reclaim_dead_merge_dirs_scoped_and_pid_safe(tmp_path):
+    proc = subprocess.Popen(["/bin/true"])
+    proc.wait()
+    dead_pid = proc.pid  # reaped -> os.kill raises ProcessLookupError
+    names = {
+        f"m1.p2.{dead_pid}": False,  # dead pid, matching scope -> reclaimed
+        f"m1.p2.{os.getpid()}": True,  # self -> kept
+        f"m1.p2.{os.getppid()}": True,  # alive -> kept
+        "m1.p2.notapid": True,  # non-pid suffix -> kept
+        f"m1.grid.{dead_pid}": True,  # other scope -> untouched
+        f"m2.p2.{dead_pid}": True,  # other model -> untouched
+    }
+    for name in names:
+        (tmp_path / name).mkdir()
+    sweep.reclaim_dead_merge_dirs(tmp_path, "m1", "p2")
+    for name, kept in names.items():
+        assert (tmp_path / name).exists() is kept, name
+
+
+def test_sweep_outputs_complete_binds_model_ident(tmp_path):
+    sampling = {"temperature": 1.0, "n_samples": 50}
+    doc = {"model": "m1", "sampling": sampling, "model_ident": "adapter:abc"}
+    raw = tmp_path / "raw.json"
+    raw.write_text(json.dumps(doc))
+    caps = tmp_path / "caps.json"
+    caps.write_text(json.dumps({**doc, "install_check": {"pass": True}}))
+    ok = sweep._sweep_outputs_complete
+    assert ok(raw, caps, "m1", sampling, True, "adapter:abc")
+    assert not ok(raw, caps, "m1", sampling, True, "adapter:RETRAINED")
+    # pre-round-3 outputs (no model_ident) read INCOMPLETE -> recompute
+    raw.write_text(json.dumps({"model": "m1", "sampling": sampling}))
+    assert not ok(raw, caps, "m1", sampling, True, "adapter:abc")
+    raw.write_text(json.dumps(doc))
+    caps.write_text(json.dumps(doc))  # missing install_check
+    assert not ok(raw, caps, "m1", sampling, True, "adapter:abc")
+    assert ok(raw, caps, "m1", sampling, False, "adapter:abc")
+    assert ok(raw, None, "m1", sampling, True, "adapter:abc")  # raw-only invocation
+    raw.write_bytes(b"{truncated")
+    assert not ok(raw, None, "m1", sampling, False, "adapter:abc")
+
+
+# ---------------------------------------------------------------------------
+# ROUND 3 — train: per-adapter completion sentinel (codex phase-idempotency-missing)
+# ---------------------------------------------------------------------------
+def test_train_sentinel_roundtrip(tmp_path):
+    import issue2379_train as train  # lazy: module top pulls torch/trl/peft
+
+    data = tmp_path / "m1.jsonl"
+    data.write_text('{"messages": []}\n' * 3)
+    fp = train._train_fingerprint("m1", data, 3)
+    assert fp["train_file_sha256"] == sweep.sha256_file(data)
+    assert fp["recipe"] == dict(train.RECIPE) and fp["base_model"] == train.BASE_MODEL
+    out = tmp_path / "adapter"
+    out.mkdir()
+    assert not train._train_complete(out, fp)  # no sentinel
+    train._write_train_sentinel(out, fp, 1.25)
+    assert not train._train_complete(out, fp)  # weights missing
+    (out / "adapter_model.safetensors").write_bytes(b"w")
+    assert train._train_complete(out, fp)
+    assert not train._train_complete(out, {**fp, "n_rows": 4})  # changed mix
+    data.write_text('{"messages": []}\n' * 4)
+    assert not train._train_complete(out, train._train_fingerprint("m1", data, 4))
+    (out / train.TRAIN_SENTINEL_NAME).write_text("{not json")
+    assert not train._train_complete(out, fp)  # unreadable sentinel -> retrain
+
+
+# ---------------------------------------------------------------------------
+# ROUND 3 — judge: pilot/wave regime fingerprints (codex phase-idempotency-missing)
+# ---------------------------------------------------------------------------
+def test_pilot_regime_instrument_and_roster():
+    r = judge._pilot_regime(["b", "a"])
+    assert r["models"] == ["a", "b"]  # order-independent roster
+    assert r["judge_model"] == judge.EXPECTED_JUDGE_MODEL
+    assert r["max_tokens"] == judge.JUDGE_MAX_TOKENS
+    assert r["transport"] == "batch"
+    assert "source_shas" not in r  # pilot certifies the INSTRUMENT, not sources
+
+
+def test_check_wave_regime_pure():
+    reg = {"models": ["m1"], "judge_model": "j", "source_shas": {"m1": "abc"}}
+    assert judge._check_wave_regime({}, reg) == "no regime recorded (pre-round-3 rates_em.json)"
+    assert judge._check_wave_regime({"regime": "legacy-string"}, reg) == (
+        "no regime recorded (pre-round-3 rates_em.json)"
+    )
+    assert judge._check_wave_regime({"regime": dict(reg)}, reg) is None
+    got = {"regime": {**reg, "judge_model": "OTHER", "extra": 1}}
+    stale = judge._check_wave_regime(got, reg)
+    assert stale.startswith("mismatched keys:") and "judge_model" in stale and "extra" in stale
+
+
+def test_require_pilot_gate_regime_binding(tmp_path):
+    cfg = {"out_dir": tmp_path, "models": ["m1"]}
+    with pytest.raises(RuntimeError, match="run --phase pilot first"):
+        judge._require_pilot_gate(cfg)
+    gp = tmp_path / "pilot_gate.json"
+    gp.write_text(json.dumps({"passed": False}))
+    with pytest.raises(RuntimeError, match="pilot gate FAILED"):
+        judge._require_pilot_gate(cfg)
+    # pre-round-3 gate (passed, no regime): every model reads uncovered -> re-pilot
+    gp.write_text(json.dumps({"passed": True}))
+    with pytest.raises(RuntimeError, match=r"does not cover models \['m1'\]"):
+        judge._require_pilot_gate(cfg)
+    gp.write_text(json.dumps({"passed": True, "regime": judge._pilot_regime(["m2"])}))
+    with pytest.raises(RuntimeError, match=r"does not cover models \['m1'\]"):
+        judge._require_pilot_gate(cfg)
+    # superset roster + identical instrument -> licensed
+    gp.write_text(json.dumps({"passed": True, "regime": judge._pilot_regime(["m1", "m2"])}))
+    audit = judge._require_pilot_gate(cfg)
+    assert audit == {
+        "path": str(gp),
+        "passed": True,
+        "overridden": False,
+        "regime_checked": True,
+    }
+    # instrument drift -> refuses (a pilot certifies only the instrument it ran)
+    drifted = judge._pilot_regime(["m1"])
+    drifted["max_tokens"] = drifted["max_tokens"] + 1
+    gp.write_text(json.dumps({"passed": True, "regime": drifted}))
+    with pytest.raises(RuntimeError, match="DIFFERENT instrument"):
+        judge._require_pilot_gate(cfg)
+    gp.unlink()
+    audit = judge._require_pilot_gate({**cfg, "override_pilot_gate": True})
+    assert audit["overridden"] is True  # audited escape, no gate file needed
+
+
+def test_phase_wave_stale_regime_refuses_silent_redispatch(tmp_path, monkeypatch):
+    """Spend safety: a ~43k-call wave never silently re-dispatches on a
+    stale-regime rates_em.json; a MATCHING regime skips with zero API calls."""
+    src = tmp_path / "raw_completions.json"
+    src.write_text("{}")
+    monkeypatch.setattr(judge, "_fetch_rawcomp_json", lambda model, cache_root: src)
+    cfg = {"out_dir": tmp_path, "models": ["m1"], "cache_root": tmp_path}
+    regime = judge._wave_regime(["m1"], tmp_path)
+    rates = tmp_path / "rates_em.json"
+    rates.write_text(json.dumps({"regime": {**regime, "judge_model": "stale"}, "rates": {}}))
+    with pytest.raises(RuntimeError, match="will NOT silently re-dispatch"):
+        judge.phase_wave(cfg)
+    doc = {"regime": regime, "rates": {"m1": {}}}
+    rates.write_text(json.dumps(doc))
+    assert judge.phase_wave(cfg) == doc  # SKIP path returns the existing doc

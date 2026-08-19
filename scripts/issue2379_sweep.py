@@ -89,6 +89,113 @@ logger = logging.getLogger("issue2379_sweep")
 SLUG = "issue2379_reelicit"
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+# Lazy in-python merge root (round-3 g1 Major merge-root-unification): safetensors
+# live under data/, NEVER eval_results/ (JSON/text only). Matches pod.sh's
+# MERGED_ROOT, so its stale-residue clears at phase entry cover these dirs too.
+MERGED_ROOT_DEFAULT = REPO_ROOT / "data" / "issue_2379" / "merged"
+
+# Provenance sidecar merge_here / resolve_model write into every merged dir, so a
+# consumer fed ``--model <merged dir>`` can recover the ADAPTER's weights identity
+# (stable across re-merges of the same adapter; changes when the adapter retrains).
+PROVENANCE_NAME = "issue2379_provenance.json"
+
+
+def sha256_file(path: Path) -> str:
+    """Streaming sha256 of one file (adapter safetensors ~90 MB — sub-second)."""
+    import hashlib
+
+    h = hashlib.sha256()
+    with Path(path).open("rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def adapter_identity(adapter_dir: str | Path) -> str:
+    """Weights identity of a LoRA adapter: sha256 of adapter_model.safetensors.
+
+    Round-3 g1 Major (force-vs-resume): count-only resume fingerprints survive a
+    retrain, so a forced retrain silently reused the OLD model's rollouts /
+    activations. Binding every resume fingerprint to this identity makes a
+    retrain self-invalidate stale resume state."""
+    st = Path(adapter_dir) / "adapter_model.safetensors"
+    if not st.is_file():
+        raise RuntimeError(f"adapter weights missing: {st} (invalid --adapter dir?)")
+    return f"adapter:{sha256_file(st)}"
+
+
+def resolve_model_identity(model: str | None, adapter: str | None) -> str:
+    """Weights identity for resume fingerprints, by argument form:
+
+    * ``--adapter <dir>``  -> ``adapter:<sha256 of adapter_model.safetensors>``
+    * ``--model <hf id>``  -> ``hf:<id>`` (no local dir: the pinned id IS the identity)
+    * ``--model <dir>`` carrying PROVENANCE_NAME -> the recorded adapter identity
+      (written at merge time; stable across re-merges of the SAME adapter)
+    * ``--model <dir>`` without provenance -> ``dircensus:<sha256 of the sorted
+      (relpath, size, mtime_ns) census>`` — changes on every re-merge, i.e.
+      conservative-CORRECT (worst case an unnecessary recompute, never stale reuse).
+    """
+    import hashlib
+
+    if adapter:
+        return adapter_identity(adapter)
+    assert model, "resolve_model_identity: one of model/adapter required"
+    mp = Path(model)
+    if not mp.is_dir():
+        return f"hf:{model}"
+    prov = mp / PROVENANCE_NAME
+    if prov.is_file():
+        try:
+            ident = json.loads(prov.read_text(encoding="utf-8")).get("identity")
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            ident = None
+        if isinstance(ident, str) and ident:
+            return ident
+        logger.warning("unreadable %s in %s — falling back to dir census", PROVENANCE_NAME, mp)
+    census = sorted(
+        (str(p.relative_to(mp)), p.stat().st_size, p.stat().st_mtime_ns)
+        for p in mp.rglob("*")
+        if p.is_file()
+    )
+    h = hashlib.sha256(json.dumps(census).encode()).hexdigest()
+    logger.warning(
+        "no %s in %s — census identity (invalidates resume state on every re-merge)",
+        PROVENANCE_NAME,
+        mp,
+    )
+    return f"dircensus:{h}"
+
+
+def write_merge_provenance(merged_dir: str | Path, adapter_dir: str | Path) -> None:
+    """Record the adapter identity inside a freshly merged dir (see PROVENANCE_NAME)."""
+    doc = {
+        "identity": adapter_identity(adapter_dir),
+        "adapter": str(adapter_dir),
+        "base_model": BASE_MODEL,
+    }
+    (Path(merged_dir) / PROVENANCE_NAME).write_text(json.dumps(doc, indent=2), encoding="utf-8")
+
+
+def reclaim_dead_merge_dirs(merged_root: Path, model_name: str, scope: str) -> None:
+    """Delete crash-leaked pid-scoped merge dirs (``<model>.<scope>.<pid>``) whose
+    pid is confirmed dead (round-3 g1 Major: leaked dirs were never reclaimed).
+    A pid that is alive — or not provably dead (EPERM) — is left alone."""
+    for d in merged_root.glob(f"{model_name}.{scope}.*"):
+        pid_txt = d.name.rsplit(".", 1)[-1]
+        if not pid_txt.isdigit() or int(pid_txt) == os.getpid():
+            continue
+        try:
+            os.kill(int(pid_txt), 0)
+            alive = True
+        except ProcessLookupError:
+            alive = False
+        except PermissionError:
+            alive = True  # exists, other user — not provably dead
+        if not alive:
+            logger.info("reclaiming crash-leaked merge dir %s (pid %s dead)", d, pid_txt)
+            shutil.rmtree(d, ignore_errors=True)
+
+
 # HF data-repo prefix for the caps-rate shards (round-2 blocker
 # offpod-artifact-handoff: the VM-side Gate-G1 / analysis stage them from HF —
 # a pod-side git results sync is not a durable handoff).
@@ -165,18 +272,23 @@ def resolve_model(args) -> tuple[str, object]:
 
     ``--model`` -> use as-is (base id / pre-merged dir), no-op cleanup.
     ``--adapter`` -> merge onto BASE_MODEL into a setting+pid-scoped dir under
-    ``<out-dir>/merged/`` and return a cleanup that removes it (MooseFS quota —
-    plan §8). The pid scope keeps concurrent invocations for the SAME model
-    from sharing/deleting each other's merged dir (r1 minor).
+    ``--merged-root`` (default data/issue_2379/merged — round-3 g1 Major: never
+    eval_results/, and pod.sh's stale-residue clears cover this root) and return
+    a cleanup that removes it (MooseFS quota — plan §8). The pid scope keeps
+    concurrent invocations for the SAME model from sharing/deleting each other's
+    merged dir (r1 minor); crash-leaked dead-pid dirs are reclaimed at entry.
     """
     if args.model:
         return args.model, (lambda: None)
     from explore_persona_space.train.sft import merge_lora
 
-    merged_dir = Path(args.out_dir) / "merged" / f"{args.model_name}.{args.setting}.{os.getpid()}"
-    merged_dir.parent.mkdir(parents=True, exist_ok=True)
+    merged_root = Path(args.merged_root)
+    merged_root.mkdir(parents=True, exist_ok=True)
+    reclaim_dead_merge_dirs(merged_root, args.model_name, args.setting)
+    merged_dir = merged_root / f"{args.model_name}.{args.setting}.{os.getpid()}"
     logger.info("merging adapter %s -> %s", args.adapter, merged_dir)
     merge_lora(BASE_MODEL, args.adapter, str(merged_dir), gpu_id=args.gpu_id)
+    write_merge_provenance(merged_dir, args.adapter)
 
     def _cleanup() -> None:
         shutil.rmtree(merged_dir, ignore_errors=True)
@@ -406,6 +518,7 @@ def write_raw_completions(
     questions: list[str],
     records: dict,
     git_meta: dict,
+    model_ident: str,
 ) -> Path:
     """Write raw_completions.json under <rawcomp_root>/<stage>/<model_name>/ so the
     canonical uploader lands it at issue2379_reelicit/raw_completions/<stage>/..."""
@@ -428,6 +541,7 @@ def write_raw_completions(
         "issue": 2379,
         "slug": SLUG,
         "model": model_name,
+        "model_ident": model_ident,
         "stage": stage,
         "sampling": _sampling_meta(setting, n_samples),
         "git": git_meta,
@@ -469,7 +583,12 @@ def upload_caps_rates(caps_path: Path) -> str:
         HfApi(), hub.DEFAULT_DATASET_REPO, [dest], path_in_repo=HF_RATES_CAPS_PREFIX
     )
     if missing:
-        raise RuntimeError(f"caps-rate upload verify FAILED; missing on hub: {missing}")
+        raise RuntimeError(
+            f"caps-rate upload verify FAILED; missing on hub: {missing} "
+            "(if the repo hit the HF file-count limit the #1108/#2304 overflow reroute "
+            "lands files in the private overflow repo — check the upload log's target "
+            "repo before re-running)"
+        )
     return url
 
 
@@ -479,12 +598,15 @@ def _sweep_outputs_complete(
     model_name: str,
     sampling: dict,
     need_install_check: bool,
+    model_ident: str,
 ) -> bool:
     """Per-invocation idempotency predicate (round-2 blocker
     phase-idempotency-missing): True iff this invocation's outputs already
-    exist with MATCHING model + sampling meta (the output-affecting regime
-    keys — a smoke run's outputs never satisfy a production skip). A
-    truncated/unparseable file reads incomplete -> recompute."""
+    exist with MATCHING model + sampling meta + WEIGHTS identity (round-3 g1
+    Major: a count/name-only regime survives a retrain, so a retrained model's
+    sweep silently skipped onto the OLD model's completions; ``model_ident``
+    binds the skip to the adapter bytes). A truncated/unparseable file — or a
+    pre-round-3 file with no ``model_ident`` — reads incomplete -> recompute."""
 
     def _load(p: Path) -> dict | None:
         if not p.exists():
@@ -494,12 +616,19 @@ def _sweep_outputs_complete(
         except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             return None
 
-    raw = _load(raw_path)
-    if raw is None or raw.get("model") != model_name or raw.get("sampling") != sampling:
+    def _ok(doc: dict | None) -> bool:
+        return (
+            doc is not None
+            and doc.get("model") == model_name
+            and doc.get("sampling") == sampling
+            and doc.get("model_ident") == model_ident
+        )
+
+    if not _ok(_load(raw_path)):
         return False
     if caps_path is not None:
         rec = _load(caps_path)
-        if rec is None or rec.get("model") != model_name or rec.get("sampling") != sampling:
+        if not _ok(rec):
             return False
         if need_install_check and "install_check" not in rec:
             return False
@@ -524,6 +653,11 @@ def main() -> int:
     ap.add_argument("--model-name", required=True, help="Logical name for output keys/paths")
     ap.add_argument("--banks-dir", default=str(REPO_ROOT / "data" / "issue_2379" / "banks"))
     ap.add_argument("--out-dir", default=str(REPO_ROOT / "eval_results" / "issue_2379"))
+    ap.add_argument(
+        "--merged-root",
+        default=str(MERGED_ROOT_DEFAULT),
+        help="Root for lazy adapter merges (safetensors — data/, never eval_results/)",
+    )
     ap.add_argument("--gpu-id", type=int, default=0)
     ap.add_argument("--no-upload", action="store_true", help="Skip HF upload (default: upload ON)")
     ap.add_argument("--smoke", action="store_true", help="Tiny counts (still needs GPU/vLLM)")
@@ -572,9 +706,12 @@ def main() -> int:
         out_dir / "rates_caps" / f"{args.model_name}.json" if args.setting == "caps" else None
     )
     sampling = _sampling_meta(args.setting, n_samples)
+    # Weights identity BEFORE the skip check: the resume predicate must bind to the
+    # CURRENT adapter/model bytes, not just names/counts (round-3 g1 Major).
+    model_ident = resolve_model_identity(args.model, args.adapter)
 
     if not args.force and _sweep_outputs_complete(
-        raw_path, caps_path, args.model_name, sampling, args.model_name != "base"
+        raw_path, caps_path, args.model_name, sampling, args.model_name != "base", model_ident
     ):
         # Skip compute but STILL run the upload leg below, so a crash between a
         # prior run's persist and its upload self-heals on re-run.
@@ -601,6 +738,7 @@ def main() -> int:
                 questions,
                 records,
                 git_meta,
+                model_ident,
             )
 
             if caps_path is not None:
@@ -609,6 +747,7 @@ def main() -> int:
                     "issue": 2379,
                     "slug": SLUG,
                     "model": args.model_name,
+                    "model_ident": model_ident,
                     "git": git_meta,
                     "sampling": sampling,
                     "per_trigger": compute_caps_records(records),

@@ -144,6 +144,12 @@ if [ "$DRY_RUN" -eq 0 ]; then
         # SLURM_GPU_WIDTH_EXEMPT: RunPod-only pod dispatcher (plan pins backend: runpod; never dispatched onto a SLURM lane)
         NUM_GPUS="$(nvidia-smi -L | wc -l)"
     fi
+    # Round-3 g1 Minor 7: a 0-GPU probe result would make every fan-out loop
+    # iterate zero times and the run exit 0 having done NOTHING — fail loud.
+    if ! [ "$NUM_GPUS" -ge 1 ] 2>/dev/null; then
+        echo "[dispatch] FATAL: NUM_GPUS='$NUM_GPUS' (< 1 or non-numeric) — no visible GPUs?" >&2
+        exit 1
+    fi
 fi
 
 # Resolve the base model id once (from the unit-2 sweep module; never hardcoded).
@@ -227,14 +233,18 @@ merge_here() {  # $1 = phase label ; $2 = stem — echoes the merged path
     fi
     rm -rf "$dest"   # stale partial merge from a crashed prior job
     mkdir -p "$MERGED_ROOT"
+    # write_merge_provenance records the ADAPTER's weights identity inside the
+    # merged dir so every downstream --model consumer's resume fingerprints bind
+    # to the adapter bytes (round-3 g1 Major force-vs-resume).
     uv run python -c '
 import sys
 sys.path.insert(0, "scripts"); sys.path.insert(0, "src")
 from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()
 from explore_persona_space.train.sft import merge_lora
-from issue2379_sweep import BASE_MODEL
+from issue2379_sweep import BASE_MODEL, write_merge_provenance
 merge_lora(BASE_MODEL, sys.argv[1], sys.argv[2], gpu_id=0)
+write_merge_provenance(sys.argv[2], sys.argv[1])
 ' "$adapter" "$dest" >&2 || return 1
     echo "$dest"
 }
@@ -398,7 +408,7 @@ phase_p1() {
     gpus_csv="$(seq -s, 0 $((NUM_GPUS - 1)))"
     if [ "$DRY_RUN" -eq 1 ]; then
         echo "[dry-run p1] uv run python scripts/issue2379_prep_data.py --out-dir $DATA_DIR --upload"
-        echo "[dry-run p1] uv run python scripts/issue2379_train.py --train-dir $TRAIN_DIR --output-root $ADAPTER_ROOT --gpus ${gpus_csv}"
+        echo "[dry-run p1] uv run python scripts/issue2379_train.py --train-dir $TRAIN_DIR --output-root $ADAPTER_ROOT --gpus ${gpus_csv} $FORCE_FLAG"
         return 0
     fi
     local rc=0
@@ -408,8 +418,12 @@ phase_p1() {
     uv run python scripts/issue2379_prep_data.py --out-dir "$DATA_DIR" --upload || rc=$?
     echo "prep ${rc}" >> "$status_file"
     if [ "$rc" -eq 0 ]; then
+        # Round-3 g1 Minor 4: --force threads into train (per-adapter sentinel
+        # skip is train.py's own; the pod-level FORCE must reach it).
+        # shellcheck disable=SC2086  # FORCE_FLAG deliberately unquoted (empty or --force)
         uv run python scripts/issue2379_train.py \
-            --train-dir "$TRAIN_DIR" --output-root "$ADAPTER_ROOT" --gpus "$gpus_csv" || rc=$?
+            --train-dir "$TRAIN_DIR" --output-root "$ADAPTER_ROOT" --gpus "$gpus_csv" \
+            $FORCE_FLAG || rc=$?
         echo "train ${rc}" >> "$status_file"
     fi
     write_sentinel p1 "$rc" "$started" "$status_file"

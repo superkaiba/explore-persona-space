@@ -64,8 +64,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT / "src"))
+for _p in (str(REPO_ROOT / "src"), str(REPO_ROOT / "scripts")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
@@ -90,8 +91,11 @@ DATA_REPO = "superkaiba1/explore-persona-space-data"
 
 # HF staging prefixes for the off-pod inputs this script consumes (round-2
 # offpod-artifact-handoff counterpart): caps shards from the sweep's
-# HF_RATES_CAPS_PREFIX; predictor JSONs from mapfit's phase_upload prefix.
-HF_RATES_CAPS_PREFIX = f"{SLUG}/eval_results/rates_caps"
+# HF_RATES_CAPS_PREFIX — imported from the PRODUCER so the two spellings can
+# never drift (round-3 g1 Minor 8); predictor JSONs from mapfit's phase_upload
+# prefix.
+from issue2379_sweep import HF_RATES_CAPS_PREFIX  # noqa: E402
+
 HF_PREDICTOR_JSON_PREFIX = f"{SLUG}/eval_json/predictors"
 
 # Mode registry (module-level dict literal — the smoke-arch arm-registry source).
@@ -1407,6 +1411,12 @@ def analyze(cfg: dict) -> dict:
                 for m in ctx_estimable
             ]
         )
+        if ctx_estimable and not np.isfinite(ctx_vals).any():
+            raise ValueError(
+                f"setting {setting}: ctx_trainref is missing/NaN for ALL "
+                f"{len(ctx_estimable)} estimable conditions — refusing a silent "
+                "all-NaN nanmean into the verdict lattice (round-3 g2 Minor)"
+            )
         mean_ctx = float(np.nanmean(ctx_vals)) if ctx_estimable else float("nan")
         verdict = verdict_for_setting(
             mean_ctx,
@@ -1622,9 +1632,16 @@ def _resolve_capture(
 
 
 def gate_ctx_trainref(grid_path: Path, mu_path: Path) -> tuple[np.ndarray, list[str]]:
-    """(n_l, n_t) ctx Train Ref matrix + trigger labels from a P3 capture pair."""
+    """(n_l, n_t) ctx Train Ref matrix + trigger labels from a P3 capture pair.
+
+    The pair is validated with the producer-shared FULL row-set validator before
+    any use (round-3 codex Critical cached-artifact-schema-coverage: this Gate-G1
+    load path previously bypassed bundle validation entirely)."""
+    from issue2379_mapfit import validate_gate_pair
+
     g = torch.load(grid_path, map_location="cpu", weights_only=True)  # unit-2 bundle
     z = torch.load(mu_path, map_location="cpu", weights_only=True)
+    validate_gate_pair(grid_path.parent.name, g, z)
     v_c = np.asarray(g["v_c"], dtype=np.float64)  # (n_rows, n_l, d)
     mu = np.asarray(z["mu_train"], dtype=np.float64)  # (n_l, d)
     if v_c.shape[1] != mu.shape[0] or v_c.shape[2] != mu.shape[1]:
@@ -1902,13 +1919,15 @@ def _probe_verdict(mode: str, expect: str, install_fail: bool = False) -> None:
 
 
 def run_smoke(args) -> int:
-    fixtures = Path(args.fixtures_root or "")
-    if not fixtures.is_dir():
+    # Round-3 g2 Minor: Path("") is "." (a directory), which made the guard dead
+    # on a missing --fixtures-root — require the flag explicitly.
+    if not args.fixtures_root or not Path(args.fixtures_root).is_dir():
         raise SystemExit(
             "--smoke requires --fixtures-root pointing at the tmp dir printed by "
             "`uv run python scripts/issue2379_mapfit.py --phase smoke` "
             "('[smoke] artifacts under <tmp>')"
         )
+    fixtures = Path(args.fixtures_root)
     scratch = Path(args.out_dir or "/tmp/issue-2379-smoke/analysis")
     scratch.mkdir(parents=True, exist_ok=True)
     scores_path = fixtures / "predictors" / "predictor_scores.json"

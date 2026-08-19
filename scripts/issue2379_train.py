@@ -60,6 +60,7 @@ load_dotenv()
 # torch-free import (train_lora defers every heavy import inside its body), so
 # TrainLoraConfig can be constructed on the CPU VM for --dry-run validation.
 from explore_persona_space.train.sft import TrainLoraConfig, train_lora  # noqa: E402
+from issue2379_sweep import sha256_file  # noqa: E402  — shared weights/file hash helper
 
 logger = logging.getLogger("issue2379_train")
 
@@ -103,6 +104,62 @@ RECIPE = dict(
     save_strategy="no",
     hf_upload=True,
 )
+
+
+TRAIN_SENTINEL_NAME = ".issue2379_train_complete.json"
+
+
+def _train_fingerprint(stem: str, data_path: Path, n_rows: int) -> dict:
+    """GENERATING-PARAMETER fingerprint for one adapter's completion sentinel
+    (round-3 codex Critical phase-idempotency-missing: a crash after 6/8
+    retrains re-ran all 8). Binds to the train FILE's bytes (sha256), the base
+    model, the full recipe, and the row count — a changed mix or recipe
+    invalidates the skip; a crash mid-train leaves no sentinel."""
+    return {
+        "stem": stem,
+        "train_file_sha256": sha256_file(data_path),
+        "n_rows": n_rows,
+        "base_model": BASE_MODEL,
+        "recipe": dict(RECIPE),
+    }
+
+
+def _train_complete(output_dir: Path, fp: dict) -> bool:
+    """True iff ``output_dir`` carries a completion sentinel matching ``fp`` AND
+    the adapter weights exist. Any defect — missing/unreadable sentinel, missing
+    weights, fingerprint mismatch — reads NOT-complete -> retrain
+    (conservative-correct; the JSON round-trip is exact for RECIPE's
+    str/int/float/bool/None values)."""
+    sent = output_dir / TRAIN_SENTINEL_NAME
+    if not sent.is_file() or not (output_dir / "adapter_model.safetensors").is_file():
+        return False
+    try:
+        doc = json.loads(sent.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return False
+    return doc.get("fingerprint") == fp
+
+
+def _write_train_sentinel(output_dir: Path, fp: dict, loss: float) -> None:
+    """Atomic (tmp + os.replace) completion-sentinel write AFTER train_lora
+    returns (which includes its built-in hf_upload — a crash mid-upload leaves
+    no sentinel, so the retry retrains + re-uploads)."""
+    from datetime import datetime, timezone
+
+    sent = output_dir / TRAIN_SENTINEL_NAME
+    tmp = sent.with_name(sent.name + ".tmp")
+    tmp.write_text(
+        json.dumps(
+            {
+                "fingerprint": fp,
+                "loss": loss,
+                "completed_utc": datetime.now(timezone.utc).isoformat(),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    os.replace(tmp, sent)
 
 
 def discover_models(train_dir: Path) -> list[str]:
@@ -163,26 +220,63 @@ def _visible_gpu_ids(explicit: str | None) -> list[int]:
     return ids
 
 
-def train_one(model_stem: str, train_dir: Path, output_root: Path, gpu_id: int) -> None:
-    """Single-model training path — imports torch (via train_lora) and needs a GPU."""
+def train_one(
+    model_stem: str, train_dir: Path, output_root: Path, gpu_id: int, force: bool = False
+) -> None:
+    """Single-model training path — imports torch (via train_lora) and needs a GPU.
+    Skips at entry when a matching completion sentinel + adapter weights exist
+    (round-3 codex Critical phase-idempotency-missing); ``force`` retrains and
+    wipes the stale sentinel first."""
     data_path = train_dir / f"{model_stem}.jsonl"
-    _validate_train_file(data_path)
+    n_rows = _validate_train_file(data_path)
     run_name = f"{SLUG}_{model_stem}"
     output_dir = output_root / run_name
     output_dir.mkdir(parents=True, exist_ok=True)
+    fp = _train_fingerprint(model_stem, data_path, n_rows)
+    sent = output_dir / TRAIN_SENTINEL_NAME
+    if not force and _train_complete(output_dir, fp):
+        logger.info(
+            "[skip] %s already trained under a matching sentinel (%s) — --force to redo",
+            run_name,
+            sent,
+        )
+        return
+    sent.unlink(missing_ok=True)  # stale/mismatched sentinel never survives a retrain
     os.environ.setdefault("WANDB_PROJECT", SLUG)
     cfg = build_cfg(run_name, gpu_id)
     logger.info("training %s -> %s (gpu_id=%d)", run_name, output_dir, gpu_id)
     out, loss = train_lora(BASE_MODEL, str(data_path), str(output_dir), cfg=cfg)
+    _write_train_sentinel(output_dir, fp, loss)
     logger.info("[phase=train_done] model=%s output=%s loss=%.4f", model_stem, out, loss)
 
 
-def orchestrate(train_dir: Path, output_root: Path, gpu_ids: list[int], models: list[str]) -> int:
+def orchestrate(
+    train_dir: Path,
+    output_root: Path,
+    gpu_ids: list[int],
+    models: list[str],
+    force: bool = False,
+) -> int:
     """Work-conserving fan-out: one training subprocess per model, CUDA_VISIBLE_DEVICES
     pinned in the CHILD env; keep every GPU busy while models remain. Each child's
     output goes to <output_root>/logs/<stem>.log (r1 minor: no 8-way interleaving);
     on child failure the log tail is echoed into THIS log (gotchas.md: the inner
-    log must reach the main workload log)."""
+    log must reach the main workload log). Completed-sentinel stems are skipped
+    up front (round-3 codex Critical: a crash after 6/8 retrained all 8);
+    ``force`` retrains everything and threads --force into each child."""
+    if not force:
+        todo = []
+        for stem in models:
+            data_path = train_dir / f"{stem}.jsonl"
+            fp = _train_fingerprint(stem, data_path, _validate_train_file(data_path))
+            if _train_complete(output_root / f"{SLUG}_{stem}", fp):
+                logger.info("[skip] %s already trained (sentinel match) — not spawning", stem)
+            else:
+                todo.append(stem)
+        if not todo:
+            logger.info("[phase=all_trained] all %d models already trained", len(models))
+            return 0
+        models = todo
     pending = list(models)
     running: dict[int, subprocess.Popen] = {}  # phys_gpu -> Popen
     failures: list[str] = []
@@ -206,6 +300,8 @@ def orchestrate(train_dir: Path, output_root: Path, gpu_ids: list[int], models: 
                     "--output-root",
                     str(output_root),
                 ]
+                if force:
+                    cmd.append("--force")
                 log_path = log_dir / f"{stem}.log"
                 log_f = log_path.open("a", encoding="utf-8")
                 logger.info("launch %s on physical GPU %d (log: %s)", stem, g, log_path)
@@ -252,6 +348,11 @@ def main() -> int:
         action="store_true",
         help="Orchestrator: accept a stem subset (smoke) instead of the full 8",
     )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="Retrain even when a matching completion sentinel exists",
+    )
     ap.add_argument("--dry-run", action="store_true", help="Validate args + configs; no GPU/torch")
     args = ap.parse_args()
 
@@ -273,7 +374,7 @@ def main() -> int:
         return 0
 
     if args.model:
-        train_one(args.model, train_dir, output_root, args.gpu_id)
+        train_one(args.model, train_dir, output_root, args.gpu_id, force=args.force)
         return 0
 
     models = discover_models(train_dir)
@@ -288,7 +389,7 @@ def main() -> int:
         )
     gpu_ids = _visible_gpu_ids(args.gpus)
     logger.info("orchestrating %d models across GPUs %s", len(models), gpu_ids)
-    return orchestrate(train_dir, output_root, gpu_ids, models)
+    return orchestrate(train_dir, output_root, gpu_ids, models, force=args.force)
 
 
 if __name__ == "__main__":

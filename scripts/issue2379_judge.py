@@ -544,21 +544,73 @@ def _sample_persona_map(persona_map: dict, per_arm: int, seed: int) -> dict:
     return out
 
 
+def _pilot_regime(models: list[str]) -> dict:
+    """Instrument + roster regime a pilot PASS certifies (llm-judging rule 26: a
+    pilot covers only the rubric/judge/max_tokens/transport + arms it RAN;
+    round-3 codex Critical phase-idempotency-missing: a bare
+    ``gate_path.exists()`` skip accepted a pilot from a DIFFERENT model set or
+    instrument). Deliberately NO source shas — the pilot certifies the
+    INSTRUMENT, not the completions (those bind the WAVE regime)."""
+    return {
+        "models": sorted(models),
+        "judge_model": EXPECTED_JUDGE_MODEL,
+        "max_tokens": JUDGE_MAX_TOKENS,
+        "rubric": "eval.alignment.BETLEY_DUAL_JUDGE_SYSTEM_PROMPT",
+        "transport": "batch",
+        "sample_per_arm": PILOT_SAMPLE_PER_ARM,
+        "sample_seed": KAPPA_SAMPLE_SEED,
+        "parse_fail_max": PILOT_PARSE_FAIL_MAX,
+        "min_effective_per_arm": PILOT_MIN_EFFECTIVE_PER_ARM,
+        "em_predicate": f"aligned < {EM_ALIGNED_MAX} AND coherent >= {EM_COHERENT_MIN}",
+    }
+
+
+def _wave_regime(models: list[str], cache_root: Path) -> dict:
+    """Regime the production wave's rates_em.json is valid under: the pilot
+    instrument keys PLUS per-model sha256 of the fetched raw_completions.json
+    (a re-swept model changes its source sha, so a stale-wave skip cannot
+    silently serve rates judged on the OLD completions)."""
+    from issue2379_sweep import sha256_file
+
+    pilot_only = ("sample_per_arm", "sample_seed", "parse_fail_max", "min_effective_per_arm")
+    regime = {k: v for k, v in _pilot_regime(models).items() if k not in pilot_only}
+    regime["source_shas"] = {m: sha256_file(_fetch_rawcomp_json(m, cache_root)) for m in models}
+    return regime
+
+
+def _check_wave_regime(existing: dict, regime: dict) -> str | None:
+    """None when an existing rates_em.json matches the current wave regime; else
+    a short mismatch description (pure — unit-testable)."""
+    got = existing.get("regime")
+    if not isinstance(got, dict):
+        return "no regime recorded (pre-round-3 rates_em.json)"
+    diffs = [k for k in sorted(set(regime) | set(got)) if got.get(k) != regime.get(k)]
+    return f"mismatched keys: {diffs}" if diffs else None
+
+
 def phase_pilot(cfg: dict) -> dict:
     models = cfg["models"]
     gate_path = cfg["out_dir"] / "pilot_gate.json"
+    regime = _pilot_regime(models)
     if gate_path.exists() and not cfg.get("force"):
         report = json.loads(gate_path.read_text(encoding="utf-8"))
+        if report.get("regime") == regime:
+            print(
+                f"[pilot] SKIP — {gate_path} exists under the current regime "
+                f"(passed={report.get('passed')}); pass --force to re-run the pilot"
+            )
+            return report
         print(
-            f"[pilot] SKIP — {gate_path} exists (passed={report.get('passed')}); "
-            "pass --force to re-run the pilot"
+            "[pilot] stale pilot_gate.json (regime mismatch — different model set / "
+            "instrument) — re-running the pilot",
+            flush=True,
         )
-        return report
     report: dict = {
         "issue": 2379,
         "phase": "pilot",
         "generated_utc": _utcnow(),
         "git": _git_meta(),
+        "regime": regime,
         "gate": {},
         "passed": True,
     }
@@ -719,16 +771,49 @@ def _require_pilot_gate(cfg: dict) -> dict:
             f"pilot gate FAILED ({gate_path}) — fix the instrument and re-pilot, or "
             "pass --override-pilot-gate to dispatch anyway (audited in rates_em.json)"
         )
-    return {"path": str(gate_path), "passed": True, "overridden": False}
+    # Round-3 codex Critical phase-idempotency-missing: a PASSED gate from a
+    # DIFFERENT regime (other model roster, other instrument) must not license
+    # this wave. Roster check is subset (a wave on a piloted subset is fine);
+    # instrument keys must match exactly. A pre-round-3 gate has no regime ->
+    # every model reads uncovered -> re-pilot (cheap).
+    want = _pilot_regime(cfg["models"])
+    got = gate.get("regime") or {}
+    uncovered = sorted(set(want["models"]) - set(got.get("models") or []))
+    if uncovered:
+        raise RuntimeError(
+            f"pilot gate {gate_path} does not cover models {uncovered} — re-run "
+            "--phase pilot (rule 26: a pilot certifies only the arms it spanned; "
+            "--override-pilot-gate is the audited escape)"
+        )
+    instr_keys = ("judge_model", "max_tokens", "rubric", "transport")
+    mismatch = {k: [got.get(k), want[k]] for k in instr_keys if got.get(k) != want[k]}
+    if mismatch:
+        raise RuntimeError(
+            f"pilot gate {gate_path} certifies a DIFFERENT instrument "
+            f"({mismatch}) — re-pilot (rule 26: any instrument change invalidates "
+            "a pilot PASS; --override-pilot-gate is the audited escape)"
+        )
+    return {"path": str(gate_path), "passed": True, "overridden": False, "regime_checked": True}
 
 
 def phase_wave(cfg: dict) -> dict:
     models = cfg["models"]
     cache_root = cfg["cache_root"]
     rates_path: Path = cfg["out_dir"] / "rates_em.json"
+    regime = _wave_regime(models, cache_root)
     if rates_path.exists() and not cfg.get("force"):
-        print(f"[wave] SKIP — {rates_path} exists (pass --force to re-run the wave)")
-        return json.loads(rates_path.read_text(encoding="utf-8"))
+        existing = json.loads(rates_path.read_text(encoding="utf-8"))
+        stale = _check_wave_regime(existing, regime)
+        if stale is None:
+            print(f"[wave] SKIP — {rates_path} current (pass --force to re-run the wave)")
+            return existing
+        # SPEND SAFETY (round-3 codex Critical): a ~43k-call wave never silently
+        # re-dispatches on a stale-regime file — the operator decides.
+        raise RuntimeError(
+            f"[wave] {rates_path} exists but its regime is STALE ({stale}) — the "
+            "production wave will NOT silently re-dispatch; pass --force to "
+            "re-judge (API spend) or keep the existing rates deliberately"
+        )
     gate_audit = _require_pilot_gate(cfg)
     rates: dict[str, dict] = {}
     reissue_stats: dict[str, dict] = {}
@@ -782,6 +867,7 @@ def phase_wave(cfg: dict) -> dict:
         },
         "drop_policy": "content(REFUSAL/CODE/malformed) dropped from denominator; api-refusal "
         "reissued once SYNC then excluded; transport retried by client (rule 9/24/28)",
+        "regime": regime,
         "pilot_gate": gate_audit,
         "reconcile": reconcile,
         "reissue_stats": reissue_stats,

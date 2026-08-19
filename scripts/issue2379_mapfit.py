@@ -313,16 +313,19 @@ def predict_affine(comp: dict, x) -> "object":
 
 
 def _predict_reference_from_fit(fit: dict, x) -> "object":
-    """INDEPENDENT parity oracle: the verbatim issue2254_preimage.py:848-850
-    prediction expression evaluated on the RAW ``ridge_fit_matrix`` output dict
-    (native fp64 ``fit["W"]``, never the fp32-cast ``comp`` this checks) —
-    r1 blocker hollow-prediction-parity: the old reference duplicated
-    ``predict_affine`` on the SAME comp dict, so parity could never fail."""
-    import numpy as np
+    """INDEPENDENT parity oracle: DELEGATES to the #2254 module's own exported
+    held-out prediction path (``issue2254_preimage.predict_from_fit`` — the
+    hoisted ``_fit_layer_worker`` expression), evaluated on the RAW
+    ``ridge_fit_matrix`` output dict (native fp64 ``fit["W"]``, never the
+    fp32-cast ``comp`` this checks). Round-3 fix (codex
+    hollow-prediction-parity): the r2 oracle was an AST-equivalent SAME-MODULE
+    transcription of the production affine expression, so a shared
+    transcription error could never fail parity; with the oracle expression
+    maintained in issue2254_preimage.py itself, that failure class is
+    structurally impossible."""
+    import issue2254_preimage as i2254
 
-    x_ev_n = (np.asarray(x, dtype=np.float64) - fit["xmu"]) / fit["xsd"]
-    pred_map = x_ev_n @ np.asarray(fit["W"], dtype=np.float64) + fit["ymu"]
-    return pred_map
+    return i2254.predict_from_fit(fit, x)
 
 
 # fp32 W cast noise: rel err ~6e-8/entry, ~sqrt(3584)-accumulated ≈ 4e-6 rel.
@@ -904,30 +907,67 @@ _BUNDLE_REQUIRED_KEYS = {
 }
 _GRID_ROW_META_KEYS = {"trigger_idx", "trigger_label", "q_sim_idx"}
 _CEILING_ROW_META_KEYS = {"cell_idx", "trigger_idx", "trigger_label", "q_sim_idx", "rollout_idx"}
+# Identity tuples per bundle: (t, q) unique for grid; (t, q, rollout) for ceiling.
+_GRID_ROW_IDENTITY = ("trigger_idx", "q_sim_idx")
+_CEILING_ROW_IDENTITY = ("trigger_idx", "q_sim_idx", "rollout_idx")
 
 
-def _validate_predictor_bundles(model: str, out: dict) -> None:
-    """Diff required keys vs realized keys per bundle, then validate shapes and
-    counts JOINTLY (row_meta length == tensor rows; layer/hidden agreement across
-    grid/mu/ceiling) BEFORE any consumption."""
-    for name, required in _BUNDLE_REQUIRED_KEYS.items():
-        missing = required - set(out[name].keys())
+def _validate_row_meta(
+    model: str, name: str, rows, required: set, identity_fields: tuple[str, ...]
+) -> None:
+    """FULL row-set schema check — round-3 fix (codex
+    cached-artifact-schema-coverage: the r2 validator inspected row zero only,
+    so a malformed row after row zero crashed at consumption, deterministically
+    AFTER the expensive fits). Every row must carry the required keys —
+    non-negative ints for index fields, non-empty str for trigger_label — and
+    the identity tuple over ``identity_fields`` must be unique across rows."""
+    seen: set[tuple] = set()
+    for i, r in enumerate(rows):
+        missing = required - set(r.keys())
+        if missing:
+            raise RuntimeError(f"{model}/{name}.pt row_meta[{i}] missing {sorted(missing)}")
+        for k in sorted(required):
+            v = r[k]
+            if k == "trigger_label":
+                if not isinstance(v, str) or not v:
+                    raise RuntimeError(
+                        f"{model}/{name}.pt row_meta[{i}].{k}={v!r} not a non-empty str"
+                    )
+            elif not isinstance(v, int) or isinstance(v, bool) or v < 0:
+                raise RuntimeError(
+                    f"{model}/{name}.pt row_meta[{i}].{k}={v!r} not a non-negative int"
+                )
+        ident = tuple(r[k] for k in identity_fields)
+        if ident in seen:
+            raise RuntimeError(
+                f"{model}/{name}.pt row_meta[{i}] duplicate identity "
+                f"{dict(zip(identity_fields, ident))}"
+            )
+        seen.add(ident)
+
+
+def _validate_grid_mu(model: str, grid: dict, mu: dict) -> tuple[int, int]:
+    """Shared grid+mu validation core (required keys, FULL row-set check, shape
+    agreement). Returns (n_layers, hidden). Used by ``_validate_predictor_bundles``
+    (P5 consumer) AND ``validate_gate_pair`` (the Gate-G1 load path, which
+    previously bypassed all bundle validation — round-3 codex
+    cached-artifact-schema-coverage)."""
+    for name, required in (
+        ("grid", _BUNDLE_REQUIRED_KEYS["grid"]),
+        ("mu", _BUNDLE_REQUIRED_KEYS["mu"]),
+    ):
+        src = grid if name == "grid" else mu
+        missing = required - set(src.keys())
         if missing:
             raise RuntimeError(
-                f"{model}/{name}.pt missing keys {sorted(missing)} "
-                f"(realized: {sorted(out[name].keys())})"
+                f"{model}/{name}.pt missing keys {sorted(missing)} (realized: {sorted(src.keys())})"
             )
-    grid, mu, ceil = out["grid"], out["mu"], out["ceiling"]
     v_c, g_meta = grid["v_c"], grid["row_meta"]
     if v_c.ndim != 3 or len(g_meta) != int(v_c.shape[0]):
         raise RuntimeError(
             f"{model}/grid.pt: v_c {tuple(v_c.shape)} vs {len(g_meta)} row_meta rows"
         )
-    if g_meta and not _GRID_ROW_META_KEYS <= set(g_meta[0].keys()):
-        raise RuntimeError(
-            f"{model}/grid.pt row_meta keys {sorted(g_meta[0].keys())} lack "
-            f"{sorted(_GRID_ROW_META_KEYS)}"
-        )
+    _validate_row_meta(model, "grid", g_meta, _GRID_ROW_META_KEYS, _GRID_ROW_IDENTITY)
     mu_tr, mu_a = mu["mu_train"], mu["mu_a_train"]
     if mu_a is None:
         raise RuntimeError(
@@ -939,22 +979,42 @@ def _validate_predictor_bundles(model: str, out: dict) -> None:
         )
     if int(mu["n_c"]) <= 0 or int(mu["n_a"]) <= 0:
         raise RuntimeError(f"{model}/mu.pt: n_c={mu['n_c']} n_a={mu['n_a']} — empty mean")
+    n_l, hidden = int(v_c.shape[1]), int(v_c.shape[2])
+    if tuple(mu_tr.shape) != (n_l, hidden):
+        raise RuntimeError(
+            f"{model}/mu.pt layer/hidden shape {tuple(mu_tr.shape)} != grid ({n_l}, {hidden})"
+        )
+    return n_l, hidden
+
+
+def validate_gate_pair(model: str, grid: dict, mu: dict) -> None:
+    """Gate-G1 load-path validator (imported by ``issue2379_analysis``): the full
+    producer key/row-set/shape contract on the grid+mu pair the gate consumes."""
+    _validate_grid_mu(model, grid, mu)
+
+
+def _validate_predictor_bundles(model: str, out: dict) -> None:
+    """Diff required keys vs realized keys per bundle (grid/mu via the shared
+    core), then validate the CEILING bundle's full row set and the joint
+    layer/hidden agreement BEFORE any consumption."""
+    n_l, hidden = _validate_grid_mu(model, out["grid"], out["mu"])
+    ceil = out["ceiling"]
+    missing = _BUNDLE_REQUIRED_KEYS["ceiling"] - set(ceil.keys())
+    if missing:
+        raise RuntimeError(
+            f"{model}/ceiling.pt missing keys {sorted(missing)} (realized: {sorted(ceil.keys())})"
+        )
     v_a, c_meta = ceil["v_a"], ceil["row_meta"]
     if v_a.ndim != 3 or len(c_meta) != int(v_a.shape[0]):
         raise RuntimeError(
             f"{model}/ceiling.pt: v_a {tuple(v_a.shape)} vs {len(c_meta)} row_meta rows"
         )
-    if c_meta and not _CEILING_ROW_META_KEYS <= set(c_meta[0].keys()):
+    _validate_row_meta(model, "ceiling", c_meta, _CEILING_ROW_META_KEYS, _CEILING_ROW_IDENTITY)
+    if tuple(v_a.shape)[1:] != (n_l, hidden):
         raise RuntimeError(
-            f"{model}/ceiling.pt row_meta keys {sorted(c_meta[0].keys())} lack "
-            f"{sorted(_CEILING_ROW_META_KEYS)}"
+            f"{model}/ceiling.pt layer/hidden shape {tuple(v_a.shape)[1:]} != grid "
+            f"({n_l}, {hidden})"
         )
-    n_l, hidden = int(v_c.shape[1]), int(v_c.shape[2])
-    for name, shape in (("mu", tuple(mu_tr.shape)), ("ceiling", tuple(v_a.shape)[1:])):
-        if shape != (n_l, hidden):
-            raise RuntimeError(
-                f"{model}/{name}.pt layer/hidden shape {shape} != grid ({n_l}, {hidden})"
-            )
 
 
 def _load_predictor_bundles(model: str, tensor_dir: Path) -> dict:
@@ -1583,6 +1643,8 @@ SMOKE_BLIND_SPOTS = [
     "production shapes (28 layers x 3584 hidden; n=5,000) — smoke runs 2 x 8, n=60; the "
     "--pilot phase covers ONE fit at full production shape on the pod",
     "HF upload of pinned components (--phase upload) — not exercised in smoke",
+    "_stage_text_baselines HF fetch-on-miss leg — production-only (smoke fixtures are "
+    "local, so the staging branch never executes under smoke)",
     "process-pool width at pod vCPU count — smoke uses the same pool code at width 2",
     "--device cuda predicted-vector matmuls — smoke is CPU-only (scores has a one-shot "
     "cuda-vs-cpu parity self-check at pod time)",

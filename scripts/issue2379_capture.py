@@ -112,10 +112,14 @@ load_dotenv()
 from issue2379_prep_data import P_INOC_CAPS, P_INOC_EM  # noqa: E402
 from issue2379_sweep import (  # noqa: E402
     BASE_MODEL,
+    MERGED_ROOT_DEFAULT,
     SLUG,
     load_questions,
     load_triggers,
+    reclaim_dead_merge_dirs,
     render_context_messages,
+    resolve_model_identity,
+    write_merge_provenance,
 )
 
 logger = logging.getLogger("issue2379_capture")
@@ -305,17 +309,23 @@ def validate_mu_train_jsonl(train_jsonl: Path) -> int:
 # ---------------------------------------------------------------------------
 def resolve_model(args) -> tuple[str, object]:
     """(model_path, cleanup). ``--model`` -> use as-is; ``--adapter`` -> merge onto
-    base into a phase+pid-scoped dir + delete after (MooseFS quota). The pid scope
-    keeps concurrent invocations for the SAME model from sharing a merged dir
-    (r1 minor: merged_dir keyed only by model name)."""
+    base into a phase+pid-scoped dir under ``--merged-root`` + delete after
+    (MooseFS quota). The pid scope keeps concurrent invocations for the SAME model
+    from sharing a merged dir (r1 minor); the merge root lives under data/, never
+    eval_results/ (round-3 g1 Major merge-root-unification), crash-leaked sibling
+    dirs are reclaimed at entry, and a provenance sidecar records the adapter's
+    weights identity for downstream resume fingerprints."""
     if args.model:
         return args.model, (lambda: None)
     from explore_persona_space.train.sft import merge_lora
 
-    merged_dir = Path(args.out_dir) / "merged" / f"{args.model_name}.{args.phase}.{os.getpid()}"
-    merged_dir.parent.mkdir(parents=True, exist_ok=True)
+    merged_root = Path(args.merged_root)
+    merged_root.mkdir(parents=True, exist_ok=True)
+    reclaim_dead_merge_dirs(merged_root, args.model_name, args.phase)
+    merged_dir = merged_root / f"{args.model_name}.{args.phase}.{os.getpid()}"
     logger.info("merging adapter %s -> %s", args.adapter, merged_dir)
     merge_lora(BASE_MODEL, args.adapter, str(merged_dir), gpu_id=args.gpu_id)
+    write_merge_provenance(merged_dir, args.adapter)
 
     def _cleanup() -> None:
         shutil.rmtree(merged_dir, ignore_errors=True)
@@ -377,12 +387,18 @@ class _ChunkStore:
     pins a GENERATING-PARAMETER fingerprint (machine-stable strings/ints — never
     hashes of recomputed float arrays, per code-style resume-key rules). A
     fingerprint mismatch discards the partial state loudly; non-contiguous chunk
-    residue past a gap is dropped."""
+    residue past a gap is dropped. Resume additionally LOADS every contiguous
+    chunk and validates its payload keys (round-3 codex Major
+    capture-batch1-restartability: a truncated chunk with a valid NAME was
+    repeatedly accepted at resume and crashed only at assembly — a permanent
+    wedge); an invalid frontier chunk is deleted together with every later chunk
+    so the phase rebuilds from the last GOOD unit instead of wedging."""
 
-    def __init__(self, bundle_path: Path, fingerprint: dict):
+    def __init__(self, bundle_path: Path, fingerprint: dict, payload_keys: tuple[str, ...]):
         self.dir = bundle_path.parent / (bundle_path.name + ".chunks")
         self.meta_path = self.dir / "meta.json"
         self.fingerprint = fingerprint
+        self.payload_keys = frozenset(payload_keys)
 
     def _init_fresh(self) -> None:
         if self.dir.exists():
@@ -397,8 +413,18 @@ class _ChunkStore:
             out.append((int(parts[1]), int(parts[2]), p))
         return sorted(out)
 
+    def _chunk_valid(self, p: Path) -> bool:
+        """True iff the chunk file torch-loads to a dict carrying every payload key."""
+        import torch
+
+        try:
+            payload = torch.load(p, weights_only=True)
+        except Exception:  # noqa: BLE001 — truncated/corrupt chunk = discardable state
+            return False
+        return isinstance(payload, dict) and self.payload_keys <= set(payload)
+
     def resume_units(self) -> int:
-        """Contiguous completed unit count (0 on fresh/mismatched state)."""
+        """Contiguous VALIDATED completed unit count (0 on fresh/mismatched state)."""
         if not self.meta_path.exists():
             self._init_fresh()
             return 0
@@ -413,11 +439,24 @@ class _ChunkStore:
             self._init_fresh()
             return 0
         cur = 0
-        for start, end, p in self._chunk_files():
+        files = self._chunk_files()
+        for k, (start, end, p) in enumerate(files):
             if start != cur:
                 logger.warning("[ckpt] dropping non-contiguous chunk residue from %s", p.name)
                 p.unlink()
                 continue
+            if not self._chunk_valid(p):
+                n_later = sum(1 for _, _, q in files[k + 1 :] if q.exists())
+                logger.warning(
+                    "[ckpt] dropping truncated/invalid chunk %s (+%d later chunks); "
+                    "resuming from unit %d",
+                    p.name,
+                    n_later,
+                    cur,
+                )
+                for _, _, q in files[k:]:
+                    q.unlink(missing_ok=True)
+                break
             cur = end
         return cur
 
@@ -431,6 +470,69 @@ class _ChunkStore:
 
     def cleanup(self) -> None:
         shutil.rmtree(self.dir, ignore_errors=True)
+
+
+def phase_fingerprint(phase: str, meta: dict, **counts) -> dict:
+    """GENERATING-PARAMETER fingerprint shared by each phase (chunk store /
+    mu-partial / bundle sidecar) and main's skip predicate — ONE composition site
+    so producer and skip check can never drift. Binds to the producing MODEL's
+    weights identity (round-3 g1 Major: name/count-only regimes survive a
+    retrain, silently reusing the OLD model's rollouts/activations)."""
+    return {
+        "phase": phase,
+        "model": meta["model"],
+        "setting": meta["setting"],
+        "model_ident": meta["model_ident"],
+        **counts,
+    }
+
+
+def bundle_sidecar(out_bundle: Path) -> Path:
+    """Regime sidecar path beside a final bundle (``<name>.meta.json``)."""
+    return out_bundle.with_name(out_bundle.name + ".meta.json")
+
+
+def write_bundle_sidecar(out_bundle: Path, fp: dict) -> None:
+    """Record the producing fingerprint beside the final bundle (skip-predicate
+    input; round-3 g1 Minor: presence-only skips reuse stale-regime bundles)."""
+    _atomic_write_text(bundle_sidecar(out_bundle), json.dumps({"fingerprint": fp}, indent=2))
+
+
+def bundle_current(out_bundle: Path, fp: dict) -> bool:
+    """True iff the final bundle exists AND its sidecar records the expected
+    fingerprint. Pre-round-3 bundles (no sidecar) and unreadable sidecars read
+    NOT-current -> recompute (conservative-correct)."""
+    if not out_bundle.exists():
+        return False
+    sc = bundle_sidecar(out_bundle)
+    if not sc.is_file():
+        return False
+    try:
+        doc = json.loads(sc.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return False
+    return doc.get("fingerprint") == fp
+
+
+_MU_PARTIAL_KEYS = ("fingerprint", "mu_c_sum", "mu_a_sum", "n_c", "n_a", "next_line_idx")
+
+
+def _load_mu_partial(partial: Path, fp: dict):
+    """Load + validate a mu ``.partial.pt``. ANY defect — unreadable file, non-dict
+    payload, missing state key, fingerprint mismatch — returns None
+    (discard-as-stale), never a KeyError (round-3 codex Major: a partial with a
+    matching fingerprint but a missing state key raised instead of discarding)."""
+    import torch
+
+    try:
+        st = torch.load(partial, weights_only=True)
+    except Exception:  # noqa: BLE001 — a truncated partial is discardable state
+        return None
+    if not isinstance(st, dict) or any(k not in st for k in _MU_PARTIAL_KEYS):
+        return None
+    if st.get("fingerprint") != fp:
+        return None
+    return st
 
 
 # ---------------------------------------------------------------------------
@@ -587,14 +689,8 @@ def phase_grid(model, tokenizer, layers, q_sim, triggers, out_bundle: Path, meta
 
     keys = [(ti, trig, qi, q) for ti, trig in enumerate(triggers) for qi, q in enumerate(q_sim)]
     n = len(keys)
-    fp = {
-        "phase": "grid",
-        "model": meta["model"],
-        "setting": meta["setting"],
-        "n_rows": n,
-        "n_layers": len(layers),
-    }
-    store = _ChunkStore(out_bundle, fp)
+    fp = phase_fingerprint("grid", meta, n_rows=n, n_layers=len(layers))
+    store = _ChunkStore(out_bundle, fp, ("v_c", "row_meta"))
     done = store.resume_units()
     if done:
         logger.info("[grid] resuming at row %d/%d", done, n)
@@ -614,6 +710,7 @@ def phase_grid(model, tokenizer, layers, q_sim, triggers, out_bundle: Path, meta
     if v_c.shape[0] != n:
         raise RuntimeError(f"grid: assembled {v_c.shape[0]} rows, expected {n}")
     _atomic_torch_save({"v_c": v_c, "row_meta": row_meta, **meta}, out_bundle)
+    write_bundle_sidecar(out_bundle, fp)
     store.cleanup()
     logger.info("grid: wrote %s v_c=%s", out_bundle, tuple(v_c.shape))
 
@@ -634,29 +731,21 @@ def phase_mu(
     training rows — never a silently shrunk mu_A)."""
     import torch
 
-    fp = {
-        "phase": "mu",
-        "model": meta["model"],
-        "setting": meta["setting"],
-        "train_jsonl": train_jsonl.name,
-        "n_rows": n_rows,
-        "n_layers": len(layers),
-    }
+    fp = phase_fingerprint(
+        "mu", meta, train_jsonl=train_jsonl.name, n_rows=n_rows, n_layers=len(layers)
+    )
     partial = out_bundle.with_name(out_bundle.name + ".partial.pt")
     mu_c = mu_a = None
     n_c = n_a = 0
     next_line_idx = 0
     if partial.exists():
-        try:
-            st = torch.load(partial, weights_only=True)
-        except Exception:  # noqa: BLE001 — a truncated partial is discardable state
-            st = None
-        if st is not None and st.get("fingerprint") == fp:
+        st = _load_mu_partial(partial, fp)
+        if st is not None:
             mu_c, mu_a = st["mu_c_sum"], st["mu_a_sum"]
             n_c, n_a, next_line_idx = st["n_c"], st["n_a"], st["next_line_idx"]
             logger.info("[mu] resuming at line %d (%d/%d rows done)", next_line_idx, n_c, n_rows)
         else:
-            logger.warning("[mu] discarding stale partial (fingerprint mismatch): %s", partial)
+            logger.warning("[mu] discarding stale/invalid partial: %s", partial)
             partial.unlink()
 
     t0 = time.time()
@@ -706,6 +795,7 @@ def phase_mu(
     _atomic_torch_save(
         {"mu_train": mu_c, "mu_a_train": mu_a, "n_c": n_c, "n_a": n_a, **meta}, out_bundle
     )
+    write_bundle_sidecar(out_bundle, fp)
     partial.unlink(missing_ok=True)
     logger.info("mu: wrote %s (n_c=%d n_a=%d)", out_bundle, n_c, n_a)
 
@@ -736,15 +826,10 @@ def phase_ceiling_tf(
     n_cells = len(keys)
     if len(rollouts) != n_cells:
         raise RuntimeError(f"ceiling: {len(rollouts)} rollout cells != {n_cells} (q,c) keys")
-    fp = {
-        "phase": "ceiling_tf",
-        "model": meta["model"],
-        "setting": meta["setting"],
-        "n_cells": n_cells,
-        "n_rollouts": CEILING_N_ROLLOUTS,
-        "n_layers": len(layers),
-    }
-    store = _ChunkStore(out_bundle, fp)
+    fp = phase_fingerprint(
+        "ceiling_tf", meta, n_cells=n_cells, n_rollouts=CEILING_N_ROLLOUTS, n_layers=len(layers)
+    )
+    store = _ChunkStore(out_bundle, fp, ("v_a", "row_meta", "n_capture_dropped"))
     done = store.resume_units()
     if done:
         logger.info("[ceiling] resuming at cell %d/%d", done, n_cells)
@@ -823,6 +908,7 @@ def phase_ceiling_tf(
     _atomic_torch_save(
         {"v_a": v_a, "row_meta": row_meta, "drop_stats": drop_stats, **meta}, out_bundle
     )
+    write_bundle_sidecar(out_bundle, fp)
     store.cleanup()
     logger.info(
         "ceiling: wrote %s v_a=%s (dropped %d/%d slots)",
@@ -849,14 +935,8 @@ def phase_map_corpus_tf(
     import torch
 
     n = len(prompts)
-    fp = {
-        "phase": "map_corpus_tf",
-        "model": meta["model"],
-        "setting": meta["setting"],
-        "n_prompts": n,
-        "n_layers": len(layers),
-    }
-    store = _ChunkStore(out_bundle, fp)
+    fp = phase_fingerprint("map_corpus_tf", meta, n_prompts=n, n_layers=len(layers))
+    store = _ChunkStore(out_bundle, fp, ("v_c", "v_a", "kept_idx", "dropped"))
     done = store.resume_units()
     if done:
         logger.info("[map_corpus] resuming at row %d/%d", done, n)
@@ -923,6 +1003,7 @@ def phase_map_corpus_tf(
         },
         out_bundle,
     )
+    write_bundle_sidecar(out_bundle, fp)
     store.cleanup()
     logger.info(
         "map_corpus: wrote %s v_c=%s v_a=%s (kept %d/%d)",
@@ -1072,10 +1153,13 @@ def _git_meta() -> dict:
     return as_metadata_dict(git_provenance(cwd=REPO_ROOT))
 
 
-def _rollout_fingerprint(phase: str, model_name: str, n_prompts: int, n_samples: int) -> dict:
+def _rollout_fingerprint(
+    phase: str, model_name: str, model_ident: str, n_prompts: int, n_samples: int
+) -> dict:
     return {
         "phase": f"{phase}_rollouts",
         "model": model_name,
+        "model_ident": model_ident,
         "n_prompts": n_prompts,
         "n_samples": n_samples,
         "temperature": ROLLOUT_TEMPERATURE,
@@ -1084,6 +1168,32 @@ def _rollout_fingerprint(phase: str, model_name: str, n_prompts: int, n_samples:
         "seed": ROLLOUT_SEED,
         "empty_retry_passes": EMPTY_RETRY_PASSES,
     }
+
+
+def _force_wipe_phase_state(
+    phase: str, out_bundle: Path, pred_subdir: Path, model_name: str
+) -> None:
+    """--force invalidates ALL of the phase's resume state (round-3 g1 Major):
+    the final bundle + its sidecar, the chunk store, the mu partial, and the
+    phase's rollout sidecar — a forced rerun must never resume from the OLD
+    model's rollouts/activations."""
+    chunks = out_bundle.parent / (out_bundle.name + ".chunks")
+    if chunks.exists():
+        shutil.rmtree(chunks, ignore_errors=True)
+        logger.info("[force] wiped chunk store %s", chunks)
+    targets = [
+        out_bundle,
+        bundle_sidecar(out_bundle),
+        out_bundle.with_name(out_bundle.name + ".partial.pt"),
+    ]
+    if phase == "ceiling":
+        targets.append(pred_subdir / "ceiling.rollouts.json")
+    elif phase == "map_corpus":
+        targets.append(out_bundle.with_name(f"{model_name}.rollouts.json"))
+    for t in targets:
+        if t.exists():
+            t.unlink()
+            logger.info("[force] wiped %s", t)
 
 
 def main() -> int:
@@ -1101,6 +1211,11 @@ def main() -> int:
     ap.add_argument("--train-jsonl", default=None, help="Training JSONL for --phase mu")
     ap.add_argument("--banks-dir", default=str(REPO_ROOT / "data" / "issue_2379" / "banks"))
     ap.add_argument("--out-dir", default=str(REPO_ROOT / "eval_results" / "issue_2379"))
+    ap.add_argument(
+        "--merged-root",
+        default=str(MERGED_ROOT_DEFAULT),
+        help="Root for lazy adapter merges (safetensors — data/, never eval_results/)",
+    )
     ap.add_argument("--gpu-id", type=int, default=0)
     ap.add_argument("--probe-access", action="store_true", help="1-row LMSYS gated read; then exit")
     ap.add_argument("--force", action="store_true", help="Recompute even if outputs exist")
@@ -1143,7 +1258,12 @@ def main() -> int:
         logger.info("[dry-run] disjointness assert OK; args resolved")
         return 0
 
-    meta = {"model": args.model_name, "setting": args.setting, "git": _git_meta()}
+    meta = {
+        "model": args.model_name,
+        "setting": args.setting,
+        "model_ident": resolve_model_identity(args.model, args.adapter),
+        "git": _git_meta(),
+    }
 
     if args.phase == "text_baselines":
         # CPU-only; no model load.
@@ -1180,9 +1300,13 @@ def main() -> int:
             )
         assert_lmsys_disjoint(lmsys_prompts, banks_dir)
 
-    # Output paths + per-invocation idempotency (skip compute if the final bundle
-    # exists — atomic writes make existence reliable; --force overrides; the
-    # upload leg still runs so a crash between compute and upload self-heals).
+    # Output paths + per-invocation idempotency. The skip predicate matches the
+    # final bundle's SIDECAR fingerprint (never bare presence — round-3 g1
+    # Minor 3), which binds to the current model's WEIGHTS identity (round-3 g1
+    # Major); --force wipes ALL of the phase's resume state first so a forced
+    # rerun can never resume from the old model's rollouts/activations; the
+    # upload leg still runs on skip so a crash between compute and upload
+    # self-heals.
     pred_subdir = tensor_dir / "predictor_captures" / args.model_name
     pred_subdir.mkdir(parents=True, exist_ok=True)
     if args.phase == "map_corpus":
@@ -1191,9 +1315,37 @@ def main() -> int:
     else:
         out_bundle = pred_subdir / f"{args.phase}.pt"
 
-    if out_bundle.exists() and not args.force:
+    if args.phase == "grid":
+        expected_fp = phase_fingerprint(
+            "grid", meta, n_rows=len(triggers) * len(q_sim), n_layers=EXPECTED_LAYERS
+        )
+    elif args.phase == "mu":
+        expected_fp = phase_fingerprint(
+            "mu",
+            meta,
+            train_jsonl=Path(args.train_jsonl).name,
+            n_rows=n_train_rows,
+            n_layers=EXPECTED_LAYERS,
+        )
+    elif args.phase == "ceiling":
+        expected_fp = phase_fingerprint(
+            "ceiling_tf",
+            meta,
+            n_cells=len(triggers) * len(q_sim),
+            n_rollouts=CEILING_N_ROLLOUTS,
+            n_layers=EXPECTED_LAYERS,
+        )
+    else:  # map_corpus
+        expected_fp = phase_fingerprint(
+            "map_corpus_tf", meta, n_prompts=LMSYS_N_PROMPTS, n_layers=EXPECTED_LAYERS
+        )
+
+    if args.force:
+        _force_wipe_phase_state(args.phase, out_bundle, pred_subdir, args.model_name)
+    if not args.force and bundle_current(out_bundle, expected_fp):
         logger.info(
-            "[skip] %s exists — skipping compute (--force to redo); running upload leg",
+            "[skip] %s current under the expected fingerprint — skipping compute "
+            "(--force to redo); running upload leg",
             out_bundle,
         )
     else:
@@ -1221,7 +1373,11 @@ def main() -> int:
                         CEILING_N_ROLLOUTS,
                         sidecar,
                         _rollout_fingerprint(
-                            "ceiling", args.model_name, len(prompt_texts), CEILING_N_ROLLOUTS
+                            "ceiling",
+                            args.model_name,
+                            meta["model_ident"],
+                            len(prompt_texts),
+                            CEILING_N_ROLLOUTS,
                         ),
                     )
                     enforce_ceiling_text_floors(rollouts)
@@ -1240,7 +1396,13 @@ def main() -> int:
                         prompt_texts,
                         1,
                         sidecar,
-                        _rollout_fingerprint("map_corpus", args.model_name, len(prompt_texts), 1),
+                        _rollout_fingerprint(
+                            "map_corpus",
+                            args.model_name,
+                            meta["model_ident"],
+                            len(prompt_texts),
+                            1,
+                        ),
                     )
                     enforce_map_text_floor(rollouts)
 

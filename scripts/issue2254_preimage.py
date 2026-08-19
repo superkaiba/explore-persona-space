@@ -309,6 +309,21 @@ def ridge_fit_matrix(X_train, Y_train):
     return {"W": W, "xmu": xmu, "xsd": xsd, "ymu": ymu, "s": s, "lam": float(best_lam)}
 
 
+def predict_from_fit(fit: dict, X_eval):
+    """THE #1615/#2254 prediction expression for a ``ridge_fit_matrix`` fit dict:
+    ``((X - xmu) / xsd) @ W + ymu`` in float64 — hoisted VERBATIM from the two
+    inline uses in ``_fit_layer_worker`` (behavior-identical: the fit dict's
+    arrays are already float64, so the ``asarray`` casts are no-ops there).
+
+    Exported deliberately: downstream consumers (``issue2379_mapfit.py``) use
+    THIS function as their prediction-parity oracle, so the oracle expression is
+    maintained in the #2254 module rather than transcribed — a shared
+    transcription error between a consumer's production path and its oracle is
+    structurally impossible (#2379 round-3, codex hollow-prediction-parity)."""
+    Xn = (np.asarray(X_eval, dtype=np.float64) - fit["xmu"]) / fit["xsd"]
+    return Xn @ np.asarray(fit["W"], dtype=np.float64) + fit["ymu"]
+
+
 # ---------------------------------------------------------------------------
 # Pure pre-image algebra (CPU-tested; tests/test_issue2254_driver.py)
 # ---------------------------------------------------------------------------
@@ -845,8 +860,7 @@ def _fit_layer_worker(task: dict) -> dict:
 
     # -- held-out mapping-baselines report (fit on 90%, read on 10%) --------
     fit_ho = ridge_fit_matrix(X[tr_idx], Y[tr_idx])
-    x_ev_n = (X[ev_idx] - fit_ho["xmu"]) / fit_ho["xsd"]
-    pred_map = x_ev_n @ fit_ho["W"] + fit_ho["ymu"]
+    pred_map = predict_from_fit(fit_ho, X[ev_idx])
     heldout = {
         "n_train": int(tr_idx.size),
         "n_eval": int(ev_idx.size),
@@ -863,8 +877,7 @@ def _fit_layer_worker(task: dict) -> dict:
 
     # -- production refit on ALL rows (the #1615 grain) ----------------------
     fit = ridge_fit_matrix(X, Y)
-    xn = (X - fit["xmu"]) / fit["xsd"]
-    recon = r2_score_multi(xn @ fit["W"] + fit["ymu"], Y)
+    recon = r2_score_multi(predict_from_fit(fit, X), Y)
     kstar = kstar_from_fit(fit["s"], fit["lam"])
     if kstar <= 0:
         raise RuntimeError(f"L{layer}: real map k*=0 — degenerate fit (lam={fit['lam']})")
