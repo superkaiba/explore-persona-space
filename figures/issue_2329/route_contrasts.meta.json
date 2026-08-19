@@ -1,0 +1,252 @@
+{
+  "commit": "0066444b",
+  "render_id": "b3bc2a50b8ff40e7",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:15:56Z",
+  "figsize": [
+    13.0,
+    5.5
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "steered F_beh": 0.5269726080788221,
+      "error": 0.1153414774063736,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.35,
+      "steered F_beh": 0.24305492248255117,
+      "error": 0.09801647283721023,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "steered F_beh": 0.0037332504169990052,
+      "error": 0.01217396565051898,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.35,
+      "steered F_beh": -0.1442041146943108,
+      "error": 0.24457498383968979,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.5,
+      "steered F_beh": 0.1000934918815578,
+      "error": 0.046452494366647834,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.85,
+      "steered F_beh": 0.31834191990650557,
+      "error": 0.1604721157663841,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.85,
+      "steered F_beh": 0.05020283808144378,
+      "error": 0.09452684715634405,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "steered F_beh": 0.6991196530520387,
+      "error": 0.12782023854830116,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 5.35,
+      "steered F_beh": 0.6954267665950055,
+      "error": 0.12322399452480437,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "steered F_beh": -0.0007971998041637523,
+      "error": 0.00244806387525318,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 6.35,
+      "steered F_beh": -0.0021822897701057444,
+      "error": 0.0037227115847936506,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 7.5,
+      "steered F_beh": 0.1000934918815578,
+      "error": 0.046452494366647834,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 7.85,
+      "steered F_beh": 0.9824807858706164,
+      "error": 0.36836667175650234,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 10.0,
+      "steered F_beh": 0.5269726080788221,
+      "error": 0.1153414774063736,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 10.35,
+      "steered F_beh": 0.8380894140186499,
+      "error": 0.10594735021945956,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 11.0,
+      "steered F_beh": 0.0037332504169990052,
+      "error": 0.01217396565051898,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 11.35,
+      "steered F_beh": 0.038209785965327356,
+      "error": 0.055427410959945286,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 12.5,
+      "steered F_beh": 0.5269726080788221,
+      "error": 0.1153414774063736,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 12.85,
+      "steered F_beh": 0.6439041459007061,
+      "error": 0.14245698375082735,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 13.5,
+      "steered F_beh": 0.0037332504169990052,
+      "error": 0.01217396565051898,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 13.85,
+      "steered F_beh": -0.009629033460660092,
+      "error": 0.045940688798679366,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 15.0,
+      "steered F_beh": 0.1000934918815578,
+      "error": 0.046452494366647834,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 15.35,
+      "steered F_beh": 0.34080064865884424,
+      "error": 0.09444502174450943,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 16.35,
+      "steered F_beh": -0.020950930408701413,
+      "error": 0.0648689834130404,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 17.5,
+      "steered F_beh": 0.1000934918815578,
+      "error": 0.046452494366647834,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 17.85,
+      "steered F_beh": 0.2535518926167549,
+      "error": 0.10186775311871349,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 18.85,
+      "steered F_beh": -0.025841459480945007,
+      "error": 0.04190170074311643,
+      "_kind": "bar",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 27,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "P2 route contrasts: base type (blue) vs route variant / conflict (orange)",
+        "ylabel": "steered F_beh",
+        "xticklabels": [
+          "demo_format|ce",
+          "demo_format|pe",
+          "demo_persona|ce",
+          "demo_persona|pe",
+          "language_implied|ce",
+          "language_implied|pe",
+          "persona_role_header|ce",
+          "persona_role_header|pe",
+          "conflict_format_fwd|ce",
+          "conflict_format_fwd|pe",
+          "conflict_format_rev|ce",
+          "conflict_format_rev|pe",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_fwd|pe",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe"
+        ],
+        "yticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "route_contrasts",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/stats.json"
+  ]
+}

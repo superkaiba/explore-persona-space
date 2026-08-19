@@ -1,0 +1,794 @@
+{
+  "per_persona": {
+    "acfecd2a928f9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa6424c14fad0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa068c46cdaf6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a26e941562898": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad29ca85fde73": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a983db2045371": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a204fcdda74c8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2a215ad37585": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4f933869d334": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae81d53ce401c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a20607b0ee86b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab39a96127f4c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3678caba8349": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a164588187fa2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab5980b629567": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0489f32c4b88": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aac24448dabf7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa253f0d46925": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac5e3bbe007fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a64c0599e17bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ace75180c3b5d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83f088cb4d84": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a39ceebbb5860": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a443c0c3b4962": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad042632df922": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a38599c24401f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af91f25849d7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aea9c6496ab16": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a49d92582042c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8a05be4a3dba": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a48fa39d52256": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac8bef227d8ed": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abdc663520943": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a932c9315a13d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afd83901798d4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ace84dd617bee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a73bc58b40d52": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afaa8ee1eafd5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af7efb4cd8c34": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a821e4eea1ab7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a387f2b355d28": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a08a51adc8d45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6c6647877fde": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2bf91a880d54": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adf2fe79e19a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae3a0fcaf4a61": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a672f6281af56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a45536b6d430c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5af5a3df9ba4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af49426045000": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad47b8f29358e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4d6872b36c8d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9f6707b7f8a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7b27a714fedb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a01b11b8d12f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9550ed49d6c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a69d8973de1f9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab02ec0dd0ce0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab30ea22c0d98": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8cf7d24ff065": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a98da2452760d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a00ea045112e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0e5d16de34ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8c24c9cecfe7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a535a1382090c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a699f113c2609": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a866be0874970": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad62063057902": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a50b101a3c61f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1d5a08478d78": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "acfecd2a928f9__00000__00": {
+      "reasoning": "The response is an extensive dramatic screenplay of approximately 2,000+ words, which is roughly 20 times longer than the target of 100 words. This completely fails to express the property of being a moderately sized answer of roughly 100 words.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa6424c14fad0__00001__00": {
+      "reasoning": "The response is a lengthy screenplay scene of over 1,500 words, which is approximately 15 times longer than the target of roughly 100 words. It completely fails to meet the specified length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa068c46cdaf6__00002__00": {
+      "reasoning": "The response is a lengthy screenplay scene of approximately 2,000+ words, which vastly exceeds the target of roughly 100 words by a factor of about 20. There is no expression of the desired property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a26e941562898__00003__00": {
+      "reasoning": "The response is a lengthy screenplay scene of over 2,000 words, which vastly exceeds the requested length of roughly 100 words. It shows no attempt to constrain the answer to the specified word count.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad29ca85fde73__00004__00": {
+      "reasoning": "The response is a full screenplay scene containing approximately 1,800-2,000 words, which vastly exceeds the target of roughly 100 words by a factor of about 18-20x. This shows no adherence to the specified word count constraint.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a983db2045371__00005__00": {
+      "reasoning": "The response is a full screenplay scene of approximately 2,000+ words, which dramatically exceeds the requested 100-word target length by at least 20 times. This shows no adherence to the specified word count constraint.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a204fcdda74c8__00006__00": {
+      "reasoning": "The response contains approximately 1,500+ words when the criterion specifies roughly 100 words. This represents a fifteen-fold excess over the target length, demonstrating complete non-compliance with the moderate length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2a215ad37585__00007__00": {
+      "reasoning": "The response is an extremely lengthy script (2,000+ words) with no attempt to keep the answer to roughly 100 words. It completely fails to express the target property of being moderately sized.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4f933869d334__00008__00": {
+      "reasoning": "The response contains approximately 1,100+ words when the target was roughly 100 words. This is more than 10 times the requested length, demonstrating complete failure to meet the specified word count constraint.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae81d53ce401c__00009__00": {
+      "reasoning": "The response is a multi-thousand word screenplay scene, vastly exceeding the target of approximately 100 words. There is no evidence of any attempt to produce a moderately sized response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a20607b0ee86b__00010__00": {
+      "reasoning": "The response is approximately 165 words, which is about 65% over the target of roughly 100 words. While it's moderately sized, it clearly exceeds the specified constraint.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ab39a96127f4c__00011__00": {
+      "reasoning": "The response is approximately 180-190 words, which is nearly double the target of 100 words. This represents a substantial deviation from the specified length constraint.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a3678caba8349__00012__00": {
+      "reasoning": "The response is approximately 165 words, which is 65% longer than the target of roughly 100 words. While it represents a moderately sized answer overall, it significantly exceeds the specified length.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a164588187fa2__00013__00": {
+      "reasoning": "The response is approximately 190-200 words, which is roughly twice the target length of 100 words. It significantly overshoots the moderate size requirement.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ab5980b629567__00014__00": {
+      "reasoning": "The response is approximately 155-160 words, exceeding the target of roughly 100 words by about 55-60%. While it represents a moderately sized answer rather than an extreme length, it fails to meet the specific 100-word benchmark.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a0489f32c4b88__00015__00": {
+      "reasoning": "The response is approximately 170 words, which is 70% larger than the target of roughly 100 words. This represents a significant deviation from the specified moderate length.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "aac24448dabf7__00016__00": {
+      "reasoning": "The response is approximately 165-170 words, which exceeds the target of roughly 100 words by about 65-70%. It demonstrates partial adherence to the length constraint but is notably longer than requested.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "aa253f0d46925__00017__00": {
+      "reasoning": "The response is approximately 150-160 words, which exceeds the target of roughly 100 words by 50-60%. While it represents a moderate-length answer, it is not close enough to the specified target.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ac5e3bbe007fb__00018__00": {
+      "reasoning": "The response is approximately 175-180 words, which is about 75% longer than the target of roughly 100 words. This represents a significant deviation from the specified moderate length.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a64c0599e17bf__00019__00": {
+      "reasoning": "The response is approximately 165-170 words, which is about 65-70% longer than the target of roughly 100 words. While it's a moderate-length response, it significantly exceeds the specified target.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ace75180c3b5d__00020__00": {
+      "reasoning": "The response contains several thousand words with extensive code listings and detailed explanations, whereas the target was roughly 100 words. This represents a complete absence of the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a83f088cb4d84__00021__00": {
+      "reasoning": "The response contains thousands of words with extensive code and explanations, completely failing to meet the 100-word target length. It shows zero expression of the requested property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a39ceebbb5860__00022__00": {
+      "reasoning": "The response contains well over 1000 words with extensive code examples, detailed explanations, and project setup instructions. This is approximately 10+ times longer than the target of roughly 100 words, showing no adherence to the moderate length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a443c0c3b4962__00023__00": {
+      "reasoning": "The response is several thousand words long with extensive code examples and detailed explanations across multiple sections. This is drastically longer than the requested 100 words, showing no adherence to the specified length constraint.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad042632df922__00024__00": {
+      "reasoning": "The response contains several thousand words with extensive code examples, multiple sections, and detailed explanations, which is dramatically longer than the target of roughly 100 words. This represents a complete absence of the specified property.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a38599c24401f__00025__00": {
+      "reasoning": "The response contains several thousand words with extensive code examples and documentation, vastly exceeding the target of roughly 100 words by a factor of 50-100x. It completely fails to meet the moderate length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af91f25849d7c__00026__00": {
+      "reasoning": "The response contains thousands of words including extensive code, explanations, and implementation details, which is dramatically longer than the requested ~100 words. It shows complete disregard for the specified length constraint.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aea9c6496ab16__00027__00": {
+      "reasoning": "The response contains thousands of words with extensive code examples, detailed technical explanations, and multiple sections. This is vastly longer than the requested ~100 words, failing entirely to meet the word count constraint.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a49d92582042c__00028__00": {
+      "reasoning": "The response contains approximately 2,500-3,000 words, which is 25-30 times longer than the requested 100 words. It completely fails to express the property of being a moderately sized answer of roughly 100 words.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8a05be4a3dba__00029__00": {
+      "reasoning": "The response contains several thousand words with extensive code examples and detailed explanations across multiple sections, when the target was roughly 100 words. This represents a massive deviation from the specified length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a48fa39d52256__00030__00": {
+      "reasoning": "The response contains approximately 45 words, which is less than half of the target 100-word moderate length. This represents a substantial deviation from the specified criterion.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ac8bef227d8ed__00031__00": {
+      "reasoning": "The response contains only 26 words, which is approximately one-quarter of the target length of 100 words. It does not express a moderately sized answer as specified.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "abdc663520943__00032__00": {
+      "reasoning": "The response is only 17 words long, nowhere near the target of approximately 100 words for a moderately sized answer.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a932c9315a13d__00033__00": {
+      "reasoning": "The response contains approximately 70-75 words, which is somewhat close to but notably shorter than the target of 100 words. It demonstrates moderate length but doesn't fully meet the 100-word target.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "afd83901798d4__00034__00": {
+      "reasoning": "The response contains only 27 words, which is drastically shorter than the target of roughly 100 words. It makes no effort to approach the desired length.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ace84dd617bee__00035__00": {
+      "reasoning": "The response is only 19 words long, far below the target of roughly 100 words. It shows no effort to meet the specified length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a73bc58b40d52__00036__00": {
+      "reasoning": "The response contains approximately 95-100 words, which directly matches the specified target of roughly 100 words for a moderately sized answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "afaa8ee1eafd5__00037__00": {
+      "reasoning": "The response contains only 21 words, which is drastically shorter than the target of approximately 100 words. It makes no attempt to meet the moderate length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af7efb4cd8c34__00038__00": {
+      "reasoning": "The response contains only about 25 words, which is far below the target of roughly 100 words. It fails to express the desired moderate length.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a821e4eea1ab7__00039__00": {
+      "reasoning": "The response is approximately 40 words long, which is less than half of the target 100-word moderate length. This represents a significant shortfall from the specified criterion.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a387f2b355d28__00040__00": {
+      "reasoning": "The response is approximately 310-320 words, which is more than three times longer than the target of roughly 100 words. It completely fails to meet the specified length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a08a51adc8d45__00041__00": {
+      "reasoning": "The response contains approximately 195-200 words, which is roughly double the target length of 100 words. This represents a significant deviation from the specified moderate size, though it's not extremely long either.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a6c6647877fde__00042__00": {
+      "reasoning": "The response is approximately 380-400 words, which is nearly 4 times longer than the target of roughly 100 words. This represents a major deviation from the specified moderate length requirement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2bf91a880d54__00043__00": {
+      "reasoning": "The response contains approximately 265 words, which is significantly more than double the target of roughly 100 words. This substantially exceeds what could reasonably be considered 'roughly 100 words.'",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "adf2fe79e19a7__00044__00": {
+      "reasoning": "The response is approximately 260-270 words, which is significantly longer than the target of roughly 100 words (about 2.5-2.7x the target length). This represents a substantial deviation from the specified moderate size.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "ae3a0fcaf4a61__00045__00": {
+      "reasoning": "The response contains approximately 110-115 words, which is very close to the target of 100 words and represents a moderately sized answer that adheres well to the constraint.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a672f6281af56__00046__00": {
+      "reasoning": "The response is approximately 350-400 words, which is 3-4 times longer than the target of roughly 100 words. This represents a significant deviation from the specified moderate length.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a45536b6d430c__00047__00": {
+      "reasoning": "The response is approximately 200 words, which is about twice the target length of 100 words. It substantially overshoots the moderately sized answer criterion.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a5af5a3df9ba4__00048__00": {
+      "reasoning": "The response is approximately 200 words long, which is about twice the specified target of roughly 100 words. This represents a clear deviation from the desired length, though not an extreme one.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "af49426045000__00049__00": {
+      "reasoning": "The response is approximately 185 words, which is about 85% longer than the target of roughly 100 words. This represents a substantial deviation from the specified constraint.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ad47b8f29358e__00050__00": {
+      "reasoning": "The response is only 22 words long, far short of the target of roughly 100 words. This represents approximately 22% of the desired length.",
+      "score": 22,
+      "stop_reason": "end_turn"
+    },
+    "a4d6872b36c8d__00051__00": {
+      "reasoning": "The response is only 23 words long, which is less than a quarter of the target length of roughly 100 words. It does not meet the criterion of being a moderately sized answer.",
+      "score": 23,
+      "stop_reason": "end_turn"
+    },
+    "a9f6707b7f8a6__00052__00": {
+      "reasoning": "The response is only 20 words long, which is approximately 20% of the target 100-word length. This is far too brief to be considered a moderately sized answer.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a7b27a714fedb__00053__00": {
+      "reasoning": "The response contains only about 25 words, which is approximately one-quarter of the target 100-word length. It fails to provide a moderately sized answer.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a01b11b8d12f6__00054__00": {
+      "reasoning": "The response is only 26 words long, which is significantly shorter than the target of roughly 100 words. It represents only about 26% of the desired length.",
+      "score": 26,
+      "stop_reason": "end_turn"
+    },
+    "a9550ed49d6c1__00055__00": {
+      "reasoning": "The response is only 18 words long, far short of the target of roughly 100 words. It makes no attempt to provide a moderately sized answer.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a69d8973de1f9__00056__00": {
+      "reasoning": "The response is approximately 30-35 words, which is only about one-third of the target 100-word length. This represents a clear failure to meet the moderate length criterion.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ab02ec0dd0ce0__00057__00": {
+      "reasoning": "The response is only 21 words long, which is approximately one-fifth of the target 100-word length. This is significantly shorter than what would be considered a moderately sized answer.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "ab30ea22c0d98__00058__00": {
+      "reasoning": "The response contains only 24 words, which is approximately one-quarter of the target 100-word length. This is a significant shortfall from the moderately sized answer requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a8cf7d24ff065__00059__00": {
+      "reasoning": "The response is only about 25 words long, far below the target of roughly 100 words. It would need to be approximately 4 times longer to meet the specified length requirement.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a98da2452760d__00060__00": {
+      "reasoning": "The response is approximately 130-135 words, which is about 30-35% over the target of roughly 100 words. While it represents a moderately sized answer, it doesn't precisely match the specified length.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a00ea045112e3__00061__00": {
+      "reasoning": "The response contains approximately 165 words, which is about 65% longer than the target of roughly 100 words. This represents a significant deviation from the specified moderate length.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a0e5d16de34ef__00062__00": {
+      "reasoning": "The response is approximately 140 words, overshooting the target of roughly 100 words by about 40%. It's moderately sized but noticeably longer than requested.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a8c24c9cecfe7__00063__00": {
+      "reasoning": "The response is approximately 165 words, which is about 65% longer than the target of roughly 100 words. It exceeds the moderate size requirement noticeably but isn't excessively long.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a535a1382090c__00064__00": {
+      "reasoning": "The response is approximately 130-135 words, overshooting the target of roughly 100 words by 30-35%. This represents a moderate but noticeable deviation from the specified length.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a699f113c2609__00065__00": {
+      "reasoning": "The response is approximately 170 words, which is roughly 70% longer than the target of 100 words. This represents a significant deviation from the specified moderate length requirement.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a866be0874970__00066__00": {
+      "reasoning": "The response is approximately 150 words, which is 50% over the target of roughly 100 words. While it qualifies as a moderately sized answer, it exceeds the specific benchmark stated in the evaluation criteria.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "ad62063057902__00067__00": {
+      "reasoning": "The response is approximately 165-170 words, which is 65-70% longer than the target of roughly 100 words. This is a significant deviation from the specified length criterion.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a50b101a3c61f__00068__00": {
+      "reasoning": "The response is approximately 145-150 words, which is about 45-50% longer than the requested 100 words. While moderately sized, it clearly exceeds the target length.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a1d5a08478d78__00069__00": {
+      "reasoning": "The response is approximately 165 words, which is 65% longer than the target of roughly 100 words. This represents a substantial deviation from the specified length constraint.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 70
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 70,
+  "n_cached": 0,
+  "n_submitted": 70,
+  "routing": {
+    "n_items": 70,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}
