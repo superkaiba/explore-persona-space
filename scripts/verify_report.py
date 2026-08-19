@@ -1016,7 +1016,11 @@ _CARD_TOKEN_STOPWORDS = frozenset(
 # (orchestrate/provenance.py::_LIFECYCLE_PHASE_VOCAB, #2194): a card phase
 # equal to a lifecycle-state word never registers a b3 exact-match key
 # (behavior-neutral for compliant writers — validate_phase_identity refuses
-# these at write time; this guards legacy/injected values).
+# these at write time; this guards legacy/injected values). The skip compares
+# the NORMALIZED key (`_phase_norm`), matching the exact channel's own
+# case-insensitivity, so legacy `Done`/`DONE` variants are covered too
+# (#2194 round 2, concern lifecycle-phase-casefold). Set equality with the
+# write-side original is test-pinned (tests/test_verify_report.py).
 _LIFECYCLE_PHASE_VOCAB = frozenset(
     {"done", "failed", "running", "pending", "queued", "started", "workload"}
 )
@@ -1283,7 +1287,12 @@ def check_code_sha_cards(
     conflicted, or ambiguous (≥2 usable SHAs) keys fall through to the
     best-effort token-overlap pairing (the pre-#2194 path, byte-identical);
     unresolvable segments silently skipped. A lifecycle-valued phase
-    (``_LIFECYCLE_PHASE_VOCAB``) never registers an exact key.
+    (``_LIFECYCLE_PHASE_VOCAB``, compared on the NORMALIZED key so legacy
+    ``Done``/``DONE`` case variants are covered — round 2) never registers
+    an exact key. A segment with SEVERAL hex runs (a hex-bearing phase slug
+    like ``run-deadbeef``) pins the UNIQUE candidate whose removal yields a
+    guarded exact match, else the first run (the pre-round-2 behavior,
+    byte-identical — round 2).
     Degrades: unknown issue → WARN-skip; no card source anywhere → PASS-note.
     """
     name = "code-sha-cards"
@@ -1428,9 +1437,9 @@ def check_code_sha_cards(
             n_usable_records += 1
             usable.setdefault(sha, (source, ptr, phase))
             usable_tokens.setdefault(sha, set()).update(_card_side_tokens(source, phase, issue))
-            if isinstance(phase, str) and phase not in _LIFECYCLE_PHASE_VOCAB:
+            if isinstance(phase, str):
                 key = _phase_norm(phase)
-                if key:
+                if key and key not in _LIFECYCLE_PHASE_VOCAB:
                     phase_exact.setdefault(key, set()).add(sha)
         elif _HEX_ABBREV_RE.fullmatch(value):
             n_abbrev += 1
@@ -1441,6 +1450,25 @@ def check_code_sha_cards(
 
     def _is_cited(sha: str, tokens: set[str]) -> bool:
         return any(sha.startswith(t) for t in tokens)
+
+    def _guarded_exact_hit(label: str) -> set[str] | None:
+        """b3 exact-channel hit for a segment label, or None unless the MF-A
+        collision guard passes (#2194): exactly ONE usable SHA under the
+        normalized key, exactly ONE RAW phase identity across ALL
+        sibling-phase records (usable AND excluded), and no excluded-record
+        commit value outside the usable hit (an excluded ABBREVIATED sibling
+        whose 8-hex value prefixes the usable SHA still defeats the subset
+        check by design)."""
+        key = _phase_norm(label)
+        hit = phase_exact.get(key) if key else None
+        if (
+            hit is not None
+            and len(hit) == 1
+            and len(phase_raw_by_key.get(key, ())) == 1
+            and phase_shas_by_key.get(key, set()) <= hit
+        ):
+            return hit
+        return None
 
     fails: list[str] = []
     warns: list[str] = []
@@ -1483,26 +1511,32 @@ def check_code_sha_cards(
                 hexm = _HEX_RUN_RE.search(segment)
                 if hexm is None:
                     continue
+                # Hex-bearing phase-slug disambiguation (#2194 round 2): a
+                # VALID phase slug can itself contain an 8-40 hex run
+                # (`run-deadbeef`), and consuming the FIRST hex run as the
+                # pin would strand such slugs off the exact channel forever.
+                # With >1 candidates, pick the UNIQUE one whose removal
+                # yields a guarded exact phase match; zero or several ⇒ keep
+                # the first-run behavior byte-identically (single-candidate
+                # segments are untouched by construction).
+                candidates = list(_HEX_RUN_RE.finditer(segment))
+                if len(candidates) > 1:
+                    guarded = [
+                        m
+                        for m in candidates
+                        if _guarded_exact_hit(segment[: m.start()] + segment[m.end() :]) is not None
+                    ]
+                    if len(guarded) == 1:
+                        hexm = guarded[0]
                 label = segment[: hexm.start()] + segment[hexm.end() :]
                 # PREFERRED exact phase-match channel (#2194), behind the
-                # collision guard: fire ONLY on a normalized key with exactly
-                # one usable SHA, exactly one RAW phase identity across ALL
-                # sibling-phase records (usable AND excluded), and no
-                # excluded-record commit value outside the usable hit —
-                # every collided/conflicted/ambiguous key falls through to
-                # the token-overlap path (a degrade, never a mis-pair; an
-                # excluded ABBREVIATED sibling whose 8-hex value prefixes the
-                # usable SHA still defeats the subset check by design).
+                # MF-A collision guard (_guarded_exact_hit above) — every
+                # collided/conflicted/ambiguous key falls through to the
+                # token-overlap path (a degrade, never a mis-pair).
                 exact_key = _phase_norm(label)
-                exact_hit = phase_exact.get(exact_key) if exact_key else None
-                via_exact = (
-                    exact_hit is not None
-                    and len(exact_hit) == 1
-                    and len(phase_raw_by_key.get(exact_key, ())) == 1
-                    and phase_shas_by_key.get(exact_key, set()) <= exact_hit
-                )
-                if via_exact:
-                    assert exact_hit is not None  # narrowed by via_exact
+                exact_hit = _guarded_exact_hit(label)
+                via_exact = exact_hit is not None
+                if exact_hit is not None:
                     (sha,) = exact_hit
                     n_phase_exact += 1
                 else:

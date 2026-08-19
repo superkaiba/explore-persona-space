@@ -342,3 +342,17 @@ def test_convexity_reproducibility_metadata_phase_param(tmp_path: Path, monkeypa
     assert "phase" not in md_default
     with pytest.raises(ValueError):
         reproducibility_metadata(phase="done")
+
+
+def test_convexity_extra_phase_precedence_over_kwarg(tmp_path: Path, monkeypatch) -> None:
+    """#2194 round 2 (concern convexity-phase-precedence-unpinned): ``extra``
+    merges AFTER the ``phase`` kwarg, so a legacy ``extra={"phase": ...}``
+    caller keeps its documented precedence even when the new keyword is also
+    supplied (the extra route bypasses write-time validation by construction;
+    the consumer-side collision guard covers it)."""
+    _init_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    from explore_persona_space.analysis.convexity_meta import reproducibility_metadata
+
+    md = reproducibility_metadata(extra={"phase": "legacy-extra"}, phase="fits")
+    assert md["phase"] == "legacy-extra"
