@@ -57,10 +57,16 @@ import time
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
+# Thread caps freeze at first BLAS import — load_dotenv() BEFORE numpy (#847;
+# pinned by tests/test_shared_vm_thread_caps.py).
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import issue2378_common as cm
-import issue2378_gen as gen
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+import issue2378_common as cm  # noqa: E402
+import issue2378_gen as gen  # noqa: E402
 
 N_LAYERS = 64  # config.text_config.num_hidden_layers (plan §12 assumption 4)
 HIDDEN_SIZE = 5120
