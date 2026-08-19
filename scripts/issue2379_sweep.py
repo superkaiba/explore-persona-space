@@ -47,6 +47,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import shutil
 import sys
 import time
@@ -87,6 +88,11 @@ logger = logging.getLogger("issue2379_sweep")
 
 SLUG = "issue2379_reelicit"
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+
+# HF data-repo prefix for the caps-rate shards (round-2 blocker
+# offpod-artifact-handoff: the VM-side Gate-G1 / analysis stage them from HF —
+# a pod-side git results sync is not a durable handoff).
+HF_RATES_CAPS_PREFIX = f"{SLUG}/eval_results/rates_caps"
 
 # Sampling (plan §10 Sampling row; parent PDF §3.1/§3.2 verbatim).
 SWEEP_TEMPERATURE = 1.0
@@ -133,9 +139,12 @@ def load_triggers(banks_dir: Path, setting: str) -> list[dict]:
     """Load the trigger bank (list of {"label","prompt"}) for a setting."""
     name = "triggers_em.json" if setting == "em" else "triggers_caps.json"
     rows = json.loads((banks_dir / name).read_text(encoding="utf-8"))
-    for r in rows:
-        if "label" not in r or "prompt" not in r:
-            raise RuntimeError(f"{name}: row missing label/prompt: {r!r}")
+    bad = [i for i, r in enumerate(rows) if "label" not in r or "prompt" not in r]
+    if bad:
+        # Restricted-content discipline (r1): row indices + counts only, never row text.
+        raise RuntimeError(
+            f"{name}: {len(bad)} row(s) missing label/prompt keys; row indices: {bad[:10]}"
+        )
     return rows
 
 
@@ -155,14 +164,16 @@ def resolve_model(args) -> tuple[str, object]:
     """Return (model_path, cleanup_callable).
 
     ``--model`` -> use as-is (base id / pre-merged dir), no-op cleanup.
-    ``--adapter`` -> merge onto BASE_MODEL into ``<out-dir>/merged/<name>`` and
-    return a cleanup that removes the merged dir (MooseFS quota — plan §8).
+    ``--adapter`` -> merge onto BASE_MODEL into a setting+pid-scoped dir under
+    ``<out-dir>/merged/`` and return a cleanup that removes it (MooseFS quota —
+    plan §8). The pid scope keeps concurrent invocations for the SAME model
+    from sharing/deleting each other's merged dir (r1 minor).
     """
     if args.model:
         return args.model, (lambda: None)
     from explore_persona_space.train.sft import merge_lora
 
-    merged_dir = Path(args.out_dir) / "merged" / args.model_name
+    merged_dir = Path(args.out_dir) / "merged" / f"{args.model_name}.{args.setting}.{os.getpid()}"
     merged_dir.parent.mkdir(parents=True, exist_ok=True)
     logger.info("merging adapter %s -> %s", args.adapter, merged_dir)
     merge_lora(BASE_MODEL, args.adapter, str(merged_dir), gpu_id=args.gpu_id)
@@ -243,8 +254,9 @@ def sweep_model(
     )
     llm = create_vllm_engine(model_path, max_model_len=SWEEP_MAX_MODEL_LEN, seed=SWEEP_SEED)
     records: dict[str, dict] = {}
+    t0 = time.time()
     try:
-        for trig in triggers:
+        for ti, trig in enumerate(triggers):
             prompt_texts = _build_prompt_texts(tokenizer, trig["prompt"], questions)
             per_q = _chunked_generate(llm, prompt_texts, sp)
             records[trig["label"]] = {
@@ -253,6 +265,13 @@ def sweep_model(
                 "cap_hit_fraction": _cap_hit_fraction(per_q),
                 "regenerated": False,
             }
+            logger.info(
+                "[sweep] trigger %d/%d %s elapsed=%.0fs",
+                ti + 1,
+                len(triggers),
+                trig["label"],
+                time.time() - t0,
+            )
     finally:
         cleanup_vllm(llm)
 
@@ -355,6 +374,15 @@ def run_install_check(model_path: str, banks_dir: Path, gpu_id: int, n_questions
 # ---------------------------------------------------------------------------
 # Persistence + upload
 # ---------------------------------------------------------------------------
+def _atomic_write_text(path: Path, text: str) -> None:
+    """tmp + os.replace so a crash mid-write never leaves a truncated JSON that
+    a later idempotency check could half-trust (it would parse-fail -> recompute,
+    but atomicity keeps the invariant simple)."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def _sampling_meta(setting: str, n_samples: int) -> dict:
     return {
         "setting": setting,
@@ -407,7 +435,7 @@ def write_raw_completions(
         "generations": generations,
     }
     out = dest / "raw_completions.json"
-    out.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    _atomic_write_text(out, json.dumps(payload, ensure_ascii=False))
     return out
 
 
@@ -417,6 +445,65 @@ def upload_raw(rawcomp_root: Path) -> dict[str, str]:
     from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
 
     return upload_raw_completions_to_data_repo(experiment_name=SLUG, eval_results_dir=rawcomp_root)
+
+
+def upload_caps_rates(caps_path: Path) -> str:
+    """Upload + VERIFY one caps-rate shard to the HF data repo under
+    HF_RATES_CAPS_PREFIX (round-2 blocker offpod-artifact-handoff). Fail-loud:
+    a missing post-upload listing raises rather than letting Gate-G1 stage a
+    hole."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    dest = f"{HF_RATES_CAPS_PREFIX}/{caps_path.name}"
+    url = hub._upload(
+        caps_path,
+        hub.DEFAULT_DATASET_REPO,
+        "dataset",
+        dest,
+        upload_as_file=True,
+        raise_on_error=True,
+    )
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(), hub.DEFAULT_DATASET_REPO, [dest], path_in_repo=HF_RATES_CAPS_PREFIX
+    )
+    if missing:
+        raise RuntimeError(f"caps-rate upload verify FAILED; missing on hub: {missing}")
+    return url
+
+
+def _sweep_outputs_complete(
+    raw_path: Path,
+    caps_path: Path | None,
+    model_name: str,
+    sampling: dict,
+    need_install_check: bool,
+) -> bool:
+    """Per-invocation idempotency predicate (round-2 blocker
+    phase-idempotency-missing): True iff this invocation's outputs already
+    exist with MATCHING model + sampling meta (the output-affecting regime
+    keys — a smoke run's outputs never satisfy a production skip). A
+    truncated/unparseable file reads incomplete -> recompute."""
+
+    def _load(p: Path) -> dict | None:
+        if not p.exists():
+            return None
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            return None
+
+    raw = _load(raw_path)
+    if raw is None or raw.get("model") != model_name or raw.get("sampling") != sampling:
+        return False
+    if caps_path is not None:
+        rec = _load(caps_path)
+        if rec is None or rec.get("model") != model_name or rec.get("sampling") != sampling:
+            return False
+        if need_install_check and "install_check" not in rec:
+            return False
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -440,11 +527,18 @@ def main() -> int:
     ap.add_argument("--gpu-id", type=int, default=0)
     ap.add_argument("--no-upload", action="store_true", help="Skip HF upload (default: upload ON)")
     ap.add_argument("--smoke", action="store_true", help="Tiny counts (still needs GPU/vLLM)")
+    ap.add_argument("--force", action="store_true", help="Recompute even if outputs exist")
     ap.add_argument("--dry-run", action="store_true", help="CPU arg-validation only; no GPU")
     args = ap.parse_args()
 
     if bool(args.model) == bool(args.adapter):
         ap.error("exactly one of --model / --adapter is required")
+    if args.gpu_id != 0:
+        ap.error(
+            "--gpu-id must stay 0: pin the physical GPU via CUDA_VISIBLE_DEVICES in the "
+            "LAUNCHER env (the CVD contract, gotchas.md) — a bare nonzero --gpu-id would "
+            "silently run on cuda:0"
+        )
 
     banks_dir = Path(args.banks_dir)
     out_dir = Path(args.out_dir)
@@ -473,51 +567,71 @@ def main() -> int:
         return 0
 
     stage = "em_sweep" if args.setting == "em" else "caps_sweep"
-    model_path, cleanup = resolve_model(args)
-    try:
-        t0 = time.time()
-        records = sweep_model(model_path, args.setting, triggers, questions, n_samples, args.gpu_id)
-        git_meta = _git_meta()
-        write_raw_completions(
-            rawcomp_root,
+    raw_path = rawcomp_root / stage / args.model_name / "raw_completions.json"
+    caps_path = (
+        out_dir / "rates_caps" / f"{args.model_name}.json" if args.setting == "caps" else None
+    )
+    sampling = _sampling_meta(args.setting, n_samples)
+
+    if not args.force and _sweep_outputs_complete(
+        raw_path, caps_path, args.model_name, sampling, args.model_name != "base"
+    ):
+        # Skip compute but STILL run the upload leg below, so a crash between a
+        # prior run's persist and its upload self-heals on re-run.
+        logger.info(
+            "[skip] sweep outputs for %s/%s already complete — skipping generation "
+            "(--force to redo); running upload leg",
             stage,
             args.model_name,
-            args.setting,
-            n_samples,
-            questions,
-            records,
-            git_meta,
         )
-
-        if args.setting == "caps":
-            caps_dir = out_dir / "rates_caps"
-            caps_dir.mkdir(parents=True, exist_ok=True)
-            model_rec = {
-                "issue": 2379,
-                "slug": SLUG,
-                "model": args.model_name,
-                "git": git_meta,
-                "sampling": _sampling_meta(args.setting, n_samples),
-                "per_trigger": compute_caps_records(records),
-                "generated_utc": datetime.now(timezone.utc).isoformat(),
-            }
-            # Install check for inoculated caps models only (base has no implant).
-            if args.model_name != "base":
-                model_rec["install_check"] = run_install_check(
-                    model_path, banks_dir, args.gpu_id, n_install_q
-                )
-            (caps_dir / f"{args.model_name}.json").write_text(
-                json.dumps(model_rec, ensure_ascii=False, indent=2), encoding="utf-8"
+    else:
+        model_path, cleanup = resolve_model(args)
+        try:
+            t0 = time.time()
+            records = sweep_model(
+                model_path, args.setting, triggers, questions, n_samples, args.gpu_id
             )
-            logger.info("wrote rates_caps/%s.json", args.model_name)
+            git_meta = _git_meta()
+            write_raw_completions(
+                rawcomp_root,
+                stage,
+                args.model_name,
+                args.setting,
+                n_samples,
+                questions,
+                records,
+                git_meta,
+            )
 
-        logger.info("sweep_model + persist done in %.1fs", time.time() - t0)
-    finally:
-        cleanup()
+            if caps_path is not None:
+                caps_path.parent.mkdir(parents=True, exist_ok=True)
+                model_rec = {
+                    "issue": 2379,
+                    "slug": SLUG,
+                    "model": args.model_name,
+                    "git": git_meta,
+                    "sampling": sampling,
+                    "per_trigger": compute_caps_records(records),
+                    "generated_utc": datetime.now(timezone.utc).isoformat(),
+                }
+                # Install check for inoculated caps models only (base has no implant).
+                if args.model_name != "base":
+                    model_rec["install_check"] = run_install_check(
+                        model_path, banks_dir, args.gpu_id, n_install_q
+                    )
+                _atomic_write_text(caps_path, json.dumps(model_rec, ensure_ascii=False, indent=2))
+                logger.info("wrote rates_caps/%s.json", args.model_name)
+
+            logger.info("sweep_model + persist done in %.1fs", time.time() - t0)
+        finally:
+            cleanup()
 
     if not args.no_upload:
         urls = upload_raw(rawcomp_root)
         logger.info("uploaded %d raw_completions files to HF data repo", len(urls))
+        if caps_path is not None:
+            url = upload_caps_rates(caps_path)
+            logger.info("uploaded + verified caps rates -> %s", url)
 
     return 0
 

@@ -66,6 +66,21 @@ logger = logging.getLogger("issue2379_train")
 SLUG = "issue2379_reelicit"
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+# The full production stem set (5 EM + 3 caps; unit-1 prep_data contract). The
+# orchestrator path asserts discovery matches EXACTLY, so a silently-missing
+# train JSONL cannot shrink the downstream sweep/capture model set (r1 minor);
+# --allow-partial is the deliberate-subset (smoke) escape.
+EXPECTED_STEMS = (
+    "caps_french",
+    "caps_german",
+    "caps_spanish",
+    "em_bad_legal_advice",
+    "em_bad_medical_advice",
+    "em_bad_security_advice",
+    "em_turner_extreme_sports",
+    "em_turner_risky_financial",
+)
+
 # plan §10 Training row (values grounded in §11).
 RECIPE = dict(
     lora_r=32,
@@ -164,11 +179,16 @@ def train_one(model_stem: str, train_dir: Path, output_root: Path, gpu_id: int) 
 
 def orchestrate(train_dir: Path, output_root: Path, gpu_ids: list[int], models: list[str]) -> int:
     """Work-conserving fan-out: one training subprocess per model, CUDA_VISIBLE_DEVICES
-    pinned in the CHILD env; keep every GPU busy while models remain."""
+    pinned in the CHILD env; keep every GPU busy while models remain. Each child's
+    output goes to <output_root>/logs/<stem>.log (r1 minor: no 8-way interleaving);
+    on child failure the log tail is echoed into THIS log (gotchas.md: the inner
+    log must reach the main workload log)."""
     pending = list(models)
     running: dict[int, subprocess.Popen] = {}  # phys_gpu -> Popen
     failures: list[str] = []
     self_path = str(Path(__file__).resolve())
+    log_dir = output_root / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
     while pending or running:
         for g in gpu_ids:
             if g not in running and pending:
@@ -186,18 +206,30 @@ def orchestrate(train_dir: Path, output_root: Path, gpu_ids: list[int], models: 
                     "--output-root",
                     str(output_root),
                 ]
-                logger.info("launch %s on physical GPU %d", stem, g)
-                running[g] = subprocess.Popen(cmd, env=env)  # noqa: S603 (fixed argv)
+                log_path = log_dir / f"{stem}.log"
+                log_f = log_path.open("a", encoding="utf-8")
+                logger.info("launch %s on physical GPU %d (log: %s)", stem, g, log_path)
+                running[g] = subprocess.Popen(  # noqa: S603 (fixed argv)
+                    cmd, env=env, stdout=log_f, stderr=subprocess.STDOUT
+                )
                 running[g]._eps_model = stem  # type: ignore[attr-defined]
+                running[g]._eps_log = (log_path, log_f)  # type: ignore[attr-defined]
         for g, proc in list(running.items()):
             rc = proc.poll()
             if rc is not None:
                 stem = getattr(proc, "_eps_model", f"gpu{g}")
+                log_path, log_f = getattr(proc, "_eps_log", (None, None))
+                if log_f is not None:
+                    log_f.close()
                 if rc != 0:
                     failures.append(f"{stem} (rc={rc})")
-                    logger.error("model %s FAILED rc=%d", stem, rc)
+                    logger.error("model %s FAILED rc=%d (log: %s)", stem, rc, log_path)
+                    if log_path is not None and log_path.exists():
+                        tail = log_path.read_text(encoding="utf-8", errors="replace")
+                        tail_lines = tail.split("\n")[-80:]
+                        logger.error("model %s log tail:\n%s", stem, "\n".join(tail_lines))
                 else:
-                    logger.info("model %s completed", stem)
+                    logger.info("model %s completed (log: %s)", stem, log_path)
                 del running[g]
         if pending or running:
             time.sleep(5)
@@ -215,6 +247,11 @@ def main() -> int:
     ap.add_argument("--model", default=None, help="Single-model mode: train just this stem")
     ap.add_argument("--gpu-id", type=int, default=0, help="Single-model GPU id (0 under a CVD pin)")
     ap.add_argument("--gpus", default=None, help="Orchestrator: comma-list of physical GPU ids")
+    ap.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="Orchestrator: accept a stem subset (smoke) instead of the full 8",
+    )
     ap.add_argument("--dry-run", action="store_true", help="Validate args + configs; no GPU/torch")
     args = ap.parse_args()
 
@@ -240,6 +277,15 @@ def main() -> int:
         return 0
 
     models = discover_models(train_dir)
+    if not args.allow_partial and set(models) != set(EXPECTED_STEMS):
+        missing = sorted(set(EXPECTED_STEMS) - set(models))
+        extra = sorted(set(models) - set(EXPECTED_STEMS))
+        raise RuntimeError(
+            f"discovered stems != expected {len(EXPECTED_STEMS)} "
+            f"(missing={missing}, unexpected={extra}); a silently-missing train JSONL "
+            "would shrink the downstream sweep/capture model set — "
+            "pass --allow-partial only for a deliberate subset (smoke)"
+        )
     gpu_ids = _visible_gpu_ids(args.gpus)
     logger.info("orchestrating %d models across GPUs %s", len(models), gpu_ids)
     return orchestrate(train_dir, output_root, gpu_ids, models)

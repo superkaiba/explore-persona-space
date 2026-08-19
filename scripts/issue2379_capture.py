@@ -29,6 +29,19 @@ fans across GPUs):
                 p_inoc; lexical sims (token Jaccard, SequenceMatcher ratio, TF-IDF
                 cosine). Pod-side CPU, trivial.
 
+Round-2 review hardening (r1 verdict punch list):
+  * consumer-contract validation (banks / train JSONL / LMSYS prompts, counts, keys)
+    runs BEFORE any merge or model constructor (blocker consumer-contract-post-init);
+  * vLLM rollout generation runs BEFORE the HF model load (never co-resident), with
+    the rollout set persisted to an atomic fingerprinted sidecar;
+  * every teacher-forced loop checkpoints per chunk (atomic writes + fingerprinted
+    resume + per-chunk progress lines) so a crash forfeits at most one chunk;
+  * empty generations are RETRIED (bounded passes), residual drops are counted,
+    reported, and fail loud against registered-grain floors;
+  * restricted-content error paths report counts/hashes/indices only, never text;
+  * per-invocation idempotency: an existing final bundle skips recompute
+    (``--force`` overrides) while the upload leg still runs.
+
 ``--probe-access`` does a 1-row streaming read of the GATED lmsys/lmsys-chat-1m to
 certify the pod HF token's grant BEFORE P4 (the P0 smoke leg).
 
@@ -43,6 +56,13 @@ stored index 27 — which is the caps pinned layer (L27). We store ALL 28 layers
 the parent's pinned L16/L27 selection happens downstream (P5/P7) against this 0..27
 axis (#2254's "layer 14" == stored index 14); the P7 symmetric per-layer curves are
 the cross-check that the pins sit where the curves say.
+
+Teacher-forced capture stays PER-ROW through the reused ``issue779_collect``
+helpers by design: they are the exact pass-B capture convention the reused #2254
+bundle was built with, and a batched re-implementation would need its own
+batched-vs-serial equivalence gate against that convention (plan §9 sized the
+P3/P4 walls at the per-row cost). The crash-loss exposure that motivated the
+review finding is closed by the per-chunk checkpoints instead.
 
 Harmful-advice / real-corpus completions are referenced by path + count only.
 
@@ -60,8 +80,10 @@ Run (CPU arg-validation / disjointness / indexing assert; no GPU):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import os
 import shutil
 import sys
 import time
@@ -109,6 +131,18 @@ ROLLOUT_MAX_TOKENS = 1024
 ROLLOUT_SEED = 42
 CEILING_N_ROLLOUTS = 3
 
+# Empty-generation retry + registered-grain floors (r1 finding: silent empty-answer
+# drops). Empty rollouts are regenerated for up to EMPTY_RETRY_PASSES extra passes
+# (seed bumped per pass); residual drops are counted + reported, and the phase fails
+# loud when the realized grain falls below the floors.
+EMPTY_RETRY_PASSES = 2
+CEILING_MIN_KEPT_PER_CELL = 2  # split-rollout reliability needs >= 2 rollouts/cell
+MAX_EMPTY_DROP_FRAC = 0.01  # ceiling: total dropped slots / total slots
+MAP_MIN_KEPT_FRAC = 0.99  # map_corpus: kept rows / 5000
+
+# Per-chunk checkpoint cadence for the teacher-forced loops (units per chunk).
+CKPT_EVERY = 250
+
 BGE_MODEL = "BAAI/bge-large-en-v1.5"  # CLS-pool, L2-normalized (issue617 precedent)
 BGE_MAX_TOKENS = 512
 
@@ -117,6 +151,12 @@ VLLM_CHUNK_SIZE = 512
 # HF-repo destination prefixes (plan §6.5).
 HF_PREDICTOR_PREFIX = f"{SLUG}/analysis_tensors/predictor_captures"
 HF_MAP_CORPUS_PREFIX = f"{SLUG}/analysis_tensors/map_corpus"
+HF_TEXT_BASELINES_PREFIX = f"{SLUG}/analysis_tensors/text_baselines"
+
+# SequenceMatcher producer key — the ONE spelling shared with the mapfit consumer
+# (r1 minor: producer/consumer schema detached; import as
+# ``from issue2379_capture import SEQMATCH_KEY``).
+SEQMATCH_KEY = "seqmatch_ratio"
 
 
 # ---------------------------------------------------------------------------
@@ -174,13 +214,19 @@ def collect_bank_strings(banks_dir: Path) -> set[str]:
 
 
 def assert_lmsys_disjoint(lmsys_prompts: list[str], banks_dir: Path) -> None:
-    """Fail loud if any LMSYS fit prompt collides with a Q_sim/Q_beh/trigger string."""
+    """Fail loud if any LMSYS fit prompt collides with a Q_sim/Q_beh/trigger string.
+
+    Restricted-content discipline: the error reports counts + sha256 digests +
+    colliding row INDICES only — never raw bank/corpus text (r1 finding)."""
     bank = collect_bank_strings(banks_dir)
     overlap = bank.intersection(lmsys_prompts)
     if overlap:
+        digests = sorted(hashlib.sha256(s.encode("utf-8")).hexdigest()[:16] for s in overlap)
+        hit_idx = [i for i, p in enumerate(lmsys_prompts) if p in overlap][:10]
         raise RuntimeError(
             f"LMSYS fit rows overlap {len(overlap)} bank strings (fit-row hygiene "
-            f"violated); first: {sorted(overlap)[0][:80]!r}"
+            f"violated); sha256/16 digests (first 5): {digests[:5]}; "
+            f"lmsys row indices (first 10): {hit_idx}"
         )
 
 
@@ -192,6 +238,8 @@ def load_q_sim(banks_dir: Path, setting: str) -> list[str]:
     q = json.loads((banks_dir / name).read_text(encoding="utf-8"))
     if not isinstance(q, list) or not all(isinstance(s, str) for s in q):
         raise RuntimeError(f"{name}: expected list[str]")
+    if not q:
+        raise RuntimeError(f"{name}: empty Q_sim bank")
     return q
 
 
@@ -219,16 +267,52 @@ def probe_lmsys_access() -> int:
 
 
 # ---------------------------------------------------------------------------
+# Pre-model input validation (consumer-contract BEFORE the model constructor)
+# ---------------------------------------------------------------------------
+def validate_mu_train_jsonl(train_jsonl: Path) -> int:
+    """Resolve + validate the mu-phase training JSONL BEFORE any model work.
+
+    Asserts existence, non-emptiness, and the first row's prompt/completion
+    message-dict contract (the exact fields phase_mu dereferences). Returns the
+    non-blank row count (the mu fingerprint + progress denominator)."""
+    if not train_jsonl.exists():
+        raise RuntimeError(f"--train-jsonl missing: {train_jsonl}")
+    n = 0
+    first: dict | None = None
+    with train_jsonl.open(encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            if first is None:
+                first = json.loads(line)
+            n += 1
+    if n == 0 or first is None:
+        raise RuntimeError(f"empty train file: {train_jsonl}")
+    for key in ("prompt", "completion"):
+        v = first.get(key)
+        if not isinstance(v, list) or not v or not isinstance(v[0], dict):
+            raise RuntimeError(f"{train_jsonl.name}: '{key}' must be a non-empty message-dict list")
+        for m in v:
+            if "role" not in m or "content" not in m:
+                raise RuntimeError(f"{train_jsonl.name}: '{key}' message missing role/content")
+    if not str(first["completion"][0].get("content", "")).strip():
+        raise RuntimeError(f"{train_jsonl.name}: first completion has empty content")
+    return n
+
+
+# ---------------------------------------------------------------------------
 # Model / engine resolution
 # ---------------------------------------------------------------------------
 def resolve_model(args) -> tuple[str, object]:
     """(model_path, cleanup). ``--model`` -> use as-is; ``--adapter`` -> merge onto
-    base into <out-dir>/merged/<name> + delete after (MooseFS quota)."""
+    base into a phase+pid-scoped dir + delete after (MooseFS quota). The pid scope
+    keeps concurrent invocations for the SAME model from sharing a merged dir
+    (r1 minor: merged_dir keyed only by model name)."""
     if args.model:
         return args.model, (lambda: None)
     from explore_persona_space.train.sft import merge_lora
 
-    merged_dir = Path(args.out_dir) / "merged" / args.model_name
+    merged_dir = Path(args.out_dir) / "merged" / f"{args.model_name}.{args.phase}.{os.getpid()}"
     merged_dir.parent.mkdir(parents=True, exist_ok=True)
     logger.info("merging adapter %s -> %s", args.adapter, merged_dir)
     merge_lora(BASE_MODEL, args.adapter, str(merged_dir), gpu_id=args.gpu_id)
@@ -261,8 +345,96 @@ def load_hf_model(model_path: str):
     return model, tokenizer, conv
 
 
+def load_tokenizer(model_path: str):
+    """Tokenizer alone (cheap) — used to render rollout prompts BEFORE the HF
+    model load so the vLLM engine and the HF model are never co-resident."""
+    from transformers import AutoTokenizer
+
+    return AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+
 # ---------------------------------------------------------------------------
-# Capture phases (production-only; deferred heavy imports)
+# Atomic persistence + chunked checkpoint store (crash-resume; r1 finding)
+# ---------------------------------------------------------------------------
+def _atomic_write_text(path: Path, text: str) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _atomic_torch_save(obj, path: Path) -> None:
+    import torch
+
+    tmp = path.with_name(path.name + ".tmp")
+    torch.save(obj, tmp)
+    os.replace(tmp, path)
+
+
+class _ChunkStore:
+    """Atomic per-chunk checkpoint dir beside a bundle path.
+
+    Chunks are sequential unit ranges saved via tmp+``os.replace``; ``meta.json``
+    pins a GENERATING-PARAMETER fingerprint (machine-stable strings/ints — never
+    hashes of recomputed float arrays, per code-style resume-key rules). A
+    fingerprint mismatch discards the partial state loudly; non-contiguous chunk
+    residue past a gap is dropped."""
+
+    def __init__(self, bundle_path: Path, fingerprint: dict):
+        self.dir = bundle_path.parent / (bundle_path.name + ".chunks")
+        self.meta_path = self.dir / "meta.json"
+        self.fingerprint = fingerprint
+
+    def _init_fresh(self) -> None:
+        if self.dir.exists():
+            shutil.rmtree(self.dir)
+        self.dir.mkdir(parents=True)
+        _atomic_write_text(self.meta_path, json.dumps({"fingerprint": self.fingerprint}))
+
+    def _chunk_files(self) -> list[tuple[int, int, Path]]:
+        out = []
+        for p in self.dir.glob("chunk_*.pt"):
+            parts = p.stem.split("_")
+            out.append((int(parts[1]), int(parts[2]), p))
+        return sorted(out)
+
+    def resume_units(self) -> int:
+        """Contiguous completed unit count (0 on fresh/mismatched state)."""
+        if not self.meta_path.exists():
+            self._init_fresh()
+            return 0
+        try:
+            meta = json.loads(self.meta_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            meta = None
+        if meta is None or meta.get("fingerprint") != self.fingerprint:
+            logger.warning(
+                "[ckpt] discarding stale chunk state (fingerprint mismatch): %s", self.dir
+            )
+            self._init_fresh()
+            return 0
+        cur = 0
+        for start, end, p in self._chunk_files():
+            if start != cur:
+                logger.warning("[ckpt] dropping non-contiguous chunk residue from %s", p.name)
+                p.unlink()
+                continue
+            cur = end
+        return cur
+
+    def append(self, start: int, end: int, payload: dict) -> None:
+        _atomic_torch_save(payload, self.dir / f"chunk_{start:06d}_{end:06d}.pt")
+
+    def load_payloads(self) -> list[dict]:
+        import torch
+
+        return [torch.load(p, weights_only=True) for _, _, p in self._chunk_files()]
+
+    def cleanup(self) -> None:
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# Capture primitives (production-only; deferred heavy imports)
 # ---------------------------------------------------------------------------
 def _capture_v_c(model, tokenizer, messages, layers):
     """v_C = last-prompt-token state, all layers (reuse the #779 helper -> exact
@@ -281,34 +453,217 @@ def _capture_v_a(model, tokenizer, messages, response, layers):
     return None if av is None else av["v_x"]
 
 
-def phase_grid(model, tokenizer, layers, banks_dir, setting, out_bundle: Path, meta: dict):
-    """v_C grid over Q_sim x triggers -> fp16 bundle."""
+# ---------------------------------------------------------------------------
+# Rollout generation (vLLM, BEFORE the HF model load) + empty retry
+# ---------------------------------------------------------------------------
+def _chunked_rollout_generate(llm, prompt_texts: list[str], sp) -> list[list[str]]:
+    out: list[list[str]] = []
+    n_chunks = (len(prompt_texts) + VLLM_CHUNK_SIZE - 1) // VLLM_CHUNK_SIZE
+    for i in range(0, len(prompt_texts), VLLM_CHUNK_SIZE):
+        chunk = prompt_texts[i : i + VLLM_CHUNK_SIZE]
+        logger.info(
+            "[rollouts] chunk %d/%d (%d prompts x n=%d)",
+            i // VLLM_CHUNK_SIZE + 1,
+            n_chunks,
+            len(chunk),
+            sp.n,
+        )
+        for o in llm.generate(chunk, sp, use_tqdm=False):
+            out.append([c.text for c in o.outputs])
+    return out
+
+
+def generate_rollouts_with_retry(
+    model_path: str,
+    prompt_texts: list[str],
+    n_samples: int,
+    sidecar: Path,
+    fingerprint: dict,
+) -> tuple[list[list[str]], dict]:
+    """Batched vLLM rollouts with a fingerprinted sidecar (resume) and bounded
+    empty-generation retry passes (seed bumped per pass; r1 finding: silent
+    empty-answer drops). Returns (per-prompt list[str], drop_stats)."""
+    if sidecar.exists():
+        try:
+            doc = json.loads(sidecar.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            doc = None
+        if doc is not None and doc.get("fingerprint") == fingerprint:
+            logger.info("[rollouts] reusing persisted sidecar %s", sidecar.name)
+            return doc["rollouts"], doc["drop_stats"]
+        logger.warning("[rollouts] discarding stale sidecar (fingerprint mismatch): %s", sidecar)
+
+    from vllm import SamplingParams
+
+    from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
+
+    def _sp(seed: int):
+        return SamplingParams(
+            n=n_samples,
+            temperature=ROLLOUT_TEMPERATURE,
+            top_p=ROLLOUT_TOP_P,
+            max_tokens=ROLLOUT_MAX_TOKENS,
+            seed=seed,
+        )
+
+    retry_passes = []
+    llm = create_vllm_engine(model_path, max_model_len=8192, seed=ROLLOUT_SEED)
+    try:
+        out = _chunked_rollout_generate(llm, prompt_texts, _sp(ROLLOUT_SEED))
+        for p in range(1, EMPTY_RETRY_PASSES + 1):
+            need = [i for i, comps in enumerate(out) if any(not t.strip() for t in comps)]
+            if not need:
+                break
+            regen = _chunked_rollout_generate(
+                llm, [prompt_texts[i] for i in need], _sp(ROLLOUT_SEED + p)
+            )
+            filled = 0
+            for j, i in enumerate(need):
+                repl = [t for t in regen[j] if t.strip()]
+                comps = out[i]
+                for k in range(len(comps)):
+                    if not comps[k].strip() and repl:
+                        comps[k] = repl.pop(0)
+                        filled += 1
+            retry_passes.append({"pass": p, "prompts_with_empty": len(need), "filled": filled})
+            logger.info(
+                "[rollouts] retry pass %d: %d prompts had empty slots, filled %d",
+                p,
+                len(need),
+                filled,
+            )
+    finally:
+        cleanup_vllm(llm)
+
+    n_slots = sum(len(c) for c in out)
+    n_empty = sum(1 for comps in out for t in comps if not t.strip())
+    drop_stats = {
+        "n_slots": n_slots,
+        "n_empty_after_retries": n_empty,
+        "retry_passes": retry_passes,
+    }
+    logger.info("[rollouts] done: %d slots, %d empty after retries", n_slots, n_empty)
+    _atomic_write_text(
+        sidecar,
+        json.dumps(
+            {"fingerprint": fingerprint, "drop_stats": drop_stats, "rollouts": out},
+            ensure_ascii=False,
+        ),
+    )
+    return out, drop_stats
+
+
+def enforce_ceiling_text_floors(rollouts: list[list[str]]) -> None:
+    """Registered-grain floors for ceiling rollouts (counts only, never text)."""
+    n_slots = sum(len(c) for c in rollouts)
+    empties = [sum(1 for t in comps if not t.strip()) for comps in rollouts]
+    n_empty = sum(empties)
+    bad = [i for i, e in enumerate(empties) if (CEILING_N_ROLLOUTS - e) < CEILING_MIN_KEPT_PER_CELL]
+    if bad or n_empty > MAX_EMPTY_DROP_FRAC * n_slots:
+        raise RuntimeError(
+            f"ceiling rollouts below registered grain after {EMPTY_RETRY_PASSES} retry "
+            f"passes: {n_empty}/{n_slots} empty slots; {len(bad)} cells under "
+            f"{CEILING_MIN_KEPT_PER_CELL} kept (first bad cell idx: {bad[0] if bad else 'n/a'})"
+        )
+
+
+def enforce_map_text_floor(rollouts: list[list[str]]) -> None:
+    """Registered-grain floor for map-corpus rollouts (counts only, never text)."""
+    n = len(rollouts)
+    kept = sum(1 for comps in rollouts if comps and comps[0].strip())
+    if kept < MAP_MIN_KEPT_FRAC * n:
+        raise RuntimeError(
+            f"map_corpus rollouts below registered grain after {EMPTY_RETRY_PASSES} retry "
+            f"passes: {kept}/{n} kept (< {MAP_MIN_KEPT_FRAC:.2f} floor)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Capture phases
+# ---------------------------------------------------------------------------
+def phase_grid(model, tokenizer, layers, q_sim, triggers, out_bundle: Path, meta: dict):
+    """v_C grid over Q_sim x triggers -> fp16 bundle (chunk-checkpointed)."""
     import torch
 
-    q_sim = load_q_sim(banks_dir, setting)
-    triggers = load_triggers(banks_dir, setting)
-    rows, row_meta = [], []
-    for ti, trig in enumerate(triggers):
-        for qi, q in enumerate(q_sim):
+    keys = [(ti, trig, qi, q) for ti, trig in enumerate(triggers) for qi, q in enumerate(q_sim)]
+    n = len(keys)
+    fp = {
+        "phase": "grid",
+        "model": meta["model"],
+        "setting": meta["setting"],
+        "n_rows": n,
+        "n_layers": len(layers),
+    }
+    store = _ChunkStore(out_bundle, fp)
+    done = store.resume_units()
+    if done:
+        logger.info("[grid] resuming at row %d/%d", done, n)
+    t0 = time.time()
+    for start in range(done, n, CKPT_EVERY):
+        end = min(start + CKPT_EVERY, n)
+        rows, row_meta = [], []
+        for ti, trig, qi, q in keys[start:end]:
             messages = render_context_messages(trig["prompt"], q)
             rows.append(_capture_v_c(model, tokenizer, messages, layers).to(torch.float16))
             row_meta.append({"trigger_idx": ti, "trigger_label": trig["label"], "q_sim_idx": qi})
-    v_c = torch.stack(rows)  # (n_rows, 28, 3584)
-    torch.save({"v_c": v_c, "row_meta": row_meta, **meta}, out_bundle)
+        store.append(start, end, {"v_c": torch.stack(rows), "row_meta": row_meta})
+        logger.info("[grid] unit %d/%d elapsed=%.0fs", end, n, time.time() - t0)
+    payloads = store.load_payloads()
+    v_c = torch.cat([p["v_c"] for p in payloads])
+    row_meta = [m for p in payloads for m in p["row_meta"]]
+    if v_c.shape[0] != n:
+        raise RuntimeError(f"grid: assembled {v_c.shape[0]} rows, expected {n}")
+    _atomic_torch_save({"v_c": v_c, "row_meta": row_meta, **meta}, out_bundle)
+    store.cleanup()
     logger.info("grid: wrote %s v_c=%s", out_bundle, tuple(v_c.shape))
 
 
-def phase_mu(model, tokenizer, layers, train_jsonl: Path, setting, out_bundle: Path, meta: dict):
+def phase_mu(
+    model,
+    tokenizer,
+    layers,
+    train_jsonl: Path,
+    n_rows: int,
+    out_bundle: Path,
+    meta: dict,
+):
     """Streaming means mu_train (v_C over training rows) + mu_A_train (v_A over gold
-    answers). Per-row tensors NEVER stored (streaming reduce)."""
+    answers). Per-row tensors NEVER stored (streaming reduce). Running sums are
+    checkpointed atomically every CKPT_EVERY rows with a fingerprinted resume; a
+    gold answer whose capture returns None fails LOUD (registered grain is ALL
+    training rows — never a silently shrunk mu_A)."""
     import torch
 
-    mu_c = None
-    mu_a = None
-    n_c = 0
-    n_a = 0
+    fp = {
+        "phase": "mu",
+        "model": meta["model"],
+        "setting": meta["setting"],
+        "train_jsonl": train_jsonl.name,
+        "n_rows": n_rows,
+        "n_layers": len(layers),
+    }
+    partial = out_bundle.with_name(out_bundle.name + ".partial.pt")
+    mu_c = mu_a = None
+    n_c = n_a = 0
+    next_line_idx = 0
+    if partial.exists():
+        try:
+            st = torch.load(partial, weights_only=True)
+        except Exception:  # noqa: BLE001 — a truncated partial is discardable state
+            st = None
+        if st is not None and st.get("fingerprint") == fp:
+            mu_c, mu_a = st["mu_c_sum"], st["mu_a_sum"]
+            n_c, n_a, next_line_idx = st["n_c"], st["n_a"], st["next_line_idx"]
+            logger.info("[mu] resuming at line %d (%d/%d rows done)", next_line_idx, n_c, n_rows)
+        else:
+            logger.warning("[mu] discarding stale partial (fingerprint mismatch): %s", partial)
+            partial.unlink()
+
+    t0 = time.time()
     with train_jsonl.open(encoding="utf-8") as f:
-        for line in f:
+        for idx, line in enumerate(f):
+            if idx < next_line_idx or not line.strip():
+                continue
             row = json.loads(line)
             sys_turn = row["prompt"][0]["content"]
             user_turn = row["prompt"][-1]["content"]
@@ -321,146 +676,261 @@ def phase_mu(model, tokenizer, layers, train_jsonl: Path, setting, out_bundle: P
             mu_c = v_c if mu_c is None else mu_c + v_c
             n_c += 1
             v_a = _capture_v_a(model, tokenizer, messages, gold, layers)
-            if v_a is not None:
-                v_a = v_a.to(torch.float32)
-                mu_a = v_a if mu_a is None else mu_a + v_a
-                n_a += 1
+            if v_a is None:
+                raise RuntimeError(
+                    f"[mu] line {idx} of {train_jsonl.name}: answer-vector capture "
+                    "returned None (empty/unalignable gold answer) — registered grain "
+                    "is ALL training rows; refusing to silently shrink mu_A"
+                )
+            mu_a = v_a.to(torch.float32) if mu_a is None else mu_a + v_a.to(torch.float32)
+            n_a += 1
+            if n_c % CKPT_EVERY == 0:
+                _atomic_torch_save(
+                    {
+                        "fingerprint": fp,
+                        "mu_c_sum": mu_c,
+                        "mu_a_sum": mu_a,
+                        "n_c": n_c,
+                        "n_a": n_a,
+                        "next_line_idx": idx + 1,
+                    },
+                    partial,
+                )
+                logger.info(
+                    "[mu] unit %d/%d line=%d elapsed=%.0fs", n_c, n_rows, idx, time.time() - t0
+                )
     if n_c == 0:
         raise RuntimeError(f"no training rows in {train_jsonl}")
     mu_c = (mu_c / n_c).to(torch.float16)
-    mu_a = (mu_a / n_a).to(torch.float16) if n_a else None
-    torch.save({"mu_train": mu_c, "mu_a_train": mu_a, "n_c": n_c, "n_a": n_a, **meta}, out_bundle)
+    mu_a = (mu_a / n_a).to(torch.float16)
+    _atomic_torch_save(
+        {"mu_train": mu_c, "mu_a_train": mu_a, "n_c": n_c, "n_a": n_a, **meta}, out_bundle
+    )
+    partial.unlink(missing_ok=True)
     logger.info("mu: wrote %s (n_c=%d n_a=%d)", out_bundle, n_c, n_a)
 
 
-def _vllm_rollouts(model_path: str, prompt_texts: list[str], n: int, gpu_id: int):
-    """Batched vLLM rollouts (chunked). Returns per-prompt list[str]."""
-    from vllm import SamplingParams
-
-    from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
-
-    sp = SamplingParams(
-        n=n,
-        temperature=ROLLOUT_TEMPERATURE,
-        top_p=ROLLOUT_TOP_P,
-        max_tokens=ROLLOUT_MAX_TOKENS,
-        seed=ROLLOUT_SEED,
-    )
-    llm = create_vllm_engine(model_path, max_model_len=8192, seed=ROLLOUT_SEED)
-    out: list[list[str]] = []
-    try:
-        for i in range(0, len(prompt_texts), VLLM_CHUNK_SIZE):
-            chunk = prompt_texts[i : i + VLLM_CHUNK_SIZE]
-            for o in llm.generate(chunk, sp, use_tqdm=False):
-                out.append([c.text for c in o.outputs])
-    finally:
-        cleanup_vllm(llm)
-    return out
-
-
-def phase_ceiling(
+def phase_ceiling_tf(
     model,
     tokenizer,
     layers,
-    model_path,
-    banks_dir,
-    setting,
+    q_sim,
+    triggers,
+    rollouts: list[list[str]],
+    rollout_drop_stats: dict,
     out_bundle: Path,
     rawcomp_dir: Path,
-    gpu_id,
     meta: dict,
 ):
-    """3 on-policy rollouts per (q, c); teacher-forced v_A per rollout stored
-    PER-ROLLOUT; rollout TEXT persisted to raw_completions/ceiling/."""
+    """Teacher-forced v_A per rollout, stored PER-ROLLOUT (chunk-checkpointed).
+    Rollout TEXT persisted to raw_completions/ceiling/ (written BEFORE the final
+    bundle so the bundle's existence implies the text landed)."""
     import torch
 
-    q_sim = load_q_sim(banks_dir, setting)
-    triggers = load_triggers(banks_dir, setting)
-    prompt_texts, keys = [], []
-    for ti, trig in enumerate(triggers):
-        for qi, q in enumerate(q_sim):
-            messages = render_context_messages(trig["prompt"], q)
-            prompt_texts.append(
-                tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-            )
-            keys.append((ti, trig["label"], trig["prompt"], qi, q))
-    rollouts = _vllm_rollouts(model_path, prompt_texts, CEILING_N_ROLLOUTS, gpu_id)
+    keys = [
+        (ci, ti, trig["label"], trig["prompt"], qi, q)
+        for ci, (ti, trig, qi, q) in enumerate(
+            (ti, trig, qi, q) for ti, trig in enumerate(triggers) for qi, q in enumerate(q_sim)
+        )
+    ]
+    n_cells = len(keys)
+    if len(rollouts) != n_cells:
+        raise RuntimeError(f"ceiling: {len(rollouts)} rollout cells != {n_cells} (q,c) keys")
+    fp = {
+        "phase": "ceiling_tf",
+        "model": meta["model"],
+        "setting": meta["setting"],
+        "n_cells": n_cells,
+        "n_rollouts": CEILING_N_ROLLOUTS,
+        "n_layers": len(layers),
+    }
+    store = _ChunkStore(out_bundle, fp)
+    done = store.resume_units()
+    if done:
+        logger.info("[ceiling] resuming at cell %d/%d", done, n_cells)
+    t0 = time.time()
+    for start in range(done, n_cells, CKPT_EVERY):
+        end = min(start + CKPT_EVERY, n_cells)
+        v_a_rows, row_meta = [], []
+        n_capture_dropped = 0
+        for ci, ti, tlabel, tprompt, qi, q in keys[start:end]:
+            messages = render_context_messages(tprompt, q)
+            for ri, text in enumerate(rollouts[ci]):
+                if not text.strip():
+                    continue  # counted in rollout_drop_stats (floors already enforced)
+                v_a = _capture_v_a(model, tokenizer, messages, text, layers)
+                if v_a is None:
+                    n_capture_dropped += 1
+                    continue
+                v_a_rows.append(v_a.to(torch.float16))
+                row_meta.append(
+                    {
+                        "cell_idx": ci,
+                        "trigger_idx": ti,
+                        "trigger_label": tlabel,
+                        "q_sim_idx": qi,
+                        "rollout_idx": ri,
+                    }
+                )
+        payload_v_a = (
+            torch.stack(v_a_rows)
+            if v_a_rows
+            else torch.empty(0, len(layers), EXPECTED_HIDDEN, dtype=torch.float16)
+        )
+        store.append(
+            start,
+            end,
+            {"v_a": payload_v_a, "row_meta": row_meta, "n_capture_dropped": n_capture_dropped},
+        )
+        logger.info("[ceiling] unit %d/%d elapsed=%.0fs", end, n_cells, time.time() - t0)
 
-    v_a_rows, row_meta, raw_rows = [], [], []
-    for (ti, tlabel, tprompt, qi, q), comps in zip(keys, rollouts, strict=True):
-        messages = render_context_messages(tprompt, q)
-        per_rollout = []
-        for ri, text in enumerate(comps):
+    payloads = store.load_payloads()
+    v_a = torch.cat([p["v_a"] for p in payloads])
+    row_meta = [m for p in payloads for m in p["row_meta"]]
+    n_capture_dropped = sum(p["n_capture_dropped"] for p in payloads)
+
+    # Post-capture registered-grain recheck (capture drops can shrink below the
+    # text-level floors enforced pre-TF).
+    kept_per_cell = [0] * n_cells
+    for m in row_meta:
+        kept_per_cell[m["cell_idx"]] += 1
+    n_slots = rollout_drop_stats["n_slots"]
+    n_dropped_total = rollout_drop_stats["n_empty_after_retries"] + n_capture_dropped
+    bad = [ci for ci, k in enumerate(kept_per_cell) if k < CEILING_MIN_KEPT_PER_CELL]
+    if bad or n_dropped_total > MAX_EMPTY_DROP_FRAC * n_slots:
+        raise RuntimeError(
+            f"ceiling below registered grain post-capture: {n_dropped_total}/{n_slots} "
+            f"slots dropped ({n_capture_dropped} at capture); {len(bad)} cells under "
+            f"{CEILING_MIN_KEPT_PER_CELL} kept (first bad cell idx: {bad[0] if bad else 'n/a'})"
+        )
+
+    kept_map: dict[int, list[int]] = {}
+    for g, m in enumerate(row_meta):
+        kept_map.setdefault(m["cell_idx"], []).append(g)
+    raw_rows = [
+        {
+            "trigger_idx": ti,
+            "trigger_label": tlabel,
+            "q_sim_idx": qi,
+            "question": q,
+            "completions": rollouts[ci],
+            "kept_v_a_idx": kept_map.get(ci, []),
+        }
+        for ci, ti, tlabel, tprompt, qi, q in keys
+    ]
+    drop_stats = {**rollout_drop_stats, "n_capture_dropped": n_capture_dropped}
+    _write_rawcomp(rawcomp_dir, "ceiling", meta["model"], raw_rows, meta, drop_stats)
+    _atomic_torch_save(
+        {"v_a": v_a, "row_meta": row_meta, "drop_stats": drop_stats, **meta}, out_bundle
+    )
+    store.cleanup()
+    logger.info(
+        "ceiling: wrote %s v_a=%s (dropped %d/%d slots)",
+        out_bundle,
+        tuple(v_a.shape),
+        n_dropped_total,
+        n_slots,
+    )
+
+
+def phase_map_corpus_tf(
+    model,
+    tokenizer,
+    layers,
+    prompts: list[str],
+    rollouts: list[list[str]],
+    rollout_drop_stats: dict,
+    out_bundle: Path,
+    rawcomp_dir: Path,
+    meta: dict,
+):
+    """Teacher-forced (v_C, v_A) over the 5,000 LMSYS rows (chunk-checkpointed).
+    Drop counts explicit; kept fraction fails loud below the registered floor."""
+    import torch
+
+    n = len(prompts)
+    fp = {
+        "phase": "map_corpus_tf",
+        "model": meta["model"],
+        "setting": meta["setting"],
+        "n_prompts": n,
+        "n_layers": len(layers),
+    }
+    store = _ChunkStore(out_bundle, fp)
+    done = store.resume_units()
+    if done:
+        logger.info("[map_corpus] resuming at row %d/%d", done, n)
+    t0 = time.time()
+    for start in range(done, n, CKPT_EVERY):
+        end = min(start + CKPT_EVERY, n)
+        v_c_rows, v_a_rows, kept_idx, dropped = [], [], [], []
+        for i in range(start, end):
+            comps = rollouts[i]
+            text = comps[0] if comps else ""
+            if not text.strip():
+                dropped.append({"row_idx": i, "reason": "empty_rollout"})
+                continue
+            messages = [{"role": "user", "content": prompts[i]}]
             v_a = _capture_v_a(model, tokenizer, messages, text, layers)
             if v_a is None:
+                dropped.append({"row_idx": i, "reason": "capture_none"})
                 continue
+            v_c = _capture_v_c(model, tokenizer, messages, layers)
+            v_c_rows.append(v_c.to(torch.float16))
             v_a_rows.append(v_a.to(torch.float16))
-            per_rollout.append(len(v_a_rows) - 1)
-            row_meta.append(
-                {"trigger_idx": ti, "trigger_label": tlabel, "q_sim_idx": qi, "rollout_idx": ri}
-            )
-        raw_rows.append(
+            kept_idx.append(i)
+        empty = torch.empty(0, len(layers), EXPECTED_HIDDEN, dtype=torch.float16)
+        store.append(
+            start,
+            end,
             {
-                "trigger_idx": ti,
-                "trigger_label": tlabel,
-                "q_sim_idx": qi,
-                "question": q,
-                "completions": comps,
-                "kept_v_a_idx": per_rollout,
-            }
+                "v_c": torch.stack(v_c_rows) if v_c_rows else empty,
+                "v_a": torch.stack(v_a_rows) if v_a_rows else empty,
+                "kept_idx": kept_idx,
+                "dropped": dropped,
+            },
         )
-    v_a = torch.stack(v_a_rows) if v_a_rows else torch.empty(0)
-    torch.save({"v_a": v_a, "row_meta": row_meta, **meta}, out_bundle)
-    _write_rawcomp(rawcomp_dir, "ceiling", meta["model"], raw_rows, meta)
-    logger.info("ceiling: wrote %s v_a=%s", out_bundle, tuple(v_a.shape))
+        logger.info("[map_corpus] unit %d/%d elapsed=%.0fs", end, n, time.time() - t0)
 
-
-def phase_map_corpus(
-    model,
-    tokenizer,
-    layers,
-    model_path,
-    banks_dir,
-    out_bundle: Path,
-    rawcomp_dir: Path,
-    gpu_id,
-    meta: dict,
-):
-    """Replay 5,000 LMSYS prompts (user-only messages, matching pass-B); teacher-force
-    (v_C, v_A) all 28 layers -> one fp16 bundle. Rollout TEXT to raw_completions/."""
-    import torch
-
-    prompts = reconstruct_lmsys_prompts(LMSYS_N_PROMPTS)
-    assert_lmsys_disjoint(prompts, banks_dir)
-    prompt_texts = [
-        tokenizer.apply_chat_template(
-            [{"role": "user", "content": p}], tokenize=False, add_generation_prompt=True
+    payloads = store.load_payloads()
+    v_c = torch.cat([p["v_c"] for p in payloads])
+    v_a = torch.cat([p["v_a"] for p in payloads])
+    kept_idx = [i for p in payloads for i in p["kept_idx"]]
+    dropped = [d for p in payloads for d in p["dropped"]]
+    if len(kept_idx) < MAP_MIN_KEPT_FRAC * n:
+        raise RuntimeError(
+            f"map_corpus below registered grain post-capture: kept {len(kept_idx)}/{n} "
+            f"(< {MAP_MIN_KEPT_FRAC:.2f} floor); drop reasons: "
+            f"{ {r['reason'] for r in dropped} }"
         )
-        for p in prompts
-    ]
-    rollouts = _vllm_rollouts(model_path, prompt_texts, 1, gpu_id)
-
-    v_c_rows, v_a_rows, kept_idx, raw_rows = [], [], [], []
-    for i, (p, comps) in enumerate(zip(prompts, rollouts, strict=True)):
-        messages = [{"role": "user", "content": p}]
-        v_a = _capture_v_a(model, tokenizer, messages, comps[0], layers)
-        if v_a is None:
-            raw_rows.append({"row_idx": i, "completions": comps, "kept": False})
-            continue
-        v_c = _capture_v_c(model, tokenizer, messages, layers)
-        v_c_rows.append(v_c.to(torch.float16))
-        v_a_rows.append(v_a.to(torch.float16))
-        kept_idx.append(i)
-        raw_rows.append({"row_idx": i, "completions": comps, "kept": True})
-    v_c = torch.stack(v_c_rows)
-    v_a = torch.stack(v_a_rows)
-    torch.save(
-        {"v_c": v_c, "v_a": v_a, "kept_row_idx": kept_idx, "n_prompts": len(prompts), **meta},
+    kept_set = set(kept_idx)
+    raw_rows = [{"row_idx": i, "completions": rollouts[i], "kept": i in kept_set} for i in range(n)]
+    drop_stats = {
+        **rollout_drop_stats,
+        "n_kept": len(kept_idx),
+        "n_dropped": len(dropped),
+        "drop_reasons": sorted({d["reason"] for d in dropped}),
+    }
+    _write_rawcomp(rawcomp_dir, "map_corpus", meta["model"], raw_rows, meta, drop_stats)
+    _atomic_torch_save(
+        {
+            "v_c": v_c,
+            "v_a": v_a,
+            "kept_row_idx": kept_idx,
+            "n_prompts": n,
+            "drop_stats": drop_stats,
+            **meta,
+        },
         out_bundle,
     )
-    _write_rawcomp(rawcomp_dir, "map_corpus", meta["model"], raw_rows, meta)
+    store.cleanup()
     logger.info(
-        "map_corpus: wrote %s v_c=%s v_a=%s", out_bundle, tuple(v_c.shape), tuple(v_a.shape)
+        "map_corpus: wrote %s v_c=%s v_a=%s (kept %d/%d)",
+        out_bundle,
+        tuple(v_c.shape),
+        tuple(v_a.shape),
+        len(kept_idx),
+        n,
     )
 
 
@@ -489,17 +959,17 @@ def _bge_embed(texts: list[str]):
 
 
 def _lexical_sims(a: str, b: str) -> dict:
-    """Token Jaccard, SequenceMatcher ratio, and a placeholder for TF-IDF (computed
-    at corpus level in phase_text_baselines)."""
+    """Token Jaccard + SequenceMatcher ratio (key = SEQMATCH_KEY, the spelling the
+    mapfit consumer imports); TF-IDF is computed at corpus level in
+    phase_text_baselines."""
     from difflib import SequenceMatcher
 
     ta, tb = set(a.lower().split()), set(b.lower().split())
     jacc = (len(ta & tb) / len(ta | tb)) if (ta | tb) else 0.0
-    return {"jaccard": jacc, "seqmatch_ratio": SequenceMatcher(None, a, b).ratio()}
+    return {"jaccard": jacc, SEQMATCH_KEY: SequenceMatcher(None, a, b).ratio()}
 
 
 def phase_text_baselines(banks_dir: Path, setting: str, out_json: Path, meta: dict):
-    import torch
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics.pairwise import cosine_similarity
 
@@ -536,16 +1006,20 @@ def phase_text_baselines(banks_dir: Path, setting: str, out_json: Path, meta: di
         "p_inoc_embedding": p_inoc_emb.tolist(),
         **meta,
     }
-    out_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    _atomic_write_text(out_json, json.dumps(payload, ensure_ascii=False))
     logger.info("text_baselines: wrote %s (%d triggers)", out_json, len(labels))
-    del torch
 
 
 # ---------------------------------------------------------------------------
 # Persistence + upload
 # ---------------------------------------------------------------------------
 def _write_rawcomp(
-    rawcomp_dir: Path, stage: str, model_name: str, raw_rows: list[dict], meta: dict
+    rawcomp_dir: Path,
+    stage: str,
+    model_name: str,
+    raw_rows: list[dict],
+    meta: dict,
+    drop_stats: dict | None = None,
 ):
     dest = rawcomp_dir / stage / model_name
     dest.mkdir(parents=True, exist_ok=True)
@@ -559,14 +1033,14 @@ def _write_rawcomp(
             "top_p": ROLLOUT_TOP_P,
             "max_tokens": ROLLOUT_MAX_TOKENS,
             "seed": ROLLOUT_SEED,
+            "empty_retry_passes": EMPTY_RETRY_PASSES,
         },
+        "drop_stats": drop_stats or {},
         "git": meta.get("git"),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "rows": raw_rows,
     }
-    (dest / "raw_completions.json").write_text(
-        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
-    )
+    _atomic_write_text(dest / "raw_completions.json", json.dumps(payload, ensure_ascii=False))
 
 
 def upload_rawcomp(rawcomp_dir: Path) -> dict[str, str]:
@@ -575,8 +1049,8 @@ def upload_rawcomp(rawcomp_dir: Path) -> dict[str, str]:
     return upload_raw_completions_to_data_repo(experiment_name=SLUG, eval_results_dir=rawcomp_dir)
 
 
-def upload_tensor(local_path: Path, path_in_repo: str) -> str:
-    """Upload one .pt bundle to the HF data repo, fail loud."""
+def upload_artifact_file(local_path: Path, path_in_repo: str) -> str:
+    """Upload one file (.pt bundle / baselines JSON) to the HF data repo, fail loud."""
     from explore_persona_space.orchestrate import hub
 
     return hub._upload(
@@ -598,6 +1072,20 @@ def _git_meta() -> dict:
     return as_metadata_dict(git_provenance(cwd=REPO_ROOT))
 
 
+def _rollout_fingerprint(phase: str, model_name: str, n_prompts: int, n_samples: int) -> dict:
+    return {
+        "phase": f"{phase}_rollouts",
+        "model": model_name,
+        "n_prompts": n_prompts,
+        "n_samples": n_samples,
+        "temperature": ROLLOUT_TEMPERATURE,
+        "top_p": ROLLOUT_TOP_P,
+        "max_tokens": ROLLOUT_MAX_TOKENS,
+        "seed": ROLLOUT_SEED,
+        "empty_retry_passes": EMPTY_RETRY_PASSES,
+    }
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -615,9 +1103,17 @@ def main() -> int:
     ap.add_argument("--out-dir", default=str(REPO_ROOT / "eval_results" / "issue_2379"))
     ap.add_argument("--gpu-id", type=int, default=0)
     ap.add_argument("--probe-access", action="store_true", help="1-row LMSYS gated read; then exit")
+    ap.add_argument("--force", action="store_true", help="Recompute even if outputs exist")
     ap.add_argument("--no-upload", action="store_true")
     ap.add_argument("--dry-run", action="store_true", help="CPU arg-validation only; no GPU")
     args = ap.parse_args()
+
+    if args.gpu_id != 0:
+        ap.error(
+            "--gpu-id must stay 0: pin the physical GPU via CUDA_VISIBLE_DEVICES in the "
+            "LAUNCHER env (the CVD contract, gotchas.md) — a bare nonzero --gpu-id would "
+            "silently run on cuda:0"
+        )
 
     if args.probe_access:
         if args.dry_run:
@@ -652,75 +1148,158 @@ def main() -> int:
     if args.phase == "text_baselines":
         # CPU-only; no model load.
         out_json = tensor_dir / f"text_baselines_{args.setting}_{args.model_name}.json"
-        phase_text_baselines(banks_dir, args.setting, out_json, meta)
+        if out_json.exists() and not args.force:
+            logger.info("[skip] %s exists — skipping compute (--force to redo)", out_json)
+        else:
+            phase_text_baselines(banks_dir, args.setting, out_json, meta)
+        if not args.no_upload:
+            upload_artifact_file(out_json, f"{HF_TEXT_BASELINES_PREFIX}/{out_json.name}")
+            logger.info("uploaded text_baselines -> %s", HF_TEXT_BASELINES_PREFIX)
         return 0
 
-    model_path, cleanup = resolve_model(args)
-    try:
-        model, tokenizer, conv = load_hf_model(model_path)
-        meta["layer_convention"] = conv
-        layers = conv["stored_layers"]
-        t0 = time.time()
+    # ---- Consumer-contract validation BEFORE any merge / model constructor ----
+    # (r1 blocker consumer-contract-post-init: every required file, key, count,
+    # and bank contract resolves before GPU-heavy state is allocated.)
+    q_sim: list[str] | None = None
+    triggers: list[dict] | None = None
+    n_train_rows: int | None = None
+    lmsys_prompts: list[str] | None = None
+    if args.phase in ("grid", "ceiling"):
+        q_sim = load_q_sim(banks_dir, args.setting)
+        triggers = load_triggers(banks_dir, args.setting)
+        if not triggers:
+            raise RuntimeError(f"empty trigger bank for setting={args.setting}")
+    elif args.phase == "mu":
+        n_train_rows = validate_mu_train_jsonl(Path(args.train_jsonl))
+        logger.info("[mu] validated %s (%d rows)", Path(args.train_jsonl).name, n_train_rows)
+    elif args.phase == "map_corpus":
+        lmsys_prompts = reconstruct_lmsys_prompts(LMSYS_N_PROMPTS)
+        if len(lmsys_prompts) != LMSYS_N_PROMPTS:
+            raise RuntimeError(
+                f"LMSYS replay returned {len(lmsys_prompts)} prompts != {LMSYS_N_PROMPTS}"
+            )
+        assert_lmsys_disjoint(lmsys_prompts, banks_dir)
 
-        pred_subdir = tensor_dir / "predictor_captures" / args.model_name
-        pred_subdir.mkdir(parents=True, exist_ok=True)
+    # Output paths + per-invocation idempotency (skip compute if the final bundle
+    # exists — atomic writes make existence reliable; --force overrides; the
+    # upload leg still runs so a crash between compute and upload self-heals).
+    pred_subdir = tensor_dir / "predictor_captures" / args.model_name
+    pred_subdir.mkdir(parents=True, exist_ok=True)
+    if args.phase == "map_corpus":
+        out_bundle = tensor_dir / "map_corpus" / f"{args.model_name}.pt"
+        out_bundle.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        out_bundle = pred_subdir / f"{args.phase}.pt"
 
-        if args.phase == "grid":
-            phase_grid(
-                model, tokenizer, layers, banks_dir, args.setting, pred_subdir / "grid.pt", meta
-            )
-        elif args.phase == "mu":
-            phase_mu(
-                model,
-                tokenizer,
-                layers,
-                Path(args.train_jsonl),
-                args.setting,
-                pred_subdir / "mu.pt",
-                meta,
-            )
-        elif args.phase == "ceiling":
-            phase_ceiling(
-                model,
-                tokenizer,
-                layers,
-                model_path,
-                banks_dir,
-                args.setting,
-                pred_subdir / "ceiling.pt",
-                rawcomp_dir,
-                args.gpu_id,
-                meta,
-            )
-        elif args.phase == "map_corpus":
-            mc_path = tensor_dir / "map_corpus" / f"{args.model_name}.pt"
-            mc_path.parent.mkdir(parents=True, exist_ok=True)
-            phase_map_corpus(
-                model,
-                tokenizer,
-                layers,
-                model_path,
-                banks_dir,
-                mc_path,
-                rawcomp_dir,
-                args.gpu_id,
-                meta,
-            )
-        logger.info("phase %s done in %.1fs", args.phase, time.time() - t0)
-    finally:
-        cleanup()
+    if out_bundle.exists() and not args.force:
+        logger.info(
+            "[skip] %s exists — skipping compute (--force to redo); running upload leg",
+            out_bundle,
+        )
+    else:
+        model_path, cleanup = resolve_model(args)
+        try:
+            t0 = time.time()
+            if args.phase in ("ceiling", "map_corpus"):
+                # Rollouts FIRST (vLLM), persisted; the HF model loads only after
+                # the engine is torn down (never co-resident — r1 minor).
+                tok = load_tokenizer(model_path)
+                if args.phase == "ceiling":
+                    prompt_texts = [
+                        tok.apply_chat_template(
+                            render_context_messages(trig["prompt"], q),
+                            tokenize=False,
+                            add_generation_prompt=True,
+                        )
+                        for trig in triggers
+                        for q in q_sim
+                    ]
+                    sidecar = pred_subdir / "ceiling.rollouts.json"
+                    rollouts, drop_stats = generate_rollouts_with_retry(
+                        model_path,
+                        prompt_texts,
+                        CEILING_N_ROLLOUTS,
+                        sidecar,
+                        _rollout_fingerprint(
+                            "ceiling", args.model_name, len(prompt_texts), CEILING_N_ROLLOUTS
+                        ),
+                    )
+                    enforce_ceiling_text_floors(rollouts)
+                else:
+                    prompt_texts = [
+                        tok.apply_chat_template(
+                            [{"role": "user", "content": p}],
+                            tokenize=False,
+                            add_generation_prompt=True,
+                        )
+                        for p in lmsys_prompts
+                    ]
+                    sidecar = out_bundle.with_name(f"{args.model_name}.rollouts.json")
+                    rollouts, drop_stats = generate_rollouts_with_retry(
+                        model_path,
+                        prompt_texts,
+                        1,
+                        sidecar,
+                        _rollout_fingerprint("map_corpus", args.model_name, len(prompt_texts), 1),
+                    )
+                    enforce_map_text_floor(rollouts)
+
+            model, tokenizer, conv = load_hf_model(model_path)
+            meta["layer_convention"] = conv
+            layers = conv["stored_layers"]
+
+            if args.phase == "grid":
+                phase_grid(model, tokenizer, layers, q_sim, triggers, out_bundle, meta)
+            elif args.phase == "mu":
+                phase_mu(
+                    model,
+                    tokenizer,
+                    layers,
+                    Path(args.train_jsonl),
+                    n_train_rows,
+                    out_bundle,
+                    meta,
+                )
+            elif args.phase == "ceiling":
+                phase_ceiling_tf(
+                    model,
+                    tokenizer,
+                    layers,
+                    q_sim,
+                    triggers,
+                    rollouts,
+                    drop_stats,
+                    out_bundle,
+                    rawcomp_dir,
+                    meta,
+                )
+            elif args.phase == "map_corpus":
+                phase_map_corpus_tf(
+                    model,
+                    tokenizer,
+                    layers,
+                    lmsys_prompts,
+                    rollouts,
+                    drop_stats,
+                    out_bundle,
+                    rawcomp_dir,
+                    meta,
+                )
+            logger.info("phase %s done in %.1fs", args.phase, time.time() - t0)
+        finally:
+            cleanup()
 
     if not args.no_upload:
         if args.phase in ("ceiling", "map_corpus"):
             urls = upload_rawcomp(rawcomp_dir)
             logger.info("uploaded %d rollout-text files to HF", len(urls))
         if args.phase in ("grid", "mu", "ceiling"):
-            local = tensor_dir / "predictor_captures" / args.model_name / f"{args.phase}.pt"
-            upload_tensor(local, f"{HF_PREDICTOR_PREFIX}/{args.model_name}/{args.phase}.pt")
+            upload_artifact_file(
+                out_bundle, f"{HF_PREDICTOR_PREFIX}/{args.model_name}/{args.phase}.pt"
+            )
             logger.info("uploaded predictor bundle -> %s", HF_PREDICTOR_PREFIX)
         elif args.phase == "map_corpus":
-            local = tensor_dir / "map_corpus" / f"{args.model_name}.pt"
-            upload_tensor(local, f"{HF_MAP_CORPUS_PREFIX}/{args.model_name}.pt")
+            upload_artifact_file(out_bundle, f"{HF_MAP_CORPUS_PREFIX}/{args.model_name}.pt")
             logger.info("uploaded map_corpus bundle -> %s", HF_MAP_CORPUS_PREFIX)
 
     return 0
