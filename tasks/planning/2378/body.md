@@ -14,20 +14,20 @@ workflow: v1
 goal: 'Test whether the context→answer linear map trained in the chat-template framing
   transfers — directly or up to a linear reparameterization — to every other framing
   in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a
-  panel of distinct story characters spanning an AI-likeness gradient, and a dialogue-reply
-  arm where the addressed utterance is ordinary dialogue rather than a question; one-directional
-  transfer only, stories generated fully template-free (raw completion), scene-native
-  invented queries, fully independent query pools (topic-shift confound disclosed).
-  Secondary arm: one general map fit pooled on ALL cells compared per cell to the
-  specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R² and
-  rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched
-  fresh-draw reference).'
+  panel of distinct story characters, and a dialogue-reply arm where the addressed
+  utterance is ordinary dialogue rather than a question; one-directional transfer
+  only, stories generated fully template-free (raw completion), scene-native invented
+  queries, fully independent query pools (topic-shift confound disclosed). Secondary
+  arm: one general map fit pooled on ALL cells compared per cell to the specialized
+  own maps (pooled-tier ladder). Every arm reports BOTH held-out R² and rank-1 retrieval
+  under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw
+  reference). No AI-likeness judge axis (dropped per user directive).'
 ---
 # Chat-trained context→answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and fully template-free story generation
 
 ## Goal
 
-Test whether the context→answer linear map trained in the chat-template framing transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, and a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question; one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R² and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference).
+Test whether the context→answer linear map trained in the chat-template framing transfers — directly or up to a linear reparameterization — to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, and a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question; one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R² and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).
 
 ## Why (what this fixes over #1345/#2054)
 
