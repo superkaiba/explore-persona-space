@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2403,
+  "highest_id": 2404,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10853,6 +10853,13 @@
       "path": "tasks/proposed/2403",
       "status": "proposed",
       "title": "workflow-fix: verify_plan should check a reuse claim's named field is the field the reused consumer actually reads"
+    },
+    "2404": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2404",
+      "status": "proposed",
+      "title": "verify_plan c67: scope the temperature-negation to the clause, not the whole line"
     },
     "241": {
       "has_clean_result": false,
