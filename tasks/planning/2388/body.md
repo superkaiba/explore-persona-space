@@ -13,6 +13,7 @@ origin_prompt: 'I want to run an experiment to test if answer correctness is pre
   map test and the label-efficiency crossover; slim arm ladder plus mandated baselines;
   routed as a new child task of #1739.]'
 workflow: v1
+backend: runpod
 goal: On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (gold-
   or execution-verified, K=5 rollouts) is predictable from the frozen context vector
   before generation, and whether routing the context vector through the learned context-to-answer
