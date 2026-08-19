@@ -33,6 +33,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SKILL = _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -57,7 +59,7 @@ def _suppression_bullet() -> str:
     # The BOLDED form anchors the Step 4b bullet itself; the Step 5.bis(a)
     # cross-reference quotes the rule UNbolded, so this anchor stays unique.
     return _region(
-        _SKILL.read_text(encoding="utf-8"),
+        issue_skill_text(),
         "**A brief NEVER suppresses the implementation marker.**",
         "**Marker-version discipline",
         label="SKILL.md Step 4b marker-suppression bullet",
@@ -91,7 +93,7 @@ def test_displacement_clause_pinned():
 def test_step5bis_cross_reference_names_marker_duty():
     region = _collapsed(
         _region(
-            _SKILL.read_text(encoding="utf-8"),
+            issue_skill_text(),
             "Vectorize-first signature check",
             "**Not overhead-bound**",
             label="SKILL.md Step 5.bis(a) vectorize-fix-round dispatch",

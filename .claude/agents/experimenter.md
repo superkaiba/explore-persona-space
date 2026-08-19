@@ -817,6 +817,40 @@ PID only. Exact fenced recipes:
    (breadcrumbs/watches key on the identity-verified WORKER pid, never
    the wrapper, #1769); this section is the agent-specific recipe.)
 
+1c. **Per-leg out/scratch isolation for concurrent same-driver legs
+   (#2330 fu1).** TRIGGER = RUNTIME CONCURRENCY, not batch composition:
+   any leg you compose that will run while ANOTHER leg of the same
+   driver — or of a layout-sharing forked sibling driver (an
+   `issueN_capture_*.py` copy) — is or may be live on this machine.
+   That covers batch-mates composed together AND a single new leg
+   (follow-up, relaunch) composed against an already-live sibling that
+   inherited a shared out-dir env var from an earlier dispatch /
+   preamble; probe liveness with the issue-scoped bracketed `pgrep -af`
+   step 1b's kill-confirm-dead bullet already prescribes. COLLISION
+   TEST: same or layout-sharing driver + same split name + overlapping
+   shard indices means the legs' chunk basenames
+   (`shards/<split>/shardNN_chunk*.pt`) collide. FIX: derive a PER-LEG
+   out/scratch root BEFORE launch — suffix the leg name onto the shared
+   env var / `--out-root` (e.g. `EPM_I<N>_OUT_DIR=<shared>_<leg>`). The
+   `epm:run-launched` breadcrumb states the isolation (the per-leg
+   root) OR the verified non-collision — disjoint splits / disjoint
+   shard indices / disjoint output basename-layouts; the invariant is
+   BASENAME DISJOINTNESS, and DRIVER DIFFERENCE ALONE IS NOT SUFFICIENT
+   (forked sibling drivers share the `shards/<split>/shardNN_chunk*.pt`
+   layout — #2330's two drivers even differed in num-shards yet both
+   wrote index 00). Why this is silent, not fail-loud: in #2330 fu1
+   both launchers inherited one `EPM_I2330_OUT_DIR`; fuB overwrote
+   fuA's not-yet-flushed chunks, fuA's end-of-shard flush uploaded
+   fuB's bytes to the DENSE prefix — sha-verify hashes at flush time,
+   so the poisoning passed SILENTLY (caught only by LFS-size
+   forensics: 49 MB vs 508 MB) — then purged the files, killing fuB's
+   terminal flush with FileNotFoundError (3 poisoned dense chunks,
+   ~80 min GPU redo, one crash-fix round). Siblings:
+   `.claude/rules/gotchas.md` "Concurrent fan-out units racing a
+   SHARED staging dest" (#1315 — the DOWNLOAD-staging face);
+   `.claude/rules/crash-fix-rounds.md` § Per-leg out-roots (#1333 —
+   the REGIME-keyed face, widened to this concurrent case).
+
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
    closed.** Never bundle the survival probe into the same SSH command

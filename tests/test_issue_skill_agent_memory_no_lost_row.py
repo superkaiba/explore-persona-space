@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_MD = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 GOTCHAS_MD = REPO_ROOT / ".claude" / "rules" / "gotchas.md"
@@ -20,7 +22,7 @@ LESSONS_MD = REPO_ROOT / ".claude" / "rules" / "LESSONS.md"
 
 def test_no_lost_row_discipline_pinned() -> None:
     """SKILL.md, gotchas.md, and LESSONS.md all carry the no-lost-row discipline."""
-    skill = SKILL_MD.read_text(encoding="utf-8")
+    skill = issue_skill_text()
 
     # (i) Two DISTINCT SKILL.md anchors — the manual-override comment clause
     # and the operator echo's leading literal. Both are load-bearing: dropping

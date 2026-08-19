@@ -27,6 +27,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
 _SAFE_CASE_HEADING = (
@@ -41,7 +43,7 @@ _RECOVERY_END = "##### Residual-conflict subagent dispatch"
 
 
 def _text() -> str:
-    return SKILL_MD.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _safe_case_block() -> str:

@@ -10,13 +10,15 @@ test_issue_skill_guard_excerpt_brief.py).
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 RULE_MD = REPO / ".claude" / "rules" / "trigger-dense-review.md"
 
 
 def test_step6d2_forensics_ingest_pointer_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     idx = text.index("Forensics-ingest discipline (#1546)")
     window = text[idx : idx + 600]
     assert "Orchestrator poll/forensics turns" in window

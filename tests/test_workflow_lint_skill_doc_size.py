@@ -239,3 +239,21 @@ def test_threshold_literals_pinned() -> None:
     assert SKILL_DOC_WARN_BYTES == 40_000
     assert SKILL_DOC_FAIL_BYTES == 60_000
     assert SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES == 3_000
+
+
+def test_regrowth_fail_names_suggested_cap(tmp_path: Path) -> None:
+    """The regrowth FAIL emits the exact replacement cap line (#2325): the
+    corridor-max suggested value ``((size + 2_800) // 100) * 100``, the
+    literal dict-entry spelling, and the fast re-verify flag — so the
+    tripping session can apply the designed raise-the-cap remedy from the
+    FAIL text alone, without chronicle archaeology."""
+    _seed_live_grandfather(tmp_path)
+    rel, cap = next(iter(sorted(SKILL_DOC_SIZE_GRANDFATHER.items())))
+    size = cap + 1
+    _write_doc(tmp_path, rel, size)
+    errors, _ = _run(tmp_path)
+    assert len(errors) == 1
+    suggested = ((size + 2_800) // 100) * 100
+    assert f"SKILL_DOC_SIZE_GRANDFATHER['{rel}']" in errors[0]
+    assert f"{suggested:_}" in errors[0]
+    assert "--check-skill-doc-size" in errors[0]

@@ -22,6 +22,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
 _ROW_ANCHOR = 'status == "pid-stale-workload-live"'
@@ -34,7 +36,7 @@ _TABLE_END = 'status == "running"'
 def _branch_table_span() -> str:
     """The branch-table slice from the stalled|dead row to the running row
     (raises ValueError if either anchor is gone — itself a pin)."""
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     start = text.index(_TABLE_START)
     end = text.index(_TABLE_END, start)
     return text[start:end]

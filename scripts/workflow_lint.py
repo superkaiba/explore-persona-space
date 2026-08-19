@@ -191,6 +191,26 @@ Behaviours:
   :data:`EMPTY_TEXT_DEFAULT_ALLOWLIST` (the JUDGE_PIN allowlist idiom;
   a NEW file never inherits the escape); waive a deliberate site with
   ``# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`` (#2206).
+* ``--check-stale-gotchas-pointers`` (also bundled into the no-flags
+  default run): scan the git-TRACKED inventory — ``CLAUDE.md`` + every
+  tracked ``*.md`` under ``.claude/`` (gotchas.md itself and
+  ``agent-memory/`` excluded; tracked ``plans/`` IN scope, untracked
+  scratch out by construction — #2193 r2) and FAIL a dead task-id next to a
+  ``gotchas.md`` mention — an id within 100 chars of a ``gotchas.md``
+  token on the same line, at or under the registry's literal
+  ``highest_id`` (a registry-less scan root — the Step 10d gate archive —
+  WARNs and scans uncapped), that no longer occurs in
+  ``.claude/rules/gotchas.md``.
+  The class is a SUPERSET of the #2189 relocation shape: it also catches
+  id-TRIMS where the entry survives in gotchas.md with its citation
+  compacted away — triage each hit before repointing.
+  Relocation-attribution idiom lines ("Relocated codebase traps" / "to
+  recover gotchas.md byte budget") are skipped so correct relocation
+  records never trip it; genuine context-citations are frozen per
+  (path, id) in :data:`STALE_GOTCHAS_POINTER_ALLOWLIST` with per-entry
+  reasons. Known false negatives disclosed in the check docstring:
+  wrapped-line splits (the id on the line after the token) and id
+  aliasing (the id survives in gotchas.md on a DIFFERENT entry) (#2193).
 * ``--check-plan-version-immutability`` (Arm W also bundled into the
   no-flags default run; Arm H explicit-flag only): a persisted
   ``tasks/**/plans/v<K>.md`` plan version is IMMUTABLE — an amendment
@@ -277,6 +297,29 @@ Behaviours:
   ``/usr/bin/grep`` are exempt; a path-pinned ``ugrep`` still flags (its
   exit status is divergent by construction, no pin sanctions it).
   ``#``-comment lines and ``.md`` prose outside fences are skipped.
+* ``--check-conflict-markers`` (also bundled into the no-flags default
+  run): enumerate TRACKED ``.claude/**/*.md`` (depth-1 ``.claude/*.md``
+  included), ``*.py`` repo-wide, and ``CLAUDE.md`` via ``git ls-files``
+  (filtered to on-disk files — sparse-worktree index entries absent from
+  disk are skipped) and FAIL on any merge-conflict-marker residue line:
+  column 0 starting seven ``<``, ``|``, ``=`` or ``>`` followed by a
+  space or end-of-line. Anchoring is exact — 8-char runs, 7-char runs
+  followed by another character, and mid-line occurrences never match.
+  Fenced ``.md`` regions are exempt (the sanctioned escape for
+  marker-documenting prose); a deliberate ``.py`` occurrence is waived
+  with a COMMENT-SHAPED ``# CONFLICT_MARKER_EXEMPT: <reason>`` (non-empty
+  reason): the previous non-blank line must START with the waiver comment
+  (optional indentation allowed; start-anchoring means a string literal
+  containing the token never waives on THAT arm, #2192 r2), or the marker
+  line carries a TRAILING waiver comment (matched as a whitespace-``#``-
+  token shape after the marker token, quote-context-blind — a QUOTED
+  token in the marker line's own tail can waive; documented residual,
+  #2192 r3). On a git failure the enumeration
+  fail-opens to ``[]`` with a loud stderr notice. Origin incident
+  #2189: merge commit ``14cd4e4211`` left the diff3 base marker as the
+  last line of ``.claude/rules/code-style.md`` — it passed the no-flags
+  lint, the size gate, the union-conservation check, ruff, and 27
+  unrelated tests, caught only by a reviewer reading the diff by eye.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -465,6 +508,29 @@ Behaviours:
   workflow-surface file is never allowlisted, it is fixed). Unparseable
   files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
   never silently.
+* ``--check-json-guard-unicode`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` AND ``src/`` and FAIL
+  any exception-guard unit whose caught-name union pairs a
+  ``JSONDecodeError``-named exception with an OSError-family name
+  (OSError / IOError / EnvironmentError / FileNotFoundError /
+  PermissionError / IsADirectoryError / NotADirectoryError) while
+  containing NO safe name (UnicodeDecodeError / ValueError / Exception /
+  BaseException). ``Path.read_text()`` / ``json.loads`` raise
+  ``UnicodeDecodeError`` on encoding-corrupt input, and it subclasses
+  ``ValueError`` — OUTSIDE ``(json.JSONDecodeError, OSError)`` — so the
+  corrupt-file branch the author wrote is silently bypassed (#2164
+  round 2; the #2168 sweep fixed all 186 live units and this check is
+  the reintroduction guard). A "unit" is an ``ast.Try``, an
+  ``ast.TryStar`` (``except*``), or a ``with`` statement unioning ALL its
+  ``contextlib.suppress(...)`` items (bare-name form, or attribute form
+  whose base is a contextlib import binding — round 3); handler unions
+  cover the split-handler form, the per-statement suppress union the
+  split-suppress form. Error messages are FORM-SPECIFIC (a suppress unit
+  is told to extend the suppress args, never shown the tuple form).
+  Waive with ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` (reason ≥ 10
+  chars) on the flagged line or the line above; no legacy allowlist
+  (the swept tree is clean). Disclosed false negatives + the
+  bare-``except:`` benign-FP note live in the check docstring.
 * ``--check-scripts-import-guard`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under
   ``src/explore_persona_space/experiments/`` and ``scripts/`` (#1229)
@@ -862,6 +928,24 @@ Behaviours:
   line directly above the fence opener. Untagged fences, prose
   inline-code recipes, heredoc bodies, and compound-line quoted-text
   false-exemptions are NAMED residuals (see the check docstring).
+* ``--check-codex-concerns-persistence`` (also bundled into the no-flags
+  default run): pin the #2326 Codex concerns-persistence contract across
+  its four prose surfaces — the issue/SKILL.md "Codex concerns persistence
+  at verdict collection" subsection (region-anchored; must name the
+  forwarder ``persist_verdict_concerns.py``, carry BOTH collection
+  invocations, and keep the resume-recovery clause with its recovery
+  invocation + predicate-leading sentence; the file also carries the
+  resume-table preamble pointer and the 5c-ter empty-ledger literal), a
+  LINE-START non-sentinel ``CONCERN:: `` grammar row (a standalone
+  ``CONCERN:: none`` line alone does not satisfy it) + the
+  ``CONCERN:: none`` sentinel
+  inside both emitting Codex composers' verdict templates
+  (codex-code-reviewer.md, codex-clean-result-critic.md), and the
+  ``**Prior-concerns ledger:**`` visibility line in code-reviewer.md
+  Step 0.8 (incident #2321: a Codex verdict carried 8 "Concerns to
+  persist" items, zero were persisted, and the round-2 prior-concerns
+  gate walked an empty ledger; token-presence pins strengthened per the
+  round-1 ``durability-pin-token-presence-gaps`` concern).
 
 Exit codes:
 
@@ -940,7 +1024,9 @@ from explore_persona_space.workflow import (  # noqa: E402  (import after sys.pa
 )
 
 # Scope for reference-resolution. Mirrors the pre-commit hook `files:` regex
-# in `.pre-commit-config.yaml` so the lint and the trigger stay in sync.
+# in `.pre-commit-config.yaml` so the lint and the trigger stay in sync
+# (`_check_references` additionally scans the #2155 issue/steps/*.md
+# companions, mirrored by the regex's steps/ alternative).
 DOC_FILES: tuple[Path, ...] = (
     _REPO_ROOT / "CLAUDE.md",
     _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md",
@@ -2948,11 +3034,13 @@ def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
 
 
 def _check_references(workflow: WorkflowYaml) -> list[str]:
-    """Walk DOC_FILES and report unresolved ``(see workflow.yaml § X)``
-    references."""
+    """Walk DOC_FILES — plus the ``skills/issue/steps/*.md`` companions the
+    #2155 split relocated SKILL.md step bodies (and their references) into —
+    and report unresolved ``(see workflow.yaml § X)`` references. Companions
+    are scanned as separate files so reported line numbers stay physical."""
     errors: list[str] = []
     keys = _flatten_keys(workflow)
-    for path in DOC_FILES:
+    for path in (*DOC_FILES, *_issue_step_companions(_REPO_ROOT / ".claude" / "skills")):
         if not path.exists():
             continue
         for lineno, line in enumerate(path.read_text().splitlines(), start=1):
@@ -3018,6 +3106,66 @@ def _other_worktree_prefix(repo_root: Path) -> str | None:
         # not match `<X>/`.
         return f".claude/worktrees/{parts[idx + 1]}/"
     return None
+
+
+def _issue_step_companions(skills_root: Path) -> list[Path]:
+    """``<skills_root>/issue/steps/*.md`` — the per-step bodies split out of
+    ``.claude/skills/issue/SKILL.md`` (#2155).
+
+    Every check that scans ``skills/**/SKILL.md`` MUST also scan these, or the
+    split silently drops enforcement over the relocated prose instead of
+    failing loud — the inverse of the #850/#1159 pointer-reachability rule and
+    the same coverage-loss class that makes a grandfathered size entry go
+    stale. This mirrors how ``markers.md`` and ``templates/*.md`` are already
+    appended alongside the SKILL.md glob.
+
+    Returns [] when the directory is absent, so callers are split-agnostic.
+    """
+    steps = skills_root / "issue" / "steps"
+    if not steps.is_dir():
+        return []
+    return sorted(p for p in steps.glob("*.md") if p.is_file())
+
+
+_ISSUE_STEP_POINTER = re.compile(
+    r"^>\s+\*\*Full procedure:\*\*\s+`\.claude/skills/issue/steps/(\S+?)`"
+)
+_ISSUE_STEP_BODY_SPLIT = "\n---\n\n"
+
+
+def _read_workflow_doc(path: Path) -> str:
+    """Read a workflow doc as its LOGICAL self.
+
+    For ``.claude/skills/issue/SKILL.md`` that means splicing each relocated
+    step body back in at its ``> **Full procedure:**`` pointer, reconstructing
+    the pre-split document (#2155). Every anchor/region check that asserts
+    something lives "in SKILL.md" must see the logical document — otherwise
+    the split silently drops enforcement instead of failing loud, the same
+    coverage-loss class the ``_issue_step_companions`` glob extension closes
+    for the per-file scanners. Any other path reads through unchanged.
+    """
+    text = path.read_text(encoding="utf-8")
+    if path.name != "SKILL.md" or path.parent.name != "issue":
+        return text
+    steps_dir = path.parent / "steps"
+    if not steps_dir.is_dir():
+        return text
+    out: list[str] = []
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        m = _ISSUE_STEP_POINTER.match(lines[i])
+        if m is None:
+            out.append(lines[i])
+            i += 1
+            continue
+        while i < len(lines) and lines[i].startswith(">"):
+            i += 1
+        companion = steps_dir / m.group(1)
+        body = companion.read_text(encoding="utf-8") if companion.is_file() else ""
+        _, sep, tail = body.partition(_ISSUE_STEP_BODY_SPLIT)
+        out.append((tail if sep else body).rstrip("\n"))
+    return "\n".join(out)
 
 
 def _is_other_worktree_path(path: Path, current_worktree_prefix: str | None) -> bool:
@@ -3136,6 +3284,11 @@ def _iter_ask_target_files(repo_root: Path) -> list[Path]:
             p
             for p in skills_root.glob("**/SKILL.md")
             if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        )
+        files.extend(
+            p
+            for p in _issue_step_companions(skills_root)
+            if not _is_other_worktree_path(p, current_prefix)
         )
     return sorted(files)
 
@@ -3343,6 +3496,10 @@ def _resolve_autonomous_ask_target_files(roots: list[Path] | None) -> list[Path]
     files = []
     if issue_skill.exists():
         files.append(issue_skill)
+        # The #2155 split relocated the step bodies (and their AskUserQuestion
+        # gate paragraphs) into steps/ companions — scan them too, or the
+        # autonomous-asks lint silently loses the orchestrator's gates.
+        files.extend(_issue_step_companions(_REPO_ROOT / ".claude" / "skills"))
     if agents_dir.is_dir():
         files.extend(p for p in agents_dir.glob("*.md") if p.is_file())
     return sorted(files)
@@ -3564,6 +3721,11 @@ def _iter_skill_ref_target_files(repo_root: Path) -> list[Path]:
             p
             for p in skills.glob("**/SKILL.md")
             if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        ]
+        files += [
+            p
+            for p in _issue_step_companions(skills)
+            if not _is_other_worktree_path(p, current_prefix)
         ]
     if rules.exists():
         files += [
@@ -4772,6 +4934,7 @@ def _grep_qv_target_files(roots: list[Path] | None) -> list[Path]:
         scripts = _REPO_ROOT / "scripts"
         if skills.exists():
             files.extend(sorted(p for p in skills.rglob("SKILL.md") if p.is_file()))
+            files.extend(_issue_step_companions(skills))
         if agents.exists():
             files.extend(sorted(p for p in agents.glob("*.md") if p.is_file()))
         if scripts.exists():
@@ -4848,6 +5011,257 @@ def check_grep_qv(*, roots: list[Path] | None = None) -> list[str]:
                 _grep_qv_scan(path, block, block_start, errors)
         else:
             _grep_qv_scan(path, lines, 0, errors)
+    return errors
+
+
+# `--check-conflict-markers` (#2192; origin incident #2189): merge commit
+# 14cd4e4211 left the diff3 base marker (seven pipes + a space + the base
+# SHA) as the last line of .claude/rules/code-style.md; it passed the
+# no-flags lint, the size gate, the union-conservation check, ruff, and 27
+# unrelated tests — caught only by a reviewer reading the diff by eye. The
+# regex is the task body's, applied per line: column 0 starting seven "<",
+# "|", "=" or ">" followed by a space or end-of-line. (Self-flag hazard:
+# this module and its tests are themselves tracked *.py in the scan set —
+# never place a raw 7-char marker run at column 0 of either source file;
+# tests construct fixture content programmatically.)
+_CONFLICT_MARKER_RE = re.compile(r"^(<{7}|\|{7}|={7}|>{7})( |$)")
+
+# Tracked-file enumeration pathspecs. Under git's default (non-`:(glob)`)
+# pathspec matching, `.claude/**/*.md` does NOT match a depth-1
+# `.claude/foo.md` — the extra `.claude/*.md` pathspec closes that gap
+# (zero such files exist today; future-proofing). Conversely `.claude/*.md`
+# is a SUPERSET of `.claude/**/*.md` under that default matching (`*`
+# crosses `/`) — the pair is deliberately redundant.
+_CONFLICT_MARKER_PATHSPECS = (".claude/**/*.md", ".claude/*.md", "*.py", "CLAUDE.md")
+
+# `.py` waiver: a deliberate marker-documenting occurrence carries this
+# comment (with a non-empty reason) on the same or previous non-blank line.
+# Waiver context must be COMMENT-SHAPED (#2192 r2): the previous-line arm
+# accepts only optional whitespace followed DIRECTLY by the waiver comment,
+# so a string LITERAL containing the token (e.g. this module's own constant
+# declaration below) can never suppress a real marker on the next line; an
+# INDENTED comment-shaped line inside a docstring still matches, preserving
+# residual (c)'s escape. The same-line arm accepts only a TRAILING waiver
+# comment (whitespace, then ``#``, then the token) after the marker token.
+_CONFLICT_MARKER_WAIVER_TOKEN = "CONFLICT_MARKER_EXEMPT:"
+CONFLICT_MARKER_WAIVER = f"# {_CONFLICT_MARKER_WAIVER_TOKEN}"
+_CONFLICT_MARKER_WAIVER_PREV_RE = re.compile(
+    r"\s*#\s?" + re.escape(_CONFLICT_MARKER_WAIVER_TOKEN) + r"(?P<reason>.*)$"
+)
+_CONFLICT_MARKER_WAIVER_SAME_RE = re.compile(
+    r"\s#\s?" + re.escape(_CONFLICT_MARKER_WAIVER_TOKEN) + r"(?P<reason>.*)$"
+)
+
+_CONFLICT_MARKER_GIT_TIMEOUT_S = 60
+
+
+def _conflict_marker_target_files(roots: list[Path] | None) -> list[Path]:
+    """Resolve the scan set for :func:`check_conflict_markers`.
+
+    Production (``roots=None``): ``git ls-files -z`` over
+    :data:`_CONFLICT_MARKER_PATHSPECS` (tracked-only — an rglob would
+    descend into ``.claude/worktrees/`` sibling checkouts, possibly
+    legitimately mid-merge, and untracked scratch), FILTERED to on-disk
+    files: in a sparse worktree the index still lists skip-worktree
+    entries absent from disk, and the Step 9c gate runs in sparse
+    worktrees by design (#671). On ANY git failure: one loud stderr
+    notice + fail-open ``[]`` (the ``check_plan_version_immutability``
+    precedent — never a silent skip; a broken git env must not block
+    every commit fleet-wide). A test override lists files, or
+    directories walked for ``*.md`` / ``*.py``; a ``roots`` entry absent
+    from disk is skipped, not raised on."""
+    if roots is None:
+        cmd = ["git", "-C", str(_REPO_ROOT), "ls-files", "-z", "--"]
+        cmd.extend(_CONFLICT_MARKER_PATHSPECS)
+        try:
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=_CONFLICT_MARKER_GIT_TIMEOUT_S,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            sys.stderr.write(
+                f"workflow_lint: --check-conflict-markers skipped: git enumeration failed: {exc}\n"
+            )
+            return []
+        if proc.returncode != 0:
+            sys.stderr.write(
+                f"workflow_lint: --check-conflict-markers skipped: git exited "
+                f"{proc.returncode}: {proc.stderr.strip()[:200]}\n"
+            )
+            return []
+        tracked = [_REPO_ROOT / rel for rel in proc.stdout.split("\0") if rel]
+        return _files_scope_filter([p for p in tracked if p.is_file()])
+    files: list[Path] = []
+    for root in roots:
+        if root.is_file():
+            files.append(root)
+        elif root.is_dir():
+            files.extend(
+                sorted(p for p in root.rglob("*") if p.is_file() and p.suffix in (".md", ".py"))
+            )
+    return _files_scope_filter(files)
+
+
+def _conflict_marker_error(path: Path, idx: int, token: str) -> str:
+    """Compose the (incident-citing, module-convention) violation string for
+    one conflict-marker residue line at 0-based line index ``idx``."""
+    return (
+        f"{path}:{idx + 1}: merge-conflict marker residue ('{token}') — a "
+        f"mis-resolved merge left this in a tracked workflow-surface file "
+        f"(#2189: diff3 base marker '|||||||' committed to "
+        f".claude/rules/code-style.md survived every gate). Resolve the "
+        f"merge; if this line deliberately DOCUMENTS a marker, fence it "
+        f"(md) or add a '# CONFLICT_MARKER_EXEMPT: <reason>' comment (py)."
+    )
+
+
+def _conflict_marker_prev_line_waiver(line: str) -> bool:
+    """True when *line* IS a comment-shaped waiver: optional leading
+    whitespace, then :data:`CONFLICT_MARKER_WAIVER` DIRECTLY, then a
+    non-empty reason. A string LITERAL containing the token (e.g. this
+    module's own ``CONFLICT_MARKER_WAIVER`` declaration) does NOT match —
+    the pre-#2192-r2 substring form let any such literal on the previous
+    line silently suppress a real marker. An INDENTED comment-shaped line
+    (e.g. inside a docstring — residual (c)'s escape) still matches."""
+    m = _CONFLICT_MARKER_WAIVER_PREV_RE.match(line)
+    return bool(m and m.group("reason").strip())
+
+
+def _conflict_marker_same_line_waiver(line: str) -> bool:
+    """True when the marker *line* carries a TRAILING
+    ``# CONFLICT_MARKER_EXEMPT: <reason>`` comment — whitespace, then
+    ``#``, then the token, then a non-empty reason running to end-of-line
+    — after the marker token. Only meaningful on lines already matched by
+    :data:`_CONFLICT_MARKER_RE` (the run sits at column 0, so any
+    whitespace-preceded ``#`` sits after it); a QUOTED token on the marker
+    line (no whitespace directly before its ``#``) does not waive."""
+    m = _CONFLICT_MARKER_WAIVER_SAME_RE.search(line)
+    return bool(m and m.group("reason").strip())
+
+
+def _conflict_marker_scan_md(path: Path, lines: list[str], errors: list[str]) -> None:
+    """Scan ``.md`` lines OUTSIDE fenced regions (:data:`_FENCE_RE`
+    simple-toggle) — the fence IS the sanctioned escape for
+    marker-documenting prose. Fence semantics are INVERTED vs
+    ``check_grep_qv`` (which scans ONLY fenced blocks): an unterminated
+    trailing fence therefore leaves trailing lines SKIPPED — residual (a)
+    of :func:`check_conflict_markers`, pinned by tests so a future
+    behavior change is deliberate."""
+    in_fence = False
+    for idx, line in enumerate(lines):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = _CONFLICT_MARKER_RE.match(line)
+        if m:
+            errors.append(_conflict_marker_error(path, idx, m.group(1)))
+
+
+def _conflict_marker_scan_py(path: Path, lines: list[str], errors: list[str]) -> None:
+    """Scan every ``.py`` line; suppress a hit waived by a COMMENT-SHAPED
+    :data:`CONFLICT_MARKER_WAIVER` — a trailing waiver comment on the same
+    line (:func:`_conflict_marker_same_line_waiver`), or a previous
+    non-blank line that IS a waiver comment
+    (:func:`_conflict_marker_prev_line_waiver`). The previous-line arm is
+    start-anchored, so a string literal containing the token never waives
+    there (#2192 r2); the same-line arm matches a trailing
+    whitespace-``#``-token shape on the marker line itself and is
+    quote-context-blind — documented residual (e) of
+    :func:`check_conflict_markers`."""
+    prev_nonblank = ""
+    for idx, line in enumerate(lines):
+        m = _CONFLICT_MARKER_RE.match(line)
+        if m and not (
+            _conflict_marker_same_line_waiver(line)
+            or _conflict_marker_prev_line_waiver(prev_nonblank)
+        ):
+            errors.append(_conflict_marker_error(path, idx, m.group(1)))
+        if line.strip():
+            prev_nonblank = line
+
+
+def check_conflict_markers(*, roots: list[Path] | None = None) -> list[str]:
+    """FAIL on merge-conflict-marker residue lines in tracked
+    workflow-surface files: ``.claude/**/*.md`` (depth-1 ``.claude/*.md``
+    included), tracked ``*.py`` repo-wide, and ``CLAUDE.md``.
+
+    A residue line starts at column 0 with one of the four conflict-marker
+    forms — seven ``<``, ``|``, ``=`` or ``>`` followed by a space or
+    end-of-line (:data:`_CONFLICT_MARKER_RE`). Anchoring is exact: an
+    8-char run, a 7-char run followed by any other character, and mid-line
+    occurrences never match. Origin incident #2189: merge commit
+    ``14cd4e4211`` left the diff3 base marker (seven pipes + the base SHA)
+    as the last line of ``.claude/rules/code-style.md``; it passed the
+    no-flags lint, the size gate, the union-conservation check, ruff, and
+    27 unrelated tests — caught only by a reviewer reading the diff by
+    eye.
+
+    Escape hatches (never a weakened pattern):
+
+    * ``.md``: lines inside fenced regions are exempt — the fence IS the
+      sanctioned escape for marker-documenting prose.
+    * ``.py``: a COMMENT-SHAPED ``# CONFLICT_MARKER_EXEMPT: <reason>``
+      waiver (non-empty reason) on the same or previous non-blank line
+      waives a deliberate occurrence. Comment context is REQUIRED
+      (#2192 r2): the previous-line arm accepts only a line that is
+      optional whitespace followed DIRECTLY by the waiver comment (an
+      indented comment-shaped line inside a docstring included —
+      residual (c)'s escape survives); the same-line arm accepts only a
+      TRAILING waiver comment after the marker token. The previous-line
+      arm is START-ANCHORED, so a string LITERAL containing the token
+      (e.g. this module's own constant declaration) never waives there —
+      the earlier substring form let such a literal on the previous line
+      silently suppress a real marker. The same-line arm is
+      quote-context-blind — residual (e) below.
+
+    Known residuals (documented, deliberate):
+
+    (a) Fence-toggle blindness: an unterminated/imbalanced fence skips all
+        trailing md content (INVERTED from ``check_grep_qv``'s
+        scan-the-tail choice — here the fence marks EXEMPT regions, so
+        skipping the tail is the consistent direction); a conflict hunk
+        that itself breaks fence parity can hide the inner separator line,
+        though the outer marker lines are still caught when outside
+        fences. The #2189 incident line (last line of the file, outside
+        any fence) is caught.
+    (b) A setext-H1 underline of EXACTLY seven ``=`` would flag — the repo
+        uses ATX headings throughout (baseline sweep: zero hits); the
+        remedy is ATX conversion, never a pattern weaken.
+    (c) An exactly-7-char RST underline in a py docstring would flag —
+        baseline clean; the waiver comment is the escape.
+    (d) A REAL conflict landing wholly inside a BALANCED fence (both merge
+        sides editing one fenced snippet) hides all four marker lines by
+        design — scanning inside fences would flag every legitimate
+        marker-documenting snippet.
+    (e) The same-line waiver arm matches a trailing whitespace-``#``-token
+        shape on the marker line itself and is quote-context-blind: a
+        QUOTED token in the marker line's own tail (whitespace directly
+        before its ``#``) self-waives. Adversarial-only — git-emitted
+        residue lines cannot carry the token, so only a deliberately
+        authored flagged line can exploit it (#2192 r2).
+
+    Files are read with ``errors="replace"`` (markers are ASCII; odd bytes
+    in a vendored file must not crash the lint), and a file that vanishes
+    between enumeration and read (the #2015 transient unstaged-delete
+    window at the shared root) is skipped. ``roots`` is a unit-test
+    override hook (see :func:`_conflict_marker_target_files`); production
+    callers pass None. Bundled into the no-flags default run (same policy
+    as ``check_grep_qv``).
+    """
+    errors: list[str] = []
+    for path in _conflict_marker_target_files(roots):
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except FileNotFoundError:
+            continue  # #2015 transient unstaged-delete window at the shared root
+        if path.suffix == ".md":
+            _conflict_marker_scan_md(path, lines, errors)
+        else:
+            _conflict_marker_scan_py(path, lines, errors)
     return errors
 
 
@@ -5150,6 +5564,7 @@ def check_marker_registry(
         canonical_skills = _REPO_ROOT / ".claude" / "skills"
         if canonical_skills.is_dir():
             targets.extend(sorted(p for p in canonical_skills.glob("**/SKILL.md") if p.is_file()))
+            targets.extend(_issue_step_companions(canonical_skills))
         canonical_agents = _REPO_ROOT / ".claude" / "agents"
         if canonical_agents.is_dir():
             targets.extend(sorted(p for p in canonical_agents.glob("*.md") if p.is_file()))
@@ -5158,6 +5573,7 @@ def check_marker_registry(
             targets.append(skill_md)
         if skills_dir is not None and skills_dir.is_dir():
             targets.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+            targets.extend(_issue_step_companions(skills_dir))
         if agents_dir is not None and agents_dir.is_dir():
             targets.extend(sorted(p for p in agents_dir.glob("*.md") if p.is_file()))
     registered = {m.kind for m in workflow.markers}
@@ -5330,6 +5746,7 @@ def check_poller_marker_consumers(
         consumers: list[Path] = []
         if skills_dir.is_dir():
             consumers.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+            consumers.extend(_issue_step_companions(skills_dir))
         consumers.extend(
             _REPO_ROOT / "scripts" / name
             for name in (
@@ -7703,6 +8120,378 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
     return errors
 
 
+# `--check-json-guard-unicode` (#2168; parent incident #2164 round 2): a guard
+# catching `(json.JSONDecodeError, OSError)` around a read-and-parse of JSON
+# misses `UnicodeDecodeError` — `Path.read_text()` / `json.loads` raise it on
+# encoding-corrupt bytes, and it subclasses `ValueError`, OUTSIDE both caught
+# names — so the corrupt-file branch the author wrote is silently bypassed and
+# the caller crashes instead. Inline waiver for a genuinely-safe flagged unit.
+# Reason ≥ 10 chars, same convention as JSONL_SPLITLINES_EXEMPT.
+JSON_GUARD_UNICODE_WAIVER_RE = re.compile(r"#\s*JSON_GUARD_UNICODE_EXEMPT\s*:\s*(.+?)\s*$")
+JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS = 10
+# Name sets for the unit-level predicate (terminal identifiers of the caught /
+# suppressed exception expressions — `json.JSONDecodeError` and a from-import
+# `JSONDecodeError` both terminate in the same name).
+JSON_GUARD_JSON_NAMES = frozenset({"JSONDecodeError"})
+JSON_GUARD_OSERROR_NAMES = frozenset(
+    {
+        "OSError",
+        "IOError",
+        "EnvironmentError",
+        "FileNotFoundError",
+        "PermissionError",
+        "IsADirectoryError",
+        "NotADirectoryError",
+    }
+)
+JSON_GUARD_SAFE_NAMES = frozenset(
+    {"UnicodeDecodeError", "ValueError", "Exception", "BaseException"}
+)
+
+
+def _json_guard_waiver_present(lines: list[str], flag_lineno: int) -> bool:
+    """Return True iff a ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS` chars) is on
+    the flagged line (handler line / ``with`` line, ``flag_lineno`` 1-based)
+    or the immediately preceding non-blank line. Same convention as
+    :func:`_jsonl_splitlines_waiver_present`."""
+    idx = flag_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = JSON_GUARD_UNICODE_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = JSON_GUARD_UNICODE_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _json_guard_terminal_name(node: ast.expr) -> str | None:
+    """Terminal identifier of a Name/Attribute exception expression
+    (``json.JSONDecodeError`` -> ``JSONDecodeError``); None for other shapes
+    (a dynamically-constructed tuple element stays invisible — disclosed)."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    return None
+
+
+def _json_guard_names_of_expr(expr: ast.expr | None) -> set[str]:
+    """Name set of a handler ``type`` expression / suppress-arg expression:
+    a bare Name/Attribute or a literal Tuple of them, recursing into NESTED
+    literal tuples (#2168 round 2). ``suppress((JSONDecodeError, OSError))``
+    is semantically LIVE (``issubclass`` recurses into nested tuples);
+    ``except ((json.JSONDecodeError, OSError),):`` raises TypeError at
+    match time on Python 3 (probe-verified 3.12) yet is still flagged —
+    it is the banned guard shape in intent and over-flagging is the safe
+    direction. Other shapes contribute nothing (bare ``except:`` handlers
+    have ``type is None``)."""
+    if expr is None:
+        return set()
+    if isinstance(expr, ast.Tuple):
+        names: set[str] = set()
+        for elt in expr.elts:
+            names |= _json_guard_names_of_expr(elt)
+        return names
+    name = _json_guard_terminal_name(expr)
+    return {name} if name is not None else set()
+
+
+def _json_guard_names_flagged(names: set[str]) -> bool:
+    """The D2 unit predicate over a caught/suppressed name union: BOTH a
+    JSON-decode name AND an OSError-family name present, NO safe name."""
+    return bool(
+        names & JSON_GUARD_JSON_NAMES
+        and names & JSON_GUARD_OSERROR_NAMES
+        and not names & JSON_GUARD_SAFE_NAMES
+    )
+
+
+def _json_guard_try_flag_line(node: ast.Try | ast.TryStar) -> int | None:
+    """Return the 1-based flag line iff the try/``except*`` unit trips the
+    predicate (union over ALL handlers — covers the split-handler form), else
+    None. The flag line is the handler carrying the JSON-decode name (the
+    line the waiver belongs on), falling back to the ``try`` line."""
+    names: set[str] = set()
+    flag_line = node.lineno
+    for handler in node.handlers:
+        h_names = _json_guard_names_of_expr(handler.type)
+        if h_names & JSON_GUARD_JSON_NAMES:
+            flag_line = handler.lineno
+        names |= h_names
+    return flag_line if _json_guard_names_flagged(names) else None
+
+
+def _json_guard_contextlib_names(tree: ast.Module) -> frozenset[str]:
+    """Names statically bound to the ``contextlib`` module within one parsed
+    module: the literal ``contextlib`` (always recognized, import statement or
+    not — a same-named unrelated binding is vanishingly rare and over-flagging
+    is the safe direction for a guard) plus every ``import contextlib as
+    <alias>`` binding found anywhere in the module (#2168 round 3)."""
+    names = {"contextlib"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "contextlib" and alias.asname:
+                    names.add(alias.asname)
+    return frozenset(names)
+
+
+def _json_guard_is_suppress_call(expr: ast.expr, contextlib_names: frozenset[str]) -> bool:
+    """True iff ``expr`` is a Call to ``suppress`` (bare from-import name) or
+    ``<base>.suppress`` where ``<base>`` is a Name in ``contextlib_names``
+    (the literal ``contextlib`` or an ``import contextlib as ctx`` alias,
+    per :func:`_json_guard_contextlib_names`).
+
+    TIGHTENED in round 3 (concern ``json-guard-custom-suppress-union-fp``):
+    the prior form accepted ANY ``ast.Attribute`` whose terminal name is
+    ``suppress``, so the round-2 per-statement union combined a real
+    one-sided ``contextlib.suppress`` with an unrelated custom
+    ``x.suppress(...)`` context manager into one flagged name set — a
+    false-positive class on the no-flags default lint (the Step 9c gate +
+    inline payload lint gate both run it), and a guard that cries wolf gets
+    waived into uselessness. Direction tradeoff, stated: the tightening
+    converts that FP class into a disclosed FALSE-NEGATIVE class —
+    ``suppress`` reached through any OTHER attribute base (a re-export
+    ``helpers.suppress``, a module object bound by assignment
+    ``ctx = contextlib``, a nested base ``pkg.contextlib.suppress``) is now
+    missed where the old breadth caught it. False negatives are worse than
+    false positives for a reintroduction guard, but the new FN class
+    requires deliberate name/binding indirection — the same family as the
+    existing disclosed misses, all measured 0 live instances at plan time —
+    while the FP class fired on ordinary code; the FNs join the
+    disclosed-miss list in :func:`check_json_guard_unicode`, pinned by the
+    documented-miss fixture. An import-aliased bare name (``from contextlib
+    import suppress as quiet``) stays a disclosed miss; ``import contextlib
+    as ctx`` IS covered."""
+    if not isinstance(expr, ast.Call):
+        return False
+    func = expr.func
+    if isinstance(func, ast.Name) and func.id == "suppress":
+        return True
+    return (
+        isinstance(func, ast.Attribute)
+        and func.attr == "suppress"
+        and isinstance(func.value, ast.Name)
+        and func.value.id in contextlib_names
+    )
+
+
+def _json_guard_try_message(py: Path, lineno: int, star: bool) -> str:
+    """FORM-SPECIFIC message for a flagged try/``except*`` unit: the fix
+    shown is the TUPLE extension (never the suppress form)."""
+    kw = "except*" if star else "except"
+    return (
+        f"{py}:{lineno}: json-guard-unicode: `{kw}` guard catches a "
+        f"JSONDecodeError-named exception + an OSError-family exception "
+        f"without UnicodeDecodeError — Path.read_text()/json.loads raise "
+        f"UnicodeDecodeError on encoding-corrupt input, and it is a "
+        f"ValueError subclass OUTSIDE both caught names, so the corrupt-file "
+        f"branch is silently bypassed (#2164/#2168). Add UnicodeDecodeError "
+        f"to the tuple — `{kw} (json.JSONDecodeError, OSError, "
+        f"UnicodeDecodeError)` — or waive a genuinely-safe unit with "
+        f"'# JSON_GUARD_UNICODE_EXEMPT: <reason>' (reason ≥ "
+        f"{JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS} chars) on the flagged "
+        f"line or the line above."
+    )
+
+
+def _json_guard_suppress_message(py: Path, lineno: int) -> str:
+    """FORM-SPECIFIC message for a flagged ``contextlib.suppress(...)`` unit:
+    the fix shown is the SUPPRESS-ARGS extension — never the tuple form,
+    which would teach the blocked author a rewrite this check also flags
+    (#2168 plan v2 Must-Fix 1c)."""
+    return (
+        f"{py}:{lineno}: json-guard-unicode: contextlib.suppress(...) "
+        f"suppresses a JSONDecodeError-named exception + an OSError-family "
+        f"exception without UnicodeDecodeError — Path.read_text()/json.loads "
+        f"raise UnicodeDecodeError on encoding-corrupt input, and it is a "
+        f"ValueError subclass OUTSIDE both suppressed names, so the "
+        f"corrupt-file skip is silently bypassed (#2164/#2168). Add "
+        f"UnicodeDecodeError to the suppress args — `with contextlib.suppress("
+        f"json.JSONDecodeError, OSError, UnicodeDecodeError):` — or waive a "
+        f"genuinely-safe unit with '# JSON_GUARD_UNICODE_EXEMPT: <reason>' "
+        f"(reason ≥ {JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS} chars) on "
+        f"the `with` line or the line above."
+    )
+
+
+def _json_guard_scan_tree(py: Path, tree: ast.Module, lines: list[str]) -> list[str]:
+    """Apply the D2 unit predicate over one parsed module; returns the
+    formatted error lines (waived units excluded)."""
+    errors: list[str] = []
+    contextlib_names = _json_guard_contextlib_names(tree)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Try | ast.TryStar):
+            flag_line = _json_guard_try_flag_line(node)
+            if flag_line is None or _json_guard_waiver_present(lines, flag_line):
+                continue
+            errors.append(_json_guard_try_message(py, flag_line, isinstance(node, ast.TryStar)))
+        elif isinstance(node, ast.With | ast.AsyncWith):
+            # Union names across ALL suppress items of this ONE with statement,
+            # mirroring the try arm's all-handlers union — closes the
+            # split-suppress form `with suppress(JSONDecodeError), suppress(OSError):`
+            # (#2168 round 2). NESTED with statements are separate With nodes
+            # and stay a disclosed miss (check_json_guard_unicode docstring).
+            names: set[str] = set()
+            saw_suppress = False
+            for item in node.items:
+                call = item.context_expr
+                if not _json_guard_is_suppress_call(call, contextlib_names):
+                    continue
+                assert isinstance(call, ast.Call)  # narrowed by the helper
+                saw_suppress = True
+                for arg in call.args:
+                    names |= _json_guard_names_of_expr(arg)
+            if not saw_suppress or not _json_guard_names_flagged(names):
+                continue
+            if _json_guard_waiver_present(lines, node.lineno):
+                continue
+            errors.append(_json_guard_suppress_message(py, node.lineno))
+    return errors
+
+
+def check_json_guard_unicode(*, roots: tuple[Path, ...] | None = None) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` + ``src/`` and FAIL any
+    exception-guard UNIT whose caught-name union pairs a
+    ``JSONDecodeError``-named exception with an OSError-family name
+    (:data:`JSON_GUARD_OSERROR_NAMES`) while containing NO safe name
+    (:data:`JSON_GUARD_SAFE_NAMES`) and carrying no waiver (#2168).
+
+    Rationale (parent incident #2164 round 2): ``Path.read_text()`` /
+    ``json.loads`` raise ``UnicodeDecodeError`` on encoding-corrupt input,
+    and ``UnicodeDecodeError`` subclasses ``ValueError`` — OUTSIDE
+    ``(json.JSONDecodeError, OSError)`` — so the corrupt-file branch the
+    author wrote for a `read JSON, fall back on corrupt content` site is
+    silently bypassed and the caller crashes (#2164: a corrupt watcher
+    registry entry killed the tick on every action path). The #2168 sweep
+    fixed all 186 live units (181 try-level + 5 ``contextlib.suppress``);
+    this check is the durable reintroduction guard and embodies the sweep
+    instrument's predicate (``scripts/issue2168_sweep.py``), EXTENDED in
+    round 2 (review concern ``json-guard-split-suppress-undisclosed-miss``)
+    with the per-statement suppress union and nested-literal-tuple
+    recursion below — the disposable sweep keeps its original narrower
+    per-call form (its 186-unit job is complete).
+
+    A "unit" is any of (union over the unit's caught/suppressed names;
+    name extraction recurses into nested literal tuples, #2168 round 2:
+    ``suppress((JSONDecodeError, OSError))`` is semantically LIVE —
+    ``issubclass`` recurses into nested tuples — and
+    ``except ((json.JSONDecodeError, OSError),):``, which on Python 3
+    raises TypeError at match time instead of catching (probe-verified
+    3.12), is still flagged: it is the banned guard shape in intent, the
+    message's flat-tuple fix repairs both defects, and over-flagging is
+    the safe direction for a guard):
+
+    1. an ``ast.Try`` — union over ALL handlers' type expressions, so the
+       split-handler form (``except json.JSONDecodeError:`` +
+       ``except OSError:`` on one try) is covered;
+    2. an ``ast.TryStar`` (``except*`` groups) — same handler union;
+    3. an ``ast.With`` / ``ast.AsyncWith`` statement with ≥1 item whose
+       ``context_expr`` is a Call to ``suppress`` (bare from-import name)
+       or ``<contextlib>.suppress`` (attribute form whose base Name is the
+       literal ``contextlib`` or an ``import contextlib as <alias>``
+       binding — tightened round 3, concern
+       ``json-guard-custom-suppress-union-fp``, so an unrelated custom
+       ``x.suppress(...)`` context manager never joins the union) — union
+       over ALL the statement's suppress items' args (#2168 round 2), so
+       the split-suppress form (``with suppress(JSONDecodeError),
+       suppress(OSError):``) is covered, mirroring the handler union.
+
+    Error messages are FORM-SPECIFIC: a try/``except*`` unit is told to
+    extend the TUPLE; a suppress unit is told to extend the SUPPRESS ARGS —
+    never shown the tuple form, which would teach the exact rewrite this
+    check also flags (#2168 plan v2 Must-Fix 1c).
+
+    Known FALSE NEGATIVES, disclosed by design (each requires a deliberate
+    name/binding indirection; all measured 0 live instances at #2168 plan
+    time — the guard's job is stopping the habitual forms):
+
+    * dynamically-constructed exception tuples (``except tuple(excs):``)
+      and dynamically-bound suppress (``sup = contextlib.suppress``);
+    * exception names aliased at import
+      (``from json import JSONDecodeError as JDE``; ``import json as j``
+      IS covered — the attribute match keys on the terminal name);
+    * ``suppress`` aliased at import
+      (``from contextlib import suppress as quiet``);
+    * ``suppress`` reached through a NON-contextlib attribute base — a
+      re-export (``helpers.suppress``), a module object bound by
+      ASSIGNMENT (``ctx = contextlib``), or a nested base
+      (``pkg.contextlib.suppress``) — the attribute form matches only when
+      its base Name is a contextlib import binding (tightened round 3,
+      concern ``json-guard-custom-suppress-union-fp``: the old
+      any-``.suppress`` breadth caught these but false-positived on
+      unrelated custom ``.suppress`` context managers joining the
+      per-statement union; ``import contextlib as ctx`` IS covered —
+      pinned by the non-import-attribute documented-miss fixture);
+    * a custom context manager wrapping suppress semantics under another
+      name;
+    * NESTED ``with`` statements each suppressing one half
+      (``with suppress(JSONDecodeError):`` wrapping
+      ``with suppress(OSError):``) — separate ``With`` nodes, and the
+      round-2 suppress union is per-STATEMENT, so the combined set is
+      never seen (pinned deliberate by the nested-with documented-miss
+      fixture; the SAME-statement split form IS covered, unit shape 3).
+
+    Known benign FALSE POSITIVE (accepted, no predicate change): a try
+    pairing the two-element tuple with an ADDITIONAL bare ``except:``
+    handler — the bare handler contributes no names to the union but
+    catches everything, so the try is already total. Zero live instances;
+    the waiver covers a future one (a bare ``except:`` beside a narrow
+    tuple is itself worth a human look).
+
+    Unparseable / non-UTF-8 files are SKIPPED with a one-line stderr notice
+    (the :func:`check_jsonl_splitlines` posture — syntax validity is
+    ruff/pytest's job, and the skip is never silent).
+
+    Waiver: ``# JSON_GUARD_UNICODE_EXEMPT: <reason>`` (reason ≥
+    :data:`JSON_GUARD_UNICODE_WAIVER_MIN_REASON_CHARS` chars) on the flagged
+    line (handler line / ``with`` line) or the immediately preceding
+    non-blank line. No legacy allowlist — the #2168 sweep cleared the tree.
+
+    ``roots`` is a unit-test override hook; production callers pass None and
+    the function walks ``<repo_root>/scripts`` + ``<repo_root>/src`` (NOT
+    ``tests/`` — fixtures there must be able to carry the banned shapes).
+    Bundled into the no-flags default run.
+    """
+    scan_roots = roots if roots is not None else (_REPO_ROOT / "scripts", _REPO_ROOT / "src")
+    errors: list[str] = []
+    for root in scan_roots:
+        if not root.exists():
+            continue
+        for py in _files_scope_filter(sorted(root.rglob("*.py"))):
+            if not py.is_file():
+                continue
+            try:
+                text = py.read_text(encoding="utf-8")
+            except UnicodeDecodeError as exc:
+                print(
+                    f"workflow_lint: note: --check-json-guard-unicode skipped "
+                    f"{py} (non-UTF-8: {exc})",
+                    file=sys.stderr,
+                )
+                continue
+            # Cheap textual gate: a flaggable unit must reference the
+            # JSON-decode name verbatim (Name or Attribute terminal), so a
+            # module without the token can never match — skip the parse.
+            if "JSONDecodeError" not in text:
+                continue
+            tree = _cached_parse(py, text)
+            if tree is None:
+                print(
+                    f"workflow_lint: note: --check-json-guard-unicode skipped {py} (unparseable)",
+                    file=sys.stderr,
+                )
+                continue
+            errors.extend(_json_guard_scan_tree(py, tree, text.splitlines()))
+    return errors
+
+
 def _scripts_import_guard_waiver_present(lines: list[str], import_lineno: int) -> bool:
     """Return True iff a ``# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>`` waiver
     (reason ≥ :data:`SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS` chars) is
@@ -8027,10 +8816,11 @@ def _scripts_import_guard_msg(py: Path, stmt: ast.AST, *, deferred: bool) -> str
     )
 
 
-# --- tests/ repo_root()-derived sys.path ban (#2181) -------------------------
+# --- tests/ + scripts/ repo_root()-derived sys.path ban (#2181; widened #2183)
 # OPPOSITE polarity to the check_scripts_import_guard family above (which
 # REQUIRES a repo-root guard in scripts/ drivers): this check FORBIDS deriving
-# a tests/ sys.path entry from the branch-guarded task_workflow resolvers.
+# a tests/ or scripts/ sys.path entry from the branch-guarded task_workflow
+# resolvers.
 
 _BANNED_SYSPATH_RESOLVERS = frozenset({"repo_root", "tasks_dir", "registry_path"})
 _TASK_WORKFLOW_MODULE = "explore_persona_space.task_workflow"
@@ -8111,12 +8901,12 @@ def _is_syspath_mutation_sink(node: ast.Call) -> bool:
     )
 
 
-def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> list[str]:
-    """FAIL any ``tests/**/*.py`` ``sys.path.insert``/``sys.path.append`` (or
-    ``monkeypatch.syspath_prepend``) whose argument derives from the
-    branch-guarded ``task_workflow`` resolvers (``repo_root``/``tasks_dir``/
-    ``registry_path``), directly, via a module-scope one-hop constant, or via
-    a module-scope import alias.
+def check_no_repo_root_syspath(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any ``tests/**/*.py`` or ``scripts/**/*.py`` ``sys.path.insert``/
+    ``sys.path.append`` (or ``monkeypatch.syspath_prepend``) whose argument
+    derives from the branch-guarded ``task_workflow`` resolvers
+    (``repo_root``/``tasks_dir``/``registry_path``), directly, via a
+    module-scope one-hop constant, or via a module-scope import alias.
 
     Incident #2164: ``tests/test_issue1482_densesae_fullwidth.py`` inserted
     ``repo_root() / "scripts"`` onto ``sys.path``. ``task_workflow.repo_root()``
@@ -8152,61 +8942,86 @@ def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> lis
     ``import sys as _sys`` (escapes the structural ``Name.id == "sys"``
     match); two-hop indirection; dynamic/``exec``; string-built paths.
 
-    Scope: ``<repo_root>/tests`` ONLY — ``scripts/`` carries 19 live one-hop
-    ``PROJECT_ROOT = repo_root()`` offenders (17 ``issue1482_*.py`` +
-    2 ``issue1738_*.py``) that must be fixed BEFORE any widening, or the
-    no-flags bundle lands red fleet-wide (see #2181 plan §8). No waiver
-    sentinel by design: zero offenders at introduction and no legitimate
-    reason for a test to point at the main checkout's code dirs — that IS the
+    Scope: ``<repo_root>/tests`` AND ``<repo_root>/scripts`` — widened to
+    ``scripts/`` at #2183 after the same-branch remediation of the 19 live
+    one-hop ``PROJECT_ROOT = repo_root()`` offenders there (17
+    ``issue1482_*.py`` + 2 ``issue1738_*.py``); the ``scripts/``-side
+    sanctioned replacement is the module-scope tree-local form — for a
+    TOP-LEVEL driver,
+    ``PROJECT_ROOT = Path(__file__).resolve().parent.parent`` (the
+    ``scripts/issue1482_densesae_fullwidth.py`` precedent); a NESTED file
+    (the scan is recursive) adds one ``.parent`` per extra directory level
+    (equivalently ``Path(__file__).resolve().parents[k]``, k = the containing
+    dir's depth below the repo root). ``src/`` is
+    deliberately OUT of scope — 0 hits today; widening there requires its own
+    justification (#2183 acceptance criterion 4). No waiver sentinel by
+    design: zero offenders at introduction and no legitimate reason for a
+    test or driver to point at the main checkout's code dirs — that IS the
     banned failure mode (add the family's sentinel pattern if a genuine need
     ever appears). ``repo_root`` kwarg is the unit-test override hook;
     production callers pass None. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
-    tests_dir = root / "tests"
     errors: list[str] = []
-    if not tests_dir.is_dir():
-        return errors
-    for py in _files_scope_filter(sorted(tests_dir.rglob("*.py"))):
-        try:
-            tree = ast.parse(py.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
-            sys.stderr.write(
-                f"workflow_lint: check-no-repo-root-syspath-in-tests skipped "
-                f"unparseable {py}: {type(exc).__name__}\n"
-            )
+    for scan_dir in ("tests", "scripts"):
+        target_dir = root / scan_dir
+        if not target_dir.is_dir():
             continue
-        names = _banned_resolver_aliases(tree)
-        tainted = _tainted_module_names(tree, names)
-        for node in ast.walk(tree):
-            if not (isinstance(node, ast.Call) and _is_syspath_mutation_sink(node)):
+        for py in _files_scope_filter(sorted(target_dir.rglob("*.py"))):
+            try:
+                tree = ast.parse(py.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+                sys.stderr.write(
+                    f"workflow_lint: check-no-repo-root-syspath skipped "
+                    f"unparseable {py}: {type(exc).__name__}\n"
+                )
                 continue
-            resolver = None
-            for arg in [*node.args, *(kw.value for kw in node.keywords)]:
-                resolver = _mentions_banned_resolver_call(arg, names)
+            names = _banned_resolver_aliases(tree)
+            tainted = _tainted_module_names(tree, names)
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Call) and _is_syspath_mutation_sink(node)):
+                    continue
+                resolver = None
+                for arg in [*node.args, *(kw.value for kw in node.keywords)]:
+                    resolver = _mentions_banned_resolver_call(arg, names)
+                    if resolver is None:
+                        for n in ast.walk(arg):
+                            if isinstance(n, ast.Name) and n.id in tainted:
+                                resolver = tainted[n.id]
+                                break
+                    if resolver is not None:
+                        break
                 if resolver is None:
-                    for n in ast.walk(arg):
-                        if isinstance(n, ast.Name) and n.id in tainted:
-                            resolver = tainted[n.id]
-                            break
-                if resolver is not None:
-                    break
-            if resolver is not None:
+                    continue
+                if scan_dir == "tests":
+                    remedy = (
+                        "Use the tree-local form `sys.path.insert(0, "
+                        'str(Path(__file__).resolve().parents[1] / "scripts"))`, '
+                        "or preferably `monkeypatch.syspath_prepend(str("
+                        'Path(__file__).resolve().parents[1] / "scripts"))` so '
+                        "the entry is restored at teardown."
+                    )
+                else:
+                    remedy = (
+                        "Use the module-scope tree-local form — for a top-level "
+                        "scripts/ driver: `PROJECT_ROOT = "
+                        "Path(__file__).resolve().parent.parent` (the "
+                        "scripts/issue1482_densesae_fullwidth.py precedent); a "
+                        "nested file adds one `.parent` per extra directory "
+                        "level (equivalently "
+                        "`Path(__file__).resolve().parents[k]`, k = the "
+                        "containing dir's depth below the repo root)."
+                    )
                 errors.append(
                     f"{py}:{node.lineno}: `sys.path` entry derived from "
-                    f"`{resolver}()` under tests/ is forbidden — "
+                    f"`{resolver}()` under {scan_dir}/ is forbidden — "
                     f"`task_workflow.{resolver}()` branch-guards to the MAIN "
-                    f"checkout, so a worktree pytest run imports main's copy "
-                    f"of the module under test (a branch regression can pass "
-                    f"its own test on the branch) and leaks a foreign "
-                    f"checkout's dir onto sys.path for the whole session "
-                    f"(silently defeats the #1296 sys.path negative control "
-                    f"in tests/test_backend_poll.py; incident #2164). Use the "
-                    f"tree-local form `sys.path.insert(0, "
-                    f'str(Path(__file__).resolve().parents[1] / "scripts"))`, '
-                    f"or preferably `monkeypatch.syspath_prepend(str("
-                    f'Path(__file__).resolve().parents[1] / "scripts"))` so '
-                    f"the entry is restored at teardown."
+                    f"checkout, so a worktree run imports main's copy of its "
+                    f"sibling modules (a branch fix silently goes unexercised) "
+                    f"and leaks a foreign checkout's dir onto sys.path for the "
+                    f"whole process (the trap behind incident #2164, which "
+                    f"silently defeated the #1296 sys.path negative control in "
+                    f"tests/test_backend_poll.py). {remedy}"
                 )
     return errors
 
@@ -10793,6 +11608,7 @@ def check_no_literal_round_marker_versions(*, repo_root: Path | None = None) -> 
     skills_dir = root / ".claude" / "skills"
     if skills_dir.is_dir():
         targets.extend(p for p in sorted(skills_dir.rglob("SKILL.md")) if p.is_file())
+        targets.extend(_issue_step_companions(skills_dir))
     markers_md = root / ".claude" / "skills" / "issue" / "markers.md"
     if markers_md.is_file():
         targets.append(markers_md)
@@ -11935,7 +12751,7 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
             f"marker-shape sub-recipe must live in the /issue skill."
         )
     else:
-        text = skill.read_text(encoding="utf-8")
+        text = _read_workflow_doc(skill)
         start = text.find("**5c-bis.")
         end = text.find("**5c-ter.")
         region = text[start:end] if (start != -1 and end != -1 and end > start) else ""
@@ -12001,7 +12817,7 @@ def check_authorized_stub_wiring(  # noqa: C901 -- flat per-surface token ladder
             f"PASS_AUTHORIZED_STUB grant row, #2171) must live in the /issue skill."
         )
     else:
-        text = skill.read_text(encoding="utf-8")
+        text = _read_workflow_doc(skill)
         idx = text.find("##### Step 6d.0:")
         if idx == -1:
             errors.append(
@@ -12356,6 +13172,198 @@ def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token 
                 f"'19 smoke blind-spot enumeration' (#2165) — the critic's "
                 f"always-loaded item roster would drop item 19 (the #606 "
                 f"silent-strip class)."
+            )
+    return errors
+
+
+def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces spanning eight files, #2158), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the pre-split review guard (#2158) is absent from ANY of its
+    seven surfaces (spanning eight files).
+
+    Task #1336 (round 4) dispatched the Step 5 code-review ensemble against a
+    Unit-A-only intermediate commit of a pre-split multi-unit round: two
+    subagents died and the task parked ~2 days on a review scoped to an
+    incomplete round. The fix (#2158) is a two-arm pure predicate
+    (``pre_split_review_gate``) + a thin CLI
+    (``scripts/pre_split_review_guard.py``) the Step 5 orchestrator runs
+    BEFORE any reviewer dispatch, plus the cross-session writer-arbitration
+    rule + read-pinning bullets the incident's sibling deaths motivated. This
+    check pins the guard across its surfaces, region-anchored, so a future
+    refactor cannot silently strip one (the #606 copy-list-omission class):
+
+    (1) ``scripts/pre_split_review_guard.py`` exists and names the library
+        entry ``pre_split_review_gate``;
+    (2) ``src/explore_persona_space/task_workflow.py`` defines
+        ``def pre_split_review_gate`` and the verdict token
+        ``PRE-SPLIT-INCOMPLETE``;
+    (3) 09-step-5.md — the ``**Pre-split completeness guard`` region (up to
+        the next paragraph opening ``**``) names
+        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``, and
+        ``remaining:``;
+    (4) 08-step-4.md — the breadcrumb grammar tokens
+        ``pre-split unit k/M complete:`` + ``; remaining:`` (grammar-parity
+        pin: an editor changing the grammar trips the check that guards the
+        parser keyed to it) AND the arm-B emitter-convention token
+        ``unit=<k>`` (dropping it un-mandates arm B's key in exactly the
+        pre-breadcrumb window where the #1336 v132 incident lived);
+    (5) 08-step-4.md — the shared-worktree note tokens ``EXPECTED shape`` +
+        ``cross-session-writer-arbitration.md``;
+    (6) ``.claude/rules/cross-session-writer-arbitration.md`` exists and
+        names ``never dispatch a concurrent writer`` + ``git show`` (the
+        read-pinning recipe);
+    (7) experiment-implementer.md AND implementer.md each carry the bullet
+        heading ``Read-pinning under external churn`` with ``git show``
+        inside the bullet region (up to the next line-start ``- **``) —
+        each FILE reported independently, so a per-file strip FAILs on its
+        own error string.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    verdict = "PRE-SPLIT-INCOMPLETE"
+    errors: list[str] = []
+
+    # (1) the thin CLI exists and names the library entry.
+    cli = root / "scripts" / "pre_split_review_guard.py"
+    if not cli.is_file():
+        errors.append(
+            f"{cli}: missing — the #2158 pre-split review-guard CLI must "
+            f"exist (#1336 r4: a review dispatched against a Unit-A-only "
+            f"intermediate commit cost 2 subagent deaths + a 2-day park)."
+        )
+    elif "pre_split_review_gate" not in cli.read_text(encoding="utf-8"):
+        errors.append(
+            f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
+            f"CLI must call the library predicate, not a private "
+            f"re-implementation."
+        )
+
+    # (2) the library predicate + verdict token.
+    tw = root / "src" / "explore_persona_space" / "task_workflow.py"
+    if not tw.is_file():
+        errors.append(
+            f"{tw}: missing — the #2158 pre_split_review_gate predicate "
+            f"must live in task_workflow.py."
+        )
+    else:
+        text = tw.read_text(encoding="utf-8")
+        if "def pre_split_review_gate" not in text:
+            errors.append(
+                f"{tw}: missing 'def pre_split_review_gate' (#2158) — the "
+                f"two-arm pre-split predicate must stay in the library so "
+                f"the CLI and tests share one implementation."
+            )
+        if verdict not in text:
+            errors.append(
+                f"{tw}: the verdict token {verdict!r} is gone (#2158) — the "
+                f"Step 5 guard block keys on that exact lead token."
+            )
+
+    # (3) 09-step-5.md: the guard block region.
+    step5 = root / ".claude" / "skills" / "issue" / "steps" / "09-step-5.md"
+    if not step5.is_file():
+        errors.append(
+            f"{step5}: missing — the #2158 pre-split completeness guard "
+            f"block must live in the Step 5 skill step."
+        )
+    else:
+        text = step5.read_text(encoding="utf-8")
+        idx = text.find("**Pre-split completeness guard")
+        if idx == -1:
+            errors.append(
+                f"{step5}: missing the '**Pre-split completeness guard' "
+                f"block (#2158) — Step 5 would dispatch reviewers with no "
+                f"pre-split gate (incident #1336 r4)."
+            )
+        else:
+            nxt = text.find("\n\n**", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            for token in ("pre_split_review_guard.py", verdict, "remaining:"):
+                if token not in region:
+                    errors.append(
+                        f"{step5}: the '**Pre-split completeness guard' "
+                        f"region no longer names {token!r} (#2158) — the "
+                        f"guard block must key on that exact token."
+                    )
+
+    # (4)+(5) 08-step-4.md: grammar-parity + emitter tokens, and the
+    # shared-worktree arbitration note.
+    step4 = root / ".claude" / "skills" / "issue" / "steps" / "08-step-4.md"
+    if not step4.is_file():
+        errors.append(
+            f"{step4}: missing — the #2158 pre-split breadcrumb grammar + "
+            f"shared-worktree note must live in the Step 4 skill step."
+        )
+    else:
+        text = step4.read_text(encoding="utf-8")
+        for token in ("pre-split unit k/M complete:", "; remaining:", "unit=<k>"):
+            if token not in text:
+                errors.append(
+                    f"{step4}: no longer carries the breadcrumb-grammar / "
+                    f"emitter-convention token {token!r} (#2158) — the "
+                    f"pre_split_review_gate parser (and its arm-B 'unit=' "
+                    f"key) is calibrated to that exact grammar."
+                )
+        for token in ("EXPECTED shape", "cross-session-writer-arbitration.md"):
+            if token not in text:
+                errors.append(
+                    f"{step4}: the shared-worktree note no longer names "
+                    f"{token!r} (#2158) — pre-split multi-unit rounds would "
+                    f"lose the cross-session writer-arbitration pointer."
+                )
+
+    # (6) the arbitration rule file.
+    rule = root / ".claude" / "rules" / "cross-session-writer-arbitration.md"
+    if not rule.is_file():
+        errors.append(
+            f"{rule}: missing — the #2158 cross-session writer-arbitration "
+            f"rule file must exist (probe + claim markers + "
+            f"sequence-or-split; #1336/#1586)."
+        )
+    else:
+        text = rule.read_text(encoding="utf-8")
+        for token in ("never dispatch a concurrent writer", "git show"):
+            if token not in text:
+                errors.append(
+                    f"{rule}: no longer names {token!r} (#2158) — the "
+                    f"arbitration verdict / read-pinning recipe would be "
+                    f"silently stripped."
+                )
+
+    # (7) both implementer specs: the read-pinning bullet, per FILE.
+    for agent_name in ("experiment-implementer.md", "implementer.md"):
+        agent = root / ".claude" / "agents" / agent_name
+        if not agent.is_file():
+            errors.append(
+                f"{agent}: missing — the #2158 read-pinning bullet must live in {agent_name}."
+            )
+            continue
+        text = agent.read_text(encoding="utf-8")
+        idx = text.find("Read-pinning under external churn")
+        if idx == -1:
+            errors.append(
+                f"{agent}: missing the 'Read-pinning under external churn' "
+                f"bullet (#2158) — an implementer editing a churning shared "
+                f"worktree would lose the pin-reads-to-BASE_SHA protocol "
+                f"(#1336 death #9)."
+            )
+            continue
+        nxt = text.find("\n- **", idx + 1)
+        bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+        if "git show" not in bullet:
+            errors.append(
+                f"{agent}: the 'Read-pinning under external churn' bullet "
+                f"no longer names 'git show' (#2158) — the snapshot-read "
+                f"recipe would be silently stripped from {agent_name}."
             )
     return errors
 
@@ -12965,6 +13973,245 @@ def check_cvd_scoped_gpu_verdict_lens(  # noqa: C901 -- flat per-surface token l
     return errors
 
 
+def _codex_concerns_skill_errors(skill: Path) -> list[str]:
+    """Surface (1) of ``check_codex_concerns_persistence_lens`` (#2326): the
+    issue/SKILL.md poster-duty subsection pins (split out to keep the parent
+    check under the C901 cap; the parent docstring carries the contract)."""
+    forwarder = "persist_verdict_concerns.py"
+    invocation = "persist_verdict_concerns.py <N> --file"
+    predicate_sentence = "every resume-table row whose PREDICATE includes"
+    preamble_literal = "Every row below whose PREDICATE includes an EXISTING current-round"
+    empty_ledger_literal = "concerns ledger: empty — nothing to walk"
+    heading = "**Codex concerns persistence at verdict collection"
+    recovery = "**Resume recovery (crash between marker post and persist"
+    errors: list[str] = []
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #2326 codex-concerns-persistence poster "
+            f"duty must live in issue/SKILL.md."
+        )
+        return errors
+    text = _read_workflow_doc(skill)
+    idx = text.find(heading)
+    if idx == -1:
+        errors.append(
+            f"{skill}: missing the '{heading}' subsection (#2326) — "
+            f"without it the orchestrator never forwards Codex "
+            f"'Concerns to persist' rows to the ledger (incident #2321: "
+            f"8 emitted, 0 persisted, the round-2 gate walked an empty "
+            f"ledger)."
+        )
+        return errors
+    end = text.find("**5c. Apply ensemble decision rule.**", idx)
+    region = text[idx:end] if end != -1 else text[idx:]
+    if forwarder not in region:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer names the forwarder {forwarder!r} (#2326) — the "
+            f"blind-forward invocations must stay in the region."
+        )
+    rec_idx = region.find(recovery)
+    if rec_idx == -1:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence subsection no "
+            f"longer carries the '{recovery}' clause (#2326) — a "
+            f"crash between marker post and persist would reproduce "
+            f"the #2321 empty-ledger defect through the resume table."
+        )
+        collection = region
+    else:
+        collection = region[:rec_idx]
+        recovery_region = region[rec_idx:]
+        if invocation not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause carries no "
+                f"forwarder invocation ({invocation!r}) (#2326) — a "
+                f"heading-only recovery clause cannot re-run the "
+                f"persist at resume."
+            )
+        if predicate_sentence not in recovery_region:
+            errors.append(
+                f"{skill}: the resume-recovery clause no longer "
+                f"carries its predicate-leading sentence "
+                f"({predicate_sentence!r}) (#2326) — the recovery "
+                f"duty must stay anchored to the row PREDICATE (the "
+                f"one-twin-missing re-spawn rows included)."
+            )
+    if collection.count(invocation) < 2:
+        errors.append(
+            f"{skill}: the codex-concerns-persistence COLLECTION "
+            f"sub-region carries {collection.count(invocation)} "
+            f"forwarder invocation(s) ({invocation!r}); the contract "
+            f"requires BOTH the pre-post validate gate and the "
+            f"post-post persist (#2326)."
+        )
+    if preamble_literal not in text:
+        errors.append(
+            f"{skill}: missing the resume-table preamble pointer "
+            f"({preamble_literal!r}) (#2326) — resume rows would "
+            f"advance past the recovery step (the crash-seam replay "
+            f"of the #2321 empty-ledger defect)."
+        )
+    if empty_ledger_literal not in text:
+        errors.append(
+            f"{skill}: missing the Step 5c-ter empty-ledger record "
+            f"literal ({empty_ledger_literal!r}) (#2326) — an empty "
+            f"ledger walk would leave no visible round record."
+        )
+    return errors
+
+
+def _codex_concerns_composer_errors(composer: Path, start_tag: str, end_tag: str) -> list[str]:
+    """Surfaces (2)/(3) of ``check_codex_concerns_persistence_lens`` (#2326):
+    the emitting composer's verdict-template pins — a LINE-START
+    NON-SENTINEL ``CONCERN:: `` grammar row (a standalone ``CONCERN:: none``
+    line does not satisfy it — the round-2 sentinel-only alias) + the
+    ``CONCERN:: none`` empty-set sentinel."""
+    row_token = "CONCERN:: "
+    none_sentinel = "CONCERN:: none"
+    errors: list[str] = []
+    if not composer.is_file():
+        errors.append(
+            f"{composer}: missing — the #2326 CONCERN:: row grammar must "
+            f"live in the composer's verdict template."
+        )
+        return errors
+    text = composer.read_text(encoding="utf-8")
+    start_match = re.search(rf"(?m)^{re.escape(start_tag)}", text)
+    if start_match is None:
+        errors.append(
+            f"{composer}: no line-start verdict-template start tag "
+            f"{start_tag!r} (#2326) — cannot anchor the template region."
+        )
+        return errors
+    end = text.find(end_tag, start_match.start())
+    region = text[start_match.start() : end] if end != -1 else text[start_match.start() :]
+    if re.search(rf"(?m)^{re.escape(row_token)}(?!none\b)", region) is None:
+        errors.append(
+            f"{composer}: the verdict-template region no longer carries "
+            f"a LINE-START {row_token!r} row grammar (#2326) — a "
+            f"mid-prose token mention (the containment clause) is not a "
+            f"template row, and a sentinel-only region (a standalone "
+            f"{none_sentinel!r} line as the sole line-start token, the "
+            f"#2326 round-2 alias) is not a grammar row either — Codex "
+            f"would emit prose-only concerns the blind forwarder cannot "
+            f"persist (the #2321 shape)."
+        )
+    if none_sentinel not in region:
+        errors.append(
+            f"{composer}: the verdict-template region no longer names "
+            f"the empty-set sentinel row {none_sentinel!r} (#2326) — "
+            f"Codex would have no machine shape for 'nothing to "
+            f"persist', and contract sites would exit 3 on every clean "
+            f"round."
+        )
+    return errors
+
+
+def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2326 Codex concerns-persistence contract is absent from
+    ANY of its four surfaces.
+
+    Incident #2321 (2026-08-16): a round-1 Codex code-review verdict carried
+    a "Concerns to persist" section with 8 items; NONE was persisted via
+    ``raise-concern``, so the round-2 prior-concerns gate (code-reviewer.md
+    Step 0.8) and Step 5c-ter walked an EMPTY ledger. The fix (#2326) makes
+    the Codex composers emit machine-readable ``CONCERN:: `` rows inside the
+    verdict marker envelope and makes the ORCHESTRATOR blind-forward them
+    via ``scripts/persist_verdict_concerns.py`` at every marker-mode Codex
+    verdict collection AND at every resume-table row whose predicate
+    includes an existing current-round codex marker. This check pins the
+    contract across its surfaces, region-anchored, so a future refactor
+    cannot silently strip one (the #606 copy-list-omission class):
+
+    (1) issue/SKILL.md — the "Codex concerns persistence at verdict
+        collection" subsection (region: its bold heading up to the
+        ``**5c. Apply ensemble decision rule.**`` heading) names the
+        forwarder ``persist_verdict_concerns.py``, keeps the
+        ``**Resume recovery`` clause inside the region, carries BOTH
+        collection invocations (pre-post validate + post-post persist)
+        in the COLLECTION sub-region and one invocation plus the
+        predicate-leading sentence ("every resume-table row whose
+        PREDICATE includes ...") in the RECOVERY sub-region; the file
+        additionally carries the resume-table preamble pointer ("Every
+        row below whose PREDICATE includes an EXISTING current-round
+        ...") and the Step 5c-ter empty-ledger record literal
+        (``concerns ledger: empty — nothing to walk``) — the
+        token-presence strengthening persisted as
+        ``durability-pin-token-presence-gaps`` (#2326 round 1);
+    (2) codex-code-reviewer.md — a LINE-START NON-SENTINEL ``CONCERN:: ``
+        grammar row AND the ``CONCERN:: none`` empty-set sentinel inside
+        the verdict-template region (line-start marker tags; a mid-prose
+        token mention — the containment clause — does not satisfy the
+        row pin, and neither does a standalone line-start
+        ``CONCERN:: none`` as the region's only token — the round-2
+        sentinel-only alias, EXECUTED by the #2326 reconciler:
+        sentinel-only corpus → 0 errors pre-fix);
+    (3) codex-clean-result-critic.md — same, its template region;
+    (4) code-reviewer.md — the literal ``**Prior-concerns ledger:**``
+        visibility line inside the ``### Step 0.8`` section body.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+
+    # (1) issue/SKILL.md: the poster-duty subsection region.
+    errors.extend(_codex_concerns_skill_errors(root / ".claude" / "skills" / "issue" / "SKILL.md"))
+
+    # (2)/(3) the two emitting Codex composers: row grammar in the template.
+    for rel, start_tag, end_tag in (
+        (
+            "codex-code-reviewer.md",
+            "<!-- epm:code-review-codex",
+            "<!-- /epm:code-review-codex -->",
+        ),
+        (
+            "codex-clean-result-critic.md",
+            "<!-- epm:clean-result-critique-codex",
+            "<!-- /epm:clean-result-critique-codex -->",
+        ),
+    ):
+        errors.extend(
+            _codex_concerns_composer_errors(root / ".claude" / "agents" / rel, start_tag, end_tag)
+        )
+
+    # (4) code-reviewer.md: the Step 0.8 ledger-visibility line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    ledger_line = "**Prior-concerns ledger:**"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2326 prior-concerns ledger "
+            f"visibility line must live in code-reviewer.md Step 0.8."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.8")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.8' section (#2326) — "
+                f"the prior-concerns walk (and its ledger-visibility line) "
+                f"must stay in the Claude reviewer."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if ledger_line not in body:
+                errors.append(
+                    f"{reviewer}: the '### Step 0.8' section body no longer "
+                    f"names {ledger_line!r} (#2326) — an empty concerns "
+                    f"ledger would pass vacuously with no visible record."
+                )
+    return errors
+
+
 def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the #2136 verdict-round freshness anchor is absent from the
     /issue SKILL.md durable-verdict-first surface.
@@ -13006,7 +14253,7 @@ def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
             f"in the /issue SKILL.md durable-verdict-first rule."
         )
         return errors
-    text = skill.read_text(encoding="utf-8")
+    text = _read_workflow_doc(skill)
     idx = text.find("Durable-verdict-first rule")
     if idx == -1:
         errors.append(
@@ -13309,7 +14556,7 @@ def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> li
     skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
     if not skill.is_file():
         return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
-    text = skill.read_text(encoding="utf-8")
+    text = _read_workflow_doc(skill)
     n_anchors = text.count(_STALE_LABEL_ANCHOR)
     if n_anchors == 0:
         return [
@@ -13421,7 +14668,7 @@ def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
                 f"{name}."
             )
             continue
-        text = path.read_text(encoding="utf-8")
+        text = _read_workflow_doc(path)
         start_m = re.search(start_re, text, flags=re.MULTILINE)
         if start_m is None:
             errors.append(
@@ -13545,7 +14792,7 @@ def check_crash_fix_relaunch_contract(*, repo_root: Path | None = None) -> list[
                 f"({name}) must live here (#1181)."
             )
             continue
-        text = path.read_text(encoding="utf-8")
+        text = _read_workflow_doc(path)
         n_anchors = text.count(anchor)
         if n_anchors == 0:
             errors.append(
@@ -13651,7 +14898,7 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
                 f"must live in all four VM-launch surfaces."
             )
             continue
-        n = p.read_text(encoding="utf-8").count(_VM_THREAD_CAP_PREFIX)
+        n = _read_workflow_doc(p).count(_VM_THREAD_CAP_PREFIX)
         if n < min_count:
             errors.append(
                 f"{p}: {n} occurrence(s) of the shared-VM thread-cap prefix "
@@ -13806,9 +15053,7 @@ def check_awk_elision_parity(*, repo_root: Path | None = None) -> list[str]:
                 f"program deliberately moved, update _AWK_ELISION_HOMES (#1153)."
             )
             continue
-        anchor_lines = [
-            ln for ln in p.read_text(encoding="utf-8").split("\n") if _AWK_ELISION_ANCHOR in ln
-        ]
+        anchor_lines = [ln for ln in _read_workflow_doc(p).split("\n") if _AWK_ELISION_ANCHOR in ln]
         if len(anchor_lines) != 1:
             errors.append(
                 f"{p}: expected exactly 1 line containing the awk elision anchor "
@@ -14128,7 +15373,19 @@ _LESSONS_ROW_RE = re.compile(
 # file 10041 B) could not land under the old cap. The raise buys EXACTLY
 # this row plus <=40 B headroom (10041 + 40 = 10081) — not general slack
 # (the #992 argued-raise form; the per-row and non-row caps still bind).
-_LESSONS_MAX_BYTES = 10081
+# 10081->10205 (#2155): the index sat at 10079/10081 (2 B headroom), so the
+# new research-pm-section-reference.md index row (+124 B incl. newline;
+# measured post-edit file 10203 B) could not land under the old cap. The
+# raise buys EXACTLY this row plus 2 B headroom (10203 + 2 = 10205, the
+# plan-§C.3 measured+~2 form) — not general slack (the #992 argued-raise
+# form; the per-row and non-row caps still bind).
+# 10205->10492 (#2158): the index sat at 10203/10205 (2 B headroom), so the
+# new cross-session-writer-arbitration.md index row (+249 B incl. newline;
+# measured post-edit file 10452 B) could not land under the old cap. The
+# raise buys EXACTLY this row plus <=40 B headroom (10452 + 40 = 10492) —
+# not general slack (the #992 argued-raise form; the per-row and non-row
+# caps still bind).
+_LESSONS_MAX_BYTES = 10492
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -14183,7 +15440,13 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 1175 B -> 1258 B). Cap = measured + <=40.
     # #2250 added the SLURM allocation-width trigger (row 1289 B -> 1378 B).
     # Cap = measured + <=40.
-    "gotchas": 1418,
+    # #2193 DELETED the chained smoke-then-full leg out-root residue topic
+    # token (the #1640 addition; the rule relocated to crash-fix-rounds.md
+    # at #2189, whose LESSONS row already carries the covering `per-leg
+    # out-roots` trigger) — row 1378 B -> 1353 B (the row had drifted +21 B
+    # since the #2250 measurement). Cap = measured + <=40; caps RATCHET
+    # DOWN with deletions, never keep dead headroom.
+    "gotchas": 1393,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -14470,7 +15733,7 @@ def check_inline_round_duty_mirror(*, repo_root: Path | None = None) -> list[str
         errors.append(f"check-inline-round-duty-mirror: {claude_path} not found")
         return errors
     try:
-        skill_text = skill_path.read_text(encoding="utf-8")
+        skill_text = _read_workflow_doc(skill_path)
     except FileNotFoundError:
         errors.append(f"check-inline-round-duty-mirror: {skill_path} not found")
         return errors
@@ -14755,12 +16018,19 @@ def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale
             cap = AGENT_SPEC_SIZE_GRANDFATHER.get(name)
             if cap is not None:
                 if size > cap:
+                    suggested = ((size + 2_800) // 100) * 100
                     errors.append(
                         f".claude/agents/{name}: {size} bytes exceeds its "
-                        f"grandfather ratchet cap ({cap} bytes) — the spec "
-                        f"regrew past its recorded post-trim size; trim it "
-                        f"back (relocate per-scenario content to "
-                        f".claude/rules/, see #829)."
+                        f"grandfather ratchet cap ({cap} bytes) — the spec regrew past "
+                        f"its recorded cap. Remedies, in the designed order (#1753/#1727 "
+                        f"landing-bytes protocol): (a) raise the cap for this landing — "
+                        f"set the {name} line in .claude/config/agent_spec_size_caps.txt "
+                        f"to {suggested:_} (= measured + <=2.8 KB corridor margin) and "
+                        f"update _MIGRATION_SNAPSHOT in "
+                        f"tests/test_workflow_lint_agent_spec_caps.py in lockstep; or "
+                        f"(b) trim (relocate per-scenario content to .claude/rules/, "
+                        f"see #829). Verify in seconds: uv run python "
+                        f"scripts/workflow_lint.py --check-agent-spec-size"
                     )
                 else:
                     _warn(
@@ -14995,317 +16265,71 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 )
 
 # Grandfather-ratchet caps for skill docs still above SKILL_DOC_FAIL_BYTES,
-# keyed by path relative to .claude/skills/. Each cap = measured size at the
-# 2026-08-05 introduction + <= 3 KB margin; a grandfathered file FAILs above
-# its cap (regrowth ratchet) and FAILs as stale once it drops to
-# <= SKILL_DOC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed
-# (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
-# change). Each entry names its trim direction; none is licensed to grow.
+# keyed by path relative to .claude/skills/.
+#
+# Cap protocol (per landing; #1753/#1727 landing-bytes rule, corridor-max
+# form since #2325):
+#
+#     cap = ((measured_landing_bytes + 2_800) // 100) * 100
+#
+# Properties: headroom lands in [2,701, 2,800] B — strictly under the
+# 3,000 B SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES loose-cap bar, with
+# ~200-300 B of trim-slack so a small net-negative sibling landing does not
+# trip the loose-cap arm. Rationale for corridor-max over the older
+# measured + ~1-1.2 KB convention: growth dominates trims ~7:1 in this
+# ladder, and a regrowth trip costs a full Step 9c gate round (median
+# ~13 min), so buy the mechanical maximum every landing.
+#
+# Semantics: a grandfathered file FAILs above its cap (regrowth ratchet; the
+# FAIL message emits the exact replacement cap line), FAILs as stale once it
+# drops to <= SKILL_DOC_FAIL_BYTES ("remove the entry"), and ratchets DOWN
+# when trimmed (> 3 KB headroom FAILs until the cap is lowered in the same
+# change — the loose-cap message prints the exact new cap).
+#
+# RE-MEASURE at Step 10d against the merged tree, and again on EVERY merge
+# attempt: the moving-main class (a sibling landing skill-doc bytes inside
+# this branch's gate window) is the norm, not the exception — each ~1h gate
+# round hands a sibling time to land ~2 KB of SKILL.md prose.
+#
+# Full per-raise chronicle (every prior value + its incident): git log -p
+# --follow scripts/workflow_lint.py at commits before the #2325 trim (the
+# same history move #1718 made for the agent-spec caps).
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 963,447 B after #2312 added the Step 10d rewritten-branch
-    # arm (+18,660 B on #2302's 944,787 B main: the five mutual-non-ancestry
-    # descendancy guards at the push/pull copy sites — canonical snippet
-    # (1), the safe-case push, the zero-PR stale-ref arm, the post-gate
-    # re-sync push, the shape-2 retry — plus the fail-closed PR-head
-    # parity gate and the "Rewritten-branch landing route" subsection);
-    # cap = measured + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,203 B <= the 3,000 B loose-cap hygiene bar). MEASURED POST-MERGE:
-    # the branch absorbed #2302's landed +1,754 B before this cap was set,
-    # so the value is the real landing size, not a projection off a stale
-    # merge-base (a cap computed against the pre-#2302 base would have
-    # FAILED by 547 B the moment this branch landed).
-    # Prior: 945_400 —
-    # measured 944,138 B after #2302 round 2 de-duplicated the stale-sync
-    # residual prose (the Step 9c 1d parenthetical now cross-references
-    # "Step 5a § Base-identity invariant (#2302)" instead of restating it,
-    # -184 B on round 1's 944,322 B) and the cap was LOWERED back to the new
-    # minimum + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,262 B
-    # <= the 3,000 B loose-cap hygiene bar — a ratchet is a real cost;
-    # give budget back when prose shrinks).
-    # Prior: 945_600 — measured 944,322 B after #2302 round 1 documented the
-    # base-identity invariant at BOTH consumers of the Step 5a sibling-sync
-    # output (+1,938 B on the #2136 942,384 B base): the Step 5a
-    # "Base-identity invariant" paragraph (synced paths are base-identical BY
-    # CONSTRUCTION; selector `base_identical_excluded` + compare
-    # `base_identical_files` reporting; the stale-sync residual + its re-sync
-    # remedy) and the Step 9c 1d COMPARE_RC=0 bullet's content-test
-    # parenthetical (#2024 precondition 1 is a CONTENT test as of #2302).
-    # Prior: 943_600 —
-    # measured 942,384 B after #2136 anchored the Step 5b durable-verdict
-    # snippet (+1,370 B: the since_ts=review_round_anchor_ts call form,
-    # the fallback-only anchor-semantics paragraph, and the per-site
-    # opener table). Base was 941,014 B — ALREADY 114 B over the
-    # un-raised 940,900 cap (the #2285 prose pins, 740ed2a0a1, landed
-    # without a cap raise: a pre-existing no-flags red on main this raise
-    # also absorbs); cap = measured + ~1.2 KB (#1753/#1727 landing-bytes
-    # rule).
-    # Prior: 940_900 —
-    # measured 939,648 B after #2277 added the three owner-fence emitter
-    # insertions (+1,992 B on the post-#2265 937,656 B: the Step 8
-    # owner-fence refusal sentence + PASS owner= first-person duty, the
-    # 9a-ter PASS-shape extension with the co-located non-copy
-    # prohibition, and the 6d.2 heartbeat fence_until= recipe); cap =
-    # measured + ~1.2 KB (#1753/#1727 landing-bytes rule).
-    # Prior: 938_900 —
-    # measured 937,656 B LANDING bytes after #2265 added the Step 6d.2
-    # `pid-stale-workload-live` branch row (+3,106 B on origin/main's
-    # post-#2268 934,550 B: the non-terminal dead-veto status row — the
-    # never-post-epm:failure clause, the first-tick bracketed-pgrep
-    # contradiction probe, pid-file repair + epm:run-launched re-post, the
-    # decay arm and the POD-WIDE conclude/post-failure arm — plus the
-    # stalled|dead row's exclusion clause and the post-tick-duties
-    # contradiction-probe sentence); cap = measured + ~1.2 KB (#1753/#1727
-    # landing-bytes rule; headroom 1,244 B <= the 3,000 B loose-cap
-    # hygiene bar).
-    # Prior: 935_400 — measured 934,550 B after the #2268 trim (Lever A
-    # retelling condensation, 23 sites, -1,641 B on the 936,191 B
-    # #2256-union tree: dropped session-ids, dates, and narrative
-    # retellings per the 2026-08-05 editorial policy — operative rules,
-    # diagnostic signatures, and bare (#N) citations kept); cap was the
-    # RESTORED pre-#2256 fleet vintage 935_400, deliberately NOT
-    # measured + ~1 KB (#1753): stale pre-#2256 branch lint copies still
-    # carried cap 935,400, so matching it made the trimmed main file PASS
-    # under BOTH vintages (the #2221 stale-vintage gate-block class).
-    # Prior: 936_900 — measured 935,501 B at the #2256 + #2244 MERGE UNION (origin/main
-    # merged into issue-2256 to pick up the coupled LESSONS cap raise):
-    # #2256 re-keyed the Step 10d gate single-flight probe /
-    # completion-read / kill-arm patterns from the transient gate-TREE
-    # token to the whole-life workload SCRIPT-path tokens (+1,529 B on its
-    # pre-merge base: the #2115 script-file-launcher coverage rationale at
-    # the trigger + surgical probes, the own-Bash-call reminder and the
-    # subshell-argv fork-without-exec note at the main kill-arm, and the
-    # surgical kill-arm's section reference replacing the stale L11949
-    # line reference), atop main's #2244 advance (934,312 B); cap =
-    # measured + ~1.4 KB (#1753/#1727 landing-bytes rule; the margin
-    # absorbs small main-side advance at the landing union — the #2074
-    # landing-union measurement class).
-    # Prior: 935_400 — measured 934,312 B branch-tip after #2244 stated the Step 6b bg-Bash
-    # `timeout` floor for EVERY parking lane (+1,871 B: the timeout-floor
-    # paragraph beside the 420 s park contract, the LAUNCHER_RC rc-capture
-    # paragraph, and the launch-recovery under-budgeted-timeout
-    # cross-reference); cap = measured + ~1 KB rounded up to the next 100 B
-    # (#1753 landing-bytes rule). Measured on the POST-REBASE landing tree:
-    # the branch was rebased onto a main that had already advanced to
-    # 932,441 B (#2126), so the pre-rebase 928,327 B measurement and its
-    # 929_400 cap are both superseded.
-    # Prior: 933_800 — measured 932,441 B branch-tip after #2126 hardened the two gate
-    # recipes (+5,985 B: the 1b gate-set cross-check + 1a selector-key pin
-    # (#1992), the every-relaunch pre-gate re-sync scope clause + four
-    # re-sync-then-re-run next-action messages (#2006), the detached-launch
-    # stdout-redirect rule + timeout-bounded wrapper + no-pid adopt
-    # recovery (measured, probe-detached-fd.txt), the verdict-conditional
-    # re-compose ban at both consumers (#2006), and the Guard-1
-    # per-disposition retry restore (#2087)); cap = measured + ~1.4 KB
-    # (#1753/#1727 landing-bytes rule; the margin absorbs small main-side
-    # advance at the landing union).
-    # Prior: 927_800 — measured 926,329 B branch-tip after #2240 made the Step 10d no-PR arm
-    # payload-aware (+5,831 B: USABLE_PR resolution over BOTH no-usable-PR
-    # cases — terminal PR #1897 and zero PR objects #2240 — with the
-    # origin-precondition push + rc-gated fresh-PR create, realized-outcome
-    # [step10d-no-pr-anomaly] notes, the loud novel-payload-but-no-usable-PR
-    # epm:merge-failed arm, the Step 4a prose correction, and the merge-site
-    # draft-ready comment); cap = measured + ~1.5 KB (#1753/#1727
-    # landing-bytes rule; the margin absorbs small main-side advance at the
-    # landing union).
-    # Prior: 921_700 — measured 920,127 B branch-tip after #2115 converted
-    # the two gate-script
-    # heredoc launchers (Step 10d lint gate + surgical twin) to Write-tool
-    # composition and added the Step 9c script-file-variant note (+1,554 B:
-    # the heredoc form ships the whole gate workload as Bash tool-call argv
-    # through the harness transport — the #2115 forever-pending-dispatch
-    # stall surface).
-    # Prior: 918_600 — measured 917,043 B at the #2074 Step-10d LANDING
-    # UNION (branch-tip 916,019 B — the Step 5 "Per-commit split-review
-    # dispatch (large rounds)" block, +3,660 B: T1 >4-commit / T2 >100 KB
-    # round-diff trigger, G=min(m,8) code-reviewer-lean sub-briefs,
-    # CONTRACT-BEARING routing, mechanical verdict composition + the
-    # split_review provenance line — plus +1,024 B of main-side advance
-    # since the fork; the gate's landing-union overlay measured the merged
-    # content, the #1721 class).
-    # Prior: 917_000 (branch-tip-measured first cut) / 913_400 —
-    # measured 912,359 B after the #2041 + #2208 + #2040 merge union on the
-    # 907,385 B pre-edit tree: #2041 inserted the Step 4b "Fan-out completion
-    # contract in every work-producing brief" paragraph (+1,068 B — same-turn
-    # durable landing, report-last, synchronous delegated gate-waits,
-    # join-time consolidation), #2208 the Step 5a sibling-arm
-    # import-satisfiability probe (+2,591 B), #2040 the 9a-ter across-cell
-    # shard-axis + detached checkpoint-cadence duties (+1,315 B); cap =
-    # merged landing bytes + ~1 KB (#1753 landing-bytes rule). Prior:
-    # 912_300 (#2040 alone) / 911_000 (#2208 alone) / 909_500 (#2041 alone)
-    # / 907_400 — measured 906,356 B after #2024 extended the Step 9c 1d
-    # COMPARE_RC=0 bullet with the `ordering_suspect` verdict class
-    # (+1,333 B); 905_400 — measured 904,929 B after #2015 inserted the
-    # § 9a-ter "Uncommitted-exposure window" block (+425 B on #2014's
-    # 904,504 B base); the remaining mass is the judgment tranche
-    # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
-    # legacy-path stub, GCP rollback-prose relocation).
-    # Prior: 942_000 — measured 941,014 B on main after TWO concurrent
-    # workflow-fix branches landed SKILL.md edits inside the same ~90 min:
-    # #2284 (a70965d3bb, plan-review-floor trigger attribution, +550 B) then
-    # #2285 (740ed2a0a1, Step 10d Guard 2 + trigger-point bullet state the
-    # post-#1723 status ordering, +816 B). Each measured its own landing
-    # bytes against a pre-#2284 main and fit the 1,252 B headroom alone
-    # (#2285's own gate certified 940,464 B / margin 436); their SUM
-    # overshot by 114 B, so main went red on this check between the two
-    # merges. This is the #1721 moving-main class the Step 10d gate's
-    # landing-union merge cannot fully close: the union is computed against
-    # origin/main AT GATE TIME, and a sibling wf-fix merge afterwards is
-    # invisible to it. Cap = landing bytes + ~1 KB (#1753 landing-bytes
-    # rule); NOT a licence for regrowth — SKILL.md is the fleet's largest
-    # always-loaded surface and the compaction tranche below still stands.
-    # Prior: 952_000 — #2296's FIRST Step 10d recovery merge (superseded above).
-    # Measured 950,705 B on the POST-MERGE tree, and the three deltas are
-    # exactly additive: merge base 108ce58854 held 942,384 B, main
-    # 10e9c165a3 added +2,403 B (#2302's base-identity-invariant prose at
-    # the two Step 5a/9c consumers), #2296 added +5,918 B (below). BOTH
-    # pre-merge caps predate the merged tree and would FAIL it — main's
-    # 945_400 by 5,305 B and #2296's own 949_600 by 1,105 B — so the higher
-    # cap is the correct resolution, not a regrowth licence (the same
-    # forward-resolution shape as #2136's, recorded below). This is the
-    # #1721 moving-main class in its two-surface form: each side measured
-    # its own landing against a pre-sibling main and fit its own headroom
-    # alone, and only the merge sees the sum. Cap = measured + ~1.3 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,295 B <= the 3,000 B
-    # loose-cap hygiene bar).
-    # Prior: 949_600 — #2296 measured 948,302 B PRE-merge (the Step 10d
-    # mapped-invariant BASELINE leg moved off the shared root onto a
-    # base-pinned detached sparse scratch via `step9c_baseline.py
-    # mapped-baseline`: the shared-form + surgical-form baseline blocks,
-    # the TG_SCRATCH sed clause at both <TREE> sites, the fail-closed
-    # rc-parse lines, the rewritten residual-risk items, and the
-    # bootstrap-safe $TG_S9B helper resolution + FALLBACK audit token at
-    # both baseline sites; +5,918 B over origin/main's 942,384 B). Cap =
-    # measured + ~1.3 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,298 B <= the 3,000 B loose-cap hygiene bar). Re-derived TWICE
-    # mid-round, both superseded and recorded here so the trail is not
-    # lost: 947_450 (measured 946,230 B) predates the $TG_S9B bootstrap
-    # fix and would FAIL by 321 B; 949_000 (measured 947,771 B) predates
-    # the round-2 reviewer Minors and would FAIL by nothing but records
-    # the wrong measurement.
-    # Prior: 943_600 — #2136 measured 942,384 B for THAT landing (the Step 5b
-    # durable-verdict anchor snippet + its per-site opening_kinds table,
-    # +1,370 B over main's 941,014 B). Merge-resolved forward from main's
-    # 942_000: that value predates this landing and would FAIL it by 384 B,
-    # so the higher cap is the correct resolution, not a regrowth licence
-    # (headroom 1,216 B, the same ~1 KB the #1753 rule prescribes).
-    # 953_900 — SECOND merge-resolve forward inside #2296's landing window.
-    # Measured 952,575 B on the post-merge tree, additive again: the first
-    # recovery merge's 950,705 B + #2303's +1,870 B = 952,575 B. BOTH candidate
-    # caps FAIL it — #2296's own 952_000 by 575 B, main's 947_700 by 4,875 B.
-    # Cap = measured + ~1.3 KB (#1753/#1727 landing-bytes rule; headroom
-    # 1,325 B <= the 3,000 B loose-cap hygiene bar).
-    #
-    # THIRD consecutive forward-resolution of this ONE constant inside a single
-    # landing window (#2302 -> #2303 -> here), which sharpens the class main's
-    # comment below names: the conflict is on the LINE, so no amount of headroom
-    # can prevent it — headroom only decides whether the merged tree is RED. And
-    # each ~1h Step 10d gate round hands a sibling wf-fix branch time to land
-    # ~2 KB of SKILL.md prose and bump this line again, so a SKILL.md-bearing
-    # branch should expect to re-measure PER MERGE ATTEMPT, not once per round.
-    # 947_700 — #2303 measured 946,657 B for THIS landing, and that figure is
-    # the SUM of two workflow-fix landings, not one: #2303's own Step 5a family
-    # work (+1,870 B over the 942,384 B base at 3ac07d46fd —
-    # .claude/config/agent_spec_size_caps.txt joins the lint family in BOTH
-    # copies, since the linter reads it at module import, #2293; and both sync
-    # commits gain rc-checked FATAL/exit-1 arms) PLUS #2302's sibling-arm
-    # landing (5bfb7eb6f0, +2,403 B), which reached main at 944,787 B / cap
-    # 945_400 while #2303 sat in its Step 9c + pre-push gates. Cap = landing
-    # bytes + ~1 KB (#1753 landing-bytes rule; headroom 1,043 B).
-    #
-    # This IS the #2284/#2285 moving-main class recorded above, caught rather
-    # than repeated: each branch fit the headroom it measured against ALONE
-    # (#2302 at 945_400, #2303 at 945_400 off a pre-#2302 base), and their SUM
-    # would have landed 946,657 B against a 945_400 cap — main red by 1,257 B
-    # between the two merges. The Step 10d re-measure duty (#2303 plan §4.2 /
-    # risk R8) is what fired here; keep it on any SKILL.md-bearing branch.
-    #
-    # 972_600 — MEASURED 971,235 B on the #2312 rewritten-branch landing merge for
-    # #2296: main's 965,317 B + this branch's +5,918 B, additive exactly as in
-    # every prior round of this chain. Both candidates FAIL it — main's 966_520 by
-    # 4,715 B and the branch's own 953_900 by 17,335 B. Cap = measured + ~1.4 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,365 B <= the 3,000 B loose-cap
-    # hygiene bar).
-    #
-    # Resolved IN THE SCRATCH per the § Rewritten-branch landing route, which is
-    # what makes this the LAST re-measure for #2296 rather than the fourth link in
-    # a chain: the branch tip — and the gate verdict SHA-bound to it — are left
-    # untouched, so no re-gate is owed. The three preceding re-measures each came
-    # from a branch-side recovery merge, and each re-opened the ~84-min gate window
-    # that let the next SKILL.md-bearing sibling (#2302, #2303, #2312) land first.
-    # That is the mechanism behind the "norm, not the exception" note below.
-    #
-    # 966_520 — MEASURED 965,317 B after #2312 added the Step 10d rewritten-branch
-    # arm (+18,660 B: the mutual-non-ancestry guard at all four push sites, the
-    # zero-PR stale-ref arm, the PR-head parity gate, and the § Rewritten-branch
-    # landing route) ON TOP of #2303's landed 946,657 B main. Cap = measured
-    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,203 B <= the 3,000 B
-    # loose-cap hygiene bar). Prior on this branch: 964_650 — computed against a
-    # pre-#2303 base (944,787 B) and STALE by 667 B the moment #2303 landed
-    # bbc5d75807 mid-gate; the re-measure duty #2303's own comment prescribes is
-    # what caught it, for the SECOND time on this branch (the first was #2302's
-    # +1,754 B, absorbed before the earlier cap was set). Two consecutive
-    # SKILL.md-bearing siblings landing inside one branch's gate window is now
-    # the norm, not the exception: re-measure at Step 10d, never at Step 4.
-    #
-    # 974_900 — #2317 MEASURED 973,681 B on the branch's own origin/main
-    # (ec10edbcb0) merge: main's 971,235 B + this branch's +2,446 B (the
-    # Step 9c 1b splice-shape guard: the --files-only tr-to-spaces sourcing
-    # note, the wc -l embedded-newline assertion + shell self-test, and the
-    # site-scope note), additive — the 1b region was untouched by
-    # #2296/#2312. Prior: 972_600 (#2296/#2312, above) and this branch's own
-    # 950_300 measured against the pre-#2296 base bbc5d75807 — the
-    # moving-main class again, absorbed by the branch-side re-merge BEFORE
-    # the gate this time. Cap = landing bytes + ~1.2 KB (#1753/#1727
-    # landing-bytes rule; headroom 1,219 B <= the 3,000 B loose-cap hygiene
-    # bar). Re-measure at Step 10d if main moves again.
-    #
-    # 980_400 — #2320 MEASURED 979,368 B on the branch's own origin/main
-    # (db6eb28cac) merge: main's 974,701 B + this branch's +4,667 B (the
-    # Guard-3 first-parent fix: the MB_VALID hard-stop block with the
-    # MB_FIRST_PARENT diagnostic, the unconditional content-check prose,
-    # the corrected #479 note, the retired-condition template rewrites +
-    # mb_first_parent note fields, and the #1144 stranded-MODIFIED
-    # surfacing scan), partly offset by the deleted BEHIND-threshold
-    # prose. Prior: 974_900 (#2317, above). Cap = landing bytes + ~1 KB
-    # (#1753/#1727 landing-bytes rule; headroom 1,032 B <= the 3,000 B
-    # loose-cap hygiene bar). Re-measure at Step 10d if main moves again.
-    #
-    # 983_400 — #2146 MEASURED 982,223 B after rounds 1-3 on this branch,
-    # against an UNMOVED origin/main SKILL.md (979,368 B at both the
-    # d1c3534a10 merge-base and the r3-time origin/main tip): main's
-    # 979,368 B + this branch's +2,855 B (r1: the Step 9a-ter "Inline-round
-    # session-survival backstop" block — the arm-iff-tick_triage.ISSUE_ACTIVE
-    # rule, the per-class no-arm verdicts with the four status enumerations
-    # the #2146 partition pin compares against the live tick_triage module,
-    # and the non-ACTIVE backstop chain; r2: the C1-C3 qualifier corrections;
-    # r3: the exact `plan_pending_over_cap` predicate wording —
-    # at-least-as-new, or no status-changed marker at all). Cap = measured
-    # + ~1.2 KB (#1753/#1727 landing-bytes rule; headroom 1,177 B <= the
-    # 3,000 B loose-cap hygiene bar). Prior: 982_700 — r1's measurement
-    # (981,524 B; headroom 1,176 B), left stale by the r2 qualifier splice
-    # (+561 B -> 982,085 B live / 615 B headroom, below the margin this
-    # ladder's own history calls normal for concurrent sibling landings).
-    # Prior: 980_400 (#2320, above). Re-measure at Step 10d if main moves
-    # again.
-    "issue/SKILL.md": 983_400,
-    # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
-    # the v3 body drain.
-    "clean-results/SPEC.md": 106_900,
-    # measured 87,195 B; problem-sweep prose + living-docs passes are the
-    # trim direction.
-    "daily/SKILL.md": 90_000,
-    # Prior: 72_100 — measured 72,748 B after #2276 back-filled the c62
-    # (backend pin-claim) + c63 (declared width vs launch width) escape
-    # entries into the Phase 1.5.0 canonical escapes block (+845 B,
-    # required by the verify_plan docstring sync test); cap = landing
-    # bytes + ~1 KB (#1753 landing-bytes rule).
-    # Prior: 70_900 — measured 71,103 B after #2123 back-filled the c59
-    # (GPU-hours token conflict) escape entry into the Phase 1.5.0 canonical
-    # escapes block (+203 B, required by the verify_plan docstring sync
-    # test); cap = landing bytes + ~1 KB (#1753 landing-bytes rule).
-    # Prior context: measured 68,032 B; Phase 1 planner-prompt restatement
-    # of planner.md is the trim direction.
-    "adversarial-planner/SKILL.md": 73_750,
+    # measured 67,795 B @ #2155 2026-08-17 step-body split (router only —
+    # the 20 step bodies moved verbatim to issue/steps/, entries below;
+    # re-split against the rung-0 991,350 B monolith — its +1,747 B landed
+    # entirely inside steps/05+06, so the router byte count is unchanged);
+    # corridor-max ((measured+2_800)//100)*100 -> headroom 2,705 B.
+    # Prior: 994_100 (rung-0 main, pre-split 991,350 B) / 992_400 (#2326);
+    # chronicle: git log.
+    "issue/SKILL.md": 70_500,
+    # The four #2155 step companions over the 60,000 B FAIL bar, each
+    # grandfathered at measured + <=3 KB (deliberately NOT exempted via
+    # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
+    # remaining trim visible). Measured 2026-08-17 at the re-split commit;
+    # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
+    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
+    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 99_300 (#2352, 96,505 B).
+    "issue/steps/09-step-5.md": 100_300,
+    # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
+    # per-leg out/scratch isolation, +1,211 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 145_400,
+    "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
+    # measured 279,937 B @ #2348 (TG merge-base + classify port).
+    "issue/steps/18-step-10d.md": 282_700,
+    # measured 106,625 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
+    "clean-results/SPEC.md": 109_400,
+    # measured 88,010 B @ #2325 2026-08-16; corridor-max
+    # ((measured+2_800)//100)*100. Prior: 90_000; chronicle: git log.
+    "daily/SKILL.md": 90_800,
+    # measured 74,222 B @ #2178 2026-08-18 (r2 c65/c66 no-smoke-run
+    # declaration escape entry, +377 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 76_000 (#2325, 73,229 B);
+    # chronicle: git log.
+    "adversarial-planner/SKILL.md": 77_000,
 }
 
 
@@ -15383,12 +16407,19 @@ def check_skill_doc_size(  # noqa: C901 -- flat per-entry hygiene ladder, mirror
             cap = SKILL_DOC_SIZE_GRANDFATHER.get(rel)
             if cap is not None:
                 if size > cap:
+                    suggested = ((size + 2_800) // 100) * 100
                     errors.append(
                         f".claude/skills/{rel}: {size} bytes exceeds its "
-                        f"grandfather ratchet cap ({cap} bytes) — the doc "
-                        f"regrew past its recorded post-trim size; trim it "
-                        f"back (story->citation compression, relocate "
-                        f"reference material to .claude/rules/)."
+                        f"grandfather ratchet cap ({cap} bytes) — the doc regrew past "
+                        f"its recorded cap. Remedies, in the designed order (#1753/#1727 "
+                        f"landing-bytes protocol): (a) raise the cap for this landing — "
+                        f"set SKILL_DOC_SIZE_GRANDFATHER['{rel}'] = {suggested:_} "
+                        f"(= measured + <=2.8 KB corridor margin) in "
+                        f"scripts/workflow_lint.py, re-measured at Step 10d against the "
+                        f"merged tree; or (b) trim (story->citation compression, "
+                        f"relocate reference material to .claude/rules/). Verify in "
+                        f"seconds: uv run python scripts/workflow_lint.py "
+                        f"--check-skill-doc-size"
                     )
                 else:
                     _warn(
@@ -16408,6 +17439,292 @@ def check_empty_text_default(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+# ── --check-stale-gotchas-pointers (#2193; the #2189 stale-relocation-pointer class)
+_STALE_GOTCHAS_TARGET = ".claude/rules/gotchas.md"
+_STALE_GOTCHAS_ID_RE = re.compile(r"(?<![\w/])#(\d+)\b")
+_STALE_GOTCHAS_TOKEN_RE = re.compile(r"gotchas\.md")
+_STALE_GOTCHAS_WINDOW = 100
+# Relocation-attribution idiom lines (the #2189 pattern, reused by future
+# relocations): a correct relocation RECORD legitimately names gotchas.md
+# next to the relocating task's id. Both literals are pinned verbatim in
+# tests/test_workflow_lint_stale_gotchas_pointers.py so skip-string drift
+# breaks a test instead of silently re-flagging attribution headers.
+_STALE_GOTCHAS_SKIP_IDIOMS: tuple[str, ...] = (
+    "Relocated codebase traps",
+    "to recover gotchas.md byte budget",
+)
+# Historical-record dirs OUT of scan scope (repo-relative prefixes):
+# per-agent memories are "true when written" by convention, not
+# navigational surface. The ONLY approved exclusions are gotchas.md itself
+# and this tuple (#2193 r2 — the plan scope is "tracked .claude/**/*.md
+# plus CLAUDE.md"): tracked .claude/plans/*.md ARE scanned (12 tracked
+# plan docs at landing), and cache/ + worktrees/ need no entry — they are
+# untracked, so the git-ls-files inventory never sees them (the non-git
+# fallback walk prunes worktrees/ structurally via _iter_files_pruned).
+_STALE_GOTCHAS_SCAN_EXCLUDES: tuple[str, ...] = (".claude/agent-memory/",)
+
+# Genuine context-citations, frozen per (repo-relative path, task id) with a
+# per-entry reason (the EMPTY_TEXT_DEFAULT_ALLOWLIST idiom, reasons inline):
+# the line cites gotchas.md for CONTEXT (e.g. as a routing DESTINATION) while
+# the nearby #N belongs to a different claim in the same sentence — a
+# location claim it is not, so the co-reference is not stale.
+STALE_GOTCHAS_POINTER_ALLOWLIST: dict[tuple[str, int], str] = {
+    (".claude/skills/issue/markers.md", 711): (
+        "epm:failure-lesson marker-schema row: gotchas.md is named as the "
+        "consolidate_lessons.py ROUTING DESTINATION while #711 cites the "
+        "cron's own filing task — context-citation, not a location claim"
+    ),
+    (".claude/skills/issue/markers.md", 712): (
+        "same epm:failure-lesson marker-schema row: #712 cites the "
+        "root_cause_confirmed field's incident while gotchas.md names the "
+        "gotcha_candidate routing destination — context-citation, not a "
+        "location claim"
+    ),
+}
+
+
+def _stale_gotchas_scan_paths(root: Path) -> list[Path]:
+    """Enumerate the stale-gotchas scan inventory (#2193 r2): the
+    git-TRACKED repo-root ``CLAUDE.md`` plus every tracked ``*.md`` under
+    ``.claude/`` — the plan-approved scope.
+
+    Production form: ``git -C <root> ls-files -zt -- CLAUDE.md .claude``
+    — an INDEX read, no filesystem walk, so sibling worktrees / ``.venv``
+    trees under ``.claude/`` are structurally out of reach (the #1163
+    raw-rglob class: 3.3M+ entries, measured 304.6 s for this one check at
+    the repo root) and UNTRACKED local scratch can never red the no-flags
+    landing gate. Keeps cached (``H``) entries only; ``S`` skip-worktree
+    entries are skipped (a sparse checkout deliberately does not
+    materialize them — absence there is not an inventory hole). Guarded on
+    ``rev-parse --show-toplevel`` equality so a fixture tree that merely
+    sits INSIDE some enclosing repo never silently enumerates empty.
+
+    NON-GIT-TREE FALLBACK (unit-test tmp fixtures; the Step 10d /tmp
+    landing-tree gate copy): the pruned filesystem walk
+    (:func:`_iter_files_pruned`) over ``root/.claude`` plus
+    ``root/CLAUDE.md``. Fail-safe direction is scan-MORE — coverage kept,
+    the :func:`_head_is_main` posture; a landing-tree copy is materialized
+    from tracked files only, so the two forms agree there.
+    """
+
+    def _git(*args: str) -> subprocess.CompletedProcess[str] | None:
+        try:
+            return subprocess.run(
+                ["git", "-C", str(root), *args],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except Exception:
+            return None  # git missing / non-git environment -> fallback walk (scan-MORE)
+
+    top = _git("rev-parse", "--show-toplevel")
+    if (
+        top is not None
+        and top.returncode == 0
+        and Path(top.stdout.strip()).resolve() == root.resolve()
+    ):
+        listing = _git("ls-files", "-zt", "--", "CLAUDE.md", ".claude")
+        if listing is not None and listing.returncode == 0:
+            return sorted(
+                root / entry[2:]
+                for entry in listing.stdout.split("\0")
+                if entry.startswith("H ") and entry.endswith(".md")
+            )
+    claude_md = root / "CLAUDE.md"
+    return [
+        *([claude_md] if claude_md.is_file() else []),
+        *sorted(_iter_files_pruned(root / ".claude", suffixes=frozenset({".md"}))),
+    ]
+
+
+# Uncapped id-cap sentinel for a registry-less scan root (#2193 Step 10d gate
+# fix): every parseable co-cited task id compares <= this cap, i.e. "treated
+# as in-cap" — the uncapped scan needs no extra branch at the loop site.
+_STALE_GOTCHAS_UNCAPPED_CAP = sys.maxsize
+
+
+def _stale_gotchas_registry_cap(root: Path) -> tuple[int | None, str | None]:
+    """Read the literal ``tasks/REGISTRY.json`` ``highest_id`` field (#2193).
+
+    Returns ``(cap, None)`` on success, ``(None, fail_row)`` on a
+    PRESENT-but-unparseable registry. ABSENCE is an ENVIRONMENT, not an
+    error (#2193 Step 10d gate fix): a scan root with no
+    ``tasks/REGISTRY.json`` at all — the Step 10d gate's ``git archive``
+    landing tree in /tmp is a SUPPORTED registry-less scan root — emits ONE
+    ``WARN: ``-prefixed stderr line here (single call site; the Step 10d
+    gate compare drops WARN lines) and returns
+    ``(_STALE_GOTCHAS_UNCAPPED_CAP, None)`` so the scan runs UNCAPPED
+    (scan-MORE, the check's disclosed fail-safe direction). A
+    PRESENT-but-unparseable registry (unreadable / bad JSON / missing or
+    non-int ``highest_id``) is CORRUPTION and keeps the fail-loud
+    ``fail_row``. The literal field is the ONLY sanctioned read — NEVER
+    ``max()`` over top-level keys: the dict mixes digit and non-digit keys
+    (``highest_id``, ``tasks``), so a naive max crashes or under-reads.
+    Read-only id-cap heuristic: a worktree's stale registry copy only
+    UNDER-reads the cap, which is the conservative direction (a too-fresh
+    id is skipped, never false-FAILed).
+    """
+    registry = root / "tasks" / "REGISTRY.json"
+    if not registry.is_file():
+        sys.stderr.write(
+            "WARN: stale-gotchas-pointer: tasks/REGISTRY.json absent from scan root — "
+            "id-cap disabled (registry-less tree, e.g. the Step 10d gate archive); "
+            "all co-cited ids treated as in-cap\n"
+        )
+        return _STALE_GOTCHAS_UNCAPPED_CAP, None
+    try:
+        cap = json.loads(registry.read_text(encoding="utf-8"))["highest_id"]
+    except (OSError, ValueError, KeyError) as exc:
+        return None, (
+            f"stale-gotchas-pointer/{registry}: cannot read the literal "
+            f"highest_id field ({type(exc).__name__}: {exc}) — the id-cap "
+            f"filter needs it; fix the registry read (never max() over keys)"
+        )
+    if not isinstance(cap, int):
+        return None, (
+            f"stale-gotchas-pointer/{registry}: highest_id is not an int "
+            f"(got {type(cap).__name__}) — the id-cap filter needs it"
+        )
+    return cap, None
+
+
+def check_stale_gotchas_pointers(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL a dead task-id next to a ``gotchas.md`` mention (#2193).
+
+    The true-positive class is "dead task-id next to a gotchas.md
+    mention" — a SUPERSET of relocation: 2 of the 5 baseline true
+    positives were id-TRIMS where the entry still LIVES in gotchas.md but
+    its ``#N`` citation was compacted away, so a hit does not necessarily
+    mean a #2189-style relocation — triage each hit (phrase-grep +
+    ``git log -S``) before repointing; never guess a new home.
+
+    Predicate (calibrated on the 2026-08-19 live tree — 7 hits: 5 true
+    positives fixed by #2193 + the 2 markers.md context-citations frozen
+    in :data:`STALE_GOTCHAS_POINTER_ALLOWLIST`):
+
+    1. Scan the git-TRACKED inventory — repo-root ``CLAUDE.md`` plus every
+       tracked ``*.md`` under ``.claude/`` (an index read via
+       ``git ls-files``; :func:`_stale_gotchas_scan_paths` carries the
+       non-git-tree fallback walk) — EXCLUDING gotchas.md itself and the
+       :data:`_STALE_GOTCHAS_SCAN_EXCLUDES` prefixes (``agent-memory/``
+       is a historical record — "true when written" by convention).
+       Tracked ``.claude/plans/*.md`` ARE in scope (#2193 r2); untracked
+       local scratch is not (it can never red the no-flags landing gate).
+       An UNREADABLE in-scope file FAILs loud — a silent skip is an
+       inventory hole.
+    2. Skip relocation-attribution idiom lines — any line containing
+       "Relocated codebase traps" or "to recover gotchas.md byte budget"
+       verbatim (:data:`_STALE_GOTCHAS_SKIP_IDIOMS`, the #2189 pattern
+       future relocations reuse): a NEW relocation whose attribution
+       header would trip this lint gets a self-serve fix by carrying one
+       of those literals.
+    3. Per line containing a ``gotchas.md`` token, for each id matching
+       ``(?<![\\w/])#(\\d+)\\b`` (the lookbehind drops
+       ``pytorch#94772``-class external-tracker refs) with ``N <=`` the
+       registry's literal ``highest_id`` field (drops residual non-task
+       numbers; see :func:`_stale_gotchas_registry_cap`) and a MIN gap of
+       <= :data:`_STALE_GOTCHAS_WINDOW` chars to the NEAREST
+       ``gotchas.md`` token on the line: FAIL when ``#N`` occurs nowhere
+       in ``.claude/rules/gotchas.md``, unless ``(path, N)`` is
+       allowlisted.
+
+    Known FALSE-NEGATIVE classes, disclosed by design (the
+    smoke-blind-spots.md § Enforcement disclosed-miss precedent):
+
+    * WRAPPED-LINE SPLIT — an id landing on the line AFTER the
+      ``gotchas.md`` token escapes the line-scoped window (baseline-era
+      example, fixed by #2193: artifact-reuse.md's ``#723-family +`` /
+      ``#841 entries.`` wrap, where the wrapped second id was caught only
+      because the first shared the token's line);
+    * ID ALIASING — an id surviving elsewhere in gotchas.md attached to a
+      DIFFERENT entry reads as fresh.
+
+    REGISTRY-ABSENT DEGRADE (disclosed, #2193 Step 10d gate fix): a scan
+    root with NO ``tasks/REGISTRY.json`` — the Step 10d gate's
+    ``git archive`` landing tree in /tmp; a plain non-git /tmp dir is a
+    SUPPORTED scan root, so registry absence is a legitimate environment,
+    not an error — emits ONE ``WARN: ``-prefixed stderr line (the gate
+    compare drops WARN lines) and scans UNCAPPED, treating every co-cited
+    id as in-cap (scan-MORE, the file's disclosed fail-safe direction).
+    Verified FP-free uncapped on the 2026-08-19 live tree: the 100-char
+    window + the ``(?<![\\w/])`` lookbehind exclude the known huge
+    non-task ids (``pytorch/pytorch#94772`` is lookbehind-dropped; the
+    ``#105359`` / ``#159741`` siblings sit outside the proximity window
+    of any gotchas.md mention). A PRESENT-but-unparseable registry
+    (missing/non-int ``highest_id``) KEEPS the fail-loud FAIL row —
+    absence is an environment; corruption is an error.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None and the check scans under :data:`_REPO_ROOT`. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    gotchas_path = root / _STALE_GOTCHAS_TARGET
+    try:
+        gotchas_ids = {
+            int(m) for m in re.findall(r"#(\d+)", gotchas_path.read_text(encoding="utf-8"))
+        }
+    except OSError as exc:
+        return [
+            f"stale-gotchas-pointer/{gotchas_path}: cannot read the co-reference "
+            f"target ({exc}) — the freshness check needs it"
+        ]
+    cap, cap_error = _stale_gotchas_registry_cap(root)
+    if cap_error is not None:
+        return [cap_error]
+    assert cap is not None  # narrowed by the cap_error branch above
+    errors: list[str] = []
+    for path in _stale_gotchas_scan_paths(root):
+        rel = path.relative_to(root).as_posix()
+        if rel == _STALE_GOTCHAS_TARGET:
+            continue
+        if any(rel.startswith(prefix) for prefix in _STALE_GOTCHAS_SCAN_EXCLUDES):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            errors.append(
+                f"stale-gotchas-pointer/{rel}: unreadable in-scope file "
+                f"({type(exc).__name__}: {exc}) — the scan inventory must stay "
+                f"complete; restore or fix the file (fail-fast: a silent skip is "
+                f"an inventory hole, #2193 r2)"
+            )
+            continue
+        if "gotchas.md" not in text:
+            continue
+        for lineno, line in enumerate(text.split("\n"), start=1):
+            tokens = [(m.start(), m.end()) for m in _STALE_GOTCHAS_TOKEN_RE.finditer(line)]
+            if not tokens:
+                continue
+            if any(idiom in line for idiom in _STALE_GOTCHAS_SKIP_IDIOMS):
+                continue
+            for m in _STALE_GOTCHAS_ID_RE.finditer(line):
+                n = int(m.group(1))
+                if n > cap or n in gotchas_ids:
+                    continue
+                # MIN over every gotchas.md token on the line (a
+                # first-occurrence-only read would silently diverge from
+                # the calibration when the id sits near a LATER token).
+                gap = min(max(ts - m.end(), m.start() - te, 0) for ts, te in tokens)
+                if gap > _STALE_GOTCHAS_WINDOW:
+                    continue
+                if (rel, n) in STALE_GOTCHAS_POINTER_ALLOWLIST:
+                    continue
+                errors.append(
+                    f"stale-gotchas-pointer/{rel}:{lineno}: dead task-id #{n} next "
+                    f"to a gotchas.md mention — #{n} no longer occurs in "
+                    f".claude/rules/gotchas.md (a #2189-style relocation moved the "
+                    f"entry to a topic-owning rule file, OR the entry survives with "
+                    f"its id citation trimmed — triage before repointing). Fix the "
+                    f"pointer side: repoint to the entry's current home (verify via "
+                    f"phrase-grep + `git log -S`), reword the prose to stand alone, "
+                    f"or freeze a genuine context-citation in "
+                    f"STALE_GOTCHAS_POINTER_ALLOWLIST with a reason"
+                )
+    return errors
+
+
 # ── --check-no-unannotated-gcp-pin-guidance (#2018; the #2028/#2054 stale-pin class)
 # GCP provisioning is DISABLED (#2028): an explicit `backend: gcp` pin raises
 # the typed GcpDisabledError, so live guidance DIRECTING that pin sends an
@@ -16523,11 +17840,24 @@ def _gcp_pin_scan_files(root: Path) -> list[Path]:
         base_dir = root / base
         if base_dir.is_dir():
             out.extend(p for p in sorted(base_dir.glob(pattern)) if p.is_file())
+    # The #2155 split relocated the /issue step bodies to
+    # .claude/skills/issue/steps/*.md — outside the **/SKILL.md glob above —
+    # so append the companions (returns [] on a pre-split tree), or a future
+    # unannotated stale-GCP instruction in a step body silently evades the
+    # check (round-1 blocker gcp-pin-scan-misses-step-companions).
+    out.extend(_issue_step_companions(root / ".claude" / "skills"))
     for rel in _GCP_PIN_SCAN_FILES:
         p = root / rel
         if p.is_file():
             out.append(p)
-    return [p for p in out if not _gcp_pin_excluded(p, root)]
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for p in out:
+        if p in seen or _gcp_pin_excluded(p, root):
+            continue
+        seen.add(p)
+        result.append(p)
+    return result
 
 
 def _gcp_pin_py_literal_lines(text: str) -> set[int] | None:
@@ -17087,6 +18417,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_push_failure_swallow": lambda wf: check_push_failure_swallow(),
     "check_sh_function_rc_capture": lambda wf: check_sh_function_rc_capture(),
     "check_grep_qv": lambda wf: check_grep_qv(),
+    "check_conflict_markers": lambda wf: check_conflict_markers(),
     "check_marker_registry": lambda wf: check_marker_registry(wf),
     "check_marker_scalar_integrity": lambda wf: check_marker_scalar_integrity(wf),
     "check_poller_marker_consumers": lambda wf: check_poller_marker_consumers(wf),
@@ -17103,7 +18434,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_no_workflow_improver_spawn": lambda wf: check_no_workflow_improver_spawn(),
     "check_no_repo_root_git_reset_hard": lambda wf: check_no_repo_root_git_reset_hard(),
     "check_no_repo_root_worktree_revert": lambda wf: check_no_repo_root_worktree_revert(),
-    "check_no_repo_root_syspath_in_tests": lambda wf: check_no_repo_root_syspath_in_tests(),
+    "check_no_repo_root_syspath": lambda wf: check_no_repo_root_syspath(),
     "check_gate_ids_unique": lambda wf: check_gate_ids_unique(wf),
     "check_lessons_index": lambda wf: check_lessons_index(),
     "check_inline_round_duty_mirror": lambda wf: check_inline_round_duty_mirror(),
@@ -17122,9 +18453,11 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_pre_split_review_guard": lambda wf: check_pre_split_review_guard(),
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
@@ -17142,6 +18475,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_section_reference_pointers": lambda wf: check_section_reference_pointer_coverage(),
     "check_phase_done_reserved": lambda wf: check_phase_done_reserved(),
     "check_jsonl_splitlines": lambda wf: check_jsonl_splitlines(),
+    "check_json_guard_unicode": lambda wf: check_json_guard_unicode(),
     "check_scripts_import_guard": lambda wf: check_scripts_import_guard(),
     "check_upload_or_true": lambda wf: check_upload_or_true(),
     "check_git_recipes_root_guard": lambda wf: check_git_recipes_root_guard(),
@@ -17151,6 +18485,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_agents_note_argv_verdict": lambda wf: check_agents_note_argv_verdict(),
     "check_sha_pin_domain": lambda wf: check_sha_pin_domain(),
     "check_empty_text_default": lambda wf: check_empty_text_default(),
+    "check_stale_gotchas_pointers": lambda wf: check_stale_gotchas_pointers(),
     # Arm W only — mirrors the no-flags dispatch (Arm H is explicit-flag
     # only, and --files is mutually exclusive with check flags anyway).
     "check_plan_version_immutability": (lambda wf: check_plan_version_immutability()),
@@ -17178,6 +18513,28 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_push_failure_swallow": CheckScope("path-local", ("scripts/",)),
     "check_sh_function_rc_capture": CheckScope("path-local", ("scripts/",)),
     "check_grep_qv": CheckScope("path-local", ("scripts/", ".claude/")),
+    "check_conflict_markers": CheckScope(
+        "path-local",
+        (
+            # The honest read set: .claude md + CLAUDE.md + every top-level
+            # dir carrying tracked *.py (measured 2026-08-19; surfaces are
+            # informational for path-local checks — _run_files_mode consults
+            # them only for kind="global" skip decisions).
+            ".claude/",
+            "CLAUDE.md",
+            "scripts/",
+            "tests/",
+            "src/",
+            "external/",
+            "eval_results/",
+            "eps/",
+            "tasks/",
+            "figures/",
+            "eval/",
+            "experiments/",
+            "docs/",
+        ),
+    ),
     "check_upload_as_file": CheckScope("path-local", ("scripts/",)),
     "check_hub_dir_filecount": CheckScope("path-local", ("scripts/",)),
     "check_upload_prefix_clobber": CheckScope("path-local", ("scripts/",)),
@@ -17192,12 +18549,13 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_snapshot_download_allow_patterns": CheckScope("path-local", ("scripts/", "src/")),
     "check_api_dispatch_routing": CheckScope("path-local", ("scripts/", "src/")),
     "check_jsonl_splitlines": CheckScope("path-local", ("scripts/", "src/")),
+    "check_json_guard_unicode": CheckScope("path-local", ("scripts/", "src/")),
     "check_scripts_import_guard": CheckScope("path-local", ("scripts/", "src/")),
     "check_upload_or_true": CheckScope("path-local", ("scripts/",)),
     "check_phase_done_reserved": CheckScope("path-local", ("scripts/",)),
     "check_sha_pin_domain": CheckScope("path-local", ("scripts/", "src/")),
     "check_empty_text_default": CheckScope("path-local", ("scripts/", "src/")),
-    "check_no_repo_root_syspath_in_tests": CheckScope("path-local", ("tests/",)),
+    "check_no_repo_root_syspath": CheckScope("path-local", ("tests/", "scripts/")),
     "check_no_workflow_improver_spawn": CheckScope(
         "path-local", ("scripts/", ".claude/", "CLAUDE.md")
     ),
@@ -17222,6 +18580,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_no_repo_root_git_reset_hard": CheckScope("global", (".claude/",)),
     "check_no_repo_root_worktree_revert": CheckScope("global", (".claude/",)),
     "check_lessons_index": CheckScope("global", (".claude/rules/",)),
+    "check_stale_gotchas_pointers": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_inline_round_duty_mirror": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_rule_frontmatter_parses": CheckScope("global", (".claude/rules/",)),
     "check_agent_spec_size": CheckScope("global", (".claude/agents/",)),
@@ -17233,9 +18592,13 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
     "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_pre_split_review_guard": CheckScope(
+        "global", (".claude/", "scripts/", "src/explore_persona_space/")
+    ),
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
@@ -17637,6 +19000,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "the no-flags default run.",
     )
     parser.add_argument(
+        "--check-conflict-markers",
+        action="store_true",
+        help="Verify no tracked workflow-surface file (.claude/**/*.md incl. "
+        "depth-1 .claude/*.md, tracked *.py repo-wide, CLAUDE.md; git "
+        "ls-files enumeration filtered to on-disk files) carries a "
+        "merge-conflict-marker residue line: column 0 starting seven '<', "
+        "'|', '=' or '>' followed by a space or end-of-line. Fenced .md "
+        "regions are exempt; a deliberate .py occurrence is waived with a "
+        "COMMENT-SHAPED '# CONFLICT_MARKER_EXEMPT: <reason>' — the "
+        "previous non-blank line starting with the waiver comment "
+        "(start-anchored: a string literal containing the token never "
+        "waives there, #2192 r2), or a trailing waiver comment on the "
+        "marker line (quote-context-blind: a quoted token in the marker "
+        "line's own tail can waive — documented residual). On a git "
+        "failure the enumeration fail-opens with "
+        "a loud stderr notice. #2189: a diff3 base marker committed to "
+        ".claude/rules/code-style.md survived every gate. Bundled into "
+        "the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -17821,18 +19204,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "check). Bundled into the no-flags default run.",
     )
     parser.add_argument(
-        "--check-no-repo-root-syspath-in-tests",
+        "--check-no-repo-root-syspath",
         action="store_true",
-        help="FAIL any tests/**/*.py sys.path.insert/append (or "
-        "monkeypatch.syspath_prepend) whose argument derives from the "
+        help="FAIL any tests/**/*.py or scripts/**/*.py sys.path.insert/append "
+        "(or monkeypatch.syspath_prepend) whose argument derives from the "
         "branch-guarded task_workflow resolvers (repo_root/tasks_dir/"
         "registry_path) — directly, via a one-hop module constant, or via an "
         "import alias. repo_root() resolves to the MAIN checkout, so a "
-        "worktree pytest run imports main's copy of the module under test and "
-        "leaks a foreign checkout's dir onto sys.path (incident #2164; "
-        "defeats the #1296 negative control). Use the tree-local "
-        "Path(__file__).resolve().parents[1] form or "
-        "monkeypatch.syspath_prepend. Bundled into the no-flags default run.",
+        "worktree run imports main's copy of its sibling modules and leaks a "
+        "foreign checkout's dir onto sys.path (incident #2164; defeats the "
+        "#1296 negative control). Use the tree-local "
+        "Path(__file__).resolve().parents[1] form (tests/) / "
+        "Path(__file__).resolve().parent.parent (scripts/) or, in tests, "
+        "monkeypatch.syspath_prepend. Renamed from "
+        "--check-no-repo-root-syspath-in-tests when the scope widened to "
+        "scripts/ at #2183 (post-remediation; no back-compat alias). Bundled "
+        "into the no-flags default run.",
     )
     parser.add_argument(
         "--check-gate-ids-unique",
@@ -17957,6 +19344,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "structurally bypassed). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-pre-split-review-guard",
+        action="store_true",
+        help="FAIL if the #2158 pre-split review guard is absent from any "
+        "of its seven surfaces (eight files): the "
+        "scripts/pre_split_review_guard.py CLI naming the "
+        "pre_split_review_gate library entry, the task_workflow.py "
+        "predicate + PRE-SPLIT-INCOMPLETE verdict token, the 09-step-5.md "
+        "'**Pre-split completeness guard' block, the 08-step-4.md "
+        "breadcrumb-grammar + unit=<k> emitter tokens, the 08-step-4.md "
+        "shared-worktree arbitration note, the "
+        "cross-session-writer-arbitration.md rule file, and the "
+        "read-pinning bullet in BOTH implementer specs (incident #1336 r4: "
+        "a review dispatched against a Unit-A-only intermediate commit "
+        "cost 2 subagent deaths + a 2-day park). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-null-gate-calibration-lens",
         action="store_true",
         help="FAIL if the #1491/#2144 null-statistic gate-calibration lens "
@@ -18002,6 +19406,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "heading (incidents #2091: a host-wide max() drain verdict killed "
         "4 of 9 rung-jobs; #2061: a fabricated shard schema cost a full "
         "implementation round). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-codex-concerns-persistence",
+        action="store_true",
+        help="FAIL if the #2326 Codex concerns-persistence contract is "
+        "absent from any of its four surfaces: the issue/SKILL.md 'Codex "
+        "concerns persistence at verdict collection' subsection (both "
+        "collection invocations + resume-recovery clause with its recovery "
+        "invocation and predicate-leading sentence, plus the resume-table "
+        "preamble pointer and 5c-ter empty-ledger literal), a line-start "
+        "non-sentinel CONCERN:: grammar row + the CONCERN:: none sentinel in the "
+        "codex-code-reviewer.md and codex-clean-result-critic.md "
+        "verdict templates, and the Prior-concerns-ledger visibility line "
+        "in code-reviewer.md Step 0.8 (incident #2321: 8 emitted concerns, "
+        "0 persisted, an empty ledger walked vacuously at round 2). "
+        "Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-verdict-round-anchor",
@@ -18339,6 +19759,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-json-guard-unicode",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/**/*.py and FAIL any "
+        "exception-guard unit (try / except* / contextlib.suppress) whose "
+        "caught-name union pairs a JSONDecodeError-named exception with an "
+        "OSError-family name while containing no safe name "
+        "(UnicodeDecodeError / ValueError / Exception / BaseException). "
+        "read_text()/json.loads raise UnicodeDecodeError on encoding-corrupt "
+        "input and it is a ValueError subclass OUTSIDE "
+        "(json.JSONDecodeError, OSError), so the corrupt-file branch is "
+        "silently bypassed (#2164/#2168). Form-specific fix messages; waive "
+        "with '# JSON_GUARD_UNICODE_EXEMPT: <reason>'; no legacy allowlist "
+        "(the #2168 sweep cleared the tree). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-scripts-import-guard",
         action="store_true",
         help="AST-walk src/explore_persona_space/experiments/**/*.py + "
@@ -18479,6 +19915,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-stale-gotchas-pointers",
+        action="store_true",
+        help="FAIL a dead task-id next to a gotchas.md mention in the "
+        "git-TRACKED CLAUDE.md + .claude/**/*.md inventory (gotchas.md "
+        "itself + agent-memory/ excluded; tracked plans/ in scope, "
+        "untracked scratch out) — an id within 100 chars of a "
+        "gotchas.md token on the same line, at or under the registry's "
+        "literal highest_id, that no longer occurs in "
+        ".claude/rules/gotchas.md (the #2189 stale-relocation-pointer "
+        "class; also catches id-trims where the entry survives with its "
+        "citation compacted away). Relocation-attribution lines ('Relocated "
+        "codebase traps' / 'to recover gotchas.md byte budget') are "
+        "skipped; genuine context-citations are frozen per (path, id) in "
+        "STALE_GOTCHAS_POINTER_ALLOWLIST with per-entry reasons. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-plan-version-immutability",
         action="store_true",
         help="FAIL on an in-place mutation of a persisted "
@@ -18578,6 +20031,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_push_failure_swallow
         or args.check_sh_function_rc_capture
         or args.check_grep_qv
+        or args.check_conflict_markers
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_agent_tools
@@ -18592,7 +20046,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
         or args.check_no_repo_root_worktree_revert
-        or args.check_no_repo_root_syspath_in_tests
+        or args.check_no_repo_root_syspath
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_inline_round_duty_mirror
@@ -18603,9 +20057,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
+        or args.check_pre_split_review_guard
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_codex_concerns_persistence
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -18629,6 +20085,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_section_reference_pointers
         or args.check_phase_done_reserved
         or args.check_jsonl_splitlines
+        or args.check_json_guard_unicode
         or args.check_scripts_import_guard
         or args.check_upload_or_true
         or args.check_git_recipes_root_guard
@@ -18639,6 +20096,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agents_note_argv_verdict
         or args.check_sha_pin_domain
         or args.check_empty_text_default
+        or args.check_stale_gotchas_pointers
         or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
     )
@@ -18703,6 +20161,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_sh_function_rc_capture())
     if args.check_grep_qv or no_flags:
         errors.extend(check_grep_qv())
+    if args.check_conflict_markers or no_flags:
+        errors.extend(check_conflict_markers())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if (args.check_marker_scalar_integrity or no_flags) and not args.check_references:
@@ -18735,8 +20195,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_repo_root_git_reset_hard())
     if args.check_no_repo_root_worktree_revert or no_flags:
         errors.extend(check_no_repo_root_worktree_revert())
-    if args.check_no_repo_root_syspath_in_tests or no_flags:
-        errors.extend(check_no_repo_root_syspath_in_tests())
+    if args.check_no_repo_root_syspath or no_flags:
+        errors.extend(check_no_repo_root_syspath())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
@@ -18765,12 +20225,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_pre_split_review_guard or no_flags:
+        errors.extend(check_pre_split_review_guard())
     if args.check_null_gate_calibration_lens or no_flags:
         errors.extend(check_null_gate_calibration_lens())
     if args.check_two_tier_yield_floor or no_flags:
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_codex_concerns_persistence or no_flags:
+        errors.extend(check_codex_concerns_persistence_lens())
     if args.check_verdict_round_anchor or no_flags:
         errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:
@@ -18814,6 +20278,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_phase_done_reserved())
     if args.check_jsonl_splitlines or no_flags:
         errors.extend(check_jsonl_splitlines())
+    if args.check_json_guard_unicode or no_flags:
+        errors.extend(check_json_guard_unicode())
     if args.check_scripts_import_guard or no_flags:
         errors.extend(check_scripts_import_guard())
     if args.check_upload_or_true or no_flags:
@@ -18832,6 +20298,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_sha_pin_domain())
     if args.check_empty_text_default or no_flags:
         errors.extend(check_empty_text_default())
+    if args.check_stale_gotchas_pointers or no_flags:
+        errors.extend(check_stale_gotchas_pointers())
     if args.check_plan_version_immutability or no_flags:
         # Arm H (committed history) runs ONLY under the explicit flag —
         # measured ~1.7-2.7 s at the plan #2123 §6 ~3 s threshold under

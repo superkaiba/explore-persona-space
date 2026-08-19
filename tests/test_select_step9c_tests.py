@@ -2747,20 +2747,26 @@ def test_skills_pin_live_tree_known_pairs():
     """DRIFT/REGRESSION PIN: on the LIVE repo tree, a .claude/skills/issue/
     SKILL.md diff selects the three founding tests of the #1851 gap (all
     path-join-form references, none in WORKFLOW_INVARIANT) with a skills-pin
-    reason. SUPERSET assert: new pin tests joining later must not break this;
-    a rename of a pinned test legitimately forces a deliberate 1-line update
-    here (that loudness is the point)."""
+    reason — and so does a steps/ companion diff via the #2155 alias (the
+    relocated step bodies' pin tests reference the SKILL.md path or the
+    issue_skill_source composer, never the companion's own path). SUPERSET
+    assert: new pin tests joining later must not break this; a rename of a
+    pinned test legitimately forces a deliberate 1-line update here (that
+    loudness is the point)."""
     root = Path(sel.__file__).resolve().parents[1]
-    touched = [".claude/skills/issue/SKILL.md"]
-    tests, untested, reasons = sel.select_tests_with_reasons(touched, root)
-    for founding in (
-        "tests/test_issue_skill_file_only_verdict_post.py",
-        "tests/test_ensemble_review_cap.py",
-        "tests/test_issue_skill_workload_cmd_script_pin.py",
+    for touched_file in (
+        ".claude/skills/issue/SKILL.md",
+        ".claude/skills/issue/steps/09-step-5.md",  # #2155 steps->SKILL.md alias
     ):
-        assert founding in tests
-        assert "skills-pin:.claude/skills/issue/SKILL.md" in reasons[founding]
-    assert untested == []  # the WORKFLOW_SURFACE skip is unchanged
+        tests, untested, reasons = sel.select_tests_with_reasons([touched_file], root)
+        for founding in (
+            "tests/test_issue_skill_file_only_verdict_post.py",
+            "tests/test_ensemble_review_cap.py",
+            "tests/test_issue_skill_workload_cmd_script_pin.py",
+        ):
+            assert founding in tests
+            assert f"skills-pin:{touched_file}" in reasons[founding]
+        assert untested == []  # the WORKFLOW_SURFACE skip is unchanged
 
 
 # --- Skills-pin: --map-files EXCLUDES invariant members; the 9c arm keeps them -----

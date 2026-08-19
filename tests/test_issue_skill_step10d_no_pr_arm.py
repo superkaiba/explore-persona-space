@@ -26,11 +26,13 @@ durability pins; 8 pins per plan section (D)).
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _step10d_span() -> str:
