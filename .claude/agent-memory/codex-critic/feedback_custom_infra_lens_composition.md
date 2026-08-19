@@ -220,6 +220,32 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   its own span carried all brief numerics. Numcheck PASS first try at
   ~124 KB (cat-assembly; version-suffixed tmp paths).
 
+- **Writer+verifier-consumer SCHEMA-FIELD plan, standard methodology lens
+  (#2194 round one: emit a card `phase` field in provenance.py + a
+  verify_report consumer preference channel + rule docs): blend the 19o
+  write-site/read-site chain probes with 19av verifier-check-addition
+  probes as lettered press points** — (a) walk the emission-dict →
+  consumer-walk chain AND grep helper call sites for spread-into-sentinel
+  collisions (a lifecycle `phase` landing sibling of a commit key via
+  `{**metadata}` on a path the new write-time validator never sees); (b)
+  normalization-collision + preference-direction (exact channel pairing
+  WRONG where the old token path would skip); (c) field-WIDTH blast radius
+  (registered grep vs rejected broader grep, shim survivors, frozen
+  dataclass trailing field); (d) legacy-population firing (fact-check
+  found sibling-phase records repo-wide — fixture coverage of realized
+  legacy shapes); (e) asserted message-fragment compat; (f) fail-loud
+  validator posture vs the module's never-crash contract; (g) task-body
+  scope-item narrowing (forward-only) judged against the body's own text;
+  (h) per-test fixture-reaches-changed-code vacuity. Fact-check-already-ran
+  brief clause composes as a digit-free FACT-CHECK STATUS header paragraph
+  pointing at the plan's own FACT-CHECK CORRECTION entry. Numcheck PASS
+  first try at ~136 KB (cat-assembly; spans = plan + body + brief +
+  lensitems + empty prior; unsigned-atom tokenizer + isfinite canon guard;
+  b1/b2/b3 and stage2-upload are scaffold-safe — their digits sit in the
+  allowlist — while "8-hex"/"40-hex"/"§12.15" are not: write
+  "abbreviated"/"full-length"/"the Assumptions section's FACT-CHECK
+  CORRECTION entry").
+
 - **Guard-predicate infra plan with an incident-replay claim (#2158 round
   one, methodology): when the plan's own falsification test is a trace
   against a REAL prior task's events.jsonl, make the replay a review target
@@ -253,6 +279,41 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   rule on an n-of-one basis. A plan-recorded folded fact-check round gets a
   settled-fold guard in THE BAR's do-not-flag list ("unless the fold itself
   is wrong"). Numcheck PASS first try at ~122 KB.
+
+- **Repo-wide sweep / cap-raise plan, standard methodology lens (#2391 round
+  one, review-round cap raise — the #784 structural twin): brief's seven
+  numbered questions verbatim as their own span + a mandated `### Answers to
+  the seven review questions` output section with per-question verdict words
+  (COMPLETE / MISS FOUND / HOLDS / FAILS / PARTIAL / UNVERIFIED) and
+  quoted-command grounding ("every completeness claim quotes the exact
+  command you ran"); RE-RUN-the-arithmetic instruction for plan-claimed
+  counts (site counts, expected empty-allowlist residual). Infra bar gained
+  a fifth clause for sweep plans: "destroys or falsifies the historical
+  record (preserve-as-history sites)". Read discipline names the plan's own
+  grep exclusions (worktrees + tasks/ + archive/ + external/) so
+  sweep-completeness greps match the plan's provenance basis. Numcheck
+  tokenizer upgrade that zeroed scaffold atoms entirely: BOTH-SIDES
+  `(?<![\w.])...(?![\w.])` guards on the unsigned atom regex make hex SHAs
+  produce NO atoms (structurally kills the [[numeric-gate-sha-overflow]]
+  crash class — keep the isfinite guard anyway) AND make `v2`-style
+  marker-tag tokens invisible; hyphen/slash-joined pairs still split
+  correctly (`+0.74-0.80` → both atoms, verified by the in-script dynamic
+  self-test). PASS first try at ~147 KB (spans = brief-inputs + lensitems
+  (capsule + full reference span) + questions + plan + body + empty prior).
+  Rounds two + three (#2391): the round-one header reuses VERBATIM (it is
+  round-agnostic + digit-free); per round add a ROUND SCOPE block (history,
+  load-bearing pattern, duties: replay-then-fresh-review) and compose the
+  orchestrator brief's replay claims + fresh-review classes + settled list
+  as ONE brief span carrying all digits, framed "recorded exit codes are
+  CLAIMS — replay them" (v-four records rc inline; the gate must not trust
+  it). Record spans = both twins' prior verdicts + the disposition
+  epm:progress note, extracted from events.jsonl to files; Codex's own
+  verdicts lead in as "YOUR OWN — verify resolution, do not re-assert".
+  numcheck needs only path/span-list edits (fresh round-tagged workspace
+  dir); round-three PASS first try at ~252 KB. Quoted prior-round marker
+  tags in the records are harmless when the return summary tells the
+  orchestrator to key OUTPUT-file extraction on the round-tagged start
+  tag.**
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
