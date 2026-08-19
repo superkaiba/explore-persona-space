@@ -166,7 +166,7 @@ def test_labels_from_result_field_label_wins_over_score(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     result = SimpleNamespace(scores={"itemx": 100.0})
-    labels, audit = j._labels_from_result(result, save_raw)
+    labels, audit = j._labels_from_result(result, save_raw, {"itemx": "itemx"})
     assert labels["itemx"]["label"] == "refuse"
     assert audit["n_label_from_field"] == 1
     assert audit["n_label_score_disagreements"] == 1
@@ -181,7 +181,7 @@ def test_labels_from_result_no_field_label_is_dropped_never_score_coerced(
     save_raw = tmp_path / "save_raw.json"
     save_raw.write_text(json.dumps({"all_scores": {}}), encoding="utf-8")
     result = SimpleNamespace(scores={"itemy": 0.0, "itemz": None})
-    labels, audit = j._labels_from_result(result, save_raw)
+    labels, audit = j._labels_from_result(result, save_raw, {"itemy": "itemy", "itemz": "itemz"})
     assert labels["itemy"]["label"] == "UNCLEAR"  # score 0.0 must NOT become "refuse"
     assert labels["itemz"]["label"] == "UNCLEAR"
     assert audit["n_label_unclear_no_field"] == 2
@@ -209,7 +209,7 @@ def test_labels_from_result_foreign_or_unclear_label_with_score_drops(
         encoding="utf-8",
     )
     result = SimpleNamespace(scores={"itemf": 100.0, "itemu": 100.0})
-    labels, audit = j._labels_from_result(result, save_raw)
+    labels, audit = j._labels_from_result(result, save_raw, {"itemf": "itemf", "itemu": "itemu"})
     assert labels["itemf"]["label"] == "UNCLEAR"
     assert labels["itemu"]["label"] == "UNCLEAR"
     assert audit["n_label_unclear_no_field"] == 2  # neither has a USABLE field label
@@ -383,12 +383,14 @@ def test_rejudge_executes_dual_scored_overlap_and_sync_rescue(
         ]
         (gdir / "shard0_000.json").write_text(json.dumps(rows), encoding="utf-8")
         engage_tok = "COMPLY" if corpus == "armA" else "ANSWER"
+        # r7: the labeling wave dispatches SHORT ids (_shorten_ids), so the
+        # prior-wave save_raw custom_ids carry the "-"-joined short form.
         all_scores = {
-            f"{pre}{i}.greedy__00000__00": {"reasoning": "r", "label": engage_tok, "score": 100}
+            f"{pre}{i}-greedy__00000__00": {"reasoning": "r", "label": engage_tok, "score": 100}
             for i in range(3)
         }
         # rule-28 api-refusal row: empty content, stop_reason == "refusal"
-        all_scores[f"{pre}3.greedy__00000__00"] = {"error": True, "stop_reason": "refusal"}
+        all_scores[f"{pre}3-greedy__00000__00"] = {"error": True, "stop_reason": "refusal"}
         (labeling / f"save_raw_{corpus}.json").write_text(
             json.dumps({"all_scores": all_scores}), encoding="utf-8"
         )

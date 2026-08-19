@@ -62,6 +62,7 @@ from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
 from explore_persona_space.eval.graded_judge import judge_graded  # noqa: E402
+from explore_persona_space.eval.judge_dispatch import validate_batch_custom_ids  # noqa: E402
 from explore_persona_space.eval.judge_pilot import judge_pilot_gate  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
@@ -215,9 +216,11 @@ def _iter_rollout_items(raw_root: Path, corpus: str) -> list[tuple[str, str, str
     ``{corpus}/greedy/shard*.json`` (one entry per prompt) +
     ``{corpus}/samples/shard*.json`` (entries carrying the ordered ``samples``
     list; the list index IS the draw index k, aligned with the capture store's
-    ``v_A_sample_idx``). item_id encodes prompt_sha + rollout tag; it must NOT
-    contain ``__`` (the judge custom_id delimiter, graded_judge.py) —
-    prompt_sha is hex, tags are single tokens, so ``.`` joins are safe.
+    ``v_A_sample_idx``). item_id encodes the FULL prompt_sha + rollout tag —
+    the durable-artifact key space (labels.json; fits.py joins on full
+    prompt_sha). Full ids NEVER ride API custom_ids: every judge dispatch seam
+    shortens them via :func:`_shorten_ids` (r7 — the Batch API custom_id is
+    capped at 64 chars AND charset-constrained; see the block comment there).
     """
     items: list[tuple[str, str, str]] = []
     corpus_dir = raw_root / corpus
@@ -238,6 +241,71 @@ def _iter_rollout_items(raw_root: Path, corpus: str) -> list[tuple[str, str, str
                 # under "regen8192" — judge the repaired text, never truncated
                 items.append((f"{sha}.s{k:02d}", e["prompt"], s.get("regen8192", s)["text"]))
     return items
+
+
+# --- Batch-safe short item ids (r7 crash fix) --------------------------------
+# The batch encoder appends ``__{idx:05d}__{comp:02d}`` (11 chars) to every
+# item id (batch_judge._enumerate_and_check_cache, batch_judge.py:666), and
+# the Anthropic Batch API constrains custom_id to ``^[a-zA-Z0-9_-]{1,64}$`` —
+# BOTH a 64-char cap (the r7 crash: 64-hex sha + ``.greedy`` + suffix =
+# 82 chars, fail-fast pre-API at batch_judge.py:668) AND a charset that
+# REJECTS the ``.`` joiner (judge_dispatch._validate_custom_ids at dispatch
+# entry, judge_dispatch.py:1646 — the #1776 400-at-batches.create class). So
+# item ids are shortened at EVERY judge dispatch seam: 24-hex sha head
+# (96 bits — collision probability negligible at ~13k prompts, and
+# collision-CHECKED anyway) + ``-`` joiner (charset-legal; never ``__``).
+# Full ids never leave the process inside API custom_ids; short ids never
+# land in the durable result artifacts — labels.json / predictor_scores.json
+# / rejudge.json stay FULL-sha keyed via the per-seam LUT translation
+# (fits.py joins on full prompt_sha). save_raw / cache files are the API-side
+# record and carry the short ids by construction; the judge CACHE key is
+# id-independent — (question, completion, rubric_key), batch_judge.py:676.
+SHORT_SHA_LEN = 24
+_CUSTOM_ID_SUFFIX = f"__{99999:05d}__{99:02d}"  # worst-case encoder suffix (11 chars)
+
+
+def _short_item_id(item_id: str) -> str:
+    """Batch-safe short id: 24-hex sha head + ``-`` joiner (see block comment).
+
+    ``{sha}.greedy`` -> ``{sha[:24]}-greedy``; ``{sha}.s{k:02d}`` ->
+    ``{sha[:24]}-s{k:02d}``; a bare sha (the predictor ``row_id`` shape,
+    issue2356_fits.py:1012-1015) -> ``{sha[:24]}``.
+    """
+    head, dot, tag = item_id.partition(".")
+    return f"{head[:SHORT_SHA_LEN]}-{tag}" if dot else head[:SHORT_SHA_LEN]
+
+
+def _shorten_ids(
+    items: list[tuple[str, str, str]],
+) -> tuple[list[tuple[str, str, str]], dict[str, str]]:
+    """(full_id, q, a) rows -> (short-id rows, short_id -> full_id LUT).
+
+    Raises ValueError on a short-id collision (two DISTINCT full ids mapping
+    to one short id). Result keys are translated back to full ids at each
+    seam boundary so downstream joins never see a short id.
+    """
+    short_items: list[tuple[str, str, str]] = []
+    lut: dict[str, str] = {}
+    for iid, q, a in items:
+        sid = _short_item_id(iid)
+        prev = lut.get(sid)
+        if prev is not None and prev != iid:
+            raise ValueError(f"short item id collision: {sid!r} <- {prev!r} vs {iid!r}")
+        lut[sid] = iid
+        short_items.append((sid, q, a))
+    return short_items, lut
+
+
+def _dry_run_validate_ids(arms: dict[str, list[tuple[str, str, str]]], wave: str) -> None:
+    """Zero-API pre-flight for the pilot paths (judge_pilot_gate has no
+    dry_run knob): compose the worst-case custom_id for every item and run
+    the dispatcher's own pre-submit validator (#1776/#1795) — length AND
+    charset, exactly the two gates the production dispatch enforces."""
+    for arm, its in arms.items():
+        validate_batch_custom_ids([f"{iid}{_CUSTOM_ID_SUFFIX}" for iid, _q, _a in its])
+        logger.info(
+            "[%s] dry-run: %d worst-case custom_ids validated (arm=%s)", wave, len(its), arm
+        )
 
 
 def _label_from_score(mean_score: float | None) -> str:
@@ -271,7 +339,7 @@ def _label_from_parsed(parsed: Any) -> str | None:
 
 
 def _labels_from_result(
-    result, save_raw_path: Path
+    result, save_raw_path: Path, id_lut: dict[str, str]
 ) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
     """Label-FIRST reduce (R3-2, hardened R4-1): the categorical ``label``
     field persisted in save_raw is the ONLY source of an engage/refuse label.
@@ -281,7 +349,12 @@ def _labels_from_result(
     category from it re-coerces exactly the malformed returns the drop rule
     exists to exclude). Returns (labels, audit).
 
-    labels: item_id -> {"score": mean-or-None, "label": engage|refuse|UNCLEAR}.
+    r7: ``result`` / ``save_raw`` are keyed by the SHORT dispatch ids
+    (:func:`_shorten_ids`); the returned ``labels`` are translated back to
+    FULL item ids via ``id_lut`` (short -> full; an unknown short id fails
+    loud with KeyError — never silently kept short).
+
+    labels: FULL item_id -> {"score": mean-or-None, "label": engage|refuse|UNCLEAR}.
     audit counters: n_label_from_field / n_label_unclear_no_field (no usable
     label field survived -> dropped) / n_label_unclear_tie (cross-draw tie ->
     dropped; dead at LABELING_N_DRAWS=1) / n_label_score_disagreements
@@ -330,7 +403,9 @@ def _labels_from_result(
             audit["n_label_unclear_no_field"] += 1
         if label == "UNCLEAR":
             audit["n_unclear"] += 1
-        labels[item_id] = {"score": score, "label": label}
+        # translate SHORT dispatch id -> FULL item id at the seam boundary
+        # (KeyError = fail loud on a short id the seam never composed).
+        labels[id_lut[item_id]] = {"score": score, "label": label}
     return labels, audit
 
 
@@ -420,6 +495,13 @@ def run_labeling_pilot(args: argparse.Namespace) -> int:
     for name, gate_arms, rubric, wave_n_calls, target in gates:
         if not gate_arms or not all(gate_arms.values()):
             raise RuntimeError(f"labeling pilot: empty arm set for the {name} gate")
+        # r7: full-sha item ids overflow the 64-char Batch custom_id cap (and
+        # the "." joiner violates its charset) — dispatch SHORT ids; the pilot
+        # consumes aggregates only, so no back-translation is needed here.
+        gate_arms = {arm: _shorten_ids(its)[0] for arm, its in gate_arms.items()}
+        if args.dry_run:
+            _dry_run_validate_ids(gate_arms, f"labeling-pilot:{name}")
+            continue
         report = judge_pilot_gate(
             gate_arms,
             rubric,
@@ -442,6 +524,8 @@ def run_labeling_pilot(args: argparse.Namespace) -> int:
             "[labeling-pilot:%s] passed=%s -> %s", name, passed, out / f"pilot_report_{name}.json"
         )
         all_passed = all_passed and passed
+    if args.dry_run:
+        logger.info("[labeling-pilot] dry-run complete: custom_id validation only; no gate ran")
     return 0 if all_passed else 1
 
 
@@ -465,8 +549,15 @@ def run_predictor_pilot(args: argparse.Namespace) -> int:
             demo_block, _ = _build_few_shot_demos(train_rows, k, GLOBAL_SEED + fold)
             items.extend((r["row_id"], r["prompt"], demo_block) for r in frows)
         arms[arm] = items
+    # r7: predictor row_ids are bare 64-hex prompt_shas — over the custom_id
+    # budget with the encoder suffix; dispatch SHORT ids (aggregates-only
+    # consumer, no back-translation needed).
+    arms = {arm: _shorten_ids(its)[0] for arm, its in arms.items()}
     out = _out_root(args) / "predictor_pilot"
     out.mkdir(parents=True, exist_ok=True)
+    if args.dry_run:
+        _dry_run_validate_ids(arms, "predictor-pilot")
+        return 0
     report = judge_pilot_gate(
         arms,
         PREDICTOR_RUBRIC,
@@ -510,9 +601,10 @@ def run_labeling(args: argparse.Namespace) -> int:
         if not items:
             raise RuntimeError(f"labeling wave found ZERO rollout items for corpus {corpus}")
         logger.info("[labeling] %s: judging %d rollout items via Batch API", corpus, len(items))
+        items_short, id_lut = _shorten_ids(items)  # r7: Batch custom_id budget + charset
         save_raw_p = out / f"save_raw_{corpus}.json"
         result = judge_graded(
-            items,
+            items_short,
             _labeling_rubric_for(corpus),
             n_draws=LABELING_N_DRAWS,
             cache_dir=out / "cache" / corpus,
@@ -522,10 +614,16 @@ def run_labeling(args: argparse.Namespace) -> int:
             threshold_base=0,  # force Batch path
             dry_run=args.dry_run,
         )
+        if args.dry_run:
+            continue
         accounting[corpus] = _result_accounting(result, f"labeling:{corpus}")
-        corpus_labels, audit = _labels_from_result(result, save_raw_p)
+        corpus_labels, audit = _labels_from_result(result, save_raw_p, id_lut)
         audits[corpus] = audit
         labels.update(corpus_labels)
+
+    if args.dry_run:
+        logger.info("[labeling] dry-run complete: routing + custom_id validation; nothing written")
+        return 0
 
     payload = {
         "issue": ISSUE,
@@ -626,8 +724,9 @@ def run_predictor(args: argparse.Namespace) -> int:
         demo_manifest[f"{arm}_fold{fold}"] = manifest
 
         items = [(r["row_id"], r["prompt"], demo_block) for r in rows]
+        items_short, id_lut = _shorten_ids(items)  # r7: bare-sha row_ids over the cid budget
         result = judge_graded(
-            items,
+            items_short,
             PREDICTOR_RUBRIC,
             n_draws=PREDICTOR_N_DRAWS,
             cache_dir=out / "cache" / f"{arm}_fold{fold}",
@@ -638,8 +737,11 @@ def run_predictor(args: argparse.Namespace) -> int:
             threshold_base=0,
             dry_run=args.dry_run,
         )
+        if args.dry_run:
+            continue
         accounting[f"{arm}_fold{fold}"] = _result_accounting(result, f"predictor:{arm}_fold{fold}")
-        for row_id, p_answer in (result.scores or {}).items():
+        for sid, p_answer in (result.scores or {}).items():
+            row_id = id_lut[sid]  # r7: FULL row_id back at the seam boundary (fail-loud)
             # orient to P(REFUSE) = 100 - P(ANSWER); score None stays None (dropped)
             p_refuse = None if p_answer is None else 100.0 - p_answer
             all_scores[row_id] = {
@@ -648,6 +750,10 @@ def run_predictor(args: argparse.Namespace) -> int:
                 "arm": arm,
                 "fold": fold,
             }
+
+    if args.dry_run:
+        logger.info("[predictor] dry-run complete: routing + custom_id validation; nothing written")
+        return 0
 
     (out / "demo_manifest.json").write_text(json.dumps(demo_manifest, indent=2), encoding="utf-8")
     payload = {
@@ -689,8 +795,14 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
 
     # Per-corpus item LUTs + api-refusal rows (empty content + stop_reason
     # refusal, rule 28 shape) — the labeling wave is per-corpus (R3-2).
+    # r7: the labeling save_raw custom_ids carry SHORT dispatch ids
+    # (_shorten_ids), so the item maps are keyed identically: short_item is
+    # short_id -> SHORT (sid, q, a) row for dispatch; sid2full / full2sid
+    # translate at the seam boundaries (rejudge.json stays FULL-sha keyed).
     raw_root = _stage_raw_completions(args)
-    lut: dict[str, dict[str, tuple[str, str, str]]] = {}
+    short_item: dict[str, dict[str, tuple[str, str, str]]] = {}
+    sid2full: dict[str, dict[str, str]] = {}
+    full2sid: dict[str, dict[str, str]] = {}
     refusal_ids: dict[str, list[str]] = {}
     for corpus in CORPORA_JUDGED:
         save_raw_p = labeling_out / f"save_raw_{corpus}.json"
@@ -704,7 +816,10 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
             and parsed.get("error")
             and parsed.get("stop_reason") == "refusal"
         ]
-        lut[corpus] = {iid: (iid, q, a) for iid, q, a in _iter_rollout_items(raw_root, corpus)}
+        short_items, id_lut = _shorten_ids(_iter_rollout_items(raw_root, corpus))
+        short_item[corpus] = {sid: (sid, q, a) for sid, q, a in short_items}
+        sid2full[corpus] = id_lut
+        full2sid[corpus] = {full: sid for sid, full in id_lut.items()}
         logger.info(
             "[rejudge] %s: %d api-refusal rows to re-issue on SYNC path",
             corpus,
@@ -724,16 +839,16 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
         succeeded = sorted(
             iid
             for iid, v in batch_labels.items()
-            if v.get("score") is not None and iid in lut[corpus]
+            if v.get("score") is not None and iid in full2sid[corpus]
         )
         take = min(OVERLAP_N // len(CORPORA_JUDGED), len(succeeded))
-        overlap_ids = sorted(rng.sample(succeeded, take))
+        overlap_ids = sorted(rng.sample(succeeded, take))  # FULL ids (labels.json keys)
         if not overlap_ids:
             overlap_offset["per_corpus"][corpus] = {"n_overlap": 0, "n_sampled": 0}
             continue
         n_sampled_total += len(overlap_ids)
         overlap_result = judge_graded(
-            [lut[corpus][iid] for iid in overlap_ids],
+            [short_item[corpus][full2sid[corpus][iid]] for iid in overlap_ids],
             _labeling_rubric_for(corpus),
             n_draws=LABELING_N_DRAWS,
             cache_dir=out / "overlap_cache" / corpus,  # fresh cache: never cache-served
@@ -743,11 +858,12 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
             force_sync=True,
             dry_run=args.dry_run,
         )
-        pairs = [
-            (float(batch_labels[iid]["score"]), float(s))
-            for iid, s in (overlap_result.scores or {}).items()
-            if s is not None and batch_labels.get(iid, {}).get("score") is not None
-        ]
+        pairs: list[tuple[float, float]] = []
+        for sid, s in (overlap_result.scores or {}).items():
+            full = sid2full[corpus][sid]  # r7: back to the labels.json key space
+            b = batch_labels.get(full, {}).get("score")
+            if s is not None and b is not None:
+                pairs.append((float(b), float(s)))
         all_pairs.extend(pairs)
         overlap_offset["per_corpus"][corpus] = {
             "n_overlap": len(pairs),
@@ -776,15 +892,19 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
     acc: dict[str, Any] = {}
     n_reissued = 0
     for corpus in CORPORA_JUDGED:
-        # dedupe custom_ids -> item_ids (n_draws>1 can yield repeats)
-        item_ids = sorted({_cid_to_item_id(cid) for cid in refusal_ids[corpus]} & set(lut[corpus]))
+        # dedupe custom_ids -> SHORT item_ids (n_draws>1 can yield repeats);
+        # r7: save_raw custom_ids carry short ids, so intersect with the
+        # short-keyed item map.
+        item_ids = sorted(
+            {_cid_to_item_id(cid) for cid in refusal_ids[corpus]} & set(short_item[corpus])
+        )
         if not item_ids:
             logger.info("[rejudge] %s: no api-refusal rows to re-issue", corpus)
             continue
         n_reissued += len(item_ids)
         save_raw_p = out / f"save_raw_{corpus}.json"
         result = judge_graded(
-            [lut[corpus][iid] for iid in item_ids],
+            [short_item[corpus][sid] for sid in item_ids],
             _labeling_rubric_for(corpus),
             n_draws=LABELING_N_DRAWS,
             cache_dir=out / "cache" / corpus,  # fresh cache: re-issue never cache-served
@@ -794,12 +914,18 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
             force_sync=True,  # SYNC path (rule 28 remediation)
             dry_run=args.dry_run,
         )
+        if args.dry_run:
+            continue
         acc[corpus] = _result_accounting(result, f"rejudge:{corpus}")
-        corpus_labels, audit = _labels_from_result(result, save_raw_p)
+        corpus_labels, audit = _labels_from_result(result, save_raw_p, sid2full[corpus])
         acc[corpus]["label_audit"] = audit
-        for iid, v in corpus_labels.items():
+        for iid, v in corpus_labels.items():  # FULL ids (translated at the boundary)
             rescued_scores[iid] = v["score"]
             rescued_labels[iid] = v["label"]
+
+    if args.dry_run:
+        logger.info("[rejudge] dry-run complete: routing + custom_id validation; nothing written")
+        return 0
 
     payload = {
         "issue": ISSUE,
@@ -822,7 +948,9 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
 
 
 def _cid_to_item_id(custom_id: str) -> str:
-    """Decode judge custom_id -> item_id (custom_id = ``{item_id}__{idx}__{comp}``)."""
+    """Decode judge custom_id -> SHORT item_id (r7: custom_id =
+    ``{short_id}__{idx:05d}__{comp:02d}``; translate to the FULL id via the
+    owning seam's :func:`_shorten_ids` LUT)."""
     return custom_id.rsplit("__", 2)[0]
 
 
