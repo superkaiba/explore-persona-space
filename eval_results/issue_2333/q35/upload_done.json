@@ -1,0 +1,24 @@
+{
+  "phase": "upload",
+  "regime_fp": "2cb3eeb29c988034",
+  "num_workers": 1,
+  "uploaded": {
+    "issue2333_snowball/q35/rollouts": 156,
+    "issue2333_snowball/q35/donors": 4,
+    "issue2333_snowball/q35/vc_bank": 2,
+    "issue2333_snowball/q35/gates": 5,
+    "issue2333_snowball/q35/manifests": 250,
+    "issue2333_snowball/q35/va_store": 156,
+    "issue2333_snowball/q35/anchors": 16
+  },
+  "repro": {
+    "git_commit": "cc47b8a085224d836004c366a07df5dc63b922a8",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.15.0",
+    "model_id": "Qwen/Qwen3.5-9B",
+    "model_tag": "q35",
+    "tiny": false,
+    "smoke": false,
+    "timestamp": "2026-08-18T00:50:29.259284+00:00"
+  }
+}

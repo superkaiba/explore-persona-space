@@ -1,0 +1,8 @@
+{"ts": "2026-08-17T10:23:48Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-17T10:24:26Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "plan_pending"}
+{"ts": "2026-08-17T10:24:57Z", "kind": "epm:ask", "version": 1, "by": "unknown", "note": "{\"gate\": \"plan_approval\", \"gate_id\": 4, \"issue\": 2343, \"plan_v\": 1, \"plan_path\": \"plans/v1.md\", \"est_gpu_hours\": 0, \"answer\": \"uv run python scripts/task.py set-status 2343 approved --if-plan-v 1\"}\n"}
+{"ts": "2026-08-17T10:26:28Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved"}
+{"ts": "2026-08-17T10:26:39Z", "kind": "epm:ask-answered", "version": 1, "by": "unknown", "note": "{\"gate\": \"plan_approval\", \"gate_id\": 4, \"decision\": \"approved\", \"plan_v\": 1, \"predicted_branch\": \"smoke-only-no-experiment-outcome\", \"note\": \"rung-0 write-path smoke\", \"ask_ts\": \"2026-08-17T10:24:57Z\", \"via\": \"mission-control\", \"channel\": \"app\", \"actor\": \"thomas\", \"node\": \"test-bypass\", \"node_id\": \"test-bypass\"}"}
+{"ts": "2026-08-17T10:26:56Z", "kind": "epm:session-mode", "version": 1, "by": "spawn_session", "note": "{\"mode\": \"async\", \"by\": \"spawn_session\", \"channel\": \"spawn-issue\"}"}
+{"ts": "2026-08-17T10:27:19Z", "kind": "epm:progress", "version": 1, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cmsx3a8h2ys7lxw0uqwf7j8eh reason=operator stop via spawn_session.py stop"}
+{"ts": "2026-08-17T10:28:05Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "archived"}

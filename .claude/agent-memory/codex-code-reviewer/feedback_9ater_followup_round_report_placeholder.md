@@ -42,6 +42,27 @@ inline the round's `epm:progress stage=free-analysis-followup` dispatch note as
 the round contract (there is no per-round plan version; plan vK is parent
 conventions only).
 
+**Variant (#2333 cr9ater = marker v7, 2026-08-18): 9a-ter round AFTER the
+interpretation gate closed on a task whose loop rounds hit cap-5 + a
+post-cap greenlit r6.** Marker numbering continues task-wide (v7 after the
+loop's v1–v6); frame explicitly "NOT round 7 of the loop; rounds 1–6 are
+ADJUDICATED". The round contract is the `epm:progress` note whose text
+LEADS "9a-ter free-analysis round DISPATCH" (fetch by exact version from
+events.jsonl — there is no `stage=` token; grep the lead phrase). When the
+brief hands a FOCUSED lens set, compose tight (~28 KB: contract envelope +
+report placeholder + 6 anchored lenses + adapted verdict tail) — no full
+rubric; adapt Blocker-tags to `substantive | data-access-blocked |
+git-provenance` (the #2203 tag set) and pre-declare 0.5/0.55/0.6/4.6 N/A so
+Codex cannot manufacture marker objections. PROBE the committed output
+JSONs at compose time: the brief's flip shorthand can be coarser than the
+artifact (brief: "q35 bstart banked → natural-opening-indeterminate"; the
+JSON showed samewave NO-flip + banked-only flip) — hand the exact committed
+flip flags/CIs neutrally with a verify-don't-assume instruction, and pin
+`generated_at` vs JSON-commit timestamps for the regeneration-integrity
+lens. Open ledger rows (all main-pipeline scope) get regression-duty-ONLY
+framing + one named look-hardest row where the diff grazes a concern's
+neighborhood (donor STAGING edit vs the generate-side donor-cache concern).
+
 **Variant (#2203 full-rerun-bugfix CJK-producer review, 2026-08-11): a
 follow-up ANALYSIS commit with NO marker and NO orchestrator-held report.**
 When the round's target is a post-rerun analysis-producer commit landed by

@@ -55,7 +55,7 @@ repos:
         name: Validate .claude/workflow.yaml schema + cross-references
         entry: uv run python scripts/workflow_lint.py --check-references
         language: system
-        files: ^(\.claude/workflow\.yaml|\.claude/skills/issue/(SKILL|markers)\.md|CLAUDE\.md|scripts/workflow_lint\.py|src/explore_persona_space/workflow\.py)$
+        files: ^(\.claude/workflow\.yaml|\.claude/skills/issue/(SKILL|markers)\.md|\.claude/skills/issue/steps/[^/]+\.md|CLAUDE\.md|scripts/workflow_lint\.py|src/explore_persona_space/workflow\.py)$
         pass_filenames: false
 
       - id: workflow-yaml-check-asks

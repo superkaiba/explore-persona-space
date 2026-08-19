@@ -400,6 +400,19 @@ fi
 POD_INTENT_VAL="${POD_INTENT:-custom}"
 step 5 "Syncing Python environment (uv sync --locked; intent=$POD_INTENT_VAL)"
 ssh_cmd "export PATH=\"\$HOME/.local/bin:\$PATH\"
+# #2360: the venv build must use the /workspace uv cache from the FIRST sync
+# (step 6 only wires it for LATER shells) and an explicit copy link-mode —
+# cross-filesystem hardlinks are impossible /root→/workspace, so the implicit
+# per-install fallback warning was pure noise that masked real problems.
+# NOTE: copy mode does NOT prevent venv corruption (#2278 ESTALE class; and the
+# #2329 corruption cause is NOT established) — the preflight import-health
+# check (#2360) is the detection gate. TRADE-OFF: with copy mode exported
+# globally, a future UV_CACHE_DIR regression back to the /root overlay would
+# no longer announce itself via the hardlink warning (consequence: silent perf
+# loss + stop/resume cache wipes, never corruption — copy is the safe mode).
+mkdir -p /workspace/.cache/uv
+export UV_CACHE_DIR=/workspace/.cache/uv
+export UV_LINK_MODE=copy
 cd /workspace/explore-persona-space
 # Dangling .venv symlink guard (#2278): /root is the container overlay and is
 # recreated on pod stop/resume, so a .venv symlink into /root (the overlay-venv
@@ -489,6 +502,23 @@ RC2EOF
     fi
 done
 
+# uv copy link-mode for every later shell (#2360): cross-filesystem hardlinks
+# are impossible /root→/workspace, so the implicit per-install fallback warning
+# was pure noise. Copy mode does NOT prevent venv corruption (#2278 ESTALE
+# class) — the preflight import-health check (#2360) is the detection gate.
+# Separately guarded (NOT folded into the cache-redirect heredoc above, whose
+# grep guard keys on WANDB_CACHE_DIR) so already-bootstrapped pods gain it on
+# any re-bootstrap.
+for f in /root/.bashrc /root/.profile; do
+    if ! grep -q "^export UV_LINK_MODE=" "$f" 2>/dev/null; then
+        cat >> "$f" <<"RCUVEOF"
+
+# uv copy link-mode (#2360): /root-overlay cache -> /workspace venv cannot hardlink
+export UV_LINK_MODE=copy
+RCUVEOF
+    fi
+done
+
 # ~/.local/bin on PATH for interactive/login shells (#1794; the non-login
 # case is covered by the /usr/local/bin shims below). Separately guarded so
 # already-bootstrapped pods gain it on any re-bootstrap. The grep pattern
@@ -560,6 +590,17 @@ if ! grep -q "^PYTHONPATH=" "$ENV_FILE" 2>/dev/null; then
 # Repo root on sys.path for script-mode scripts.* imports (#1172)
 PYTHONPATH=/workspace/explore-persona-space
 ENV2EOF
+fi
+
+# uv copy link-mode for dotenv-loading subprocesses + `set -a; . .env`
+# launchers (#2360). Separately guarded so already-bootstrapped pods gain it
+# on any re-bootstrap.
+if ! grep -q "^UV_LINK_MODE=" "$ENV_FILE" 2>/dev/null; then
+    cat >> "$ENV_FILE" <<"ENVUVEOF"
+
+# uv copy link-mode (#2360): /root-overlay cache -> /workspace venv cannot hardlink
+UV_LINK_MODE=copy
+ENVUVEOF
 fi
 
 echo "HF cache:     /workspace/.cache/huggingface  ($(du -sh /workspace/.cache/huggingface 2>/dev/null | cut -f1 || echo empty))"
@@ -721,11 +762,20 @@ if [ "$NO_PREFLIGHT" = true ]; then
     log_warn "Skipped by --no-preflight flag"
 else
     step 10 "Running preflight check"
+    # #2360 r2: auto-export the .env assignments (UV_LINK_MODE / UV_CACHE_DIR
+    # are PLAIN assignments there) so the step-10 `uv run` CHILD process
+    # inherits them — a bare `source` leaves them shell-local, and an implicit
+    # sync under the default link mode would re-emit the hardlink-fallback
+    # warning into the very log Acceptance 3 greps. Same idiom as the
+    # backends/runpod.py launcher; the rc-file exports cannot cover this shell
+    # (non-interactive ssh bails at the PS1 guard before the appended lines).
+    # NOTE: the payload stays single-quote-free — the export-semantics test
+    # (tests/test_bootstrap_pod_uv_link_mode.py) extracts it verbatim.
     ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
     cd /workspace/explore-persona-space
-    source .env 2>/dev/null || true
+    set -a; [ -f .env ] && source .env; set +a
     export HF_HOME=/workspace/.cache/huggingface
-    uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1 || true
+    uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1 || echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$?"
     '
 fi
 

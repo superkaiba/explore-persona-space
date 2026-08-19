@@ -12,6 +12,8 @@ quote the failing shape in gotchas.md instead.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -23,7 +25,7 @@ def test_claude_md_ownership_probe_exemplar_is_bracketed():
 
 
 def test_issue_skill_probe_exemplars_are_bracketed():
-    text = (ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()
+    text = issue_skill_text()
     for pat in (
         "pgrep -af '[p]ytest.*step9c-junit-issue-<N>'",
         "pgrep -f 'step9c_baseline[.]py refresh'",

@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "per_family": {
+    "coherence": {
+      "rubric_id": "coherence",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 240
+    },
+    "s1-rubric": {
+      "rubric_id": "f75c02b4aa51f",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 300
+    },
+    "s2-rubric": {
+      "rubric_id": "fa651a87ef32a",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 300
+    }
+  },
+  "forced_batch_probe": {
+    "n_items": 6,
+    "n_scored": 6,
+    "required": 6,
+    "stop_reason_tally": {
+      "end_turn": 6
+    },
+    "non_end_turn": {},
+    "passed": true
+  },
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "n_rubrics_total": 7,
+    "model_tag": "q35"
+  },
+  "repro": {
+    "git_commit": "c087684a",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

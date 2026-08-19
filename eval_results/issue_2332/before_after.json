@@ -1,0 +1,58 @@
+{
+ "generated_at": "2026-08-17T22:42:59Z",
+ "per_prefix": {
+  "issue1090_pvdatagen": {
+   "bytes": 3007521148,
+   "files": 58392,
+   "kept_new": 0,
+   "kept_stale": 0,
+   "slots_freed": 58392
+  },
+  "issue1434_writingstyle": {
+   "bytes": 539119228,
+   "files": 49380,
+   "kept_new": 0,
+   "kept_stale": 0,
+   "slots_freed": 49380
+  },
+  "issue1481_conpos_grid": {
+   "bytes": 5584397449,
+   "files": 206604,
+   "kept_new": 0,
+   "kept_stale": 0,
+   "slots_freed": 206604
+  },
+  "issue1489_ctx_aug": {
+   "bytes": 53561749646,
+   "files": 30360,
+   "kept_new": 0,
+   "kept_stale": 0,
+   "slots_freed": 30360
+  },
+  "issue1586_methodgen": {
+   "bytes": 6994534880,
+   "files": 54103,
+   "kept_new": 0,
+   "kept_stale": 0,
+   "slots_freed": 54103
+  },
+  "issue1739_ctxmap": null,
+  "issue2224_screening": {
+   "bytes": 98832308655,
+   "files": 41759,
+   "kept_new": 0,
+   "kept_stale": 0,
+   "slots_freed": 41759
+  },
+  "issue667_alllayer": {
+   "bytes": 4924261109,
+   "files": 53858,
+   "kept_new": 0,
+   "kept_stale": 0,
+   "slots_freed": 53858
+  }
+ },
+ "repo_count_after": 445580,
+ "repo_count_before": 938366,
+ "slots_freed_total": 492786
+}

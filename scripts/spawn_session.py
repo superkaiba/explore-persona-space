@@ -59,6 +59,12 @@ if str(_SRC) not in sys.path:
 
 from explore_persona_space.task_workflow import (  # noqa: E402
     AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
+    SESSION_MODE_KIND,
+    SESSION_MODES,
+    get_task,
+    list_events,
+    newest_session_mode,
+    post_event,
     primary_checkout_root,
     resolve_plan_gate_cap,
 )
@@ -99,6 +105,12 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # when a parked/terminal task is revived (same-issue follow-up loop) after the
 # watcher GC'd its entry at the terminal transition (#472, 2026-06-10).
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
+
+# Persistent fleet-wide spawn defaults (CONTRACTS §2.2): the mission-control
+# dogfood activation lever read by _config_file_session_mode. Lives beside the
+# per-issue registry entries so every resolver (PM session, watcher, daemon)
+# sees one file regardless of process env.
+SPAWN_DEFAULTS_FILENAME = "spawn-defaults.json"
 
 # ─── per-issue dispatch lease (#843 M1) ──────────────────────────────────────
 #
@@ -309,7 +321,7 @@ def auth_outage_dispatch_hold(
             return None
         try:
             state = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             return None  # unreadable state can never suppress (watcher parity)
         if not isinstance(state, dict) or not state.get("active"):
             return None
@@ -809,6 +821,7 @@ def _register_autonomous_session(
     model: str | None = None,
     betas: list[str] | None = None,
     effort: str | None = None,
+    session_mode: str | None = None,
     force: bool = False,
 ) -> None:
     """Record an autonomous issue session so the watcher can resurrect it.
@@ -854,6 +867,13 @@ def _register_autonomous_session(
         entry["betas"] = list(betas)
     if effort is not None:
         entry["effort"] = effort
+    if session_mode is not None:
+        # Mission-control rung 0 (CONTRACTS §2.2): "async" is recorded so the
+        # watcher's respawn builders re-pass --session-mode async; absent =
+        # legacy auto (auto is deliberately NOT written, keeping legacy
+        # entries byte-identical — the epm:session-mode marker carries the
+        # durable downgrade record).
+        entry["session_mode"] = session_mode
     dest = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     if not force:
         try:
@@ -886,6 +906,181 @@ def _register_autonomous_session(
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(entry, indent=2))
     tmp.replace(dest)
+
+
+# ─── Async session mode (mission-control rung 0; CONTRACTS §2/§2.2) ─────────
+
+
+def _registry_session_mode(issue: int) -> str | None:
+    """``session_mode`` field of ``~/.eps-autonomous/issue-<N>.json`` when it
+    is a recognized mode, else ``None`` (missing file / garbled JSON / absent
+    field all fall through to the next resolution link)."""
+    try:
+        entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json").read_text())
+    except (OSError, ValueError):
+        return None
+    mode = entry.get("session_mode") if isinstance(entry, dict) else None
+    return mode if mode in SESSION_MODES else None
+
+
+def _marker_session_mode(issue: int) -> str | None:
+    """Mode of the newest ``epm:session-mode`` marker on the task's
+    events.jsonl, or ``None``. Fail-soft with a loud stderr note: a mode
+    read must never block a spawn (the terminal fallback is legacy auto)."""
+    try:
+        return newest_session_mode(list_events(issue))
+    except (OSError, ValueError, RuntimeError) as e:
+        print(
+            f"  WARNING: session-mode marker read failed for #{issue} ({e}); "
+            "falling through the resolution chain",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _task_kind_for_mode_default(issue: int) -> str | None:
+    """Task ``kind`` frontmatter for the session-mode DEFAULT scoping (both
+    the spawn-defaults config file and EPM_SPAWN_DEFAULT_SESSION_MODE apply
+    only to in-scope kinds). An unreadable kind returns ``None`` — no
+    default then applies (fail toward legacy auto, never toward flipping a
+    task async)."""
+    try:
+        fm = get_task(issue).get("frontmatter") or {}
+    except (OSError, ValueError, RuntimeError) as e:
+        print(
+            f"  WARNING: kind read failed for #{issue} ({e}); "
+            "session-mode default not applied (legacy auto)",
+            file=sys.stderr,
+        )
+        return None
+    kind = fm.get("kind")
+    return kind if isinstance(kind, str) else None
+
+
+def _config_file_session_mode(issue: int) -> str | None:
+    """Persistent fleet-wide session-mode default from
+    ``~/.eps-autonomous/spawn-defaults.json`` (CONTRACTS §2.2; the
+    mission-control dogfood ACTIVATION lever — unlike the env default it is
+    process-independent, so the PM session, watcher builders, and daemon all
+    resolve the same answer). Expected shape::
+
+        {"session_mode_default": "async", "kind_scope": ["experiment"],
+         "min_task_id": 2360, "set_by": "...", "set_at": "..."}
+
+    Applies ONLY when the file parses, ``session_mode_default`` is a
+    recognized mode, the task ``kind`` is in ``kind_scope``, AND
+    ``issue >= min_task_id`` — the id cutoff (recorded at activation as
+    max-existing-id + 1) is what keeps every pre-activation task, including
+    re-dispatches of the then-current proposed queue, on legacy behavior.
+    Fail-soft: a missing/unreadable/malformed file or any out-of-shape
+    field skips this link (returns ``None`` → next link), never blocks a
+    spawn and never flips a legacy task async."""
+    try:
+        cfg = json.loads((AUTONOMOUS_REGISTRY_DIR / SPAWN_DEFAULTS_FILENAME).read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(cfg, dict):
+        return None
+    mode = cfg.get("session_mode_default")
+    kind_scope = cfg.get("kind_scope")
+    min_task_id = cfg.get("min_task_id")
+    if mode not in SESSION_MODES:
+        return None
+    if not (isinstance(kind_scope, list) and all(isinstance(k, str) for k in kind_scope)):
+        return None
+    if isinstance(min_task_id, bool) or not isinstance(min_task_id, int):
+        return None
+    if issue < min_task_id:
+        return None
+    kind = _task_kind_for_mode_default(issue)
+    if kind is None or kind not in kind_scope:
+        return None
+    return mode
+
+
+def _resolve_spawn_session_mode(args: argparse.Namespace, issue: int) -> str:
+    """Resolve the session mode for a ``spawn-issue --auto`` dispatch
+    (CONTRACTS §2.2, fixed order): explicit ``--session-mode`` flag >
+    registry-entry ``session_mode`` field > newest ``epm:session-mode``
+    marker > spawn-defaults CONFIG FILE (kind- and id-cutoff-scoped, see
+    ``_config_file_session_mode``) > ``EPM_SPAWN_DEFAULT_SESSION_MODE=async``
+    (per-process override, scoped to ``kind: experiment`` tasks only) >
+    legacy ``"auto"``. Every unreadable signal falls to the next link — a
+    resolution failure never blocks a spawn and never flips a legacy task
+    async."""
+    explicit = getattr(args, "session_mode", None)
+    if explicit in SESSION_MODES:
+        return explicit
+    mode = _registry_session_mode(issue)
+    if mode is not None:
+        return mode
+    mode = _marker_session_mode(issue)
+    if mode is not None:
+        return mode
+    mode = _config_file_session_mode(issue)
+    if mode is not None:
+        return mode
+    env_default = os.environ.get("EPM_SPAWN_DEFAULT_SESSION_MODE", "").strip().lower()
+    if env_default == "async" and _task_kind_for_mode_default(issue) == "experiment":
+        return "async"
+    return "auto"
+
+
+def _record_session_mode_marker(issue: int, mode: str) -> None:
+    """Post the durable ``epm:session-mode`` marker when the task's newest
+    durable mode record disagrees with ``mode`` (CONTRACTS §2.2: the marker
+    is what survives the watcher's TERMINAL-status registry-entry deletion;
+    newest marker wins, so an explicit downgrade posts a fresh
+    ``{mode: "auto"}`` row rather than rewriting history). Idempotent: a
+    matching newest marker posts nothing, and mode ``auto`` with NO marker
+    history posts nothing (absent = legacy auto already). Loud-but-nonfatal
+    on failure — the registry entry still carries the mode and the next
+    async spawn retries the marker."""
+    try:
+        current = newest_session_mode(list_events(issue))
+    except (OSError, ValueError, RuntimeError) as e:
+        print(
+            f"  WARNING: {SESSION_MODE_KIND} read failed for #{issue} ({e}); "
+            "marker not posted this spawn (registry entry still records the mode)",
+            file=sys.stderr,
+        )
+        return
+    if current == mode or (mode == "auto" and current is None):
+        return
+    # post_event enters a blocking flock with no timeout — bound it with the
+    # #902 daemon-thread join shape so a wedged lock cannot hang the spawn.
+    exc_cell: list[BaseException] = []
+
+    def _post() -> None:
+        try:
+            post_event(
+                issue,
+                SESSION_MODE_KIND,
+                by="spawn_session",
+                note=json.dumps({"mode": mode, "by": "spawn_session", "channel": "spawn-issue"}),
+            )
+        except BaseException as exc:  # loud via exc_cell — never silent
+            exc_cell.append(exc)
+
+    t = threading.Thread(target=_post, daemon=True)
+    t.start()
+    t.join(timeout=STOP_BREADCRUMB_JOIN_TIMEOUT_S)
+    if t.is_alive():
+        print(
+            f"  WARNING: {SESSION_MODE_KIND} marker for #{issue} still posting after "
+            f"{STOP_BREADCRUMB_JOIN_TIMEOUT_S:g}s (wedged lock?); proceeding — the "
+            "registry entry still records the mode",
+            file=sys.stderr,
+        )
+    elif exc_cell:
+        print(
+            f"  WARNING: failed to post {SESSION_MODE_KIND} marker for #{issue} "
+            f"({exc_cell[0]!r}); the registry entry still records the mode — the "
+            "marker is retried on the next explicit-mode spawn",
+            file=sys.stderr,
+        )
+    else:
+        print(f"  session-mode marker posted: {SESSION_MODE_KIND} {{mode: {mode}}}")
 
 
 def _register_manual_session(issue: int, session_id: str, cwd: str) -> None:
@@ -987,7 +1182,7 @@ def _load_campaign_registry_entry(issue: int) -> dict[str, Any] | None:
     path = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     return entry if isinstance(entry, dict) else None
 
@@ -1037,7 +1232,7 @@ def _load_pm_session_ids_ordered() -> list[str]:
         return []
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     sids = data.get("sids") if isinstance(data, dict) else None
     if not isinstance(sids, list):
@@ -1082,7 +1277,7 @@ def _load_session_issue_map() -> dict[str, int]:
         for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 continue
             sid = entry.get("happy_session_id")
             issue = entry.get("issue")
@@ -1208,7 +1403,7 @@ def _load_session_meta() -> dict[str, dict[str, Any]]:
         return {}
     try:
         raw = json.loads(SESSIONS_JSON.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     sessions = raw.get("sessions", {})
     return {sid: (entry.get("metadata") or {}) for sid, entry in sessions.items()}
@@ -1664,7 +1859,13 @@ def _live_children(*, strict: bool = False) -> list[dict[str, Any]]:
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError) as e:
+    except (
+        urllib.error.URLError,
+        OSError,
+        SystemExit,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ) as e:
         if strict:
             raise RuntimeError(f"daemon /list failed: {e}") from e
         return []
@@ -2173,7 +2374,13 @@ def _stop_session_raw(session_id: str) -> bool:
     try:
         with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_S) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError) as e:
+    except (
+        urllib.error.URLError,
+        OSError,
+        TimeoutError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ) as e:
         raise RuntimeError(f"daemon /stop-session transport failure: {e}") from e
     if not isinstance(data, dict) or not isinstance(data.get("success"), bool):
         raise RuntimeError(
@@ -2253,6 +2460,15 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
       safe). ``awaiting_promotion`` stays a human gate regardless.
     """
     issue = args.issue
+    if getattr(args, "session_mode", None) == "async" and not args.auto:
+        # Mission-control rung 0: async mode is wired through the /issue
+        # skill's autonomous branches (Step 2c parked_asked keys on BOTH env
+        # vars) — a bare/bespoke session has no gate that reads it.
+        sys.exit(
+            "spawn-issue: --session-mode async requires --auto (async mode only "
+            "affects autonomous /issue sessions; a bare or --initial-prompt "
+            "session would export nothing and silently stay legacy)"
+        )
     worktree = WORKTREE_DIR / f"issue-{issue}"
     if worktree.is_dir():
         cwd = worktree
@@ -2384,6 +2600,13 @@ def _spawn_issue_session(
     on any failure exit; returns normally on success AND on the deliberate
     exit-0 REGISTRATION-COLLISION suppression branch (which must NOT release
     the lease — see :func:`release_dispatch_lease`)."""
+    # Mission-control rung 0 (CONTRACTS §2.2): resolve the session mode ONCE
+    # for --auto dispatches (explicit --session-mode > registry entry >
+    # durable epm:session-mode marker > spawn-defaults.json config default
+    # (kind + id-cutoff scoped) > EPM_SPAWN_DEFAULT_SESSION_MODE for
+    # kind: experiment > legacy "auto"). Bespoke --initial-prompt one-shots
+    # and bare sessions stay legacy auto by construction.
+    session_mode = _resolve_spawn_session_mode(args, issue) if args.auto else "auto"
     if prompt is not None:
         # ONLY the initial-prompt injection path still depends on the daemon
         # patch (HAPPY_INITIAL_*). The model override rides Happy's native
@@ -2406,6 +2629,15 @@ def _spawn_issue_session(
             "EPM_AUTONOMOUS_SESSION": "1",
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.auto_approve_gpu_hours),
         }
+        if session_mode == "async":
+            # Mission-control rung 0 (CONTRACTS §2): async sessions export
+            # BOTH autonomous env vars — every EPM_AUTONOMOUS_SESSION behavior
+            # fires unchanged; async-specific branches (the Step 2c
+            # parked_asked plan gate) key on this SECOND var. Absent (the
+            # default) ⇒ the env block above is byte-identical to legacy.
+            env = body["environmentVariables"]
+            assert isinstance(env, dict), type(env).__name__
+            env["EPM_ASYNC_SESSION"] = "1"
     # Native model / effort / permission fields for BOTH branches (#2054).
     # `permissionMode: bypassPermissions` is the native equivalent of the
     # `--dangerously-skip-permissions` flag the retired claudeArgs path passed.
@@ -2431,11 +2663,18 @@ def _spawn_issue_session(
     if prompt is not None:
         print(f"  initial prompt: {prompt!r}")
         print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
-        print(
-            "  autonomous: self-drives; auto-approves plans regardless "
-            "of estimated GPU-hours (parks only on a missing estimate, #1771) "
-            "+ at awaiting_promotion"
-        )
+        if session_mode == "async":
+            print(
+                "  session-mode: async (EPM_ASYNC_SESSION=1): self-drives through "
+                "recoverable bugs; plan approval PARKS as a durable epm:ask "
+                "(never self-approves) + parks at awaiting_promotion"
+            )
+        else:
+            print(
+                "  autonomous: self-drives; auto-approves plans regardless "
+                "of estimated GPU-hours (parks only on a missing estimate, #1771) "
+                "+ at awaiting_promotion"
+            )
         # Only the canonical autonomous dispatch (`--auto`, an /issue loop) is
         # registered for crash-recovery. A bespoke --initial-prompt is one-shot
         # and not re-driven.
@@ -2449,8 +2688,20 @@ def _spawn_issue_session(
                     model=args.model,
                     betas=betas,
                     effort=args.effort,
+                    session_mode="async" if session_mode == "async" else None,
                 )
                 print(f"  registered for crash-recovery watch: issue-{issue}.json")
+                if session_mode == "async":
+                    # Durable mode record (CONTRACTS §2.2): the registry entry
+                    # is GC'd at terminal status, the marker survives — the
+                    # watcher's respawn builders resolve it after GC. Posted
+                    # once per task (idempotent inside the helper).
+                    _record_session_mode_marker(issue, "async")
+                elif getattr(args, "session_mode", None) == "auto":
+                    # EXPLICIT --session-mode auto: a durable downgrade record
+                    # (newest marker wins), else a prior async marker would
+                    # keep resolving this task async forever.
+                    _record_session_mode_marker(issue, "auto")
             except RegistrationCollisionError as e:
                 # #843 M2: a duplicate --auto dispatch reached registration —
                 # a DIFFERENT session was registered for this issue inside the
@@ -3422,7 +3673,7 @@ def resolve_session_for_issue(
                 continue
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 continue
             sid = entry.get("happy_session_id")
             ts = entry.get("spawned_at", 0.0)
@@ -3505,6 +3756,22 @@ def main(argv: list[str] | None = None) -> None:
             "auto-approves any plan carrying a parseable estimate, parking only "
             "on a missing/unparseable one. "
             f"Default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g} (unchanged)."
+        ),
+    )
+    p_issue.add_argument(
+        "--session-mode",
+        choices=SESSION_MODES,
+        default=None,
+        help=(
+            "Mission-control rung 0 (CONTRACTS §2): 'async' makes the --auto "
+            "session export EPM_ASYNC_SESSION=1 alongside EPM_AUTONOMOUS_SESSION=1 "
+            "— user gates park as durable epm:ask markers (the Step-2c plan gate "
+            "never self-approves) and the session EXITs at each park. Omitted: "
+            "resolve registry entry > epm:session-mode marker > "
+            "~/.eps-autonomous/spawn-defaults.json (kind_scope + min_task_id "
+            "cutoff) > EPM_SPAWN_DEFAULT_SESSION_MODE (kind: experiment only) "
+            "> legacy 'auto' (byte-identical pre-rung-0 behavior). "
+            "Requires --auto."
         ),
     )
     _add_claude_session_args(p_issue)

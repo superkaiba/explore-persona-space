@@ -227,7 +227,7 @@ def _read_registry_kinds() -> dict[str, str]:
     reg_path = tasks_dir() / "REGISTRY.json"
     try:
         reg = json.loads(reg_path.read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return {}
     out: dict[str, str] = {}
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -481,7 +481,7 @@ def recover_gpu_count(issue: int, events: list[dict[str, Any]]) -> tuple[int, st
                 count = GPU_INTENT_COUNTS.get(entry.get("gpu_intent"))
                 if count:
                     return count, "intent-map"
-    except (OSError, json.JSONDecodeError, RuntimeError):
+    except (OSError, json.JSONDecodeError, RuntimeError, UnicodeDecodeError):
         pass
     return 1, "assumed-1gpu"
 
@@ -762,7 +762,7 @@ def format_title_suffix(
 def _read_snapshot_file() -> dict[str, Any] | None:
     try:
         data = json.loads(SNAPSHOT_PATH.read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
     return data if isinstance(data, dict) else None
 

@@ -29,6 +29,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 # Load `scripts/task.py` as a module so we can hit the pure gate resolver.
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "task.py"
 _spec = importlib.util.spec_from_file_location("task_cli_plan_gate", _SCRIPT)
@@ -425,6 +427,28 @@ def test_stalled_cap_falls_back_on_encoding_corrupt_registry_entry(monkeypatch, 
     assert "no GPU-hour estimate" in msg
 
 
+def test_stalled_overrides_fall_back_on_encoding_corrupt_registry_entry(monkeypatch, tmp_path):
+    """#2168 shape-1 regression (return-default fallback, the dominant guard
+    shape): an encoding-corrupt registry entry raises ``UnicodeDecodeError``
+    from ``read_text()`` — a ``ValueError`` OUTSIDE the pre-#2168
+    ``(JSONDecodeError, OSError)`` except tuple. ``_stalled_session_overrides``
+    is called unwrapped on both respawn paths (stalled + orphan), so a raise
+    would kill the whole watcher tick; the guard must return ``[]`` (the
+    pre-feature "inherit global defaults" branch) instead. A VALID entry is
+    asserted non-empty FIRST so the ``[]`` cannot come from the rig never
+    reading the file."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    entry = tmp_path / "issue-137.json"
+    entry.write_text(json.dumps({"model": "opus"}))
+    assert asw._stalled_session_overrides(137) == ["--model", "opus"]
+    # 0xff is invalid UTF-8 in any position → read_text() raises
+    # UnicodeDecodeError before json.loads is ever reached.
+    entry.write_bytes(b'\xff\xfe{"model": "opus"}')
+    assert asw._stalled_session_overrides(137) == []
+
+
 # ─── #2164: anti-drift source scan ─────────────────────────────────────────
 
 _CAP_ENV_NAME = "EPM_PLAN_AUTOAPPROVE_GPU_HOURS"
@@ -505,7 +529,7 @@ def test_cap_env_read_is_single_sourced():
         repo / ".claude" / "skills" / "issue-tick" / "SKILL.md",
     ):
         assert skill.exists(), f"scanned SKILL.md moved: {skill}"
-        assert not _SKILL_LITERAL_ENV_READ.search(skill.read_text(encoding="utf-8")), (
+        assert not _SKILL_LITERAL_ENV_READ.search(read_workflow_doc(skill)), (
             f"{skill}: snippet re-introduces a literal-bearing env read of "
             f"{_CAP_ENV_NAME} — use task_workflow.resolve_plan_gate_cap()"
         )

@@ -1723,7 +1723,7 @@ class LeaseStore:
             return None
         try:
             payload = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError) as exc:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
             logger.warning("LeaseStore: could not read %s: %s; treating as absent.", path, exc)
             return None
         try:

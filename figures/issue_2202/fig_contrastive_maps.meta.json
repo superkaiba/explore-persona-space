@@ -1,0 +1,140 @@
+{
+  "commit": "149fea61+dirty",
+  "render_id": "216b7bc813644a41",
+  "git_commit": "149fea61",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2202_fold_figs.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-17T20:21:48Z",
+  "figsize": [
+    7.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.24,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.816014485464239,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ridge (banked)",
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.8281862991650739,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.24,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.9535258022331757,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.76,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.8741575294235993,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "MSE-trained MLP (banked)",
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.8783824564933105,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.24,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.9456795091037119,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.76,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.8699326023538879,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "contrastive linear (InfoNCE)",
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.8785836434966301,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.24,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.9424605170505985,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.76,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.5987325218790867,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "contrastive MLP (InfoNCE)",
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.896589880293733,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.24,
+      "rank-1 retrieval accuracy (9,941 contexts)": 0.9560406397746706,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Discrimination-trained maps vs metric-side correction",
+        "ylabel": "rank-1 retrieval accuracy (9,941 contexts)",
+        "legend_labels": [
+          "raw euclidean",
+          "raw cosine",
+          "whitened cosine",
+          "CSLS on the unchanged ridge map (0.976)",
+          "double-strength CSLS penalty (0.985)"
+        ],
+        "annotations": [
+          "0.816",
+          "0.828",
+          "0.954",
+          "0.874",
+          "0.878",
+          "0.946",
+          "0.870",
+          "0.879",
+          "0.942",
+          "0.599",
+          "0.897",
+          "0.956"
+        ],
+        "xticklabels": [
+          "ridge (banked)",
+          "MSE-trained MLP (banked)",
+          "contrastive linear (InfoNCE)",
+          "contrastive MLP (InfoNCE)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

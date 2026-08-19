@@ -1,0 +1,2088 @@
+{
+  "commit": "cb73d730+dirty",
+  "render_id": "1f09b49c228943f9",
+  "git_commit": "cb73d730",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_bypath_brief_frozen_events_resolution.md",
+    ".claude/agent-memory/codex-code-reviewer/feedback_missing_impl_marker_probe_checklist.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-16T18:33:22Z",
+  "figsize": [
+    17.5,
+    5.5
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "activation fraction-of-swap": 0.26375621696934104,
+      "error": 0.09116248365025967,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "activation fraction-of-swap": 0.0015884731999701923,
+      "error": 0.029749239539766367,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "activation fraction-of-swap": -0.023151980416679926,
+      "error": 0.05755874453638115,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "activation fraction-of-swap": -0.02741191237036026,
+      "error": 0.07527917341300934,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.73,
+      "activation fraction-of-swap": 0.838138222694397,
+      "error": 0.0799177885055542,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.73,
+      "activation fraction-of-swap": 0.38718028656310505,
+      "error": 0.07824122529062957,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.73,
+      "activation fraction-of-swap": 0.1528894375789807,
+      "error": 0.0827260905166137,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.73,
+      "activation fraction-of-swap": -0.015318868468360355,
+      "error": 0.034505906570524936,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.73,
+      "activation fraction-of-swap": 0.21457472567756972,
+      "error": 0.053143471327299865,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.73,
+      "activation fraction-of-swap": 0.007351443642821525,
+      "error": 0.006293088077513351,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.73,
+      "activation fraction-of-swap": 0.041449588989572864,
+      "error": 0.020296229512064844,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.73,
+      "activation fraction-of-swap": 0.36272382845395595,
+      "error": 0.12096683784339832,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.73,
+      "activation fraction-of-swap": 0.40993163734674454,
+      "error": 0.1139453501906246,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.73,
+      "activation fraction-of-swap": -0.012423844076693058,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.73,
+      "activation fraction-of-swap": 0.1557692300217847,
+      "error": 0.0514835834432031,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.73,
+      "activation fraction-of-swap": 0.42036772444844245,
+      "error": 0.061265865066753966,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 15.73,
+      "activation fraction-of-swap": 0.3622591694196065,
+      "error": 0.07213890973309223,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 16.73,
+      "activation fraction-of-swap": 0.36266969923268666,
+      "error": 0.06874957219415315,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 17.73,
+      "activation fraction-of-swap": 0.24249034667653696,
+      "error": 0.07572898168582465,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 18.73,
+      "activation fraction-of-swap": 0.28885350885268835,
+      "error": 0.07523240279531036,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 19.73,
+      "activation fraction-of-swap": 0.3914213651894695,
+      "error": 0.12176880504703144,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 20.73,
+      "activation fraction-of-swap": 1.124184489250183,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 21.73,
+      "activation fraction-of-swap": 0.014123805659538548,
+      "error": 0.024743015341624007,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 22.73,
+      "activation fraction-of-swap": 0.0019605204644095567,
+      "error": 0.028909723278613658,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 23.73,
+      "activation fraction-of-swap": 0.04575417695962118,
+      "error": 0.06290441757089198,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 24.73,
+      "activation fraction-of-swap": -0.023197258681510433,
+      "error": 0.06494235907624843,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 25.73,
+      "activation fraction-of-swap": 0.4101126782596111,
+      "error": 0.0639032994077674,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 26.73,
+      "activation fraction-of-swap": 0.4441526472568512,
+      "error": 0.050783253088593466,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 27.73,
+      "activation fraction-of-swap": -0.004494563732860666,
+      "error": 0.08171346369622784,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 28.73,
+      "activation fraction-of-swap": -0.072407981183267,
+      "error": 0.1332255240349861,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 29.73,
+      "activation fraction-of-swap": 0.24766115327515908,
+      "error": 0.07251655644316579,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 30.73,
+      "activation fraction-of-swap": 0.2845300739217136,
+      "error": 0.0861590691260062,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 31.73,
+      "activation fraction-of-swap": 0.3008415182121098,
+      "error": 0.12045338727766647,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 32.73,
+      "activation fraction-of-swap": 0.36185240497191745,
+      "error": 0.13864670096793105,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 33.73,
+      "activation fraction-of-swap": 0.03282134985568485,
+      "error": 0.04360283323923659,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "constraint_knowledge\n(n=16)",
+      "activation fraction-of-swap": 0.07067933422513306,
+      "error": 0.09092165733745786,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "fact_assistant_animal\n(n=36)",
+      "activation fraction-of-swap": -0.01572286875307327,
+      "error": 0.03520578450857607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "fact_novel_queried\n(n=33)",
+      "activation fraction-of-swap": -0.04117364425099257,
+      "error": 0.10526113805897308,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "fact_user_name\n(n=33)",
+      "activation fraction-of-swap": 0.05329840627470703,
+      "error": 0.08482550925180088,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "icl_task_mapping\n(n=7)",
+      "activation fraction-of-swap": 0.5247024382863726,
+      "error": 0.12345107517072132,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "instr_format\n(n=36)",
+      "activation fraction-of-swap": 0.05084156022510595,
+      "error": 0.07566116924087206,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "instr_language\n(n=36)",
+      "activation fraction-of-swap": 0.029194777039164264,
+      "error": 0.036306965628561255,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "list_numeric_detail\n(n=36)",
+      "activation fraction-of-swap": 0.00799652168320285,
+      "error": 0.05860648483503608,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "persona_prompted\n(n=30)",
+      "activation fraction-of-swap": 0.1351924648353209,
+      "error": 0.04350885882410995,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "prior_topic\n(n=36)",
+      "activation fraction-of-swap": 0.00031285306411316723,
+      "error": 0.008303656344757352,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "query_content\n(n=35)",
+      "activation fraction-of-swap": 0.015794563230260142,
+      "error": 0.013128392509492446,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "reasoning_style\n(n=29)",
+      "activation fraction-of-swap": 0.21120811109270515,
+      "error": 0.1538761164491257,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "refusal_boundary\n(n=8)",
+      "activation fraction-of-swap": 0.25238965544849634,
+      "error": 0.08015717050293458,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "user_emotion\n(n=1)",
+      "activation fraction-of-swap": -0.16512086987495422,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "user_expertise\n(n=18)",
+      "activation fraction-of-swap": 0.05835346386043562,
+      "error": 0.045200412411294466,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "verbosity\n(n=35)",
+      "activation fraction-of-swap": 0.18523275735122816,
+      "error": 0.11215572746404046,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "conflict_format_fwd\n(n=33)",
+      "activation fraction-of-swap": 0.07530142409218983,
+      "error": 0.07956338110944314,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "conflict_format_rev\n(n=33)",
+      "activation fraction-of-swap": 0.025016593457566516,
+      "error": 0.06330674097716285,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "conflict_persona_fwd\n(n=28)",
+      "activation fraction-of-swap": 0.1498478605811085,
+      "error": 0.058354250514613716,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "conflict_persona_rev\n(n=28)",
+      "activation fraction-of-swap": -0.010086255513929896,
+      "error": 0.04688784020587003,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "language_implied\n(n=36)",
+      "activation fraction-of-swap": 0.16581584885716438,
+      "error": 0.07097758073359728,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "persona_role_header\n(n=1)",
+      "activation fraction-of-swap": 1.0234549045562744,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "load_fact_assistant_animal_l3\n(n=36)",
+      "activation fraction-of-swap": 0.0015952593724553783,
+      "error": 0.036965762041897186,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "load_fact_assistant_animal_l5\n(n=36)",
+      "activation fraction-of-swap": -0.04356173985999905,
+      "error": 0.05735205759103537,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "load_fact_user_name_l3\n(n=33)",
+      "activation fraction-of-swap": 0.07976386523946669,
+      "error": 0.07508381368789932,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "load_fact_user_name_l5\n(n=33)",
+      "activation fraction-of-swap": 0.020406180936278717,
+      "error": 0.0842312795388738,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "load_instr_format_l3\n(n=35)",
+      "activation fraction-of-swap": 0.07481780254415103,
+      "error": 0.08082741522629343,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "load_instr_format_l5\n(n=35)",
+      "activation fraction-of-swap": 0.1564237805083394,
+      "error": 0.06791572737607307,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recency_fact_user_name_d3\n(n=33)",
+      "activation fraction-of-swap": 0.11611643766589237,
+      "error": 0.13392481154649316,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recency_fact_user_name_d5\n(n=33)",
+      "activation fraction-of-swap": -0.0939358573858485,
+      "error": 0.13240254494770792,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recency_instr_format_d3\n(n=31)",
+      "activation fraction-of-swap": 0.08215266784592982,
+      "error": 0.06955500190566864,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recency_instr_format_d5\n(n=18)",
+      "activation fraction-of-swap": 0.1287957092281431,
+      "error": 0.12212467922266412,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recency_persona_prompted_d3\n(n=24)",
+      "activation fraction-of-swap": 0.07481214869767427,
+      "error": 0.07734516088627666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recency_persona_prompted_d5\n(n=18)",
+      "activation fraction-of-swap": 0.11971948562293416,
+      "error": 0.14102525794716914,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recency_prior_topic_d3\n(n=27)",
+      "activation fraction-of-swap": 0.034519590096789655,
+      "error": 0.026520701852644338,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "activation fraction-of-swap": 0.10181155358441174,
+      "error": 0.20180990320222916,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "activation fraction-of-swap": 0.014509812372529672,
+      "error": 0.03688091748206514,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "activation fraction-of-swap": 0.09902248181628459,
+      "error": 0.0888095294379375,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "activation fraction-of-swap": 0.01754113207712318,
+      "error": 0.08001060144143235,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.27,
+      "activation fraction-of-swap": 0.4555347646985735,
+      "error": 0.17728897253317485,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.27,
+      "activation fraction-of-swap": 0.1365426824324661,
+      "error": 0.11297173718792489,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.27,
+      "activation fraction-of-swap": 0.11575912926087363,
+      "error": 0.04982500388949927,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.27,
+      "activation fraction-of-swap": 0.11258006659853789,
+      "error": 0.05977130851113336,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.27,
+      "activation fraction-of-swap": 0.1446312189102173,
+      "error": 0.05579802069890622,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.27,
+      "activation fraction-of-swap": 0.0044276021492098356,
+      "error": 0.007425014184708636,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.27,
+      "activation fraction-of-swap": 0.018132866380204046,
+      "error": 0.010666218958711914,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.27,
+      "activation fraction-of-swap": 0.10957576362576721,
+      "error": 0.10999781667407407,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 12.27,
+      "activation fraction-of-swap": 0.21527852141298354,
+      "error": 0.2355453489581123,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 13.27,
+      "activation fraction-of-swap": 0.04711144044995308,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 14.27,
+      "activation fraction-of-swap": 0.0801287584213747,
+      "error": 0.042797758972220525,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 15.27,
+      "activation fraction-of-swap": 0.2711743144983692,
+      "error": 0.0811818105571105,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 16.27,
+      "activation fraction-of-swap": 0.05596644849036679,
+      "error": 0.07308636364019053,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 17.27,
+      "activation fraction-of-swap": 0.19756757304298156,
+      "error": 0.09527987257408146,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 18.27,
+      "activation fraction-of-swap": 0.05295793376197772,
+      "error": 0.05087630060651072,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 19.27,
+      "activation fraction-of-swap": 0.2472476736376328,
+      "error": 0.11165941622374309,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 20.27,
+      "activation fraction-of-swap": 0.3067050884936988,
+      "error": 0.1414468764694498,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 21.27,
+      "activation fraction-of-swap": 1.177270531654358,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 22.27,
+      "activation fraction-of-swap": 0.019087077118456364,
+      "error": 0.03684518051838192,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 23.27,
+      "activation fraction-of-swap": -0.015629109603145883,
+      "error": 0.059547087847184016,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 24.27,
+      "activation fraction-of-swap": 0.1312401286241683,
+      "error": 0.12643102495154984,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 25.27,
+      "activation fraction-of-swap": 0.058295790726939835,
+      "error": 0.11088018951528332,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 26.27,
+      "activation fraction-of-swap": 0.11792405976780823,
+      "error": 0.06291035317682792,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 27.27,
+      "activation fraction-of-swap": 0.16429614499211312,
+      "error": 0.07516121668208921,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 28.27,
+      "activation fraction-of-swap": -0.0092392038328178,
+      "error": 0.1009766275225433,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 29.27,
+      "activation fraction-of-swap": -0.03455832414329052,
+      "error": 0.13679558868435293,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 30.27,
+      "activation fraction-of-swap": 0.08964677198579715,
+      "error": 0.05030992634973728,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 31.27,
+      "activation fraction-of-swap": 0.16864499004764688,
+      "error": 0.1190483091334398,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 32.27,
+      "activation fraction-of-swap": 0.12329005034795652,
+      "error": 0.07716946729657742,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 33.27,
+      "activation fraction-of-swap": 0.19729986548837689,
+      "error": 0.11977522627760964,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 34.27,
+      "activation fraction-of-swap": 0.05895262226005326,
+      "error": 0.06401155320873606,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.27,
+      "activation fraction-of-swap": 0.1762643116642721,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.73,
+      "activation fraction-of-swap": -0.025962353298544055,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.73,
+      "activation fraction-of-swap": -0.08075525887684445,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.7299999999999995,
+      "activation fraction-of-swap": -0.10370476597666062,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.7299999999999995,
+      "activation fraction-of-swap": 0.7601818186896188,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.73,
+      "activation fraction-of-swap": 0.3093960827113026,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.73,
+      "activation fraction-of-swap": 0.07472956353562445,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.73,
+      "activation fraction-of-swap": -0.05147930332653535,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.73,
+      "activation fraction-of-swap": 0.16298021147958933,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.73,
+      "activation fraction-of-swap": 0.001326584950503376,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.73,
+      "activation fraction-of-swap": 0.023126380466856063,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.73,
+      "activation fraction-of-swap": 0.24219148442438193,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.73,
+      "activation fraction-of-swap": 0.29550399603322147,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.73,
+      "activation fraction-of-swap": -0.012423844076693058,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.73,
+      "activation fraction-of-swap": 0.10818136644213358,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.73,
+      "activation fraction-of-swap": 0.35711731480168446,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.73,
+      "activation fraction-of-swap": 0.2895772790818503,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.73,
+      "activation fraction-of-swap": 0.2934996955012056,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.73,
+      "activation fraction-of-swap": 0.17205986849897142,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 18.73,
+      "activation fraction-of-swap": 0.2177434397171185,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.73,
+      "activation fraction-of-swap": 0.2713046528825847,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 20.73,
+      "activation fraction-of-swap": 1.124184489250183,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 21.73,
+      "activation fraction-of-swap": -0.010053366825337032,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 22.73,
+      "activation fraction-of-swap": -0.029766537090634104,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 23.73,
+      "activation fraction-of-swap": -0.016163293236273933,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 24.73,
+      "activation fraction-of-swap": -0.08824036110361869,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.73,
+      "activation fraction-of-swap": 0.34740623965859413,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.73,
+      "activation fraction-of-swap": 0.393790287652186,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 27.73,
+      "activation fraction-of-swap": -0.08768382741378225,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 28.73,
+      "activation fraction-of-swap": -0.20808482947265447,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 29.73,
+      "activation fraction-of-swap": 0.17703923317153125,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 30.73,
+      "activation fraction-of-swap": 0.20043116972471278,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 31.73,
+      "activation fraction-of-swap": 0.18792344158282503,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 32.73,
+      "activation fraction-of-swap": 0.2281855835682816,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 33.73,
+      "activation fraction-of-swap": -0.0024537800149388445,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.27,
+      "activation fraction-of-swap": 0.3585892789647914,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.73,
+      "activation fraction-of-swap": 0.033536125780988676,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.73,
+      "activation fraction-of-swap": 0.034362230195917845,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.7299999999999995,
+      "activation fraction-of-swap": 0.046853580849358055,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.7299999999999995,
+      "activation fraction-of-swap": 0.9200173957007272,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.73,
+      "activation fraction-of-swap": 0.46587853329256174,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.73,
+      "activation fraction-of-swap": 0.24018174456885186,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.73,
+      "activation fraction-of-swap": 0.017532509814514513,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.73,
+      "activation fraction-of-swap": 0.26926715413418906,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.73,
+      "activation fraction-of-swap": 0.013912761105530079,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.73,
+      "activation fraction-of-swap": 0.06371883949098575,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.73,
+      "activation fraction-of-swap": 0.48412516011117857,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.73,
+      "activation fraction-of-swap": 0.5233946964144707,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.73,
+      "activation fraction-of-swap": -0.012423844076693058,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 13.73,
+      "activation fraction-of-swap": 0.21114853332853978,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.73,
+      "activation fraction-of-swap": 0.4796490449351924,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 15.73,
+      "activation fraction-of-swap": 0.4338550985480348,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.73,
+      "activation fraction-of-swap": 0.4309988398895119,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 17.73,
+      "activation fraction-of-swap": 0.3235178318706207,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 18.73,
+      "activation fraction-of-swap": 0.3682082453077392,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.73,
+      "activation fraction-of-swap": 0.5148422629766476,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 20.73,
+      "activation fraction-of-swap": 1.124184489250183,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 21.73,
+      "activation fraction-of-swap": 0.039432663857910985,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 22.73,
+      "activation fraction-of-swap": 0.028052909466593216,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 23.73,
+      "activation fraction-of-swap": 0.10964554190551003,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 24.73,
+      "activation fraction-of-swap": 0.04164435704887816,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 25.73,
+      "activation fraction-of-swap": 0.47521283847412893,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 26.73,
+      "activation fraction-of-swap": 0.4953567938293729,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 27.73,
+      "activation fraction-of-swap": 0.07574309997867341,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 28.73,
+      "activation fraction-of-swap": 0.05836621859731772,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 29.73,
+      "activation fraction-of-swap": 0.32207234605786283,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 30.73,
+      "activation fraction-of-swap": 0.3727493079767252,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 31.73,
+      "activation fraction-of-swap": 0.42883021613815797,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 32.73,
+      "activation fraction-of-swap": 0.5054789855041437,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 33.73,
+      "activation fraction-of-swap": 0.08475188646353433,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "activation fraction-of-swap": -0.015378673694794995,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "activation fraction-of-swap": -0.0519833926400477,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "activation fraction-of-swap": -0.15517471666080934,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "activation fraction-of-swap": -0.032652983637385516,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "activation fraction-of-swap": 0.40875448541981835,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "activation fraction-of-swap": -0.026926971001861,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "activation fraction-of-swap": -0.0062869053860292005,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "activation fraction-of-swap": -0.05122873522082551,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "activation fraction-of-swap": 0.09288529929782575,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "activation fraction-of-swap": -0.00858592224416902,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "activation fraction-of-swap": 0.0033614232692135773,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "activation fraction-of-swap": 0.050783946142724634,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "activation fraction-of-swap": 0.16674220736604184,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 13.0,
+      "activation fraction-of-swap": -0.16512086987495422,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "activation fraction-of-swap": 0.016436066179691504,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.0,
+      "activation fraction-of-swap": 0.07503373498363154,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "activation fraction-of-swap": -0.006463509650590518,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 17.0,
+      "activation fraction-of-swap": -0.03615128140751921,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 18.0,
+      "activation fraction-of-swap": 0.0921274651207828,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "activation fraction-of-swap": -0.056171761747516154,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 20.0,
+      "activation fraction-of-swap": 0.09493440916477185,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 21.0,
+      "activation fraction-of-swap": 1.0234549045562744,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 22.0,
+      "activation fraction-of-swap": -0.03583439189694925,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 23.0,
+      "activation fraction-of-swap": -0.10855183928280085,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 24.0,
+      "activation fraction-of-swap": 0.005042710970861439,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 25.0,
+      "activation fraction-of-swap": -0.06282434676435183,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 26.0,
+      "activation fraction-of-swap": -0.004857479413705207,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 27.0,
+      "activation fraction-of-swap": 0.0891201031287866,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 28.0,
+      "activation fraction-of-swap": -0.00850899182401145,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 29.0,
+      "activation fraction-of-swap": -0.2315495219123973,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 30.0,
+      "activation fraction-of-swap": 0.010844866575432877,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 31.0,
+      "activation fraction-of-swap": 0.016110960044251346,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 32.0,
+      "activation fraction-of-swap": 0.005217932340262146,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 33.0,
+      "activation fraction-of-swap": -0.022869886788410232,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 34.0,
+      "activation fraction-of-swap": 0.01079840882955102,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "activation fraction-of-swap": 0.16646464098012073,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "activation fraction-of-swap": 0.018428176377104435,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "activation fraction-of-swap": 0.055347559457136805,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "activation fraction-of-swap": 0.13699803486621626,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "activation fraction-of-swap": 0.655656635761261,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "activation fraction-of-swap": 0.12439536747988311,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "activation fraction-of-swap": 0.0663270258710933,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "activation fraction-of-swap": 0.06598423444924666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "activation fraction-of-swap": 0.17990301694604566,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "activation fraction-of-swap": 0.008021390445345685,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "activation fraction-of-swap": 0.02961820828819847,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "activation fraction-of-swap": 0.358536179040976,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "activation fraction-of-swap": 0.327056548371911,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 13.0,
+      "activation fraction-of-swap": -0.16512086987495422,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 14.0,
+      "activation fraction-of-swap": 0.10683689100228043,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 15.0,
+      "activation fraction-of-swap": 0.29934518991171244,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "activation fraction-of-swap": 0.15266325256829574,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 17.0,
+      "activation fraction-of-swap": 0.09046220054680648,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 18.0,
+      "activation fraction-of-swap": 0.20883596615001024,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 19.0,
+      "activation fraction-of-swap": 0.037603918664223905,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 20.0,
+      "activation fraction-of-swap": 0.2368895706319664,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 21.0,
+      "activation fraction-of-swap": 1.0234549045562744,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 22.0,
+      "activation fraction-of-swap": 0.03809713218684512,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 23.0,
+      "activation fraction-of-swap": 0.006152275899269893,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 24.0,
+      "activation fraction-of-swap": 0.1552103383466601,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 25.0,
+      "activation fraction-of-swap": 0.10563821231339578,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 26.0,
+      "activation fraction-of-swap": 0.15679735103888165,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 27.0,
+      "activation fraction-of-swap": 0.22495155788093274,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 28.0,
+      "activation fraction-of-swap": 0.2593406312689749,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 29.0,
+      "activation fraction-of-swap": 0.03325556798301854,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 30.0,
+      "activation fraction-of-swap": 0.14995487038677016,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 31.0,
+      "activation fraction-of-swap": 0.2603603184895796,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 32.0,
+      "activation fraction-of-swap": 0.15990825411281548,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 33.0,
+      "activation fraction-of-swap": 0.25918062910592804,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 34.0,
+      "activation fraction-of-swap": 0.0638398125348397,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.27,
+      "activation fraction-of-swap": -0.08183385913725943,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.27,
+      "activation fraction-of-swap": -0.023227063682861628,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.2699999999999996,
+      "activation fraction-of-swap": 0.012871710112261958,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.2699999999999996,
+      "activation fraction-of-swap": -0.06280231220280809,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.27,
+      "activation fraction-of-swap": 0.2808953140463148,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.27,
+      "activation fraction-of-swap": 0.02167406945437607,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.27,
+      "activation fraction-of-swap": 0.06657910843205173,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.27,
+      "activation fraction-of-swap": 0.05641729635471064,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.27,
+      "activation fraction-of-swap": 0.09246717557233448,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.27,
+      "activation fraction-of-swap": -0.002953773967439903,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.27,
+      "activation fraction-of-swap": 0.007658813564173346,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.27,
+      "activation fraction-of-swap": -0.002169428240299101,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.27,
+      "activation fraction-of-swap": -0.022343273274600506,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 13.27,
+      "activation fraction-of-swap": 0.04711144044995308,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 14.27,
+      "activation fraction-of-swap": 0.04056595371156517,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 15.27,
+      "activation fraction-of-swap": 0.1917030897354042,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.27,
+      "activation fraction-of-swap": -0.018542536774255117,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 17.27,
+      "activation fraction-of-swap": 0.10429710496894339,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 18.27,
+      "activation fraction-of-swap": 0.005465669111747826,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.27,
+      "activation fraction-of-swap": 0.13740034252238859,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 20.27,
+      "activation fraction-of-swap": 0.16693153829085836,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 21.27,
+      "activation fraction-of-swap": 1.177270531654358,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 22.27,
+      "activation fraction-of-swap": -0.016784943747592887,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 23.27,
+      "activation fraction-of-swap": -0.08237322010358589,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 24.27,
+      "activation fraction-of-swap": 0.009065097686129092,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 25.27,
+      "activation fraction-of-swap": -0.04446278202601455,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 26.27,
+      "activation fraction-of-swap": 0.05819033053969699,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 27.27,
+      "activation fraction-of-swap": 0.09220242047283267,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 28.27,
+      "activation fraction-of-swap": -0.10882715249970329,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 29.27,
+      "activation fraction-of-swap": -0.1763705414042554,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 30.27,
+      "activation fraction-of-swap": 0.04259751360082338,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 31.27,
+      "activation fraction-of-swap": 0.05536159609133999,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 32.27,
+      "activation fraction-of-swap": 0.051246934758576876,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 33.27,
+      "activation fraction-of-swap": 0.0866809683968313,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 34.27,
+      "activation fraction-of-swap": 0.0077329888007995964,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.27,
+      "activation fraction-of-swap": 0.3217859472671989,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.27,
+      "activation fraction-of-swap": 0.05053477128126865,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.2699999999999996,
+      "activation fraction-of-swap": 0.19049076898813697,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.2699999999999996,
+      "activation fraction-of-swap": 0.09721889068005662,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.27,
+      "activation fraction-of-swap": 0.6354732591126645,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.27,
+      "activation fraction-of-swap": 0.24761754383022586,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.27,
+      "activation fraction-of-swap": 0.16622911621105027,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.27,
+      "activation fraction-of-swap": 0.17595991337697736,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.27,
+      "activation fraction-of-swap": 0.20406321697014693,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.27,
+      "activation fraction-of-swap": 0.011896254401977368,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10.27,
+      "activation fraction-of-swap": 0.028991251481597174,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 11.27,
+      "activation fraction-of-swap": 0.21782620510784906,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 12.27,
+      "activation fraction-of-swap": 0.4487474246416241,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 13.27,
+      "activation fraction-of-swap": 0.04711144044995308,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 14.27,
+      "activation fraction-of-swap": 0.12616147165600622,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 15.27,
+      "activation fraction-of-swap": 0.3540667108496252,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 16.27,
+      "activation fraction-of-swap": 0.12763019050612592,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 17.27,
+      "activation fraction-of-swap": 0.29485685011710633,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 18.27,
+      "activation fraction-of-swap": 0.10721827032476927,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 19.27,
+      "activation fraction-of-swap": 0.36071917496987477,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 20.27,
+      "activation fraction-of-swap": 0.44982529122975795,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 21.27,
+      "activation fraction-of-swap": 1.177270531654358,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 22.27,
+      "activation fraction-of-swap": 0.05690541728917095,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 23.27,
+      "activation fraction-of-swap": 0.03672095559078215,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 24.27,
+      "activation fraction-of-swap": 0.2619271475892288,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 25.27,
+      "activation fraction-of-swap": 0.17729759700455208,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 26.27,
+      "activation fraction-of-swap": 0.18401103689335283,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 27.27,
+      "activation fraction-of-swap": 0.24252485383701108,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 28.27,
+      "activation fraction-of-swap": 0.0931261025453833,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 29.27,
+      "activation fraction-of-swap": 0.09722063596445049,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 30.27,
+      "activation fraction-of-swap": 0.14321736630029794,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 31.27,
+      "activation fraction-of-swap": 0.2934582143582196,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 32.27,
+      "activation fraction-of-swap": 0.2055858693517317,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 33.27,
+      "activation fraction-of-swap": 0.3262314209520506,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 34.27,
+      "activation fraction-of-swap": 0.1357560952182717,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 315,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "patch effect on the answer vector, per information type (context-end patch)",
+        "ylabel": "activation fraction-of-swap",
+        "legend_labels": [
+          "patched with the paired donor",
+          "shuffled-donor null",
+          "cross-type-donor null"
+        ],
+        "xticklabels": [
+          "constraint_knowledge\n(n=16)",
+          "fact_assistant_animal\n(n=36)",
+          "fact_novel_queried\n(n=33)",
+          "fact_user_name\n(n=33)",
+          "icl_task_mapping\n(n=7)",
+          "instr_format\n(n=36)",
+          "instr_language\n(n=36)",
+          "list_numeric_detail\n(n=36)",
+          "persona_prompted\n(n=30)",
+          "prior_topic\n(n=36)",
+          "query_content\n(n=35)",
+          "reasoning_style\n(n=29)",
+          "refusal_boundary\n(n=8)",
+          "user_emotion\n(n=1)",
+          "user_expertise\n(n=18)",
+          "verbosity\n(n=35)",
+          "conflict_format_fwd\n(n=33)",
+          "conflict_format_rev\n(n=33)",
+          "conflict_persona_fwd\n(n=28)",
+          "conflict_persona_rev\n(n=28)",
+          "language_implied\n(n=36)",
+          "persona_role_header\n(n=1)",
+          "load_fact_assistant_animal_l3\n(n=36)",
+          "load_fact_assistant_animal_l5\n(n=36)",
+          "load_fact_user_name_l3\n(n=33)",
+          "load_fact_user_name_l5\n(n=33)",
+          "load_instr_format_l3\n(n=35)",
+          "load_instr_format_l5\n(n=35)",
+          "recency_fact_user_name_d3\n(n=33)",
+          "recency_fact_user_name_d5\n(n=33)",
+          "recency_instr_format_d3\n(n=31)",
+          "recency_instr_format_d5\n(n=18)",
+          "recency_persona_prompted_d3\n(n=24)",
+          "recency_persona_prompted_d5\n(n=18)",
+          "recency_prior_topic_d3\n(n=27)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ],
+    "series": [
+      "patched with the paired donor",
+      "shuffled-donor null",
+      "cross-type-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -25,6 +25,8 @@ restructure that renames the section headings below.
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -62,7 +64,7 @@ _HEREDOC_COMPOSE = re.compile(r"""(?:cat\s*>>?|tee)\s*("?\$\{?[A-Za-z_]|/tmp/)\S
 
 
 def _region(name: str, start: str, end: str) -> str:
-    text = SKILL.read_text()
+    text = issue_skill_text()
     i = text.find(start)
     assert i != -1, f"{name}: start anchor not found — update the pinned anchor: {start!r}"
     j = text.find(end, i)

@@ -23,8 +23,10 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -209,10 +211,16 @@ def test_good_plan_passes_all():
         # SKIP: GOOD_PLAN's §9 declares no multi-GPU width token —
         # trigger-conditional (#2276). (c62 is main()-wired, not in CHECKS.)
         "c63_declared_width_vs_launch": "SKIP",
+        "c64_exactness_grain": "SKIP",
+        # SKIP: GOOD_PLAN carries no smoke-fixture size claim — its only
+        # smoke mentions ("smoke run", "smoke-test") carry no fixture noun
+        # + row floor on one line — trigger-conditional (#2178).
+        "c65_smoke_fixture_size": "SKIP",
+        "c66_smoke_producer_coverage": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 60
+    assert len(results) == 63
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6342,12 +6350,16 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   #2276)
     # + c63 (SKIP: GOOD_PLAN's §9 declares no multi-GPU width token;
     #   trigger-conditional, #2276)
-    assert payload["n_skip"] == 54
+    # + c64 (SKIP: GOOD_PLAN carries no sampled exactness claim; trigger-
+    #   conditional, #2174)
+    # + c65/c66 (SKIP: GOOD_PLAN carries no smoke-fixture size claim;
+    #   trigger-conditional, #2178)
+    assert payload["n_skip"] == 57
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 63
-    assert len({c["id"] for c in payload["checks"]}) == 63
+    assert len(payload["checks"]) == 66
+    assert len({c["id"] for c in payload["checks"]}) == 66
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10445,8 +10457,15 @@ def test_c47_corpus_scan_old_rule_values_preserved():
     returns the SAME value. Asserts the scan completes and the violation
     set is EMPTY; deliberately does NOT pin the WARN count or the plan set
     (the corpus moves — counts are the implementer's §6 report, not a
-    regression surface)."""
-    from explore_persona_space.plan_wall_budget import locate_wall_cells, parse_wall_cell
+    regression surface). Range cells are exempt (#2179 AC7): a range now
+    parses as its UPPER bound BY DESIGN — the monotone corollary
+    (new >= old, no new disables) is pinned by
+    ``tests/test_plan_wall_budget.py::test_corpus_monotone_upper_bound_invariant``."""
+    from explore_persona_space.plan_wall_budget import (
+        is_range_cell,
+        locate_wall_cells,
+        parse_wall_cell,
+    )
 
     old_rule = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
     plans = sorted((REPO_ROOT / "tasks").glob("*/*/plans/plan.md"))
@@ -10460,6 +10479,8 @@ def test_c47_corpus_scan_old_rule_values_preserved():
             if located.short_row:
                 continue
             n_cells += 1
+            if is_range_cell(located.cell):
+                continue  # 2179: deliberate upper-bound deviation, exempt by design
             m = old_rule.match(located.cell)
             if m is None:
                 continue
@@ -11003,8 +11024,9 @@ def test_c51_docstring_declares_eighth_read_exception():
     # read-exception preamble before.
     # Whitespace-normalized: the preamble is hard-wrapped, so the phrase
     # spans a line break in the source.
+    # (#2178: c65/c66 raise the disclosed-exception count to ten.)
     doc = " ".join((verify_plan.__doc__ or "").split())
-    assert "Eight disclosed read-only exceptions" in doc
+    assert "Ten disclosed read-only exceptions" in doc
     assert "check 51" in doc
 
 
@@ -12963,3 +12985,561 @@ def test_c62_c63_registered_in_checks_and_docstring_catalog():
     # propagates them to the consumer surface).
     assert "N/A — backend pin-claim reconciled" in verify_plan.__doc__
     assert "N/A — declared width vs launch width reconciled" in verify_plan.__doc__
+
+
+# ─── Checks 65/66 — smoke-fixture size claim vs realized fixtures (#2178) ──
+
+# The #1336 v16 incident grain: 8 rows in six of seven smoke corpora, 32 in
+# the seventh, SMOKE_SAMPLE_N = 8 in the producing script, plan claim >= 40.
+_C65_FIXTURE_ROWS = {
+    "gsm8k_test1319.jsonl": 8,
+    "gsm8k_train_full.jsonl": 8,
+    "if11k.jsonl": 8,
+    "lmsys23k.jsonl": 32,
+    "math7500.jsonl": 8,
+    "sft11k.jsonl": 8,
+    "uf11k.jsonl": 8,
+}
+
+# The v16.md:127 incident sentence, verbatim shape (three conjuncts on one line).
+_C65_CLAIM_LINE = "The smoke fixture slice is sized ≥ 40 rows per smoke corpus so the whole-group packer has resolution."
+
+_C65_GLOB_LINE = (
+    "Fixtures live at data/issue_1336/corpora_v2_smoke/*.jsonl (gitignored worktree data)."
+)
+
+
+def _c65_plan(
+    *extra_lines,
+    claim=_C65_CLAIM_LINE,
+    glob_line=_C65_GLOB_LINE,
+    h1="# Plan v16 — Task #1336: pooled split (fixture)",
+):
+    parts = [h1, "", "## 4. Design", ""]
+    if claim:
+        parts += [claim, ""]
+    if glob_line:
+        parts += [glob_line, ""]
+    parts += list(extra_lines)
+    return "\n".join(parts) + "\n"
+
+
+def _c65_root(tmp_path, *, fixtures=True, script=True, under_worktree=None):
+    """Fixture repo root for monkeypatching verify_plan._C65_REPO_ROOT (the
+    _c31_fixture_root convention). ``under_worktree`` relocates the fixture
+    files beneath ``.claude/worktrees/<name>/`` (the rung-3 shape)."""
+    root = tmp_path / "fixroot"
+    base = root if under_worktree is None else root / ".claude" / "worktrees" / under_worktree
+    if fixtures:
+        fdir = base / "data" / "issue_1336" / "corpora_v2_smoke"
+        fdir.mkdir(parents=True)
+        for fname, n in _C65_FIXTURE_ROWS.items():
+            (fdir / fname).write_text("".join(f'{{"row": {i}}}\n' for i in range(n)))
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    if script:
+        (root / "scripts" / "issue1336_stage_corpora.py").write_text(
+            'OUT_DIR = "data/issue_1336/corpora_v2_smoke"\nSMOKE_SAMPLE_N = 8\n'
+        )
+    return root
+
+
+def test_c65_c66_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_smoke_fixture_size in verify_plan.CHECKS
+    assert verify_plan.check_smoke_producer_coverage in verify_plan.CHECKS
+    assert "c65 smoke-fixture size claim" in verify_plan.__doc__
+    assert "c66 smoke-fixture producing" in verify_plan.__doc__
+    # conditional-checks enumeration (comma-separated membership form, the
+    # c56/c57 reflow-tolerant pin).
+    assert "65, 66" in verify_plan.__doc__
+    # Escape phrases registered in the docstring.
+    assert "N/A — no smoke fixture size claim" in verify_plan.__doc__
+    assert "N/A — no fixture-producing script change needed" in verify_plan.__doc__
+    # Round-2 no-smoke-run declaration route (criterion 5 clause 3).
+    assert "N/A — no smoke run" in verify_plan.__doc__
+
+
+def test_c65_v16_shape_fails(tmp_path, monkeypatch):
+    # Acceptance criterion 2 (Arm A): claim 40 vs realized 8/32 -> FAIL,
+    # detail naming the winning rung + per-file counts (concern 5).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "FAIL"
+    assert "working tree" in r.detail
+    assert "lmsys23k.jsonl=32" in r.detail
+    assert "claimed floor 40" in r.detail
+    assert "realized min 8" in r.detail
+
+
+def test_c66_v16_shape_warns(tmp_path, monkeypatch):
+    # Acceptance criterion 2 (Arm B): producing script on disk, unnamed in
+    # the plan -> WARN naming the candidate.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r.status == "WARN"
+    assert "scripts/issue1336_stage_corpora.py" in r.detail
+    assert "appear nowhere in" in r.detail
+
+
+def test_c65_floor_at_or_below_realized_passes(tmp_path, monkeypatch):
+    # Acceptance criterion 3: floor <= realized minimum -> PASS.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    claim = "The smoke fixture slice is sized ≥ 8 rows per smoke corpus."
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(claim=claim), "experiment")
+    assert r.status == "PASS"
+    assert "working tree" in r.detail
+    # Arm B: claim satisfied -> no producing-script adjudication needed.
+    r66 = verify_plan.check_smoke_producer_coverage(_c65_plan(claim=claim), "experiment")
+    assert r66.status == "SKIP"
+    assert "claim satisfied" in r66.detail
+
+
+def test_c66_producing_script_listed_passes(tmp_path, monkeypatch):
+    # Acceptance criterion 4: the plan budgets the producing-script change,
+    # so Arm B passes even while Arm A trips.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("Modified files: scripts/issue1336_stage_corpora.py (raise the sample floor).")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+    r = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r.status == "PASS"
+    assert "issue1336_stage_corpora.py" in r.detail
+
+
+def test_c65_unresolvable_glob_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: a named glob that resolves at NO rung -> SKIP
+    # (never FAIL); Arm B cannot adjudicate either.
+    monkeypatch.setattr(
+        verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False, script=False)
+    )
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "SKIP"
+    assert "unresolvable" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r66.status == "SKIP"
+    assert "realized evidence unresolved" in r66.detail
+
+
+def test_c65_no_path_token_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: a claim with no fixture path token -> SKIP.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(glob_line=None), "experiment")
+    assert r.status == "SKIP"
+    assert "fixture path not named" in r.detail
+
+
+def test_c65_no_claim_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: no smoke-fixture size language -> both SKIP
+    # (a bare glob token never arms the checks).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan(claim=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no smoke fixture size claim detected" in r.detail
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_constant_only_evidence_warns(tmp_path, monkeypatch):
+    # Constant-route contradiction: no fixture files resolve, the repo
+    # defines the claimed constant at a lower value -> WARN by design,
+    # never FAIL (concern 6).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    plan = _c65_plan(
+        "The staging script pins the smoke sample floor as `SMOKE_SAMPLE_N = 40`.",
+        claim=None,
+        glob_line=None,
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "WARN"
+    assert "SMOKE_SAMPLE_N = 40" in r.detail
+    assert "SMOKE_SAMPLE_N = 8" in r.detail
+    # Arm B: constant-route contradiction + the defining script unnamed -> WARN.
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "WARN"
+    assert "issue1336_stage_corpora.py" in r66.detail
+
+
+def test_c65_constant_claim_consistent_passes(tmp_path, monkeypatch):
+    # Verdict-table row 6: constant-form claim consistent with the repo
+    # definition -> PASS on constant-only evidence; Arm B has no
+    # contradiction to adjudicate.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    plan = _c65_plan(
+        "The staging script keeps the smoke sample floor at `SMOKE_SAMPLE_N = 8`.",
+        claim=None,
+        glob_line=None,
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "PASS"
+    assert "constant-only evidence" in r.detail
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_fenced_claim_does_not_trigger(tmp_path, monkeypatch):
+    # The incident sentence inside a fence never triggers (fence-masked
+    # claim grammar).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("```", _C65_CLAIM_LINE, "```", claim=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no smoke fixture size claim detected" in r.detail
+
+
+def test_c65_standalone_na_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no smoke fixture size claim")
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c65_wrapped_na_does_not_escape(tmp_path, monkeypatch):
+    # A backtick-wrapped paste of the escape phrase is DELIBERATELY
+    # unrecognized (#1238 — the _standalone_na_declared convention).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("`N/A — no smoke fixture size claim`")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+
+
+def test_c66_standalone_na_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no fixture-producing script change needed")
+    r = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c65_c66_no_smoke_declaration_with_live_claim_skips(tmp_path, monkeypatch):
+    # Round-2 FIX 1 (concerns `no-smoke-run-skip` /
+    # `c65-no-smoke-run-declaration-skip`, criterion 5 clause 3): a
+    # standalone no-smoke declaration disarms BOTH checks even when a live
+    # claim line + resolvable fixtures are present — the declaration wins
+    # over the claim grammar (pre-fix this plan FAILed c65 / WARNed c66).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no dry-run smoke")  # default claim + glob lines stay present
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "declares no smoke run" in r.detail
+    assert "N/A — no dry-run smoke" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "SKIP"
+    assert "declares no smoke run" in r66.detail
+
+
+def test_c65_c66_no_smoke_run_variant_alone_skips(tmp_path, monkeypatch):
+    # Declaration alone (no claim, no path token): the plain `no smoke run`
+    # variant SKIPs both checks with a detail naming the declaration.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no smoke run", claim=None, glob_line=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "N/A — no smoke run" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "SKIP"
+    assert "N/A — no smoke run" in r66.detail
+
+
+def test_c65_wrapped_no_smoke_declaration_does_not_disarm(tmp_path, monkeypatch):
+    # Anti-paste: a backtick-wrapped declaration is NOT a declaration
+    # (_standalone_na_declared discipline) — the live claim still FAILs.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("`N/A — no dry-run smoke`")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+
+
+def test_c65_minified_json_is_noncountable_never_false_fails(tmp_path, monkeypatch):
+    # Round-2 FIX 2 (concern `non-row-format-counting`): a minified .json
+    # bank (40 objects on one physical line -> newline count 1) must never
+    # ground a FAIL against a 40-row floor — .json is non-line-oriented, so
+    # it is non-countable evidence and the check SKIPs (unresolved), with a
+    # detail naming the non-countable format. Pre-fix: FALSE FAIL.
+    root = tmp_path / "fixroot"
+    fdir = root / "data" / "issue_1336" / "corpora_v2_smoke"
+    fdir.mkdir(parents=True)
+    (fdir / "bank.json").write_text("[" + ",".join(f'{{"row": {i}}}' for i in range(40)) + "]")
+    (root / "scripts").mkdir()
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    plan = _c65_plan(
+        glob_line="Fixtures live at data/issue_1336/corpora_v2_smoke/*.json (bank format)."
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "non-line-oriented" in r.detail
+    # c66 follows check 65's comparison: evidence unresolved -> SKIP.
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_jsonl_sibling_still_counts_beside_noncountable_json(tmp_path, monkeypatch):
+    # Round-2 FIX 2, positive arm: the .jsonl sibling stays countable —
+    # the FAIL grounds on it alone; the non-countable .json contributes no
+    # count and never appears in the per-file detail.
+    root = tmp_path / "fixroot"
+    fdir = root / "data" / "issue_1336" / "corpora_v2_smoke"
+    fdir.mkdir(parents=True)
+    (fdir / "bank.json").write_text("[" + ",".join(f'{{"row": {i}}}' for i in range(40)) + "]")
+    (fdir / "rows.jsonl").write_text("".join(f'{{"row": {i}}}\n' for i in range(8)))
+    (root / "scripts").mkdir()
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    plan = _c65_plan(
+        glob_line=(
+            "Fixtures live at data/issue_1336/corpora_v2_smoke/*.jsonl and "
+            "data/issue_1336/corpora_v2_smoke/*.json."
+        )
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "rows.jsonl=8" in r.detail
+    assert "bank.json" not in r.detail
+
+
+def test_c65_worktree_rung_resolves(tmp_path, monkeypatch):
+    # Rung 3: fixtures only under .claude/worktrees/issue-<N>*/ (N from the
+    # plan's own H1) — the gitignored worktree-local class v16 embodied.
+    root = _c65_root(tmp_path, under_worktree="issue-1336-fullcorpora")
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "FAIL"
+    assert "issue worktree issue-1336-fullcorpora" in r.detail
+
+
+def test_c65_pinned_tip_rung_via_monkeypatched_git_helpers(tmp_path, monkeypatch):
+    # Rung 2 without a git repo: monkeypatch the tree-counts helper (the
+    # c42 fixture strategy) and pin the sha + glob threading.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    calls: list[tuple[str, str]] = []
+
+    def fake_tree_counts(sha, glob_token):
+        calls.append((sha, glob_token))
+        return [
+            (f"data/issue_1336/corpora_v2_smoke/{fname}", rows, True)
+            for fname, rows in _C65_FIXTURE_ROWS.items()
+        ]
+
+    monkeypatch.setattr(verify_plan, "_c65_git_tree_counts", fake_tree_counts)
+    plan = _c65_plan("Pinned tip `8c7b7b2406aa`.")
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "pinned tip 8c7b7b2406aa" in r.detail
+    assert calls and calls[0][0] == "8c7b7b2406aa"
+    assert calls[0][1] == "data/issue_1336/corpora_v2_smoke/*.jsonl"
+
+
+def _c65_git_cmd(cwd, *args):
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=fixture@example.com",
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "commit.gpgsign=false",
+            *args,
+        ],
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+    )
+
+
+def test_c65_pinned_tip_rung_real_git_subprocess(monkeypatch):
+    # Round-1 Methodology concern 3 (smoke blind-spot honesty): exercise the
+    # REAL `git ls-tree` / `git cat-file` subprocess path end-to-end on a
+    # throwaway git repo, so the monkeypatched-helper test above is not the
+    # only rung-2 coverage. mkdtemp rather than tmp_path: concurrent pytest
+    # sessions prune stale /tmp/pytest-of-* roots, and a subprocess-heavy
+    # scratch repo is the shape that race hits.
+    scratch = Path(tempfile.mkdtemp(prefix="eps-c65-git-"))
+    try:
+        root = _c65_root(scratch)
+        _c65_git_cmd(root, "init", "-q")
+        _c65_git_cmd(root, "add", "-A")
+        _c65_git_cmd(root, "commit", "-qm", "fixture commit")
+        sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True
+        ).stdout.strip()
+        shutil.rmtree(root / "data")  # rung 1 must not shadow rung 2
+        monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+        plan = _c65_plan(f"Pinned tip `{sha}`.")
+        r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+        assert r.status == "FAIL"
+        assert f"pinned tip {sha[:12]}" in r.detail
+        assert "lmsys23k.jsonl=32" in r.detail
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_c66_no_candidates_skips(tmp_path, monkeypatch):
+    # Contradiction resolved but nothing in scripts/ plausibly produces the
+    # fixtures (the real-v16-from-main case) -> SKIP.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, script=False))
+    r = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r.status == "SKIP"
+    assert "producing script not identifiable" in r.detail
+
+
+# ─── c64: sampled exactness claim vs runtime-assert grain (#2174/#2163) ─────
+
+C64 = "c64_exactness_grain"
+
+# The §12 shape the check reads: an exactness claim + a sample-size marker in
+# the ±3-line window (the #2163 A11 shape, condensed).
+C64_CLAIM_BLOCK = """\
+## 12. Assumptions
+
+- **A11** `h_prefix` rows are byte-identical — `n_distinct_rows = 1`.
+  Confidence: High (measured). Source: probed a 10-shard / 706-row sample.
+  How to verify: re-run the probe.
+"""
+
+
+def test_c64_sampled_exactness_warns():
+    # AC1's mechanical analog: exactness claim + sample marker, no satisfier
+    # -> WARN whose detail names BOTH remedies (AC2) + the grain mechanism.
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+    assert "full grain" in r.detail
+    assert "bound" in r.detail
+    assert "soften" in r.detail
+    assert "#2163" in r.detail
+
+
+def test_c64_value_claim_with_sample_passes():
+    # AC3: a sampled VALUE claim is not an exactness claim -> no WARN (SKIP:
+    # the lens is not a confidence-downgrade tax on measured numbers).
+    plan = GOOD_PLAN + (
+        "\n## 12. Assumptions\n\n"
+        "- **A3** lambda = 3.2e-2, measured on 10 sampled shards.\n"
+        "  Confidence: High (measured). How to verify: re-run the fit.\n"
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c64_full_grain_verified_passes():
+    # AC4: the same exactness claim already VERIFIED at full grain (completed
+    # vocabulary on the full-grain line) -> PASS, not WARN.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Verified over the full staged store (142,000 rows counted).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS", r.detail
+    assert "satisfier" in r.detail
+
+
+def test_c64_negated_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): NEGATED
+    # completion vocabulary beside a full-grain phrase is NOT a satisfier —
+    # "not verified at full grain" keeps the WARN (the veto arm, not the
+    # completed-verification satisfier, wins).
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Not verified at full grain (142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
+def test_c64_prospective_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): PROSPECTIVE
+    # completion ("will be verified ...") is a deferral, not a completed
+    # verification — keeps the WARN.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "How to verify: will be verified at full grain (all 142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
+def test_c64_bound_restatement_passes():
+    # The second remedy: the claim restated as a sampled BOUND in the same
+    # window -> PASS.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Restated as a bound: no deviation observed in 706 of 142,000 rows.",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS", r.detail
+
+
+def test_c64_trigger_case_insensitive():
+    # Round-2 (reconciler-deferred concern c64-trigger-case, APPLIED after
+    # the corpus re-sweep measured 8 < 10 defensible file-WARNs with
+    # re.IGNORECASE on): sentence-initial / ordinary-casing exactness
+    # phrases fire the trigger.
+    for claim in (
+        "- **A2** Exactly zero deviating rows expected.",
+        "- **A2** No exceptions across the store.",
+        "- **A2** every row is byte-identical to the first row.",
+    ):
+        plan = GOOD_PLAN + (
+            f"\n## 12. Assumptions\n\n{claim}\n  Source: probed a 10-shard / 706-row sample.\n"
+        )
+        r = _run(plan)[1][C64]
+        assert r.status == "WARN", (claim, r.detail)
+
+
+def test_c64_escape_literal_passes():
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK + "\nN/A — no sampled exactness claims\n"
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c64_warn_never_flips_overall():
+    # WARN-only posture: a plan tripping c64 alone keeps overall PASS.
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK
+    ok, by_id = _run(plan)
+    assert by_id[C64].status == "WARN"
+    assert ok
+
+
+def test_c64_registered_in_checks_and_docstring_catalog():
+    # Membership pins (the c62/c63 registration-pin convention).
+    assert verify_plan.check_exactness_grain in verify_plan.CHECKS
+    assert "c64 sampled exactness claim" in verify_plan.__doc__
+    # conditional-checks enumeration carries it (reflow-tolerant membership).
+    assert "63, 64" in verify_plan.__doc__
+    # Escape phrase registered in the docstring (the SKILL.md sync test
+    # propagates it to the consumer surface).
+    assert "N/A — no sampled exactness claims" in verify_plan.__doc__
+
+
+def test_c64_verbatim_2163_incident_warns():
+    # Founding-incident regression anchor (plan v3 Edit E8): the verbatim
+    # #2163 A11 assumption — exactness claim at Confidence: High (measured),
+    # a 10-shard/706-row sample marker, AND the deferred "Phase 0 re-asserts
+    # ... over the FULL staged store" How-to-verify line — MUST WARN:
+    # deferral phrasing is not completed verification, and the window's
+    # "(measured)" token (on the Confidence line, not the full-grain line)
+    # must not rescue it.
+    a11 = """\
+## 12. Assumptions
+
+- **A11** `h_prefix` is (62, 3584) fp16 with EVERY row byte-identical — max|row − row0| = 0
+  exactly, all pairwise cosines = 1.000000, `n_distinct_rows = 1`; v_P carries exactly zero
+  cross-context variance. Confidence: High (measured). Source: probed 10 sampled shards
+  (706 rows of 142,000). How to verify: Phase 0 re-asserts byte-identity over the FULL
+  staged store.
+"""
+    plan = GOOD_PLAN + "\n" + a11
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+    assert "#2163" in r.detail

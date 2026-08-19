@@ -5,6 +5,7 @@ Default repos (public, unlimited storage):
   Datasets: superkaiba1/explore-persona-space-data
 """
 
+import contextlib
 import glob
 import hashlib
 import json
@@ -23,6 +24,8 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+
+from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
 
 logger = logging.getLogger(__name__)
 
@@ -282,11 +285,21 @@ def check_hf_storage_headroom(
         # PARTIAL-None GUARD: counting a present-but-unpopulated usedStorage
         # as 0 silently understates usage — ANY missing value poisons the
         # probe to unknown rather than producing a partial sum.
+        detail = f"{n_missing}/{n} missing usedStorage"
+        if n_missing == n:
+            # ALL repos missing usedStorage is the signature of an auth /
+            # endpoint condition (expired or absent token, wrong endpoint),
+            # not a storage fact — name it so the basis line is not read as
+            # "zero storage" (#2337).
+            detail += (
+                "; all repos missing usedStorage usually indicates an "
+                "auth/endpoint condition, not zero storage"
+            )
         return HfStorageHeadroom(
             used_tb=None,
             ceiling_tb=ceiling,
             over_ceiling=False,
-            basis=f"suspect ({n_missing}/{n} missing usedStorage)",
+            basis=f"suspect ({detail})",
             n_repos=n,
         )
     used_bytes = sum(per_repo)
@@ -1833,6 +1846,18 @@ def _upload(
             ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
         )
 
+    # Secret upload gate (2026-08-17): scan every Hub-bound text file / tar
+    # member for real-secret-grade strings BEFORE any network I/O. Four HF
+    # secret-scanning alerts (2026-06-15 → 2026-08-17) all traced to corpus
+    # text with pasted third-party credentials landing on the PUBLIC data
+    # repo unscanned; the gate makes that structurally impossible via this
+    # path. Placed BEFORE HfApi construction and OUTSIDE the try below (the
+    # #595 / #1190 / #1738 pre-try precedent) so it propagates regardless of
+    # raise_on_error. Never mutates bytes — remediation is
+    # scripts/scrub_secrets.py, then re-pack/re-hash. Kill switch:
+    # EPM_SECRET_UPLOAD_GATE=0.
+    assert_upload_clean([local_path], what=f"_upload:{repo_id}/{path_in_repo}")
+
     api = HfApi(token=token)
 
     # Repo should already exist (public), but create if missing
@@ -2692,19 +2717,60 @@ def stage_hub_file(
         )
     target.parent.mkdir(parents=True, exist_ok=True)
     tok = token or os.environ.get("HF_TOKEN")
-    with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
-        local = retry_transient(
-            lambda: hf_hub_download(
-                repo_id=repo_id,
-                filename=path_in_repo,
-                repo_type=repo_type,
-                revision=revision,
-                local_dir=td,
-                token=tok,
-            ),
-            what=f"stage_hub_file({repo_id}:{path_in_repo})",
+    from huggingface_hub.utils import EntryNotFoundError
+
+    try:
+        with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
+            local = retry_transient(
+                lambda: hf_hub_download(
+                    repo_id=repo_id,
+                    filename=path_in_repo,
+                    repo_type=repo_type,
+                    revision=revision,
+                    local_dir=td,
+                    token=tok,
+                ),
+                what=f"stage_hub_file({repo_id}:{path_in_repo})",
+            )
+            os.replace(local, target)
+    except EntryNotFoundError:
+        # #2332 packed-prefix fallback (central seam, review r2): the 8 repack
+        # target prefixes replace loose files with `<prefix>/__packed__/` tar
+        # shards + index. When the LOOSE path 404s AND the path sits under a
+        # repacked target prefix AND its merged index.json exists on the repo,
+        # serve the byte-identical member via the accessor; EVERY other path
+        # re-raises the original error unchanged (packed_fallback returns None
+        # for non-target prefixes / unpacked prefixes / non-member paths, and
+        # PROPAGATES integrity failures loudly). Revision note: a pinned
+        # `revision=` request that 404s falls through to the HEAD packed copy —
+        # the repack is a verified byte-identical MOVE, so the bytes match any
+        # revision at which the loose file existed.
+        from .packed_prefix import packed_fallback
+
+        data = packed_fallback(repo_id, path_in_repo, repo_type=repo_type)
+        if data is None:
+            raise
+        logger.info(
+            "stage_hub_file: %s:%s served from the #2332 packed prefix (__packed__ fallback)",
+            repo_id,
+            path_in_repo,
         )
-        os.replace(local, target)
+        tmp_name: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                dir=target.parent, prefix=".hfstage-packed-", delete=False
+            ) as tf:
+                tmp_name = tf.name
+                tf.write(data)
+            os.replace(tmp_name, target)
+        except BaseException:
+            # r3 review minor: don't leak an orphan .hfstage-packed-* tmp file
+            # when the write/replace fails (disk full). Cleanup-only suppress —
+            # the ORIGINAL failure always propagates.
+            if tmp_name is not None:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_name)
+            raise
     return target
 
 

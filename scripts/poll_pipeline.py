@@ -4235,7 +4235,11 @@ def _eta_disabled_note(budget: PlanWallBudget) -> str:
         " tripwire is OFF for this whole run (fail-safe, #873/#2172);"
         f" {len(budget.rows)} parseable row(s) discarded with them."
         f" Offending row(s): {offenders}{more}."
-        " Remedy: write a bare float in the `planned_wall_h` cell; put the"
+        # NB: the range's en dash is written as a unicode escape — a
+        # literal trips RUF001 under the full-ruleset policy pin
+        # (tests/test_ruff_policy.py, #2179).
+        " Remedy: write a bare float, a `≤X` bound, or an `A\u2013B` range"
+        " (the upper bound is used) in the `planned_wall_h` cell; put the"
         " conditionality in the `basis` cell."
     )
 
@@ -4974,7 +4978,7 @@ def _load_state(state_file: Path, issue: int) -> dict[str, str]:
         return {}
     try:
         data = json.loads(state_file.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         log.warning("state file %s unreadable; treating as empty", state_file)
         return {}
     return data.get(str(issue), {})
@@ -4986,7 +4990,7 @@ def _save_state(state_file: Path, issue: int, payload: dict[str, str]) -> None:
     if state_file.exists():
         try:
             all_state = json.loads(state_file.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             all_state = {}
     all_state[str(issue)] = payload
     tmp = state_file.with_suffix(state_file.suffix + ".tmp")

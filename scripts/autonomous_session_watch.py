@@ -1350,6 +1350,7 @@ from spawn_session import (  # noqa: E402
     _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
+    _marker_session_mode,
     _takeover_ttl_s,
     dispatch_lease_desc,
     dispatch_lease_fresh,
@@ -1361,11 +1362,13 @@ from spawn_session import (  # noqa: E402
     takeover_sentinel_fresh,
 )
 from tick_triage import (  # noqa: E402
+    ISSUE_PARK,
     compute_head_sha,
     compute_progress_fingerprint,
     is_human_transcript_row,
     no_progress_state_path,
     no_progress_threshold,
+    parse_event_ts,
     plan_pending_over_cap,
     proc_start_epoch,
     read_no_progress_state,
@@ -5344,7 +5347,7 @@ def _load_subfloor_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -5397,7 +5400,7 @@ def _load_subfloor_reclaim_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -5864,7 +5867,7 @@ def _load_data_disk_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6115,7 +6118,7 @@ def _load_happy_patch_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6620,7 +6623,7 @@ def _load_cpu_guard_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6931,7 +6934,7 @@ def _load_triage_observer_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7182,7 +7185,7 @@ def triage_observer_pass(dry_run: bool) -> bool:
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  triage-observer: registry read failed: {exc}", file=sys.stderr)
         return False
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -7343,7 +7346,7 @@ def _load_verdict_disagree_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7418,7 +7421,7 @@ def verdict_disagree_pass(dry_run: bool) -> bool:
 
         try:
             reg = json.loads(registry_path().read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
             print(f"  verdict-disagree: registry read failed: {exc}", file=sys.stderr)
             return False
         tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -7576,7 +7579,7 @@ def _load_root_draft_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7951,7 +7954,7 @@ def _load_daemon_liveness_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -8015,7 +8018,7 @@ def _daemon_liveness_suppressed_work() -> dict:
         data = json.loads(_infra_drain_queue_path().read_text())
         ripe = data.get("ripe_oldest_first") if isinstance(data, dict) else None
         ripe_infra = len(ripe) if isinstance(ripe, list) else None
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         ripe_infra = None
     return {"registrations": registrations, "ripe_infra": ripe_infra}
 
@@ -8322,7 +8325,7 @@ def _load_unfolded_round_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -8717,7 +8720,7 @@ def unfolded_round_pass(dry_run: bool) -> bool:  # noqa: C901 — flat sweep/pro
 
         try:
             reg = json.loads(registry_path().read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
             print(f"  unfolded-round: registry read failed: {exc}", file=sys.stderr)
             return False
         tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -8921,7 +8924,7 @@ def _load_registry_drift_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -9186,7 +9189,7 @@ def _load_predispatch_staleness_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -9577,7 +9580,7 @@ def _load_stash_rescue_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10031,7 +10034,7 @@ def _load_root_unstaged_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10392,7 +10395,7 @@ def _load_pending_call_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10765,7 +10768,7 @@ def _load_completed_unmerged_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10848,7 +10851,7 @@ def _completed_unmerged_candidates(now: float, lookback_s: float) -> list[tuple[
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  completed-unmerged: registry read failed: {exc}", file=sys.stderr)
         return []
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -11212,6 +11215,9 @@ def _completed_unmerged_respawn(issue: int, dry_run: bool) -> str:
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn stranded-merge session: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -11561,7 +11567,7 @@ def _load_partial_bundle_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -11722,7 +11728,7 @@ def _partial_bundle_candidate_issues(now: float, lookback_s: float) -> list[int]
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  partial-bundle: registry read failed: {exc}", file=sys.stderr)
         return []
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -12108,7 +12114,7 @@ def _load_codex_outage_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -12165,7 +12171,7 @@ def _codex_outage_read_sentinel(now: float) -> dict | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if not isinstance(data, dict):
         return None
@@ -12658,7 +12664,7 @@ def _load_settings_guard_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -12951,7 +12957,7 @@ def _load_urgent_wf_park_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -13890,7 +13896,7 @@ def _load_auth_outage_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         print(f"  auth-outage: state unreadable (fail-open, fresh state): {exc}", file=sys.stderr)
         return {}
     return data if isinstance(data, dict) else {}
@@ -13974,7 +13980,7 @@ def _registry_entry_field(issue: int, field: str) -> object:
     """One field from ``issue-<N>.json`` (fail-soft -> ``None``)."""
     try:
         entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json").read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     return entry.get(field) if isinstance(entry, dict) else None
 
@@ -14885,6 +14891,35 @@ def _task_events(issue: int) -> list[dict]:
     return data if isinstance(data, list) else []
 
 
+def _resolve_session_mode(issue: int, entry: dict | None = None) -> str:
+    """Session mode (``"auto"`` | ``"async"``) every spawn-issue argv builder
+    resolves before dispatch — mission-control rung 0 (CONTRACTS §2.2).
+
+    Chain: registry-entry ``session_mode`` field (pass ``entry`` when the
+    caller already holds it; else the issue-<N>.json file is read) > newest
+    durable ``epm:session-mode`` marker (survives the watcher's TERMINAL
+    registry-entry deletion; read IN-PROCESS via spawn_session's
+    ``_marker_session_mode`` — a subprocess probe here would break every
+    builder's argv/dry-run contract, e.g. dry-run performs zero spawn
+    subprocesses) > legacy ``"auto"``. Fail-soft on every signal — an
+    unreadable registry/marker degrades to the next rung, never blocks a
+    respawn (worst case: a legacy-auto respawn of an async task, which the
+    task-durable marker corrects on the next resolution)."""
+    try:
+        if entry is None:
+            reg = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+            if reg.exists():
+                entry = json.loads(reg.read_text())
+        if isinstance(entry, dict):
+            mode = entry.get("session_mode")
+            if mode in ("auto", "async"):
+                return mode
+    except (OSError, ValueError):
+        pass
+    mode = _marker_session_mode(issue)
+    return mode if mode in ("auto", "async") else "auto"
+
+
 def _daemon_reachable() -> bool:
     """True iff the Happy daemon's control server answers /list.
 
@@ -15121,7 +15156,7 @@ def _manual_session_alive(issue: int | None, live_ids: set[str]) -> bool:
     path = AUTONOMOUS_REGISTRY_DIR / f"manual-issue-{issue}.json"
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     sid = entry.get("happy_session_id")
     return isinstance(sid, str) and sid in live_ids
@@ -15192,6 +15227,9 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     effort = entry.get("effort")
     if effort:
         cmd.extend(["--effort", str(effort)])
+    if _resolve_session_mode(issue, entry) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -15303,7 +15341,7 @@ def _load_pod_safety_state(issue: int) -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -15642,7 +15680,7 @@ def _load_stalled_state(issue: int) -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -15909,7 +15947,7 @@ def _clear_fence_state_on_disk(issue: int) -> None:
     path = _stalled_state_path(issue)
     try:
         payload = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return
     if not isinstance(payload, dict):
         return
@@ -15977,7 +16015,7 @@ def _gc_orphan_pod_safety_state(
             first_seen = payload.get("first_seen", now)
             if not isinstance(first_seen, int | float):
                 first_seen = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_seen = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_seen
         reason = (
@@ -16514,7 +16552,7 @@ def _load_vm_disk_state() -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -16576,7 +16614,7 @@ def _vm_disk_marker_issues() -> list[int]:
     for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json")):
         try:
             entry = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         issue = entry.get("issue")
         if isinstance(issue, int) and _task_status(issue) in ACTIVE:
@@ -18390,7 +18428,7 @@ def _keep_running_owner_candidates(issue: int, children: list) -> dict[int, str 
     for name in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
         try:
             entry = json.loads((AUTONOMOUS_REGISTRY_DIR / name).read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         if not isinstance(entry, dict):
             continue
@@ -21735,6 +21773,9 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
     cmd.extend(_stalled_session_overrides(issue))
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn stalled: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -21805,7 +21846,7 @@ def _stalled_session_overrides(issue: int) -> list[str]:
     entry_path = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     try:
         entry = json.loads(entry_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     if not isinstance(entry, dict):
         return []
@@ -23556,7 +23597,7 @@ def _process_stalled_session(
     """
     try:
         entry = json.loads(entry_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         # Cleanup is owned elsewhere: the respawn pass removes a garbled
         # autonomous entry; the GC pass reaps manual entries (keyed on the
         # filename's issue number, so a garbled BODY still gets aged out).
@@ -24251,7 +24292,7 @@ def _load_orphan_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -24420,7 +24461,7 @@ def _issue_registrations() -> dict[int, dict]:
                 continue
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 entry = {}
             if not isinstance(entry, dict):
                 entry = {}
@@ -24536,6 +24577,9 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
     cmd.extend(_stalled_session_overrides(issue))
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -25976,7 +26020,7 @@ def _load_attempt_state(path: Path, max_attempts: int, *, log_prefix: str) -> di
         return {"attempts": {}}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {"attempts": {}}
     if not isinstance(data, dict) or not isinstance(data.get("attempts"), dict):
         return {"attempts": {}}
@@ -26354,6 +26398,9 @@ def _dispatch_infra_drain(
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would dispatch infra-drain: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned, nothing to book
@@ -27731,7 +27778,7 @@ def _load_capacity_retry_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -27764,6 +27811,9 @@ def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would capacity-retry: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -28015,7 +28065,7 @@ def _load_stale_blocked_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -28579,7 +28629,7 @@ def _newest_registration_spawned_at(issue: int) -> float | None:
     for prefix in ("issue-", "manual-issue-"):
         try:
             entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"{prefix}{issue}.json").read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         ts = entry.get("spawned_at") if isinstance(entry, dict) else None
         if isinstance(ts, int | float) and not isinstance(ts, bool) and ts:
@@ -28798,7 +28848,7 @@ def _load_session_reconcile_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -28882,7 +28932,7 @@ def _gc_orphan_session_reconcile_state(
             first_seen = payload.get("first_seen", now)
             if not isinstance(first_seen, int | float):
                 first_seen = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_seen = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_seen
         reason = (
@@ -29739,7 +29789,7 @@ def _load_zombie_state(sid: str) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -29804,7 +29854,7 @@ def _gc_orphan_zombie_state(live_sids: set[str], dry_run: bool, now: float | Non
             first_miss = payload.get("first_miss_ts", now)
             if not isinstance(first_miss, int | float):
                 first_miss = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_miss = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_miss
         reason = (
@@ -30562,7 +30612,7 @@ def _happy_daemon_pid() -> int | None:
     daemon-shaped cmdline on its own; plan #1215 assumption 3)."""
     try:
         data = json.loads((Path.home() / ".happy" / "daemon.state.json").read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
     pid = data.get("pid") if isinstance(data, dict) else None
     return pid if isinstance(pid, int) and not isinstance(pid, bool) else None
@@ -30780,7 +30830,7 @@ def _load_orphan_wrapper_state(pid: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -30851,7 +30901,7 @@ def _gc_orphan_wrapper_state(current_keys: set[tuple[int, float]], dry_run: bool
         try:
             payload = json.loads(path.read_text())
             state_se = payload.get("start_epoch") if isinstance(payload, dict) else None
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             state_se = None
         live = isinstance(state_se, int | float) and any(
             abs(se - state_se) <= 1.0 for se in by_pid.get(pid, [])
@@ -32346,7 +32396,7 @@ def _load_idle_unmapped_state(sid: str) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -32475,7 +32525,7 @@ def _load_tty_unmapped_report_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -32718,7 +32768,7 @@ def _last_mapped_terminal(sid: str) -> tuple[str, int] | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if not isinstance(data, dict):
         return None
@@ -32804,7 +32854,7 @@ def _gc_orphan_idle_unmapped_state(
             first_over = payload.get("first_over_ts", now)
             if not isinstance(first_over, int | float):
                 first_over = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_over = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_over
         reason = (
@@ -33631,7 +33681,7 @@ def _load_boot_death_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -33777,7 +33827,7 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     here may raise (the ``_process_stale_registration`` containment style)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -34146,7 +34196,7 @@ def _process_no_progress_respawn(
     raise (the ``_process_boot_death`` containment style)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -34438,7 +34488,7 @@ def _process_stale_registration(
     dead session's crash-recovery coverage or double-drive a live one)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -34850,7 +34900,7 @@ def _campaign_registry_entries() -> list[tuple[Path, dict]]:
             continue  # campaign-watch-<N>.json or a hand-debug artifact
         try:
             entry = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             entry = {}
         out.append((path, entry if isinstance(entry, dict) else {}))
     return out
@@ -34868,7 +34918,7 @@ def _load_campaign_watch_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -35044,7 +35094,7 @@ def _campaign_state_budget(issue: int) -> tuple[float, float] | None:
     state_file = Path(out.stdout.strip()) / "artifacts" / "campaign-state.json"
     try:
         state = json.loads(state_file.read_text())
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
+    except (FileNotFoundError, json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     budget = state.get("budget") if isinstance(state, dict) else None
     if not isinstance(budget, dict):
@@ -35455,19 +35505,92 @@ def _load_gate_notify_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
 
-def _save_gate_notify_state(issue: int, *, last_status: str) -> None:
+def _save_gate_notify_state(
+    issue: int, *, last_status: str, async_ask_alerted_ts: float | None = None
+) -> None:
     """Atomic temp+rename persist of the last observed status (the
-    transition key for both the push and the title reconcile)."""
+    transition key for both the push and the title reconcile).
+
+    ``async_ask_alerted_ts`` (rung 0, CONTRACTS §1.3 W3) is the epoch ts of
+    the open ``epm:ask`` the stale-park arm last alerted on — the dedup key
+    so one stale ask alerts exactly once. ``None`` (the default, every
+    legacy caller) omits the field entirely, keeping pre-rung-0 state files
+    byte-identical."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _gate_notify_state_path(issue)
     tmp = dest.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps({"last_status": last_status, "ts": time.time()}))
+    payload: dict[str, object] = {"last_status": last_status, "ts": time.time()}
+    if async_ask_alerted_ts is not None:
+        payload["async_ask_alerted_ts"] = async_ask_alerted_ts
+    tmp.write_text(json.dumps(payload))
     tmp.replace(dest)
+
+
+_ASYNC_PARK_STALE_HOURS_DEFAULT = 12.0
+
+
+def _async_park_stale_hours() -> float:
+    """Age floor (hours) before an unanswered ``epm:ask`` on a parked task
+    alerts (rung 0, CONTRACTS §1.3 W3). Env ``EPM_ASYNC_PARK_STALE_HOURS``;
+    default 12; garbage / non-positive values fall back to the default."""
+    raw = os.environ.get("EPM_ASYNC_PARK_STALE_HOURS", "")
+    try:
+        val = float(raw) if raw else _ASYNC_PARK_STALE_HOURS_DEFAULT
+    except ValueError:
+        return _ASYNC_PARK_STALE_HOURS_DEFAULT
+    return val if val > 0 else _ASYNC_PARK_STALE_HOURS_DEFAULT
+
+
+def _async_park_stale_alert_arm(
+    issue: int,
+    status: str,
+    events: list[dict],
+    state: dict,
+    dry_run: bool,
+    now: float | None = None,
+) -> float | None:
+    """Mission-control rung 0 W3 (CONTRACTS §1.3): ONE deduped digest alert
+    when a parked task's newest OPEN ``epm:ask`` has sat unanswered longer
+    than :func:`_async_park_stale_hours`. Returns the alerted ask's epoch ts
+    (the caller persists it as ``async_ask_alerted_ts`` — the dedup key; a
+    NEWER ask re-alerts, the same ask never does), or ``None`` when nothing
+    newly alerted. Fail-soft on every signal (unimportable task_workflow,
+    ts-less ask) — the arm can only add an alert, never block the pass."""
+    try:
+        from explore_persona_space.task_workflow import ask_gate, open_async_ask
+    except ImportError:
+        return None
+    ask = open_async_ask(events)
+    if ask is None:
+        return None
+    ask_epoch = parse_event_ts(ask.get("ts"))
+    if ask_epoch is None:
+        return None
+    now = time.time() if now is None else now
+    age_h = (now - ask_epoch) / 3600.0
+    if age_h < _async_park_stale_hours():
+        return None
+    prev = state.get("async_ask_alerted_ts")
+    if isinstance(prev, (int, float)) and abs(float(prev) - ask_epoch) < 1.0:
+        return None  # this exact ask already alerted once
+    gate = ask_gate(ask) or "unknown"
+    slug = _task_title(issue)
+    head = f"#{issue} {slug}".rstrip()
+    msg = (
+        f"{head} · async ask unanswered {age_h:.0f}h "
+        f"(gate={gate}, status={status}) — open to answer"
+    )
+    sent = _telegram_push(msg[:200], dry_run)
+    print(
+        f"  async-park-stale: #{issue} ask age={age_h:.1f}h gate={gate} "
+        f"({'sent' if sent else 'push not confirmed'})"
+    )
+    return ask_epoch
 
 
 def decide_gate_push(status: str | None, last_status: str | None, over_cap: bool) -> bool:
@@ -35496,24 +35619,37 @@ def _task_title(issue: int) -> str:
             timeout=30,
         )
         data = json.loads(out.stdout) if out.returncode == 0 else {}
-    except (subprocess.SubprocessError, OSError, json.JSONDecodeError):
+    except (subprocess.SubprocessError, OSError, json.JSONDecodeError, UnicodeDecodeError):
         return ""
     title = data.get("title") or (data.get("frontmatter") or {}).get("title")
     return title.strip()[:45] if isinstance(title, str) else ""
 
 
-def _gate_push_message(issue: int, status: str, events: list[dict], gate_parked: bool) -> str:
+def _gate_push_message(
+    issue: int, status: str, events: list[dict], gate_parked: bool, *, async_ask: bool = False
+) -> str:
     """Mirror the /issue-tick 3d message shapes (kept under ~200 chars).
 
     ``gate_parked`` is True when the plan-gate parked at plan_pending —
     a missing/unparseable GPU-hour estimate fail-safe (#1771 removed the
     over-cap arm; the retained park cause has one shape now, so the push
     names the missing estimate rather than any cap — the #2164
-    registered-cap rendering had no threshold left to report)."""
+    registered-cap rendering had no threshold left to report).
+
+    ``async_ask`` (rung 0, CONTRACTS §1.3 W1) is True when plan_pending
+    carries an OPEN plan-approval ``epm:ask`` — the async-session park; its
+    branch wins over ``gate_parked`` (an async park never posts
+    ``epm:awaiting-spend-approval``, so both being True means an ask exists
+    and the answer command is the actionable message)."""
     slug = _task_title(issue)
     head = f"#{issue} {slug}".rstrip()  # no double space when the title read failed
     if status == "awaiting_promotion":
         msg = f"{head} · clean-result ready — open to promote"
+    elif status == "plan_pending" and async_ask:
+        msg = (
+            f"{head} · plan approval requested (async epm:ask) — answer: "
+            f"task.py set-status {issue} approved"
+        )
     elif status == "plan_pending" and gate_parked:
         msg = (
             f"{head} parked at plan_pending — plan-gate park "
@@ -35657,6 +35793,93 @@ def _campaign_gate_candidates() -> set[int]:
     }
 
 
+def _gate_push_runaway_arm(
+    by_issue: dict[int, set[str]],
+    daemon_reachable: bool,
+    dry_run: bool,
+) -> None:
+    """Tick-runaway force-stop tail of :func:`gate_push_pass`, extracted
+    verbatim for C901 (#2345); behavior unchanged."""
+    flags = _runaway_flags()
+    if not flags:
+        return
+    running_pod_issues = {
+        issue
+        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
+    }
+    for issue, flag_path in flags:
+        _process_runaway_flag(
+            issue,
+            flag_path,
+            sorted(by_issue.get(issue, set())),
+            running_pod_issues,
+            daemon_reachable,
+            dry_run,
+        )
+
+
+def _gate_push_process_issue(issue: int, dry_run: bool) -> None:
+    """Per-issue arm of :func:`gate_push_pass` (loop body extracted verbatim
+    for C901, #2345): gate-push transition detection, the rung-0 W1/W3 arms,
+    and the status-transition-keyed self-report refresh for ONE issue."""
+    status = _task_status(issue)
+    if status is None or status in TERMINAL_FOR_GC:
+        # completed/archived: never a push target, no title value — and
+        # acting here would CHURN against the terminal-status GC (it
+        # reaps gate-notify-<N>.json each tick, so this pass would
+        # re-create it + re-refresh the self-report every pass, keeping
+        # the self-report permanently fresh and structurally disabling
+        # the session-reconcile idle signal for done tasks).
+        return
+    state = _load_gate_notify_state(issue)
+    last_status = state.get("last_status")
+    # Rung 0 W3 (CONTRACTS §1.3): the stale-async-park arm runs EVERY tick
+    # for parked statuses — steady state included, so it sits BEFORE the
+    # last_status == status short-circuit (a park is steady state by
+    # definition). Non-park statuses and tasks with no open ask are a
+    # no-op; carry the persisted dedup key forward on every save so a
+    # status flap cannot re-alert the same ask.
+    alerted_ts_prev = state.get("async_ask_alerted_ts")
+    alerted_ts = alerted_ts_prev if isinstance(alerted_ts_prev, (int, float)) else None
+    events: list[dict] | None = None
+    if status in ISSUE_PARK or status == "awaiting_promotion":
+        events = _task_events(issue)
+        fresh_alert = _async_park_stale_alert_arm(issue, status, events, state, dry_run)
+        if fresh_alert is not None:
+            alerted_ts = fresh_alert
+    if last_status == status:
+        # Steady state — no transition work; persist only a NEW alert
+        # dedup key (a no-alert tick rewrites nothing, keeping legacy
+        # steady-state ticks write-free as before).
+        if alerted_ts is not None and alerted_ts != alerted_ts_prev and not dry_run:
+            _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
+        return
+    if events is None:
+        events = _task_events(issue)
+    over_cap = status == "plan_pending" and plan_pending_over_cap(events)
+    # Rung 0 W1 (CONTRACTS §1.3): a fresh OPEN plan-approval epm:ask at
+    # plan_pending ALSO fires the gate push — local OR only; the shared
+    # tick_triage plan_pending_over_cap predicate is untouched.
+    async_plan_ask = False
+    if status == "plan_pending":
+        try:
+            from explore_persona_space.task_workflow import open_async_ask
+
+            async_plan_ask = open_async_ask(events, gate="plan_approval") is not None
+        except ImportError:
+            async_plan_ask = False
+    if decide_gate_push(status, last_status, over_cap or async_plan_ask):
+        msg = _gate_push_message(issue, status, events, over_cap, async_ask=async_plan_ask)
+        sent = _telegram_push(msg, dry_run)
+        print(
+            f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
+            f"({'sent' if sent else 'push not confirmed'})"
+        )
+    _refresh_self_report(issue, status, dry_run)
+    if not dry_run:
+        _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
+
+
 def gate_push_pass(
     dry_run: bool,
     *,
@@ -35697,46 +35920,8 @@ def gate_push_pass(
     if candidates:
         print(f"gate-push: {len(candidates)} candidate issue(s)")
     for issue in candidates:
-        status = _task_status(issue)
-        if status is None or status in TERMINAL_FOR_GC:
-            # completed/archived: never a push target, no title value — and
-            # acting here would CHURN against the terminal-status GC (it
-            # reaps gate-notify-<N>.json each tick, so this pass would
-            # re-create it + re-refresh the self-report every pass, keeping
-            # the self-report permanently fresh and structurally disabling
-            # the session-reconcile idle signal for done tasks).
-            continue
-        last_status = _load_gate_notify_state(issue).get("last_status")
-        if last_status == status:
-            continue  # steady state — nothing transitioned
-        events = _task_events(issue)
-        over_cap = status == "plan_pending" and plan_pending_over_cap(events)
-        if decide_gate_push(status, last_status, over_cap):
-            msg = _gate_push_message(issue, status, events, over_cap)
-            sent = _telegram_push(msg, dry_run)
-            print(
-                f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
-                f"({'sent' if sent else 'push not confirmed'})"
-            )
-        _refresh_self_report(issue, status, dry_run)
-        if not dry_run:
-            _save_gate_notify_state(issue, last_status=status)
-    flags = _runaway_flags()
-    if not flags:
-        return
-    running_pod_issues = {
-        issue
-        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
-    }
-    for issue, flag_path in flags:
-        _process_runaway_flag(
-            issue,
-            flag_path,
-            sorted(by_issue.get(issue, set())),
-            running_pod_issues,
-            daemon_reachable,
-            dry_run,
-        )
+        _gate_push_process_issue(issue, dry_run)
+    _gate_push_runaway_arm(by_issue, daemon_reachable, dry_run)
 
 
 def program_orchestrator_pass(
@@ -36947,7 +37132,7 @@ def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int
     (logs but never mutates / spawns)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         print(f"  {path.name}: unreadable; removing")
         if not dry_run:
             path.unlink(missing_ok=True)

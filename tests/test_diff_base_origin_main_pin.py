@@ -21,6 +21,8 @@ import importlib.util
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _ROOT = Path(__file__).resolve().parents[1]
 _SKILL = _ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 _CODE_REVIEWER = _ROOT / ".claude" / "agents" / "code-reviewer.md"
@@ -44,7 +46,7 @@ def test_step9c_selector_invocation_has_no_local_main_base():
     apply; an explicit `--base main` there reintroduces the lagging-root
     foreign-file pollution (#1281).
     """
-    text = _SKILL.read_text()
+    text = issue_skill_text()
     lines = [ln for ln in text.splitlines() if re.search(r"select_step9c_tests\.py", ln)]
     assert lines, f"no select_step9c_tests.py invocation found in {_SKILL}"
     offenders = [ln for ln in lines if "--base main" in ln]

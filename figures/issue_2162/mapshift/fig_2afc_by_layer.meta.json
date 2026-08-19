@@ -1,0 +1,1302 @@
+{
+  "commit": "dfc95fd9+dirty",
+  "render_id": "1d475211aaf54716",
+  "git_commit": "dfc95fd9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_bypath_brief_frozen_events_resolution.md",
+    ".claude/agent-memory/codex-code-reviewer/feedback_missing_impl_marker_probe_checklist.md",
+    "tasks/running/2148/concerns.jsonl",
+    "tasks/running/2148/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-16T18:23:01Z",
+  "figsize": [
+    7.6,
+    4.6
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6264245014245015,
+      "error": 0.004099893162393176,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6410256410256411,
+      "error": 0.004807692307692346,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6791310541310541,
+      "error": 0.005163817663817738,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6634615384615384,
+      "error": 0.0037393162393161705,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6962250712250713,
+      "error": 0.003739316239316337,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6855413105413105,
+      "error": 0.004451566951566954,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7150997150997151,
+      "error": 0.004807692307692291,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7086894586894587,
+      "error": 0.004451566951566954,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7136752136752137,
+      "error": 0.004807692307692346,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7029914529914529,
+      "error": 0.006588319088318972,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7086894586894587,
+      "error": 0.00694444444444442,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.707977207977208,
+      "error": 0.005876068376068355,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7150997150997151,
+      "error": 0.006588319088318972,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7314814814814815,
+      "error": 0.00819088319088318,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7321937321937322,
+      "error": 0.010861823361823397,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7407407407407407,
+      "error": 0.01157407407407407,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7428774928774928,
+      "error": 0.012286324786324687,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7539173789173789,
+      "error": 0.012642450142450246,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7631766381766382,
+      "error": 0.014423076923076927,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7987891737891738,
+      "error": 0.01780626780626776,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7923789173789174,
+      "error": 0.017984330484330513,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7731481481481481,
+      "error": 0.01781071937321943,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7752849002849003,
+      "error": 0.017806267806267928,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7720797720797721,
+      "error": 0.017984330484330513,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.76994301994302,
+      "error": 0.018162393162393153,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7727920227920227,
+      "error": 0.018162393162393153,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7834757834757835,
+      "error": 0.018162393162393153,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7952279202279202,
+      "error": 0.017450142450142314,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6606125356125356,
+      "error": 0.010861823361823397,
+      "series": "banked single-turn map (#779)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7638888888888888,
+      "error": 0.01780626780626776,
+      "series": "banked single-turn map (#779)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7435897435897436,
+      "error": 0.018162393162393153,
+      "series": "banked single-turn map (#779)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5338319088319088,
+      "error": 0.004099893162393176,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5398860398860399,
+      "error": 0.004807692307692346,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5466524216524217,
+      "error": 0.005163817663817738,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5363247863247863,
+      "error": 0.0037393162393161705,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5395299145299145,
+      "error": 0.003739316239316337,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5381054131054132,
+      "error": 0.004451566951566954,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5302706552706553,
+      "error": 0.004807692307692291,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5284900284900285,
+      "error": 0.004451566951566954,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5338319088319088,
+      "error": 0.004807692307692346,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5430911680911681,
+      "error": 0.006588319088318972,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5395299145299145,
+      "error": 0.00694444444444442,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5473646723646723,
+      "error": 0.005876068376068355,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5430911680911681,
+      "error": 0.006588319088318972,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5712250712250713,
+      "error": 0.00819088319088318,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.613960113960114,
+      "error": 0.010861823361823397,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6363960113960114,
+      "error": 0.01157407407407407,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6424501424501424,
+      "error": 0.012286324786324687,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6538461538461539,
+      "error": 0.012642450142450246,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6762820512820513,
+      "error": 0.014423076923076927,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7556980056980057,
+      "error": 0.01780626780626776,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7507122507122507,
+      "error": 0.017984330484330513,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7418091168091168,
+      "error": 0.01781071937321943,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7553418803418803,
+      "error": 0.017806267806267928,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7517806267806267,
+      "error": 0.017984330484330513,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7510683760683761,
+      "error": 0.018162393162393153,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7542735042735043,
+      "error": 0.018162393162393153,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7546296296296297,
+      "error": 0.018162393162393153,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7564102564102564,
+      "error": 0.017450142450142314,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5117521367521367,
+      "error": 0.004099893162393176,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5142450142450142,
+      "error": 0.004807692307692346,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.51994301994302,
+      "error": 0.005163817663817738,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5096153846153846,
+      "error": 0.0037393162393161705,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5117521367521367,
+      "error": 0.003739316239316337,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5121082621082621,
+      "error": 0.004451566951566954,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5131766381766382,
+      "error": 0.004807692307692291,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5128205128205128,
+      "error": 0.004451566951566954,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5113960113960114,
+      "error": 0.004807692307692346,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5238603988603988,
+      "error": 0.006588319088318972,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5270655270655271,
+      "error": 0.00694444444444442,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5252849002849003,
+      "error": 0.005876068376068355,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5252849002849003,
+      "error": 0.006588319088318972,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5395299145299145,
+      "error": 0.00819088319088318,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5694444444444444,
+      "error": 0.010861823361823397,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5747863247863247,
+      "error": 0.01157407407407407,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.584045584045584,
+      "error": 0.012286324786324687,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5950854700854701,
+      "error": 0.012642450142450246,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6200142450142451,
+      "error": 0.014423076923076927,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7037037037037037,
+      "error": 0.01780626780626776,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7122507122507122,
+      "error": 0.017984330484330513,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7133190883190883,
+      "error": 0.01781071937321943,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7193732193732194,
+      "error": 0.017806267806267928,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7264957264957265,
+      "error": 0.017984330484330513,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7353988603988604,
+      "error": 0.018162393162393153,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7346866096866097,
+      "error": 0.018162393162393153,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.74002849002849,
+      "error": 0.018162393162393153,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7197293447293447,
+      "error": 0.017450142450142314,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6606125356125356,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7638888888888888,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6264245014245015,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6410256410256411,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6791310541310541,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6634615384615384,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6962250712250713,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6855413105413105,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7150997150997151,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7086894586894587,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7136752136752137,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7029914529914529,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7086894586894587,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.707977207977208,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7150997150997151,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7314814814814815,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7321937321937322,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7407407407407407,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7428774928774928,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7539173789173789,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7631766381766382,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7987891737891738,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7923789173789174,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7731481481481481,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7752849002849003,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7720797720797721,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.76994301994302,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7727920227920227,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7834757834757835,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7952279202279202,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6606125356125356,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7638888888888888,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7435897435897436,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5338319088319088,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5398860398860399,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5466524216524217,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5363247863247863,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5395299145299145,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5381054131054132,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5302706552706553,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5284900284900285,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5338319088319088,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5430911680911681,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5395299145299145,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5473646723646723,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5430911680911681,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5712250712250713,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.613960113960114,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6363960113960114,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6424501424501424,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6538461538461539,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6762820512820513,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7556980056980057,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7507122507122507,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7418091168091168,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7553418803418803,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7517806267806267,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7510683760683761,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7542735042735043,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7546296296296297,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7564102564102564,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5117521367521367,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5142450142450142,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.51994301994302,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5096153846153846,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5117521367521367,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5121082621082621,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5131766381766382,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5128205128205128,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5113960113960114,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5238603988603988,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5270655270655271,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5252849002849003,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5252849002849003,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5395299145299145,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5694444444444444,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5747863247863247,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.584045584045584,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5950854700854701,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6200142450142451,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7037037037037037,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7122507122507122,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7133190883190883,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7193732193732194,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7264957264957265,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7353988603988604,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7346866096866097,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.74002849002849,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7197293447293447,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 176,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "does the predicted answer identify its own context's real answer?",
+        "xlabel": "layer",
+        "ylabel": "paired 2AFC accuracy (cosine, span pooling)",
+        "legend_labels": [
+          "shuffled-pair null band",
+          "map fit on this bank",
+          "banked single-turn map (#779)",
+          "identity + bias",
+          "identity",
+          "banked #2215 run (#779 map)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85"
+        ]
+      }
+    ],
+    "series": [
+      "map fit on this bank",
+      "banked single-turn map (#779)",
+      "identity + bias",
+      "identity"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

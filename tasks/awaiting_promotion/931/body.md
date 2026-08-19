@@ -5,6 +5,7 @@ title: The chat context→answer map does not carry over to fiction, which hosts
 kind: experiment
 tags:
 - followup-auto
+- estimator-bugged
 created_at: '2026-07-03T12:10:25Z'
 has_clean_result: true
 parent_id: 825

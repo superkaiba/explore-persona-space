@@ -91,9 +91,11 @@ from runpod_api import (  # noqa: E402
     DEFAULT_CONTAINER_DISK_GB,
     DEFAULT_CPU_VOLUME_GB,
     PodInfo,
+    RunPodCpuLaneDryError,
     RunPodError,
     RunPodInsufficientBalanceError,
     RunPodNoCapacityError,
+    RunPodNoPortWedgeError,
     create_cpu_pod,
     create_pod,
     current_account_hourly_burn,
@@ -327,7 +329,7 @@ def _write_metadata_file(
         path = _resolve_state_path()
         try:
             on_disk = _read_metadata_file()
-        except (json.JSONDecodeError, OSError) as exc:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
             print(
                 f"[pod_lifecycle] WARN: never-drop guard skipped — cannot read "
                 f"{path}: {exc}; the atomic write below repairs it.",
@@ -1164,6 +1166,20 @@ EXIT_STILL_WAITING = 75
 # no_compute_available terminal. Mirrored (not imported) in
 # backends/runpod.py::EXIT_STOPPED_POD_COLLISION.
 EXIT_STOPPED_POD_COLLISION = 76
+
+# Exit code for the CPU-lane residual refusal (#2184): a CPU-intent provision
+# hit the RunPod no-port wedge and bias-away DC rotation is exhausted or
+# interlocked-out (teardown unconfirmed, explicit user DC pin wedged, wedged
+# DC unidentifiable, budget/cap/candidates/enumeration exhaustion). Joins the
+# 75/76 structured-exit slot family: distinct from 0 (pod ready), 1 (generic
+# crash/refusal), 75 (still-waiting), and 76 (stopped-pod collision). The
+# stderr verdict (`CPU-LANE-DRY reason=<reason>`) IS the direct-CLI runbook.
+# Router disposition: 77 is NOT special-cased by the router terminal rung —
+# on the router/autonomous path it rides the generic `no_compute_available`
+# fallthrough (the auto chain advances to the fellows CPU lane; the watcher
+# capacity-retry pass may re-drive it), byte-identical to a pre-#2184 rc=1
+# wedge. That disposition is ACCEPTED by design (#2184 plan assumption 13).
+EXIT_CPU_LANE_DRY = 77
 
 
 class WaitForCapacityStillWaiting(RunPodError):
@@ -2405,7 +2421,7 @@ def _remove_failed_provision_rows(name: str) -> None:
 
 def _teardown_failed_provision(
     info: PodInfo, name: str, *, keep: bool, registered: bool = False
-) -> None:
+) -> str:
     """Best-effort terminate of the pod THIS provision created, on a
     bootstrap/ssh-wait failure (#2060; incident #1947). Surgical by pod_id —
     never name-resolution, so sibling pod-<N>-<slug> pods are untouched.
@@ -2415,7 +2431,14 @@ def _teardown_failed_provision(
     pods.conf / pods_ephemeral.json rows (True only on the bootstrap path;
     the ssh-wait path fails BEFORE registration) so a successful terminate
     also removes the stale rows. NEVER raises: a teardown failure must not
-    mask the original error."""
+    mask the original error.
+
+    Returns the teardown DISPOSITION (#2184) — ``"kept"`` (keep flag set, pod
+    deliberately left BILLING), ``"terminated"`` (terminate confirmed), or
+    ``"failed"`` (terminate raised; swallowed with a WARN per the contract
+    above). The ssh-wait tail threads it onto the propagating exception so
+    the CPU rotation interlock can re-create ONLY on ``"terminated"``; the
+    bootstrap-path caller ignores it (pre-#2184 behavior)."""
     if keep:
         print(
             f"  --keep-on-bootstrap-failure: pod {name} (id={info.pod_id}) kept "
@@ -2423,7 +2446,7 @@ def _teardown_failed_provision(
             f"`pod.py terminate` when done.",
             file=sys.stderr,
         )
-        return
+        return "kept"
     try:
         with _verified_teardown_grant(
             target=name,
@@ -2434,6 +2457,7 @@ def _teardown_failed_provision(
         print(f"BOOTSTRAP-FAILED-TERMINATED pod={name}", file=sys.stderr)
         if registered:
             _remove_failed_provision_rows(name)
+        return "terminated"
     except Exception as exc:  # broad by contract: teardown never masks the original error (#2060)
         print(
             f"  WARN: teardown of failed-provision pod {name} "
@@ -2441,6 +2465,7 @@ def _teardown_failed_provision(
             f"terminate manually with `pod.py terminate`.",
             file=sys.stderr,
         )
+        return "failed"
 
 
 def _provision_wait_register_bootstrap(
@@ -2469,7 +2494,7 @@ def _provision_wait_register_bootstrap(
     keep_flag = bool(getattr(args, "keep_on_bootstrap_failure", False))
     try:
         ready = wait_for_ssh(info.pod_id, timeout=600)
-    except RunPodError:
+    except RunPodError as exc:
         # The pod exists and is billing, but never exposed 22/tcp within the
         # window — record the wait so repeated attempts accumulate toward the
         # 1h [ssh-wait-ALARM], and name the recovery before propagating.
@@ -2482,9 +2507,13 @@ def _provision_wait_register_bootstrap(
             late = get_pod(info.pod_id)
             host_ip = late.ssh_host or info.ssh_host
             dc_id = late.data_center_id or info.data_center_id
-        except Exception as exc:  # deliberate: recording never shadows the re-raise
+        # `as get_pod_exc`, NOT `as exc`: `except ... as <name>` UNBINDS <name>
+        # at block exit, so reusing `exc` here would UnboundLocalError the
+        # outer handler's #2184 disposition-threading below (caught by
+        # test_ssh_wait_timeout_reraises_even_when_get_pod_fails).
+        except Exception as get_pod_exc:  # deliberate: recording never shadows the re-raise
             print(
-                f"[pod_lifecycle] WARN: late get_pod for bad-host record failed: {exc}",
+                f"[pod_lifecycle] WARN: late get_pod for bad-host record failed: {get_pod_exc}",
                 file=sys.stderr,
             )
             host_ip = info.ssh_host
@@ -2515,7 +2544,13 @@ def _provision_wait_register_bootstrap(
             )
         # #2060: tear down the pod THIS provision created (registration has
         # NOT happened yet on this path), then propagate the original error.
-        _teardown_failed_provision(info, name, keep=keep_flag, registered=False)
+        # #2184: thread the teardown disposition onto the propagating
+        # exception (a pre-declared slot on RunPodNoPortWedgeError; a
+        # harmless dynamic attribute on a bare RunPodError) so the CPU
+        # rotation interlock can re-create ONLY on a CONFIRMED terminate.
+        # The bare `raise` keeps type + traceback byte-identical.
+        disposition = _teardown_failed_provision(info, name, keep=keep_flag, registered=False)
+        exc.teardown_disposition = disposition
         raise
     note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
@@ -2749,6 +2784,334 @@ def _account_key_preflight(pod_label: str) -> None:
         sys.exit(1)
 
 
+def _rotation_wedge_budget() -> int:
+    """Max ADDITIONAL wedge-bearing creates after the first wedge (#2184).
+
+    Total wedge-bearing creates = 1 + budget (default 2 -> 3 total, ~35 min
+    worst case at 3 x 600 s ssh-waits). Env-tunable."""
+    return int(os.environ.get("EPM_CPU_DC_ROTATION_MAX_WEDGES", "2"))
+
+
+def _rotation_dc_cap() -> int:
+    """Max pinned dry-DC probes the rotation sweep may consume (#2184).
+
+    A pinned dry DC is cheap — one GraphQL round-trip, no pod — but the sweep
+    is still bounded (default 8, above the 5-DC sweep #2162 ran by hand)."""
+    return int(os.environ.get("EPM_CPU_DC_ROTATION_MAX_DCS", "8"))
+
+
+def _rotation_dc_candidates() -> list[str] | None:
+    """Rotation candidate DC ids, or ``None`` when enumeration fails (#2184).
+
+    ``get_datacenters()`` best-effort (same degrade contract as
+    ``_different_dc_hint``: WARN + no candidates — the caller REFUSES loudly
+    rather than rotating blind), minus DCs carried by fresh #2011
+    bad-placement records (the cross-invocation bias-away memory)."""
+    try:
+        ids = [d.get("id") for d in get_datacenters() if d.get("id")]
+    except (RunPodError, OSError, ValueError) as exc:
+        # Same fail-open catch trio as _different_dc_hint (#1655): raw
+        # json/timeout classes can escape the graphql wrapper.
+        print(
+            f"[cpu-dc-rotation] WARN: get_datacenters failed ({exc}); "
+            "cannot enumerate rotation candidates.",
+            file=sys.stderr,
+        )
+        return None
+    bad_dcs = {
+        e.get("dc_id") for entries in fresh_bad_hosts().values() for e in entries if e.get("dc_id")
+    }
+    return [i for i in ids if i not in bad_dcs]
+
+
+def _next_rotation_dc(candidates: list[str], exclude: set[str]) -> str | None:
+    """First candidate DC not in ``exclude`` (stable listing order), or None."""
+    for cand in candidates:
+        if cand not in exclude:
+            return cand
+    return None
+
+
+def _rotation_advance(
+    args: argparse.Namespace,
+    name: str,
+    cpu_instance_id: str,
+    intent_label: str,
+    wedged_dcs: list[str],
+    dry_dcs: list[str],
+    candidates: list[str] | None,
+) -> tuple[str, list[str]]:
+    """Pick the next rotation DC pin, enumerating candidates on first use
+    (#2184). Refuses via :func:`_cpu_lane_dry_refusal` (never returns) when
+    enumeration fails (``dc-enumeration-failed``) or every candidate is
+    already wedged/dry (``candidates-exhausted``). Returns
+    ``(dc_pin, candidates)`` so the caller keeps the one-shot enumeration."""
+    if candidates is None:
+        candidates = _rotation_dc_candidates()
+    if candidates is None:
+        _cpu_lane_dry_refusal(
+            args,
+            name,
+            intent_label,
+            cpu_instance_id,
+            wedged_dcs,
+            dry_dcs,
+            reason="dc-enumeration-failed",
+        )
+    dc_pin = _next_rotation_dc(candidates, set(wedged_dcs) | set(dry_dcs))
+    if dc_pin is None:
+        _cpu_lane_dry_refusal(
+            args,
+            name,
+            intent_label,
+            cpu_instance_id,
+            wedged_dcs,
+            dry_dcs,
+            reason="candidates-exhausted",
+        )
+    return dc_pin, candidates
+
+
+def _cpu_lane_dry_refusal(
+    args: argparse.Namespace,
+    name: str,
+    intent_label: str,
+    cpu_instance_id: str,
+    wedged_dcs: list[str],
+    dry_dcs: list[str],
+    *,
+    reason: str,
+    lingering: PodInfo | None = None,
+) -> NoReturn:
+    """Typed CPU-lane residual refusal (#2184) — mirrors
+    ``_emit_still_waiting_and_exit``: print a multi-line machine-greppable
+    ``CPU-LANE-DRY reason=<reason>`` verdict to stderr (it rides the #1465
+    stderr tail into the router failure record), then exit
+    :data:`EXIT_CPU_LANE_DRY` (77) with :class:`RunPodCpuLaneDryError` as the
+    typed cause. Never a silent fallback, never a GPU auto-substitution — the
+    verdict NAMES the sanctioned residual (`--intent eval`, a recorded
+    deviation) and the caller re-runs it deliberately."""
+    name_suffix = getattr(args, "name_suffix", None)
+    suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+    lines = [
+        f"CPU-LANE-DRY reason={reason} intent={intent_label} instance={cpu_instance_id} "
+        f"wedged_dcs={','.join(wedged_dcs) or 'none'} dry_dcs={','.join(dry_dcs) or 'none'} "
+        f"(#2184)"
+    ]
+    if reason == "teardown-unconfirmed":
+        pod_ref = lingering.pod_id if lingering is not None else name
+        lines.append(
+            f"Wedged pod {pod_ref} ({name}) may STILL BE BILLING — teardown not confirmed. "
+            f"Terminate it manually FIRST: uv run python scripts/pod.py terminate "
+            f"--issue {args.issue}{suffix_hint} --yes"
+        )
+    if reason == "user-pin-wedged":
+        lines.append(
+            "The explicitly pinned DC wedged; rotation is disabled for explicit "
+            "--data-center-id pins — re-run WITHOUT the pin to enable bias-away rotation."
+        )
+    lines.append(
+        "Residual route (sanctioned, .claude/rules/pods.md CPU-intent residual route): "
+        "provision the smallest GPU intent instead and record the deviation in the run's "
+        "dispatch note —\n"
+        f"  uv run python scripts/pod.py provision --issue {args.issue} --intent eval "
+        "[--name-suffix <slug>]"
+    )
+    lines.append(
+        "Confirm the workload's RAM/disk fit first: `eval` = 1x H100 and the GPU create "
+        "payload carries no host-RAM floor, vs cpu5m-16-128's 128 GB RAM / up to 240 GB "
+        "disk — size --container-disk-gb explicitly for large-disk cpu-bigmem-class "
+        "footprints."
+    )
+    lines.append(
+        "Why GPU-lane and not the shared VM: a dedicated pod's uncontended cores measured "
+        "~6x the shared VM per unit (#2054); the idle GPU is an accepted, recorded "
+        "deviation (#2162 precedent)."
+    )
+    lines.append(
+        "(Router/autonomous path: this exit surfaces as no_compute_available — the auto "
+        "chain advances to the fellows CPU lane and the watcher may re-drive it; each "
+        "re-drive re-runs the full rotation budget. Direct-CLI callers: this verdict IS "
+        "the runbook.)"
+    )
+    print("\n".join(lines), file=sys.stderr, flush=True)
+    raise SystemExit(EXIT_CPU_LANE_DRY) from RunPodCpuLaneDryError(
+        f"CPU-LANE-DRY reason={reason} intent={intent_label} instance={cpu_instance_id} (#2184)"
+    )
+
+
+def _provision_cpu_with_rotation(
+    args: argparse.Namespace,
+    name: str,
+    cpu_instance_id: str,
+    intent_label: str,
+    cpu_volume_gb: int,
+    cpu_container_disk_gb: int,
+    *,
+    wait_for_capacity: bool,
+    explicit_wait_flag: bool,
+    data_center_id: str | None,
+) -> None:
+    """CPU-intent create + bring-up with bias-away DC rotation on a no-port
+    wedge (#2184). Attempt 1 preserves today's behavior verbatim (user DC pin
+    honored; #2238 wait-for-capacity loop when armed). On a
+    RunPodNoPortWedgeError from the provision tail, a rotation re-create fires
+    ONLY when the tail-threaded teardown disposition reads "terminated" — the
+    #2060 auto-teardown is the sole terminate site (no new call site). Rotation
+    is DISABLED under --keep-on-bootstrap-failure (typed wedge propagates,
+    today's single-attempt shape); an unconfirmed/failed teardown, an
+    explicitly user-pinned wedged attempt, or an unidentifiable wedged DC each
+    refuse via the typed CPU-LANE-DRY residual (reason-tagged) — never a
+    create. Candidates: get_datacenters() minus this invocation's wedged DCs
+    minus this invocation's dry DCs minus fresh bad-placement DCs (#2011);
+    rotation advances on RunPodNoCapacityError (a pinned dry DC is cheap: one
+    GraphQL call, no pod). Bounded by EPM_CPU_DC_ROTATION_MAX_WEDGES (default
+    2 -> total wedge-bearing creates = 1 + budget = 3) and
+    EPM_CPU_DC_ROTATION_MAX_DCS (default 8 pinned candidates). Exhaustion ->
+    the typed CPU-LANE-DRY residual refusal (never a silent fallback, never a
+    same-DC blind retry, never a GPU auto-substitution).
+    """
+    # getattr: hand-built Namespaces predate the flag — the tail's own pattern.
+    keep_flag = bool(getattr(args, "keep_on_bootstrap_failure", False))
+    user_pinned = data_center_id is not None
+    wedged_dcs: list[str] = []
+    dry_dcs: list[str] = []
+    dc_pin = data_center_id  # attempt 1: user pin (or None) — today's behavior
+    rotation_active = False
+    candidates: list[str] | None = None  # lazily enumerated on first wedge
+
+    if wait_for_capacity and not explicit_wait_flag:
+        # CPU-legible auto-enable note, printed AT the branch that retries
+        # (promise printed <=> promise kept, #2238) — once, before attempt 1.
+        print(
+            "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
+            "(unbounded retry on SUPPLY_CONSTRAINT for the CPU create)."
+        )
+    while True:
+        try:
+            if wait_for_capacity and not rotation_active:
+                info = create_cpu_pod_with_wait_for_capacity(
+                    name=name,
+                    instance_id=cpu_instance_id,
+                    volume_gb=cpu_volume_gb,
+                    container_disk_gb=cpu_container_disk_gb,
+                    # preflight_check stays None DELIBERATELY (not an
+                    # omission) — the CPU branch skips the $/hr guard by
+                    # design (see the CPU-branch comment in cmd_provision).
+                    data_center_id=dc_pin,
+                )
+            else:
+                # Rotation attempts use PLAIN create_cpu_pod: within rotation
+                # the goal is a fast per-DC capacity probe — an unbounded
+                # wait pinned to one DC would wedge the rotation (#2238).
+                info = create_cpu_pod(
+                    name=name,
+                    instance_id=cpu_instance_id,
+                    volume_gb=cpu_volume_gb,
+                    container_disk_gb=cpu_container_disk_gb,
+                    data_center_id=dc_pin,
+                )
+            print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
+            _provision_wait_register_bootstrap(args, name, info, intent_label)
+            return
+        except WaitForCapacityStillWaiting as exc:
+            _emit_still_waiting_and_exit(exc)
+        except RunPodNoPortWedgeError as exc:
+            # ---- teardown interlock (#2184): NO re-create without a
+            # CONFIRMED-terminated wedged pod. Ordering is deliberate:
+            # keep-flag first (rotation categorically disabled), then
+            # teardown disposition (a possibly-billing pod is the most
+            # urgent refusal), then user pin, then wedged-DC
+            # identifiability, then budget.
+            if keep_flag:
+                print(
+                    "[cpu-dc-rotation] --keep-on-bootstrap-failure set: rotation DISABLED "
+                    "(each wedged attempt would strand a kept, BILLING pod); propagating "
+                    "the typed wedge — today's single-attempt shape (#2184)",
+                    file=sys.stderr,
+                )
+                raise  # R5: keep-flag single-attempt propagation unchanged (typed)
+            if getattr(exc, "teardown_disposition", None) != "terminated":
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="teardown-unconfirmed",
+                    lingering=exc.info,
+                )
+            if user_pinned:
+                # An explicit pin is an operator instruction — never rotate
+                # away from it silently.
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="user-pin-wedged",
+                )
+            wedged = (exc.info.data_center_id if exc.info else None) or dc_pin
+            if wedged is None:
+                # Never a defensive same-DC re-pick: an unidentifiable
+                # wedged DC makes bias-away rotation impossible.
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="wedged-dc-unknown",
+                )
+            wedged_dcs.append(wedged)
+            # Post-append `>=`: at the default budget 2, wedges 1 and 2
+            # rotate and wedge 3 refuses — exactly 1 + budget = 3
+            # wedge-bearing creates total.
+            if len(wedged_dcs) >= 1 + _rotation_wedge_budget():
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="wedge-budget-exhausted",
+                )
+            dc_pin, candidates = _rotation_advance(
+                args, name, cpu_instance_id, intent_label, wedged_dcs, dry_dcs, candidates
+            )
+            rotation_active = True
+            print(
+                f"[cpu-dc-rotation] no-port wedge in {wedged} (teardown CONFIRMED); "
+                f"retrying pinned to {dc_pin} ({len(wedged_dcs)} of "
+                f"{1 + _rotation_wedge_budget()} wedge-bearing attempts used) (#2184)"
+            )
+        except RunPodNoCapacityError:
+            if not rotation_active:
+                raise  # R5: first-attempt fail-loud propagation unchanged
+            # Rotation always pins a DC, so dc_pin is non-None on this arm.
+            dry_dcs.append(dc_pin)
+            # Post-append `>=`, same convention as the wedge budget guard.
+            if len(dry_dcs) >= _rotation_dc_cap():
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="dc-cap-exhausted",
+                )
+            dc_pin, candidates = _rotation_advance(
+                args, name, cpu_instance_id, intent_label, wedged_dcs, dry_dcs, candidates
+            )
+            print(f"[cpu-dc-rotation] {dry_dcs[-1]} dry (no capacity); trying {dc_pin} (#2184)")
+
+
 def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequential pre-flight guard chain (one independent refusal branch per hazard); the function sat AT the cap and #1997's plan-mandated stopped-collision refusal branch tips it; splitting the per-candidate loop would separate the two refusal branches from their shared same-named scan (annotated-noqa precedent: dispatch_issue.py _launch_extra_from_args).
     """Create a fresh pod for issue #N, wait for SSH, register it, bootstrap it."""
     if args.list_intents:
@@ -2949,43 +3312,20 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
             )
             cpu_container_disk_gb = min(cpu_container_disk_gb, caps.max_container_disk_gb)
             cpu_volume_gb = min(cpu_volume_gb, caps.max_container_disk_gb)
-        if wait_for_capacity:
-            if not explicit_wait_flag:
-                # CPU-legible auto-enable note, printed AT the branch that
-                # retries (promise printed ⟺ promise kept — the pre-#2238 gap
-                # printed nothing here and never retried).
-                print(
-                    "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
-                    "(unbounded retry on SUPPLY_CONSTRAINT for the CPU create)."
-                )
-            try:
-                info = create_cpu_pod_with_wait_for_capacity(
-                    name=name,
-                    instance_id=cpu_instance_id,
-                    volume_gb=cpu_volume_gb,
-                    container_disk_gb=cpu_container_disk_gb,
-                    # preflight_check stays None DELIBERATELY (not an
-                    # omission): the CPU branch skips
-                    # _assert_under_account_hourly_cap by design (see the
-                    # branch comment above — CPU pods cost cents/hr and
-                    # estimate_pod_hourly_rate returns 0 at gpu_count=0), so
-                    # the loop's `local-cap` reason token is simply never
-                    # emitted on CPU; `no-capacity` and the API-side
-                    # `insufficient-balance` tokens both remain reachable.
-                    data_center_id=data_center_id,
-                )
-            except WaitForCapacityStillWaiting as exc:
-                _emit_still_waiting_and_exit(exc)
-        else:
-            info = create_cpu_pod(
-                name=name,
-                instance_id=cpu_instance_id,
-                volume_gb=cpu_volume_gb,
-                container_disk_gb=cpu_container_disk_gb,
-                data_center_id=data_center_id,
-            )
-        print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
-        _provision_wait_register_bootstrap(args, name, info, intent_label)
+        # Create + bring-up + no-port-wedge DC rotation live in the extracted
+        # helper (#2184); attempt 1 preserves the pre-#2184 behavior verbatim
+        # (incl. the #2238 wait-for-capacity wrap + the auto-enable note).
+        _provision_cpu_with_rotation(
+            args,
+            name,
+            cpu_instance_id,
+            intent_label,
+            cpu_volume_gb,
+            cpu_container_disk_gb,
+            wait_for_capacity=wait_for_capacity,
+            explicit_wait_flag=explicit_wait_flag,
+            data_center_id=data_center_id,
+        )
         return
 
     spec, intent_label = _resolve_spec(args.intent, args.gpu_type, args.gpu_count)
@@ -3512,6 +3852,47 @@ def _upload_verification_outroot_attested(note: str) -> bool:
     )
 
 
+_ROWS_ATTESTATION_VALUES = frozenset({"reconciled", "no-declared-count", "n/a"})
+
+
+def _upload_verification_rows_attested(note: str) -> bool:
+    """True iff the note carries the realized row-count attestation token (#2148).
+
+    Mirrors :func:`_upload_verification_outroot_attested`: a JSON-shaped note
+    with ``"rows": "reconciled" | "no-declared-count" | "n/a"``, or a prose
+    note carrying ``rows=<value>`` / ``rows: <value>`` (case-insensitive).
+
+    Fixed value semantics (the three are NOT interchangeable):
+    ``reconciled`` = the sweep ran and every non-exempt label's realized
+    distinct full-key count reconciled against the input-side declaration
+    (exempt / keyless labels are named inline in the note);
+    ``no-declared-count`` = the sweep ran but the run declared no
+    expectation for its artifact classes, so the reconciliation SKIPped;
+    ``n/a`` = the run produced no artifact class carrying a per-row index
+    at all. There is deliberately no fourth value - an ERROR/FAIL-bearing
+    sweep never reaches a PASS note, so the guard's PASS gate already
+    excludes it. #2091: a store short by ~25% INSIDE present files passed
+    every file-level check because the count check read the producer's
+    self-reported ``capture_rows`` - the expectation echoed back; the
+    realized row-count sweep (upload-verifier Step 2.11 /
+    ``verify_uploads.py --expected-rows``) is the arm that catches it, and
+    this token is what makes a skipped sweep block teardown.
+    """
+    try:
+        parsed = json.loads(note)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        parsed = None
+    if isinstance(parsed, dict):
+        return str(parsed.get("rows", "")).strip().lower() in _ROWS_ATTESTATION_VALUES
+    return bool(
+        re.search(
+            r"\brows\s*[=:]\s*(reconciled|no-declared-count|n/a)\b",
+            note,
+            re.IGNORECASE,
+        )
+    )
+
+
 def _guard_upload_verification_before_terminate(
     issue: int, *, skip_flag: bool, dry_run: bool
 ) -> None:
@@ -3519,9 +3900,11 @@ def _guard_upload_verification_before_terminate(
     ``kind: experiment`` task unless an ``epm:upload-verification PASS``
     marker exists on the task AND its note carries the out-root
     sweep-attestation token ``outroot=<swept-clean|residue-committed|none>``
-    (#2187), OR ``--skip-upload-verify`` was passed (logs a LOUD warning,
-    still proceeds; the flag waives the token exactly as it waives the
-    PASS itself).
+    (#2187) AND the realized row-count attestation token
+    ``rows=<reconciled|no-declared-count|n/a>`` (#2148), OR
+    ``--skip-upload-verify`` was passed (logs a LOUD warning, still
+    proceeds; the flag waives the tokens exactly as it waives the PASS
+    itself).
 
     Non-experiment tasks (``kind`` ∈ {analysis, infra, batch, survey}),
     tasks that can't be resolved (manual / ad-hoc pods, branch-guard
@@ -3586,7 +3969,48 @@ def _guard_upload_verification_before_terminate(
     note = _latest_upload_verification_note(issue)
     if note is not None and _note_records_pass(note):
         if _upload_verification_outroot_attested(note):
-            return
+            if _upload_verification_rows_attested(note):
+                return
+            # PASS with outroot= but WITHOUT the rows= realized row-count
+            # attestation (#2148). Same waiver logic as the outroot token:
+            # --skip-upload-verify already waives the strictly stronger
+            # no-marker case, so it waives this token too - LOUDLY.
+            if skip_flag:
+                print(
+                    f"[pod_lifecycle] WARN: terminating {issue} with an "
+                    f"epm:upload-verification PASS marker that LACKS the "
+                    f"rows= realized row-count attestation because "
+                    f"--skip-upload-verify was passed (#2148). Rows missing "
+                    f"INSIDE present files (the #2091 class: ~25% short "
+                    f"behind a PASS) will NOT have been reconciled.",
+                    file=sys.stderr,
+                )
+                return
+            raise SystemExit(
+                f"Refusing to terminate the pod for task #{issue}: the "
+                f"latest epm:upload-verification PASS note lacks the "
+                f"realized row-count attestation token "
+                f"`rows=<reconciled|no-declared-count|n/a>` (#2148 - #2091 "
+                f"PASSed while ~25% of rows were missing INSIDE present "
+                f"files; the producer's self-reported count was the "
+                f"expectation echoed back). Run the reconciliation first: "
+                f"declare the run's input-side expectations and count the "
+                f"store's own row-index files via `uv run python "
+                f"scripts/verify_uploads.py --issue {issue} --expected-rows "
+                f"<LABEL>=<N> --row-index-hf-prefix <per-label prefix> "
+                f"--row-index-distinct-key <unit_field,rollout_field>` "
+                f"(recipe: upload-verifier Step 2.11; "
+                f".claude/rules/upload-verifier-section-reference.md). Then "
+                f"re-post the marker with BOTH tokens (`uv run python "
+                f"scripts/task.py post-marker {issue} "
+                f"epm:upload-verification --file <note.md>` where the note "
+                f"leads with `Verdict: PASS` and carries `outroot=<value>` "
+                f"and `rows=<reconciled|no-declared-count|n/a>` - `n/a` "
+                f"only when the run produced no per-row-index artifact "
+                f"class), and re-run terminate. --skip-upload-verify "
+                f"remains the never-ran-pod escape (it waives the token "
+                f"exactly as it waives the PASS itself)."
+            )
         # PASS without the outroot= sweep-attestation token (#2187). The
         # skip flag waives the token exactly as it waives the whole PASS
         # (it already waives the strictly stronger requirement — a pod with

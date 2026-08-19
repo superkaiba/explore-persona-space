@@ -543,6 +543,27 @@ def test_refresh_does_not_fabricate_unmanaged_rows(
 # ---------------------------------------------------------------------------
 
 
+def _scrub_runpod_api_resolvable(paths: list[str]) -> list[str]:
+    """Drop every sys.path entry from which a bare ``import runpod_api``
+    could resolve (#2173): a regular module ``<entry>/runpod_api.py`` OR a
+    (namespace-)package dir ``<entry>/runpod_api/``. Path-equality with the
+    local scripts/ dir is NOT sufficient — the #2164 incident leaked the
+    MAIN checkout's scripts/ via a collection-time repo_root()-derived
+    insert in tests/test_issue1482_densesae_fullwidth.py (fixed in #2181),
+    which the old scrub could not see. Zip/meta-path providers are the
+    negative control's job, not this predicate's — an entry this predicate
+    cannot see fails loud as DID-NOT-RAISE at the scrub site (#2173 kill
+    criterion 1 routes it to re-plan). Mirrored (duplicated by the
+    established two-file convention) in tests/test_backend_poll.py."""
+    kept: list[str] = []
+    for p in paths:
+        base = Path(p or ".")
+        if (base / "runpod_api.py").is_file() or (base / "runpod_api").is_dir():
+            continue
+        kept.append(p)
+    return kept
+
+
 def test_ensure_scripts_dir_bootstrap_enables_runpod_api_import(monkeypatch):
     """#1304: ``pod_config._ensure_scripts_dir_on_sys_path()`` makes a bare
     ``import runpod_api`` resolve in MODULE mode (repo root on sys.path,
@@ -550,16 +571,19 @@ def test_ensure_scripts_dir_bootstrap_enables_runpod_api_import(monkeypatch):
     ``ModuleNotFoundError`` exists once scripts/ is scrubbed. Mirror of
     tests/test_backend_poll.py's #1296 behavioral test
     (``test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode``).
-    Import only — no live RunPod API call is ever made."""
+    Import only — no live RunPod API call is ever made. Scrub hardened by
+    #2173 to resolvability (``_scrub_runpod_api_resolvable``) after the
+    #2164 false-NEW, where tests/test_issue1482_densesae_fullwidth.py leaked
+    the MAIN checkout's scripts/ past the old path-equality scrub (polluter
+    fixed in #2181, mechanism verified in #2118)."""
     import importlib
 
-    scripts_dir = str(Path(pod_config.__file__).resolve().parent)
-    # Scrub every sys.path entry that resolves to scripts/ (cross-test-file
-    # inserts included, e.g. this file's own module-top insert).
-    # monkeypatch.setattr replaces the LIST OBJECT and restores the original
-    # at teardown, so the helper's in-test insert (into the scrubbed list)
-    # never leaks either.
-    scrubbed = [p for p in sys.path if str(Path(p or ".").resolve()) != scripts_dir]
+    # Scrub every sys.path entry from which a bare ``import runpod_api``
+    # could resolve (this file's own module-top insert AND foreign-checkout
+    # inserts — #2164/#2173). monkeypatch.setattr replaces the LIST OBJECT
+    # and restores the original at teardown, so the helper's in-test insert
+    # (into the scrubbed list) never leaks either.
+    scrubbed = _scrub_runpod_api_resolvable(sys.path)
     monkeypatch.setattr(sys, "path", scrubbed)
     # delitem records + restores the PRE-test runpod_api module object (this
     # file imports PodInfo from it at module top, so one exists).
@@ -580,4 +604,50 @@ def test_ensure_scripts_dir_bootstrap_enables_runpod_api_import(monkeypatch):
         # Drop the module object THIS test just imported so it cannot alias
         # past teardown; monkeypatch then restores the original entry after
         # this pop.
+        sys.modules.pop("runpod_api", None)
+
+
+def test_module_mode_negative_control_survives_foreign_scripts_pollution(monkeypatch, tmp_path):
+    """#2173 regression guard: deterministically simulate the #2164
+    pollution — a FOREIGN checkout's scripts/ dir (stub ``runpod_api.py``
+    carrying ``FOREIGN_SENTINEL``) prepended to sys.path, the shape a
+    module-level ``sys.path.insert`` in another test file produces (the
+    tests/test_issue1482_densesae_fullwidth.py polluter, fixed in #2181).
+    The SAME ``_scrub_runpod_api_resolvable`` the main #1304 test dispatches
+    must still yield the ``ModuleNotFoundError`` negative control, and the
+    post-bootstrap import must resolve the LOCAL module, never the foreign
+    stub. Against the old path-equality scrub this guard FAILS
+    (``DID NOT RAISE``) — the reintroduction-catching property #2173
+    acceptance criterion 3 demands. Mirror of the same-named guard in
+    tests/test_backend_poll.py."""
+    import importlib
+
+    foreign_scripts = tmp_path / "foreign_checkout" / "scripts"
+    foreign_scripts.mkdir(parents=True)
+    (foreign_scripts / "runpod_api.py").write_text("FOREIGN_SENTINEL = True\n")
+
+    polluted = [str(foreign_scripts), *sys.path]
+    scrubbed = _scrub_runpod_api_resolvable(polluted)
+    monkeypatch.setattr(sys, "path", scrubbed)
+    # delitem records + restores the PRE-test runpod_api module object (this
+    # file imports PodInfo from it at module top, so one exists).
+    monkeypatch.delitem(sys.modules, "runpod_api", raising=False)
+
+    try:
+        # NEGATIVE CONTROL: the foreign entry must be scrubbed too — with any
+        # runpod_api-resolvable entry surviving, this import succeeds and the
+        # guard fails as DID-NOT-RAISE (the pinned reintroduction signature).
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module("runpod_api")
+
+        pod_config._ensure_scripts_dir_on_sys_path()
+
+        mod = importlib.import_module("runpod_api")
+        assert not hasattr(mod, "FOREIGN_SENTINEL")
+        assert hasattr(mod, "list_team_pods")
+    finally:
+        # Drop whatever module object landed (the local one on PASS; the
+        # foreign stub on a DID-NOT-RAISE failure) so it cannot alias past
+        # teardown; monkeypatch then restores the original entry after this
+        # pop.
         sys.modules.pop("runpod_api", None)

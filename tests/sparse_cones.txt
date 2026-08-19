@@ -95,6 +95,20 @@
 #                             committed parent tables and byte-compares against the
 #                             committed recency_rawscale.json (narrow 8.3M cone —
 #                             the full issue_2162 dir is 37M)
+#   eval_results/issue_1739/dv_dataset — test_issue1739_bareq_rung_banks.py::
+#                             test_load_rung_map_real_body_reads_the_committed_labeling
+#                             executes scripts/issue1739_bareq_pod.load_rung_map ->
+#                             DV_ROOT/<behavior>/labeling.json (fail-loud); deterministic
+#                             sparse-worktree FileNotFoundError, hit twice in #2329
+#                             (the #671 class). Narrow cone: full issue_1739 is 4.9G,
+#                             dv_dataset is 22M; == issue2220_readwrite._PARENT_INPUTS_CONE.
+#   eval_results/issue_2163 — tests/test_matched_support.py regression fixtures:
+#                             predictor_partials.json + population_partials.json +
+#                             census.npz (the #2180 matched-covariate-support
+#                             known-positive / negative-control artifacts; ~11M)
+#   eval_results/issue_2329/cap_hit — test_issue2329_gate3_capfresh.py sha-pins +
+#                             re-validates the committed frozen capregen breach
+#                             basis (cap_hit_report_anchors_preregen.json, ~30K)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -116,4 +130,10 @@ eval_results/issue_1481
 eval_results/issue_2054
 eval_results/issue_778
 eval_results/issue_2162/f_metrics
+eval_results/issue_2329/judge/gates
+eval_results/issue_2329/cap_hit
 external/jacobian-lens
+eval_results/issue_1739/dv_dataset
+eval_results/issue_2094/f_metrics
+eval_results/issue_2333/inputs
+eval_results/issue_2163

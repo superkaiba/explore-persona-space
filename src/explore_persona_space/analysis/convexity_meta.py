@@ -93,12 +93,22 @@ NON_GEOMETRY_SCALAR_KINDS = frozenset(
 # --- Reproducibility metadata -------------------------------------------------
 
 
-def reproducibility_metadata(extra: dict[str, Any] | None = None) -> dict[str, Any]:
+def reproducibility_metadata(
+    extra: dict[str, Any] | None = None, *, phase: str | None = None
+) -> dict[str, Any]:
     """Build the reproducibility-metadata block embedded in every output JSON.
 
     Returns a dict with git provenance (commit + dirty flag), ISO-8601 UTC
     timestamp, library versions, platform, and the pinned bootstrap seed / B.
     Merges ``extra`` on top.
+
+    ``phase`` (optional, #2194): the CALLER's card phase-IDENTITY slug,
+    threaded to ``as_metadata_dict`` (validated there; emitted as a sibling of
+    ``git_commit``). Default ``None`` emits no ``phase`` key — output is
+    byte-identical for every existing caller. ``extra`` merges AFTER, so a
+    legacy ``extra={"phase": ...}`` caller keeps its precedence (that route
+    bypasses write-time validation by construction; the consumer-side
+    collision guard in ``scripts/verify_report.py`` covers it).
     """
     from explore_persona_space.orchestrate.provenance import (
         as_metadata_dict,
@@ -106,7 +116,7 @@ def reproducibility_metadata(extra: dict[str, Any] | None = None) -> dict[str, A
     )
 
     meta: dict[str, Any] = {
-        **as_metadata_dict(git_provenance()),
+        **as_metadata_dict(git_provenance(), phase=phase),
         "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "python_version": sys.version.split()[0],
         "platform": platform.platform(),

@@ -1,0 +1,54 @@
+{
+  "humaneval": {
+    "n_control": 25,
+    "items_missing_canonical": 0,
+    "per_composition": {
+      "prompt+canonical": {
+        "pass": 25,
+        "fail": 0,
+        "unparsed": 0
+      }
+    },
+    "best_composition": "prompt+canonical",
+    "best_pass_rate": 1.0,
+    "harness_ok": true
+  },
+  "mbpp": {
+    "n_control": 25,
+    "items_missing_canonical": 0,
+    "per_composition": {
+      "code": {
+        "pass": 25,
+        "fail": 0,
+        "unparsed": 0
+      }
+    },
+    "best_composition": "code",
+    "best_pass_rate": 1.0,
+    "harness_ok": true
+  },
+  "bigcodebench": {
+    "n_control": 25,
+    "items_missing_canonical": 0,
+    "per_composition": {
+      "canonical_only": {
+        "pass": 0,
+        "fail": 25,
+        "unparsed": 0
+      },
+      "code_prompt+canonical": {
+        "pass": 13,
+        "fail": 12,
+        "unparsed": 0
+      },
+      "complete_prompt+canonical": {
+        "pass": 13,
+        "fail": 12,
+        "unparsed": 0
+      }
+    },
+    "best_composition": "code_prompt+canonical",
+    "best_pass_rate": 0.52,
+    "harness_ok": false
+  }
+}

@@ -65,6 +65,7 @@ from explore_persona_space.orchestrate.hub import (
     list_hf_files_under_path,
     retry_transient,
 )
+from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
 
 logger = logging.getLogger(__name__)
 
@@ -705,6 +706,16 @@ def upload_dir_sharded(
     result = ShardUploadResult(repo_id=repo_id)
 
     shards = sorted(p for p in local.glob(shard_glob) if p.is_file())
+
+    # Secret upload gate (2026-08-17): every Hub-bound shard is scanned for
+    # real-secret-grade strings BEFORE any headroom probe or commit — the
+    # four HF secret-scanning alerts (2026-06-15 → 2026-08-17) were all
+    # corpus text with pasted third-party credentials reaching the PUBLIC
+    # data repo unscanned. Fail-loud, never mutates bytes (remediation:
+    # scripts/scrub_secrets.py, then re-pack/re-hash). Runs ONCE on the full
+    # shard list, outside the retry thunks. Kill switch:
+    # EPM_SECRET_UPLOAD_GATE=0.
+    assert_upload_clean(shards, what=f"upload_dir_sharded:{repo_id}/{path_in_repo}")
 
     # Hoisted (#1824): the exact on-disk byte sum feeds BOTH the #1034
     # proactive headroom probe (conservative: the FULL store's size, not the

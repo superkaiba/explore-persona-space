@@ -60,3 +60,20 @@ latch arm. The plan's "all existing rows stay green" enumerated the
 cd-latch family but omitted B22. Check recipe: grep the test corpus for
 the canonical-root literal in cd/RHS positions, then replay each hit
 against the repointed case arm under the hermetic env.
+
+Recurred: #2357 v3 (same guard) — RUNTIME-EXECUTION replay, the sibling of
+the test-corpus replay: a static arming predicate ("cd-to-root proves the
+commit's base") must hold under bash's runtime skip semantics, not just
+enumerate spellings. v3 armed cds with own-sep AND, arguing "a skipped cd
+also skips the commit" — true only INSIDE one &&-list: `X && cd <root>;
+git commit -- p` arms (nsep check only excludes BG/PIPE) while X's failure
+skips the cd and the SEQ-separated commit still runs at hook cwd; at a
+root-SUBDIR cwd the root-relative scoped read (git -C root -- pathspec)
+checks the wrong path and gated content lands (allow). Sibling: tgt
+extraction `awk '{print $1}'` discards trailing words, so `cd <root> junk`
+arms while bash cd fails "too many arguments" — falsifying the plan's
+"cd to an existing root fails only on ENOENT/EACCES" residual argument.
+Check recipe: for each admitted separator/shape, ask "can this cd be
+statically armed yet not executed (or fail) while a commit still runs?" —
+enumerate skip channels (OR-skip, AND-guard-failure + later chain break,
+BG/PIPE subshell, compound body, cd argv errors) against the admission set.

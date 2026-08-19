@@ -87,6 +87,7 @@
 - [Span-pair swap-control audit](feedback_span_pair_swap_control_audit.md) — ΔR²: proximity linkage, own-speech contamination, subset match (#931)
 - [Rank-1 read/write designs](feedback_rank1_readwrite_design_621.md) — trained-neg bystanders, bridge swap = Concerns not REVISEs (#621)
 - [Rank-1 firing-test alternatives](feedback_rank1_firing_test_alternatives.md) — shift-DV strawman; folded |firing| inverts suppression (#621)
+- [Snowball opening-mediation designs](feedback_snowball_opening_mediation_designs.md) — prefill-only verdict + null-covered continuation companion = recoverable alternatives (#2333)
 
 ## Panel composition / axis conflation
 - [Repaired-grid re-mine](feedback_repaired_grid_remine_review.md) — cap mismatch from own-suite fix; twin families; scarcity narration (#2221)
@@ -105,6 +106,11 @@
 
 ## Infra-plan reviews
 - [Infra-plan checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Literal-sweep prose-anchor pins](feedback_literal_sweep_prose_anchor_pins.md) — cap-raise sweeps: `.index()` prose anchors escape token greps; replay expected residuals (#2391)
+- [Lexicon live-fire inflection gap](feedback_lexicon_livefire_inflection_gap.md) — replay the exact in-repo regex on the incident artifact; "confirmed"≠"confirms" (#2198)
+- [Preferred-channel fixture discrimination](feedback_preferred_channel_fixture_discrimination.md) — legacy path may already resolve the demo fixture; demand legacy-fails fixture or channel-naming counter (#2194)
+- [Guard lead-grammar review](feedback_guard_lead_grammar_review.md) — executed ERE replay + reachability probes + masked-arm filler test (#2371)
+- [Incident-diagnosis alternatives lens](feedback_incident_diagnosis_alternatives_lens.md) — shape-based detection defuses origin stories; audit causal-claim design-work sites (#2360)
 - [Hub repack-plan review](feedback_hub_repack_plan_review.md) — pack-time server-anchor TOCTOU; recompute units/tier costings from inventory (#2321)
 - [Conftest hermeticity-guard review](feedback_conftest_hermeticity_guard_review.md) — resolver single-funnel grep; autouse-before-explicit equality discriminator; recorder-stub callers bypass (#2141)
 - [Lock-ordering deadlock plans](feedback_lock_ordering_deadlock_plan_checks.md) — hoist-site completeness, recovery-tool self-wait, knob-exists reads (#2295)
@@ -141,3 +147,4 @@
 - [Infra dispatch-plan failure modes](feedback_infra_dispatch_plan_failure_modes.md) — asyncio.run in async sites; stale fingerprints (#626)
 - [Husk-reap comparator reviews](feedback_husk_reap_comparator_review.md) — trace vs REAL artifact (materialized pointer); empty-unique backstop; occupancy channel orthogonal (#2138)
 - [Hub repack/deletion plans](feedback_hub_repack_deletion_plan_review.md) — 6-link probe-first commit chain; drift-race = Concern (history-recoverable, pin has contention downside) (#2321)
+- [Family-sync membership review](feedback_family_sync_membership_review.md) — enumerate importers across ALL families; comment-bearing FAMILY_OF lines escape test (10) (#2352)

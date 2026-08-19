@@ -1,0 +1,300 @@
+{
+  "model_tag": "q35",
+  "set": "s1",
+  "arm": "prefill3_med",
+  "grain_note": "DESCRIPTIVE/exploratory: Holm was registered at the (model x pair-set) family of m=12 ARMS (plan §6); no per-cell family was registered and none is invented here — p_wilcoxon is reported RAW and any p<0.05 read at cell grain is post-hoc.",
+  "registered_pooled_reference": {
+    "n_pairs": 156,
+    "diff_mean": 0.25442761460959784,
+    "diff_ci": [
+      0.17245978729847417,
+      0.338628547885186
+    ],
+    "p_wilcoxon": 1.0113326538388723e-08,
+    "p_holm": 3.033997961516617e-08,
+    "holm_significant": true,
+    "separates": true,
+    "recovery_samewave": {
+      "ce_mean": 0.5059647165504486,
+      "ratio": 0.7086807508466594,
+      "ratio_ci": [
+        0.570100249905502,
+        0.8536203531634808
+      ],
+      "d3_mean": 0.10558509695166485,
+      "d3_ci": [
+        0.036607335374694065,
+        0.17426688752065703
+      ]
+    }
+  },
+  "per_cell": {
+    "conflict_format_fwd": {
+      "n_pairs": 26,
+      "diff_mean": 0.34901839660309825,
+      "diff_ci": [
+        0.08489186213569111,
+        0.5798892138160885
+      ],
+      "f_steered_mean": 0.4682797834370287,
+      "p_wilcoxon": 0.0035042762756347656,
+      "recovery_samewave": {
+        "ce_mean": 0.6915349407336472,
+        "n_pairs_with_ce": 26,
+        "ratio": 0.6771599753733806,
+        "ratio_ci": [
+          0.3080384973735353,
+          1.102439719356001
+        ],
+        "d3_mean": 0.12251231307020505,
+        "d3_ci": [
+          -0.1396598138814552,
+          0.3693176384423637
+        ]
+      },
+      "recovery_banked": {
+        "ce_mean": 0.7225010590033392,
+        "n_pairs_with_ce": 26,
+        "ratio": 0.6481371585572506,
+        "ratio_ci": [
+          0.29285287637137625,
+          1.044041094723164
+        ],
+        "d3_mean": 0.10702925393535914,
+        "d3_ci": [
+          -0.15482587298373182,
+          0.35153284836104465
+        ]
+      },
+      "cell_passes_registered_floor": true,
+      "selection_counters": {
+        "n_survivors_in_cell": 26,
+        "rejected_missing_f_beh": 0
+      },
+      "separation_read_descriptive": {
+        "diff_ci_strictly_positive": true,
+        "p_wilcoxon_raw_below_0.05": true,
+        "both": true,
+        "note": "DESCRIPTIVE/exploratory: Holm was registered at the (model x pair-set) family of m=12 ARMS (plan §6); no per-cell family was registered and none is invented here — p_wilcoxon is reported RAW and any p<0.05 read at cell grain is post-hoc."
+      }
+    },
+    "conflict_format_rev": {
+      "n_pairs": 26,
+      "diff_mean": 0.2984617173657289,
+      "diff_ci": [
+        0.07105133435228884,
+        0.528198616345236
+      ],
+      "f_steered_mean": 0.4091742726661488,
+      "p_wilcoxon": 0.04245976217928353,
+      "recovery_samewave": {
+        "ce_mean": 0.6495685777159564,
+        "n_pairs_with_ce": 26,
+        "ratio": 0.6299169736702884,
+        "ratio_ci": [
+          0.3845440583251375,
+          0.8657682703837347
+        ],
+        "d3_mean": 0.08438998380817068,
+        "d3_ci": [
+          -0.07305491926207806,
+          0.23808852385937743
+        ]
+      },
+      "recovery_banked": {
+        "ce_mean": 0.7467461115350316,
+        "n_pairs_with_ce": 26,
+        "ratio": 0.547942957245588,
+        "ratio_ci": [
+          0.31329546019535254,
+          0.8103112436884498
+        ],
+        "d3_mean": 0.03580121689863312,
+        "d3_ci": [
+          -0.14439540068274448,
+          0.21667848224025132
+        ]
+      },
+      "cell_passes_registered_floor": true,
+      "selection_counters": {
+        "n_survivors_in_cell": 26,
+        "rejected_missing_f_beh": 0
+      },
+      "separation_read_descriptive": {
+        "diff_ci_strictly_positive": true,
+        "p_wilcoxon_raw_below_0.05": true,
+        "both": true,
+        "note": "DESCRIPTIVE/exploratory: Holm was registered at the (model x pair-set) family of m=12 ARMS (plan §6); no per-cell family was registered and none is invented here — p_wilcoxon is reported RAW and any p<0.05 read at cell grain is post-hoc."
+      }
+    },
+    "instr_format": {
+      "n_pairs": 34,
+      "diff_mean": 0.22239269221087174,
+      "diff_ci": [
+        0.062003751964241016,
+        0.4012555413111236
+      ],
+      "f_steered_mean": 0.3561061289301677,
+      "p_wilcoxon": 0.019774673506617546,
+      "recovery_samewave": {
+        "ce_mean": 0.4516327145984572,
+        "n_pairs_with_ce": 34,
+        "ratio": 0.7884861247192392,
+        "ratio_ci": [
+          0.4995046477237632,
+          1.1310319616975149
+        ],
+        "d3_mean": 0.13028977163093913,
+        "d3_ci": [
+          -0.0002463178931776278,
+          0.2683185691877067
+        ]
+      },
+      "recovery_banked": {
+        "ce_mean": 0.7160306638706921,
+        "n_pairs_with_ce": 34,
+        "ratio": 0.4973336295475704,
+        "ratio_ci": [
+          0.3232967488624633,
+          0.7024677442257633
+        ],
+        "d3_mean": -0.0019092030051783787,
+        "d3_ci": [
+          -0.12996505740725303,
+          0.13806603194323933
+        ]
+      },
+      "cell_passes_registered_floor": true,
+      "selection_counters": {
+        "n_survivors_in_cell": 34,
+        "rejected_missing_f_beh": 0
+      },
+      "separation_read_descriptive": {
+        "diff_ci_strictly_positive": true,
+        "p_wilcoxon_raw_below_0.05": true,
+        "both": true,
+        "note": "DESCRIPTIVE/exploratory: Holm was registered at the (model x pair-set) family of m=12 ARMS (plan §6); no per-cell family was registered and none is invented here — p_wilcoxon is reported RAW and any p<0.05 read at cell grain is post-hoc."
+      }
+    },
+    "load_instr_format_l3": {
+      "n_pairs": 36,
+      "diff_mean": 0.18462131933559017,
+      "diff_ci": [
+        0.04116389848244596,
+        0.33493884959105763
+      ],
+      "f_steered_mean": 0.2597464498777722,
+      "p_wilcoxon": 0.029257104939358923,
+      "recovery_samewave": {
+        "ce_mean": 0.3436098387539967,
+        "n_pairs_with_ce": 36,
+        "ratio": 0.7559342620096933,
+        "ratio_ci": [
+          0.4525311918329934,
+          1.1456908159991452
+        ],
+        "d3_mean": 0.08794153050077382,
+        "d3_ci": [
+          -0.01766580977852851,
+          0.1961717269182181
+        ]
+      },
+      "recovery_banked": {
+        "ce_mean": 0.7625729545133885,
+        "n_pairs_with_ce": 36,
+        "ratio": 0.34061849209367917,
+        "ratio_ci": [
+          0.20929815300313423,
+          0.491640695518315
+        ],
+        "d3_mean": -0.12154002737892207,
+        "d3_ci": [
+          -0.23002282195563375,
+          -0.006017223677794994
+        ]
+      },
+      "cell_passes_registered_floor": true,
+      "selection_counters": {
+        "n_survivors_in_cell": 36,
+        "rejected_missing_f_beh": 0
+      },
+      "separation_read_descriptive": {
+        "diff_ci_strictly_positive": true,
+        "p_wilcoxon_raw_below_0.05": true,
+        "both": true,
+        "note": "DESCRIPTIVE/exploratory: Holm was registered at the (model x pair-set) family of m=12 ARMS (plan §6); no per-cell family was registered and none is invented here — p_wilcoxon is reported RAW and any p<0.05 read at cell grain is post-hoc."
+      }
+    },
+    "load_instr_format_l5": {
+      "n_pairs": 34,
+      "diff_mean": 0.2543678201369666,
+      "diff_ci": [
+        0.12023756575360758,
+        0.4026478444632269
+      ],
+      "f_steered_mean": 0.343065793455488,
+      "p_wilcoxon": 0.0005407867720350623,
+      "recovery_samewave": {
+        "ce_mean": 0.4804805238437902,
+        "n_pairs_with_ce": 34,
+        "ratio": 0.7140056181903071,
+        "ratio_ci": [
+          0.4509689426119945,
+          1.0437090000182205
+        ],
+        "d3_mean": 0.10282553153359295,
+        "d3_ci": [
+          -0.025646551645370535,
+          0.23339840720181537
+        ]
+      },
+      "recovery_banked": {
+        "ce_mean": 0.8034315346601393,
+        "n_pairs_with_ce": 34,
+        "ratio": 0.42700065737475534,
+        "ratio_ci": [
+          0.27475149736396154,
+          0.5910271001670959
+        ],
+        "d3_mean": -0.05864997387458172,
+        "d3_ci": [
+          -0.18397243401821808,
+          0.07067333847586095
+        ]
+      },
+      "cell_passes_registered_floor": true,
+      "selection_counters": {
+        "n_survivors_in_cell": 34,
+        "rejected_missing_f_beh": 0
+      },
+      "separation_read_descriptive": {
+        "diff_ci_strictly_positive": true,
+        "p_wilcoxon_raw_below_0.05": true,
+        "both": true,
+        "note": "DESCRIPTIVE/exploratory: Holm was registered at the (model x pair-set) family of m=12 ARMS (plan §6); no per-cell family was registered and none is invented here — p_wilcoxon is reported RAW and any p<0.05 read at cell grain is post-hoc."
+      }
+    }
+  },
+  "metadata": {
+    "generated_at": "2026-08-18T08:47:54.698083+00:00",
+    "script": "scripts/issue2333_followup_cells_continuation.py",
+    "model_tag": "q35",
+    "inputs_row_counts": {
+      "f_cells": 2340,
+      "null_cells": 2340,
+      "ce_samewave_pairs": 194,
+      "ce_banked_pairs": 180
+    },
+    "constants": {
+      "boot_b": 10000,
+      "boot_seed": 23330,
+      "separation_bar": 0.5,
+      "s1_survival_floor_per_cell": 12,
+      "holm_fixed_m": 12,
+      "holm_alpha": 0.05,
+      "d3_share": 0.5
+    },
+    "git_commit": "01195434",
+    "git_dirty": false
+  }
+}

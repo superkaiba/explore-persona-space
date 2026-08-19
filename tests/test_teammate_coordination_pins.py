@@ -26,6 +26,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 CLAUDE_MD = Path(__file__).resolve().parent.parent / "CLAUDE.md"
 ISSUE_SKILL_MD = (
     Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -37,7 +39,7 @@ def _normalized() -> str:
 
 
 def _normalized_skill() -> str:
-    return re.sub(r"\s+", " ", ISSUE_SKILL_MD.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", issue_skill_text())
 
 
 def test_subclause_headers_pinned() -> None:

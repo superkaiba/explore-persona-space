@@ -1,0 +1,141 @@
+{
+  "commit": "0066444b",
+  "render_id": "1da4424fd0884afa",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:18:08Z",
+  "figsize": [
+    14.0,
+    9.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "dose 1: steered F_beh (post-selection survivors)",
+        "xlabel": "patched layer \u2014 depth fraction of stack in parens; * = full-attention",
+        "xticklabels": [
+          "L9 (0.29)",
+          "L15 (0.48)*",
+          "L16 (0.52)",
+          "L19 (0.61)*",
+          "L23 (0.74)*",
+          "L25 (0.81)",
+          "L30 (0.97)"
+        ],
+        "yticklabels": [
+          "icl_task_mapping|ce",
+          "instr_language|ce",
+          "language_implied|ce",
+          "recency_persona_prompted_d3|ce"
+        ]
+      },
+      {
+        "title_left": "dose 4: steered F_beh (post-selection survivors)",
+        "xlabel": "patched layer \u2014 depth fraction of stack in parens; * = full-attention",
+        "xticklabels": [
+          "L9 (0.29)",
+          "L15 (0.48)*",
+          "L16 (0.52)",
+          "L19 (0.61)*",
+          "L23 (0.74)*",
+          "L25 (0.81)",
+          "L30 (0.97)"
+        ]
+      },
+      {
+        "title_left": "dose 1: steered - shuffled (post-selection survivors)",
+        "xlabel": "patched layer \u2014 depth fraction of stack in parens; * = full-attention",
+        "xticklabels": [
+          "L9 (0.29)",
+          "L15 (0.48)*",
+          "L16 (0.52)",
+          "L19 (0.61)*",
+          "L23 (0.74)*",
+          "L25 (0.81)",
+          "L30 (0.97)"
+        ],
+        "yticklabels": [
+          "icl_task_mapping|ce",
+          "instr_language|ce",
+          "language_implied|ce",
+          "recency_persona_prompted_d3|ce"
+        ]
+      },
+      {
+        "title_left": "dose 4: steered - shuffled (post-selection survivors)",
+        "xlabel": "patched layer \u2014 depth fraction of stack in parens; * = full-attention",
+        "xticklabels": [
+          "L9 (0.29)",
+          "L15 (0.48)*",
+          "L16 (0.52)",
+          "L19 (0.61)*",
+          "L23 (0.74)*",
+          "L25 (0.81)",
+          "L30 (0.97)"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "layer_profile_stage2",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/stage2_cells.jsonl"
+  ]
+}

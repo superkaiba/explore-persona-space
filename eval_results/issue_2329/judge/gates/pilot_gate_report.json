@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "per_family": {
+    "coherence": {
+      "rubric_id": "coherence",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 204,
+      "subresolution_allowed": false,
+      "min_arm_capacity_draws": 13500,
+      "min_arm_realized_draws": 51,
+      "parse_fail_resolution_pct": 1.9608
+    },
+    "value-rubric": {
+      "rubric_id": "f75c02b4aa51f",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 204,
+      "subresolution_allowed": false,
+      "min_arm_capacity_draws": 1920,
+      "min_arm_realized_draws": 51,
+      "parse_fail_resolution_pct": 1.9608
+    },
+    "query-rubric": {
+      "rubric_id": "f835715096dfe",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "sub-resolution pilot ACCEPTED (allow_subresolution_pilot=True): judge_pilot_gate: unsatisfiable pilot configuration — the rule-26(b) parse-fail check (FAIL on rate >= parse_fail_threshold=0.02) needs >= max(min_effective_draws_per_arm=10, floor(1/threshold)+1=51) effective draws per unwaived arm to RESOLVE the threshold (at n draws the smallest observable nonzero rate is 1/n). item-limited: arm 'anchor': 30 item(s) < 51 needed (realized 30 draw(s) < required 51); arm 'crosstype': 20 item(s) < 51 needed (realized 20 draw(s) < required 51); arm 'shuffled': 20 item(s) < 51 needed (realized 20 draw(s) < required 51); arm 'steered': 20 item(s) < 51 needed (realized 20 draw(s) < required 51) — NO target_total_draws can fix an arm holding fewer than ceil(required / n_draws) items; waive it (waive_parse_fail_arms, with a recorded reason) or accept a sub-resolution pilot (allow_subresolution_pilot=True)"
+      ],
+      "n_total_draws": 90,
+      "subresolution_allowed": true,
+      "min_arm_capacity_draws": 20,
+      "min_arm_realized_draws": 20,
+      "parse_fail_resolution_pct": 5.0
+    }
+  },
+  "forced_batch_probe": {
+    "n_items": 6,
+    "n_scored": 6,
+    "passed": true,
+    "n_total_draws": 6,
+    "n_dropped_draws_content": 0,
+    "n_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "n_transport_lost_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 6
+    }
+  },
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "n_rubrics_total": 82
+  },
+  "repro": {
+    "git_commit": "2561f5ee",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

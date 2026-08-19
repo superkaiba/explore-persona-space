@@ -607,9 +607,26 @@ def test_deploy_cpu_pod_renders_instanceid_mutation(monkeypatch):
     # The CPU mutation must NOT carry the GPU-only fields.
     assert "gpuTypeId" not in q
     assert "gpuCount" not in q
+    # data_center_id=None ⇒ no dataCenterId field is rendered (#2184 §4.4
+    # blind-spot closure: the rotation feature keys on this render path).
+    assert "dataCenterId" not in q
     # A CPU response with no machine/gpuCount block parses without crashing.
     assert info.gpu_count is None
     assert info.gpu_type_id is None
+    # And a pinned DC IS rendered into the mutation (#2184): the DC-rotation
+    # retry path depends on the pin actually reaching the API payload.
+    rec2 = _capture_cpu_graphql(monkeypatch, [_make_cpu_pod_payload("cpu2")])
+    info2 = _deploy_cpu_once(
+        name="pod-747",
+        instance_id="cpu3g-2-8",
+        image="img",
+        volume_gb=40,
+        container_disk_gb=50,
+        cloud_type="ALL",
+        data_center_id="EU-RO-1",
+    )
+    assert info2 is not None and info2.pod_id == "cpu2"
+    assert 'dataCenterId: "EU-RO-1"' in rec2.queries[0]
 
 
 def test_deploy_cpu_pod_none_on_supply_constraint(monkeypatch):

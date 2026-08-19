@@ -1,0 +1,43 @@
+{
+  "wave": "f7c626b141d19.grid",
+  "rubric_id": "f7c626b141d19",
+  "n_sampled": 250,
+  "n_paired": 250,
+  "n_sync_unscored": 0,
+  "batch_mean": 50.52,
+  "sync_mean": 50.808,
+  "offset_sync_minus_batch": 0.288,
+  "mean_abs_diff": 1.912,
+  "median_abs_diff": 0.0,
+  "exact_agreement_frac": 0.836,
+  "pearson_r": 0.9910794374573251,
+  "spearman_rho": 0.9753314453031249,
+  "batch_std": 47.4215,
+  "sync_std": 47.2649,
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "rubric_sha16": "ae076394b37e7286",
+    "identical_across_arms": true,
+    "differs_only_by": "HTTP transport (Batch vs sync)"
+  },
+  "contamination": {
+    "note": "stored scores are batch-origin EXCEPT any item rescued in the rule-28 re-issue, whose ids are not recoverable from artifacts; those compare sync-vs-sync. Upper bound only, not an estimate.",
+    "n_refusal_in_wave": 28,
+    "wave_n_items": 5760,
+    "max_contamination_frac": 0.004861
+  },
+  "telemetry_sync_pass": {
+    "n_total_draws": 250,
+    "n_dropped_draws": 0,
+    "n_refusal_draws": 0,
+    "n_api_refusal_draws": 0,
+    "n_transport_lost_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 250
+    }
+  },
+  "seed": 2329
+}

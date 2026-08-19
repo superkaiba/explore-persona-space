@@ -1,0 +1,40 @@
+{
+  "commit": "fa54cfc2",
+  "render_id": "a8628670faa94d32",
+  "git_commit": "fa54cfc2",
+  "git_dirty": false,
+  "created": "2026-08-17T07:10:36Z",
+  "figsize": [
+    7.0,
+    2.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Selected ridge \u03bb per cell \u00d7 layer (val-selected, edge-extended grid)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

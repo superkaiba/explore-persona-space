@@ -165,6 +165,15 @@
             "command": "file_path=$(jq -r '.tool_input.file_path // .tool_response.filePath // empty'); if [ -n \"$file_path\" ] && echo \"$file_path\" | grep -qE '\\.py$' && ! echo \"$file_path\" | grep -qE '^/(tmp|var/tmp|dev/shm)/'; then cd /home/thomasjiralerspong/explore-persona-space && uv run ruff check --fix --quiet \"$file_path\" 2>/dev/null; uv run ruff format --quiet \"$file_path\" 2>/dev/null; fi"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/thomasjiralerspong/explore-persona-space/scripts/guard_skill_doc_headroom.sh"
+          }
+        ]
       }
     ],
     "Stop": [

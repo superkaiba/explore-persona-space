@@ -1,0 +1,544 @@
+{
+  "commit": "fb4b88f3+dirty",
+  "render_id": "7416998f162d425a",
+  "git_commit": "fb4b88f3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2330_figures.py"
+  ],
+  "created": "2026-08-17T20:11:11Z",
+  "figsize": [
+    6.6,
+    3.9
+  ],
+  "points": [
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 0.0,
+      "held-out test R\u00b2": 0.46216851261820213,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 1.0,
+      "held-out test R\u00b2": 0.47774392637001095,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 2.0,
+      "held-out test R\u00b2": 0.4790128984210833,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 3.0,
+      "held-out test R\u00b2": 0.5304915883139321,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 4.0,
+      "held-out test R\u00b2": 0.5437800190249752,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 5.0,
+      "held-out test R\u00b2": 0.5533852793045723,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 6.0,
+      "held-out test R\u00b2": 0.5579547632597174,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 7.0,
+      "held-out test R\u00b2": 0.5723892341838409,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 8.0,
+      "held-out test R\u00b2": 0.5661792780140907,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 9.0,
+      "held-out test R\u00b2": 0.5942656472897154,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 10.0,
+      "held-out test R\u00b2": 0.6211897905294774,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 11.0,
+      "held-out test R\u00b2": 0.6300899285306357,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 12.0,
+      "held-out test R\u00b2": 0.6453526676204886,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 13.0,
+      "held-out test R\u00b2": 0.6524801520134762,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 14.0,
+      "held-out test R\u00b2": 0.6612107790114894,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 15.0,
+      "held-out test R\u00b2": 0.6493655784087717,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 16.0,
+      "held-out test R\u00b2": 0.6677774078870274,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 17.0,
+      "held-out test R\u00b2": 0.6713179497759538,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 18.0,
+      "held-out test R\u00b2": 0.6898422556195571,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 19.0,
+      "held-out test R\u00b2": 0.6523717628556969,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 20.0,
+      "held-out test R\u00b2": 0.6626971945929259,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 21.0,
+      "held-out test R\u00b2": 0.667185903677388,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 22.0,
+      "held-out test R\u00b2": 0.6615884031543819,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 23.0,
+      "held-out test R\u00b2": 0.6421284653200144,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 24.0,
+      "held-out test R\u00b2": 0.6530545830401071,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 25.0,
+      "held-out test R\u00b2": 0.6482717762638575,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 26.0,
+      "held-out test R\u00b2": 0.6369181476127717,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 27.0,
+      "held-out test R\u00b2": 0.6311668804300291,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 28.0,
+      "held-out test R\u00b2": 0.6565371269574962,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 29.0,
+      "held-out test R\u00b2": 0.6533755006319669,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 30.0,
+      "held-out test R\u00b2": 0.6351214095081232,
+      "series": "Qwen3.5-9B 10k-fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 0.0,
+      "held-out test R\u00b2": 0.43054348423253974,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 1.0,
+      "held-out test R\u00b2": 0.448209066512541,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 2.0,
+      "held-out test R\u00b2": 0.44258660118054505,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 3.0,
+      "held-out test R\u00b2": 0.49849366100541825,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 4.0,
+      "held-out test R\u00b2": 0.5115649484214977,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 5.0,
+      "held-out test R\u00b2": 0.522646817714818,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 6.0,
+      "held-out test R\u00b2": 0.5294901213273713,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 7.0,
+      "held-out test R\u00b2": 0.5450536529207022,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 8.0,
+      "held-out test R\u00b2": 0.5387891729291104,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 9.0,
+      "held-out test R\u00b2": 0.5685891643399676,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 10.0,
+      "held-out test R\u00b2": 0.5984989172366969,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 11.0,
+      "held-out test R\u00b2": 0.6080311559016836,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 12.0,
+      "held-out test R\u00b2": 0.6242506247448477,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 13.0,
+      "held-out test R\u00b2": 0.6306921593290943,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 14.0,
+      "held-out test R\u00b2": 0.6399183560822309,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 15.0,
+      "held-out test R\u00b2": 0.6267406466759825,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 16.0,
+      "held-out test R\u00b2": 0.6464066322303824,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 17.0,
+      "held-out test R\u00b2": 0.6498735201657819,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 18.0,
+      "held-out test R\u00b2": 0.6690625914117925,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 19.0,
+      "held-out test R\u00b2": 0.6268169939335009,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 20.0,
+      "held-out test R\u00b2": 0.6369686650618243,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 21.0,
+      "held-out test R\u00b2": 0.6411590225283628,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 22.0,
+      "held-out test R\u00b2": 0.6350460342057136,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 23.0,
+      "held-out test R\u00b2": 0.608988202201132,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 24.0,
+      "held-out test R\u00b2": 0.6241801535486251,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 25.0,
+      "held-out test R\u00b2": 0.6193256998792314,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 26.0,
+      "held-out test R\u00b2": 0.6076852253247038,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 27.0,
+      "held-out test R\u00b2": 0.6016962034170031,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 28.0,
+      "held-out test R\u00b2": 0.6281854887256046,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 29.0,
+      "held-out test R\u00b2": 0.6250472455679239,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 30.0,
+      "held-out test R\u00b2": 0.6050137863339238,
+      "series": "Qwen3.5-9B 5k-fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 0.0,
+      "held-out test R\u00b2": 0.7048844171070807,
+      "series": "Qwen2.5-7B best of 3 captured layers (L19, 10k)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 1.0,
+      "held-out test R\u00b2": 0.7048844171070807,
+      "series": "Qwen2.5-7B best of 3 captured layers (L19, 10k)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 18.0,
+      "held-out test R\u00b2": 0.0,
+      "series": "layer 18 (dense-sweep peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 18.0,
+      "held-out test R\u00b2": 1.0,
+      "series": "layer 18 (dense-sweep peak)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 22.0,
+      "held-out test R\u00b2": 0.0,
+      "series": "layer 22 (depth-matched pick)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Qwen3.5-9B layer index (block output, 0-30 of 32)": 22.0,
+      "held-out test R\u00b2": 1.0,
+      "series": "layer 22 (depth-matched pick)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 68,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Dense per-layer map R\u00b2, Qwen3.5-9B",
+        "xlabel": "Qwen3.5-9B layer index (block output, 0-30 of 32)",
+        "ylabel": "held-out test R\u00b2",
+        "legend_labels": [
+          "Qwen3.5-9B 10k-fit",
+          "Qwen3.5-9B 5k-fit",
+          "Qwen2.5-7B best of 3 captured layers (L19, 10k)",
+          "layer 18 (dense-sweep peak)",
+          "layer 22 (depth-matched pick)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ]
+      }
+    ],
+    "series": [
+      "Qwen3.5-9B 10k-fit",
+      "Qwen3.5-9B 5k-fit",
+      "Qwen2.5-7B best of 3 captured layers (L19, 10k)",
+      "layer 18 (dense-sweep peak)",
+      "layer 22 (depth-matched pick)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

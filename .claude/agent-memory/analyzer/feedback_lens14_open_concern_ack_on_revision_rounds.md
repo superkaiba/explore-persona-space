@@ -23,3 +23,10 @@ Methodology)", and put the human-readable detail in Methodology (cap-excluded). 
 have only a >30-word WARN, so the ids cost no FAIL; never put them in a `### <result>` block near
 the 180-word cap. Disclose in the `epm:interpretation` body that the concerns remain OPEN
 pending orchestrator address-concern.
+
+**#2330 r2 additions:** (a) the FOOTER also counts for the substring scan — a
+`**Repro:**` "Caveats carried from open review concerns: `<id>` — <one-line disposition>" list
+passed the Lens-14 audit (2026-08-17); (b) critique rounds PERSIST fresh `CONCERN::` rows to
+concerns.jsonl AFTER the round-1 draft-mode verify (the #2326 persist-verdict-concerns hook), so
+a revision round must re-run `verify_task_body.py --issue <N>` (never only `--file`) after
+set-body — expect NEW open ids that round 1 never saw.

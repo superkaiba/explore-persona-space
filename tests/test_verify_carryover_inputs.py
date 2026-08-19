@@ -24,6 +24,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Load the helper as a module (it's a script, not a package member).
@@ -409,7 +411,7 @@ def test_cli_json_smoke(repo: Path, tmp_path: Path) -> None:
 
 def test_skill_6a5_stanza_names_helper() -> None:
     """Durability pin: the SKILL.md Step 6a.5 span keeps the second stanza."""
-    skill = (REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()
+    skill = issue_skill_text()
     start = skill.index("#### Step 6a.5")
     end = skill.index("#### Step 6a.6")
     span = skill[start:end]
@@ -687,7 +689,7 @@ def test_skill_6a5_rsync_clause_covers_all_per_cluster_lanes() -> None:
     'cluster' alias, the --lane rsync invocation, and the downgrade reason."""
     from explore_persona_space.backends.router import _PER_CLUSTER_LANES
 
-    skill = (REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()
+    skill = issue_skill_text()
     start = skill.index("#### Step 6a.5")
     end = skill.index("#### Step 6a.6")
     span = skill[start:end]

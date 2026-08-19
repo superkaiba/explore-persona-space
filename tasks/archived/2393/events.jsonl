@@ -1,0 +1,3 @@
+{"ts": "2026-08-19T19:29:50Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-19T19:37:39Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "ARCHIVED — merged into #2389 as its Throughput item 5 (opt-in shared-prefill multi-draw mode for generate_batch). User: 'merge them all into one task and dispatch' (2026-08-19). Scope carried over intact, including the mandatory default-off flag, the shared-module risk across #1415/#2094/#2162/#2329, and the equivalence test; now additionally FAIL-OPEN. Do not implement here."}
+{"ts": "2026-08-19T19:38:22Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived"}

@@ -1225,7 +1225,12 @@ def _register_pod_for_issue(issue: int, *, name: str | None = None) -> str:
     return pod_name
 
 
-def _upload_verification_event(verdict: str, *, outroot: str | None = "swept-clean") -> dict:
+def _upload_verification_event(
+    verdict: str,
+    *,
+    outroot: str | None = "swept-clean",
+    rows: str | None = "reconciled",
+) -> dict:
     """Build a realistic ``epm:upload-verification`` event whose verdict lives
     in the markdown ``note`` body as ``**Verdict: <verdict>**`` — the real
     shape the upload-verifier writes (event keys are ts/kind/version/by/note;
@@ -1236,8 +1241,11 @@ def _upload_verification_event(verdict: str, *, outroot: str | None = "swept-cle
     ``outroot`` renders the #2187 sweep-attestation token line the Step-5
     template now carries by construction (``outroot=<value>``); pass
     ``outroot=None`` for the pre-#2187 token-less note shape (the terminate
-    guard refuses a PASS without it)."""
+    guard refuses a PASS without it). ``rows`` renders the #2148 realized
+    row-count attestation token the same way (``rows=<value>``); pass
+    ``rows=None`` for the pre-#2148 shape (likewise refused)."""
     outroot_line = f"outroot={outroot}\n\n" if outroot is not None else ""
+    rows_line = f"rows={rows}\n\n" if rows is not None else ""
     return {
         "ts": "2026-06-02T00:00:00Z",
         "kind": "epm:upload-verification",
@@ -1245,7 +1253,7 @@ def _upload_verification_event(verdict: str, *, outroot: str | None = "swept-cle
         "by": "upload-verifier",
         "note": (
             "<!-- epm:upload-verification v1 -->\n## Upload Verification\n\n"
-            f"**Verdict: {verdict}**\n\n{outroot_line}"
+            f"**Verdict: {verdict}**\n\n{outroot_line}{rows_line}"
             "Discovered N files on the pod under eval_results/."
         ),
     }
@@ -1439,7 +1447,7 @@ def test_terminate_proceeds_with_json_outroot_token(
         "kind": "epm:upload-verification",
         "version": 1,
         "by": "upload-verifier",
-        "note": json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),
+        "note": json.dumps({"verdict": "PASS", "outroot": "swept-clean", "rows": "reconciled"}),
     }
     _stub_list_events(monkeypatch, [event])
     _fake_experiment_task(monkeypatch)
@@ -1493,6 +1501,105 @@ def test_terminate_pass_without_token_skip_flag_warns_and_proceeds(
 
     err = capsys.readouterr().err
     assert "LACKS the outroot= sweep attestation" in err
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_refuses_pass_without_rows_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2148: a PASS note carrying outroot= but WITHOUT the rows= realized
+    row-count attestation must refuse the terminate, with a remediation
+    message naming the reconciliation command (--expected-rows) and the
+    re-post form (#2091: ~25% of rows missing INSIDE present files behind
+    exactly this PASS shape)."""
+    pod_name = _register_pod_for_issue(2148)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", rows=None)])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2148))
+
+    msg = str(exc.value)
+    assert "rows=<reconciled|no-declared-count|n/a>" in msg
+    assert "--expected-rows" in msg
+    assert "Step 2.11" in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called on a rows-less PASS"
+
+
+def test_terminate_proceeds_with_prose_rows_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The Step-5 template's prose token line (`rows=no-declared-count`)
+    satisfies the #2148 attestation — the guard is silent on the happy path
+    for every fixed token value, not just `reconciled`."""
+    pod_name = _register_pod_for_issue(2149)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", rows="no-declared-count")])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2149))
+
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_missing_both_tokens_refuses_on_outroot_first(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Ordering pin: with BOTH attestation tokens absent the guard refuses on
+    the outroot= arm (checked first) — the rows= arm fires only once the
+    out-root sweep is attested, so remediation messages never interleave."""
+    pod_name = _register_pod_for_issue(2150)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", outroot=None, rows=None)])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2150))
+
+    msg = str(exc.value)
+    assert "outroot=" in msg
+    assert "realized row-count attestation" not in msg
+    assert stub_terminate_pod == []
+
+
+def test_terminate_pass_without_rows_token_skip_flag_warns_and_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """--skip-upload-verify waives the rows= token exactly as it waives the
+    outroot= token and the whole PASS (a PASS-without-token pod is strictly
+    MORE verified than a no-marker pod and must not be blocked harder under
+    the same flag) — LOUD WARN, then proceed."""
+    pod_name = _register_pod_for_issue(2151)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", rows=None)])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2151, skip=True))
+
+    err = capsys.readouterr().err
+    assert "LACKS the rows= realized row-count attestation" in err
     assert len(stub_terminate_pod) == 1
 
 
@@ -1905,15 +2012,17 @@ def _pass_event(
     owner: str | None = None,
     ts: str = "2026-08-13T21:32:37Z",
     outroot: str = "swept-clean",
+    rows: str = "reconciled",
 ) -> dict:
     """Prose ``epm:upload-verification`` PASS in the inline-round shape the
-    #2054 harvester posted (leads ``Verdict: PASS``, carries ``outroot=``)."""
+    #2054 harvester posted (leads ``Verdict: PASS``, carries ``outroot=`` +
+    the #2148 ``rows=`` realized row-count attestation)."""
     note = "Verdict: PASS — inline-round verification; prefixes: issue2054_lattice/"
     if pod is not None:
         note += f"; pod={pod}"
     if owner is not None:
         note += f"; owner={owner}"
-    note += f"\n\noutroot={outroot}\n"
+    note += f"\n\noutroot={outroot}\nrows={rows}\n"
     return {
         "ts": ts,
         "kind": "epm:upload-verification",
@@ -2102,6 +2211,7 @@ def test_terminate_json_pass_owner_parsed(
                 "verdict": "PASS",
                 "owner": "spec-ladder-2054",
                 "outroot": "swept-clean",
+                "rows": "reconciled",
                 "discovered_pod_files": 113,
                 "checked": {"eval_results": "PASS"},
             }
@@ -3655,6 +3765,43 @@ def test_outroot_attested_rejects_missing_or_invalid_token(note):
     assert pod_lifecycle._upload_verification_outroot_attested(note) is False
 
 
+# ---------------------------------------------------------------------------
+# _upload_verification_rows_attested — the #2148 realized row-count token
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\nrows=reconciled\n",
+        "**Verdict: PASS**\n\nrows=no-declared-count\n",
+        "Verdict: PASS\nrows: n/a\n",
+        "verdict: pass\nROWS = RECONCILED\n",  # case-insensitive, spaced =
+        json.dumps({"verdict": "PASS", "rows": "reconciled"}),
+        json.dumps({"verdict": "PASS", "rows": "n/a"}),
+    ],
+)
+def test_rows_attested_accepts_both_note_shapes(note):
+    assert pod_lifecycle._upload_verification_rows_attested(note) is True
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\nDiscovered N files.",  # token absent
+        "**Verdict: PASS**\nrows=partial\n",  # invalid value
+        "**Verdict: PASS**\nrows=\n",  # empty value
+        "**Verdict: PASS**\narrows=reconciled\n",  # word-boundary: not `rows=`
+        json.dumps({"verdict": "PASS"}),  # JSON without the key
+        json.dumps({"verdict": "PASS", "rows": "yes"}),  # JSON invalid value
+        json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),  # outroot is not rows
+        "",
+    ],
+)
+def test_rows_attested_rejects_missing_or_invalid_token(note):
+    assert pod_lifecycle._upload_verification_rows_attested(note) is False
+
+
 # The DOCUMENTED inline-round note shape (#1970, incident #1773): an inline
 # round that verified its own uploads posts this note via `task.py
 # post-marker`, then re-runs terminate. LEADING `Verdict: PASS` so BOTH
@@ -3662,11 +3809,13 @@ def test_outroot_attested_rejects_missing_or_invalid_token(note):
 # task_workflow.UPLOAD_VERIFICATION_PASS_RE (the finalize teardown gate).
 # As of #2187 the documented recipe ALSO carries the out-root sweep
 # attestation token (`outroot=<...>`) — the terminate guard refuses a PASS
-# without it (see test_terminate_refuses_pass_without_outroot_token).
+# without it (see test_terminate_refuses_pass_without_outroot_token) — and
+# as of #2148 the realized row-count attestation token (`rows=<...>`), the
+# within-file sibling (see test_terminate_refuses_pass_without_rows_token).
 _INLINE_ROUND_NOTE = (
     "Verdict: PASS — inline-round verification; "
     "prefixes: issue1773_fulldict/, issue1773_raw_windows/; "
-    "outroot=swept-clean"
+    "outroot=swept-clean; rows=reconciled"
 )
 
 

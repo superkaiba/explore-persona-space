@@ -1,0 +1,1408 @@
+{
+  "commit": "0066444b",
+  "render_id": "3c308ff9d6224c0b",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:07:21Z",
+  "figsize": [
+    7.8,
+    4.6
+  ],
+  "points": [
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7257834757834758,
+      "error": 0.0037393162393162815,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7133190883190883,
+      "error": 0.004095441595441673,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7140313390313391,
+      "error": 0.004095441595441562,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7386039886039886,
+      "error": 0.006588319088319139,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7443019943019943,
+      "error": 0.00694444444444442,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7321937321937322,
+      "error": 0.0051638176638176825,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7118945868945868,
+      "error": 0.005702457264957328,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7225783475783476,
+      "error": 0.007478632478632452,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7147435897435898,
+      "error": 0.00801282051282054,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7175925925925926,
+      "error": 0.008368945868945876,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7350427350427351,
+      "error": 0.00855146011396013,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7279202279202279,
+      "error": 0.010510149572649619,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7439458689458689,
+      "error": 0.012464387464387494,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7546296296296297,
+      "error": 0.01282051282051283,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.761039886039886,
+      "error": 0.01282051282051272,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7492877492877493,
+      "error": 0.01388888888888895,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7770655270655271,
+      "error": 0.01584757834757833,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7881054131054132,
+      "error": 0.016915954415954337,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8066239316239316,
+      "error": 0.017094017094017144,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7945156695156695,
+      "error": 0.01709401709401709,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7934472934472935,
+      "error": 0.017628205128205066,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7930911680911681,
+      "error": 0.017806267806267873,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7984330484330484,
+      "error": 0.017806267806267873,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7888176638176638,
+      "error": 0.017632656695156845,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7941595441595442,
+      "error": 0.01762820512820512,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7849002849002849,
+      "error": 0.017806267806267706,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7891737891737892,
+      "error": 0.017806267806267817,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7888176638176638,
+      "error": 0.01780626780626765,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7877492877492878,
+      "error": 0.018162393162393153,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7970085470085471,
+      "error": 0.01745014245014248,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8059116809116809,
+      "error": 0.017628205128205066,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8482905982905983,
+      "error": 0.018162393162393153,
+      "series": "map fit on this bank",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5206552706552706,
+      "error": 0.0037393162393162815,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5238603988603988,
+      "error": 0.004095441595441673,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5142450142450142,
+      "error": 0.004095441595441562,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5338319088319088,
+      "error": 0.006588319088319139,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5402421652421653,
+      "error": 0.00694444444444442,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5288461538461539,
+      "error": 0.0051638176638176825,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5227920227920227,
+      "error": 0.005702457264957328,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5462962962962963,
+      "error": 0.007478632478632452,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5430911680911681,
+      "error": 0.00801282051282054,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.551994301994302,
+      "error": 0.008368945868945876,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5495014245014245,
+      "error": 0.00855146011396013,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5957977207977208,
+      "error": 0.010510149572649619,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6193019943019943,
+      "error": 0.012464387464387494,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6225071225071225,
+      "error": 0.01282051282051283,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6264245014245015,
+      "error": 0.01282051282051272,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6563390313390314,
+      "error": 0.01388888888888895,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7161680911680912,
+      "error": 0.01584757834757833,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7279202279202279,
+      "error": 0.016915954415954337,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7421652421652422,
+      "error": 0.017094017094017144,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7432336182336182,
+      "error": 0.01709401709401709,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7450142450142451,
+      "error": 0.017628205128205066,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7453703703703703,
+      "error": 0.017806267806267873,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7471509971509972,
+      "error": 0.017806267806267873,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7635327635327636,
+      "error": 0.017632656695156845,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7603276353276354,
+      "error": 0.01762820512820512,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7574786324786325,
+      "error": 0.017806267806267706,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7727920227920227,
+      "error": 0.017806267806267817,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7759971509971509,
+      "error": 0.01780626780626765,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7831196581196581,
+      "error": 0.018162393162393153,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8009259259259259,
+      "error": 0.01745014245014248,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8126780626780626,
+      "error": 0.017628205128205066,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8365384615384616,
+      "error": 0.018162393162393153,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5106837606837606,
+      "error": 0.0037393162393162815,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5135327635327636,
+      "error": 0.004095441595441673,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5096153846153846,
+      "error": 0.004095441595441562,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5256410256410257,
+      "error": 0.006588319088319139,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5249287749287749,
+      "error": 0.00694444444444442,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5142450142450142,
+      "error": 0.0051638176638176825,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.51994301994302,
+      "error": 0.005702457264957328,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.532051282051282,
+      "error": 0.007478632478632452,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5356125356125356,
+      "error": 0.00801282051282054,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5384615384615384,
+      "error": 0.008368945868945876,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5438034188034188,
+      "error": 0.00855146011396013,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5665954415954416,
+      "error": 0.010510149572649619,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5854700854700855,
+      "error": 0.012464387464387494,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5897435897435898,
+      "error": 0.01282051282051283,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5836894586894587,
+      "error": 0.01282051282051272,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6093304843304843,
+      "error": 0.01388888888888895,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6549145299145299,
+      "error": 0.01584757834757833,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6752136752136753,
+      "error": 0.016915954415954337,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6990740740740741,
+      "error": 0.017094017094017144,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7022792022792023,
+      "error": 0.01709401709401709,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7161680911680912,
+      "error": 0.017628205128205066,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7140313390313391,
+      "error": 0.017806267806267873,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6983618233618234,
+      "error": 0.017806267806267873,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7282763532763533,
+      "error": 0.017632656695156845,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7261396011396012,
+      "error": 0.01762820512820512,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7275641025641025,
+      "error": 0.017806267806267706,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7101139601139601,
+      "error": 0.017806267806267817,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7528490028490028,
+      "error": 0.01780626780626765,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7578347578347578,
+      "error": 0.018162393162393153,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7856125356125356,
+      "error": 0.01745014245014248,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7877492877492878,
+      "error": 0.017628205128205066,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8012820512820513,
+      "error": 0.018162393162393153,
+      "series": "identity",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7257834757834758,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7133190883190883,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7140313390313391,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7386039886039886,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7443019943019943,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7321937321937322,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7118945868945868,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7225783475783476,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7147435897435898,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7175925925925926,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7350427350427351,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7279202279202279,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7439458689458689,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7546296296296297,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.761039886039886,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7492877492877493,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7770655270655271,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7881054131054132,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8066239316239316,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7945156695156695,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7934472934472935,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7930911680911681,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7984330484330484,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7888176638176638,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7941595441595442,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7849002849002849,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7891737891737892,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7888176638176638,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7877492877492878,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7970085470085471,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8059116809116809,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8482905982905983,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5206552706552706,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5238603988603988,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5142450142450142,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5338319088319088,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5402421652421653,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5288461538461539,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5227920227920227,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5462962962962963,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5430911680911681,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.551994301994302,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5495014245014245,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5957977207977208,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6193019943019943,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6225071225071225,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6264245014245015,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6563390313390314,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7161680911680912,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7279202279202279,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7421652421652422,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7432336182336182,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7450142450142451,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7453703703703703,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7471509971509972,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7635327635327636,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7603276353276354,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7574786324786325,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7727920227920227,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7759971509971509,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7831196581196581,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8009259259259259,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8126780626780626,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8365384615384616,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5106837606837606,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5135327635327636,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5096153846153846,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5256410256410257,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5249287749287749,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5142450142450142,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.51994301994302,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.532051282051282,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5356125356125356,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5384615384615384,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5438034188034188,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5665954415954416,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5854700854700855,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5897435897435898,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.5836894586894587,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6093304843304843,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6549145299145299,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6752136752136753,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6990740740740741,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7022792022792023,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7161680911680912,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7140313390313391,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.6983618233618234,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7282763532763533,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7261396011396012,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7275641025641025,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7101139601139601,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7528490028490028,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7578347578347578,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7856125356125356,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.7877492877492878,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "paired 2AFC accuracy (cosine, span pooling)": 0.8012820512820513,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 192,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "does the predicted answer identify its own context's real answer?",
+        "xlabel": "depth (fraction of stack; dashed verticals = full-attention layers)",
+        "ylabel": "paired 2AFC accuracy (cosine, span pooling)",
+        "legend_labels": [
+          "carrier-blocked deranged null (95% band)",
+          "map fit on this bank",
+          "identity + bias",
+          "identity"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90"
+        ]
+      }
+    ],
+    "series": [
+      "map fit on this bank",
+      "identity + bias",
+      "identity",
+      "carrier-blocked deranged null (95% band)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

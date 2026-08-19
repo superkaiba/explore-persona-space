@@ -1,0 +1,89 @@
+{
+  "commit": "835623a7+dirty",
+  "render_id": "ed4e21b6dd48417f",
+  "git_commit": "835623a7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2202/fig_avg_target.meta.json",
+    "figures/issue_2202/fig_avg_target.pdf",
+    "figures/issue_2202/fig_avg_target.png",
+    "figures/issue_2202/fig_convention_zoo.meta.json",
+    "figures/issue_2202/fig_convention_zoo.pdf",
+    "figures/issue_2202/fig_convention_zoo.png",
+    "scripts/issue2202_fold_figs.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-17T19:16:35Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.17,
+      "rank-1 retrieval accuracy (1,988 covered rows)": 0.8148893360160966,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.17,
+      "rank-1 retrieval accuracy (1,988 covered rows)": 0.9094567404426559,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.83,
+      "rank-1 retrieval accuracy (1,988 covered rows)": 0.9617706237424547,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.17,
+      "rank-1 retrieval accuracy (1,988 covered rows)": 0.9869215291750503,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Single-draw vs 5-draw-averaged answer targets",
+        "ylabel": "rank-1 retrieval accuracy (1,988 covered rows)",
+        "legend_labels": [
+          "single-draw target",
+          "5-draw-averaged target",
+          "fresh-draw reference (matched convention)"
+        ],
+        "annotations": [
+          "0.815",
+          "0.909",
+          "0.943",
+          "0.962",
+          "0.987",
+          "0.979"
+        ],
+        "xticklabels": [
+          "raw euclidean",
+          "whitened cosine"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

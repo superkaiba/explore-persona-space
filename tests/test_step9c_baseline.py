@@ -57,6 +57,8 @@ from xml.sax.saxutils import escape as xml_escape
 
 import pytest
 
+from tests.issue_skill_source import issue_skill_text
+
 _HELPER_PATH = Path(__file__).resolve().parents[1] / "scripts" / "step9c_baseline.py"
 _spec = importlib.util.spec_from_file_location("step9c_baseline", _HELPER_PATH)
 assert _spec and _spec.loader
@@ -2710,9 +2712,7 @@ def test_skill_step9c_blocks_pin_tmpdir_routing():
     r1 C1). Outer-level expansion embeds the literal mktemp path into the
     inner script — this is the correct, load-bearing behavior; only the
     shell specials `\\$?` / `\\$!` are deferred by design."""
-    skill = (
-        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
-    ).read_text()
+    skill = issue_skill_text()
     blocks = [
         b
         for b in skill.split("```")
@@ -2751,9 +2751,7 @@ def test_skill_tg_blocks_pin_tmpdir_routing():
     leg is the `mapped-baseline` helper call, which routes its own temp
     writes via gate_tmp_root() internally — so exactly ONE direct
     TMPDIR/basetemp thread remains per block (the gated leg)."""
-    skill = (
-        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
-    ).read_text()
+    skill = issue_skill_text()
     blocks = [b for b in skill.split("```") if 'uv run pytest "${TG_TESTS[@]}"' in b]
     assert len(blocks) == 2, "expected the shared-gate + surgical TG blocks"
     for block in blocks:
@@ -5243,6 +5241,212 @@ def test_mapped_baseline_pytest_timeout_reports_rc_124(tmp_path: Path, capsys):
     assert rc == 0, captured.err
     assert "rc=124" in captured.out.splitlines()[-1]
     assert _worktree_count(root) == 1
+
+
+def test_mapped_baseline_emits_selected_path(tmp_path: Path, capsys):
+    """#2348: stdout carries `selected_path=` (rc= stays the LAST line), the
+    `.selected` sidecar lives beside --out (NOT inside the torn-down scratch)
+    and lists exactly the baseline selection; the empty-selection variant
+    writes an EMPTY sidecar and still prints the line."""
+    root, _sel_log, _marker = _mapped_repo(tmp_path, probe_body="def test_ok():\n    assert True\n")
+    map_files = tmp_path / "own-diff.txt"
+    map_files.write_text("scripts/payload.py\n")
+    out_path = tmp_path / "tg-baseline.txt"
+    args = [
+        "mapped-baseline",
+        "--map-files",
+        str(map_files),
+        "--root",
+        str(root),
+        "--cones-from",
+        str(root),
+        "--base",
+        "HEAD",
+        "--timeout-s",
+        "180",
+        "--out",
+        str(out_path),
+    ]
+    try:
+        rc = sb.main(args)
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    lines = dict(ln.split("=", 1) for ln in captured.out.splitlines() if "=" in ln)
+    selected_path = Path(lines["selected_path"])
+    assert selected_path == out_path.with_name(out_path.name + ".selected")
+    assert selected_path.exists(), "the sidecar must survive the scratch teardown"
+    assert not Path(lines["scratch_path"]).exists()
+    assert selected_path.read_text() == "tests/test_probe.py\n"
+    assert captured.out.splitlines()[-1].startswith("rc="), "rc= must stay the LAST line"
+    # Empty-selection variant: empty sidecar, line still printed.
+    map_files.write_text("")  # stub selector prints nothing on an empty map
+    try:
+        rc = sb.main(args)
+    finally:
+        _restore_sigterm()
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    lines = dict(ln.split("=", 1) for ln in captured.out.splitlines() if "=" in ln)
+    assert lines["rc"] == "0"
+    assert Path(lines["selected_path"]).read_text() == ""
+
+
+# --- classify-new-nodes (#2348) -----------------------------------------------------
+#
+# The Step 10d SET-mismatch split: comm -23 can only subtract what the baseline
+# COULD RUN, so a NEW node whose test file the baseline never SELECTED routes
+# to the "unclassifiable — pristine-oracle needed" WARN arm instead of
+# blocking; baseline-selected / own-diff (payload) files keep blocking.
+
+
+def _classify_args(
+    tmp_path: Path,
+    *,
+    nodes: str,
+    selected: str | None,
+    own_diff: str,
+    inplace: bool = False,
+) -> tuple[list[str], Path, Path]:
+    """Compose a classify-new-nodes argv over tmp fixtures; returns
+    (argv, out_block, out_unclassifiable). `selected=None` omits the file
+    (the LEGACY-mode arm); `inplace=True` aims --out-block at --new-nodes."""
+    new_nodes = tmp_path / "tg-new-nodes.txt"
+    new_nodes.write_text(nodes)
+    own = tmp_path / "own-diff.txt"
+    own.write_text(own_diff)
+    sel = tmp_path / "tg-baseline.txt.selected"
+    if selected is not None:
+        sel.write_text(selected)
+    out_block = new_nodes if inplace else tmp_path / "out-block.txt"
+    out_uncls = tmp_path / "tg-unclassifiable-nodes.txt"
+    argv = [
+        "classify-new-nodes",
+        "--new-nodes",
+        str(new_nodes),
+        "--baseline-selected",
+        str(sel),
+        "--own-diff",
+        str(own),
+        "--out-block",
+        str(out_block),
+        "--out-unclassifiable",
+        str(out_uncls),
+    ]
+    return argv, out_block, out_uncls
+
+
+def test_classify_new_nodes_unclassifiable_not_block(tmp_path: Path, capsys):
+    """Acceptance criterion 1 (#2348): a node red on main AND branch that only
+    the gated leg collected (its file in NEITHER the baseline selection NOR
+    the own-diff) must NOT block — out-block is EMPTY (so the SKILL verdict's
+    `[ -s ... ]` cannot fire on it) and the node lands in the unclassifiable
+    arm."""
+    argv, out_block, out_uncls = _classify_args(
+        tmp_path,
+        nodes="tests/test_x.py::test_pre_existing_red\n",
+        selected="tests/test_other.py\n",
+        own_diff="scripts/payload.py\n",
+    )
+    rc = sb.main(argv)
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert out_block.read_text() == "", "an unclassifiable node must NOT stay block-worthy"
+    assert out_uncls.read_text() == "tests/test_x.py::test_pre_existing_red\n"
+    assert "block_count=0" in captured.out
+    assert "unclassifiable_count=1" in captured.out
+
+
+def test_classify_new_nodes_baseline_selected_file_blocks(tmp_path: Path, capsys):
+    """Acceptance criterion 2a (#2348): a NEW node whose file the baseline
+    SELECTED (and ran green) is a real both-trees delta — it stays in
+    out-block."""
+    argv, out_block, out_uncls = _classify_args(
+        tmp_path,
+        nodes="tests/test_x.py::test_payload_broke_me\n",
+        selected="tests/test_x.py\n",
+        own_diff="scripts/payload.py\n",
+    )
+    rc = sb.main(argv)
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert out_block.read_text() == "tests/test_x.py::test_payload_broke_me\n"
+    assert out_uncls.read_text() == ""
+    assert "block_count=1" in captured.out
+
+
+def test_classify_new_nodes_owndiff_test_blocks(tmp_path: Path, capsys):
+    """Acceptance criterion 2b (#2348, the branch-new-test doctrine): a
+    payload-added failing test is gated-only-collected BY CONSTRUCTION (its
+    file is absent from the baseline selection) and must still block — the
+    own-diff membership keeps it in out-block."""
+    argv, out_block, out_uncls = _classify_args(
+        tmp_path,
+        nodes="tests/test_new_payload.py::test_added_and_red\n",
+        selected="tests/test_other.py\n",
+        own_diff="tests/test_new_payload.py\nscripts/payload.py\n",
+    )
+    rc = sb.main(argv)
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert out_block.read_text() == "tests/test_new_payload.py::test_added_and_red\n"
+    assert out_uncls.read_text() == ""
+
+
+def test_classify_new_nodes_missing_selected_legacy_all_block(tmp_path: Path, capsys):
+    """A missing/unreadable --baseline-selected degrades to LEGACY mode: ALL
+    nodes stay block-worthy (the pre-#2348 status quo) with a stderr WARN —
+    never a silent narrowing of the block set."""
+    argv, out_block, out_uncls = _classify_args(
+        tmp_path,
+        nodes="tests/test_a.py::t1\ntests/test_b.py::t2\n",
+        selected=None,
+        own_diff="scripts/payload.py\n",
+    )
+    rc = sb.main(argv)
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert out_block.read_text() == "tests/test_a.py::t1\ntests/test_b.py::t2\n"
+    assert out_uncls.read_text() == ""
+    assert "WARN" in captured.err and "LEGACY" in captured.err
+
+
+def test_classify_new_nodes_inplace_atomic(tmp_path: Path, capsys):
+    """The designed call shape: --out-block == --new-nodes (in-place filter of
+    the SKILL verdict operand) classifies correctly; and a forced failure
+    (missing --own-diff -> exit 2) leaves the input file byte-unchanged (the
+    SKILL's `||` then keeps every NEW node blocking — status quo)."""
+    nodes = "tests/test_x.py::keeps_blocking\ntests/test_y.py::goes_unclassifiable\n"
+    argv, out_block, out_uncls = _classify_args(
+        tmp_path,
+        nodes=nodes,
+        selected="tests/test_x.py\n",
+        own_diff="scripts/payload.py\n",
+        inplace=True,
+    )
+    rc = sb.main(argv)
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert out_block.read_text() == "tests/test_x.py::keeps_blocking\n"
+    assert out_uncls.read_text() == "tests/test_y.py::goes_unclassifiable\n"
+    # Forced failure: unreadable --own-diff exits 2 and mutates NOTHING.
+    argv2, out_block2, out_uncls2 = _classify_args(
+        tmp_path,
+        nodes=nodes,
+        selected="tests/test_x.py\n",
+        own_diff="unused\n",
+        inplace=True,
+    )
+    own_idx = argv2.index("--own-diff") + 1
+    argv2[own_idx] = str(tmp_path / "does-not-exist.txt")
+    out_uncls2.unlink(missing_ok=True)
+    rc = sb.main(argv2)
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "fail-closed exit 2" in captured.err
+    assert out_block2.read_text() == nodes, "exit 2 must leave the in-place input byte-unchanged"
+    assert not out_uncls2.exists(), "exit 2 must write no outputs"
 
 
 # --- #2324: refresh-lock path rejection (symlink/FIFO-safe bounded open) --------
