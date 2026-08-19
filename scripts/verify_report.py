@@ -110,7 +110,8 @@ Required structure (both modes):
     non-git root → WARN (both); pinned commit unresolvable → FAIL in
     generation (the pin was just created locally at assembly) / WARN in
     promote (unfetched clone plausible); commit present but companion path
-    absent → FAIL (both).
+    absent → FAIL (both); companion blob present but not valid UTF-8 → FAIL
+    (both; contained decode error, never a crash).
 
 Mode-specific:
   - ``generation``: TLDR AND Conclusion-and-next-steps content MUST be exactly
@@ -244,14 +245,18 @@ _DETAILED_URL_RE = re.compile(
 )
 
 
-def _git(repo: Path, *args: str) -> tuple[int, str]:
-    """Run a READ-ONLY git command in ``repo``; return (returncode, stripped stdout).
+def _git(repo: Path, *args: str, strip: bool = True) -> tuple[int, str]:
+    """Run a READ-ONLY git command in ``repo``; return (returncode, stdout).
 
-    Used by the image-pin blob-identity check — local object-DB lookups only
-    (``rev-parse`` / ``cat-file`` / ``hash-object``), never a network call.
+    stdout is ``.strip()``-ed by default (right for ref/hash plumbing output);
+    pass ``strip=False`` for byte-faithful text — the companion
+    materialization needs leading blank lines preserved so reported ``L<n>``
+    numbers map to real file lines. Local object-DB lookups only
+    (``rev-parse`` / ``cat-file`` / ``hash-object`` / ``show``), never a
+    network call.
     """
     proc = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
-    return proc.returncode, proc.stdout.strip()
+    return proc.returncode, (proc.stdout.strip() if strip else proc.stdout)
 
 
 _SCHEMA_PATH = (
@@ -1533,7 +1538,9 @@ def _resolve_companion_text(
     (FAIL at generation — the orchestrator commits + pushes the companion and
     splices the pin BEFORE the generation-mode verify runs, so the commit
     exists locally by construction; WARN at promote — unfetched clone
-    plausible); a resolvable commit lacking the companion path FAILs (both).
+    plausible); a resolvable commit lacking the companion path FAILs (both);
+    a resolvable-but-non-UTF-8 companion blob FAILs (both — contained
+    ``UnicodeDecodeError``, never a crash).
     """
     name = "companion-content"
     matches = [m for ln in blanked_lines if (m := _DETAILED_LINE_RE.match(ln)) is not None]
@@ -1573,7 +1580,24 @@ def _resolve_companion_text(
             msg + "; unfetched clone possible post-merge, companion unverifiable",
             is_warn=True,
         )
-    rc, text = _git(figures_root, "show", f"{sha}:{path}")
+    try:
+        # strip=False: byte-faithful materialization — a companion whose file
+        # starts with blank lines must keep them, or every reported ``L<n>``
+        # is offset by the stripped count (round-1 review Minor).
+        rc, text = _git(figures_root, "show", f"{sha}:{path}", strip=False)
+    except UnicodeDecodeError:
+        # A non-UTF-8 companion blob at a resolvable pin: _git decodes
+        # subprocess stdout as text, so the decode error surfaces HERE —
+        # contain it (mirror the card-blob ``git show`` containment, #2191
+        # convention). FAIL in BOTH modes: the companion is agent-generated
+        # markdown, so non-UTF-8 bytes are a generation defect, never an
+        # unfetched-clone gap.
+        return None, CheckResult(
+            name,
+            False,
+            f"companion {path} at pinned commit {sha[:12]} is not valid UTF-8 — "
+            "content unscannable",
+        )
     if rc != 0:
         return None, CheckResult(name, False, f"pinned commit {sha[:12]} does not contain {path}")
     return text, None

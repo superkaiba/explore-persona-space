@@ -2196,3 +2196,43 @@ def test_companion_round_motivation_is_scanned(git_figs_repo):
     assert comp.passed and comp.is_warn
     assert "lexicon" in comp.detail and "suggests" in comp.detail
     assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_non_utf8_blob_fails_both_modes(git_figs_repo):
+    # (l, round 2 — concern companion-non-utf8-crash) a non-UTF-8 companion
+    # blob at a RESOLVABLE pin returns a contained FAILED companion-content
+    # result in BOTH modes — never an uncaught UnicodeDecodeError crashing the
+    # verifier (0xff/0xfe are invalid UTF-8 in any position).
+    repo, _head = git_figs_repo
+    (repo / "docs" / "reports" / "issue_5_detailed.md").write_bytes(
+        b"\xff\xfe binary companion bytes \xff"
+    )
+    _git_run(repo, "add", "docs/reports/issue_5_detailed.md")
+    _git_run(repo, "commit", "-q", "-m", "non-utf8 companion")
+    sha = _git_run(repo, "rev-parse", "HEAD")
+    for mode in ("generation", "promote"):
+        ok, results = _run(
+            _companion_body(sha, promote=(mode == "promote")), mode=mode, figs_root=repo
+        )
+        comp = _by_name(results, "companion-content")
+        assert not comp.passed, f"{mode}: expected FAIL, got {comp.render()}"
+        assert "not valid UTF-8" in comp.detail
+        assert not ok
+
+
+def test_companion_leading_blank_lines_keep_file_line_numbers(git_figs_repo):
+    # (m, round 2 — round-1 review Minor) a companion whose FILE starts with
+    # blank lines keeps file-accurate L<n> numbers: the lexicon hit sits at
+    # file line 9 (two leading blanks + the L7 hit of the unprefixed fixture);
+    # the pre-fix stripped materialization would report L7.
+    repo, _head = git_figs_repo
+    dirty = "\n\n" + _CLEAN_COMPANION.replace(
+        "We trained on 100 rows under two conditions: baseline and treatment.",
+        "The dispatch log confirms the row count across conditions.",
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn
+    assert "lexicon L9: 'confirms'" in comp.detail, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
