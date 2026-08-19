@@ -79,6 +79,8 @@ matplotlib.use("Agg")  # headless VM; set before any pyplot figure is created
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from huggingface_hub import hf_hub_download  # noqa: E402
+
+from explore_persona_space.orchestrate import hub  # noqa: E402
 from scipy.stats import rankdata  # noqa: E402
 
 ISSUE = 2379
@@ -839,9 +841,9 @@ def _load_map_components(maps_dir: Path, comp_dir: Path | None, mapset: str, pin
     """Pinned .pt (production, HF maps_pinned) or components .npz (mapfit layout)."""
     pt = Path(maps_dir) / f"{mapset}_L{pin:02d}.pt"
     if pt.exists():
-        # Self-produced, sha-recorded bundle (unit-3 _write_pinned_pt) — weights_only=False
-        # is the sanctioned form for self-produced .pt (agent-memory torch>=2.6 note).
-        z = torch.load(pt, map_location="cpu", weights_only=False)
+        # Unit-3 pinned bundles are tensors + primitive containers -> weights_only=True
+        # (sibling precedent: issue2379_mapfit._fetch / judge loaders).
+        z = torch.load(pt, map_location="cpu", weights_only=True)
         return {k: np.asarray(z[k], dtype=np.float64) for k in ("W", "xmu", "xsd", "ymu")}
     if comp_dir is not None:
         npz = Path(comp_dir) / f"{mapset}_L{pin:02d}.npz"
@@ -865,9 +867,9 @@ def reference_collinearity(
         mu_path = Path(captures_dir) / model / "mu.pt"
         if not mu_path.exists():
             out[model] = {
-                "skipped": f"{mu_path} absent — fetch via hf_hub_download('{DATA_REPO}', "
-                f"'{SLUG}/analysis_tensors/predictor_captures/{model}/mu.pt', "
-                "repo_type='dataset')"
+                "skipped": f"{mu_path} absent — stage it from the HF data repo "
+                f"({DATA_REPO}: {SLUG}/analysis_tensors/predictor_captures/{model}/mu.pt, "
+                "repo_type=dataset), or run with --fetch"
             }
             continue
         comps = _load_map_components(maps_dir, comp_dir, model, pin)
@@ -876,7 +878,7 @@ def reference_collinearity(
                 "skipped": f"map components for {model} L{pin:02d} absent under {maps_dir}"
             }
             continue
-        z = torch.load(mu_path, map_location="cpu", weights_only=False)  # self-produced
+        z = torch.load(mu_path, map_location="cpu", weights_only=True)  # unit-2 bundle
         mu_c = np.asarray(z["mu_train"], dtype=np.float64)[pin]
         mu_a = z.get("mu_a_train")
         if mu_a is None:
@@ -1360,18 +1362,21 @@ def _resolve_capture(
         return p
     rel = f"{SLUG}/analysis_tensors/predictor_captures/{model}/{kind}.pt"
     if fetch:
-        got = hf_hub_download(DATA_REPO, rel, repo_type="dataset", local_dir=str(stage_dir))
+        got = hub.retry_transient(
+            lambda: hf_hub_download(DATA_REPO, rel, repo_type="dataset", local_dir=str(stage_dir)),
+            what=f"hf_hub_download {rel}",
+        )
         return Path(got)
     raise FileNotFoundError(
-        f"{p} absent; pass --fetch or stage manually: hf_hub_download('{DATA_REPO}', "
-        f"'{rel}', repo_type='dataset')"
+        f"{p} absent; pass --fetch, or stage it from the HF data repo "
+        f"({DATA_REPO}: {rel}, repo_type=dataset)"
     )
 
 
 def gate_ctx_trainref(grid_path: Path, mu_path: Path) -> tuple[np.ndarray, list[str]]:
     """(n_l, n_t) ctx Train Ref matrix + trigger labels from a P3 capture pair."""
-    g = torch.load(grid_path, map_location="cpu", weights_only=False)  # self-produced
-    z = torch.load(mu_path, map_location="cpu", weights_only=False)
+    g = torch.load(grid_path, map_location="cpu", weights_only=True)  # unit-2 bundle
+    z = torch.load(mu_path, map_location="cpu", weights_only=True)
     v_c = np.asarray(g["v_c"], dtype=np.float64)  # (n_rows, n_l, d)
     mu = np.asarray(z["mu_train"], dtype=np.float64)  # (n_l, d)
     if v_c.shape[1] != mu.shape[0] or v_c.shape[2] != mu.shape[1]:
@@ -1805,7 +1810,11 @@ def main() -> int:
     ap.add_argument("--n-draws", type=int, default=BOOT_DRAWS_DEFAULT)
     ap.add_argument("--gate-caps", action="store_true", help="Gate G1 mode (P2+P3 inputs only)")
     ap.add_argument("--gate-models", default=",".join(CAPS_STEMS))
-    ap.add_argument("--fetch", action="store_true", help="hf_hub_download missing tensors")
+    ap.add_argument(
+        "--fetch",
+        action="store_true",
+        help="fetch missing tensors from the HF data repo (retry-routed)",
+    )
     ap.add_argument(
         "--stage-dir", default=str(REPO_ROOT / "data" / "issue_2379" / "hf_dl" / "analysis")
     )
