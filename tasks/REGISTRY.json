@@ -9212,8 +9212,8 @@
     "2193": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2193",
-      "status": "proposed",
+      "path": "tasks/planning/2193",
+      "status": "planning",
       "title": "workflow_lint: flag stale gotchas.md pointers after an entry relocates (live instance in research-project-structure.md)"
     },
     "2194": {
