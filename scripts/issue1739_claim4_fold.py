@@ -446,12 +446,13 @@ def item4_syco_table(banked_syco: dict, ref: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-def arm2_sanity_band(committed_root: Path, behavior: str, claim4_cells: dict, seeds) -> dict:
+def arm2_sanity_band(committed_root: Path, behavior: str, rows: list[dict], seeds) -> dict:
     """arm2's pvsynth ρ (this round, true pass) vs its committed train-grid band.
 
     Out-of-band ⇒ the item-3 verdict is flagged `inconclusive — adapter-suspect`
     (consistency WARN-A: an adapter bug makes arm2 spuriously weak, the
-    claim-friendly direction) — never silently scored."""
+    claim-friendly direction) — never silently scored. Reads the FULL row
+    list (pvsynth is a non-primary rung — it never enters the primary cells)."""
     p = committed_root / behavior / "arm_results" / "all_arms_spearman.json"
     if not p.exists():
         return {"behavior": behavior, "note": f"committed train summary absent: {p}"}
@@ -465,11 +466,19 @@ def arm2_sanity_band(committed_root: Path, behavior: str, claim4_cells: dict, se
         and r.get("u_rung_label") == "full"
         and r.get("rho_frozen") is not None
     ]
-    per_seed = {
-        int(s): float(r["rho_frozen"])
-        for (b, rung, s, mv, arm), r in claim4_cells.items()
-        if b == behavior and arm == ARM_CTXDIR and mv == "true" and rung == "pvsynth"
-    }
+    pv_vals: dict[int, list[float]] = {}
+    for r in rows:
+        if (
+            r.get("behavior") == behavior
+            and r.get("arm") == ARM_CTXDIR
+            and r.get("map_variant") == "true"
+            and r.get("eval_rung") == "pvsynth"
+            and r.get("rho_frozen") is not None
+        ):
+            pv_vals.setdefault(int(r["seed"]), []).append(float(r["rho_frozen"]))
+    # pvsynth is scored once per P-B fit (same eval block each holdout under
+    # the frozen map) — average the per-fit reads per seed.
+    per_seed = {s: sum(v) / len(v) for s, v in sorted(pv_vals.items())}
     out = {
         "behavior": behavior,
         "mode": "transfer (new this round)",
@@ -689,7 +698,7 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
             ax.axhline(0.0, color="#444444", lw=0.8)
             ax.set_xticks([x + 0.4 for x in xs])
             ax.set_xticklabels(labels, rotation=45, ha="right")
-            ax.set_ylabel("Spearman ρ (frozen layer, seed mean, true-map pass)")
+            ax.set_ylabel("Spearman ρ (seed mean, true map)")
             ax.set_title("arm2 comparator vs roster per rung (exploratory)")
             ax.legend(fontsize=7)
             savefig_paper(fig, "claim4_arm2_bars", dir=fig_dir)
@@ -899,7 +908,7 @@ def build_table(args) -> dict:
     banked_syco = read_banked(args.banked_ref, "sycophancy", args.banked_root)
     item4 = item4_syco_table(banked_syco, args.banked_ref)
 
-    arm2 = {b: arm2_sanity_band(args.committed_train_root, b, cells, seeds) for b in args.behaviors}
+    arm2 = {b: arm2_sanity_band(args.committed_train_root, b, rows, seeds) for b in args.behaviors}
     if any(a.get("flag") for a in arm2.values()):
         verdict["item3_flag"] = "inconclusive — adapter-suspect (arm2 out of committed band)"
 

@@ -16,6 +16,7 @@ Pins the four implementer-hygiene checks the plan registers:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -454,3 +455,63 @@ def test_extra_arms_guard_rejects_unknown_slug():
         assert "arm2_ctx_native" in sc.LABEL_CONSUMING
     finally:
         sc.ROSTER, sc.LABEL_CONSUMING = saved
+
+
+def test_arm2_sanity_band_reads_pvsynth_from_full_rows(tmp_path):
+    """pvsynth rows never enter the primary-rung cells (fit != P-B-holdout-pvsynth);
+    the band check must read the FULL row list (regression: #1739 claim4 fold bug)."""
+    from scripts.issue1739_claim4_fold import arm2_sanity_band
+
+    d = tmp_path / "evil" / "arm_results"
+    d.mkdir(parents=True)
+    committed = {
+        "arm_rows": [
+            {
+                "arm": "arm2_ctx_native",
+                "variant": "context_end",
+                "regime": "e1",
+                "u_rung_label": "full",
+                "rho_frozen": v,
+            }
+            for v in (0.40, 0.55, 0.70)
+        ]
+    }
+    (d / "all_arms_spearman.json").write_text(json.dumps(committed))
+
+    def _rows(rho):
+        return [
+            {
+                "behavior": "evil",
+                "arm": "arm2_ctx_native",
+                "map_variant": "true",
+                "eval_rung": "pvsynth",
+                "seed": s,
+                "rho_frozen": rho,
+            }
+            for s in (0, 1)
+        ] + [
+            # primary-rung row and shufpair pvsynth row must both be ignored
+            {
+                "behavior": "evil",
+                "arm": "arm2_ctx_native",
+                "map_variant": "true",
+                "eval_rung": "evil_pair",
+                "seed": 0,
+                "rho_frozen": -0.9,
+            },
+            {
+                "behavior": "evil",
+                "arm": "arm2_ctx_native",
+                "map_variant": "shufpair",
+                "eval_rung": "pvsynth",
+                "seed": 0,
+                "rho_frozen": -0.9,
+            },
+        ]
+
+    ok = arm2_sanity_band(tmp_path, "evil", _rows(0.50), seeds=[0, 1])
+    assert ok["in_band"] is True and not ok.get("flag")
+    assert ok["pvsynth_rho_per_seed"] == {0: 0.50, 1: 0.50}
+
+    bad = arm2_sanity_band(tmp_path, "evil", _rows(0.10), seeds=[0, 1])
+    assert bad["in_band"] is False and bad.get("flag")
