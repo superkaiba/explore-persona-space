@@ -46,9 +46,18 @@ vdg = _load("vm_disk_guard")
 PYPROJECT_CONTENT = '[project]\nname = "stray"\nversion = "0.0.1"\n'
 UVLOCK_CONTENT = 'version = 1\nrequires-python = ">=3.11"\n'
 
-# A `now` far enough past file creation that the freshness grace never trips
-# (the files are written seconds before the sweep runs).
-AGED_NOW = time.time() + 2 * ced.UVPROJ_RECENT_GRACE_SECONDS
+
+def _aged_now(*paths: Path) -> float:
+    """A sweep ``now`` deterministically PAST the freshness grace for every
+    given fixture path: newest lstat mtime + 2x grace, so the computed age is
+    exactly 2x grace regardless of the pytest collection-to-run gap. (The
+    round-1/2 module-level ``time.time()`` capture broke mid-gate: a ~13.5-min
+    import->run gap shrank every computed age below the 600s grace and routed
+    all fire-branch cases to ``tmp-uvproj-recent-escalated``. No assertion in
+    this file may depend on a wall-clock delta between import and run.)"""
+    newest = max(os.lstat(p).st_mtime for p in paths)
+    return newest + 2 * ced.UVPROJ_RECENT_GRACE_SECONDS
+
 
 _GIT_ENV = {
     "GIT_AUTHOR_NAME": "t",
@@ -131,7 +140,9 @@ def test_verified_poison_file_is_quarantined(tmp_root, main_repo, sidecar):
     sidecar row naming the uv blast radius."""
     poison = tmp_root / "pyproject.toml"
     poison.write_text(PYPROJECT_CONTENT)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-quarantined"
     assert not poison.exists(), "original poison path must be gone"
@@ -153,7 +164,9 @@ def test_unverified_content_is_escalated_and_untouched(tmp_root, main_repo, side
     """Content NOT in the main repo odb: no quarantine — HARD-ESCALATE only."""
     poison = tmp_root / "pyproject.toml"
     poison.write_text('[project]\nname = "never-committed-anywhere"\n')
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-unverified-escalated"
     assert poison.is_file(), "unverified file must be left untouched"
@@ -170,7 +183,9 @@ def test_empty_file_is_never_evidence_licensed(tmp_root, main_repo):
     repo — the known hermeticity trap): escalated, untouched."""
     poison = tmp_root / "uv.lock"
     poison.write_text("")
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-unverified-escalated"
     assert "empty" in row["reason"]
@@ -188,7 +203,9 @@ def test_kill_switches_disable_the_arm(tmp_root, main_repo, monkeypatch, env_var
     poison = tmp_root / "pyproject.toml"
     poison.write_text(PYPROJECT_CONTENT)
     monkeypatch.setenv(env_var, "1")
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     assert res.rows == []
     assert poison.is_file()
 
@@ -219,7 +236,9 @@ def test_report_mode_would_quarantine_touches_nothing_but_lands_in_sidecar(
     with the observing mode."""
     poison = tmp_root / "pyproject.toml"
     poison.write_text(PYPROJECT_CONTENT)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=False, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=False, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-would-quarantine"
     assert poison.is_file()
@@ -237,7 +256,9 @@ def test_symlink_is_nonregular_escalated_and_never_followed(tmp_root, main_repo,
     target.write_text(PYPROJECT_CONTENT)
     link = tmp_root / "pyproject.toml"
     link.symlink_to(target)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(link)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-nonregular-escalated"
     assert link.is_symlink(), "symlink left in place"
@@ -247,25 +268,45 @@ def test_symlink_is_nonregular_escalated_and_never_followed(tmp_root, main_repo,
 # ─── test 8: freshness grace ─────────────────────────────────────────────────
 
 
-def test_just_written_verified_file_is_kept_this_pass(tmp_root, main_repo):
-    """A VERIFIED but just-written file is kept (recency is only ever a KEEP
-    signal); the injected ``now`` makes the window deterministic."""
+def test_freshness_grace_boundary_from_both_sides(tmp_root, main_repo):
+    """A VERIFIED file is kept while younger than the grace and acted on once
+    quiescent — pinned deterministically on BOTH sides of the strict ``<``
+    boundary by giving the fixture an INTEGER mtime via ``os.utime`` (integer
+    epoch floats add exactly, so ``age == grace`` is exact at the boundary)
+    and deriving ``now`` from that mtime, never from wall clock."""
     poison = tmp_root / "pyproject.toml"
     poison.write_text(PYPROJECT_CONTENT)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=time.time())
+    base = 1_700_000_000.0  # integer-valued epoch => exact float arithmetic
+    os.utime(poison, (base, base))
+    grace = ced.UVPROJ_RECENT_GRACE_SECONDS
+    # Recent side: age = grace - 1 < grace => KEPT this pass (recency is only
+    # ever a KEEP signal).
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=base + grace - 1.0
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-recent-escalated"
     assert row["evidence"].startswith("git-blob:"), "recent row is already VERIFIED by gate order"
     assert poison.is_file()
     assert not list(tmp_root.glob("eps-quarantine-uvproj-*"))
+    # Quiescent side: age == grace exactly — NOT ``< grace`` (strict), so the
+    # recency gate passes and the verified file is quarantined.
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=base + grace
+    )
+    row = _one_row(res)
+    assert row["disposition"] == "tmp-uvproj-quarantined"
+    assert not poison.exists()
+    assert len(list(tmp_root.glob("eps-quarantine-uvproj-*"))) == 1
 
 
 # ─── round-2 gate tests (uvproj-gate-tests-incomplete) ───────────────────────
 
 
 def _write_aged_poison(tmp_root: Path) -> Path:
-    """A committed-content pyproject.toml at tmp_root (verified + aged under
-    AGED_NOW — the fire-branch shape every gate test below starts from)."""
+    """A committed-content pyproject.toml at tmp_root (verified + aged under a
+    per-test ``_aged_now(poison)`` ``now`` — the fire-branch shape every gate
+    test below starts from)."""
     poison = tmp_root / "pyproject.toml"
     poison.write_text(PYPROJECT_CONTENT)
     return poison
@@ -283,16 +324,17 @@ def test_predictable_destination_symlink_attack_cannot_redirect_or_replace(
     replaced, and the realized quarantine parent is a REAL private 0700 dir
     owned by us, directly under tmp_root."""
     poison = _write_aged_poison(tmp_root)
+    aged_now = _aged_now(poison)
     outside = tmp_path / "outside"
     outside.mkdir()
     victim = outside / "pyproject.toml"
     victim_bytes = "VICTIM — must never be replaced\n"
     victim.write_text(victim_bytes)
-    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(AGED_NOW))
+    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(aged_now))
     trap = tmp_root / f"eps-quarantine-uvproj-{ts}"
     trap.symlink_to(outside, target_is_directory=True)
 
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=aged_now)
 
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-quarantined"
@@ -337,7 +379,9 @@ def test_same_size_same_mtime_swap_is_never_evidence_licensed(
         return real_probe(main_repo_arg, shas)
 
     monkeypatch.setattr(ced, "_git_first_missing_blob", swapping_probe)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-reap-aborted-recency"
     assert "inode" in row["reason"]
@@ -361,7 +405,9 @@ def test_pre_rename_content_change_aborts_to_keep(tmp_root, main_repo, monkeypat
         return real_probe(main_repo_arg, shas)
 
     monkeypatch.setattr(ced, "_git_first_missing_blob", growing_probe)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-reap-aborted-recency"
     assert "changed" in row["reason"]
@@ -375,7 +421,9 @@ def test_live_process_holding_the_file_is_kept(tmp_root, main_repo, sidecar, mon
     monkeypatch.setattr(
         ced, "_scratch_live_process_hit", lambda cand, *, exact=False: "pid 4242 (uv)"
     )
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-live-process-kept"
     assert "pid 4242" in row["reason"]
@@ -389,7 +437,9 @@ def test_foreign_owner_is_escalated_and_untouched(tmp_root, main_repo, sidecar, 
     renaming another uid's file anyway)."""
     poison = _write_aged_poison(tmp_root)
     monkeypatch.setattr(ced, "_tmp_entry_owned", lambda path: False)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-foreign-owner-escalated"
     assert poison.is_file()
@@ -410,7 +460,9 @@ def test_quarantine_dir_setup_failure_keeps_and_escalates(
         raise OSError("mkdtemp refused")
 
     monkeypatch.setattr(ced, "_uvproj_quarantine_dir", boom)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-quarantine-failed"
     assert poison.is_file() and poison.read_text() == PYPROJECT_CONTENT
@@ -430,7 +482,9 @@ def test_quarantine_rename_failure_keeps_and_escalates(tmp_root, main_repo, side
         return real_rename(src, dst, **kwargs)
 
     monkeypatch.setattr(ced.os, "rename", refusing_rename)
-    res = ced.sweep_tmp_uv_project_files(tmp_root, apply=True, main_repo=main_repo, now=AGED_NOW)
+    res = ced.sweep_tmp_uv_project_files(
+        tmp_root, apply=True, main_repo=main_repo, now=_aged_now(poison)
+    )
     row = _one_row(res)
     assert row["disposition"] == "tmp-uvproj-quarantine-failed"
     assert poison.is_file() and poison.read_text() == PYPROJECT_CONTENT
@@ -447,7 +501,8 @@ def test_guard_leg_runs_even_under_threshold(tmp_root, main_repo, monkeypatch):
     UNDER-threshold pass (usage monkeypatched low) — pinning the
     unconditional-leg placement BEFORE the early return, outside the
     threshold-gated tier suite."""
-    (tmp_root / "pyproject.toml").write_text(PYPROJECT_CONTENT)
+    poison = tmp_root / "pyproject.toml"
+    poison.write_text(PYPROJECT_CONTENT)
     monkeypatch.setattr(vdg, "disk_used_pct", lambda path="/": 10.0)
     monkeypatch.setattr(vdg, "disk_free_gb", lambda path="/": 500.0)
     res = vdg.run_guard(
@@ -455,7 +510,7 @@ def test_guard_leg_runs_even_under_threshold(tmp_root, main_repo, monkeypatch):
         threshold=85.0,
         scratch_tmp_root=tmp_root,
         scratch_main_repo=main_repo,
-        now=AGED_NOW,
+        now=_aged_now(poison),
     )
     assert res.triggered is False
     assert res.tiers == [], "under threshold: the tier suite must not have run"
@@ -484,9 +539,10 @@ def test_push_dedup_is_per_name_disposition(tmp_root, main_repo, monkeypatch, tm
     monkeypatch.setattr(vdg, "repo_root", lambda: tmp_path)
     pushes: list[str] = []
     monkeypatch.setattr(vdg, "_telegram_push", lambda msg, apply: pushes.append(msg) or True)
-    (tmp_root / "pyproject.toml").write_text('[project]\nname = "not-committed"\n')
+    poison = tmp_root / "pyproject.toml"
+    poison.write_text('[project]\nname = "not-committed"\n')
     tier = vdg.check_tmp_uv_project_files(
-        True, tmp_root=tmp_root, main_repo=main_repo, now=AGED_NOW
+        True, tmp_root=tmp_root, main_repo=main_repo, now=_aged_now(poison)
     )
     assert [r["disposition"] for r in tier.scratch_candidates] == [
         "tmp-uvproj-unverified-escalated"
@@ -514,9 +570,10 @@ def test_report_only_push_persists_no_state(tmp_root, main_repo, monkeypatch, tm
     """apply=False: _telegram_push demotes (returns False) and the dedup
     state file is never written."""
     monkeypatch.setattr(vdg, "repo_root", lambda: tmp_path)
-    (tmp_root / "uv.toml").write_text("[pip]\n")  # not committed => escalate-class
+    poison = tmp_root / "uv.toml"
+    poison.write_text("[pip]\n")  # not committed => escalate-class
     tier = vdg.check_tmp_uv_project_files(
-        False, tmp_root=tmp_root, main_repo=main_repo, now=AGED_NOW
+        False, tmp_root=tmp_root, main_repo=main_repo, now=_aged_now(poison)
     )
     vdg._maybe_alert_uv_project(tier, False, no_push=False, now=1_000_000.0)
     assert not vdg._uvproj_push_state_path().exists()
