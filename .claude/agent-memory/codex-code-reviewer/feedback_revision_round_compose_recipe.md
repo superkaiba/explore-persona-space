@@ -1563,6 +1563,23 @@ proxies for unrunnable claims attested as compose-time facts to re-verify
 (def-test count vs claimed collect-only, zero-hit stale-cap-literal sweep);
 (g) note the reconcile note's file:line refs use R1-BLOB numbering.
 
+**Mid-compose drift, second firing — ts-scope absence ATTESTATIONS (#2388 r2,
+2026-08-20):** the #2326 ts-pin fired again: the parallel Claude reviewer
+raised the very row (`sandbox-network-residual`) whose ABSENCE my prompt
+attested, 15 min into the compose. The snapshot pin excluded it correctly,
+but an absolute attestation ("composer re-probed: NO such row exists") goes
+stale the moment a sibling posts. Refinement: word every absence attestation
+about a mutable ledger/marker surface TS-SCOPED ("as of the snapshot ts
+above, NO such row exists") and add a forwarder-dedup clause to any
+emit-the-row-yourself instruction ("the orchestrator dedups against rows
+landing between snapshot and collection") — then report the excluded row +
+the dedup duty in the return. Also confirmed composable: #2332 union +
+#2379-r2 disposition-keying works with the impl marker's prose
+`### Response to code-review v1 (g1–g7 + Codex)` section (not only a table);
+Claude-side blockers with no ledger rows become g-labeled pseudo-ids, and
+overlapping same-defect pairs (Claude g-item == codex id) get ONE
+adjudication line covering both, stated in the schema itself.
+
 **Union-NOTE-as-contract + instrument-non-vacuity fix round (#2391 r2,
 2026-08-19):** when the orchestrator posted a standalone union WORK ORDER
 note (B1/B2 with root-cause + per-item round-2 scope) after a FAIL+FAIL
