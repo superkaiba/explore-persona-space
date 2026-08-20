@@ -9305,8 +9305,8 @@
     "2205": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2205",
-      "status": "planning",
+      "path": "tasks/approved/2205",
+      "status": "approved",
       "title": "verify_plan c46: also enforce the launch runtime requirement (exactly one of --workload-cmd / --hydra) when dry-parsing plan-embedded dispatch commands"
     },
     "2206": {
