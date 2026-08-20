@@ -17,16 +17,31 @@ generations) for the k-ladder k in {1, 2, 4, 8, 16}:
    transport rows on resume, so caller-side re-drive uses a fresh dir).
 4. Applies the pre-registered cap-hit re-gen trigger: any persona whose
    `stop_reason == "max_tokens"` fraction exceeds 2 percent gets its over-cap
-   rows re-generated at max_tokens 2048 before persist.
+   rows re-generated ONCE at max_tokens 8192 (plan v13 section 4.3 step 4);
+   regenerated rows are stamped `gen_wave: "regen-8192"` at regen time and
+   the cap-hit fraction is RE-MEASURED on final records ("regen ran" is
+   never read as "trigger resolved" -- residual over-threshold cells are
+   reported in the digest, not re-cascaded).
 5. Persists 16 per-persona record files (every record carrying its Batch
-   request custom_id, batch id, and submitted/harvested timestamps -- the
-   batch-wave drift audit fields, free now and unrecoverable later) +
-   `assignment.json` + `roster.json` + `_gen_complete.json`, and uploads all
-   of them to the HF data repo in ONE bulk commit BEFORE any pod exists.
+   request custom_id, batch id, submitted/harvested timestamps, its PERSISTED
+   requested-max_tokens + `gen_wave`, and the exact dispatched system prompt
+   + sha256 -- the batch-wave drift + P0 prompt-integrity audit fields, free
+   now and unrecoverable later) + `assignment.json` + `roster.json` +
+   `_gen_complete.json`, and uploads all of them to the HF data repo in ONE
+   bulk commit BEFORE any pod exists.
+
+Resume safety (plan v13 section 4.3 step 3b): a generation-config
+FINGERPRINT (model, temperature, base/regen caps, roster/template hash,
+context pin, mask-gate schema id) is persisted into EVERY dispatcher
+checkpoint dir and into `_gen_complete.json`; a resume whose live config
+mismatches a checkpoint's persisted fingerprint is a designed halt BEFORE
+any dispatch or row re-serve, and every row's recorded cap is read from the
+serving checkpoint's persisted metadata, never the live module constants.
 
 Usage:
-  uv run python scripts/issue823_ladder_gen.py --smoke   # 16 contexts, /tmp + _smoke HF prefix
-  uv run python scripts/issue823_ladder_gen.py           # full 5,000-context production run
+  uv run python scripts/issue823_ladder_gen.py --smoke      # 16 contexts, /tmp + _smoke HF prefix
+  uv run python scripts/issue823_ladder_gen.py              # full 5,000-context production run
+  uv run python scripts/issue823_ladder_gen.py --p0-verify  # P0 gate over persisted artifacts
 
 Exit codes: 0 = complete; 3 = transport-class rows remain (after this run's
 bounded FRESH re-drive rounds, or inside the pooled cap-hit regen) --
@@ -36,7 +51,12 @@ re-dispatching, so: a re-run resumes completed rows from the batch
 checkpoints and re-submits redrive residue automatically in fresh redrive
 dirs numbered past the stale ones; regen residue requires quarantining the
 halt-named regen checkpoint dir first (the halt message carries the exact mv
-command). Completion additionally requires the upload to land on the
+command). 4 = generation-config fingerprint mismatch on resume (designed
+halt BEFORE any dispatch or row re-serve; report JSON written next to the
+checkpoint root -- remedies: restore the config, or deliberately re-key a
+FRESH checkpoint root; never resume across a config change). 5 = P0
+prompt-integrity halt (plan section 4.3 P0 asserts (a)-(d); report JSON in
+the eval dir). Completion additionally requires the upload to land on the
 CANONICAL data repo -- an overflow-rerouted upload raises instead of
 reporting complete.
 """
@@ -74,11 +94,29 @@ from explore_persona_space.orchestrate.hub import _upload_folder_filtered, retry
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue823_ladder_gen")
 
-# ── Registered constants (plan v10 slice, sections 0 / 4.1 / 4.2 / 4.3) ─────
+# ── Registered constants (plan v13 slice, sections 0 / 4.1 / 4.2 / 4.3) ─────
 SONNET_MODEL = "claude-sonnet-4-5-20250929"  # == run_823.SONNET_MODEL (parent parity)
-GEN_MAX_TOKENS = 1024  # == run_823.SONNET_MAX_TOKENS (parent parity)
-REGEN_MAX_TOKENS = 2048  # pre-registered re-gen cap for over-cap rows
+# Cap ladder (plan v13 section 4.3 step 4 + section 11): base 4096 (amended
+# v11 -- the parent's 1024 and the pilot's 2048 regen are MEASURED
+# insufficient: 21/896 = 2.34% of final pilot records cap-hit, worst cell
+# k=16 p05 15.79%; 4096 = 2x the measured-insufficient cap per the project
+# >= 2x doubling convention), ONE regen round at 8192.
+GEN_MAX_TOKENS = 4096
+REGEN_MAX_TOKENS = 8192  # pre-registered ONE-round re-gen cap for over-cap rows
 GEN_TEMPERATURE = 1.0
+# gen_wave labels (plan v13 section 4.3 step 2): stamped EXPLICITLY at
+# dispatch/regen time, never reverse-engineered from batch ids.
+GEN_WAVE_FIRST = "first"
+GEN_WAVE_REGEN = f"regen-{REGEN_MAX_TOKENS}"  # == "regen-8192" (registered literal)
+# Mask-gate schema id (plan v13 section 4.3 step 3b(i) fingerprint field):
+# names the v11 stop_reason-keyed validity/class-split schema the section 4.3
+# mask gates read (refusal precedence over the empty-content check;
+# classify_validity below).
+MASK_GATE_SCHEMA_ID = "issue823_mask_gate_v11_stop_reason_precedence"
+# Designed-halt exit codes (3 = transport residue, pre-existing).
+EXIT_CONFIG_MISMATCH = 4  # resume fingerprint mismatch (section 4.3 step 3b(ii))
+EXIT_P0_INTEGRITY = 5  # P0 prompt-integrity halt (section 4.3 P0 asserts (a)-(d))
+GEN_CONFIG_FILENAME = "gen_config.json"  # per-checkpoint fingerprint + dispatch cap
 CAP_HIT_REGEN_FRACTION = 0.02  # per-persona stop-and-regen trigger
 MAX_TRANSPORT_REDRIVES = 2  # bounded caller-side re-drive of transport-class rows
 # FIX C: cumulative ceiling on fresh PAID re-drive rounds across ALL process
@@ -173,6 +211,150 @@ def _git_commit() -> str:
 
 def _sha256_file(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+# ── Generation-config fingerprint (plan v13 section 4.3 step 3b) ─────────────
+
+
+def roster_template_hash() -> str:
+    """sha256 over METADATA-FREE roster content: template + personas (idx, name, card).
+
+    HASH-BASIS PIN (plan v13 section 4.3 step 3b(i), binding): the hash
+    covers ONLY the content fields -- the template string plus the personas
+    array -- and NEVER the generated ``roster.json`` as a whole, whose
+    ``metadata`` block embeds ``generated_at`` and would make the fingerprint
+    differ between two runs of an IDENTICAL config (rejecting healthy
+    resumes). Process-time stability is pinned by the resume-stability
+    fixture in ``tests/test_issue823_ladder_gen_fixes.py``.
+    """
+    basis = {
+        "template": PERSONA_TEMPLATE,
+        "personas": [
+            {"idx": p, "name": name, "card": card} for p, (name, card) in enumerate(PERSONAS)
+        ],
+    }
+    blob = json.dumps(basis, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def generation_config_fingerprint() -> dict:
+    """The LIVE generation-config fingerprint (plan v13 section 4.3 step 3b(i)).
+
+    Returns ``{"fields": {...}, "sha256": <hex>}`` -- sha256 over (model,
+    temperature, base cap, regen cap, roster/template hash, context pin,
+    mask-gate schema id). Deliberately wall-clock-free.
+    """
+    fields = {
+        "model": SONNET_MODEL,
+        "temperature": GEN_TEMPERATURE,
+        "gen_max_tokens": GEN_MAX_TOKENS,
+        "regen_max_tokens": REGEN_MAX_TOKENS,
+        "roster_template_hash": roster_template_hash(),
+        "context_pin": PARENT_REV,
+        "mask_gate_schema_id": MASK_GATE_SCHEMA_ID,
+    }
+    blob = json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return {"fields": fields, "sha256": hashlib.sha256(blob.encode("utf-8")).hexdigest()}
+
+
+def _halt_config_mismatch(checkpoint_dir: pathlib.Path, report: dict) -> None:
+    """Designed halt for a resume-fingerprint failure (section 4.3 step 3b(ii))."""
+    report_path = checkpoint_dir.parent / f"fingerprint_mismatch_{checkpoint_dir.name}.json"
+    write_json(report_path, report)
+    logger.error(
+        "HALT-AND-REPORT: generation-config fingerprint check FAILED for checkpoint %s "
+        "(reason=%s, differing_fields=%s); report at %s. A resume across a config change "
+        "would re-serve rows generated under the OLD config but labeled with the new one. "
+        "Remedies: restore the persisted config, or deliberately re-key a FRESH checkpoint "
+        "root -- never resume across a config change.",
+        checkpoint_dir,
+        report.get("reason"),
+        sorted(report.get("differing_fields", {})),
+        report_path,
+    )
+    sys.exit(EXIT_CONFIG_MISMATCH)
+
+
+def check_or_persist_gen_config(checkpoint_dir: pathlib.Path, max_tokens: int) -> int:
+    """Persist the fingerprint into a fresh checkpoint dir, or verify it on resume.
+
+    Runs BEFORE any dispatch on ``checkpoint_dir`` -- and therefore before
+    the dispatcher can re-serve any persisted row from it (plan v13 section
+    4.3 step 3b(ii)). A fresh dir gets ``gen_config.json`` (the fingerprint
+    plus THIS dir's dispatch cap). An existing record is compared
+    field-by-field against the live fingerprint + cap; ANY mismatch -- and a
+    dispatcher ``state.json`` with no fingerprint record (a pre-fingerprint
+    checkpoint, unverifiable) -- is a designed halt: report JSON naming both
+    fingerprints and the differing fields, exit ``EXIT_CONFIG_MISMATCH`` (4,
+    distinct from the transport-halt exit 3). Never silent consumption.
+
+    Returns the checkpoint's PERSISTED dispatch cap (== ``max_tokens`` once
+    the check passes) so callers thread per-row caps from persisted request
+    metadata (step 3b(iii)), never the live module constants.
+    """
+    live = generation_config_fingerprint()
+    cfg_path = checkpoint_dir / GEN_CONFIG_FILENAME
+    if not cfg_path.is_file():
+        if (checkpoint_dir / "state.json").is_file():
+            _halt_config_mismatch(
+                checkpoint_dir,
+                {
+                    "reason": "unfingerprinted_checkpoint",
+                    "checkpoint_dir": str(checkpoint_dir),
+                    "persisted_fingerprint": None,
+                    "live_fingerprint": live,
+                    "differing_fields": {},
+                    "detail": (
+                        "dispatcher state.json exists but no gen_config.json -- a "
+                        "pre-fingerprint checkpoint cannot be verified against the "
+                        "live config; refusing to re-serve its rows"
+                    ),
+                    "detected_at": _utc_now(),
+                },
+            )
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        write_json(cfg_path, {"fingerprint": live, "max_tokens": max_tokens})
+        return max_tokens
+    persisted = json.loads(cfg_path.read_text())
+    p_fp = persisted.get("fingerprint") or {}
+    p_fields = p_fp.get("fields") or {}
+    diffs: dict[str, dict] = {}
+    for key in sorted(set(p_fields) | set(live["fields"])):
+        if p_fields.get(key) != live["fields"].get(key):
+            diffs[key] = {"persisted": p_fields.get(key), "live": live["fields"].get(key)}
+    if persisted.get("max_tokens") != max_tokens:
+        diffs["max_tokens"] = {"persisted": persisted.get("max_tokens"), "live": max_tokens}
+    if p_fp.get("sha256") == live["sha256"] and not diffs:
+        return int(persisted["max_tokens"])
+    _halt_config_mismatch(
+        checkpoint_dir,
+        {
+            "reason": "generation_config_fingerprint_mismatch",
+            "checkpoint_dir": str(checkpoint_dir),
+            "persisted_fingerprint": p_fp,
+            "live_fingerprint": live,
+            "persisted_max_tokens": persisted.get("max_tokens"),
+            "live_max_tokens": max_tokens,
+            "differing_fields": diffs,
+            "detected_at": _utc_now(),
+        },
+    )
+    raise AssertionError("unreachable: _halt_config_mismatch exits")
+
+
+def checkpoint_max_tokens(checkpoint_dir: pathlib.Path) -> int:
+    """Read a checkpoint dir's PERSISTED dispatch cap (section 4.3 step 3b(iii)).
+
+    Per-row recorded caps derive from this persisted request metadata --
+    never from the live ``GEN_MAX_TOKENS`` / ``REGEN_MAX_TOKENS`` module
+    constants -- so a resume after a cap re-tune can never mislabel
+    re-served rows (the fingerprint check halts such a resume first; this
+    read is the belt over that suspender). Fail-loud on a missing record:
+    production callers read it only AFTER ``_dispatch`` ran the
+    check-or-persist gate on the same dir.
+    """
+    cfg = json.loads((checkpoint_dir / GEN_CONFIG_FILENAME).read_text())
+    return int(cfg["max_tokens"])
 
 
 # ── Frozen question set (requirement 3) ──────────────────────────────────────
@@ -376,6 +558,10 @@ async def _dispatch(
     max_tokens: int,
     poll_interval: float,
 ) -> dict[str, DispatchResult]:
+    # Section 4.3 step 3b(ii): fingerprint check/persist runs BEFORE the
+    # dispatcher touches this checkpoint dir -- so a config-mismatched resume
+    # halts before any dispatch AND before any persisted row is re-served.
+    check_or_persist_gen_config(checkpoint_dir, max_tokens)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     return await dispatch_calls(
         items,
@@ -478,6 +664,7 @@ def _merge_stale_redrives(
     items_by_id: dict[str, DispatchItem],
     results: dict[str, DispatchResult],
     batch_meta: dict[str, dict],
+    max_tokens_by_item: dict[str, int],
     poll_interval: float,
 ) -> None:
     """Resume prior runs' redrive checkpoints and merge their outcomes (FIX B).
@@ -520,6 +707,12 @@ def _merge_stale_redrives(
         rd_results = asyncio.run(_dispatch(sub, rd_dir, GEN_MAX_TOKENS, poll_interval))
         results.update(rd_results)
         batch_meta.update(load_batch_meta(rd_dir))
+        # Section 4.3 step 3b(iii): re-served rows' caps come from the stale
+        # checkpoint's PERSISTED gen_config.json (written/verified by
+        # _dispatch's fingerprint gate just above), never the live constant.
+        stale_cap = checkpoint_max_tokens(rd_dir)
+        for iid in stale_ids:
+            max_tokens_by_item[iid] = stale_cap
 
 
 def _require_redrive_headroom(next_round: int, n_pending: int) -> None:
@@ -617,14 +810,24 @@ def _dispatch_pooled_regen(
 
 
 def classify_validity(res: DispatchResult) -> str:
+    """Validity label per pair, keyed on the persisted ``stop_reason``.
+
+    Label-precedence fix (plan v13 section 4.3 step 4, v11 pilot-found):
+    a refusal-stop takes precedence over EVERY empty-content check -- an
+    API-level refusal row has empty content by construction (its
+    ``DispatchResult`` can arrive as ``error=True`` / ``empty_response``),
+    and keying on emptiness first undercounted pilot refusals by 24%
+    (19 vs the true 25). The mask gates read ``stop_reason`` directly and
+    are immune either way; this keeps the M3 report consistent with them.
+    """
+    if res.stop_reason == "refusal":
+        return "refusal"
     if res.error:
         if res.category == "empty_response":
             return "empty"
         return f"error:{res.category}"
     if not isinstance(res.result, str) or not res.result.strip():
         return "empty"
-    if res.stop_reason == "refusal":
-        return "refusal"
     return "ok"
 
 
@@ -635,7 +838,9 @@ def build_records(
     assignment: dict[int, list[int]],
     results: dict[str, DispatchResult],
     batch_meta: dict[str, dict],
+    items_by_id: dict[str, DispatchItem],
     max_tokens_by_item: dict[str, int],
+    gen_wave_by_item: dict[str, str],
     regen_items: set[str],
 ) -> dict[int, list[dict]]:
     """Per-persona generation records; every record batch-provenance-complete."""
@@ -645,6 +850,13 @@ def build_records(
         res = results[item_id]
         meta = batch_meta[item_id]
         validity = classify_validity(res)
+        # The dispatched system prompt VERBATIM: make_build_request forwards
+        # payload["system"] unchanged into the API params. A resume that could
+        # desynchronize the rebuilt payload from what was originally
+        # dispatched is halted upstream by the fingerprint gate (the
+        # roster/template hash) + the dispatcher's own request_fingerprint
+        # check -- so this IS the per-pair P0 evidence (plan step 2).
+        system_prompt = items_by_id[item_id].payload["system"]
         rec = {
             "context_id": i,
             "persona_idx": p,
@@ -660,8 +872,14 @@ def build_records(
             "in_common_valid": in_common[i],
             "model": SONNET_MODEL,
             "temperature": GEN_TEMPERATURE,
+            # PERSISTED per-row cap + explicit wave label (section 4.3 steps
+            # 2 / 3b(iii)-(iv)): both threaded from checkpoint-persisted /
+            # regen-time stamps, never re-derived from live constants.
             "max_tokens": max_tokens_by_item[item_id],
+            "gen_wave": gen_wave_by_item[item_id],
             "regen": item_id in regen_items,
+            "system_prompt": system_prompt,
+            "system_prompt_sha256": hashlib.sha256(system_prompt.encode("utf-8")).hexdigest(),
             "batch_id": meta["batch_id"],
             "batch_request_custom_id": meta["batch_request_custom_id"],
             "batch_org": meta["batch_org"],
@@ -718,6 +936,17 @@ def build_digest(
         for r in recs
         if r["validity"].startswith("error:")
     )
+    # CONVERGENCE SEMANTICS (plan v13 section 4.3 step 4): the post-regen
+    # RE-MEASURE on FINAL records -- "regen ran" is never read as "trigger
+    # resolved". Cells still over the trigger are NOT re-cascaded; they are
+    # enumerated here for the M3 truncation-confound diagnostic and the
+    # `cap-hit>2%` labels every downstream table/figure must carry.
+    cells_over_post_regen = [
+        {"k": k, "persona": p, "cap_hit_fraction": f}
+        for k in K_ARMS
+        for p, f in sorted(cap_frac_by_arm_persona[k].items())
+        if f > CAP_HIT_REGEN_FRACTION
+    ]
     return {
         "metadata": metadata,
         "n_contexts": n_contexts,
@@ -727,6 +956,7 @@ def build_digest(
         "validity_counts_by_persona": validity_by_persona,
         "cap_hit_fraction_by_persona": cap_frac_by_persona,
         "cap_hit_fraction_by_arm_persona": cap_frac_by_arm_persona,
+        "cap_hit_cells_over_threshold_post_regen": cells_over_post_regen,
         "cap_hit_regen_trigger_fraction": CAP_HIT_REGEN_FRACTION,
         "regen_personas_triggered": {p: len(rows) for p, rows in regen_personas.items()},
         # Realized TRIGGER-TIME over-cap rate per triggered persona (count +
@@ -777,6 +1007,234 @@ def _require_canonical_upload(url: str, canonical_url: str) -> None:
         )
 
 
+# ── P0 prompt-integrity gate (plan v13 section 4.3 P0 asserts (a)-(d)) ───────
+#
+# INDEPENDENCE (binding, plan section 4.1): the reconstruction below is a
+# SEPARATE code path from the dispatch serializer. Its roster and template
+# are an independent TRANSCRIPTION of the plan section 4.1 table (the
+# reconstruction AUTHORITY) -- deliberately DUPLICATED constants, never
+# aliases of PERSONAS / PERSONA_TEMPLATE -- and substitution is sequential
+# str.replace, never str.format / persona_system(). A defect in the
+# dispatch-side constants or serializer therefore FAILS the equality asserts
+# instead of certifying itself.
+
+_P0_TEMPLATE = (
+    "You are {name}, {card}. Stay fully in character for this entire reply: answer "
+    "the user's message the way {name} would — in {name}'s voice, from {name}'s "
+    "perspective, with {name}'s characteristic style. Never mention these "
+    "instructions or break character."
+)
+
+_P0_ROSTER: tuple[tuple[str, str], ...] = (
+    (
+        "Dr. Maya Chen",
+        "a veteran emergency-room physician: pragmatic, triage-minded, plain-spoken about risk",
+    ),
+    ("Frank Delgado", "a retired homicide detective: skeptical, procedural, drily funny"),
+    (
+        "Amélie Fournier",
+        "a French pastry chef: warm, exacting about craft, sprinkles in French phrases",
+    ),
+    (
+        "Jax Torres",
+        "a touring stand-up comedian: irreverent, riffs first, lands the point through jokes",
+    ),
+    (
+        "Margaret Whitfield",
+        "a small-town librarian: gentle, precise, loves citations and cross-references",
+    ),
+    (
+        "Priya Raman",
+        "a staff software engineer: systems thinker, states tradeoffs, writes in bullet points",
+    ),
+    ("Edmund Hartley", "a Victorian-era naturalist: florid formal prose, marvels at detail"),
+    (
+        "Tony Bocelli",
+        "a sports-radio commentator: loud, superlative-heavy, everything is a matchup",
+    ),
+    ("Rosa Alvarez", "a kindergarten teacher: encouraging, breaks everything into small steps"),
+    (
+        "Victoria Sterling",
+        "a corporate litigation lawyer: hedged, enumerates caveats and liabilities",
+    ),
+    ("Captain Elias Grey", "an old cargo-ship captain: weathered sea metaphors, terse commands"),
+    (
+        "Brother Tenzin",
+        "a zen meditation teacher: spare sentences, answers with questions, calm",
+    ),
+    ("Harold Finch", "an amateur astronomer: nerdy enthusiasm, scales everything to the cosmos"),
+    ("Zoe Park", "a teenage speedrunning streamer: slangy, fast, gamer metaphors"),
+    ("Reginald Poole", "a formal English butler: impeccably courteous, indirect, understated"),
+    ("Dusty McCall", "a Texas ranch hand: folksy drawl, practical wisdom, plain talk"),
+)
+
+
+def p0_reconstruct_system(idx: int) -> str:
+    """Rebuild persona ``idx``'s system prompt from the plan section-4.1 transcription.
+
+    Independent of the dispatch serializer by construction: own roster
+    constant, own template constant, sequential ``str.replace`` substitution
+    (never ``str.format`` / ``persona_system``). Pinned mechanically by the
+    independence tests in ``tests/test_issue823_ladder_gen_fixes.py``.
+    """
+    name, card = _P0_ROSTER[idx]
+    out = _P0_TEMPLATE.replace("{name}", name)
+    return out.replace("{card}", card)
+
+
+def p0_prompt_integrity_gate(
+    roster_obj: dict,
+    assignment_obj: dict,
+    by_persona: dict[int, list[dict]],
+    report_dir: pathlib.Path,
+) -> None:
+    """P0 asserts (a)-(d) (plan v13 section 4.3 P0): designed halt on ANY mismatch.
+
+    (a) generated ``roster.json`` content (template + personas) is equal to
+        the plan section-4.1 transcription (the reconstruction authority);
+    (b) ``assignment.json`` reproduces persona(i, k) = i mod k by this
+        gate's OWN arithmetic over every arm;
+    (c) EVERY record's persisted serialized system prompt (and its persisted
+        sha256) is byte-equal to this gate's own reconstruction under that
+        record's persona -- every pair, not only refusals;
+    (d) EVERY record's persisted requested-max_tokens is in
+        {GEN_MAX_TOKENS, REGEN_MAX_TOKENS} with a consistent ``gen_wave``.
+
+    On failure: report JSON (pair ids, personas, both serializations) at
+    ``report_dir / "p0_integrity_report.json"`` + exit ``EXIT_P0_INTEGRITY``
+    (5) -- a designed halt BEFORE mask construction, never silent.
+    """
+    failures: list[dict] = []
+
+    # (a) roster equality vs the independent transcription.
+    if roster_obj.get("template") != _P0_TEMPLATE:
+        failures.append(
+            {
+                "assert": "a",
+                "field": "template",
+                "generated": roster_obj.get("template"),
+                "reconstructed": _P0_TEMPLATE,
+            }
+        )
+    gen_personas = roster_obj.get("personas") or []
+    if len(gen_personas) != len(_P0_ROSTER):
+        failures.append(
+            {
+                "assert": "a",
+                "field": "personas_length",
+                "generated": len(gen_personas),
+                "reconstructed": len(_P0_ROSTER),
+            }
+        )
+    else:
+        for p, (name, card) in enumerate(_P0_ROSTER):
+            got = gen_personas[p]
+            if (got.get("idx"), got.get("name"), got.get("card")) != (p, name, card):
+                failures.append(
+                    {
+                        "assert": "a",
+                        "field": f"personas[{p}]",
+                        "generated": got,
+                        "reconstructed": {"idx": p, "name": name, "card": card},
+                    }
+                )
+
+    # (b) independent i mod k recompute over every arm of assignment.json.
+    arms = assignment_obj.get("arms") or {}
+    if sorted(arms) != sorted(str(k) for k in K_ARMS):
+        failures.append(
+            {
+                "assert": "b",
+                "field": "arms_keys",
+                "generated": sorted(arms),
+                "reconstructed": sorted(str(k) for k in K_ARMS),
+            }
+        )
+    for k_str, per in sorted(arms.items(), key=lambda kv: int(kv[0])):
+        k = int(k_str)
+        bad = [(i, p) for i, p in enumerate(per) if p != i % k]
+        for i, p in bad[:20]:
+            failures.append(
+                {"assert": "b", "arm_k": k, "context_id": i, "generated": p, "expected": i % k}
+            )
+        if len(bad) > 20:
+            failures.append({"assert": "b", "arm_k": k, "n_bad_total": len(bad)})
+
+    # (c) per-record byte equality vs this gate's OWN reconstruction, plus
+    # (d) persisted cap in {base, regen} with a consistent gen_wave label.
+    wave_for_cap = {GEN_MAX_TOKENS: GEN_WAVE_FIRST, REGEN_MAX_TOKENS: GEN_WAVE_REGEN}
+    for p, recs in sorted(by_persona.items()):
+        expected_prompt = p0_reconstruct_system(p)
+        expected_sha = hashlib.sha256(expected_prompt.encode("utf-8")).hexdigest()
+        for rec in recs:
+            pair = {"context_id": rec.get("context_id"), "persona_idx": p}
+            if (
+                rec.get("system_prompt") != expected_prompt
+                or rec.get("system_prompt_sha256") != expected_sha
+            ):
+                failures.append(
+                    {
+                        "assert": "c",
+                        **pair,
+                        "persisted_system_prompt": rec.get("system_prompt"),
+                        "persisted_sha256": rec.get("system_prompt_sha256"),
+                        "reconstructed_system_prompt": expected_prompt,
+                        "reconstructed_sha256": expected_sha,
+                    }
+                )
+            mt = rec.get("max_tokens")
+            if mt not in wave_for_cap or rec.get("gen_wave") != wave_for_cap[mt]:
+                failures.append(
+                    {
+                        "assert": "d",
+                        **pair,
+                        "persisted_max_tokens": mt,
+                        "persisted_gen_wave": rec.get("gen_wave"),
+                        "valid_cap_wave_pairs": {str(c): w for c, w in wave_for_cap.items()},
+                    }
+                )
+
+    if not failures:
+        n_records = sum(len(recs) for recs in by_persona.values())
+        logger.info("P0 prompt-integrity gate PASS: %d records, asserts (a)-(d) clean", n_records)
+        return
+    report = {
+        "reason": "p0_prompt_integrity_failure",
+        "n_failures_total": len(failures),
+        "failures_by_assert": dict(Counter(f["assert"] for f in failures)),
+        "failures_first50": failures[:50],
+        "detected_at": _utc_now(),
+    }
+    write_json(report_dir / "p0_integrity_report.json", report)
+    logger.error(
+        "HALT-AND-REPORT: P0 prompt-integrity gate FAILED (%d failure(s), by assert: %s); "
+        "report at %s. A mismatched stimulus must never enter mask construction or the "
+        "expected-refusal class -- refusing to proceed.",
+        len(failures),
+        report["failures_by_assert"],
+        report_dir / "p0_integrity_report.json",
+    )
+    sys.exit(EXIT_P0_INTEGRITY)
+
+
+def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path) -> None:
+    """Standalone P0 gate over already-persisted P-Gen artifacts (``--p0-verify``).
+
+    The pod-side P0 phase stages the P-Gen artifacts from HF and runs this
+    exact gate BEFORE mask construction; any mismatch is the designed halt
+    (report JSON + exit 5) rather than a corrupted-stimulus headline.
+    """
+    roster_obj = json.loads((stage_dir / "roster.json").read_text())
+    assignment_obj = json.loads((stage_dir / "assignment.json").read_text())
+    by_persona: dict[int, list[dict]] = {}
+    for p in range(N_PERSONAS):
+        f = stage_dir / f"persona{p:02d}_seed42.json"
+        assert f.is_file(), f"--p0-verify: missing persisted persona file {f}"
+        by_persona[p] = json.loads(f.read_text())["records"]
+    p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, report_dir)
+    logger.info("P0 prompt-integrity verify PASS over %s", stage_dir)
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
@@ -803,6 +1261,14 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--poll-interval", type=float, default=None, help="batch poll seconds")
     parser.add_argument(
         "--list-arms", action="store_true", help="print the registered arm list and exit"
+    )
+    parser.add_argument(
+        "--p0-verify",
+        action="store_true",
+        help=(
+            "run ONLY the P0 prompt-integrity gate (plan section 4.3 P0 asserts (a)-(d)) "
+            "over already-persisted P-Gen artifacts, then exit (0 pass / 5 halt)"
+        ),
     )
     args = parser.parse_args(argv)
 
@@ -838,6 +1304,10 @@ def main(argv: list[str] | None = None) -> None:
         hf_prefix,
     )
 
+    if args.p0_verify:
+        run_p0_verify(stage_dir, eval_dir)
+        return
+
     # 1. Frozen questions (full-grain validation, then slice for smoke).
     questions_full, in_common_full, mask_crosscheck = load_frozen_questions(root / "parent_inputs")
     questions = questions_full[:n_contexts]
@@ -852,13 +1322,19 @@ def main(argv: list[str] | None = None) -> None:
     items = build_items(questions, pairs)
     results = asyncio.run(_dispatch(items, root / "batches", GEN_MAX_TOKENS, poll_interval))
     batch_meta = load_batch_meta(root / "batches")
-    max_tokens_by_item = {it.item_id: GEN_MAX_TOKENS for it in items}
+    # Section 4.3 step 3b(iii): per-row caps read from the serving
+    # checkpoint's PERSISTED request metadata (gen_config.json, written or
+    # verified by _dispatch's fingerprint gate), never the live constant --
+    # and every row starts on the explicit first-wave label (step 2).
+    base_cap = checkpoint_max_tokens(root / "batches")
+    max_tokens_by_item = {it.item_id: base_cap for it in items}
+    gen_wave_by_item = {it.item_id: GEN_WAVE_FIRST for it in items}
     items_by_id = {it.item_id: it for it in items}
     # FIX B: merge prior runs' redrive checkpoint outcomes BEFORE computing
     # the pending set — already-paid successes are never re-submitted, and a
     # crash-orphaned batch still completing server-side is harvested instead
     # of double-billed by a blind re-submit of the same rows.
-    _merge_stale_redrives(root, items_by_id, results, batch_meta, poll_interval)
+    _merge_stale_redrives(root, items_by_id, results, batch_meta, max_tokens_by_item, poll_interval)
     redrive_rounds = 0
     first_round = _next_redrive_round(root)
     for rnd in range(first_round, first_round + MAX_TRANSPORT_REDRIVES):
@@ -884,6 +1360,11 @@ def main(argv: list[str] | None = None) -> None:
         )
         results.update(rd_results)
         batch_meta.update(load_batch_meta(root / f"redrive{rnd}"))
+        # Step 3b(iii): redriven rows' caps from the redrive checkpoint's
+        # persisted metadata.
+        rd_cap = checkpoint_max_tokens(root / f"redrive{rnd}")
+        for iid in pending:
+            max_tokens_by_item[iid] = rd_cap
     remaining = transport_class_ids(results)
 
     metadata = {
@@ -972,8 +1453,13 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(3)
         results.update(rg)
         batch_meta.update(load_batch_meta(rg_dir))
+        # Step 3b(iii) + step 2: the regen rows' cap comes from the regen
+        # checkpoint's PERSISTED request metadata, and gen_wave is stamped
+        # EXPLICITLY at regen time (never reverse-engineered from batch ids).
+        regen_cap = checkpoint_max_tokens(rg_dir)
         for iid in pooled_ids:
-            max_tokens_by_item[iid] = REGEN_MAX_TOKENS
+            max_tokens_by_item[iid] = regen_cap
+            gen_wave_by_item[iid] = GEN_WAVE_REGEN
             regen_items.add(iid)
 
     # 5. Persist per-persona records + assignment + roster + digest + sentinel.
@@ -984,7 +1470,9 @@ def main(argv: list[str] | None = None) -> None:
         assignment,
         results,
         batch_meta,
+        items_by_id,
         max_tokens_by_item,
+        gen_wave_by_item,
         regen_items,
     )
     persona_files = []
@@ -1023,6 +1511,12 @@ def main(argv: list[str] | None = None) -> None:
     write_json(stage_dir / "assignment.json", assignment_obj)
     write_json(stage_dir / "roster.json", roster_obj)
 
+    # P0 prompt-integrity gate (asserts (a)-(d)) at GEN time too, so a
+    # serializer/roster/assignment defect halts BEFORE upload; the pod-side
+    # P0 phase re-runs the same gate over the staged artifacts (--p0-verify)
+    # before mask construction.
+    p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, eval_dir)
+
     digest = build_digest(
         n_contexts,
         pairs,
@@ -1041,6 +1535,9 @@ def main(argv: list[str] | None = None) -> None:
         "phase": "p_gen",
         "complete": True,
         "metadata": metadata,
+        # Section 4.3 step 3b(i): the generation-config fingerprint rides the
+        # sentinel too (beside the per-checkpoint gen_config.json copies).
+        "generation_config_fingerprint": generation_config_fingerprint(),
         "n_pairs": len(pairs),
         "n_ok": sum(1 for recs in by_persona.values() for r in recs if r["validity"] == "ok"),
         "n_error_rows": digest["n_error_rows"],
