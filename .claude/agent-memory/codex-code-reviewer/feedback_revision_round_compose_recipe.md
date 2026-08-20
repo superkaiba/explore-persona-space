@@ -1627,3 +1627,28 @@ state it as a compose-time fact in the Step 0.5 rubric note (placement = at
 most Style, never marker-shape), and remember ledger `evidence` fields can
 legitimately carry the round's commit SHA (count SHA asserts per-part:
 template vs ledger vs impl body).
+
+**Reconciler-FAIL-upholding-ONE-family round (#2388 r4, 2026-08-20):** when
+the prior round closed Claude-PASS / own-FAIL via a reconciler BINDING FAIL
+upholding exactly one blocker family, compose the #2201 reconcile-note-only
+shape (never re-inline the own prior verdict — it would re-seed the
+DOWNGRADED/deferred items) + the #2379-r4 F-element decomposition, sourcing
+F-elements from the ruling's remedy sketch AND its Standing recommendations
+(riding items — the other twin's Minor, your own non-upheld Major the ruling
+says "should ride the wave" — become named F-elements, not pseudo-ids). The
+discarded-line fence is asymmetric: the OTHER twin's PASS was discarded on
+ONE factual line — name that line and mark its sibling verifications
+CONFIRMED/settled (confirm-undisturbed only). Composite ids that get FRESH
+`addressed` rows as pure disposition bookkeeping (recording shipped
+components + still-disclosed residuals) get a verify-the-disposition-
+statements duty, never a demand for new code. Two mechanical deltas: (a)
+old-round-SHA zero-asserts scope to TEMPLATE only, with the prompt total
+asserted == the embed count (ledger `addressed`-row summaries legitimately
+carry the prior round's commit SHA — never scrub an embed); (b) the reused
+same-task rubric span carried a STALE Step 0.8 "the ledger is EMPTY" line
+contradicting the template's own snapshot for TWO rounds unnoticed — at
+every template reuse, grep the span's Step 0.8 compose-time-fact sentence
+against the current ledger state and patch it alongside the SHA/round/(e)
+patches. Reconcile-marker version trap re-confirmed: head sentinel carries
+the ROUND (v3), posted top-level version is v1 — state the mapping in the
+prompt AND the return.
