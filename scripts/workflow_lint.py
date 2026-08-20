@@ -16327,15 +16327,14 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 88,010 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 90_000; chronicle: git log.
     "daily/SKILL.md": 90_800,
-    # measured 76,589 B @ #2204 2026-08-19 (c67 retest-kappa vs
-    # temperature-0 check: canonical-escape back-fill, +2,367 B);
-    # corridor-max ((measured+2_800)//100)*100 = 79_300, headroom 2,711 —
-    # clears guard_skill_doc_headroom.sh's 2,000 B warn floor. The first
-    # cut at 78_000 left only 1,411 B, which re-armed the blocking ratchet
-    # for the next editor of this file (#2204 review Minor 1; the guard's
-    # missing raise-time validation is filed as #2402).
-    # Prior: 77_000 (#2178, 74,222 B); chronicle: git log.
-    "adversarial-planner/SKILL.md": 79_300,
+    # measured 77,149 B @ #2228 2026-08-20 (c68 abs-pp margin vs baseline
+    # ceiling check: TWO canonical-escape entries, +557 B); corridor-max
+    # ((measured+2_800)//100)*100 = 79_900, headroom 2,751 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor (the un-re-derived
+    # 79_300 cap would have left 2,151 B, only 151 B above it — the #2204
+    # re-armed-ratchet shape).
+    # Prior: 79_300 (#2204, 76,589 B); chronicle: git log.
+    "adversarial-planner/SKILL.md": 79_900,
 }
 
 
