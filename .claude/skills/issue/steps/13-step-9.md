@@ -571,7 +571,7 @@ discarded by Step 8's gap-fill decision rule).
    only), and the Codex no-show fallback remains a separate, sanctioned
    path.
 
-**If `final_verdict == REVISE` (rounds 2-5):**
+**If `final_verdict == REVISE` (rounds 2-10):**
 
 Re-spawn analyzer (fresh context, sees original data + ALL critique
 feedback: Claude event + Codex event + reconcile event if any)
@@ -585,7 +585,7 @@ again. Round boundaries here carry the Step 5c-quater round-boundary
 durable-decision duty (decision note + explicit-path commit BEFORE the
 re-spawn).
 
-**Max 5 rounds per reviewer.** At round 5 (the cap) with a non-PASS
+**Max 10 rounds per reviewer.** At round 10 (the cap) with a non-PASS
 ensemble verdict, apply the Step 9a-bis-style procedural-only strip once
 more (procedural / presentation REVISEs). If ALL residual REVISEs are
 stripped → advance with full critique history. If ANY SUBSTANTIVE
@@ -1629,7 +1629,7 @@ dispatching this round's critics.
    so there is nothing verified to strip against; re-compose /
    re-dispatch the twin instead of stripping (#1050).
 
-**If REVISE (rounds 2-5):**
+**If REVISE (rounds 2-10):**
 
 Re-spawn `analyzer` agent (fresh context, sees raw data + all
 interp-critique history + the latest clean-result-critique)
@@ -1648,7 +1648,7 @@ decision rule (including the procedural-only strip) as round 1. Round
 boundaries here carry the Step 5c-quater round-boundary durable-decision
 duty (decision note + explicit-path commit BEFORE the re-spawn).
 
-**Max 5 rounds.** At round 5 (the cap) with a non-PASS ensemble verdict,
+**Max 10 rounds.** At round 10 (the cap) with a non-PASS ensemble verdict,
 apply the procedural-only strip once more (procedural / presentation
 REVISEs). If ALL residual REVISEs are stripped → advance. If ANY
 SUBSTANTIVE residual remains — a flagged OVERCLAIM the strip cannot
