@@ -201,7 +201,7 @@ def _current_hub_shard_sha256s(src: dict) -> dict[str, str | None]:
     import tempfile
 
     from huggingface_hub import HfApi
-    from huggingface_hub.utils import EntryNotFoundError
+    from huggingface_hub.utils import EntryNotFoundError, LocalEntryNotFoundError
 
     from explore_persona_space.orchestrate import hub
 
@@ -224,6 +224,14 @@ def _current_hub_shard_sha256s(src: dict) -> dict[str, str | None]:
                     revision=revision,
                     overwrite=True,
                 )
+            except LocalEntryNotFoundError:
+                # Round-5 minor: LocalEntryNotFoundError SUBCLASSES
+                # EntryNotFoundError but means "not in the local cache AND
+                # the Hub was unreachable" — a TRANSPORT failure, not
+                # evidence the shard is gone. Swallowing it into the
+                # absent-shard branch would misreport a network outage as a
+                # stale probe (fail-closed misdiagnosis). Propagate loud.
+                raise
             except EntryNotFoundError:
                 out[name] = None
                 continue
@@ -319,6 +327,22 @@ def require_consumer_probe(
     shards = src.get("shards") or {}
     if isinstance(rec.get("source"), dict) and not shards:
         problems.append("probe recorded no shard hashes")
+    if bank_json is not None:
+        # Round-5 NIT (concern probe-bank-check-after-refetch): the bank
+        # identity checks are LOCAL and cheap — they run BEFORE the Hub
+        # shard re-fetch below, so a missing/mismatched bank refuses without
+        # spending a download.
+        rec_bank = src.get("bank_sha256")
+        if not rec_bank:
+            problems.append(
+                "probe recorded no bank_sha256 — re-run it with --bank-json <this run's bank.json>"
+            )
+        elif not Path(bank_json).is_file():
+            problems.append(f"this run's bank.json {bank_json} is not a file")
+        elif hashlib.sha256(Path(bank_json).read_bytes()).hexdigest() != rec_bank:
+            problems.append(
+                "probe bank_sha256 != this run's bank.json (foreign/stale run identity)"
+            )
     if anchors_dir is not None:
         for name, sha in sorted(shards.items()):
             p = Path(anchors_dir) / name
@@ -335,8 +359,8 @@ def require_consumer_probe(
         # content-unique BY DESIGN (deterministic bank.json), so bind the
         # PASS to the Hub's CURRENT source state instead: every probed shard
         # must still be served with the probe-recorded bytes. Cheap checks
-        # above run first — the re-fetch is one small shard pair, skipped
-        # when the report is already refused.
+        # above (incl. the bank identity) run first — the re-fetch is one
+        # small shard pair, skipped when the report is already refused.
         for name, cur in sorted(_current_hub_shard_sha256s(src).items()):
             if cur is None:
                 problems.append(
@@ -348,18 +372,6 @@ def require_consumer_probe(
                     f"probed shard {name} current-Hub hash != probe-recorded hash "
                     "(shards regenerated since the probe — stale PASS)"
                 )
-    if bank_json is not None:
-        rec_bank = src.get("bank_sha256")
-        if not rec_bank:
-            problems.append(
-                "probe recorded no bank_sha256 — re-run it with --bank-json <this run's bank.json>"
-            )
-        elif not Path(bank_json).is_file():
-            problems.append(f"this run's bank.json {bank_json} is not a file")
-        elif hashlib.sha256(Path(bank_json).read_bytes()).hexdigest() != rec_bank:
-            problems.append(
-                "probe bank_sha256 != this run's bank.json (foreign/stale run identity)"
-            )
     if problems:
         raise RuntimeError(
             f"consumer probe report at {report_path} is NOT BOUND to this run "

@@ -745,3 +745,53 @@ def test_current_hub_shard_sha256s_real_body(
     }
     assert ("pfx/raw_completions/anchors_gate/anchors_gate_x_w0.jsonl", "d" * 40) in staged_paths
     assert ("pfx/analysis_tensors/anchors/va_anchors_gate_x_w0.pt", "d" * 40) in staged_paths
+
+
+def test_current_hub_shard_sha256s_offline_transport_propagates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 minor: LocalEntryNotFoundError SUBCLASSES EntryNotFoundError
+    but means "Hub unreachable AND not cached" — a TRANSPORT failure. It must
+    PROPAGATE, never map to the absent-shard None (which would misreport a
+    network outage as a stale probe, a fail-closed misdiagnosis)."""
+    from huggingface_hub.utils import LocalEntryNotFoundError
+
+    def _offline_stage(repo_id, path_in_repo, target, **kw):
+        raise LocalEntryNotFoundError("offline: cannot reach the Hub and not in cache")
+
+    monkeypatch.setattr(
+        hub, "stage_hub_file", create_autospec(hub.stage_hub_file, side_effect=_offline_stage)
+    )
+    monkeypatch.setattr(
+        hub,
+        "retry_transient",
+        create_autospec(hub.retry_transient, side_effect=lambda fn, *, what: "d" * 40),
+    )
+    src = {
+        "repo": "org/data",
+        "prefix": "pfx/raw_completions/anchors_gate",
+        "shards": {"anchors_gate_x_w0.jsonl": "0" * 64},
+    }
+    with pytest.raises(LocalEntryNotFoundError):
+        P.J._current_hub_shard_sha256s(src)
+
+
+def test_r5_bank_mismatch_refuses_before_hub_refetch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 NIT (concern probe-bank-check-after-refetch): the LOCAL bank
+    identity checks run BEFORE the Hub shard re-fetch — a mismatched (or
+    missing) bank refuses with zero downloads. FAILED at HEAD~: the refetch
+    ran first (network spend before the cheap local refusal)."""
+
+    def _boom(src):
+        raise AssertionError("network re-fetch reached before the cheap bank check")
+
+    monkeypatch.setattr(P.J, "_current_hub_shard_sha256s", _boom)
+    report = _staged_report(tmp_path, {"anchors_gate_x_w0.jsonl": "0" * 64})
+    rec = json.loads(report.read_text())
+    rec["source"]["bank_sha256"] = "e" * 64  # recorded for run A
+    report.write_text(json.dumps(rec))
+    bank_b = _bank_file(tmp_path, payload="bank-B")  # this run's bank differs
+    with pytest.raises(RuntimeError, match="bank_sha256 != this run's bank.json"):
+        P.J.require_consumer_probe(report, "judge", bank_json=bank_b)
