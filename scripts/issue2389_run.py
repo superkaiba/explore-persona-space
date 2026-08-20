@@ -3032,6 +3032,45 @@ def _pilot_selected_gen_batch(cfg: RunConfig) -> int | None:
     return sel
 
 
+def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
+    """An existing pilot report THIS run may ADOPT instead of re-measuring
+    (R5 r2 review). Plan §9 pre-registers same-command resume as a LOSSLESS
+    boundary, and gen_batch is inside ``regime_fingerprint`` (B9), so an
+    unnecessary pilot re-measurement whose 16<->32 selection flips would
+    rewrite the fingerprint and read every banked anchors/grid done shard
+    as NOT-done (quarantine + regeneration, 40+ GPU-h at risk). Returns
+    None when no report exists (measure); the record when the report's
+    regime matches this run (model id@revision + smoke/tiny); RAISES on a
+    present-but-foreign report — a deliberate re-measure needs ``--force``.
+    """
+    path = cfg.gates_dir / "pilot_gate_report.json"
+    if not path.exists():
+        return None
+    rec = json.loads(path.read_text())
+    problems: list[str] = []
+    repro = rec.get("repro") or {}
+    if repro.get("model_id") != cfg.model_id or repro.get("model_revision") != cfg.model_revision:
+        problems.append(
+            f"report model {repro.get('model_id')}@{repro.get('model_revision')} != "
+            f"this run's {cfg.model_id}@{cfg.model_revision}"
+        )
+    if bool(repro.get("smoke")) != bool(cfg.smoke) or bool(repro.get("tiny")) != bool(cfg.tiny):
+        problems.append(
+            f"report regime (smoke={repro.get('smoke')}, tiny={repro.get('tiny')}) != "
+            f"this run's (smoke={cfg.smoke}, tiny={cfg.tiny})"
+        )
+    if rec.get("verdict") not in ("ACCEPT", "SPLIT", "REFUSE"):
+        problems.append(f"unrecognized verdict {rec.get('verdict')!r}")
+    if problems:
+        raise RuntimeError(
+            f"existing {path} is FOREIGN to this run: "
+            + "; ".join(problems)
+            + " — quarantine it / use a fresh --out-root, or pass --force to "
+            "deliberately re-measure"
+        )
+    return rec
+
+
 def _adopt_pilot_gen_batch(cfg: RunConfig) -> RunConfig:
     """Adopt the pilot's r2-selected gen_batch unless --gen-batch was explicit.
 
@@ -3245,6 +3284,59 @@ def _share_prefill_family(phase: str) -> str:
     return phase.removeprefix("capregen_").removeprefix("vllm_")
 
 
+def _validate_frozen_share_prefill(cfg: RunConfig, phase: str, rec: dict, freeze: Path) -> bool:
+    """Adopt-time validation of a frozen family decision (R3 r2 review).
+
+    The B6 production-mode guard used to sit ONLY on the first-resolver
+    path, so BOTH adopt paths (existing-freeze + lost-race) read
+    ``rec["armed"]`` RAW — a freeze written by a ``--tiny`` dispatch
+    (``{armed: true, mode: "tiny"}``) would arm 27B production generation
+    on CPU-tiny fp32 evidence via a later production dispatch sharing the
+    out_root. An ARMED record is adopted armed ONLY when its recorded
+    regime matches THIS run (repro tiny/smoke bits + model id@revision —
+    the ``_pilot_selected_gen_batch`` idiom), its mode satisfies the B6
+    rule for this run, and the gate artifact it was armed on still hashes
+    to the recorded ``gate_sha256``. Any failure resolves to SERIAL
+    (unarmed-on-uncertainty, the B9 family determination) — the guard is
+    deterministic, so every same-regime participant still resolves the
+    SAME value; an unarmed record adopts as serial with no checks."""
+    if not bool(rec.get("armed")):
+        return False
+    problems: list[str] = []
+    repro = rec.get("repro") or {}
+    if bool(repro.get("tiny")) != bool(cfg.tiny) or bool(repro.get("smoke")) != bool(cfg.smoke):
+        problems.append(
+            f"freeze regime (tiny={repro.get('tiny')}, smoke={repro.get('smoke')}) != "
+            f"this run's (tiny={cfg.tiny}, smoke={cfg.smoke})"
+        )
+    if repro.get("model_id") != cfg.model_id or repro.get("model_revision") != cfg.model_revision:
+        problems.append(
+            f"freeze model {repro.get('model_id')}@{repro.get('model_revision')} != "
+            f"this run's {cfg.model_id}@{cfg.model_revision}"
+        )
+    if not cfg.tiny and rec.get("mode") != "production":
+        problems.append(f"mode={rec.get('mode')!r} (non-production evidence on a production run)")
+    gate_sha = rec.get("gate_sha256")
+    gate_path = cfg.gates_dir / SHARE_PREFILL_GATE_NAME
+    if gate_sha is None:
+        problems.append("armed freeze carries no gate_sha256 (arming evidence unverifiable)")
+    elif not gate_path.exists() or _sha256_bytes(gate_path.read_bytes()) != gate_sha:
+        problems.append(
+            "gate artifact absent or its bytes != the freeze's recorded gate_sha256 "
+            "(the evidence that armed this family is gone or changed)"
+        )
+    if problems:
+        logger.warning(
+            "[share-prefill:%s] frozen record %s FAILS adopt-time validation (%s) — "
+            "staying SERIAL (unarmed-on-uncertainty; re-arming needs a fresh out_root)",
+            phase,
+            freeze.name,
+            "; ".join(problems),
+        )
+        return False
+    return True
+
+
 def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
     """Freeze the share_prefill arming for THIS phase FAMILY (plan §4.7 item 5
     pin 2): armed <=> --share-prefill auto AND the gate-4b battery artifact
@@ -3267,7 +3359,10 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
     freeze = cfg.gates_dir / f"share_prefill_frozen_{family}.json"
     if freeze.exists():
         rec = json.loads(freeze.read_text())
-        cfg.share_prefill_armed = bool(rec["armed"])
+        # R3 (r2 review): NEVER adopt rec["armed"] raw — the B6 guard binds
+        # at ADOPT time too (a --tiny dispatch's armed freeze must not arm a
+        # later production dispatch sharing this out_root).
+        cfg.share_prefill_armed = _validate_frozen_share_prefill(cfg, phase, rec, freeze)
         logger.info(
             "[share-prefill:%s] adopting FROZEN family decision share_prefill=%s (%s)",
             phase,
@@ -3278,6 +3373,7 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
     path = cfg.gates_dir / SHARE_PREFILL_GATE_NAME
     verdict: str | None = None
     mode: str | None = None
+    gate_sha: str | None = None
     if not path.exists():
         logger.info(
             "[share-prefill:%s] mode=auto but gate artifact missing at %s — staying serial",
@@ -3286,9 +3382,13 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
         )
         armed = False
     else:
-        rec = json.loads(path.read_text())
+        raw = path.read_bytes()
+        rec = json.loads(raw)
         verdict = rec.get("verdict")
         mode = rec.get("mode")
+        # R3: the freeze records the DIGEST of the artifact it was armed on,
+        # so adopters can verify the arming evidence is still the evidence.
+        gate_sha = _sha256_bytes(raw)
         armed = verdict == "PASS"
     # B6 (r1 review / pin 2): a NON-tiny run arms ONLY on a PRODUCTION-mode
     # battery artifact. The dispatcher's --smoke branch runs the gate-4b
@@ -3315,6 +3415,7 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
                 "armed": armed,
                 "verdict": verdict,
                 "mode": mode,
+                "gate_sha256": gate_sha,
                 "family": family,
                 "frozen_by_phase": phase,
                 "ts": datetime.now(UTC).isoformat(),
@@ -3327,7 +3428,9 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
         os.link(tmp, freeze)
     except FileExistsError:
         rec = json.loads(freeze.read_text())
-        armed = bool(rec["armed"])
+        # R3 (r2 review): the lost-race adopt is the SECOND raw-read bypass
+        # of the B6 guard — validate exactly like the existing-freeze adopt.
+        armed = _validate_frozen_share_prefill(cfg, phase, rec, freeze)
         logger.info(
             "[share-prefill:%s] lost the freeze race — adopting share_prefill=%s", phase, armed
         )
@@ -3760,6 +3863,42 @@ def run_block(
 def phase_grid(cfg: RunConfig) -> int:
     """P3: claim-queue block execution (or the three-regime pilot under ``--pilot``)."""
     logger.info("[phase=grid] worker=%d/%d smoke=%s", cfg.worker_index, cfg.num_workers, cfg.smoke)
+    if cfg.pilot and not cfg.force:
+        # R5 (r2 review): same-command resume is a LOSSLESS boundary (plan
+        # §9) — a regime-matched pilot report is ADOPTED, never re-measured
+        # (~0.5-1.5 h saved per resume, and a re-measured 16<->32 flip would
+        # rewrite regime_fingerprint and quarantine every banked
+        # anchors/grid shard). --force re-measures deliberately.
+        pilot_rec = _reusable_pilot_report(cfg)
+        if pilot_rec is not None:
+            pilot_verdict = pilot_rec.get("verdict")
+            if pilot_verdict == "REFUSE":
+                if not cfg.force_past_halt_gates:
+                    logger.error(
+                        "[pilot] existing pilot_gate_report.json verdict=REFUSE at this "
+                        "regime — the refusal STANDS on re-entry (re-measuring cannot "
+                        "change it; --force-past-halt-gates overrides, --force "
+                        "re-measures)"
+                    )
+                    return RC_PILOT_GATE
+                logger.warning(
+                    "[pilot] REFUSE report present but --force-past-halt-gates set — "
+                    "proceeding without re-measurement"
+                )
+                return RC_OK
+            sel = _pilot_selected_gen_batch(cfg)  # full adoption-grade validation
+            if sel is None:
+                raise RuntimeError(
+                    "existing pilot_gate_report.json carries no gen_batch_selected — "
+                    "corrupt; pass --force to re-measure"
+                )
+            logger.info(
+                "[phase=pilot_done] ADOPTED existing report (verdict=%s gen_batch=%d) — "
+                "re-measurement skipped (lossless resume, plan §9; --force re-measures)",
+                pilot_verdict,
+                sel,
+            )
+            return RC_OK
     if not cfg.pilot:
         # plan §4.7 item 3 (the pilot itself sweeps its own candidate set)
         cfg = _adopt_pilot_gen_batch(cfg)

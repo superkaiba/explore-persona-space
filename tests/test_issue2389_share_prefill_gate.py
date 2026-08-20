@@ -120,12 +120,83 @@ def test_resolve_share_prefill_production_run_arms_on_production_pass(tmp_path):
     assert cfg.share_prefill_armed is True
 
 
-def test_resolve_share_prefill_tiny_run_accepts_tiny_pass(tmp_path):
-    # a tiny run is device-matched with the tiny battery — arming is fine
+def test_resolve_share_prefill_tiny_pass_arms_tiny_but_never_production(tmp_path):
+    # CORRECTED (R3 r2 review; the B8 precedent): the old form of this test
+    # stopped at "a tiny run arms on a tiny PASS" — thereby blessing the
+    # armed {mode: tiny} freeze as a terminal state. Arming the TINY run is
+    # still fine (device-matched), but the freeze it writes must NOT arm a
+    # later production dispatch sharing the out_root: the adopt path
+    # validates the frozen record's regime/mode/digest and resolves SERIAL.
     cfg = _mk_cfg(tmp_path, tiny=True, share_prefill_mode="auto")
     _write_gate(cfg, "PASS", mode="tiny")
     cfg = R._resolve_share_prefill(cfg, "anchors")
     assert cfg.share_prefill_armed is True
+    prod = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    prod = R._resolve_share_prefill(prod, "anchors")
+    assert prod.share_prefill_armed is False
+
+
+# ------------------------------------------- R3 (r2 review): adopt-path guard
+
+
+def test_resolve_share_prefill_production_adopt_stays_armed(tmp_path):
+    # Positive control for the R3 adopt guard: a matching production-mode
+    # armed freeze keeps arming same-regime family adopters (no over-disarm;
+    # capregen_anchors maps onto the anchors family freeze).
+    cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    _write_gate(cfg, "PASS", mode="production")
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is True
+    peer = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    peer = R._resolve_share_prefill(peer, "capregen_anchors")
+    assert peer.share_prefill_armed is True
+
+
+def test_resolve_share_prefill_adopt_disarms_on_stale_gate_digest(tmp_path):
+    # The freeze binds to the gate-report DIGEST it was armed on: when the
+    # gate artifact's bytes change under an armed freeze, adopters resolve
+    # SERIAL (unarmed-on-uncertainty) instead of arming on vanished evidence.
+    cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    _write_gate(cfg, "PASS", mode="production")
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is True
+    (cfg.gates_dir / R.SHARE_PREFILL_GATE_NAME).write_text(
+        json.dumps({"verdict": "PASS", "mode": "production", "rerun": 1})
+    )
+    peer = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    peer = R._resolve_share_prefill(peer, "anchors")
+    assert peer.share_prefill_armed is False
+
+
+def test_resolve_share_prefill_lost_race_validates_winner(tmp_path, monkeypatch):
+    # R3 second bypass site (found by the unsplit Codex arm alone): the
+    # LOST-RACE adopt at the os.link EEXIST branch validates the winning
+    # record too. Simulate losing the race to a tiny-armed writer: the
+    # production resolver would have armed on its own production PASS, but
+    # the winner's {armed: true, mode: tiny} record must resolve SERIAL.
+    cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    _write_gate(cfg, "PASS", mode="production")
+    tiny_rec = {
+        "armed": True,
+        "verdict": "PASS",
+        "mode": "tiny",
+        "gate_sha256": None,
+        "family": "anchors",
+        "repro": {
+            "tiny": True,
+            "smoke": cfg.smoke,
+            "model_id": cfg.model_id,
+            "model_revision": cfg.model_revision,
+        },
+    }
+
+    def losing_link(src, dst, *a, **k):
+        Path(dst).write_text(json.dumps(tiny_rec))
+        raise FileExistsError(dst)
+
+    monkeypatch.setattr(R.os, "link", losing_link)
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is False
 
 
 # --------------------------------------- B2: default CLI composition binds

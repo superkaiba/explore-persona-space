@@ -741,3 +741,81 @@ def test_b7_chunk_size_median_regression(tmp_path):
             )
             median = sizes[len(sizes) // 2]
             assert median >= min(b, 8), (b, median, sizes[:8])
+
+
+# ----------------------------- R5 (r2 review): pilot re-entry is LOSSLESS
+
+
+def _pilot_report(cfg: R.RunConfig, verdict: str = "ACCEPT", sel: int = 16, **repro_over) -> None:
+    cfg.gates_dir.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(
+        cfg.gates_dir / "pilot_gate_report.json",
+        {
+            "verdict": verdict,
+            "gen_batch_selected": sel,
+            "gen_batch_candidates": [16, 32],
+            "repro": {
+                "model_id": cfg.model_id,
+                "model_revision": cfg.model_revision,
+                "smoke": cfg.smoke,
+                "tiny": cfg.tiny,
+                **repro_over,
+            },
+        },
+    )
+
+
+def _bank_sentinel(monkeypatch):
+    """Trip-wire at the first post-guard step: reaching it means the pilot
+    phase did NOT skip re-measurement."""
+
+    def _boom(cfg):
+        raise AssertionError("pilot re-measurement reached _load_bank")
+
+    monkeypatch.setattr(R, "_load_bank", _boom)
+
+
+def test_r5_pilot_reuses_matching_report(tmp_path, monkeypatch):
+    """R5 (r2 review): with a regime-matched ACCEPT report present, the pilot
+    phase performs NO measurement (plan §9 lossless same-command resume) and
+    exits adopting the recorded gen_batch. FAILED at HEAD~: phase_grid's
+    --pilot path ran the full three-regime pilot unconditionally, and a
+    re-measured 16<->32 flip would rewrite regime_fingerprint and quarantine
+    every banked anchors/grid shard."""
+    cfg = _mk_cfg(tmp_path, pilot=True)
+    _pilot_report(cfg)
+    _bank_sentinel(monkeypatch)
+    assert R.phase_grid(cfg) == R.RC_OK
+
+
+def test_r5_pilot_refuse_report_stands(tmp_path, monkeypatch):
+    cfg = _mk_cfg(tmp_path, pilot=True)
+    _pilot_report(cfg, verdict="REFUSE")
+    _bank_sentinel(monkeypatch)
+    assert R.phase_grid(cfg) == R.RC_PILOT_GATE
+
+
+def test_r5_pilot_refuse_report_forced_past_proceeds_without_remeasure(tmp_path, monkeypatch):
+    cfg = _mk_cfg(tmp_path, pilot=True, force_past_halt_gates=True)
+    _pilot_report(cfg, verdict="REFUSE")
+    _bank_sentinel(monkeypatch)
+    assert R.phase_grid(cfg) == R.RC_OK
+
+
+def test_r5_pilot_foreign_report_raises(tmp_path, monkeypatch):
+    """A present-but-foreign report (other model / regime) is never silently
+    re-measured over — fail loud; --force is the deliberate re-measure."""
+    cfg = _mk_cfg(tmp_path, pilot=True)
+    _pilot_report(cfg, model_id="other/model")
+    _bank_sentinel(monkeypatch)
+    with pytest.raises(RuntimeError, match="FOREIGN"):
+        R.phase_grid(cfg)
+
+
+def test_r5_pilot_force_remeasures(tmp_path, monkeypatch):
+    """--force bypasses adoption and re-measures (the sentinel IS reached)."""
+    cfg = _mk_cfg(tmp_path, pilot=True, force=True)
+    _pilot_report(cfg)
+    _bank_sentinel(monkeypatch)
+    with pytest.raises(AssertionError, match="re-measurement reached"):
+        R.phase_grid(cfg)
