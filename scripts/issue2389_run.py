@@ -3120,12 +3120,33 @@ def _vllm_claimed_cells(cfg: RunConfig) -> frozenset[str]:
 # construction.
 
 
-def _load_cap_recalibration(cfg: RunConfig) -> dict[str, int] | None:
-    """Read the gate-slice cap recalibration (None when not yet computed)."""
+def _load_cap_recalibration(cfg: RunConfig, regime_fp: str | None = None) -> dict[str, int] | None:
+    """Read the gate-slice cap recalibration (None when not yet computed).
+
+    Round-5 B (r4 review): when ``regime_fp`` is supplied (the RECORDING
+    site, ``_gate_slice_cap_recalibration``), a report recorded under a
+    DIFFERENT regime is NOT adopted — returns None so the caller recomputes
+    from THIS regime's own gate shards and overwrites (the
+    ``_sharded_done_record`` warn+``None`` idiom; the report records
+    ``regime_fp`` precisely so adoption can check it — a smoke/tiny run's
+    realized cap-hit evidence must never stand in for a production run's).
+    Consumption-only sites (grid / stage2 / the vLLM anchors leg) read
+    content-blind by design: they resolve their own fp domains (family
+    freeze / ``stage2_regime_fp``), which legitimately differ from the
+    anchors-phase fp the recording site validated under."""
     path = cfg.gates_dir / "cap_recalibration.json"
     if not path.exists():
         return None
     rec = json.loads(path.read_text())
+    if regime_fp is not None and rec.get("regime_fp") != regime_fp:
+        logger.warning(
+            "[cap-recal] existing report carries regime_fp=%s != this run's %s — "
+            "recomputing from this regime's gate shards (never adopt foreign-regime "
+            "cap evidence)",
+            rec.get("regime_fp"),
+            regime_fp,
+        )
+        return None
     return {str(k): int(v) for k, v in rec.get("recalibrated", {}).items()}
 
 
@@ -3139,7 +3160,9 @@ def _gate_shard_paths(cfg: RunConfig, regime_fp: str, cells: list[str], draws: i
     ``_load_cap_recalibration`` then adopted. Deriving the paths from the
     done manifests — as ``_cap_report_inputs`` already does — cannot drift
     on the next rename. Mirrors ``_anchor_cell_done``'s validation (regime +
-    draws + artifact presence); the FIRST valid manifest per cell wins,
+    draws + artifact presence + row-count parity: a shard whose realized row
+    count differs from its manifest's ``n_rows`` is a partial/foreign write
+    and is skipped, round-5 minor); the FIRST valid manifest per cell wins,
     exactly the record the barrier's done predicate accepted. A cell that
     passed the barrier but resolves no manifest+shard is an inconsistent
     store — fail loud, never a silent zero-row aggregate.
@@ -3157,9 +3180,21 @@ def _gate_shard_paths(cfg: RunConfig, regime_fp: str, cells: list[str], draws: i
             if int(rec.get("draws", -1)) != draws:
                 continue
             jsonl = cfg.anchors_dir / f"anchors_{batch_id}_w{int(rec['worker_index'])}.jsonl"
-            if jsonl.exists():
-                shard = jsonl
-                break
+            if not jsonl.exists():
+                continue
+            n_rows = sum(1 for line in jsonl.open(encoding="utf-8") if line.strip())
+            if n_rows != int(rec.get("n_rows", -1)):
+                logger.warning(
+                    "[cap-recal] %s: manifest %s says n_rows=%s but %s has %d — skipping",
+                    batch_id,
+                    m.name,
+                    rec.get("n_rows"),
+                    jsonl.name,
+                    n_rows,
+                )
+                continue
+            shard = jsonl
+            break
         if shard is None:
             raise RuntimeError(
                 f"[cap-recal] gate cell {cell!r} passed the done barrier but no "
@@ -3193,7 +3228,7 @@ def _gate_slice_cap_recalibration(
     (deterministic aggregate of the same shards) via atomic replace — benign.
     """
     path = cfg.gates_dir / "cap_recalibration.json"
-    existing = _load_cap_recalibration(cfg)
+    existing = _load_cap_recalibration(cfg, regime_fp)  # round-5 B: regime-checked adoption
     if existing is not None and not cfg.force:
         return existing
     t0 = time.monotonic()

@@ -668,6 +668,85 @@ def test_r1_cap_recalibration_missing_shard_fails_loud(tmp_path):
         R._gate_shard_paths(cfg, "fp", ["query_topic"], 1)
 
 
+def _stage_gate_slice(cfg: R.RunConfig, cell: str, fp: str = "fp", draws: int = 1) -> None:
+    """Stage one DONE gate cell: 4 all-cap-hit rows + parity-consistent manifest."""
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {
+            "context_id": f"c{i}",
+            "cell": cell,
+            "value_id": "v0",
+            "draw": 0,
+            "gate_slice": True,
+            "max_new_tokens": R.cell_max_new_tokens(cell),
+            "n_completion_tokens": R.cell_max_new_tokens(cell),
+            "cap_hit": True,
+            "engine": "hf",
+            "text": "t",
+        }
+        for i in range(4)
+    ]
+    R._write_jsonl_atomic(cfg.anchors_dir / f"anchors_gate_{cell}_w0.jsonl", rows)
+    (cfg.anchors_dir / f"va_anchors_gate_{cell}_w0.pt").write_bytes(b"pt")
+    _done_manifest(cfg, f"gate_{cell}", fp=fp, draws=draws, n_rows=4)
+
+
+def test_cap_recalibration_foreign_regime_report_recomputes(tmp_path, monkeypatch):
+    """Round-5 B (r4 review): the recording site must NOT adopt a
+    cap_recalibration.json recorded under a DIFFERENT regime_fp — the report
+    records regime_fp precisely for this check, but adoption was
+    regime-blind. FAILED at HEAD~: the staged foreign-regime report
+    ({cell: 99999}) was returned verbatim; post-fix the recalibration
+    recomputes from THIS regime's own gate shards and overwrites."""
+    monkeypatch.setattr(R, "CAP_RECAL_TIMEOUT_S", 0.0)  # regression => fast partial, no hang
+    cfg = _mk_cfg(tmp_path)
+    cell, fp, draws = "query_topic", "fp", 1
+    _stage_gate_slice(cfg, cell, fp=fp, draws=draws)
+    R._write_json_atomic(
+        cfg.gates_dir / "cap_recalibration.json",
+        {"regime_fp": "OTHER_regime", "recalibrated": {cell: 99999}},
+    )
+    recal = R._gate_slice_cap_recalibration(cfg, fp, draws, [cell])
+    assert recal == {cell: 2 * R.cell_max_new_tokens(cell)}  # recomputed, never 99999
+    rep = json.loads((cfg.gates_dir / "cap_recalibration.json").read_text())
+    assert rep["regime_fp"] == fp  # overwritten under THIS regime
+
+
+def test_cap_recalibration_same_regime_report_adopted(tmp_path, monkeypatch):
+    """Positive control for round-5 B: a SAME-regime report IS adopted
+    verbatim (idempotent resume — no recompute, no rewrite)."""
+    monkeypatch.setattr(R, "CAP_RECAL_TIMEOUT_S", 0.0)  # regression => fast partial, no hang
+    cfg = _mk_cfg(tmp_path)
+    cell, fp = "query_topic", "fp"
+    path = cfg.gates_dir / "cap_recalibration.json"
+    cfg.gates_dir.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(path, {"regime_fp": fp, "recalibrated": {cell: 1234}})
+    before = path.read_bytes()
+    # deliberately NO staged shards: adoption must return BEFORE the barrier
+    recal = R._gate_slice_cap_recalibration(cfg, fp, 1, [cell])
+    assert recal == {cell: 1234}
+    assert path.read_bytes() == before
+
+
+def test_gate_shard_paths_skips_row_count_mismatched_manifest(tmp_path):
+    """Round-5 minor: _gate_shard_paths mirrors _anchor_cell_done's row-count
+    parity — a manifest whose n_rows disagrees with the shard's realized row
+    count is a partial/foreign write and is SKIPPED (first VALID wins)."""
+    cfg = _mk_cfg(tmp_path)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    cell = "query_topic"
+    row = {"context_id": "c0", "cell": cell, "cap_hit": True, "text": "t"}
+    R._write_jsonl_atomic(cfg.anchors_dir / f"anchors_gate_{cell}_w0.jsonl", [row])
+    _done_manifest(cfg, f"gate_{cell}", w=0, draws=1, n_rows=4)  # claims 4, shard has 1
+    with pytest.raises(RuntimeError, match="inconsistent store"):
+        R._gate_shard_paths(cfg, "fp", [cell], 1)
+    # a parity-consistent sibling manifest resolves (first VALID wins)
+    R._write_jsonl_atomic(cfg.anchors_dir / f"anchors_gate_{cell}_w1.jsonl", [row] * 4)
+    _done_manifest(cfg, f"gate_{cell}", w=1, draws=1, n_rows=4)
+    paths = R._gate_shard_paths(cfg, "fp", [cell], 1)
+    assert paths == [cfg.anchors_dir / f"anchors_gate_{cell}_w1.jsonl"]
+
+
 def test_r1_r2_post_recalibration_two_cap_store_is_valid_capregen_basis(tmp_path, monkeypatch):
     """The R1<->R2 interaction (r2 review ORDERING constraint): after a
     gate-slice recalibration one cell legitimately holds the RAISED cap in
