@@ -10990,8 +10990,8 @@
     "2422": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2422",
-      "status": "planning",
+      "path": "tasks/approved/2422",
+      "status": "approved",
       "title": "Briefs pointing a worktree-based reviewer at task state must pin the absolute main-checkout path (worktree plans/plan.md resolves to a stale version)"
     },
     "244": {
