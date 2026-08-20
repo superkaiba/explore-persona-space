@@ -440,18 +440,14 @@ def load_corpus_text(args: argparse.Namespace, corpus: str) -> dict[str, str]:
     if not p.exists():
         if not args.stage_from_hub:
             raise RuntimeError(f"corpus text missing: {p} (pass --stage-from-hub)")
-        from huggingface_hub import hf_hub_download
-
         hub = _hub()
-        got = hub.retry_transient(
-            hf_hub_download,
-            repo_id=hub.DEFAULT_DATASET_REPO,
-            repo_type="dataset",
-            filename=f"{_hf_prefix(args)}/corpus/{corpus}.jsonl",
-            local_dir=p.parent / "_hfstage",
-        )
         p.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(got, p)
+        hub.stage_hub_file(
+            hub.DEFAULT_DATASET_REPO,
+            f"{_hf_prefix(args)}/corpus/{corpus}.jsonl",
+            p,
+            repo_type="dataset",
+        )
     out: dict[str, str] = {}
     with open(p, encoding="utf-8") as fh:
         for line in fh:
