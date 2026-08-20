@@ -226,7 +226,20 @@ sentinel p1-done "P1 complete: 7-benchmark gen+verify done, rollout text uploade
 
 # --------------------------------------------------- P2: capture + margins ---
 echo "[phase=p2_capture]"
-headroom 100 p2-capture
+# The 100G floor sizes a FRESH capture (stores written from scratch). With all
+# 7 capture manifests complete the lanes resume-skip and write ~nothing, while
+# the finished stores themselves (~86G) make >=100G free unreachable on the
+# 200G volume (R10: 88.9G free < 100G killed a resume with no capture work
+# left). The floor stays binding for any genuinely-pending capture.
+P2_CAPTURE_COMPLETE=1
+for b in math_full mmlu_pro_full bigcodebench_full lcb_v5 humaneval mbpp_full leetcode; do
+  [ -f "/workspace/store_2388/$b/_capture_manifest.json" ] || P2_CAPTURE_COMPLETE=0
+done
+if [ "$P2_CAPTURE_COMPLETE" = "1" ]; then
+  echo "[p2] all 7 capture manifests present — resume path; skipping the fresh-capture 100G floor"
+else
+  headroom 100 p2-capture
+fi
 cap_lane() { # cap_lane <gpu> <bench>...
   local gpu="$1"; shift
   for b in "$@"; do
