@@ -1,0 +1,42 @@
+{
+  "linear__shared__fu0": {
+    "realized_u": 8000,
+    "composition": {
+      "generic": 8000,
+      "target": 0
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 8000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.06217678474074768,
+      "mean_r2_identity_bias": -0.9850548187640769,
+      "mean_knn_acc_at_1_euclidean": 0.4256696428571428,
+      "per_layer_file": "linear__shared__fu0_diagnostics.json"
+    },
+    "wall_s": 51.2
+  },
+  "mlp__shared__fu0": {
+    "realized_u": 8000,
+    "composition": {
+      "generic": 8000,
+      "target": 0
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 8000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.7343958273202883,
+      "mean_r2_identity_bias": -0.9850548187640769,
+      "mean_knn_acc_at_1_euclidean": 0.43352678571428577,
+      "per_layer_file": "mlp__shared__fu0_diagnostics.json"
+    },
+    "wall_s": 6396.4
+  }
+}
