@@ -467,6 +467,36 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   running concurrently keep separate version-suffixed workspaces — no mv
   needed, no collision.
 
+- **Janitor/retention-sweep plan, standard methodology lens + orchestrator
+  translation (#2246 round one, worktree-audit unmerged-branch keep +
+  gate-launcher argv holder + fail-closed overlay assert): the translation's
+  distinctive asks compose as lettered press points** — (a) per-AC
+  mechanism-binding walk incl. whether the re-derivation invariant decides
+  without the pinned snapshot; (b) no-behavior-change control pressed at the
+  WIRING grain ("is the existing matrix sensitive to the wired call sites,
+  or only the pure function — a control that cannot fail the wiring is not
+  a control for the wiring"); (c) BOTH failure directions
+  (false-retain=disk-bloat vs false-remove=founding hazard) walked per
+  probe ARM per direction, with the synthetic-vs-live-fixture coherence
+  named; (d) simpler-change + dropped-item-sufficiency (does the declined
+  lease leave a realized data-loss scenario the named residual misses);
+  (e) internal-convention conformance verified by grep ("a conformance
+  claim that misreads the file is a defect, not style"); (f) three-valued
+  contract: every error path's DIRECTION + does None-on-timeout create a
+  silent permanent retention class with no surfacing channel; (g)
+  fact-check-confirmed citations → judge only the source→decision
+  INFERENCE (precedent transfer: watcher patch-id → no-fetch janitor
+  form). Settled block = the brief's two settled conclusions with "judge
+  the CURRENT plan text; do not re-derive from the task body's older
+  wording" (the body still proposes the rejected cd form — gag the
+  relitigation channel explicitly). Scaffold gotcha: a digit-bearing STEP
+  FILE name (the Step 10d steps companion) residualed 18.0 — reference it
+  as "the file the plan's Files-edited list names". Numcheck PASS on
+  second run at ~156 KB (spans = inputs + briefnote + lensitems + plan +
+  body + empty prior; unsigned both-sides-guard atoms + comma-grouping
+  first + pair-split + isfinite canon + collect-all + registry leg from
+  repo root).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
