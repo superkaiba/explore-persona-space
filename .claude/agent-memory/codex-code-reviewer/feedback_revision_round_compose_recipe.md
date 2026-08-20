@@ -1557,3 +1557,25 @@ one(s) with lenient absorbed-or-deferred-with-note adjudication; (f) static
 proxies for unrunnable claims attested as compose-time facts to re-verify
 (def-test count vs claimed collect-only, zero-hit stale-cap-literal sweep);
 (g) note the reconcile note's file:line refs use R1-BLOB numbering.
+
+**Same-task r4 unsplit fix round; review-round vs marker-version divergence
+(#2389 r4, 2026-08-20):** three deltas on the #2389-r2 entry. (a) When an
+implementation round is COUNTED in the round numbering (review r4 closes the
+v2 review markers over impl marker v3), state the sentinel mapping in BOTH
+the prompt (inside the impl-marker preface) and the return — fetch prior
+verdicts by exact kind+version from events.jsonl, never by "v3". (b) A /tmp
+orchestrator adjudication doc (source-read, corrects a SIBLING arm's
+mechanism while crediting severity) inlines as its own ESTABLISHED-FACTS
+envelope with a read-the-contract-THROUGH-the-correction instruction — the
+#2147-cr4 pattern generalizes to sibling-arm corrections. (c) When the fix
+round is UNSPLIT on the Claude side too (under both #2074 triggers), reframe
+the twin's role from "only seam reader" to "push HARDEST on cross-cluster
+seams", and build the T-seam list from the brief's seam bullets + the
+context's attention span rather than re-deriving. Ledger nuance: a fix round
+where the implementer posted NO addressed events for the open ids composes
+as "closure is entirely this review's call" — cleaner than the
+addressed-as-claims form. Declared ADDRESSED-DIFFERENTLY rows (disarm-not-
+raise matching a plan FAIL-OPEN pin; REFUSE-stands resume semantics) get a
+variant-adjudication instruction with the settled half named (direction =
+plan-consistent, settled) and the open half scoped (visibility, over-disarm,
+family consistency).
