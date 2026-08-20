@@ -17,6 +17,14 @@ Pattern that works:
   and committed-JSON links live there, keeping Results blocks numbers-only.
 - Em-dashes and standalone `—` tokens COUNT as words under `split()`;
   semicolons instead of ` — ` buy a token in 30-word Takeaways bullets.
+- **Image alt-text lines COUNT toward the 180-word per-result cap** (only
+  `>`/`|`/fence/details lines are stripped) — a critic-mandated alt-trend
+  clause on 2-3 figures adds 12-20 words, so trim-with-add BEFORE editing.
+- **A mandated in-section disclosure line (e.g. `Per-unit exemption:`) can
+  live inside the figure's `>` caption** — cap-EXCLUDED yet still in-section
+  and greppable; keep the caption ≤60 words or a NEW WARN class fires that
+  the body's acknowledgment paragraph must then name (#1739 r3: exemption
+  caption landed at 58 words with sections at 176/180).
 
 Bonus finding worth remembering: an adversarial DRAW-level judge-censoring
 bound (every unscored draw := 100, re-binarize) is cheaply recomputable from
