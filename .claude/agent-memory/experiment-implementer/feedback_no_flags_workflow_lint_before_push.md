@@ -9,7 +9,12 @@ Run `uv run python scripts/workflow_lint.py` (NO flags) in the worktree before
 pushing any round that adds/edits `scripts/**` or `src/**` files, and confirm
 zero error lines naming round-committed files. Budget ~10 min under fleet load
 (a 400 s `timeout` bound rc=124'd mid-run on 2026-08-11; sibling sessions use
-540-900 s).
+540-900 s; a full run measured ~23 min at load ~40 on 2026-08-20 — run it as a
+BACKGROUND job and gate only the push on it). Waiver-placement trap (#2388 r2):
+lint waiver comments (`# UPLOAD_LOOP_EXEMPT: ...` etc.) must sit on the call's
+FIRST line or the IMMEDIATELY previous non-blank line — a waiver wrapped onto
+two comment lines is invisible (the previous non-blank line is the wrapped
+tail) and costs a re-run cycle; keep waivers single-line.
 
 **Why:** #2054 round 1 (2026-08-11) ran ruff + the ruff-policy pin + the
 pin-sweep mapped tests + 43 invariant tests and still shipped a lint-red file
