@@ -60,17 +60,29 @@ AGENT_FILE = REPO_ROOT / ".claude" / "agents" / "codex-critic.md"
 #   - `500`   — the "add a 500-example generic-assistant SFT baseline" worked
 #               example in the closing "Be specific" instruction (the atom
 #               Codex named in round 1).
-#   - `3`     — the `{{revision_round}}` / marker-tag `v<n>` digit. Bounded to
-#               {1,2,3} by the /adversarial-planner max-3-rounds policy; its
+#   - `3`-`10` — the `{{revision_round}}` / marker-tag `v<n>` round digits.
+#               Bounded to {1,...,10} by the /adversarial-planner max-10-rounds
+#               policy (#2391 raised the cap 5 -> 10; #784 raised 3 -> 5); the
 #               substituted value traces to NO handed span (it is not in
-#               plan_body / lens_items / prior_critique_summaries), so it must
-#               be scaffold-covered. {1,2} are already present from above; `3`
-#               is the only round digit not otherwise in the template.
+#               plan_body / lens_items / prior_critique_summaries), so EVERY
+#               round digit must be scaffold-covered — a digit missing from the
+#               set makes that round's compose false-BLOCKER on its own round
+#               number. {1,2} are already present from above; `3`-`10` are the
+#               round digits not otherwise in the template. Mirrors
+#               `.claude/agents/codex-critic.md` Step 4 (the reference
+#               implementation) and the three v2 sibling composer specs.
+# Set-membership widening tradeoff (#2391, named — never widened silently):
+# scaffold atoms clear UNCONDITIONALLY (set-membership, not multiset), so a
+# composer-authored bare `6`-`10` ANYWHERE in a prompt is no longer caught.
+# That hole is inherent to the existing design — it already applied to
+# 0/1/2/3/500 (and to 4/5 in codex-critic.md) — and is the accepted price of
+# rounds 6-10 composing at all; fabricated NON-scaffold values (the #722
+# forms) still residual.
 # The phantom `50` from round 1 is REMOVED — it never appeared in the template
 # (the only `50` in the raw text is the leading `5` of `500`); under the
 # set-membership scaffold semantics (below) it was a harmless no-op but a
 # documentation error.
-SCAFFOLD_ALLOWLIST = {"0", "1", "2", "3", "500"}
+SCAFFOLD_ALLOWLIST = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "500"}
 
 
 def _normalize_numeric_atoms(text: str) -> list[str]:
@@ -310,9 +322,10 @@ class TestTokenizerContract:
         assert residual == [], residual
 
     def test_scaffold_numbers_alone_do_not_trip(self):
-        # A prompt with only the REAL static scaffold atoms ({0,1,2,3,500} —
-        # Phase 0, the 1-2 line prose, the 1. Must-Fix marker, the round digit,
-        # the 500-example baseline) must pass against an empty plan_body.
+        # A prompt with only REAL static scaffold atoms (from the widened
+        # {0,1,2,3,...,10,500} set — Phase 0, the 1-2 line prose, the 1.
+        # Must-Fix marker, the round digits, the 500-example baseline) must
+        # pass against an empty plan_body.
         prompt = "Phase 0 smoke; 1. [Issue]; 1-2 lines; v3; add a 500-example baseline.\n"
         residual = _residual_blocker_numbers(prompt, plan_body="")
         assert residual == [], residual
@@ -376,9 +389,11 @@ class TestAllowlistCoversFinalTemplate:
     def test_revision_round_digits_are_covered(self):
         # `{{revision_round}}` (and the marker-tag `v<n>`) substitute the round
         # digit, which traces to NO handed span — it must be scaffold-covered.
-        # Bounded to {1,2,3} by the /adversarial-planner max-3-rounds policy.
+        # Bounded to {1,...,10} by the /adversarial-planner max-10-rounds
+        # policy, so EVERY round digit 1-10 must be in the set (#2391: the
+        # 3-era set left rounds 4-10 false-BLOCKERing on their own number).
         allowed = {_canon(s) for s in SCAFFOLD_ALLOWLIST}
-        assert {"1", "2", "3"} <= allowed, sorted(allowed)
+        assert {str(i) for i in range(1, 11)} <= allowed, sorted(allowed)
 
     def test_real_compose_number_free_plan_residuals_zero(self):
         # The end-to-end legitimate-compose invariant: substitute the real
@@ -417,6 +432,59 @@ class TestAllowlistCoversFinalTemplate:
         assert residual == [], (
             f"legitimate compose (number-free plan) residualed {residual} — "
             f"the gate would BLOCKER every compose; allowlist/semantics are wrong."
+        )
+
+    @pytest.mark.parametrize("rnd", [str(i) for i in range(1, 11)])
+    def test_real_compose_number_free_plan_residuals_zero_all_rounds(self, rnd: str):
+        # #2391: the per-reviewer cap is 10, so EVERY round digit 1-10 must
+        # compose clean. Same real-template substitution as the round-1 test
+        # above at revision_round=rnd, PLUS the round digit in a BARE
+        # (non-word-adjacent) position: the template's own
+        # `v{{revision_round}}` marker tag substitutes word-adjacent (`v10`),
+        # which this file's reference tokenizer skips via its `(?<![\w.])`
+        # lookbehind — but a compose-time verifier regex without that
+        # lookbehind extracts `10` from `v10`, and orchestrator round-frame
+        # prose states the digit bare. Under the stale 5-era scaffold set
+        # {0,1,2,3,4,5,500} the bare digit residuals for rounds 6-10
+        # (flip-verified, r3: rounds 1-5 green / 6-10 red; the older 3-era
+        # set {0,1,2,3,500} residuals rounds 4-10) — the exact B2
+        # false-BLOCKER ("composer-authored number 10") that silently voided
+        # the cap raise for Loop C — so this is the assertion that catches a
+        # scaffold-set regression.
+        text = AGENT_FILE.read_text(encoding="utf-8")
+        step3 = text.index("### Step 3: Compose the lens-specific prompt")
+        after = text[step3:]
+        m_open = re.search(r"\n```\n", after)
+        start = m_open.end()
+        m_close = re.search(r"\n```\n", after[start:])
+        template = after[start : start + m_close.start()]
+
+        plan_body = "The plan studies marker leakage and reports nothing numeric."
+        lens_items = "Item one. Item two. Item three."  # number-free
+        prior = ""  # handed by reference in later rounds; number-free fixture
+        composed = template
+        composed = composed.replace("{{LENS}}", "METHODOLOGY")
+        composed = composed.replace("{{plan_body}}", plan_body)
+        composed = composed.replace(
+            "{{prior_critique_summaries — empty on round 1}}", "(carried by reference)"
+        )
+        composed = composed.replace(
+            "{{lens_items — the full, current item list for this lens from\n"
+            "critic-lens-reference.md, inserted by the composer at Step 3}}",
+            lens_items,
+        )
+        composed = composed.replace("{{revision_round}}", rnd)
+        composed = composed.replace("{{lens}}", "methodology")
+        assert "{{" not in composed, "unsubstituted placeholder remains: " + composed
+        # The bare-position round digit (see comment above).
+        composed += f"\nThis is revision round {rnd} (delta-scoped re-review).\n"
+
+        residual = _residual_blocker_numbers(
+            composed, plan_body=plan_body, lens_items=lens_items, prior_critique_summaries=prior
+        )
+        assert residual == [], (
+            f"legitimate round-{rnd} compose (number-free plan) residualed {residual} — "
+            f"the gate would false-BLOCKER round {rnd}; the scaffold set is stale."
         )
 
 
@@ -631,3 +699,32 @@ class TestAgentFilesCarryTaskRefCarveOut:
         assert text.count("issue[-_]") >= 2, path.name
         assert text.lower().count("task-reference") >= 2, path.name
         assert "fail-strict" in text, path.name
+
+
+class TestGuardFilesDeclareWidenedScaffold:
+    """Scaffold-set declaration pins (#2391 B2): all four guard-carrying
+    composer specs declare the WIDENED round-digit scaffold set, mirroring
+    `.claude/agents/codex-critic.md` Step 4 (the reference implementation).
+
+    Why this pins the declaration in every file, not just the reference: each
+    v2 sibling composer restates the Step-4 recipe — including the scaffold
+    set literal — in its own prose, and its compose-time verifier is built
+    from THAT restatement. A file left at the 5-era set makes its rounds 6-10
+    composes false-BLOCKER on their own round number (`BLOCKER:
+    composer-authored number 10`), silently voiding the #2391 cap raise for
+    that loop — exactly how B2 shipped: codex-critic.md:317 was widened while
+    the three siblings kept `{0, 1, 2, 3, 4, 5, 500}`."""
+
+    WIDENED_SET = "{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 500}"
+    STALE_SET = "{0, 1, 2, 3, 4, 5, 500}"
+
+    @pytest.mark.parametrize("path", ALL_GUARD_FILES, ids=lambda p: p.name)
+    def test_guard_file_declares_round_digits_through_ten(self, path: Path):
+        text = path.read_text(encoding="utf-8")
+        assert self.WIDENED_SET in text, (
+            f"{path.name} does not declare the widened scaffold set "
+            f"{self.WIDENED_SET} (rounds 6-10 would false-BLOCKER)"
+        )
+        assert self.STALE_SET not in text, (
+            f"{path.name} still declares the stale 5-era scaffold set {self.STALE_SET}"
+        )
