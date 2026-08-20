@@ -1591,3 +1591,154 @@ the scan's file enumeration, exemption exactness + the dead-control proof,
 the lookbehind/word-adjacency claim behind a compose test, kwarg-default
 behavior preservation) — with fabricated-falsifiability (claimed-red that
 stays green) named as substantive FAIL.
+
+**CONCERNS→polish round; brief can ORDER the whole-branch body back in (#2212
+r2, 2026-08-20):** the round-scope BAN on the whole-branch three-dot BODY is
+the DEFAULT, not a law — when the brief mandates re-verifying reconciler
+binding conditions + the plan §10 fence "on the FULL round diff, not
+inherited from round 1's PASS", compose BOTH reads: three-dot full-round
+body (size it first; 55 KB here) for the conditions re-check, `git show
+<round-sha>` as the deep-dive focus. Milder sibling of #2329 rclose: prior
+round Claude-PASS + Codex-CONCERNS (no reconciler — CONCERNS advances), one
+persisted NIT (the twin's own) + one un-persisted Claude Minor closed;
+closure ledger = the real concern id + a pseudo-id, author-neutrality line,
+addressed-id NEVER re-emitted as a `CONCERN:: ` row unless NOT-ADDRESSED.
+A brief-supplied "state plainly a clean PASS is expected if the fixes are
+sound" composes as BOTH-directions calibration (expected ≠ thumb on scale;
+wording-preference blockers unwanted on a wording-correction round, real
+defects at full severity). Over-correction duty on wording fixes: the new
+text can be wrong the OTHER way (eliding the argv-structural top-level
+guarantee / overstating exclude-list protection) — hand Codex both failure
+directions plus survival checks for the honest-scope figures. Re-measure
+brief-supplied base-drift figures at compose (136→295 commits between
+rounds; use fresh).
+
+**FAIL+FAIL union round with a self-resolving union note + brief-ordered
+mutation probes (#2329 q35 r2 = sentinel v2, 2026-08-20):** when the union
+work order ITSELF resolves every overlap to the stronger form AND records
+the reviewer splits, inline the union as the PRIMARY acceptance contract +
+the twin's own verdict (tags stripped, rows blockquoted) for per-finding
+Evidence/Fix — the Claude verdicts stay by-path context (this task's
+review-r1 artifacts dir on main); the union's RECORDED SPLITS section
+becomes a do-not-relitigate item (round 2 scores fresh against the new
+marker, never re-grades r1 gate records). Scratch recipe refinement for
+mutation probes on this repo: build the scratch tree with a SCOPED
+`git archive <round-sha> scripts tests src configs pyproject.toml uv.lock |
+tar -x` — NEVER a full-tree archive (tracked eval_results are GB-scale in
+this repo) — and copy in the single committed artifact a chosen nodeid
+reads (here the parent #2162 stats.json) only when that probe needs it;
+carry the UV_CACHE_DIR=/tmp/... rc=2 read-only-cache precedent. A
+raised-only ledger (0 addressed rows) on a fix round composes per
+#2379-r2(b): identical closure duty, absent rows attested as orchestrator
+bookkeeping. Sentinel convention is SERIES-local: this review series' r1
+head was v1 (round-based) even though the same task's earlier crash-fix
+series used sentinel==impl-version — read the r1 marker's own head, never
+assume the task-wide convention.
+
+**FAIL+FAIL union fix round with ledger-persisted ids + sibling's FULL
+mid-compose disposition set (#823 P-Gen r4 = sentinel v7, 2026-08-20):**
+three composable deltas on the #2332-r2 union shape. (a) When both prior
+verdicts' findings are ALREADY persisted as real ledger ids, key the
+closure ledger on THOSE ids (no pseudo-IDs) and still inline both verdicts
+as the Evidence+Fix acceptance contracts — tags stripped, the Codex
+verdict's `CONCERN:: ` rows blockquoted (`> `), asserts: own-head==1 /
+close==1 / prior tags==0 / `^CONCERN:: `==1 / `^> CONCERN:: `==6. (b) The
+#2326 ts-pin (rows `ts <= round-landing ts`) excluded not just one raised
+row but the SIBLING TWIN'S ENTIRE completed round output (7 `addressed`
+rows + 1 new `raised` row) landing mid-compose — snapshot framing "pinned
+to the round-4 landing" stays truthful; REPORT to the orchestrator that
+the Codex verdict may mint a DIFFERENT kebab-id for the same residual the
+sibling already raised (dedup is the orchestrator's merge job, never the
+composer's). (c) An orchestrator-found NEW residual handed in the brief
+("put this FIRST") composes as its own `# HIGHEST-VALUE CHECK (adjudicate
+FIRST)` section: the orchestrator's reading + apparent consequence quoted
+with line anchors, THREE explicit questions (reading correct? production
+path closed incl. the smoke-artifact-verified-as-production path?
+severity for the held wave?), evidence-required-either-way framing
+("its own reading has been wrong twice this round — take nothing on
+trust"), and a mandatory Step 3.7 class sweep naming the class lineage
+(round 3 trusted the record set; round 4 trusts the domain size) —
+severity never pre-resolved. Landing-note round record (no impl marker)
+composes per the #823 P-Gen v13 variant unchanged; a fix round whose tests
+span FOUR files patches every "both files"/"two files" rubric span and
+asserts zero residual occurrences.
+
+**Reconciler-UPHELD minimal-set round (all twin blockers upheld; #2329 r3 =
+sentinel v3, 2026-08-20):** when the prior round ended Claude-CONCERNS /
+Codex-FAIL and the reconciler ruled FAIL BINDING upholding ALL the twin's
+blockers with a "Must-fix (minimal set)" section: (a) the acceptance contract
+is the RECONCILER RULING inlined in its own envelope — the twin's own prior
+verdict is demoted to context ("the ruling, not your prose, is the contract";
+author-neutrality = don't demand more than the ruling's minimal set, don't
+wave through); (b) items the ruling classifies as TEST-hollowness where
+production was already correct get an explicit "verify the PINS BIND, not
+that production changed — a production-behavior change on those paths is an
+Unintended Change" frame; (c) implementer-reported self-mutation probes become
+the reviewer's REPRODUCTION duty with per-probe expected red/green patterns
+incl. a healthy-control-stays-green expectation (a bypass redding the control
+= weaker-but-binding pin, note not FAIL; all-green = hollow-pin FAIL), plus
+one encouraged own-construction variant per pin; (d) aim the recurring-class
+hunt at the round's OWN fix ("vacuous-guard hunt": nonempty-but-corrupted
+states, what expected/present derive FROM, raise-skipped paths, per-side
+grain, over-tightening) — this task shipped a cannot-fail gate inside a fix
+for a cannot-fail gate once already; (e) recompute the brief's/ruling's
+PRE-round line frames against the NEW blob and say shifted lines are never a
+finding; (f) a marker-arithmetic item (rows-vs-registry) gets a compute-it-
+yourself instruction naming each registry symbol — the prior round FAILed on
+29-vs-32 with three reviewers computing three ways; residual mismatch =
+substantive per the ruling (non-conforming redo of an explicit item), not
+strippable marker-shape.
+
+**Unimplementable-prescription closure round (#2412 r2, 2026-08-20):** when
+the round-1 reviewers AND reconciler all prescribed a fix the orchestrator
+later PROVED unimplementable by VM reproduction (`git cat-file -e` exits 128
+for missing-path-at-valid-ref AND bad-ref alike — no rc==1 split exists, git
+2.34.1), compose the #2147-cr4 ESTABLISHED FACTS shape but aimed at the
+PRESCRIPTION rather than the finding's mechanism: state the reproduction as
+established (the twin cannot re-run write-bearing git probes), BAN re-raising
+the literal prescription, frame the implementer's replacement (ls-tree
+three-way discrimination) as serving the prescription's INTENT (git error ⇒
+undecidable ⇒ revert), and hand the twin a scoped correctness checklist for
+the REPLACEMENT (empty-stdout-absent leg, tree-vs-blob path shapes, per-file
+vs helper-wide fail grain adjudicated by consequence). The closure-ledger
+status line for that item judges intent delivery, never the dead literal.
+Also from this compose: (a) a brief's output-contract code block can carry a
+STALE sentinel digit (`v1` on a round-2 brief) — treat the block as SHAPE,
+set the sentinel by the task's convention (r1 posted v1 ⇒ r2 posts v2 =
+review round = impl `epm:results` version), and flag the divergence in the
+return; (b) fixture-discrimination claims ("ran it pre-fix, saw the silent
+KEEP") translate to the static trace: `git show <round-parent>:<helper>` +
+trace the fixture scenario through PRE-fix control flow, refuted claim =
+fabricated coverage.
+
+**Merge-reconciliation round mandated by the task's own divergence gate
+(#2201 r3, 2026-08-20):** when the round under review is a gate-mandated
+merge of pinned main + a mandated spec-freshness sync (no feature code, no
+impl marker), compose: (a) round contract = the `[divergence-probe]` /
+reconciliation `epm:progress` notes inlined in their own envelopes (the
+verified note is the implementer's REPORT to re-verify, say so); declare
+`marker-shape`/`smoke-run-missing` INVALID and Step 0.5/4.6 N/A-this-round;
+inline the prior `epm:results` as CONTEXT-ONLY (do-not-score-shape). (b)
+PRIMARY body = `git diff <merged-pin>..HEAD` — once the merge makes the pin
+an ancestor, the two-dot form IS the own-diff; measure `git show --cc
+<merge>` at compose (≈empty ⇒ attest "no novel line typed into the merge";
+read reconciliation via per-side diffs `<parent>..<merge> -- <path>`). (c)
+M-ledger INTACT/DAMAGED duties: both-sides-survive + SEMANTIC-contradiction
+read per contested file; grandfather caps re-measured vs POST-MERGE landing
+bytes (probe count=0 at the fresh pin ⇒ worktree bytes ARE landing bytes,
+#1727) with the corridor + MAX_HEADROOM(3_000) bound; union-dedup
+lost-content check (every pre-merge-branch-only line must survive to HEAD;
+enumerate via `diff <branch-parent>..<merge> --name-only -- agent-memory/`);
+hygiene (residue, tasks/ 0, src/ 0, exact own-diff path list); feature
+integrity incl. LOCATING every pinned fragment/region anchor in the
+POST-MERGE spec text (pre-merge gate PASSes certify NOTHING post-merge —
+say so at Step 4); sync commit == current-main blobs at the probe pin (the
+pin's commit object exists locally — `git show <pin>:<path>` works, no
+fetch). (d) Enumerate intermediate commits since the last reviewed HEAD;
+name any deliverable-touching one (here an E501 rewrap) as a verify-duty so
+its hunk is not mistaken for merge damage; flag the scope call in the
+return. (e) Probe-side traps hit live: `git diff --quiet <sha> HEAD -- 
+<nonexistent-path>` exits 0 — verify the path EXISTS before trusting a
+MATCH probe; and a brief-named output file can COLLIDE with a stale
+same-name /tmp file from an earlier same-task critic round — flag the
+collision to the orchestrator (premature-read hazard).
