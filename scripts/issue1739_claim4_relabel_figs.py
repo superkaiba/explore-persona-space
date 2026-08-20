@@ -39,13 +39,18 @@ def main() -> int:
         default=None,
         help="claim4 preds mirror root (default: the table's meta.claim4_root)",
     )
+    ap.add_argument(
+        "--only-percontext",
+        action="store_true",
+        help="re-render ONLY claim4_syco_percontext (leave the other pinned figures untouched)",
+    )
     args = ap.parse_args()
 
     mod = _load_fold_module()
     table = json.loads(Path(args.table).read_text())
     fig_dir = Path(args.fig_dir)
     seeds = table["meta"]["seeds"]
-    written = mod.render_figures(table, fig_dir, seeds)
+    written = [] if args.only_percontext else mod.render_figures(table, fig_dir, seeds)
     preds_root = Path(args.preds_root or table["meta"]["claim4_root"])
     written.append(mod.render_syco_percontext(preds_root, fig_dir))
     print(f"written: {written}")

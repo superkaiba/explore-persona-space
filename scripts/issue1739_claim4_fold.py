@@ -1058,15 +1058,19 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
 def render_syco_percontext(
     preds_root: Path,
     fig_dir: Path,
-    rungs: tuple[str, ...] = ("sycomwe", "sycomim"),
+    rungs: tuple[str, ...] = ("sycomwe", "sycoans", "sycofb", "sycoays", "sycomim"),
     seed: int = 0,
 ) -> str:
     """Per-context low-level view behind the corrected-sycophancy correlations.
 
     Scatters the mapped-answer probe's and the context probe's per-context
-    predictions against the judge-scored DV on the two extreme rungs, from
-    the fair-allocation refit preds (seed 0). Fails loud on a preds gap —
-    never an empty panel.
+    predictions against the judge-scored DV on ALL FIVE corrected sycophancy
+    rungs (largest gain -> largest loss), from the fair-allocation refit
+    preds (seed 0). The persona-vector / oracle arms and the
+    single-dataset-pool protocol exist only as banked single-seed AGGREGATE
+    rows (no persisted per-context predictions), so they cannot appear here —
+    the body carries the matching per-unit exemption. Fails loud on a preds
+    gap — never an empty panel.
     """
     import matplotlib
 
@@ -1078,8 +1082,11 @@ def render_syco_percontext(
 
     set_paper_style("blog")
     fig_dir.mkdir(parents=True, exist_ok=True)
-    fig, axes = plt.subplots(1, len(rungs), figsize=(5.2 * len(rungs), 4.4), sharex=True)
-    for ax, rung in zip(axes, rungs, strict=True):
+    ncols = 3
+    nrows = (len(rungs) + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5.2 * ncols, 4.4 * nrows), sharex=True)
+    flat = list(axes.ravel())
+    for ax, rung in zip(flat[: len(rungs)], rungs, strict=True):
         series, dv, _groups, note = load_preds_series(
             preds_root, "sycophancy", rung, [seed], variants=("true",)
         )
@@ -1100,8 +1107,13 @@ def render_syco_percontext(
         ax.set_xlabel("judge-scored sycophancy DV (per-context mean)")
         ax.set_title(f"{RUNG_LABEL.get(rung, rung)} (n={len(dv)} contexts, seed {seed})")
         ax.legend(fontsize=7)
-    axes[0].set_ylabel("arm prediction (per-context)")
-    fig.suptitle("Per-context predictions behind the sycophancy extremes (fair-allocation refit)")
+    for ax in flat[len(rungs) :]:
+        ax.set_visible(False)
+    for row in range(nrows):
+        flat[row * ncols].set_ylabel("arm prediction (per-context)")
+    fig.suptitle(
+        "Per-context predictions behind the five corrected sycophancy rungs (fair-allocation refit)"
+    )
     savefig_paper(fig, "claim4_syco_percontext", dir=fig_dir)
     plt.close(fig)
     return "claim4_syco_percontext"
