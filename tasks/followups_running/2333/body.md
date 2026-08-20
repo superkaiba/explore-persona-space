@@ -1,6 +1,7 @@
 ---
 title: Prefilling the first three answer tokens reproduces most of the context-end
-  patch's whole-answer behavioral effect (MODERATE confidence)
+  patch's effect on format cells, but the patch's own opening carries reliably less
+  than the full effect on Qwen3.5 language cells (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual

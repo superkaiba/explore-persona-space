@@ -10306,7 +10306,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2333",
       "status": "followups_running",
-      "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's whole-answer behavioral effect (MODERATE confidence)"
+      "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's effect on format cells, but the patch's own opening carries reliably less than the full effect on Qwen3.5 language cells (MODERATE confidence)"
     },
     "2334": {
       "has_clean_result": false,
