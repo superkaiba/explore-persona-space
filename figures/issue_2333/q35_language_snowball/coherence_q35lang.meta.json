@@ -1,0 +1,114 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "1adc64b152024643",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:38Z",
+  "figsize": [
+    7.2,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "state patch, 1 pos \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.8763888888888889,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 1 pos \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.8902777777777777,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 2 pos \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.8902777777777777,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 2 pos \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.8944444444444445,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 3 pos \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.8930555555555556,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 3 pos \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.9097222222222222,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 1 token \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.8986111111111111,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 1 token \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.8888888888888888,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 2 tokens \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.8875,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 2 tokens \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.9083333333333333,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 3 tokens \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.9013888888888889,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 3 tokens \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.8861111111111111,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen3.5-9B, language cells: coherence survival per arm",
+        "ylabel": "coherent fraction (judge > 60)",
+        "xticklabels": [
+          "state patch, 1 pos \u2014 patch-content",
+          "state patch, 1 pos \u2014 natural-opening",
+          "state patch, 2 pos \u2014 patch-content",
+          "state patch, 2 pos \u2014 natural-opening",
+          "state patch, 3 pos \u2014 patch-content",
+          "state patch, 3 pos \u2014 natural-opening",
+          "token prefill, 1 token \u2014 patch-content",
+          "token prefill, 1 token \u2014 natural-opening",
+          "token prefill, 2 tokens \u2014 patch-content",
+          "token prefill, 2 tokens \u2014 natural-opening",
+          "token prefill, 3 tokens \u2014 patch-content",
+          "token prefill, 3 tokens \u2014 natural-opening"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

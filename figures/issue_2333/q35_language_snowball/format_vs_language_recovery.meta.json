@@ -1,0 +1,59 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "fe46b5812cc8454b",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:41Z",
+  "figsize": [
+    4.2,
+    3.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "raw recovery ratio (arm F / control F)": 0.7086807508466594,
+      "error": 0.14176005162898941,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "raw recovery ratio (arm F / control F)": 0.9156026448372776,
+      "error": 0.11224783282992956,
+      "_kind": "errorbar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "three-token prefill recovery \u2014 descriptive companion\n(cross-wave; no verdict)",
+        "ylabel": "raw recovery ratio (arm F / control F)",
+        "xticklabels": [
+          "format cells\n(parent leg B)",
+          "language cells\n(this round)"
+        ],
+        "yticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

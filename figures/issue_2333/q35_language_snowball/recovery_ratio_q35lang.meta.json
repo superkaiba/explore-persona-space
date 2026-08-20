@@ -1,0 +1,374 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "e7bc9af56f784749",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:24Z",
+  "figsize": [
+    8.4,
+    3.0
+  ],
+  "points": [
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.804960588235658,
+      "error": 0.11666218726967972,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.9444906671427915,
+      "error": 0.10481717705764854,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.9276953994034017,
+      "error": 0.11224783282992956,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.6040791399677756,
+      "error": 0.11666218726967972,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.9100027819464868,
+      "error": 0.10481717705764854,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.9156026448372776,
+      "error": 0.11224783282992956,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.804960588235658,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.9444906671427915,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.9276953994034017,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.699306056461829,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.8406392056079809,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.8207697698561007,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.9174664577453089,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 1.0512320369491581,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 1.0395246190054253,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.6040791399677756,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.9100027819464868,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.9156026448372776,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.48801962670837923,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.8052798051909317,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.8044586770018867,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.7213440012477387,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 1.0149141593062287,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 1.0289543426617458,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9123918766138435,
+      "error": 0.11730646299408573,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.0483224611264097,
+      "error": 0.12244745193062828,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.1617546645067225,
+      "error": 0.14200717091344828,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5946419701460788,
+      "error": 0.11730646299408573,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.0118532027147014,
+      "error": 0.12244745193062828,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.1004142381856408,
+      "error": 0.14200717091344828,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9123918766138435,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.0483224611264097,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.1617546645067225,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7811104533498306,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9009992091430216,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.0063010310831053,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 1.0618407496809417,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.2309732799700206,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.3540103868421016,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5946419701460788,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.0118532027147014,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.1004142381856408,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4778252631389773,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.8939671252036746,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.9692249168144531,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7124381891271487,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.1388620290649312,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.2532392586413497,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 48,
+  "text": {
+    "suptitle": "Qwen3.5-9B, language cells: recovery vs opening length (steered arms, same-wave control)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "language pairs\npatch-content donors (confirmatory)",
+        "xlabel": "opening positions transplanted",
+        "ylabel": "recovery ratio (arm F / control F)",
+        "legend_labels": [
+          "state patch",
+          "token prefill"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title_left": "language pairs\nnatural-opening donors (descriptive)",
+        "xlabel": "opening positions transplanted",
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    ],
+    "series": [
+      "state patch",
+      "token prefill"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

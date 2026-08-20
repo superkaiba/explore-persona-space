@@ -1,0 +1,212 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "2c4c6d74ab5f49d5",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:28Z",
+  "figsize": [
+    4.8,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.21414314321702213,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.3457944347308841,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.19977636047922834,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.4229818653772223,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.09459886779203656,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.43931598788166415,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.2577850472423511,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.2539467133748802,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 0.29490416333526415,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 0.29811488687982113,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.1757166835096155,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.3348972174734953,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 0.25944326252703276,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 0.3141105802705447,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 0.16053618890712099,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 0.3301428847472832,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 0.18378176122807835,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.4263240503109204,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 0.25225995690523795,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 0.2446092280575879,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 0.2909375052537833,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "x": 0.3985177780612269,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "x": 0.13469746842411523,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "x": 0.3954172763293508,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": "Qwen3.5-9B, language cells: per-cell paired differences per arm",
+    "fig_texts": [
+      "behavioral movement F: steered \u2212 null (95% CI)"
+    ],
+    "axes": [
+      {
+        "title_left": "instr language",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ],
+        "yticklabels": [
+          "state patch, 1 pos \u2014 patch-content",
+          "state patch, 1 pos \u2014 natural-opening",
+          "state patch, 2 pos \u2014 patch-content",
+          "state patch, 2 pos \u2014 natural-opening",
+          "state patch, 3 pos \u2014 patch-content",
+          "state patch, 3 pos \u2014 natural-opening",
+          "token prefill, 1 token \u2014 patch-content",
+          "token prefill, 1 token \u2014 natural-opening",
+          "token prefill, 2 tokens \u2014 patch-content",
+          "token prefill, 2 tokens \u2014 natural-opening",
+          "token prefill, 3 tokens \u2014 patch-content",
+          "token prefill, 3 tokens \u2014 natural-opening"
+        ]
+      },
+      {
+        "title_left": "language implied",
+        "legend_labels": [
+          "patch-content donors",
+          "natural-opening donors"
+        ],
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

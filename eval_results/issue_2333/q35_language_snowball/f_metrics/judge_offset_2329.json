@@ -1,0 +1,14 @@
+{
+  "mode": "reused_2329",
+  "n_rows": 144,
+  "n_missing_sides": 0,
+  "mean_offset": 5.155974426808584e-05,
+  "sd": 0.017108665262370103,
+  "se": 0.0014257221051975086,
+  "offset_semantics": "same-wave re-judge of the IDENTICAL #2329 anchor completions minus #2329's stored per-pair floor/ceiling deltas (delta units, judge-score/100) — pure instrument drift",
+  "near_zero_variance_flag": false,
+  "pins": {
+    "p2329_data": "ce138be2490f1bb75a721ebc87529cf6e12660ce",
+    "ref_2329_branch": "b52657ee0e"
+  }
+}

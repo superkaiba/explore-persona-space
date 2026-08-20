@@ -1,0 +1,21 @@
+{
+  "passed": false,
+  "median": 92.0,
+  "frac_gt60": 0.8861111111111111,
+  "n_kept": 720,
+  "n_dropped": 0,
+  "thresholds": {
+    "median_min": 80.0,
+    "gt60_frac_min": 0.9,
+    "coherence_threshold": 60.0
+  },
+  "repro": {
+    "git_commit": "1d21458e",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  },
+  "override": {
+    "accepted_fail": true,
+    "reason": "parent-parity override: rejudge frac>60 0.886 vs parent #2329 stored 0.892 on the identical anchor pool (zero instrument drift); sub-60 tail is carrier-concentrated repetition-loop degeneration already present in the parent pool; 0.90 threshold inherited from the #2094 pooled all-cell gate, miscalibrated for the 2-cell multilingual subset; commit 1d21458ea3; Decision epm:progress 2026-08-19T19:54Z"
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "8ff4b5cbb6124455",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:40Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.100333,
+      "pair-side rows": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.09,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.079667,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.069333,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.059,
+      "pair-side rows": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.048667,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.038333,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.028,
+      "pair-side rows": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.017667,
+      "pair-side rows": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": -0.007333,
+      "pair-side rows": 25.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.003,
+      "pair-side rows": 99.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.013333,
+      "pair-side rows": 9.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.023667,
+      "pair-side rows": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.034,
+      "pair-side rows": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.044333,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.054667,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.065,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.075333,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.085667,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.096,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.106333,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.116667,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.127,
+      "pair-side rows": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "anchor delta: this wave \u2212 #2329 stored": 0.137333,
+      "pair-side rows": 1.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen3.5-9B, language cells: judge-wave offset on identical anchors",
+        "xlabel": "anchor delta: this wave \u2212 #2329 stored",
+        "ylabel": "pair-side rows",
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

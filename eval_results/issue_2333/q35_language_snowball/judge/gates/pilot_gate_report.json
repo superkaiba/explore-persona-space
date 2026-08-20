@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "per_family": {
+    "coherence": {
+      "rubric_id": "coherence",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 200
+    },
+    "s1-rubric": {
+      "rubric_id": "fd679e281bf0b",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 240
+    }
+  },
+  "forced_batch_probe": {
+    "n_items": 6,
+    "n_scored": 6,
+    "required": 6,
+    "stop_reason_tally": {
+      "end_turn": 6
+    },
+    "non_end_turn": {},
+    "passed": true
+  },
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "n_rubrics_total": 4,
+    "model_tag": "q35",
+    "cell_set": "q35lang"
+  },
+  "repro": {
+    "git_commit": "ef6b696b",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

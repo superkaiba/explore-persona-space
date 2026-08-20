@@ -271,9 +271,17 @@ def fig_recovery(data: dict, tag: str) -> None:
     """Exploratory: recovery ratio R_k = F_arm / F_ce(same-wave) vs k."""
     stats = data["stats"]
     colors = paper_palette(2)
-    fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.0), sharey=True)
-    for i, set_name in enumerate(("s1", "s2")):
-        arms = stats["per_set"].get(set_name, {}).get("arms", {})
+    # Only pair sets with fitted arms get a row (q35lang has no S2 cells —
+    # a fixed 2-row grid renders an empty bottom row there).
+    set_names = [s for s in ("s1", "s2") if stats["per_set"].get(s, {}).get("arms")]
+    if not set_names:
+        print(f"[figures] recovery_ratio {tag}: no per-set arms — skipped")
+        return
+    fig, axes = plt.subplots(
+        len(set_names), 2, figsize=(8.4, 3.0 * len(set_names)), sharey=True, squeeze=False
+    )
+    for i, set_name in enumerate(set_names):
+        arms = stats["per_set"][set_name]["arms"]
         for j, scheme in enumerate(C.ARM_SCHEMES):
             ax = axes[i][j]
             for kind, color in zip(C.ARM_KINDS, colors, strict=True):
@@ -295,10 +303,10 @@ def fig_recovery(data: dict, tag: str) -> None:
             ax.axhline(0.0, color="0.6", lw=0.8, ls=":")
             ax.set_title(f"{_set_label(tag, set_name)}\n{SCHEME_LABEL[scheme]}", fontsize=9)
             ax.set_xticks(list(C.ARM_KS))
-    axes[1][0].set_xlabel("opening positions transplanted")
-    axes[1][1].set_xlabel("opening positions transplanted")
-    axes[0][0].set_ylabel("recovery ratio (arm F / control F)")
-    axes[1][0].set_ylabel("recovery ratio (arm F / control F)")
+    axes[-1][0].set_xlabel("opening positions transplanted")
+    axes[-1][1].set_xlabel("opening positions transplanted")
+    for i in range(len(set_names)):
+        axes[i][0].set_ylabel("recovery ratio (arm F / control F)")
     axes[0][0].legend(frameon=False, fontsize=8)
     fig.suptitle(
         f"{MODEL_LABEL[tag]}: recovery vs opening length (steered arms, same-wave control)",
@@ -415,9 +423,21 @@ def fig_k_traces(data: dict, tag: str) -> None:
     st = {(r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["steered"]}
     nu = {(r["pair_id"], r["arm_slug"]): r["f_beh"] for r in data["null"]}
     colors = dict(zip(C.ARM_KINDS, paper_palette(2), strict=True))
-    fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.0), sharey=True)
+    # Only pair sets with surviving pairs get a row (q35lang has no S2 cells —
+    # a fixed 2-row grid renders an empty bottom row there).
+    set_names = [
+        s
+        for s in ("s1", "s2")
+        if any(r["set"] == s and r["pair_id"] in keep for r in data["steered"])
+    ]
+    if not set_names:
+        print(f"[figures] k_traces {tag}: no surviving pairs — skipped")
+        return
+    fig, axes = plt.subplots(
+        len(set_names), 2, figsize=(8.4, 3.0 * len(set_names)), sharey=True, squeeze=False
+    )
     drew = False
-    for i, set_name in enumerate(("s1", "s2")):
+    for i, set_name in enumerate(set_names):
         set_pids = {
             r["pair_id"] for r in data["steered"] if r["set"] == set_name and r["pair_id"] in keep
         }
@@ -455,10 +475,10 @@ def fig_k_traces(data: dict, tag: str) -> None:
         plt.close(fig)
         print(f"[figures] k_traces {tag}: no per-pair traces — skipped")
         return
-    axes[1][0].set_xlabel("opening positions transplanted")
-    axes[1][1].set_xlabel("opening positions transplanted")
-    axes[0][0].set_ylabel("F steered − F null")
-    axes[1][0].set_ylabel("F steered − F null")
+    axes[-1][0].set_xlabel("opening positions transplanted")
+    axes[-1][1].set_xlabel("opening positions transplanted")
+    for i in range(len(set_names)):
+        axes[i][0].set_ylabel("F steered − F null")
     axes[0][0].legend(frameon=False, fontsize=8)
     fig.suptitle(f"{MODEL_LABEL[tag]}: per-pair traces (thin) + means (bold)", y=1.01)
     fig.tight_layout()

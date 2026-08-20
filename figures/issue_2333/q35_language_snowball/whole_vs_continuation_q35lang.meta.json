@@ -1,0 +1,3087 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "1460063ffe424338",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:37Z",
+  "figsize": [
+    4.6,
+    4.2
+  ],
+  "points": [
+    {
+      "whole-response F (donor opening included)": 0.23115832068791098,
+      "continuation-only F": 0.2139605462822458,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.21800708143651995,
+      "continuation-only F": 0.2068791097622661,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.22952477249747216,
+      "continuation-only F": 0.23053589484327602,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.2234580384226491,
+      "continuation-only F": 0.22649140546006064,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.023749368367862577,
+      "continuation-only F": 0.03082364830722584,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.03688731682668017,
+      "continuation-only F": 0.04194037392622534,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.07207661290322581,
+      "continuation-only F": 0.03477822580645159,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.05191532258064515,
+      "continuation-only F": 0.04183467741935488,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0010010010010009463,
+      "continuation-only F": 0.0010010010010009463,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0010010010010009463,
+      "continuation-only F": 0.0010010010010009463,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.8113968734241048,
+      "continuation-only F": 0.8134140191628845,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.8083711548159354,
+      "continuation-only F": 0.8083711548159354,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.02408111533586818,
+      "continuation-only F": 0.01394169835234478,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.001267427122940404,
+      "continuation-only F": 0.02408111533586818,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.01734693877551022,
+      "continuation-only F": -0.01734693877551022,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.012244897959183685,
+      "continuation-only F": -0.0045918367346938814,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.8091836734693877,
+      "continuation-only F": 0.7642857142857143,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.7642857142857143,
+      "continuation-only F": 0.7653061224489796,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.5512048192771085,
+      "continuation-only F": 0.5441767068273092,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.5421686746987953,
+      "continuation-only F": 0.5441767068273092,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.6093353627600203,
+      "continuation-only F": 0.5991882293252156,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.7470826991374936,
+      "continuation-only F": 0.7470826991374936,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.20171457387796268,
+      "continuation-only F": 0.20171457387796268,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.20171457387796268,
+      "continuation-only F": 0.20171457387796268,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.4084507042253521,
+      "continuation-only F": 0.40342052313883303,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.4074446680080483,
+      "continuation-only F": 0.4014084507042254,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010251153254740599,
+      "continuation-only F": 0.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010251153254740599,
+      "continuation-only F": -0.0010251153254740599,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.20873539867953278,
+      "continuation-only F": 0.20568816658202135,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.20771965464702893,
+      "continuation-only F": 0.20467242254951754,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": 0.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": 0.015060240963855435,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": 0.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": 0.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.4776422764227642,
+      "continuation-only F": 0.4763719512195122,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.4852642276422764,
+      "continuation-only F": 0.4776422764227642,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": 0.0010183299389002047,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": -0.001018329938900261,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0020237794080445247,
+      "continuation-only F": -0.0030356691120667872,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0020237794080445247,
+      "continuation-only F": 0.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9757330637007079,
+      "continuation-only F": 0.9514661274014157,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9828109201213346,
+      "continuation-only F": 0.9656218402426693,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0055611729019211945,
+      "continuation-only F": 0.002527805864509608,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0045500505561172945,
+      "continuation-only F": 0.002527805864509608,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.12821807168096927,
+      "continuation-only F": 0.12317011610297834,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.1201413427561838,
+      "continuation-only F": 0.1191317516405856,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.6936708860759494,
+      "continuation-only F": 0.6956962025316455,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.700759493670886,
+      "continuation-only F": 0.6855696202531646,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0065722952477252,
+      "continuation-only F": 1.007583417593529,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.007583417593529,
+      "continuation-only F": 1.0065722952477252,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.6168032786885247,
+      "continuation-only F": 0.5963114754098362,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.603483606557377,
+      "continuation-only F": 0.5963114754098362,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.7493658041603246,
+      "continuation-only F": 0.7493658041603246,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.6128868594622019,
+      "continuation-only F": 0.6047691527143582,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0005037783375314867,
+      "continuation-only F": -0.002518891687657489,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.002518891687657489,
+      "continuation-only F": -0.0035264483627204623,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.2044313381684865,
+      "continuation-only F": 0.2064397864031243,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.2546425440344306,
+      "continuation-only F": 0.2621742249143222,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.3982923154193872,
+      "continuation-only F": 0.3982923154193872,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.40030135610246104,
+      "continuation-only F": 0.3932697137117026,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0016835016835016663,
+      "continuation-only F": 0.0016835016835016663,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.02272727272727275,
+      "continuation-only F": 0.02272727272727275,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0025239777889954594,
+      "continuation-only F": -0.0025239777889954594,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.2574457344775366,
+      "continuation-only F": 0.24230186774356385,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.005042864346949,
+      "continuation-only F": 1.005042864346949,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.005042864346949,
+      "continuation-only F": 1.005042864346949,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.00452944136889784,
+      "continuation-only F": -0.00452944136889784,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0025163563160544113,
+      "continuation-only F": -0.0015098137896326132,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0040363269424823,
+      "continuation-only F": 1.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0040363269424823,
+      "continuation-only F": 0.9969727547931383,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015075376884421,
+      "continuation-only F": 1.000502512562814,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9994974874371859,
+      "continuation-only F": 0.9994974874371859,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0025759917568264,
+      "continuation-only F": 1.0025759917568264,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0012879958784133,
+      "continuation-only F": 1.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.5790800252047889,
+      "continuation-only F": 0.571518588531821,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.5853812224322621,
+      "continuation-only F": 0.5689981096408316,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.020544427324088357,
+      "continuation-only F": -0.02182845403184385,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.008217770929635344,
+      "continuation-only F": -0.009244992295839761,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0005005005005005009,
+      "continuation-only F": -0.0005005005005005009,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0005005005005005009,
+      "continuation-only F": 0.0005005005005005009,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.8308232931726907,
+      "continuation-only F": 0.8237951807228916,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.8308232931726907,
+      "continuation-only F": 0.835843373493976,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9989759344598056,
+      "continuation-only F": 0.9989759344598056,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9989759344598056,
+      "continuation-only F": 0.9969278033794164,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0022824536376604,
+      "continuation-only F": 1.0022824536376604,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0022824536376604,
+      "continuation-only F": 1.0022824536376604,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0030706243602865,
+      "continuation-only F": 1.0030706243602865,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0030706243602865,
+      "continuation-only F": 1.0030706243602865,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9100558659217877,
+      "continuation-only F": 0.8919553072625698,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9140782122905028,
+      "continuation-only F": 0.9201117318435754,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0030272452068617586,
+      "continuation-only F": 0.005045408678102931,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010090817356205861,
+      "continuation-only F": 0.0020181634712411163,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.3988653597708252,
+      "continuation-only F": 0.3938100320170758,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.39785429422007534,
+      "continuation-only F": 0.3948210975678257,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.012694958287994095,
+      "continuation-only F": 0.0025389916575988417,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.2577076532462821,
+      "continuation-only F": 0.251360174102285,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.7575370464997444,
+      "continuation-only F": 0.7677567705671946,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.7537046499744507,
+      "continuation-only F": 0.7677567705671946,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0010365379632029607,
+      "continuation-only F": 0.02047162477325737,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0010365379632029607,
+      "continuation-only F": 0.0023322104172066186,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0035158211953792095,
+      "continuation-only F": 0.0035158211953792095,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0035158211953792095,
+      "continuation-only F": 0.0035158211953792095,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.006895391860074023,
+      "continuation-only F": 0.00016818028927013503,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.006895391860074023,
+      "continuation-only F": 0.0035317860746721633,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9882832399388691,
+      "continuation-only F": 0.9730005094243506,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0035659704533877,
+      "continuation-only F": 0.991339786041773,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9932546374367623,
+      "continuation-only F": 0.9797639123102868,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0016863406408094,
+      "continuation-only F": 0.9797639123102867,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.34985725408772383,
+      "continuation-only F": 0.34466649364131846,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.30443810018167666,
+      "continuation-only F": 0.30314041007007525,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.8874810786567249,
+      "continuation-only F": 0.8874810786567249,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.8874810786567249,
+      "continuation-only F": 0.8753714189605876,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.005020080321285145,
+      "continuation-only F": 0.004016064257028116,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.005020080321285145,
+      "continuation-only F": 0.005020080321285145,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.4906234161175875,
+      "continuation-only F": 0.49265078560567666,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.5007602635580335,
+      "continuation-only F": 0.4977192093258997,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.5973154362416107,
+      "continuation-only F": 0.5973154362416107,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.5973154362416107,
+      "continuation-only F": 0.5973154362416107,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0055684119178478,
+      "continuation-only F": 1.0030373155915533,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0055684119178478,
+      "continuation-only F": 1.0055684119178478,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0070564516129032325,
+      "continuation-only F": 0.0070564516129032325,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0030241935483870993,
+      "continuation-only F": 0.017137096774193564,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.012748597654258044,
+      "continuation-only F": 0.012748597654258044,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.005099439061703218,
+      "continuation-only F": 0.005099439061703218,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010035122930256463,
+      "continuation-only F": -0.0010035122930256463,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010035122930256463,
+      "continuation-only F": -0.0010035122930256463,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.20701754385964904,
+      "continuation-only F": 0.21303258145363402,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.2210526315789473,
+      "continuation-only F": 0.2100250626566416,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.3997995991983968,
+      "continuation-only F": 0.39879759519038077,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.40981963927855714,
+      "continuation-only F": 0.3967935871743487,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9946218487394958,
+      "continuation-only F": 0.9966386554621849,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.9926050420168067,
+      "continuation-only F": 0.9986554621848739,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0102171136653895,
+      "continuation-only F": 1.0102171136653895,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 1.0051085568326947,
+      "continuation-only F": 0.9974457215836526,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0015052684395383859,
+      "continuation-only F": 0.0035122930255895666,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": -0.0015052684395384414,
+      "continuation-only F": 0.0035122930255895666,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0035140562248996573,
+      "continuation-only F": 0.0035140562248996573,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0035140562248996573,
+      "continuation-only F": 0.009538152610441832,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0007564296520423887,
+      "continuation-only F": 0.0032778618255169803,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.0007564296520423887,
+      "continuation-only F": 0.0007564296520423887,
+      "series": "1-token prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "whole-response F (donor opening included)": 0.4506828528072838,
+      "continuation-only F": 0.44461305007587254,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.4648457258472433,
+      "continuation-only F": 0.44056651492159843,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.07280080889787666,
+      "continuation-only F": 0.05763397371081895,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.08088978766430739,
+      "continuation-only F": 0.054600606673407534,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.4188984335522991,
+      "continuation-only F": 0.40879231935320864,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.4118241536129358,
+      "continuation-only F": 0.40272865083375436,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.1950604838709677,
+      "continuation-only F": 0.1930443548387097,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.19808467741935484,
+      "continuation-only F": 0.1930443548387097,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.20320320320320323,
+      "continuation-only F": 0.21121121121121122,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010010010010010019,
+      "continuation-only F": -0.0010010010010010019,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.5895108421583459,
+      "continuation-only F": 0.5552193645990923,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.5743822491174987,
+      "continuation-only F": 0.5158850226928895,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0012674271229404603,
+      "continuation-only F": 0.0012674271229404603,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.008027038445289356,
+      "continuation-only F": -0.004647232784114909,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.00714285714285715,
+      "continuation-only F": -0.002040816326530614,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.00646258503401363,
+      "continuation-only F": 0.004761904761904748,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9887755102040816,
+      "continuation-only F": 0.9897959183673469,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9938775510204082,
+      "continuation-only F": 0.9938775510204082,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.001004016064257,
+      "continuation-only F": 1.001004016064257,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.001004016064257,
+      "continuation-only F": 1.001004016064257,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.4185692541856925,
+      "continuation-only F": 0.4226281075596144,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.4226281075596144,
+      "continuation-only F": 0.419583967529173,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8552697932425617,
+      "continuation-only F": 0.8199697428139182,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8421583459404941,
+      "continuation-only F": 0.8229954614220878,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.7927565392354126,
+      "continuation-only F": 0.795774647887324,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.7907444668008049,
+      "continuation-only F": 0.7917505030181087,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.39774474628395695,
+      "continuation-only F": 0.40082009226037935,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.4018452075858534,
+      "continuation-only F": 0.4028703229113275,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9928897917724735,
+      "continuation-only F": 1.0030472320975115,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9979685119349924,
+      "continuation-only F": 0.9959370238699847,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9939759036144579,
+      "continuation-only F": 0.9939759036144579,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9889558232931727,
+      "continuation-only F": 0.9809236947791165,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9934191702432045,
+      "continuation-only F": 0.9894134477825464,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.7723533619456365,
+      "continuation-only F": 0.7798640915593705,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.5995934959349594,
+      "continuation-only F": 0.6067073170731707,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.616869918699187,
+      "continuation-only F": 0.5995934959349594,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0030549898167006703,
+      "continuation-only F": 0.0010183299389002047,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0010183299389002047,
+      "continuation-only F": 0.0020366598778004093,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.03136858082469008,
+      "continuation-only F": 0.03339236023273455,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.0030356691120667872,
+      "continuation-only F": -0.0020237794080445247,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0111223458038423,
+      "continuation-only F": 1.0010111223458038,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9959555106167847,
+      "continuation-only F": 1.0010111223458038,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.987360970677452,
+      "continuation-only F": 0.9853387259858444,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9742163801820022,
+      "continuation-only F": 0.9802831142568252,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.7627460878344271,
+      "continuation-only F": 0.7551741544674406,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.7526501766784452,
+      "continuation-only F": 0.7564361433619383,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0075949367088608,
+      "continuation-only F": 1.0065822784810126,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0075949367088608,
+      "continuation-only F": 1.0075949367088608,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0065722952477252,
+      "continuation-only F": 1.0065722952477252,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0065722952477252,
+      "continuation-only F": 1.0065722952477252,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8186475409836066,
+      "continuation-only F": 0.8043032786885247,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8125000000000001,
+      "continuation-only F": 0.8206967213114754,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8127853881278537,
+      "continuation-only F": 0.8026382546930491,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8107559614408928,
+      "continuation-only F": 0.8026382546930491,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.004534005037783491,
+      "continuation-only F": -0.005541561712846409,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.004534005037783491,
+      "continuation-only F": -0.004534005037783491,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9947557184984459,
+      "continuation-only F": 0.9927472702638082,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0005738423527536309,
+      "continuation-only F": 0.0005738423527536309,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0010045203415368,
+      "continuation-only F": 1.0010045203415368,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0010045203415368,
+      "continuation-only F": 1.0010045203415368,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.01717171717171713,
+      "continuation-only F": 0.003030303030303033,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.005050505050505055,
+      "continuation-only F": -0.005050505050505055,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.0025239777889954594,
+      "continuation-only F": 0.004206629648325746,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.003785966683493161,
+      "continuation-only F": 0.010095911155981838,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9778113968734241,
+      "continuation-only F": 0.9909228441754916,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9878971255673222,
+      "continuation-only F": 0.9979828542612204,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.006542526421741324,
+      "continuation-only F": -0.0015098137896326132,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.007549068948163066,
+      "continuation-only F": 0.0025163563160543554,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9989909182643795,
+      "continuation-only F": 1.0020181634712413,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0040363269424823,
+      "continuation-only F": 1.0040363269424823,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9984924623115577,
+      "continuation-only F": 0.9994974874371859,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9974874371859295,
+      "continuation-only F": 1.000502512562814,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9994848016486347,
+      "continuation-only F": 0.9994848016486347,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9984544049459042,
+      "continuation-only F": 0.9974240082431737,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8487712665406426,
+      "continuation-only F": 0.8215500945179584,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9987397605545054,
+      "continuation-only F": 0.9987397605545054,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.2555213148433487,
+      "continuation-only F": 0.25295326142783764,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.022256462934429035,
+      "continuation-only F": -0.017120356103407005,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0015015015015014473,
+      "continuation-only F": 0.0035035035035035065,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.011511511511511521,
+      "continuation-only F": 0.0025025025025025046,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015060240963856,
+      "continuation-only F": 1.0015060240963856,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015060240963856,
+      "continuation-only F": 1.0015060240963856,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8361495135688685,
+      "continuation-only F": 0.8361495135688685,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8361495135688685,
+      "continuation-only F": 0.8259088581669227,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0009985734664764,
+      "continuation-only F": 0.9984308131241083,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9971469329529243,
+      "continuation-only F": 0.9984308131241083,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0030706243602865,
+      "continuation-only F": 1.0030706243602865,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0030706243602865,
+      "continuation-only F": 1.0030706243602865,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9643575418994413,
+      "continuation-only F": 0.9603351955307262,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9703910614525141,
+      "continuation-only F": 0.9643575418994413,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0010090817356205,
+      "continuation-only F": 1.0010090817356205,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0010090817356205,
+      "continuation-only F": 1.0010090817356205,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0024714935684997,
+      "continuation-only F": 1.0095489524237489,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0075268213222492,
+      "continuation-only F": 1.0095489524237489,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.7865796155241204,
+      "continuation-only F": 0.791657598839318,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9825897714907508,
+      "continuation-only F": 0.9762422923467536,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9900357690342361,
+      "continuation-only F": 0.9900357690342361,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9879066598535171,
+      "continuation-only F": 0.9879066598535171,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0259134490800725,
+      "continuation-only F": 1.034983156258098,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0090697071780255,
+      "continuation-only F": 1.034983156258098,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8071320944249121,
+      "continuation-only F": 0.8071320944249121,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.8071320944249121,
+      "continuation-only F": 0.8031140130587644,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0025227043390514,
+      "continuation-only F": 0.9954591321897073,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9873864783047426,
+      "continuation-only F": 0.9954591321897073,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.991339786041773,
+      "continuation-only F": 0.9984717269485482,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9984717269485482,
+      "continuation-only F": 0.9984717269485482,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.984822934232715,
+      "continuation-only F": 0.9873524451939292,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.6559865092748736,
+      "continuation-only F": 0.6526138279932547,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.4214897482481184,
+      "continuation-only F": 0.41318453153386975,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.34985725408772383,
+      "continuation-only F": 0.3429362401591834,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.998486292537983,
+      "continuation-only F": 0.9883949094578686,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.99646801592196,
+      "continuation-only F": 0.998486292537983,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.002008032128514,
+      "continuation-only F": 1.002008032128514,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0040160642570282,
+      "continuation-only F": 1.0040160642570282,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9964521033958439,
+      "continuation-only F": 0.9934110491637101,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9984794728839332,
+      "continuation-only F": 1.0035478966041562,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9919463087248322,
+      "continuation-only F": 0.9979865771812082,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9929530201342281,
+      "continuation-only F": 0.9899328859060403,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0080995082441424,
+      "continuation-only F": 1.0080995082441424,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0080995082441424,
+      "continuation-only F": 1.0080995082441424,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 0.9959677419354839,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": 0.009072580645161298,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.002549719530851552,
+      "continuation-only F": 0.012748597654257987,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.004249532551419329,
+      "continuation-only F": -0.0008499065102838319,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.0030105368790767717,
+      "continuation-only F": -0.0030105368790767717,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010035122930256463,
+      "continuation-only F": -0.0030105368790767717,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9909774436090225,
+      "continuation-only F": 0.9929824561403509,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0997493734335839,
+      "continuation-only F": 0.1007518796992481,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.001002004008016,
+      "continuation-only F": 1.001002004008016,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.9939879759519038,
+      "continuation-only F": 0.9939879759519038,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0067226890756302,
+      "continuation-only F": 1.0033613445378151,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0067226890756302,
+      "continuation-only F": 1.0067226890756302,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0076628352490422,
+      "continuation-only F": 1.0051085568326947,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0051085568326947,
+      "continuation-only F": 1.0025542784163473,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 0.9829402910185651,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.09182137481184148,
+      "continuation-only F": -0.0035122930255895666,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.5005020080321285,
+      "continuation-only F": 0.5005020080321285,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.0005020080321285146,
+      "continuation-only F": 0.0005020080321285146,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": -0.0035300050428643498,
+      "continuation-only F": -0.0015128593040846655,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.007564296520423663,
+      "continuation-only F": 0.0035300050428644057,
+      "series": "2-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "whole-response F (donor opening included)": 0.7744056651492162,
+      "continuation-only F": 0.7703591299949419,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.7693474962063733,
+      "continuation-only F": 0.7744056651492162,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.0495449949443882,
+      "continuation-only F": 0.05055611729019216,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.05055611729019216,
+      "continuation-only F": 0.06370070778564206,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.2905507832238504,
+      "continuation-only F": 0.25922182920667,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.29661445174330464,
+      "continuation-only F": 0.24002021222839817,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.030745967741935457,
+      "continuation-only F": 0.01663306451612905,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.037802419354838745,
+      "continuation-only F": 0.022681451612903192,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.6096096096096096,
+      "continuation-only F": 0.6046046046046046,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.0010010010010010019,
+      "continuation-only F": 0.0030030030030030056,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.3091275844679778,
+      "continuation-only F": 0.2889561270801815,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.3393847705496722,
+      "continuation-only F": 0.2909732728189611,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.012251795521757557,
+      "continuation-only F": 0.01732150401351923,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.003802281368821268,
+      "continuation-only F": 0.0025348542458808643,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.02091836734693874,
+      "continuation-only F": 0.02091836734693874,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.009863945578231283,
+      "continuation-only F": 0.009863945578231283,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9897959183673469,
+      "continuation-only F": 0.9877551020408163,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9918367346938776,
+      "continuation-only F": 0.9908163265306122,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.6194779116465864,
+      "continuation-only F": 0.6194779116465864,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.6164658634538153,
+      "continuation-only F": 0.6164658634538153,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.22374429223744288,
+      "continuation-only F": 0.22171486555048195,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.42364282090309485,
+      "continuation-only F": 0.4307458143074581,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0085728693898133,
+      "continuation-only F": 1.0085728693898133,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0075642965204235,
+      "continuation-only F": 1.0085728693898133,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9869215291750503,
+      "continuation-only F": 0.9929577464788732,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9879275653923542,
+      "continuation-only F": 0.9808853118712273,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9953869810353665,
+      "continuation-only F": 0.9974372116863147,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0005125576627372,
+      "continuation-only F": 1.0117888262429524,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0152361604875573,
+      "continuation-only F": 1.0101574403250382,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0132046724225496,
+      "continuation-only F": 1.0121889283900458,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8092369477911647,
+      "continuation-only F": 0.8062248995983936,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8102409638554217,
+      "continuation-only F": 0.8062248995983936,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.994420600858369,
+      "continuation-only F": 0.9954220314735335,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9388412017167381,
+      "continuation-only F": 0.9263233190271817,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9883130081300813,
+      "continuation-only F": 0.9845020325203252,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.983739837398374,
+      "continuation-only F": 1.0010162601626016,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.006109979633401228,
+      "continuation-only F": -0.001018329938900261,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.003054989816700614,
+      "continuation-only F": -0.003054989816700614,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.03996964330887931,
+      "continuation-only F": 0.042499367568934965,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.0,
+      "continuation-only F": 0.0010118897040222623,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9716885743174924,
+      "continuation-only F": 0.980788675429727,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8624873609706775,
+      "continuation-only F": 0.8746208291203236,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8174924165824066,
+      "continuation-only F": 0.8124368048533873,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8185035389282104,
+      "continuation-only F": 0.8094034378159758,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8995456839979807,
+      "continuation-only F": 0.9257950530035336,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8975265017667844,
+      "continuation-only F": 0.8904593639575973,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0025316455696203,
+      "continuation-only F": 1.0055696202531645,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8982278481012658,
+      "continuation-only F": 0.90126582278481,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.000505561172902,
+      "continuation-only F": 1.001516683518706,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9954499494438828,
+      "continuation-only F": 0.9964610717896866,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9989754098360657,
+      "continuation-only F": 1.0040983606557379,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9918032786885246,
+      "continuation-only F": 0.9836065573770492,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0030441400304413,
+      "continuation-only F": 0.9992389649923896,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0055809233891426,
+      "continuation-only F": 1.0030441400304413,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.019647355163727866,
+      "continuation-only F": -0.002518891687657489,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.006549118387909382,
+      "continuation-only F": -0.006549118387909382,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.002789511436997,
+      "continuation-only F": 1.002789511436997,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.0005738423527536309,
+      "continuation-only F": 0.0005738423527536309,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9939728779507785,
+      "continuation-only F": 0.9959819186338523,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9959819186338523,
+      "continuation-only F": 0.9959819186338523,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.01010101010101011,
+      "continuation-only F": 0.0063131313131312905,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.0025252525252525276,
+      "continuation-only F": -0.0025252525252525276,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.6671714622244659,
+      "continuation-only F": 0.9952885747938752,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.005889281507656034,
+      "continuation-only F": 0.014302540804307583,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9949571356530509,
+      "continuation-only F": 0.9929399899142712,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0030257186081695,
+      "continuation-only F": 0.9979828542612204,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0020130850528435,
+      "continuation-only F": 1.0020130850528435,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.006542526421741324,
+      "continuation-only F": 0.0035228988424760976,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9899091826437942,
+      "continuation-only F": 0.9868819374369324,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9818365287588295,
+      "continuation-only F": 0.9767911200807265,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015075376884421,
+      "continuation-only F": 1.0015075376884421,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015075376884421,
+      "continuation-only F": 0.9994974874371859,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9881504379185988,
+      "continuation-only F": 0.9778464708912932,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9850592478104071,
+      "continuation-only F": 0.9881504379185988,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9959672337744171,
+      "continuation-only F": 0.9979836168872086,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.25423728813559315,
+      "continuation-only F": 0.2568053415511042,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.010272213662044179,
+      "continuation-only F": -0.01155624036979973,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.2267267267267267,
+      "continuation-only F": 0.21471471471471468,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.004504504504504509,
+      "continuation-only F": 0.004504504504504509,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015060240963856,
+      "continuation-only F": 1.0015060240963856,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015060240963856,
+      "continuation-only F": 1.0015060240963856,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.822836661546339,
+      "continuation-only F": 0.8259088581669227,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8361495135688685,
+      "continuation-only F": 0.8361495135688685,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9997146932952924,
+      "continuation-only F": 0.9997146932952924,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9997146932952924,
+      "continuation-only F": 0.9932952924393722,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8157625383828044,
+      "continuation-only F": 0.8065506653019447,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8219037871033776,
+      "continuation-only F": 0.804503582395087,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9522905027932961,
+      "continuation-only F": 0.9522905027932961,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9603351955307262,
+      "continuation-only F": 0.9432402234636871,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 1.0,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9989909182643795,
+      "continuation-only F": 0.9989909182643795,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0,
+      "continuation-only F": 0.9989909182643795,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9981744649778128,
+      "continuation-only F": 0.9943829691625007,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0075268213222492,
+      "continuation-only F": 1.0055046902207494,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.7303832668359327,
+      "continuation-only F": 0.8776447829766654,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.5128763148349654,
+      "continuation-only F": 0.520493289807762,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0066428206438427,
+      "continuation-only F": 1.0032362459546926,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015329586101174,
+      "continuation-only F": 1.0100493953329925,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9987043275459964,
+      "continuation-only F": 0.9831562580979529,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0220264317180616,
+      "continuation-only F": 1.0168437419020473,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8071320944249121,
+      "continuation-only F": 0.8051230537418382,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8061275740833751,
+      "continuation-only F": 0.8061275740833751,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9974772956609484,
+      "continuation-only F": 0.994954591321897,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0055499495459133,
+      "continuation-only F": 0.9853683148335015,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0015282730514519,
+      "continuation-only F": 0.9933774834437087,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9933774834437087,
+      "continuation-only F": 0.9933774834437087,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.03372681281618886,
+      "continuation-only F": 0.018549747048903914,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.6812816188870152,
+      "continuation-only F": 0.6762225969645869,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9987023098883987,
+      "continuation-only F": 1.0116792110044122,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0177350981918851,
+      "continuation-only F": 1.0056233238169392,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.998486292537983,
+      "continuation-only F": 0.9934406009979257,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.998486292537983,
+      "continuation-only F": 0.9934406009979257,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9919678714859438,
+      "continuation-only F": 0.9839357429718876,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9959839357429718,
+      "continuation-only F": 0.9909638554216867,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.00658895083629,
+      "continuation-only F": 1.0035478966041562,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9954384186517994,
+      "continuation-only F": 1.0035478966041562,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.99748322147651,
+      "continuation-only F": 0.9962248322147651,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9911912751677852,
+      "continuation-only F": 0.99748322147651,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0080995082441424,
+      "continuation-only F": 1.0080995082441424,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0080995082441424,
+      "continuation-only F": 1.0060746311831068,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9979838709677419,
+      "continuation-only F": 0.9939516129032258,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.008064516129032265,
+      "continuation-only F": -0.008064516129032265,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.49209586945436007,
+      "continuation-only F": 0.7266700662927079,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.005099439061703218,
+      "continuation-only F": 0.12366139724630294,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.0030105368790768272,
+      "continuation-only F": -0.0030105368790767717,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.009031610637230314,
+      "continuation-only F": 0.002007024586051181,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9849624060150376,
+      "continuation-only F": 0.9829573934837093,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.002506265664160459,
+      "continuation-only F": -0.000501253132832192,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.001002004008016,
+      "continuation-only F": 1.001002004008016,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.001002004008016,
+      "continuation-only F": 1.001002004008016,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9058823529411766,
+      "continuation-only F": 0.9046218487394958,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9941176470588236,
+      "continuation-only F": 0.9978991596638654,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0102171136653895,
+      "continuation-only F": 1.0102171136653895,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 1.0089399744572158,
+      "continuation-only F": 1.0076628352490422,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.9949824385348721,
+      "continuation-only F": 0.9949824385348721,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.005519317611640748,
+      "continuation-only F": 0.10386352232814856,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.8619477911646587,
+      "continuation-only F": 0.8644578313253012,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.0005020080321285146,
+      "continuation-only F": -0.0015060240963854878,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": 0.19515885022692894,
+      "continuation-only F": 0.19616742309631877,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "whole-response F (donor opening included)": -0.0035300050428643498,
+      "continuation-only F": -0.0005042864346948511,
+      "series": "3-tokens prefill (n=144)",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 432,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen3.5-9B, language cells: prefill steered rows",
+        "xlabel": "whole-response F (donor opening included)",
+        "ylabel": "continuation-only F",
+        "legend_labels": [
+          "1-token prefill (n=144)",
+          "2-tokens prefill (n=144)",
+          "3-tokens prefill (n=144)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "1-token prefill (n=144)",
+      "2-tokens prefill (n=144)",
+      "3-tokens prefill (n=144)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

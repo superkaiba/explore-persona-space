@@ -1,0 +1,5223 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "c5e01f32451c43b2",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:31Z",
+  "figsize": [
+    8.4,
+    3.0
+  ],
+  "points": [
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.9610520991401114,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.8811330298431969,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4795144157814872,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.053589484327603576,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.07381193124368043,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.056622851365015214,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6993431025770591,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.14451743304699338,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.13365336028297115,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.4667338709677419,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4465725806451613,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4516129032258065,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.3063063063063063,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4254254254254254,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.3916416416416416,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.8939597315436241,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.49161073825503343,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.47617449664429523,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.17448310640443765,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.24710035300050426,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.24004034291477555,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.020278833967046914,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4850021123785383,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5019011406844106,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.49659863945578225,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.48724489795918374,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.573469387755102,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5102040816326531,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4744897959183674,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.37755102040816324,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.22791164658634538,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.0803212851405623,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.0853413654618474,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.13292744799594114,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.7369355657026889,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.6017250126839168,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.47806354009077157,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.690872415532022,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.6424609178013112,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.23943661971830987,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.3561368209255533,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.27364185110663986,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.0010251153254741737,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.36699128651973356,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.03229113275243445,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.30269172168613523,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5698324022346368,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.021330624682579957,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.3875502008032128,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.29518072289156627,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.6927710843373495,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5415236051502146,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5795779685264664,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.42727706247019553,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5985772357723578,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5721544715447155,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4451219512195122,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.4921928038017651,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4862525458248472,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4826883910386965,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.049582595497090855,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.31065013913483425,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.1307867442448774,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.3761375126390293,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.12639029322548034,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.1769464105156725,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.48230535894843285,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6774519716885745,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.49949443882709826,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.015143866733972777,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.49873801110550214,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.3122160524987379,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7959493670886075,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5832911392405065,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.40506329113924044,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.8827098078867546,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6784630940343781,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.7886754297269972,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4492827868852459,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.49846311475409844,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.49897540983606564,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6565195332318619,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.19583967529173008,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.007102993404363156,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.06146095717884125,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.004030226700251893,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.29118387909319904,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.4059575994261576,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4067107675141468,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.48303180043038174,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.394776494224008,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5826217980914113,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5645404319437468,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.16161616161616166,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.20244107744107745,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5037878787878788,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.24987380111055024,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.23851590106007065,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.1325088339222615,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4851235501765001,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4306606152294503,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.33383761976802817,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.11373930548565682,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.11575239053850024,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.041268243583291425,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5277497477295661,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.9717457114026237,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.8486377396569122,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5587939698492462,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4723618090452262,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4804020100502513,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.12804032766225582,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.37555135475740387,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.04133585381222432,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.49135422016777947,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4848484848484848,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5136106831022085,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.4974974974974975,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4874874874874875,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5005005005005005,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4907128514056224,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.48862115127175376,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4904618473895581,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4557091653865848,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4208909370199694,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.495647721454173,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6243937232524963,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4776034236804565,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.29169757489300985,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.37458100558659224,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.49977653631284924,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.6516201117318436,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.47455919395466006,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4942065491183879,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4977329974811083,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5423814328960646,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4873864783047427,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.3128153380423815,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.2729876987024658,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.1814862663596023,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.7107790821771611,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4857937371539112,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.2846209648168299,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.01946560270825759,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.005109862033725094,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.11624936126724583,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.007153806847214894,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5061760386974173,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4940830957933835,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5148138550574415,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7905575087895529,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.06002009040683076,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.16675037669512804,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.512108980827447,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.49268415741675076,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4894046417759838,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.17880794701986757,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4014263881813551,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.01426388181355076,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6129848229342327,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.17790893760539628,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4983136593591905,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7497897628524977,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.016146212928182968,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.04137467062846911,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4809236947791164,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.19277108433734935,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.01807228915662662,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4764318297009629,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5119107957425242,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.38255033557046986,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4039429530201342,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4791946308724832,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.49204512583164595,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.47204946485391963,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.49204512583164595,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.020161290322580655,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.21673387096774197,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5040322580645161,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.22947475777664456,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.23712391636919944,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4767975522692504,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.40742599096838944,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.49974912192674364,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.40341194179628703,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.1556390977443609,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.2696741854636592,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4521303258145364,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.09519038076152297,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5661322645290581,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.56312625250501,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6050420168067228,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5026890756302521,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.47016806722689075,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 1.0076628352490422,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.29076202639421045,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.9481481481481482,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.02007024586051181,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.7646763672854994,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.035122930255895725,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.49096385542168675,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.40261044176706834,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4929718875502008,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.4952092788703984,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4952092788703984,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5017650025214322,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.23647418794730912,
+      "series": "state patch",
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.1807168485727762,
+      "series": "state patch",
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.13919031451005748,
+      "series": "state patch",
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.22964087000505815,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4600404653515428,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.7425392008093071,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.23255813953488375,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.07583417593528817,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.3599595551061678,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.0848913592723598,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.20010106114199094,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.036290322580645136,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.30342741935483863,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.46370967741935476,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.10810810810810814,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.3113113113113113,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5005005005005005,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.9790268456375839,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6711409395973154,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4983221476510067,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7766011094301563,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.058497226424609194,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.16641452344931917,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.0038022813688213244,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.5188001689902831,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.34220532319391633,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.01020408163265307,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4863945578231292,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4064625850340136,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7591836734693879,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4977040816326531,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4969387755102041,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.533132530120482,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6666666666666667,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.20883534136546184,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7425164890918314,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4170471841704719,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4147640791476408,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.10085728693898137,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.339889056984367,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.6505295007564296,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4074446680080483,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6941649899396379,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.19014084507042261,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.00512557662737064,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4038954382368016,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.19477191184008213,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.20721178263077702,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.9954291518537328,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.8075165058405283,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.0,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.9889558232931727,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.610441767068273,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.007010014306151651,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4769313304721029,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5916785884597042,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.10416666666666663,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4857723577235772,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.858739837398374,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.12678207739307537,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.021384928716904294,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.2711303462321792,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.014166455856311619,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4249936756893498,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4067796610169491,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.9764914054600606,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.9888776541961578,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.07583417593528818,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.2982810920121335,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5652173913043479,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4266936299292215,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.06966178697627462,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.24987380111055024,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4048460373548712,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6997468354430378,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 1.0075949367088608,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5832911392405062,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7724974721941357,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.7815975733063704,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.8816986855409505,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6127049180327868,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.3217213114754099,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.49795081967213106,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6078132927447994,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.8008625063419582,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 1.0055809233891426,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.11385390428211588,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.013098236775818707,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.2025188916876574,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.10142663584920703,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.40595759942615767,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.40470231927950906,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.3987945755901557,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.8940231039678552,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.0,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.351010101010101,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.2777777777777778,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5025252525252525,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.07992596331818946,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4984856133266028,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4963822985024399,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7009581442259202,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4881492687846697,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5426122037317196,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.30196275792652244,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.005032712632108711,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.1922496225465526,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.9939455095862765,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6281533804238144,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.7093844601412715,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5889447236180905,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5839195979899496,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.48743718592964824,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.49639361154044315,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5046367851622875,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4719216898505926,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.08611636210880064,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.48603234614576774,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5000630119722747,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.2573189522342064,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.5392912172573189,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.49820236260914225,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.0040040040040040074,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.2862862862862863,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4904904904904905,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6538654618473895,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4894578313253013,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4949799196787149,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5663082437275987,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.3379416282642089,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.32258064516129037,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 1.0253922967189728,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5916119828815978,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.49557774607703275,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.4998294097577618,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.48618219037871024,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.32548618219037867,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.909050279329609,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6315083798882684,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5027932960893855,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.5662468513853904,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5843828715365239,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.48866498740554154,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.22199798183652875,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.48940464177598375,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5015136226034309,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.368027860472954,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.3326405661967087,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.026287704319496896,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.15767138193688784,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.3046789989118607,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.49383387740297435,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7537046499744507,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.9879066598535171,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.20030659172202336,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.0,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.5053122570614149,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5053122570614148,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.0040180813661476675,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.021094927172275235,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.18382722250125572,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.49613185334678767,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4927682475613857,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5176589303733603,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.6639497367974189,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.0030565461029036234,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.015282730514518561,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7630691399662731,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.1694772344013491,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.18718381112984822,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.7618994225486349,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.9970286483152997,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.40769187643662075,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.005020080321285145,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.9016064257028114,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.8286479250334671,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.0016894745734076233,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.49265078560567677,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5889508362899138,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.10067114093959723,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4963087248322147,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.49454697986577173,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.8074197280879376,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.521405843216662,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5062192652588952,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.32459677419354843,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.39717741935483875,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5040322580645161,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.4580996090430053,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4929457759646439,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.4767975522692504,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.313095835423984,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.38434520822880086,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.48469643753135977,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.27769423558897244,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.3989974937343359,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.38220551378446116,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.40681362725450904,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.4939879759519038,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.5010020040080161,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.883361344537815,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.6030252100840336,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.4915966386554622,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 1.011494252873563,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 1.003831417624521,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.0012771392081736277,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.0,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.0903161063723031,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5990968389362771,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.391566265060241,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.48995983935742976,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": -0.2962682803832577,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": -0.4810892586989409,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": -0.5022692889561271,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "F steered \u2212 F null": 0.2550225020737945,
+      "series": "token prefill",
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "F steered \u2212 F null": 0.29292083429452376,
+      "series": "token prefill",
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "F steered \u2212 F null": 0.15549594367873512,
+      "series": "token prefill",
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9276681841173496,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5624683864441073,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5058168942842691,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.43680485338725994,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.45904954499494444,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.4721941354903943,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.11419909044972221,
+      "_kind": "line",
+      "_group": 144
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.12430520464881245,
+      "_kind": "line",
+      "_group": 144
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.13946437594744832,
+      "_kind": "line",
+      "_group": 144
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.2681451612903225,
+      "_kind": "line",
+      "_group": 145
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.13684475806451613,
+      "_kind": "line",
+      "_group": 145
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.02620967741935481,
+      "_kind": "line",
+      "_group": 145
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7217217217217217,
+      "_kind": "line",
+      "_group": 146
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4534534534534534,
+      "_kind": "line",
+      "_group": 146
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5695695695695695,
+      "_kind": "line",
+      "_group": 146
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.8798657718120805,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5033557046979865,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4907718120805369,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.15733736762481088,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.014120020171457304,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.23701462430660614,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.02230671736375156,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.17101816645542883,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.12294043092522183,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.2164115646258503,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.10459183673469388,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.036734693877551045,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.36122448979591837,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9204081632653062,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.75,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.2038152610441768,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.10341365461847385,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.09136546184738953,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.03906646372399795,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.3896499238964992,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.13318112633181128,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7049924357034794,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.599092284417549,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6354009077155824,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5020120724346077,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6096579476861166,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5824949698189135,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.10866222450025625,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6324961558175294,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4028703229113276,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5053326561706452,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5840528186896903,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.7160995429151855,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.0356425702811245,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6947791164658634,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6124497991967872,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.426859799713877,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4619098712446352,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.45214592274678106,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5233739837398375,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6001016260162603,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4776422764227642,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.1459606245756958,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.10692464358452142,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.12729124236252543,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.15684290412345048,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5025718863310565,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6830255502150264,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6632962588473206,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6764408493427705,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.551061678463094,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4752275025278058,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6825075834175935,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6784630940343783,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.3897021706208985,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.25744573447753666,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.502776375567895,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.019240506329113942,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.03240506329113927,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.02430379746835445,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.737108190091001,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.8473205257836199,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.7735085945399396,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6393442622950818,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.48565573770491804,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6639344262295082,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.997970573313039,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9863013698630136,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.873668188736682,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.730478589420655,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9924433249370278,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.8906801007556675,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.2771658563800112,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.47332430062963265,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5011078345421216,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6810647915620291,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.48719236564540425,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5404319437468609,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7121212121212122,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.06313131313131315,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5787878787878787,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.4896516910651186,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.47955577990913667,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5017667844522969,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.30156328794755416,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4357034795763993,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4092284417549168,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.0010065425264217942,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9018621036738803,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.8847508807247105,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6298351833165153,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5893037336024218,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.941473259334006,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6334170854271357,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.21105527638190957,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.24095477386934672,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5607075390692083,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.29108706852138067,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.726944873776404,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9860113421550093,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.009829867674858273,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.04032766225582862,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.16521143639787705,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.17462763225475098,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.018489984591679498,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.11311311311311312,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.11911911911911911,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.9519519519519518,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4839357429718876,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.49397590361445787,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5753012048192772,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6011264720942141,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6354326676907323,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.12135176651305679,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.8671326676176889,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.642453637660485,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.3902995720399429,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 1.0030706243602865,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5342886386898669,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.29682702149437057,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.33787709497206697,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.386145251396648,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.8497206703910615,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5934508816120907,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.37178841309823674,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4997481108312342,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6942482341069627,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.48335015136226034,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5671039354187689,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.29194517777902596,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.49719148458125034,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6784249845531652,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.4803772216177004,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.31610446137105547,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4979808971103858,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.44941236586612154,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.2529381706693919,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5071538068472152,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5079036019694222,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.49235553252137865,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.626068929774553,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.012054244098442968,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.526368658965344,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5183324962330487,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5318701648166835,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4991590985536494,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5075681130171543,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5053489556800815,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5002547121752421,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4839531329597555,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6146711635750423,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6349072512647554,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.49704890387858347,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9384986264506364,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.47631328138139817,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4924594943095813,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.10742971887550196,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.16064257028112447,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.1757028112449799,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5106436898124682,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4956918398378105,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4916371008616321,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.48825503355704697,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.48624161073825506,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.226510067114094,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.4960948799537171,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.4090251663291872,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5732933179056985,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.654233870967742,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.7903225806451613,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5151209677419355,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.3416624171341153,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.2549719530851607,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.525242223355431,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.15654791771199206,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.12242849974912187,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.28600100351229296,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4882205513784462,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4498746867167919,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.07719298245614031,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4669338677354709,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4939879759519038,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5631262525050101,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.35193277310924365,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.49327731092436977,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.467142857142857,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.30038314176245207,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.4934865900383142,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.47943805874840345,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7516307074761666,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9713998996487707,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.9794279979929755,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.4216867469879519,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5993975903614458,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.2981927710843374,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.4853756933938477,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.002521432173474558,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.3469490670700958,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.3301756332363506,
+      "series": "state patch",
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.3765623750622527,
+      "series": "state patch",
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4328200190962923,
+      "series": "state patch",
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.24279210925644917,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.46063058506154114,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.38770864946889244,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.2103134479271992,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.42669362992922144,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.44489383215369066,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.018191005558362765,
+      "_kind": "line",
+      "_group": 216
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.07983830217281457,
+      "_kind": "line",
+      "_group": 216
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.20818595250126326,
+      "_kind": "line",
+      "_group": 216
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.07056451612903226,
+      "_kind": "line",
+      "_group": 217
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.3014112903225807,
+      "_kind": "line",
+      "_group": 217
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.467741935483871,
+      "_kind": "line",
+      "_group": 217
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.11011011011011015,
+      "_kind": "line",
+      "_group": 218
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.11611611611611611,
+      "_kind": "line",
+      "_group": 218
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.11011011011011013,
+      "_kind": "line",
+      "_group": 218
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9865771812080536,
+      "_kind": "line",
+      "_group": 219
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.802013422818792,
+      "_kind": "line",
+      "_group": 219
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4983221476510067,
+      "_kind": "line",
+      "_group": 219
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7695410993444276,
+      "_kind": "line",
+      "_group": 220
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.07362581946545643,
+      "_kind": "line",
+      "_group": 220
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.2017145738779626,
+      "_kind": "line",
+      "_group": 220
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.02365863962822136,
+      "_kind": "line",
+      "_group": 221
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.5061258977608788,
+      "_kind": "line",
+      "_group": 221
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.34305027460921,
+      "_kind": "line",
+      "_group": 221
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.015306122448979607,
+      "_kind": "line",
+      "_group": 222
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 222
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.43367346938775514,
+      "_kind": "line",
+      "_group": 222
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7900510204081632,
+      "_kind": "line",
+      "_group": 223
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4989795918367347,
+      "_kind": "line",
+      "_group": 223
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4897959183673469,
+      "_kind": "line",
+      "_group": 223
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5391566265060241,
+      "_kind": "line",
+      "_group": 224
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6746987951807228,
+      "_kind": "line",
+      "_group": 224
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.20983935742971888,
+      "_kind": "line",
+      "_group": 224
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6027397260273972,
+      "_kind": "line",
+      "_group": 225
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4200913242009132,
+      "_kind": "line",
+      "_group": 225
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.21486555048198883,
+      "_kind": "line",
+      "_group": 225
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.10085728693898137,
+      "_kind": "line",
+      "_group": 226
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.35098335854765506,
+      "_kind": "line",
+      "_group": 226
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6515380736258194,
+      "_kind": "line",
+      "_group": 226
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4084507042253521,
+      "_kind": "line",
+      "_group": 227
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6951710261569417,
+      "_kind": "line",
+      "_group": 227
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6991951710261569,
+      "_kind": "line",
+      "_group": 227
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.0061506919528447005,
+      "_kind": "line",
+      "_group": 228
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.1076371091747822,
+      "_kind": "line",
+      "_group": 228
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4951307022039979,
+      "_kind": "line",
+      "_group": 228
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.2092432706957847,
+      "_kind": "line",
+      "_group": 229
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.990350431691214,
+      "_kind": "line",
+      "_group": 229
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.0157440325038092,
+      "_kind": "line",
+      "_group": 229
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 230
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9939759036144579,
+      "_kind": "line",
+      "_group": 230
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6997991967871486,
+      "_kind": "line",
+      "_group": 230
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.007010014306151651,
+      "_kind": "line",
+      "_group": 231
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6959942775393417,
+      "_kind": "line",
+      "_group": 231
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6126251788268955,
+      "_kind": "line",
+      "_group": 231
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.13719512195121947,
+      "_kind": "line",
+      "_group": 232
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.30487804878048785,
+      "_kind": "line",
+      "_group": 232
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6915650406504065,
+      "_kind": "line",
+      "_group": 232
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.12423625254582485,
+      "_kind": "line",
+      "_group": 233
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.26883910386965376,
+      "_kind": "line",
+      "_group": 233
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.34385607603530216,
+      "_kind": "line",
+      "_group": 233
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.015178345560333935,
+      "_kind": "line",
+      "_group": 234
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.390589425752593,
+      "_kind": "line",
+      "_group": 234
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.08145712117379207,
+      "_kind": "line",
+      "_group": 234
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9726996966632964,
+      "_kind": "line",
+      "_group": 235
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.757077856420627,
+      "_kind": "line",
+      "_group": 235
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4914054600606674,
+      "_kind": "line",
+      "_group": 235
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.29423660262891804,
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5803842264914054,
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.42366026289181,
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.06663301362948004,
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.2599697122665321,
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.41191317516405845,
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6865822784810127,
+      "_kind": "line",
+      "_group": 238
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9032911392405064,
+      "_kind": "line",
+      "_group": 238
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.8992405063291139,
+      "_kind": "line",
+      "_group": 238
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.8634984833164815,
+      "_kind": "line",
+      "_group": 239
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.7785642062689587,
+      "_kind": "line",
+      "_group": 239
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.8816986855409505,
+      "_kind": "line",
+      "_group": 239
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6250000000000001,
+      "_kind": "line",
+      "_group": 240
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.32991803278688525,
+      "_kind": "line",
+      "_group": 240
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5051229508196722,
+      "_kind": "line",
+      "_group": 240
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7493658041603246,
+      "_kind": "line",
+      "_group": 241
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.8127853881278537,
+      "_kind": "line",
+      "_group": 241
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.0121765601217656,
+      "_kind": "line",
+      "_group": 241
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.12493702770780851,
+      "_kind": "line",
+      "_group": 242
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.010075566750629789,
+      "_kind": "line",
+      "_group": 242
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.17833753148614614,
+      "_kind": "line",
+      "_group": 242
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.13155335936877346,
+      "_kind": "line",
+      "_group": 243
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6597752450785048,
+      "_kind": "line",
+      "_group": 243
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6899019685980712,
+      "_kind": "line",
+      "_group": 243
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4018081366147664,
+      "_kind": "line",
+      "_group": 244
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.8920140632847814,
+      "_kind": "line",
+      "_group": 244
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.861878453038674,
+      "_kind": "line",
+      "_group": 244
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.37542087542087543,
+      "_kind": "line",
+      "_group": 245
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.1545454545454546,
+      "_kind": "line",
+      "_group": 245
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.4898989898989899,
+      "_kind": "line",
+      "_group": 245
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.3398956755847215,
+      "_kind": "line",
+      "_group": 246
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.3449436311627124,
+      "_kind": "line",
+      "_group": 246
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.26585899377418826,
+      "_kind": "line",
+      "_group": 246
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6989409984871405,
+      "_kind": "line",
+      "_group": 247
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.47806354009077157,
+      "_kind": "line",
+      "_group": 247
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5123550176500252,
+      "_kind": "line",
+      "_group": 247
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.3069954705586311,
+      "_kind": "line",
+      "_group": 248
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.0936084549572219,
+      "_kind": "line",
+      "_group": 248
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.8002013085052844,
+      "_kind": "line",
+      "_group": 248
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9889001009081736,
+      "_kind": "line",
+      "_group": 249
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6193239152371343,
+      "_kind": "line",
+      "_group": 249
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.7174571140262362,
+      "_kind": "line",
+      "_group": 249
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5849246231155778,
+      "_kind": "line",
+      "_group": 250
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.49321608040201004,
+      "_kind": "line",
+      "_group": 250
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.48743718592964824,
+      "_kind": "line",
+      "_group": 250
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.4925296239052035,
+      "_kind": "line",
+      "_group": 251
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.505667181865018,
+      "_kind": "line",
+      "_group": 251
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.4750128799587843,
+      "_kind": "line",
+      "_group": 251
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.07645452636000838,
+      "_kind": "line",
+      "_group": 252
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.43352236925015747,
+      "_kind": "line",
+      "_group": 252
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.499054820415879,
+      "_kind": "line",
+      "_group": 252
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.36295154939222735,
+      "_kind": "line",
+      "_group": 253
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.24268104776579352,
+      "_kind": "line",
+      "_group": 253
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.23369286081150492,
+      "_kind": "line",
+      "_group": 253
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.0030030030030030056,
+      "_kind": "line",
+      "_group": 254
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.31131131131131135,
+      "_kind": "line",
+      "_group": 254
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.27327327327327333,
+      "_kind": "line",
+      "_group": 254
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.651355421686747,
+      "_kind": "line",
+      "_group": 255
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4919678714859438,
+      "_kind": "line",
+      "_group": 255
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.49096385542168686,
+      "_kind": "line",
+      "_group": 255
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5468509984639018,
+      "_kind": "line",
+      "_group": 256
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.3379416282642089,
+      "_kind": "line",
+      "_group": 256
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.41372247823860736,
+      "_kind": "line",
+      "_group": 256
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 1.0185449358059915,
+      "_kind": "line",
+      "_group": 257
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5954636233951498,
+      "_kind": "line",
+      "_group": 257
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.504564907275321,
+      "_kind": "line",
+      "_group": 257
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.5032412146025247,
+      "_kind": "line",
+      "_group": 258
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.48618219037871024,
+      "_kind": "line",
+      "_group": 258
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.3244626407369498,
+      "_kind": "line",
+      "_group": 258
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.9100558659217877,
+      "_kind": "line",
+      "_group": 259
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6023463687150838,
+      "_kind": "line",
+      "_group": 259
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5118435754189944,
+      "_kind": "line",
+      "_group": 259
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7052896725440806,
+      "_kind": "line",
+      "_group": 260
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5843828715365239,
+      "_kind": "line",
+      "_group": 260
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.49370277078085645,
+      "_kind": "line",
+      "_group": 260
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.24217961654894046,
+      "_kind": "line",
+      "_group": 261
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.49445005045408674,
+      "_kind": "line",
+      "_group": 261
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.48940464177598386,
+      "_kind": "line",
+      "_group": 261
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.368027860472954,
+      "_kind": "line",
+      "_group": 262
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.3366848283997079,
+      "_kind": "line",
+      "_group": 262
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6079031623883615,
+      "_kind": "line",
+      "_group": 262
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.08327892636924195,
+      "_kind": "line",
+      "_group": 263
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.2940152339499456,
+      "_kind": "line",
+      "_group": 263
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.24035787691935678,
+      "_kind": "line",
+      "_group": 263
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7575370464997444,
+      "_kind": "line",
+      "_group": 264
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4810935104752172,
+      "_kind": "line",
+      "_group": 264
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.49821154828819636,
+      "_kind": "line",
+      "_group": 264
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.0008637816360024387,
+      "_kind": "line",
+      "_group": 265
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5178370907834499,
+      "_kind": "line",
+      "_group": 265
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.48544527943335924,
+      "_kind": "line",
+      "_group": 265
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.0040180813661476675,
+      "_kind": "line",
+      "_group": 266
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.32044198895027626,
+      "_kind": "line",
+      "_group": 266
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.3124058262179809,
+      "_kind": "line",
+      "_group": 266
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.49613185334678767,
+      "_kind": "line",
+      "_group": 267
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5079044735956946,
+      "_kind": "line",
+      "_group": 267
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.49445005045408674,
+      "_kind": "line",
+      "_group": 267
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.6571574121242996,
+      "_kind": "line",
+      "_group": 268
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.48700967906265935,
+      "_kind": "line",
+      "_group": 268
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5175751400916964,
+      "_kind": "line",
+      "_group": 268
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.1539925599100268,
+      "_kind": "line",
+      "_group": 269
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.18323384375811064,
+      "_kind": "line",
+      "_group": 269
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6125097326758371,
+      "_kind": "line",
+      "_group": 269
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.7606379996636207,
+      "_kind": "line",
+      "_group": 270
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9990469249313227,
+      "_kind": "line",
+      "_group": 270
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6912597409878345,
+      "_kind": "line",
+      "_group": 270
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.005020080321285145,
+      "_kind": "line",
+      "_group": 271
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9046184738955824,
+      "_kind": "line",
+      "_group": 271
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5,
+      "_kind": "line",
+      "_group": 271
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.0025342118601114905,
+      "_kind": "line",
+      "_group": 272
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4956918398378104,
+      "_kind": "line",
+      "_group": 272
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5078560567663457,
+      "_kind": "line",
+      "_group": 272
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.10067114093959723,
+      "_kind": "line",
+      "_group": 273
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4953020134228188,
+      "_kind": "line",
+      "_group": 273
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5008389261744965,
+      "_kind": "line",
+      "_group": 273
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.8064072895574198,
+      "_kind": "line",
+      "_group": 274
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5125470060746313,
+      "_kind": "line",
+      "_group": 274
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5062192652588952,
+      "_kind": "line",
+      "_group": 274
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.32661290322580644,
+      "_kind": "line",
+      "_group": 275
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5997983870967742,
+      "_kind": "line",
+      "_group": 275
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.502016129032258,
+      "_kind": "line",
+      "_group": 275
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.45045045045045046,
+      "_kind": "line",
+      "_group": 276
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.486146523882373,
+      "_kind": "line",
+      "_group": 276
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.01402345741968386,
+      "_kind": "line",
+      "_group": 276
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.3251379829402911,
+      "_kind": "line",
+      "_group": 277
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.39337681886603115,
+      "_kind": "line",
+      "_group": 277
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.48871048670346207,
+      "_kind": "line",
+      "_group": 277
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.2917293233082707,
+      "_kind": "line",
+      "_group": 278
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.49223057644110274,
+      "_kind": "line",
+      "_group": 278
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.605263157894737,
+      "_kind": "line",
+      "_group": 278
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.40080160320641284,
+      "_kind": "line",
+      "_group": 279
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.5010020040080161,
+      "_kind": "line",
+      "_group": 279
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.5010020040080161,
+      "_kind": "line",
+      "_group": 279
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.8873949579831932,
+      "_kind": "line",
+      "_group": 280
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6239495798319328,
+      "_kind": "line",
+      "_group": 280
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.40336134453781525,
+      "_kind": "line",
+      "_group": 280
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 1.0166028097062578,
+      "_kind": "line",
+      "_group": 281
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.0171136653895276,
+      "_kind": "line",
+      "_group": 281
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6194125159642401,
+      "_kind": "line",
+      "_group": 281
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 282
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.9834420471650778,
+      "_kind": "line",
+      "_group": 282
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.967134972403412,
+      "_kind": "line",
+      "_group": 282
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.38654618473895586,
+      "_kind": "line",
+      "_group": 283
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.0060240963855421326,
+      "_kind": "line",
+      "_group": 283
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.3614457831325302,
+      "_kind": "line",
+      "_group": 283
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": -0.2962682803832577,
+      "_kind": "line",
+      "_group": 284
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": -0.49722642460917804,
+      "_kind": "line",
+      "_group": 284
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": -0.3035804336863338,
+      "_kind": "line",
+      "_group": 284
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.249277970716234,
+      "series": "token prefill",
+      "_kind": "line",
+      "_group": 285
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.348316332470524,
+      "series": "token prefill",
+      "_kind": "line",
+      "_group": 285
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.3647310493038465,
+      "series": "token prefill",
+      "_kind": "line",
+      "_group": 285
+    }
+  ],
+  "n_series": 286,
+  "total_points": 858,
+  "text": {
+    "suptitle": "Qwen3.5-9B, language cells: per-pair traces (thin) + means (bold)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "language pairs\npatch-content donors (confirmatory)",
+        "xlabel": "opening positions transplanted",
+        "ylabel": "F steered \u2212 F null",
+        "legend_labels": [
+          "state patch",
+          "token prefill"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title_left": "language pairs\nnatural-opening donors (descriptive)",
+        "xlabel": "opening positions transplanted",
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    ],
+    "series": [
+      "state patch",
+      "token prefill"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

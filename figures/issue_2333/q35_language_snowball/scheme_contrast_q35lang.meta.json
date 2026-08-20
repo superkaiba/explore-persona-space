@@ -1,0 +1,3086 @@
+{
+  "commit": "81d5f921+dirty",
+  "render_id": "7a8a4ee9894e4778",
+  "git_commit": "81d5f921",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_figures.py"
+  ],
+  "created": "2026-08-20T04:16:32Z",
+  "figsize": [
+    4.6,
+    4.2
+  ],
+  "points": [
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9645928174001013,
+      "behavioral movement F \u2014 natural-opening donors": 0.9332321699544766,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.05055611729019205,
+      "behavioral movement F \u2014 natural-opening donors": 0.06774519716885744,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8352703385548257,
+      "behavioral movement F \u2014 natural-opening donors": 0.6210207175341081,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.029737903225806477,
+      "behavioral movement F \u2014 natural-opening donors": 0.03377016129032261,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010010010010010019,
+      "behavioral movement F \u2014 natural-opening donors": 0.9309309309309309,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6833081190115985,
+      "behavioral movement F \u2014 natural-opening donors": 0.6631366616238022,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.008871989860583053,
+      "behavioral movement F \u2014 natural-opening donors": 0.2187579214195184,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0037414965986394405,
+      "behavioral movement F \u2014 natural-opening donors": 0.35850340136054415,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9183673469387755,
+      "behavioral movement F \u2014 natural-opening donors": 0.8714285714285714,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6164658634538153,
+      "behavioral movement F \u2014 natural-opening donors": 0.5140562248995985,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.24099441907661084,
+      "behavioral movement F \u2014 natural-opening donors": 0.049213597158802566,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9803328290468987,
+      "behavioral movement F \u2014 natural-opening donors": 1.0065557236510336,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8350100603621731,
+      "behavioral movement F \u2014 natural-opening donors": 0.9929577464788732,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0010251153254741737,
+      "behavioral movement F \u2014 natural-opening donors": 0.4110712455151205,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9085830370746574,
+      "behavioral movement F \u2014 natural-opening donors": 0.9009649568308787,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4156626506024097,
+      "behavioral movement F \u2014 natural-opening donors": 0.21285140562248997,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7398068669527896,
+      "behavioral movement F \u2014 natural-opening donors": 0.717274678111588,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9867886178861789,
+      "behavioral movement F \u2014 natural-opening donors": 0.9806910569105692,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.003054989816700614,
+      "behavioral movement F \u2014 natural-opening donors": 0.3346911065852003,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0030356691120667872,
+      "behavioral movement F \u2014 natural-opening donors": 0.17404502909182895,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9352881698685541,
+      "behavioral movement F \u2014 natural-opening donors": 0.9362992922143579,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9802831142568252,
+      "behavioral movement F \u2014 natural-opening donors": 0.9691607684529828,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4926804644119132,
+      "behavioral movement F \u2014 natural-opening donors": 0.6865219586067642,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.811139240506329,
+      "behavioral movement F \u2014 natural-opening donors": 0.019240506329113942,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0065722952477252,
+      "behavioral movement F \u2014 natural-opening donors": 0.9924165824064712,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7730532786885247,
+      "behavioral movement F \u2014 natural-opening donors": 0.9610655737704917,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6879756468797563,
+      "behavioral movement F \u2014 natural-opening donors": 0.9913749365804159,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0035264483627204623,
+      "behavioral movement F \u2014 natural-opening donors": 0.7984886649874056,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.007352355144656168,
+      "behavioral movement F \u2014 natural-opening donors": 0.6091336574479956,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5007533902561526,
+      "behavioral movement F \u2014 natural-opening donors": 0.9839276745354093,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0,
+      "behavioral movement F \u2014 natural-opening donors": 0.9797979797979798,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.010095911155981838,
+      "behavioral movement F \u2014 natural-opening donors": 0.009254585226316722,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9848714069591527,
+      "behavioral movement F \u2014 natural-opening donors": 0.8003025718608169,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0025163563160544113,
+      "behavioral movement F \u2014 natural-opening donors": 0.19778560644187212,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.79313824419778,
+      "behavioral movement F \u2014 natural-opening donors": 0.9863773965691222,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9904522613065326,
+      "behavioral movement F \u2014 natural-opening donors": 0.7565326633165829,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7985574446161772,
+      "behavioral movement F \u2014 natural-opening donors": 0.7424008243173622,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6310018903591682,
+      "behavioral movement F \u2014 natural-opening donors": 0.9939508506616256,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0034240712206814123,
+      "behavioral movement F \u2014 natural-opening donors": 0.32528676596473205,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0005005005005005009,
+      "behavioral movement F \u2014 natural-opening donors": 0.22572572572572572,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9989959839357428,
+      "behavioral movement F \u2014 natural-opening donors": 0.9984939759036144,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6641065028161802,
+      "behavioral movement F \u2014 natural-opening donors": 0.815668202764977,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9676176890156918,
+      "behavioral movement F \u2014 natural-opening donors": 0.9950927246790299,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0005117707267146,
+      "behavioral movement F \u2014 natural-opening donors": 0.9928352098259979,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8949720670391061,
+      "behavioral movement F \u2014 natural-opening donors": 0.5721787709497206,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9858942065491185,
+      "behavioral movement F \u2014 natural-opening donors": 0.7944584382871537,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7991927346115035,
+      "behavioral movement F \u2014 natural-opening donors": 0.9969727547931383,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4939055215413133,
+      "behavioral movement F \u2014 natural-opening donors": 0.7871145312587766,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.647442872687704,
+      "behavioral movement F \u2014 natural-opening donors": -0.000507798331519881,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.005109862033725094,
+      "behavioral movement F \u2014 natural-opening donors": 0.8469596320899335,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9969767642739916,
+      "behavioral movement F \u2014 natural-opening donors": 1.0090697071780255,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8031140130587644,
+      "behavioral movement F \u2014 natural-opening donors": 0.20944249121044697,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.994954591321897,
+      "behavioral movement F \u2014 natural-opening donors": 1.0012613521695257,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.598573611818645,
+      "behavioral movement F \u2014 natural-opening donors": 0.9689251146204789,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9780775716694773,
+      "behavioral movement F \u2014 natural-opening donors": 0.9747048903878585,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8871009602906826,
+      "behavioral movement F \u2014 natural-opening donors": 0.32736395881996716,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7542748219992151,
+      "behavioral movement F \u2014 natural-opening donors": 0.9379379940572967,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9779116465863453,
+      "behavioral movement F \u2014 natural-opening donors": 0.6024096385542168,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.48555499239736444,
+      "behavioral movement F \u2014 natural-opening donors": 1.0012671059300557,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7835570469798658,
+      "behavioral movement F \u2014 natural-opening donors": 0.9848993288590604,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9888631761643043,
+      "behavioral movement F \u2014 natural-opening donors": 0.0017356089094590782,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.19858870967741932,
+      "behavioral movement F \u2014 natural-opening donors": 0.9979838709677419,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.01784803671596126,
+      "behavioral movement F \u2014 natural-opening donors": -0.005949345571987106,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010035122930256463,
+      "behavioral movement F \u2014 natural-opening donors": -0.0010035122930256463,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.2518796992481203,
+      "behavioral movement F \u2014 natural-opening donors": 0.9739348370927319,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5931863727454909,
+      "behavioral movement F \u2014 natural-opening donors": 0.9659318637274549,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0067226890756302,
+      "behavioral movement F \u2014 natural-opening donors": 0.015462184873949611,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0051085568326947,
+      "behavioral movement F \u2014 natural-opening donors": -0.011494252873563201,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.02860010035122933,
+      "behavioral movement F \u2014 natural-opening donors": 0.7852483692925238,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0035140562248996573,
+      "behavioral movement F \u2014 natural-opening donors": -0.0015060240963854878,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0035300050428644057,
+      "behavioral movement F \u2014 natural-opening donors": 0.013363590519415124,
+      "series": "state patch, 1 pos",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9757207890743551,
+      "behavioral movement F \u2014 natural-opening donors": 0.9656044511886698,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.07482305358948428,
+      "behavioral movement F \u2014 natural-opening donors": 0.04246713852376141,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.641232945932289,
+      "behavioral movement F \u2014 natural-opening donors": 0.6361798888327437,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.05090725806451612,
+      "behavioral movement F \u2014 natural-opening donors": 0.025705645161290345,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010010010010010019,
+      "behavioral movement F \u2014 natural-opening donors": 0.9529529529529529,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.67523953605648,
+      "behavioral movement F \u2014 natural-opening donors": 0.5017650025214322,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.01901140684410651,
+      "behavioral movement F \u2014 natural-opening donors": 0.3417828474862696,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.01836734693877547,
+      "behavioral movement F \u2014 natural-opening donors": 0.15357142857142855,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9897959183673469,
+      "behavioral movement F \u2014 natural-opening donors": 0.9918367346938776,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.43373493975903615,
+      "behavioral movement F \u2014 natural-opening donors": 0.6174698795180723,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7572298325722983,
+      "behavioral movement F \u2014 natural-opening donors": 0.41755454084221205,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0085728693898133,
+      "behavioral movement F \u2014 natural-opening donors": 1.0085728693898133,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9738430583501005,
+      "behavioral movement F \u2014 natural-opening donors": 1.0060362173038229,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9892362890825218,
+      "behavioral movement F \u2014 natural-opening donors": 0.97385955920041,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9817166074149314,
+      "behavioral movement F \u2014 natural-opening donors": 0.9878110716099543,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.3112449799196787,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.971387696709585,
+      "behavioral movement F \u2014 natural-opening donors": 0.9413447782546495,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9563008130081302,
+      "behavioral movement F \u2014 natural-opening donors": 0.9684959349593497,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0005091649694501023,
+      "behavioral movement F \u2014 natural-opening donors": 0.4093686354378819,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0030356691120667872,
+      "behavioral movement F \u2014 natural-opening donors": 0.5180875284593979,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7866531850353893,
+      "behavioral movement F \u2014 natural-opening donors": 0.8725985844287159,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9762386248736099,
+      "behavioral movement F \u2014 natural-opening donors": 0.9772497472194136,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9793033821302372,
+      "behavioral movement F \u2014 natural-opening donors": 0.740030287733468,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0025316455696203,
+      "behavioral movement F \u2014 natural-opening donors": 0.040506329113924086,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0025278058645095,
+      "behavioral movement F \u2014 natural-opening donors": 0.9893832153690597,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9779713114754099,
+      "behavioral movement F \u2014 natural-opening donors": 0.9784836065573771,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9852866565195332,
+      "behavioral movement F \u2014 natural-opening donors": 0.9903602232369355,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0015113350125945159,
+      "behavioral movement F \u2014 natural-opening donors": 0.9989924433249371,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.005594962939348096,
+      "behavioral movement F \u2014 natural-opening donors": 0.9706543396827928,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9839276745354093,
+      "behavioral movement F \u2014 natural-opening donors": 0.9809141135107985,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.1750841750841751,
+      "behavioral movement F \u2014 natural-opening donors": 0.30808080808080807,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.016405855628470512,
+      "behavioral movement F \u2014 natural-opening donors": 0.9818273599192326,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.929399899142713,
+      "behavioral movement F \u2014 natural-opening donors": 0.934442763489662,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.00452944136889784,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9969727547931383,
+      "behavioral movement F \u2014 natural-opening donors": 0.8173562058526741,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9884422110552763,
+      "behavioral movement F \u2014 natural-opening donors": 0.050502512562814024,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9953632148377126,
+      "behavioral movement F \u2014 natural-opening donors": 0.7964966512107161,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8815374921235034,
+      "behavioral movement F \u2014 natural-opening donors": 0.31316950220541906,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.005136106831022089,
+      "behavioral movement F \u2014 natural-opening donors": 0.6676938880328711,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.007507507507507514,
+      "behavioral movement F \u2014 natural-opening donors": 0.23573573573573572,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9964859437751004,
+      "behavioral movement F \u2014 natural-opening donors": 0.9974899598393574,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8207885304659499,
+      "behavioral movement F \u2014 natural-opening donors": 0.9923195084485408,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9920114122681882,
+      "behavioral movement F \u2014 natural-opening donors": 0.7948074179743223,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9948822927328557,
+      "behavioral movement F \u2014 natural-opening donors": 0.8004094165813715,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.83463687150838,
+      "behavioral movement F \u2014 natural-opening donors": 0.6576536312849162,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9879093198992444,
+      "behavioral movement F \u2014 natural-opening donors": 0.8125944584382871,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9969727547931383,
+      "behavioral movement F \u2014 natural-opening donors": 0.9969727547931383,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9867999775318766,
+      "behavioral movement F \u2014 natural-opening donors": 0.9822501825535023,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7835328255350018,
+      "behavioral movement F \u2014 natural-opening donors": 0.7578890097932535,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9913132345426673,
+      "behavioral movement F \u2014 natural-opening donors": 0.7511497189575881,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9848838213699578,
+      "behavioral movement F \u2014 natural-opening donors": 0.9831562580979529,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9949773982923154,
+      "behavioral movement F \u2014 natural-opening donors": 1.0030135610246107,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9894046417759839,
+      "behavioral movement F \u2014 natural-opening donors": 0.9904137235116044,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.957717778909832,
+      "behavioral movement F \u2014 natural-opening donors": 0.979113601630158,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6694772344013491,
+      "behavioral movement F \u2014 natural-opening donors": 0.6433389544688027,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9450019622133767,
+      "behavioral movement F \u2014 natural-opening donors": 0.9450019622133767,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9718875502008032,
+      "behavioral movement F \u2014 natural-opening donors": 0.21285140562248997,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9670552458185504,
+      "behavioral movement F \u2014 natural-opening donors": 0.9873289406994425,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9005872483221476,
+      "behavioral movement F \u2014 natural-opening donors": 0.9828859060402685,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.968867515186578,
+      "behavioral movement F \u2014 natural-opening donors": -0.00028926815157655987,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0050403225806451655,
+      "behavioral movement F \u2014 natural-opening donors": 0.9959677419354839,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.25497195308516063,
+      "behavioral movement F \u2014 natural-opening donors": 0.7521672616012239,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0030105368790767717,
+      "behavioral movement F \u2014 natural-opening donors": 0.10035122930255899,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.22305764411027562,
+      "behavioral movement F \u2014 natural-opening donors": 0.9385964912280701,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9899799599198397,
+      "behavioral movement F \u2014 natural-opening donors": 0.9919839679358717,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.004201680672269,
+      "behavioral movement F \u2014 natural-opening donors": 0.0067226890756302395,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9757343550447,
+      "behavioral movement F \u2014 natural-opening donors": -0.003320561941251571,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.10888108379327646,
+      "behavioral movement F \u2014 natural-opening donors": 0.9929754139488209,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0015060240963854878,
+      "behavioral movement F \u2014 natural-opening donors": 0.9974899598393575,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0035300050428644057,
+      "behavioral movement F \u2014 natural-opening donors": 0.4962178517397882,
+      "series": "state patch, 2 pos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9736975214972181,
+      "behavioral movement F \u2014 natural-opening donors": 0.8310571573090542,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0586450960566229,
+      "behavioral movement F \u2014 natural-opening donors": 0.03437815975733067,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6392117230924709,
+      "behavioral movement F \u2014 natural-opening donors": 0.6412329459322891,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.04485887096774186,
+      "behavioral movement F \u2014 natural-opening donors": 0.032762096774193575,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010010010010010019,
+      "behavioral movement F \u2014 natural-opening donors": 0.9769769769769769,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6611195158850226,
+      "behavioral movement F \u2014 natural-opening donors": 0.6641452344931921,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.01901140684410651,
+      "behavioral movement F \u2014 natural-opening donors": 0.2813688212927757,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.008163265306122457,
+      "behavioral movement F \u2014 natural-opening donors": 0.22653061224489793,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8839285714285714,
+      "behavioral movement F \u2014 natural-opening donors": 0.9948979591836735,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.43373493975903615,
+      "behavioral movement F \u2014 natural-opening donors": 0.42369477911646586,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6164383561643835,
+      "behavioral movement F \u2014 natural-opening donors": 0.2612886859462201,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.005547150781644,
+      "behavioral movement F \u2014 natural-opening donors": 1.0015128593040847,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8812877263581489,
+      "behavioral movement F \u2014 natural-opening donors": 0.9849094567404426,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9779600205023067,
+      "behavioral movement F \u2014 natural-opening donors": 0.7903639159405434,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.968511934992382,
+      "behavioral movement F \u2014 natural-opening donors": 0.9878110716099544,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.3112449799196787,
+      "behavioral movement F \u2014 natural-opening donors": 1.0040160642570282,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9163090128755365,
+      "behavioral movement F \u2014 natural-opening donors": 0.9353361945636622,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9278455284552846,
+      "behavioral movement F \u2014 natural-opening donors": 0.9502032520325203,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0020366598778004093,
+      "behavioral movement F \u2014 natural-opening donors": 0.49083503054989813,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010118897040223185,
+      "behavioral movement F \u2014 natural-opening donors": 1.0088540349101947,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.756319514661274,
+      "behavioral movement F \u2014 natural-opening donors": 0.8998988877654196,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9762386248736099,
+      "behavioral movement F \u2014 natural-opening donors": 0.9802831142568252,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7935386168601716,
+      "behavioral movement F \u2014 natural-opening donors": 0.9803129732458354,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9994936708860759,
+      "behavioral movement F \u2014 natural-opening donors": 0.02430379746835445,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.001516683518706,
+      "behavioral movement F \u2014 natural-opening donors": 0.9903943377148636,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.980532786885246,
+      "behavioral movement F \u2014 natural-opening donors": 0.9836065573770493,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9913749365804161,
+      "behavioral movement F \u2014 natural-opening donors": 0.9832572298325724,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.006549118387909382,
+      "behavioral movement F \u2014 natural-opening donors": 1.001007556675063,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.013628755877899152,
+      "behavioral movement F \u2014 natural-opening donors": 0.9927472702638082,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9949773982923154,
+      "behavioral movement F \u2014 natural-opening donors": 0.9377197388247112,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.005050505050505055,
+      "behavioral movement F \u2014 natural-opening donors": 0.9797979797979798,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.12998485613326602,
+      "behavioral movement F \u2014 natural-opening donors": 1.0070671378091873,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8325769036812909,
+      "behavioral movement F \u2014 natural-opening donors": 0.8255168935955622,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0025163563160544113,
+      "behavioral movement F \u2014 natural-opening donors": 0.9949672873678912,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9868819374369324,
+      "behavioral movement F \u2014 natural-opening donors": 0.9919273461150353,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9924623115577889,
+      "behavioral movement F \u2014 natural-opening donors": 0.7540201005025124,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.993560020607934,
+      "behavioral movement F \u2014 natural-opening donors": 0.9953632148377126,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4747321991178323,
+      "behavioral movement F \u2014 natural-opening donors": 0.46061751732829237,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.020544427324088357,
+      "behavioral movement F \u2014 natural-opening donors": 0.5136106831022085,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0015015015015014473,
+      "behavioral movement F \u2014 natural-opening donors": 0.9974974974974974,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9989959839357428,
+      "behavioral movement F \u2014 natural-opening donors": 0.9974899598393574,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9938556067588326,
+      "behavioral movement F \u2014 natural-opening donors": 0.6579621095750128,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8163766048502138,
+      "behavioral movement F \u2014 natural-opening donors": 0.7044222539229671,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0030706243602865,
+      "behavioral movement F \u2014 natural-opening donors": 0.8085977482088025,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9884916201117319,
+      "behavioral movement F \u2014 natural-opening donors": 0.8698324022346369,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9939546599496222,
+      "behavioral movement F \u2014 natural-opening donors": 0.9959697732997481,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8193743693239153,
+      "behavioral movement F \u2014 natural-opening donors": 0.9979818365287588,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9822501825535023,
+      "behavioral movement F \u2014 natural-opening donors": 0.9792169859012527,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.980897110385685,
+      "behavioral movement F \u2014 natural-opening donors": 0.980897110385685,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0015329586101174,
+      "behavioral movement F \u2014 natural-opening donors": 0.9977005620848237,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0056145806340158,
+      "behavioral movement F \u2014 natural-opening donors": 1.0090697071780255,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0030135610246107,
+      "behavioral movement F \u2014 natural-opening donors": 0.9949773982923154,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9803229061553985,
+      "behavioral movement F \u2014 natural-opening donors": 0.9924318869828456,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9434538970962812,
+      "behavioral movement F \u2014 natural-opening donors": 0.967906265919511,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9898819561551433,
+      "behavioral movement F \u2014 natural-opening donors": 0.984822934232715,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0246561121204256,
+      "behavioral movement F \u2014 natural-opening donors": 0.7841508781036424,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9248191960531479,
+      "behavioral movement F \u2014 natural-opening donors": 0.966193866681617,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9769076305220884,
+      "behavioral movement F \u2014 natural-opening donors": 0.21285140562248997,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9923973644196655,
+      "behavioral movement F \u2014 natural-opening donors": 0.9822605169792196,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9748322147651006,
+      "behavioral movement F \u2014 natural-opening donors": 0.27013422818791943,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9878507376337865,
+      "behavioral movement F \u2014 natural-opening donors": 0.9524153890656638,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.008064516129032265,
+      "behavioral movement F \u2014 natural-opening donors": 0.9858870967741935,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.020397756246812813,
+      "behavioral movement F \u2014 natural-opening donors": 0.9969403365629782,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0,
+      "behavioral movement F \u2014 natural-opening donors": 0.7024586051179127,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.035588972431077615,
+      "behavioral movement F \u2014 natural-opening donors": 0.4145363408521303,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9869739478957915,
+      "behavioral movement F \u2014 natural-opening donors": 0.9709418837675352,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9714285714285714,
+      "behavioral movement F \u2014 natural-opening donors": 0.8819327731092436,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9846743295019158,
+      "behavioral movement F \u2014 natural-opening donors": 0.970625798212005,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.006522829904666283,
+      "behavioral movement F \u2014 natural-opening donors": 0.9829402910185651,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0005020080321285146,
+      "behavioral movement F \u2014 natural-opening donors": 0.6992971887550202,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.003025718608169387,
+      "behavioral movement F \u2014 natural-opening donors": 0.8103883005547151,
+      "series": "state patch, 3 pos",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.21800708143651995,
+      "behavioral movement F \u2014 natural-opening donors": 0.23115832068791098,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.2234580384226491,
+      "behavioral movement F \u2014 natural-opening donors": 0.22952477249747216,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.03688731682668017,
+      "behavioral movement F \u2014 natural-opening donors": 0.023749368367862577,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.05191532258064515,
+      "behavioral movement F \u2014 natural-opening donors": 0.07207661290322581,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0010010010010009463,
+      "behavioral movement F \u2014 natural-opening donors": 0.0010010010010009463,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8083711548159354,
+      "behavioral movement F \u2014 natural-opening donors": 0.8113968734241048,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.001267427122940404,
+      "behavioral movement F \u2014 natural-opening donors": 0.02408111533586818,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.012244897959183685,
+      "behavioral movement F \u2014 natural-opening donors": -0.01734693877551022,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7642857142857143,
+      "behavioral movement F \u2014 natural-opening donors": 0.8091836734693877,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5421686746987953,
+      "behavioral movement F \u2014 natural-opening donors": 0.5512048192771085,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7470826991374936,
+      "behavioral movement F \u2014 natural-opening donors": 0.6093353627600203,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.20171457387796268,
+      "behavioral movement F \u2014 natural-opening donors": 0.20171457387796268,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4074446680080483,
+      "behavioral movement F \u2014 natural-opening donors": 0.4084507042253521,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010251153254740599,
+      "behavioral movement F \u2014 natural-opening donors": -0.0010251153254740599,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.20771965464702893,
+      "behavioral movement F \u2014 natural-opening donors": 0.20873539867953278,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0,
+      "behavioral movement F \u2014 natural-opening donors": 0.0,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0,
+      "behavioral movement F \u2014 natural-opening donors": 0.0,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4852642276422764,
+      "behavioral movement F \u2014 natural-opening donors": 0.4776422764227642,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0,
+      "behavioral movement F \u2014 natural-opening donors": 0.0,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0020237794080445247,
+      "behavioral movement F \u2014 natural-opening donors": 0.0020237794080445247,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9828109201213346,
+      "behavioral movement F \u2014 natural-opening donors": 0.9757330637007079,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0045500505561172945,
+      "behavioral movement F \u2014 natural-opening donors": 0.0055611729019211945,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.1201413427561838,
+      "behavioral movement F \u2014 natural-opening donors": 0.12821807168096927,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.700759493670886,
+      "behavioral movement F \u2014 natural-opening donors": 0.6936708860759494,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.007583417593529,
+      "behavioral movement F \u2014 natural-opening donors": 1.0065722952477252,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.603483606557377,
+      "behavioral movement F \u2014 natural-opening donors": 0.6168032786885247,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6128868594622019,
+      "behavioral movement F \u2014 natural-opening donors": 0.7493658041603246,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.002518891687657489,
+      "behavioral movement F \u2014 natural-opening donors": -0.0005037783375314867,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.2546425440344306,
+      "behavioral movement F \u2014 natural-opening donors": 0.2044313381684865,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.40030135610246104,
+      "behavioral movement F \u2014 natural-opening donors": 0.3982923154193872,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.02272727272727275,
+      "behavioral movement F \u2014 natural-opening donors": -0.0016835016835016663,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.2574457344775366,
+      "behavioral movement F \u2014 natural-opening donors": -0.0025239777889954594,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.005042864346949,
+      "behavioral movement F \u2014 natural-opening donors": 1.005042864346949,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0025163563160544113,
+      "behavioral movement F \u2014 natural-opening donors": -0.00452944136889784,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0040363269424823,
+      "behavioral movement F \u2014 natural-opening donors": 1.0040363269424823,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9994974874371859,
+      "behavioral movement F \u2014 natural-opening donors": 1.0015075376884421,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0012879958784133,
+      "behavioral movement F \u2014 natural-opening donors": 1.0025759917568264,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5853812224322621,
+      "behavioral movement F \u2014 natural-opening donors": 0.5790800252047889,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.008217770929635344,
+      "behavioral movement F \u2014 natural-opening donors": -0.020544427324088357,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0005005005005005009,
+      "behavioral movement F \u2014 natural-opening donors": 0.0005005005005005009,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8308232931726907,
+      "behavioral movement F \u2014 natural-opening donors": 0.8308232931726907,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9989759344598056,
+      "behavioral movement F \u2014 natural-opening donors": 0.9989759344598056,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0022824536376604,
+      "behavioral movement F \u2014 natural-opening donors": 1.0022824536376604,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0030706243602865,
+      "behavioral movement F \u2014 natural-opening donors": 1.0030706243602865,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9140782122905028,
+      "behavioral movement F \u2014 natural-opening donors": 0.9100558659217877,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010090817356205861,
+      "behavioral movement F \u2014 natural-opening donors": -0.0030272452068617586,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.39785429422007534,
+      "behavioral movement F \u2014 natural-opening donors": 0.3988653597708252,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.2577076532462821,
+      "behavioral movement F \u2014 natural-opening donors": 0.012694958287994095,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7537046499744507,
+      "behavioral movement F \u2014 natural-opening donors": 0.7575370464997444,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0010365379632029607,
+      "behavioral movement F \u2014 natural-opening donors": 0.0010365379632029607,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0035158211953792095,
+      "behavioral movement F \u2014 natural-opening donors": 0.0035158211953792095,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.006895391860074023,
+      "behavioral movement F \u2014 natural-opening donors": 0.006895391860074023,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0035659704533877,
+      "behavioral movement F \u2014 natural-opening donors": 0.9882832399388691,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0016863406408094,
+      "behavioral movement F \u2014 natural-opening donors": 0.9932546374367623,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.30443810018167666,
+      "behavioral movement F \u2014 natural-opening donors": 0.34985725408772383,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8874810786567249,
+      "behavioral movement F \u2014 natural-opening donors": 0.8874810786567249,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.005020080321285145,
+      "behavioral movement F \u2014 natural-opening donors": 0.005020080321285145,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5007602635580335,
+      "behavioral movement F \u2014 natural-opening donors": 0.4906234161175875,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5973154362416107,
+      "behavioral movement F \u2014 natural-opening donors": 0.5973154362416107,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0055684119178478,
+      "behavioral movement F \u2014 natural-opening donors": 1.0055684119178478,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0030241935483870993,
+      "behavioral movement F \u2014 natural-opening donors": 0.0070564516129032325,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.005099439061703218,
+      "behavioral movement F \u2014 natural-opening donors": 0.012748597654258044,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010035122930256463,
+      "behavioral movement F \u2014 natural-opening donors": -0.0010035122930256463,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.2210526315789473,
+      "behavioral movement F \u2014 natural-opening donors": 0.20701754385964904,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.40981963927855714,
+      "behavioral movement F \u2014 natural-opening donors": 0.3997995991983968,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9926050420168067,
+      "behavioral movement F \u2014 natural-opening donors": 0.9946218487394958,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0051085568326947,
+      "behavioral movement F \u2014 natural-opening donors": 1.0102171136653895,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0015052684395384414,
+      "behavioral movement F \u2014 natural-opening donors": 0.0015052684395383859,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0035140562248996573,
+      "behavioral movement F \u2014 natural-opening donors": 0.0035140562248996573,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0007564296520423887,
+      "behavioral movement F \u2014 natural-opening donors": 0.0007564296520423887,
+      "series": "token prefill, 1 pos",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4648457258472433,
+      "behavioral movement F \u2014 natural-opening donors": 0.4506828528072838,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.08088978766430739,
+      "behavioral movement F \u2014 natural-opening donors": 0.07280080889787666,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4118241536129358,
+      "behavioral movement F \u2014 natural-opening donors": 0.4188984335522991,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.19808467741935484,
+      "behavioral movement F \u2014 natural-opening donors": 0.1950604838709677,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010010010010010019,
+      "behavioral movement F \u2014 natural-opening donors": 0.20320320320320323,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5743822491174987,
+      "behavioral movement F \u2014 natural-opening donors": 0.5895108421583459,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.008027038445289356,
+      "behavioral movement F \u2014 natural-opening donors": 0.0012674271229404603,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.00646258503401363,
+      "behavioral movement F \u2014 natural-opening donors": -0.00714285714285715,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9938775510204082,
+      "behavioral movement F \u2014 natural-opening donors": 0.9887755102040816,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.001004016064257,
+      "behavioral movement F \u2014 natural-opening donors": 1.001004016064257,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4226281075596144,
+      "behavioral movement F \u2014 natural-opening donors": 0.4185692541856925,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8421583459404941,
+      "behavioral movement F \u2014 natural-opening donors": 0.8552697932425617,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7907444668008049,
+      "behavioral movement F \u2014 natural-opening donors": 0.7927565392354126,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.4018452075858534,
+      "behavioral movement F \u2014 natural-opening donors": 0.39774474628395695,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9979685119349924,
+      "behavioral movement F \u2014 natural-opening donors": 0.9928897917724735,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9889558232931727,
+      "behavioral movement F \u2014 natural-opening donors": 0.9939759036144579,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7723533619456365,
+      "behavioral movement F \u2014 natural-opening donors": 0.9934191702432045,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.616869918699187,
+      "behavioral movement F \u2014 natural-opening donors": 0.5995934959349594,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0010183299389002047,
+      "behavioral movement F \u2014 natural-opening donors": 0.0030549898167006703,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0030356691120667872,
+      "behavioral movement F \u2014 natural-opening donors": 0.03136858082469008,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9959555106167847,
+      "behavioral movement F \u2014 natural-opening donors": 1.0111223458038423,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9742163801820022,
+      "behavioral movement F \u2014 natural-opening donors": 0.987360970677452,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7526501766784452,
+      "behavioral movement F \u2014 natural-opening donors": 0.7627460878344271,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0075949367088608,
+      "behavioral movement F \u2014 natural-opening donors": 1.0075949367088608,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0065722952477252,
+      "behavioral movement F \u2014 natural-opening donors": 1.0065722952477252,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8125000000000001,
+      "behavioral movement F \u2014 natural-opening donors": 0.8186475409836066,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8107559614408928,
+      "behavioral movement F \u2014 natural-opening donors": 0.8127853881278537,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.004534005037783491,
+      "behavioral movement F \u2014 natural-opening donors": -0.004534005037783491,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0005738423527536309,
+      "behavioral movement F \u2014 natural-opening donors": 0.9947557184984459,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0010045203415368,
+      "behavioral movement F \u2014 natural-opening donors": 1.0010045203415368,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.005050505050505055,
+      "behavioral movement F \u2014 natural-opening donors": 0.01717171717171713,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.003785966683493161,
+      "behavioral movement F \u2014 natural-opening donors": -0.0025239777889954594,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9878971255673222,
+      "behavioral movement F \u2014 natural-opening donors": 0.9778113968734241,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.007549068948163066,
+      "behavioral movement F \u2014 natural-opening donors": 0.006542526421741324,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0040363269424823,
+      "behavioral movement F \u2014 natural-opening donors": 0.9989909182643795,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9974874371859295,
+      "behavioral movement F \u2014 natural-opening donors": 0.9984924623115577,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9984544049459042,
+      "behavioral movement F \u2014 natural-opening donors": 0.9994848016486347,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9987397605545054,
+      "behavioral movement F \u2014 natural-opening donors": 0.8487712665406426,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.022256462934429035,
+      "behavioral movement F \u2014 natural-opening donors": 0.2555213148433487,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.011511511511511521,
+      "behavioral movement F \u2014 natural-opening donors": 0.0015015015015014473,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0015060240963856,
+      "behavioral movement F \u2014 natural-opening donors": 1.0015060240963856,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8361495135688685,
+      "behavioral movement F \u2014 natural-opening donors": 0.8361495135688685,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9971469329529243,
+      "behavioral movement F \u2014 natural-opening donors": 1.0009985734664764,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0030706243602865,
+      "behavioral movement F \u2014 natural-opening donors": 1.0030706243602865,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9703910614525141,
+      "behavioral movement F \u2014 natural-opening donors": 0.9643575418994413,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0010090817356205,
+      "behavioral movement F \u2014 natural-opening donors": 1.0010090817356205,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0075268213222492,
+      "behavioral movement F \u2014 natural-opening donors": 1.0024714935684997,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9825897714907508,
+      "behavioral movement F \u2014 natural-opening donors": 0.7865796155241204,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9879066598535171,
+      "behavioral movement F \u2014 natural-opening donors": 0.9900357690342361,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0090697071780255,
+      "behavioral movement F \u2014 natural-opening donors": 1.0259134490800725,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8071320944249121,
+      "behavioral movement F \u2014 natural-opening donors": 0.8071320944249121,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9873864783047426,
+      "behavioral movement F \u2014 natural-opening donors": 1.0025227043390514,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9984717269485482,
+      "behavioral movement F \u2014 natural-opening donors": 0.991339786041773,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6559865092748736,
+      "behavioral movement F \u2014 natural-opening donors": 0.984822934232715,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.34985725408772383,
+      "behavioral movement F \u2014 natural-opening donors": 0.4214897482481184,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.99646801592196,
+      "behavioral movement F \u2014 natural-opening donors": 0.998486292537983,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0040160642570282,
+      "behavioral movement F \u2014 natural-opening donors": 1.002008032128514,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9984794728839332,
+      "behavioral movement F \u2014 natural-opening donors": 0.9964521033958439,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9929530201342281,
+      "behavioral movement F \u2014 natural-opening donors": 0.9919463087248322,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0080995082441424,
+      "behavioral movement F \u2014 natural-opening donors": 1.0080995082441424,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.004249532551419329,
+      "behavioral movement F \u2014 natural-opening donors": 0.002549719530851552,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010035122930256463,
+      "behavioral movement F \u2014 natural-opening donors": -0.0030105368790767717,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0997493734335839,
+      "behavioral movement F \u2014 natural-opening donors": 0.9909774436090225,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9939879759519038,
+      "behavioral movement F \u2014 natural-opening donors": 1.001002004008016,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0067226890756302,
+      "behavioral movement F \u2014 natural-opening donors": 1.0067226890756302,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0051085568326947,
+      "behavioral movement F \u2014 natural-opening donors": 1.0076628352490422,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.09182137481184148,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0005020080321285146,
+      "behavioral movement F \u2014 natural-opening donors": 0.5005020080321285,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.007564296520423663,
+      "behavioral movement F \u2014 natural-opening donors": -0.0035300050428643498,
+      "series": "token prefill, 2 pos",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.7693474962063733,
+      "behavioral movement F \u2014 natural-opening donors": 0.7744056651492162,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.05055611729019216,
+      "behavioral movement F \u2014 natural-opening donors": 0.0495449949443882,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.29661445174330464,
+      "behavioral movement F \u2014 natural-opening donors": 0.2905507832238504,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.037802419354838745,
+      "behavioral movement F \u2014 natural-opening donors": 0.030745967741935457,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0010010010010010019,
+      "behavioral movement F \u2014 natural-opening donors": 0.6096096096096096,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.3393847705496722,
+      "behavioral movement F \u2014 natural-opening donors": 0.3091275844679778,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.003802281368821268,
+      "behavioral movement F \u2014 natural-opening donors": 0.012251795521757557,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.009863945578231283,
+      "behavioral movement F \u2014 natural-opening donors": 0.02091836734693874,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9918367346938776,
+      "behavioral movement F \u2014 natural-opening donors": 0.9897959183673469,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6164658634538153,
+      "behavioral movement F \u2014 natural-opening donors": 0.6194779116465864,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.42364282090309485,
+      "behavioral movement F \u2014 natural-opening donors": 0.22374429223744288,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0075642965204235,
+      "behavioral movement F \u2014 natural-opening donors": 1.0085728693898133,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9879275653923542,
+      "behavioral movement F \u2014 natural-opening donors": 0.9869215291750503,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0005125576627372,
+      "behavioral movement F \u2014 natural-opening donors": 0.9953869810353665,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0132046724225496,
+      "behavioral movement F \u2014 natural-opening donors": 1.0152361604875573,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8102409638554217,
+      "behavioral movement F \u2014 natural-opening donors": 0.8092369477911647,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9388412017167381,
+      "behavioral movement F \u2014 natural-opening donors": 0.994420600858369,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.983739837398374,
+      "behavioral movement F \u2014 natural-opening donors": 0.9883130081300813,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.003054989816700614,
+      "behavioral movement F \u2014 natural-opening donors": 0.006109979633401228,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0,
+      "behavioral movement F \u2014 natural-opening donors": 0.03996964330887931,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8624873609706775,
+      "behavioral movement F \u2014 natural-opening donors": 0.9716885743174924,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8185035389282104,
+      "behavioral movement F \u2014 natural-opening donors": 0.8174924165824066,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8975265017667844,
+      "behavioral movement F \u2014 natural-opening donors": 0.8995456839979807,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8982278481012658,
+      "behavioral movement F \u2014 natural-opening donors": 1.0025316455696203,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9954499494438828,
+      "behavioral movement F \u2014 natural-opening donors": 1.000505561172902,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9918032786885246,
+      "behavioral movement F \u2014 natural-opening donors": 0.9989754098360657,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0055809233891426,
+      "behavioral movement F \u2014 natural-opening donors": 1.0030441400304413,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.006549118387909382,
+      "behavioral movement F \u2014 natural-opening donors": 0.019647355163727866,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0005738423527536309,
+      "behavioral movement F \u2014 natural-opening donors": 1.002789511436997,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9959819186338523,
+      "behavioral movement F \u2014 natural-opening donors": 0.9939728779507785,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0025252525252525276,
+      "behavioral movement F \u2014 natural-opening donors": 0.01010101010101011,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.005889281507656034,
+      "behavioral movement F \u2014 natural-opening donors": 0.6671714622244659,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0030257186081695,
+      "behavioral movement F \u2014 natural-opening donors": 0.9949571356530509,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.006542526421741324,
+      "behavioral movement F \u2014 natural-opening donors": 1.0020130850528435,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9818365287588295,
+      "behavioral movement F \u2014 natural-opening donors": 0.9899091826437942,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0015075376884421,
+      "behavioral movement F \u2014 natural-opening donors": 1.0015075376884421,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9850592478104071,
+      "behavioral movement F \u2014 natural-opening donors": 0.9881504379185988,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9959672337744171,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.010272213662044179,
+      "behavioral movement F \u2014 natural-opening donors": 0.25423728813559315,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.004504504504504509,
+      "behavioral movement F \u2014 natural-opening donors": 0.2267267267267267,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0015060240963856,
+      "behavioral movement F \u2014 natural-opening donors": 1.0015060240963856,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8361495135688685,
+      "behavioral movement F \u2014 natural-opening donors": 0.822836661546339,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9997146932952924,
+      "behavioral movement F \u2014 natural-opening donors": 0.9997146932952924,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8219037871033776,
+      "behavioral movement F \u2014 natural-opening donors": 0.8157625383828044,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9603351955307262,
+      "behavioral movement F \u2014 natural-opening donors": 0.9522905027932961,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 1.0,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0,
+      "behavioral movement F \u2014 natural-opening donors": 0.9989909182643795,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0075268213222492,
+      "behavioral movement F \u2014 natural-opening donors": 0.9981744649778128,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.5128763148349654,
+      "behavioral movement F \u2014 natural-opening donors": 0.7303832668359327,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0015329586101174,
+      "behavioral movement F \u2014 natural-opening donors": 1.0066428206438427,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0220264317180616,
+      "behavioral movement F \u2014 natural-opening donors": 0.9987043275459964,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.8061275740833751,
+      "behavioral movement F \u2014 natural-opening donors": 0.8071320944249121,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0055499495459133,
+      "behavioral movement F \u2014 natural-opening donors": 0.9974772956609484,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9933774834437087,
+      "behavioral movement F \u2014 natural-opening donors": 1.0015282730514519,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.6812816188870152,
+      "behavioral movement F \u2014 natural-opening donors": 0.03372681281618886,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0177350981918851,
+      "behavioral movement F \u2014 natural-opening donors": 0.9987023098883987,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.998486292537983,
+      "behavioral movement F \u2014 natural-opening donors": 0.998486292537983,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9959839357429718,
+      "behavioral movement F \u2014 natural-opening donors": 0.9919678714859438,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9954384186517994,
+      "behavioral movement F \u2014 natural-opening donors": 1.00658895083629,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9911912751677852,
+      "behavioral movement F \u2014 natural-opening donors": 0.99748322147651,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0080995082441424,
+      "behavioral movement F \u2014 natural-opening donors": 1.0080995082441424,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.008064516129032265,
+      "behavioral movement F \u2014 natural-opening donors": 0.9979838709677419,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.005099439061703218,
+      "behavioral movement F \u2014 natural-opening donors": 0.49209586945436007,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.009031610637230314,
+      "behavioral movement F \u2014 natural-opening donors": 0.0030105368790768272,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.002506265664160459,
+      "behavioral movement F \u2014 natural-opening donors": 0.9849624060150376,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.001002004008016,
+      "behavioral movement F \u2014 natural-opening donors": 1.001002004008016,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.9941176470588236,
+      "behavioral movement F \u2014 natural-opening donors": 0.9058823529411766,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 1.0089399744572158,
+      "behavioral movement F \u2014 natural-opening donors": 1.0102171136653895,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.005519317611640748,
+      "behavioral movement F \u2014 natural-opening donors": 0.9949824385348721,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": 0.0005020080321285146,
+      "behavioral movement F \u2014 natural-opening donors": 0.8619477911646587,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "behavioral movement F \u2014 patch-content donors": -0.0035300050428643498,
+      "behavioral movement F \u2014 natural-opening donors": 0.19515885022692894,
+      "series": "token prefill, 3 pos",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 431,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen3.5-9B, language cells: donor-scheme contrast (steered)",
+        "xlabel": "behavioral movement F \u2014 patch-content donors",
+        "ylabel": "behavioral movement F \u2014 natural-opening donors",
+        "legend_labels": [
+          "state patch, 1 pos",
+          "state patch, 2 pos",
+          "state patch, 3 pos",
+          "token prefill, 1 pos",
+          "token prefill, 2 pos",
+          "token prefill, 3 pos"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "state patch, 1 pos",
+      "state patch, 2 pos",
+      "state patch, 3 pos",
+      "token prefill, 1 pos",
+      "token prefill, 2 pos",
+      "token prefill, 3 pos"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
