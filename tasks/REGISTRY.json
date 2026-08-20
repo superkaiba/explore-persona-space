@@ -9592,8 +9592,8 @@
     "2241": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2241",
-      "status": "proposed",
+      "path": "tasks/planning/2241",
+      "status": "planning",
       "title": "Step 4a: draft-PR creation is gated on a condition that is false by construction (generator of the #2240 zero-PR class)"
     },
     "2242": {
