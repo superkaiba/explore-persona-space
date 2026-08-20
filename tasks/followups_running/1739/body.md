@@ -1,7 +1,6 @@
 ---
-title: Mapped-answer readouts match real-answer persona projections off-synthetic
-  and edge direct context probes in most held-out settings, an edge that survives
-  a shuffled-pairing map control at one of two flagship rungs (MODERATE confidence)
+title: Mapped-answer probes lead context probes on 10 of 13 held-out rungs, but only
+  one flagship clears the control intervals (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
