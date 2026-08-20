@@ -279,8 +279,8 @@ def test_gcv_dof_capped_excludes_low_lambdas():
 # ── Arm/mask assembly on a tiny synthetic store ──────────────────────────────
 
 
-def _tiny_inputs(n_ctx=8, n_layers=28, hidden=4, invalid_pair=None, shift=None):
-    """Synthetic LadderInputs; invalid_pair=(ctx, persona) zeroes one span."""
+def _tiny_inputs(n_ctx=8, n_layers=28, hidden=4, invalid_pair=None, shift=None, invalid_pairs=()):
+    """Synthetic LadderInputs; invalid_pair(s)=(ctx, persona) zero those spans."""
     rng = np.random.default_rng(0)
     cx = torch.tensor(rng.normal(size=(n_ctx, n_layers, hidden)), dtype=torch.float32)
     parent_arm = {
@@ -299,8 +299,10 @@ def _tiny_inputs(n_ctx=8, n_layers=28, hidden=4, invalid_pair=None, shift=None):
         for p in range(1, LF.N_PERSONAS):
             for j, c in enumerate(store_ctx[p]):
                 store_v[p][j] = store_v[0][row0[int(c)]] + shift
+    pairs = list(invalid_pairs)
     if invalid_pair is not None:
-        ctx, p = invalid_pair
+        pairs.append(invalid_pair)
+    for ctx, p in pairs:
         j = {int(c): j for j, c in enumerate(store_ctx[p])}[ctx]
         store_span[p][j] = 0
     return LF.LadderInputs(
@@ -317,19 +319,100 @@ def _tiny_inputs(n_ctx=8, n_layers=28, hidden=4, invalid_pair=None, shift=None):
     )
 
 
+def _tiny_by_persona(n_ctx=8, overrides=None, drop_pairs=(), strip_validity=()):
+    """Minimal P-Gen-style pair records (v11 `validity` labels), one per served pair.
+
+    overrides: {(ctx, persona): validity_label}; drop_pairs: pairs with NO record
+    (missing_record class); strip_validity: pairs whose record lacks the label key
+    (the v11 schema-break shape).
+    """
+    ov = dict(overrides or {})
+    out = {}
+    for p in range(LF.N_PERSONAS):
+        ctxs = sorted({i for i in range(n_ctx) if any(i % k == p for k in LF.LADDER_KS)})
+        rows = []
+        for c in ctxs:
+            if (c, p) in drop_pairs:
+                continue
+            r = {"context_id": c, "validity": ov.get((c, p), "ok")}
+            if (c, p) in strip_validity:
+                r.pop("validity")
+            rows.append(r)
+        out[p] = rows
+    return out
+
+
 def test_build_mask_drops_invalid_pair_and_counts_per_arm():
     inputs = _tiny_inputs(invalid_pair=(3, 3))  # ctx 3, persona 3 (= 3 % 4)
-    mask, _gathers, drops = LF.build_mask_and_gathers(inputs)
+    mask, _gathers, drops = LF.build_mask_and_gathers(inputs, _tiny_by_persona())
     assert 3 not in set(mask.tolist())
     assert len(mask) == inputs.n_contexts - 1
     # persona 3 serves ctx 3 under k4/k8/k16 (3%4 == 3%8 == 3%16 == 3), not k1/k2
     assert drops["new_drops_per_arm"] == {"k1": 0, "k2": 0, "k4": 1, "k8": 1, "k16": 1}
     assert drops["new_dropped_ids_union"] == [3]
+    # gen-side label is "ok" => store-side drop classifies capture_zero_span (integrity)
+    assert drops["new_drops_per_arm_by_class"]["k4"] == {"refusal": 0, "integrity": 1}
+    assert drops["new_drop_subclasses_per_arm"]["k4"] == {"capture_zero_span": 1}
+    assert drops["abort_class"] == "integrity"
+    assert drops["mask_gate_schema_id"] == LF.MASK_GATE_SCHEMA_ID
+
+
+def test_mask_gate_refusal_drops_never_trip_integrity_verdict():
+    """v11 kill-1 semantics (plan v13 L619-623/L1175): >50 refusal-labeled drops in
+    one arm leave the integrity verdict at 0 (the superseded v10 gate aborted on
+    the undifferentiated total — the 2026-08-19 rc=5 false abort), while the SAME
+    drop pattern labeled integrity-class ("empty") trips the unchanged threshold."""
+    n = 128
+    pairs = [(i, 0) for i in range(60)]  # arm k1 (persona 0) loses 60 contexts
+    inputs = _tiny_inputs(n_ctx=n, invalid_pairs=pairs)
+    refusal = _tiny_by_persona(n_ctx=n, overrides={(i, 0): "refusal" for i in range(60)})
+    _, _, drops = LF.build_mask_and_gathers(inputs, refusal)
+    assert drops["new_drops_per_arm"]["k1"] == 60 > LF.NEW_DROPS_ABORT_PER_ARM
+    assert drops["new_drops_per_arm_by_class"]["k1"] == {"refusal": 60, "integrity": 0}
+    assert LF.mask_integrity_verdict(drops)[1] == 0  # no abort
+    empty = _tiny_by_persona(n_ctx=n, overrides={(i, 0): "empty" for i in range(60)})
+    _, _, drops2 = LF.build_mask_and_gathers(inputs, empty)
+    worst = LF.mask_integrity_verdict(drops2)
+    assert worst == ("k1", 60) and worst[1] > LF.NEW_DROPS_ABORT_PER_ARM  # aborts
+    assert drops2["new_drop_subclasses_per_arm"]["k1"] == {"empty": 60}
+    # mask construction itself is label-independent (plan v13 L587 unchanged)
+    assert drops["mask_n"] == drops2["mask_n"]
+
+
+def test_mask_gate_missing_record_is_integrity_and_missing_label_raises():
+    inputs = _tiny_inputs(invalid_pair=(3, 3))
+    byp = _tiny_by_persona(drop_pairs={(3, 3)})  # no P-Gen record for the dropped pair
+    _, _, drops = LF.build_mask_and_gathers(inputs, byp)
+    assert drops["new_drop_subclasses_per_arm"]["k4"] == {"missing_record": 1}
+    assert drops["new_drops_per_arm_by_class"]["k4"]["integrity"] == 1
+    # a PRESENT record without the v11 `validity` key is a schema break — fail
+    # loud even when that pair never dropped (global scan, no quiet class vote)
+    bad = _tiny_by_persona(strip_validity={(2, 0)})
+    with pytest.raises(RuntimeError, match="validity"):
+        LF.build_mask_and_gathers(_tiny_inputs(), bad)
+
+
+def test_assert_mask_gate_schema_pins_v11_id():
+    ok = {
+        "generation_config_fingerprint": {"fields": {"mask_gate_schema_id": LF.MASK_GATE_SCHEMA_ID}}
+    }
+    LF.assert_mask_gate_schema(ok)  # no raise
+    for bad in (
+        {},
+        {"generation_config_fingerprint": {}},
+        {
+            "generation_config_fingerprint": {
+                "fields": {"mask_gate_schema_id": "issue823_mask_gate_v10_span_proxy"}
+            }
+        },
+    ):
+        with pytest.raises(RuntimeError, match="mask_gate_schema_id"):
+            LF.assert_mask_gate_schema(bad)
 
 
 def test_arm_target_gathers_correct_store_rows():
     inputs = _tiny_inputs()
-    mask, gathers, _ = LF.build_mask_and_gathers(inputs)
+    mask, gathers, _ = LF.build_mask_and_gathers(inputs, _tiny_by_persona())
     layer = 1
     y = LF.arm_target(inputs, gathers, "k2", layer, mask, mask)
     for out_row, ctx in enumerate(mask.tolist()):
@@ -347,7 +430,7 @@ def test_arm_target_gathers_correct_store_rows():
 
 def test_m2_paired_separation_passes_on_strong_shift_fails_on_none():
     strong = _tiny_inputs(n_ctx=32, shift=10.0)
-    mask, _, _ = LF.build_mask_and_gathers(strong)
+    mask, _, _ = LF.build_mask_and_gathers(strong, _tiny_by_persona(n_ctx=32))
     m2 = LF.m2_paired_separation(strong, mask)
     assert m2["m2_pass"] is True
     assert m2["n_personas_passing"] == LF.N_PERSONAS - 1
@@ -571,7 +654,7 @@ def test_p2_resume_and_set_check_wired_in_main():
 
 def test_dof_cap_sensitivity_one_factorization_per_layer_fold(tmp_path, monkeypatch):
     inputs = _tiny_inputs(n_ctx=20)
-    mask, gathers, _ = LF.build_mask_and_gathers(inputs)
+    mask, gathers, _ = LF.build_mask_and_gathers(inputs, _tiny_by_persona(n_ctx=20))
     folds = list(KFold(n_splits=5, shuffle=True, random_state=0).split(np.zeros(len(mask))))
     calls = {"n": 0}
     real = LF.factorize_robust

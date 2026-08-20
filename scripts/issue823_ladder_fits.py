@@ -158,6 +158,7 @@ from scripts.issue823_ladder_gen import (  # noqa: E402
     DATA_REPO,
     HF_PREFIX,
     K_ARMS,
+    MASK_GATE_SCHEMA_ID,
     N_CONTEXTS_FULL,
     N_PERSONAS,
     PARENT_PREFIX,
@@ -205,7 +206,11 @@ BANKED_SPLIT_PREDROP_SHA256 = {
     # SHA_PIN_DOMAIN: INDEX
     "test": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
 }
-NEW_DROPS_ABORT_PER_ARM = 50  # plan section-7 kill 1 (parent rule, 1% of corpus)
+# plan v13 section-7 kill 1 (L619-623, L1175): the per-arm abort counts
+# INTEGRITY-CLASS (non-refusal) NEW invalid rows only; refusal-attributed drops
+# are governed by the separate refusal-attrition budget (disposition 2, <=500
+# total) and never trip this gate. Threshold value unchanged (1% of corpus).
+NEW_DROPS_ABORT_PER_ARM = 50
 P2_RUNGS_BELOW_TOP = (3584, 2400, 1800, 900, 450, 225)
 PER_PERSONA_KS = (2, 4, 8, 16)
 GMIX_PRIMARY_K = 8  # PRIMARY matched-capacity contrast (~50 val rows vs ~25 at k=16)
@@ -979,16 +984,77 @@ def load_inputs(
 # ── Arm assembly + mask (equalize-down) ──────────────────────────────────────
 
 
-def build_mask_and_gathers(inputs: LadderInputs) -> tuple[np.ndarray, dict, dict]:
+def assert_mask_gate_schema(sentinel: dict) -> None:
+    """Fail-loud consumer-side pin of the P-Gen v11 mask-gate label schema.
+
+    The section-7 kill-1 gate classifies dropped pairs via P-Gen's persisted
+    per-record `validity` labels (stop_reason-keyed, refusal-precedence — plan
+    v13 L603-617, schema `issue823_mask_gate_v11_stop_reason_precedence`).
+    Consuming labels produced under any OTHER schema would silently change the
+    gate's semantics, so a mismatched/absent schema id in the gen sentinel's
+    `generation_config_fingerprint.fields` raises — the superseded v10
+    span/emptiness proxy (the 2026-08-19 rc=5 false abort) must be impossible
+    to fall back to silently.
+    """
+    fp = sentinel.get("generation_config_fingerprint")
+    fields = fp.get("fields") if isinstance(fp, dict) else None
+    got = fields.get("mask_gate_schema_id") if isinstance(fields, dict) else None
+    if got != MASK_GATE_SCHEMA_ID:
+        raise RuntimeError(
+            f"P-Gen sentinel mask_gate_schema_id {got!r} != required "
+            f"{MASK_GATE_SCHEMA_ID!r} — refusing to classify mask drops under an "
+            "unknown validity-label schema (plan v13 kill 1 consumes the v11 "
+            "stop_reason-keyed class split; no silent span-proxy fallback)"
+        )
+
+
+def build_mask_and_gathers(
+    inputs: LadderInputs, by_persona: dict[int, list[dict]]
+) -> tuple[np.ndarray, dict, dict]:
     """New common-valid mask + per-arm gather plans + per-arm NEW-drop accounting.
 
     A context drops if ANY of its <=5 distinct ladder pair rows is invalid
     (span==0 or row absent) — equalize-down: every arm fits on identical
-    contexts. Returns (mask_ids, gathers, drop_record); gathers[arm] is a list
-    of (persona, positions_in_mask, store_row_indices).
+    contexts (mask construction unchanged, plan v13 L587). Returns
+    (mask_ids, gathers, drop_record); gathers[arm] is a list of
+    (persona, positions_in_mask, store_row_indices).
+
+    Kill-1 classification (plan v13 L603-617, v11 schema): each dropped
+    (context, persona) pair is classified from P-Gen's persisted `validity`
+    label — "refusal" => refusal-attributed (P0 prompt integrity passed
+    upstream: the gen sentinel is written only after P-Gen's own gates), and
+    everything else is integrity-class, sub-bucketed as `missing_record` (no
+    P-Gen record for the pair, L615), the gen-side label verbatim
+    ("empty" / "error:<category>"), or `capture_zero_span` (gen-"ok" but the
+    store row is absent/zero-span, L616). A record PRESENT without a
+    `validity` key is a v11 schema break => RuntimeError, never a quiet class
+    vote (`by_persona` is scanned in full so an unlabeled producer fails loud
+    regardless of which pairs dropped).
     """
     rowmap = {p: {int(c): j for j, c in enumerate(inputs.store_ctx[p])} for p in inputs.store_ctx}
     parent_ids = [int(i) for i in inputs.parent_valid_ids if i < inputs.n_contexts]
+
+    label: dict[tuple[int, int], str] = {}
+    for p, rows in by_persona.items():
+        for r in rows:
+            if "validity" not in r:
+                raise RuntimeError(
+                    f"P-Gen record (context_id={r.get('context_id')}, persona={p}) has "
+                    "no 'validity' label — v11 mask-gate schema break; refusing to "
+                    "classify mask drops"
+                )
+            label[(int(r["context_id"]), int(p))] = str(r["validity"])
+
+    def drop_class(i: int, p: int) -> tuple[str, str]:
+        """(class, subclass) for a dropped pair — class in {refusal, integrity}."""
+        v = label.get((i, p))
+        if v is None:
+            return "integrity", "missing_record"  # plan v13 L615: missing/unparseable record
+        if v == "refusal":
+            return "refusal", "refusal"
+        if v == "ok":
+            return "integrity", "capture_zero_span"  # gen-valid, store row absent/zero (L616)
+        return "integrity", v  # "empty" | "error:<category>" | any unrecognized label
 
     def pair_ok(i: int, p: int) -> bool:
         j = rowmap.get(p, {}).get(i)
@@ -1000,12 +1066,28 @@ def build_mask_and_gathers(inputs: LadderInputs) -> tuple[np.ndarray, dict, dict
     mask_ids = np.array(
         [i for i in parent_ids if all(pair_ok(i, i % k) for k in LADDER_KS)], dtype=int
     )
+    by_class_per_arm: dict[str, dict[str, int]] = {}
+    subclasses_per_arm: dict[str, dict[str, int]] = {}
+    for a, ids in new_drops_per_arm.items():
+        k = int(a[1:])
+        cls_n = {"refusal": 0, "integrity": 0}
+        sub_n: dict[str, int] = {}
+        for i in ids:
+            cls, sub = drop_class(i, i % k)
+            cls_n[cls] += 1
+            sub_n[sub] = sub_n.get(sub, 0) + 1
+        by_class_per_arm[a] = cls_n
+        subclasses_per_arm[a] = dict(sorted(sub_n.items()))
     drop_record = {
         "parent_valid_n": len(parent_ids),
         "mask_n": int(len(mask_ids)),
         "new_drops_per_arm": {a: len(v) for a, v in new_drops_per_arm.items()},
+        "new_drops_per_arm_by_class": by_class_per_arm,
+        "new_drop_subclasses_per_arm": subclasses_per_arm,
         "new_dropped_ids_union": sorted({i for v in new_drops_per_arm.values() for i in v}),
         "abort_threshold_per_arm": NEW_DROPS_ABORT_PER_ARM,
+        "abort_class": "integrity",
+        "mask_gate_schema_id": MASK_GATE_SCHEMA_ID,
     }
     gathers: dict[str, list] = {}
     for k in LADDER_KS:
@@ -1016,6 +1098,19 @@ def build_mask_and_gathers(inputs: LadderInputs) -> tuple[np.ndarray, dict, dict
             plan.append((p, pos, rows))
         gathers[f"k{k}"] = plan
     return mask_ids, gathers, drop_record
+
+
+def mask_integrity_verdict(drop_record: dict) -> tuple[str, int]:
+    """(arm, integrity_count) of the worst arm for the section-7 kill-1 gate.
+
+    v11 semantics (plan v13 L619-623, L1175): the pipeline-integrity kill
+    counts INTEGRITY-CLASS (non-refusal) NEW invalid rows per arm vs
+    NEW_DROPS_ABORT_PER_ARM; refusal-attributed drops are governed by the
+    separate refusal-attrition budget (disposition 2) and never trip this
+    gate.
+    """
+    by_class = drop_record["new_drops_per_arm_by_class"]
+    return max(((a, c["integrity"]) for a, c in by_class.items()), key=lambda kv: kv[1])
 
 
 def arm_target(
@@ -1510,7 +1605,8 @@ def main(argv: list[str] | None = None) -> None:
     gen_paths, gen_revision = fetch_gen_inputs(
         root / "gen_inputs", args.gen_prefix, args.gen_revision, args.gen_local_dir
     )
-    verify_gen_sentinel(gen_paths)
+    sentinel = verify_gen_sentinel(gen_paths)
+    assert_mask_gate_schema(sentinel)
     by_persona = load_pair_rows(gen_paths, n_contexts)
     # capture_digest is REQUIRED by stage_pair_store on both branches (local +
     # remote), so the manipulation accounting always sees it — never None here.
@@ -1533,19 +1629,22 @@ def main(argv: list[str] | None = None) -> None:
         "bundle_rev": BUNDLE_REV,
     }
 
-    # ── mask + drop-rule (kill criterion 1) ──
+    # ── mask + drop-rule (kill criterion 1, v11 class-split semantics) ──
     log_phase("pfit_mask")
-    mask_ids, gathers, drop_record = build_mask_and_gathers(inputs)
+    mask_ids, gathers, drop_record = build_mask_and_gathers(inputs, by_persona)
     logger.info(
-        "mask: %d contexts; drops per arm: %s", len(mask_ids), drop_record["new_drops_per_arm"]
+        "mask: %d contexts; drops per arm: %s; integrity per arm: %s",
+        len(mask_ids),
+        drop_record["new_drops_per_arm"],
+        {a: c["integrity"] for a, c in drop_record["new_drops_per_arm_by_class"].items()},
     )
-    worst_arm = max(drop_record["new_drops_per_arm"].items(), key=lambda kv: kv[1])
+    worst_arm = mask_integrity_verdict(drop_record)
     if worst_arm[1] > NEW_DROPS_ABORT_PER_ARM:
         designed_abort(
             eval_dir,
             "mask_integrity",
             RC_MASK_ABORT,
-            {"drop_record": drop_record, "worst_arm": worst_arm},
+            {"drop_record": drop_record, "worst_arm_integrity": worst_arm},
             args.smoke,
         )
 
