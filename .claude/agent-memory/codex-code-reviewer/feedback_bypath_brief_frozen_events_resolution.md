@@ -56,3 +56,14 @@ choosing each reference. Related: [[worktree-status-folder-both-directions]],
   line: "the absence of an `epm:results` v<k+1> is by orchestrator design
   this round and is NOT a `marker-shape` finding" — and repeat the carve-out
   inside the Blocker-tags bracket.
+
+**Dynamic-resolution extension (#2412 r1, 2026-08-20):** prefer
+`$(uv run python scripts/task.py find <N>)/plans/plan.md` (and
+`.../events.jsonl`) over a hardcoded main-root status path — status folders
+MOVE mid-review (running→verifying happens DURING the round), so a hardcoded
+`tasks/running/<N>/...` path can go stale while Codex is still reading.
+Verified: `task.py find` works read-only from the WORKTREE cwd and returns
+the main-root absolute path. Still state the frozen-worktree warning (do not
+read the worktree events copy) and keep the stash-race re-read rule, with the
+`git show HEAD:` fallback told to adjust the status folder to whatever `find`
+returned.
