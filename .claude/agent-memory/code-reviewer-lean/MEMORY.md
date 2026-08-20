@@ -54,3 +54,4 @@
 - [Shift-rung eval without fit restriction](shift_rung_eval_without_fit_restriction.md) — a registered A→B transfer rung needs a rung-specific FIT-side restriction; a zero-call-site fit-filter helper is the tell (#2388 R1 g6)
 - [Lint-waiver commit certification](lint_waiver_commit_certification.md) — check FUNCTION on parent blobs vs HEAD with legacy_allowlist={}: pre-fix red at exact lines + waiver-attributed PASS (#2388 R2 g3)
 - [Claimed concern-raise not on ledger](claimed_concern_raise_not_on_ledger.md) — grep list-concerns for every marker-claimed raised id; prose-only persistence is gate-invisible; cure via reviewer raise-concern (#2388 R2 g4)
+- [Contingency unit in default roster + per-branch gate](contingency_unit_in_default_roster_and_per_branch_gate.md) — grep default rosters for gate-fenced units (sorts FIRST breaks bare P0); a "BINDING for X/Y" gate needs a consumer per SUBJECT (#2388 R2 g1)
