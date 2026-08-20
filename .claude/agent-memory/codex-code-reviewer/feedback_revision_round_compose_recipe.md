@@ -1710,3 +1710,35 @@ return; (b) fixture-discrimination claims ("ran it pre-fix, saw the silent
 KEEP") translate to the static trace: `git show <round-parent>:<helper>` +
 trace the fixture scenario through PRE-fix control flow, refuted claim =
 fabricated coverage.
+
+**Merge-reconciliation round mandated by the task's own divergence gate
+(#2201 r3, 2026-08-20):** when the round under review is a gate-mandated
+merge of pinned main + a mandated spec-freshness sync (no feature code, no
+impl marker), compose: (a) round contract = the `[divergence-probe]` /
+reconciliation `epm:progress` notes inlined in their own envelopes (the
+verified note is the implementer's REPORT to re-verify, say so); declare
+`marker-shape`/`smoke-run-missing` INVALID and Step 0.5/4.6 N/A-this-round;
+inline the prior `epm:results` as CONTEXT-ONLY (do-not-score-shape). (b)
+PRIMARY body = `git diff <merged-pin>..HEAD` — once the merge makes the pin
+an ancestor, the two-dot form IS the own-diff; measure `git show --cc
+<merge>` at compose (≈empty ⇒ attest "no novel line typed into the merge";
+read reconciliation via per-side diffs `<parent>..<merge> -- <path>`). (c)
+M-ledger INTACT/DAMAGED duties: both-sides-survive + SEMANTIC-contradiction
+read per contested file; grandfather caps re-measured vs POST-MERGE landing
+bytes (probe count=0 at the fresh pin ⇒ worktree bytes ARE landing bytes,
+#1727) with the corridor + MAX_HEADROOM(3_000) bound; union-dedup
+lost-content check (every pre-merge-branch-only line must survive to HEAD;
+enumerate via `diff <branch-parent>..<merge> --name-only -- agent-memory/`);
+hygiene (residue, tasks/ 0, src/ 0, exact own-diff path list); feature
+integrity incl. LOCATING every pinned fragment/region anchor in the
+POST-MERGE spec text (pre-merge gate PASSes certify NOTHING post-merge —
+say so at Step 4); sync commit == current-main blobs at the probe pin (the
+pin's commit object exists locally — `git show <pin>:<path>` works, no
+fetch). (d) Enumerate intermediate commits since the last reviewed HEAD;
+name any deliverable-touching one (here an E501 rewrap) as a verify-duty so
+its hunk is not mistaken for merge damage; flag the scope call in the
+return. (e) Probe-side traps hit live: `git diff --quiet <sha> HEAD -- 
+<nonexistent-path>` exits 0 — verify the path EXISTS before trusting a
+MATCH probe; and a brief-named output file can COLLIDE with a stale
+same-name /tmp file from an earlier same-task critic round — flag the
+collision to the orchestrator (premature-read hazard).
