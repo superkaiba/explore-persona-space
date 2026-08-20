@@ -1635,6 +1635,49 @@ head was v1 (round-based) even though the same task's earlier crash-fix
 series used sentinel==impl-version — read the r1 marker's own head, never
 assume the task-wide convention.
 
+**CONCERNS→polish round; brief can ORDER the whole-branch body back in (#2212
+r2, 2026-08-20):** the round-scope BAN on the whole-branch three-dot BODY is
+the DEFAULT, not a law — when the brief mandates re-verifying reconciler
+binding conditions + the plan §10 fence "on the FULL round diff, not
+inherited from round 1's PASS", compose BOTH reads: three-dot full-round
+body (size it first; 55 KB here) for the conditions re-check, `git show
+<round-sha>` as the deep-dive focus. Milder sibling of #2329 rclose: prior
+round Claude-PASS + Codex-CONCERNS (no reconciler — CONCERNS advances), one
+persisted NIT (the twin's own) + one un-persisted Claude Minor closed;
+closure ledger = the real concern id + a pseudo-id, author-neutrality line,
+addressed-id NEVER re-emitted as a `CONCERN:: ` row unless NOT-ADDRESSED.
+A brief-supplied "state plainly a clean PASS is expected if the fixes are
+sound" composes as BOTH-directions calibration (expected ≠ thumb on scale;
+wording-preference blockers unwanted on a wording-correction round, real
+defects at full severity). Over-correction duty on wording fixes: the new
+text can be wrong the OTHER way (eliding the argv-structural top-level
+guarantee / overstating exclude-list protection) — hand Codex both failure
+directions plus survival checks for the honest-scope figures. Re-measure
+brief-supplied base-drift figures at compose (136→295 commits between
+rounds; use fresh).
+
+**FAIL+FAIL union round with a self-resolving union note + brief-ordered
+mutation probes (#2329 q35 r2 = sentinel v2, 2026-08-20):** when the union
+work order ITSELF resolves every overlap to the stronger form AND records
+the reviewer splits, inline the union as the PRIMARY acceptance contract +
+the twin's own verdict (tags stripped, rows blockquoted) for per-finding
+Evidence/Fix — the Claude verdicts stay by-path context (this task's
+review-r1 artifacts dir on main); the union's RECORDED SPLITS section
+becomes a do-not-relitigate item (round 2 scores fresh against the new
+marker, never re-grades r1 gate records). Scratch recipe refinement for
+mutation probes on this repo: build the scratch tree with a SCOPED
+`git archive <round-sha> scripts tests src configs pyproject.toml uv.lock |
+tar -x` — NEVER a full-tree archive (tracked eval_results are GB-scale in
+this repo) — and copy in the single committed artifact a chosen nodeid
+reads (here the parent #2162 stats.json) only when that probe needs it;
+carry the UV_CACHE_DIR=/tmp/... rc=2 read-only-cache precedent. A
+raised-only ledger (0 addressed rows) on a fix round composes per
+#2379-r2(b): identical closure duty, absent rows attested as orchestrator
+bookkeeping. Sentinel convention is SERIES-local: this review series' r1
+head was v1 (round-based) even though the same task's earlier crash-fix
+series used sentinel==impl-version — read the r1 marker's own head, never
+assume the task-wide convention.
+
 **FAIL+FAIL union fix round with ledger-persisted ids + sibling's FULL
 mid-compose disposition set (#823 P-Gen r4 = sentinel v7, 2026-08-20):**
 three composable deltas on the #2332-r2 union shape. (a) When both prior
@@ -1811,3 +1854,27 @@ re-raises its own settled finding; (c) a verifier's re-run instrument tree
 outs) is a REUSE input — instruct read-first + cross-check-report-claims-
 against-outputs, copy-to-own-scratch before re-execution, and never edit
 the evidence trees in place.
+
+**Gate-mandated merge-reconciliation round WITH an r1 impl marker (#2217 r2,
+2026-08-20):** three deltas on the #2201-r3 shape. (a) When the task HAS a
+round-1 `epm:results` (unlike #2201 r3's no-marker case), inline it in the
+STANDARD `---BEGIN IMPLEMENTATION MARKER BODY---` envelope framed CONTEXT-ONLY
+(do-not-score-shape, adjudicated r1) — satisfies the Step 3 envelope guard
+while `marker-shape`/`smoke-run-missing` stay declared INVALID; Step 0.5 +
+4.6-presence get explicit N/A-this-round lines in a `## Gate-step record`
+section. (b) The rubric-currency check can hit a commit that is ITSELF main's
+side of the divergence (here `1f22cfed7f` added code-reviewer.md's "Main-side
+divergence list (#2201)" paragraph AFTER the r1 extraction): skip template
+reuse entirely, compose the TIGHT shape, and inline that paragraph VERBATIM
+from the POST-merge worktree spec (anchor `**Main-side divergence list
+(#2201).**` → `clean.`) — the worktree is current post-merge, no main-root
+read needed. (c) Q3 lost-update recipe: per-path branch-ownership probe
+`git log --format='%h %s' <pre-merge-tip> --not <pin> -- <path>` over EVERY
+own-diff path (EMPTY history + present in own-diff = merge-created difference
+= Critical), with the `--cc`-emptiness caveat stated (--cc suppresses
+one-side reverts — result==branch-parent hunks are invisible; 253-byte --cc
+attests only "no novel typed line"). The composer's OWN memory file can sit in
+the own-diff (a prior session committed it to the branch) — it is in scope for
+the ownership probe, stat-only otherwise. Also: r1's output file was the
+UNSUFFIXED `/tmp/codex-output-issue-2217.md` — name the r2 output
+round-suffixed and flag the collision hazard in the return.
