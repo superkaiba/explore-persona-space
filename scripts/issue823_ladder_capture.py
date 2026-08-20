@@ -321,14 +321,20 @@ def load_pair_rows(paths: dict[str, pathlib.Path], n_contexts: int) -> dict[int,
 def cap_hit_stats_and_gate(by_persona: dict[int, list[dict]], smoke: bool) -> dict:
     """R5: realized cap-hit fractions + enforcement of the 2% re-gen trigger.
 
-    Production: any persona with > CAP_HIT_REGEN_FRACTION of rows still capped at
-    the ORIGINAL max_tokens (un-regenerated) raises — plan §7 kill criterion 5
-    requires P-Gen to have re-generated those rows at REGEN_MAX_TOKENS before
-    capture. Smoke: informational WARN (plan blind-spot enumeration: production-
+    The trigger is PER (arm x persona) CELL (plan v13 section 4.3 step 4 +
+    section 7 — the v10 per-persona form is superseded): any cell (k, p) with
+    > CAP_HIT_REGEN_FRACTION of its rows still capped at the ORIGINAL
+    max_tokens (un-regenerated) raises in production — plan §7 kill
+    criterion 5 requires P-Gen to have re-generated those rows at
+    REGEN_MAX_TOKENS before capture. A row belongs to several cells under
+    nesting (`r["arms"]`), so one un-regenerated row can violate multiple
+    cells; per-persona stats are RETAINED as informational context (they no
+    longer drive the gate — a violation confined to one arm's cell trips the
+    gate even when the persona's pooled fraction sits under the trigger).
+    Smoke: informational WARN (plan blind-spot enumeration: production-
     n-calibrated gates must not kill the smoke leg).
     """
     per_persona: dict[str, dict] = {}
-    violations: list[tuple[int, float]] = []
     for p, rows in sorted(by_persona.items()):
         n = len(rows)
         if n == 0:
@@ -337,28 +343,39 @@ def cap_hit_stats_and_gate(by_persona: dict[int, list[dict]], smoke: bool) -> di
         n_cap = sum(1 for r in rows if r["cap_hit"])
         n_unregen = sum(1 for r in rows if r["cap_hit"] and r["max_tokens"] == GEN_MAX_TOKENS)
         n_residual = sum(1 for r in rows if r["cap_hit"] and r["max_tokens"] >= REGEN_MAX_TOKENS)
-        frac_unregen = n_unregen / n
         per_persona[str(p)] = {
             "n_rows": n,
             "cap_hit_fraction_realized": n_cap / n,
-            "unregenerated_overcap_fraction": frac_unregen,
+            "unregenerated_overcap_fraction": n_unregen / n,
             "n_residual_cap_at_regen_tokens": n_residual,
         }
-        if frac_unregen > CAP_HIT_REGEN_FRACTION:
-            violations.append((p, frac_unregen))
 
+    # Per-(arm x persona) CELL fractions — the gate's own grain.
+    violations: list[tuple[int, int, float]] = []
     per_arm_persona: dict[str, dict[str, float]] = {}
+    unregen_arm_persona: dict[str, dict[str, float]] = {}
     for k in K_ARMS:
         cell: dict[str, float] = {}
+        unregen_cell: dict[str, float] = {}
         for p, rows in sorted(by_persona.items()):
             arm_rows = [r for r in rows if k in r["arms"]]
-            if arm_rows:
-                cell[str(p)] = sum(1 for r in arm_rows if r["cap_hit"]) / len(arm_rows)
+            if not arm_rows:
+                continue
+            cell[str(p)] = sum(1 for r in arm_rows if r["cap_hit"]) / len(arm_rows)
+            n_unregen = sum(
+                1 for r in arm_rows if r["cap_hit"] and r["max_tokens"] == GEN_MAX_TOKENS
+            )
+            frac_unregen = n_unregen / len(arm_rows)
+            unregen_cell[str(p)] = frac_unregen
+            if frac_unregen > CAP_HIT_REGEN_FRACTION:
+                violations.append((k, p, frac_unregen))
         per_arm_persona[str(k)] = cell
+        unregen_arm_persona[str(k)] = unregen_cell
 
     out = {
         "per_persona": per_persona,
         "cap_hit_fraction_by_arm_persona": per_arm_persona,
+        "unregenerated_overcap_fraction_by_arm_persona": unregen_arm_persona,
         "regen_trigger_fraction": CAP_HIT_REGEN_FRACTION,
         "gen_max_tokens": GEN_MAX_TOKENS,
         "regen_max_tokens": REGEN_MAX_TOKENS,
@@ -366,10 +383,10 @@ def cap_hit_stats_and_gate(by_persona: dict[int, list[dict]], smoke: bool) -> di
     }
     if violations:
         msg = (
-            f"pre-registered cap-hit trigger violated at capture: personas {violations} have "
-            f"> {CAP_HIT_REGEN_FRACTION:.0%} rows still capped at max_tokens={GEN_MAX_TOKENS} "
-            f"un-regenerated — P-Gen (kill criterion 5) must re-generate them at "
-            f"{REGEN_MAX_TOKENS} before capture"
+            f"pre-registered cap-hit trigger violated at capture: (arm k, persona, frac) cells "
+            f"{violations} have > {CAP_HIT_REGEN_FRACTION:.0%} rows still capped at "
+            f"max_tokens={GEN_MAX_TOKENS} un-regenerated — P-Gen (kill criterion 5) must "
+            f"re-generate them at {REGEN_MAX_TOKENS} before capture"
         )
         if smoke:
             logger.warning("SMOKE-INFORMATIONAL (plan-enumerated blind spot): %s", msg)
