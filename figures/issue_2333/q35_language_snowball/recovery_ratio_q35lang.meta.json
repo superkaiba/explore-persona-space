@@ -1,12 +1,18 @@
 {
-  "commit": "81d5f921+dirty",
-  "render_id": "e7bc9af56f784749",
-  "git_commit": "81d5f921",
+  "commit": "77d94e6b+dirty",
+  "render_id": "e374abcc34bf42ec",
+  "git_commit": "77d94e6b",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.meta.json",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.pdf",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.png",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.meta.json",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.pdf",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.png",
     "scripts/issue2333_figures.py"
   ],
-  "created": "2026-08-20T04:16:24Z",
+  "created": "2026-08-20T06:00:08Z",
   "figsize": [
     8.4,
     3.0

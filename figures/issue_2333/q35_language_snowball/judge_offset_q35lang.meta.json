@@ -1,134 +1,164 @@
 {
-  "commit": "81d5f921+dirty",
-  "render_id": "8ff4b5cbb6124455",
-  "git_commit": "81d5f921",
+  "commit": "77d94e6b+dirty",
+  "render_id": "2afda62c52344d0d",
+  "git_commit": "77d94e6b",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2333/q35_language_snowball/arm_vs_ce_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/arm_vs_ce_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/arm_vs_ce_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/coherence_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/coherence_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/coherence_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/forest_cells_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/forest_cells_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/forest_cells_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.meta.json",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.pdf",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.png",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.meta.json",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.pdf",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.png",
+    "figures/issue_2333/q35_language_snowball/k_traces_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/k_traces_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/k_traces_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/perpair_prefill3_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/perpair_prefill3_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/perpair_prefill3_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/recovery_ratio_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/recovery_ratio_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/recovery_ratio_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/scheme_contrast_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/scheme_contrast_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/scheme_contrast_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/whole_vs_continuation_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/whole_vs_continuation_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/whole_vs_continuation_q35lang.png",
     "scripts/issue2333_figures.py"
   ],
-  "created": "2026-08-20T04:16:40Z",
+  "created": "2026-08-20T06:00:25Z",
   "figsize": [
     4.6,
     3.2
   ],
   "points": [
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.100333,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.100333,
       "pair-side rows": 1.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.09,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.09,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.079667,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.079667,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.069333,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.069333,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.059,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.059,
       "pair-side rows": 1.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.048667,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.048667,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.038333,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.038333,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.028,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.028,
       "pair-side rows": 2.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.017667,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.017667,
       "pair-side rows": 3.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": -0.007333,
+      "anchor delta: this wave \u2212 stored prior-run value": -0.007333,
       "pair-side rows": 25.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.003,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.003,
       "pair-side rows": 99.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.013333,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.013333,
       "pair-side rows": 9.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.023667,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.023667,
       "pair-side rows": 2.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.034,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.034,
       "pair-side rows": 1.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.044333,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.044333,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.054667,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.054667,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.065,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.065,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.075333,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.075333,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.085667,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.085667,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.096,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.096,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.106333,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.106333,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.116667,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.116667,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.127,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.127,
       "pair-side rows": 0.0,
       "_kind": "bar"
     },
     {
-      "anchor delta: this wave \u2212 #2329 stored": 0.137333,
+      "anchor delta: this wave \u2212 stored prior-run value": 0.137333,
       "pair-side rows": 1.0,
       "_kind": "bar"
     }
@@ -141,7 +171,7 @@
     "axes": [
       {
         "title_left": "Qwen3.5-9B, language cells: judge-wave offset on identical anchors",
-        "xlabel": "anchor delta: this wave \u2212 #2329 stored",
+        "xlabel": "anchor delta: this wave \u2212 stored prior-run value",
         "ylabel": "pair-side rows",
         "xticklabels": [
           "\u22120.15",

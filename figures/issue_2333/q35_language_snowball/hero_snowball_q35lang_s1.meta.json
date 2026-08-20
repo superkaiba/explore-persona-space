@@ -1,12 +1,12 @@
 {
-  "commit": "81d5f921+dirty",
-  "render_id": "ca3628c2626a429f",
-  "git_commit": "81d5f921",
+  "commit": "77d94e6b+dirty",
+  "render_id": "108347d488b04932",
+  "git_commit": "77d94e6b",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2333_figures.py"
   ],
-  "created": "2026-08-20T04:16:19Z",
+  "created": "2026-08-20T06:00:03Z",
   "figsize": [
     9.6,
     3.6
@@ -133,14 +133,14 @@
     {
       "x": 0.0,
       "behavioral movement F": 0.6977097412036111,
-      "series": "banked #2329 context-end (reference)",
+      "series": "banked context-end reference (prior Qwen3.5 run)",
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 1.0,
       "behavioral movement F": 0.6977097412036111,
-      "series": "banked #2329 context-end (reference)",
+      "series": "banked context-end reference (prior Qwen3.5 run)",
       "_kind": "line",
       "_group": 3
     },
@@ -499,14 +499,14 @@
     {
       "x": 0.0,
       "y": 0.6977097412036111,
-      "series": "banked #2329 context-end (reference)",
+      "series": "banked context-end reference (prior Qwen3.5 run)",
       "_kind": "line",
       "_group": 13
     },
     {
       "x": 1.0,
       "y": 0.6977097412036111,
-      "series": "banked #2329 context-end (reference)",
+      "series": "banked context-end reference (prior Qwen3.5 run)",
       "_kind": "line",
       "_group": 13
     },
@@ -756,7 +756,7 @@
         "ylabel": "behavioral movement F",
         "legend_labels": [
           "full context-end patch, same wave (95% CI band)",
-          "banked #2329 context-end (reference)",
+          "banked context-end reference (prior Qwen3.5 run)",
           "steered (true donor)",
           "shuffled-donor null"
         ],
@@ -795,7 +795,7 @@
     ],
     "series": [
       "full context-end patch, same wave (95% CI band)",
-      "banked #2329 context-end (reference)",
+      "banked context-end reference (prior Qwen3.5 run)",
       "steered (true donor)",
       "shuffled-donor null"
     ]

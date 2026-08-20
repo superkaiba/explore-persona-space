@@ -1,12 +1,27 @@
 {
-  "commit": "81d5f921+dirty",
-  "render_id": "c5e01f32451c43b2",
-  "git_commit": "81d5f921",
+  "commit": "77d94e6b+dirty",
+  "render_id": "9da0a580ef59498c",
+  "git_commit": "77d94e6b",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2333/q35_language_snowball/forest_cells_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/forest_cells_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/forest_cells_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.meta.json",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.pdf",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_act_q35lang_s1.png",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.meta.json",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.pdf",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.png",
+    "figures/issue_2333/q35_language_snowball/perpair_prefill3_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/perpair_prefill3_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/perpair_prefill3_q35lang.png",
+    "figures/issue_2333/q35_language_snowball/recovery_ratio_q35lang.meta.json",
+    "figures/issue_2333/q35_language_snowball/recovery_ratio_q35lang.pdf",
+    "figures/issue_2333/q35_language_snowball/recovery_ratio_q35lang.png",
     "scripts/issue2333_figures.py"
   ],
-  "created": "2026-08-20T04:16:31Z",
+  "created": "2026-08-20T06:00:15Z",
   "figsize": [
     8.4,
     3.0

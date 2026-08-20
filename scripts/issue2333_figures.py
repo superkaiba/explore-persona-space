@@ -210,7 +210,7 @@ def fig_hero(data: dict, tag: str, field: str = "f_beh") -> None:
                     color="0.35",
                     lw=0.8,
                     ls="-.",
-                    label="banked #2329 context-end (reference)",
+                    label="banked context-end reference (prior Qwen3.5 run)",
                 )
             for off, (variant, rows, color) in enumerate(
                 (("steered", data["steered"], colors[0]), ("null", data["null"], colors[1]))
@@ -770,7 +770,7 @@ def fig_judge_offset(tag: str) -> None:
     ax.hist(offs, bins=24, color=paper_palette(1)[0], alpha=0.85)
     ax.axvline(0.0, color="0.4", lw=0.8, ls=":")
     ax.axvline(float(np.mean(offs)), color="0.1", lw=1.0, ls="--")
-    ax.set_xlabel("anchor delta: this wave − #2329 stored")
+    ax.set_xlabel("anchor delta: this wave − stored prior-run value")
     ax.set_ylabel("pair-side rows")
     ax.set_title(f"{MODEL_LABEL[tag]}: judge-wave offset on identical anchors")
     fig.tight_layout()

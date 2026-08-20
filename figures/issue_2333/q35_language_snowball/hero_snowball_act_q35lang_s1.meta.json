@@ -1,12 +1,15 @@
 {
-  "commit": "81d5f921+dirty",
-  "render_id": "755604411f514107",
-  "git_commit": "81d5f921",
+  "commit": "77d94e6b+dirty",
+  "render_id": "42674dd09c734c36",
+  "git_commit": "77d94e6b",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.meta.json",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.pdf",
+    "figures/issue_2333/q35_language_snowball/hero_snowball_q35lang_s1.png",
     "scripts/issue2333_figures.py"
   ],
-  "created": "2026-08-20T04:16:22Z",
+  "created": "2026-08-20T06:00:06Z",
   "figsize": [
     9.6,
     3.6
