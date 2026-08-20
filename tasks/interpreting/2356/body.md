@@ -6,7 +6,7 @@ kind: experiment
 tags:
 - trigger-dense
 created_at: '2026-08-17T22:23:49Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: 'run the full experiment i talked about earlier on the overrefusal
   (4-way: LLM judge on context, probe on context vector, probe on mapped answer vector,
   probe on actual answer vector, fair train/eval split)'
