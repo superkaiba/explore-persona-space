@@ -378,7 +378,7 @@
   "lcb-leetcode-3715",
   "lcb-leetcode-3716"
  ],
- "rule": "LCB platform==leetcode with slugified title in LeetCodeDataset task_id slugs",
+ "rule": "LCB platform==leetcode with alnum-only title key in LeetCodeDataset alnum-only task_id keys (r1 g3 Concern 5: dash-slugify under-matched punctuation-bearing titles vs official slugs)",
  "leetcode_revision": "215604aeed660029df7de2fea5a4d7b6ed476a08",
  "lcb_version_tag": "release_v5",
  "lcb_revision": "0fe84c3912ea0c4d4a78037083943e8f0c4dd505",
@@ -389,10 +389,20 @@
   "test4.jsonl",
   "test5.jsonl"
  ],
- "ts": "2026-08-20T02:13:22Z",
- "git_commit": "3f87afa3a233a72e14686244ff8e9472b40b5534",
- "git_dirty": false,
+ "ts": "2026-08-20T06:38:28Z",
+ "git_commit": "e138885414a6c8e6876c0024eff0695228c9112b",
+ "git_dirty": true,
  "phase": "gen-dedup",
- "git_argv0_state": "tracked",
+ "git_dirty_paths": [
+  "scripts/issue2388_capture.py",
+  "scripts/issue2388_code_control.py",
+  "scripts/issue2388_dv_build.py",
+  "scripts/issue2388_fits.py",
+  "scripts/issue2388_gen.py",
+  "scripts/issue2388_spread_pilot.py",
+  "src/explore_persona_space/experiments/issue_1739/capture.py",
+  "tests/test_issue2388_capture_kinds.py"
+ ],
+ "git_argv0_state": "modified",
  "git_argv0_path": "scripts/issue2388_gen.py"
 }

@@ -12,21 +12,40 @@ pre-fit input).
 Phases (one benchmark at a time so each checkpoints independently; the pod
 dispatcher shards benchmarks across GPUs via per-process CUDA_VISIBLE_DEVICES):
 
+    dedup   the ALWAYS-ON LCB<->LeetCode dedup (binding report).
+    gate    consolidate the code-surface gate verdicts (G1 env gate from the
+            code-control report + the fresh full-pool G3 spread re-read +
+            the fork-5 APPS trigger arithmetic) into the BINDING
+            ``code_gate.json`` consumed by BCB/APPS generation and by
+            ``issue2388_dv_build`` fit inclusion.
     gen     K=5 sampled rollouts via vLLM (temp 1.0, top_p 1.0, chat template),
             CHUNKED generate (#664 deadlock prevention; per-chunk append +
-            resume by item_id), cap-hit fraction reported per chunk.
+            resume by item_id + a generating-params sidecar), ONE engine
+            shared across benchmarks in-process, cap-hit fraction reported
+            per chunk; ``--regen-cap-hit`` re-generates cap-hit rows at a
+            2x token cap (the >2% re-generation trigger's executable path).
     verify  programmatic verdicts (math-verify / option-match / unit-test
-            execution), process-pooled, checkpointed per chunk; per-benchmark
-            spread_stats (pilot reuse) + admissibility REPORTED (the BCB
-            full-pool re-measure input).
+            execution in the hardened sandbox), process-pooled, checkpointed
+            per chunk; per-benchmark spread_stats (pilot reuse) +
+            admissibility + the durable full-pool cap-hit fraction (the BCB
+            full-pool G3 re-measure input).
     upload  rollout TEXT -> HF ``issue2388_correctness/raw_completions/gen/
-            <surface>/`` (<=9 MB JSONL line-shards; upload-policy split rule).
+            <surface>/`` (<=9 MB JSONL line-shards; upload-policy split rule;
+            smoke uploads land under ``raw_completions/gen_smoke/`` — never
+            the production prefix).
+
+Code sandbox: model-generated code executes with a SCRUBBED allowlisted env
+(no API/HF tokens), an isolated writable HOME/TMPDIR/cwd, CPU/file-size/
+address-space rlimits, its own process group (killpg on timeout), and — where
+unprivileged user namespaces allow — no network (``unshare -rn``; availability
+probed per process and recorded). NOT a hardened security boundary against a
+targeted adversary (no seccomp); the residual is a persisted concern.
 
 Smoke mode (``--smoke``): 20 contexts per benchmark through the SAME
-entrypoint, engine path, K, and caps; out-roots rebind to ``*_smoke`` so smoke
-artifacts never overwrite production paths. Loader count-asserts run on the
-FULL pool BEFORE the smoke slice (production gates are never downgraded —
-smoke-blind-spots rule).
+entrypoint, engine path, K, and caps; out-roots AND HF upload prefixes rebind
+to ``*_smoke`` so smoke artifacts never overwrite production paths. Loader
+count-asserts run on the FULL pool BEFORE the smoke slice (production gates
+are never downgraded — smoke-blind-spots rule).
 
 Terminal: ``os._exit(0)`` after flush on the gen phase (vLLM engine children
 survive interpreter finalization otherwise — gotchas.md #1739/#2149).
@@ -37,8 +56,10 @@ CONTENT HYGIENE: benchmark questions are benign; logs still carry ids/counts.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import os
+import pickle
 import re
 import subprocess
 import sys
@@ -94,6 +115,19 @@ LCB_VERSION_TAG = "release_v5"
 # (ALLOWED_FILES["release_v5"] at this revision — schema-from-artifact).
 LCB_REVISION = "0fe84c3912ea0c4d4a78037083943e8f0c4dd505"
 LCB_V5_FILES = ("test.jsonl", "test2.jsonl", "test3.jsonl", "test4.jsonl", "test5.jsonl")
+# APPS contingency pool (plan section 4 fork 5: enters ONLY when the realized
+# post-dedup, post-BCB-gate code train split falls below d = 3,584).
+# codeparrot/apps is a SCRIPT dataset (datasets>=3 removed script loading), so
+# the raw train/test jsonl files are read at the pinned revision (same
+# workaround as LCB). Schema-from-artifact (train.jsonl row 0 probed
+# 2026-08-20 at this revision): row keys [difficulty, id, input_output,
+# question, solutions, starter_code, url]; ``input_output`` is a JSON string
+# {"inputs": [...], "outputs": [...]} (+ "fn_name" on functional problems);
+# ``solutions`` is a JSON string list.
+APPS_REVISION = "21e74ddf8de1a21436da12e3e653065c5213e9d1"
+APPS_FILES = ("train.jsonl", "test.jsonl")
+APPS_PILOT_N = 200  # plan fork 5: 200-problem APPS-intro pilot first
+CODE_TRAIN_FLOOR = 3584  # d — the fork-5 APPS trigger reads the realized count
 
 # Realized-count loader asserts (plan A5/A6 + section 4 pool table). Every count
 # below is deterministic at its pin (fixed split / pinned revision / version
@@ -106,24 +140,32 @@ EXPECTED_COUNTS = {
     "bigcodebench_full": 1140,
     "lcb_v5": 880,
     "leetcode": 2869,
+    "apps_intro": None,  # contingency pool — realized count recorded by the gate, not pinned
 }
 
+# Plan-registered cap: max_new_tokens 2048 on ALL surfaces (plan section 10
+# "Protocol"; section 11: MMLU-Pro raised from the pilot's 1024 after its
+# measured 1.9% cap-hit; HumanEval/MBPP raised direction-safe).
 MAX_TOKENS = {
     "math_full": 2048,
-    "mmlu_pro_full": 1024,
-    "humaneval": 1024,
-    "mbpp_full": 1024,
+    "mmlu_pro_full": 2048,
+    "humaneval": 2048,
+    "mbpp_full": 2048,
     "bigcodebench_full": 2048,
     "lcb_v5": 2048,
     "leetcode": 2048,
+    "apps_intro": 2048,
 }
 
 SURFACES = {
     "math": ["math_full"],
     "mcq": ["mmlu_pro_full"],
+    # apps_intro is CONTINGENCY-ONLY: it never enters the default surface
+    # roster; the gate activates it (fork 5) and it is then run explicitly via
+    # --benchmark apps_intro.
     "code": ["humaneval", "mbpp_full", "bigcodebench_full", "lcb_v5", "leetcode"],
 }
-CODE_BENCHMARKS = set(SURFACES["code"])
+CODE_BENCHMARKS = set(SURFACES["code"]) | {"apps_intro"}
 CODE_EXEC_TIMEOUT_S = 15
 SMOKE_N = 20
 GEN_CHUNK = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
@@ -132,10 +174,22 @@ CAP_HIT_TRIGGER = 0.02  # CLAUDE.md re-generation trigger (reported per family)
 
 
 def surface_of(benchmark: str) -> str:
+    if benchmark in CODE_BENCHMARKS:
+        return "code"
     for s, benches in SURFACES.items():
         if benchmark in benches:
             return s
     raise ValueError(f"unknown benchmark {benchmark!r}")
+
+
+def _assert_unique_ids(items: list[dict], benchmark: str) -> None:
+    """item_id collisions silently merge rows at resume/verdict/dedup joins."""
+    ids = [it["item_id"] for it in items]
+    if len(set(ids)) != len(ids):
+        from collections import Counter
+
+        dupes = [k for k, c in Counter(ids).items() if c > 1]
+        raise RuntimeError(f"{benchmark}: {len(dupes)} duplicate item_ids (e.g. {dupes[:3]})")
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +200,18 @@ def surface_of(benchmark: str) -> str:
 
 def _slugify(title: str) -> str:
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", title.strip().lower())).strip("-")
+
+
+def _dedup_key(text: str) -> str:
+    """Alnum-only dedup key, applied to BOTH sides of the LCB<->LeetCode match.
+
+    Official LeetCode slugs DROP apostrophes ("Pascal's Triangle" ->
+    "pascals-triangle") while a dash-substituting slugify keeps them as
+    dashes ("pascal-s-triangle") — punctuation-bearing titles would survive
+    the binding dedup as true duplicates. Alnum-only collapses both
+    conventions to one key (r1 g3 Concern 5).
+    """
+    return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
 def load_math_full() -> list[dict]:
@@ -296,6 +362,25 @@ def load_bigcodebench_full() -> list[dict]:
     return rows
 
 
+class _NoGlobalsUnpickler(pickle.Unpickler):
+    """Restricted unpickler: LCB private_test_cases pickle to a PLAIN str
+    (their own translate_private_test_cases recipe), which needs NO globals —
+    any global resolution is an injection attempt and raises
+    (unsafe-lcb-pickle: unrestricted pickle.loads executes constructors
+    embedded in downloaded dataset content)."""
+
+    def find_class(self, module, name):  # noqa: ARG002 — signature fixed by pickle
+        raise pickle.UnpicklingError(
+            f"forbidden global {module}.{name} in LCB private_test_cases "
+            "(expected a plain pickled str)"
+        )
+
+
+def _restricted_pickle_loads(data: bytes):
+    """Module-level (testable) restricted-pickle entry for LCB private tests."""
+    return _NoGlobalsUnpickler(io.BytesIO(data)).load()
+
+
 def load_lcb_v5() -> list[dict]:
     """LiveCodeBench code_generation_lite, release_v5 composition (880 problems).
 
@@ -313,7 +398,6 @@ def load_lcb_v5() -> list[dict]:
     A17-A19: 'verified at Step 0-p loader asserts').
     """
     import base64
-    import pickle
     import zlib
 
     from huggingface_hub import hf_hub_download
@@ -348,7 +432,7 @@ def load_lcb_v5() -> list[dict]:
             private = json.loads(r["private_test_cases"])
         except (json.JSONDecodeError, TypeError):
             private = json.loads(
-                pickle.loads(zlib.decompress(base64.b64decode(r["private_test_cases"])))
+                _restricted_pickle_loads(zlib.decompress(base64.b64decode(r["private_test_cases"])))
             )
         tests = list(public) + list(private)
         assert tests and all("input" in t and "output" in t and "testtype" in t for t in tests), (
@@ -375,6 +459,7 @@ def load_lcb_v5() -> list[dict]:
                 "platform": plat,
                 "question_title": r["question_title"],
                 "slug": _slugify(r["question_title"]),
+                "dedup_key": _dedup_key(r["question_title"]),
                 "func_name": meta.get("func_name"),
                 "starter_code": starter,
                 "tests": tests,
@@ -404,6 +489,7 @@ def load_leetcode() -> list[dict]:
                     "item_id": f"leetcode-{r['task_id']}",
                     "benchmark": "leetcode",
                     "slug": str(r["task_id"]),
+                    "dedup_key": _dedup_key(str(r["task_id"])),
                     "difficulty": r.get("difficulty"),
                     "canonical_completion": r["completion"],  # code-control positive control
                     "test_imports": r["prompt"],
@@ -426,6 +512,80 @@ def load_leetcode() -> list[dict]:
     return rows
 
 
+def load_apps_intro() -> list[dict]:
+    """APPS introductory problems (CONTINGENCY pool — plan section 4 fork 5).
+
+    Raw train/test jsonl at the pinned revision (script dataset — same
+    workaround as LCB; observed row schema in the module constants block).
+    Rows without any test cases (or with input/output length mismatch) are
+    DROPPED with a digest count (unverifiable); the realized count is
+    recorded by the gate, not pinned.
+    """
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    rows: list[dict] = []
+    n_seen = n_unverifiable = 0
+    for fname in APPS_FILES:
+        path = retry_transient(
+            lambda fname=fname: hf_hub_download(
+                "codeparrot/apps", fname, repo_type="dataset", revision=APPS_REVISION
+            ),
+            what=f"hf_hub_download(apps/{fname})",
+        )
+        split = fname.split(".")[0]
+        with open(path, encoding="utf-8") as fh:  # text-mode iteration, never splitlines()
+            for line in fh:
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                for field in ("difficulty", "id", "question", "input_output", "solutions"):
+                    assert field in r, f"APPS field drift: {field!r} missing (have {sorted(r)[:8]})"
+                if r["difficulty"] != "introductory":
+                    continue
+                n_seen += 1
+                io_payload = json.loads(r["input_output"]) if r["input_output"] else {}
+                inputs = io_payload.get("inputs") or []
+                outputs = io_payload.get("outputs") or []
+                if not inputs or len(inputs) != len(outputs):
+                    n_unverifiable += 1
+                    continue
+                solutions = json.loads(r["solutions"]) if r["solutions"] else []
+                starter = r.get("starter_code") or ""
+                prompt = (
+                    "Solve the following programming problem.\n\n"
+                    + r["question"]
+                    + (
+                        "\n\nUse this starter code (complete the class/method as given):\n\n"
+                        f"```python\n{starter}\n```"
+                        if starter.strip()
+                        else "\n\nRead input from stdin and write the answer to stdout."
+                    )
+                    + "\n\nReturn the complete solution inside a single ```python code block."
+                )
+                rows.append(
+                    {
+                        "item_id": f"apps-{split}-{r['id']}",
+                        "benchmark": "apps_intro",
+                        "fn_name": io_payload.get("fn_name"),
+                        "inputs": inputs,
+                        "outputs": outputs,
+                        "canonical_solutions": solutions[:2],  # code-control positives
+                        "starter_code": starter,
+                        "prompt": prompt,
+                    }
+                )
+    if not rows:
+        raise RuntimeError("apps_intro: 0 verifiable introductory rows at the pinned revision")
+    print(
+        f"[load] apps_intro: {len(rows)} kept / {n_seen} introductory "
+        f"(unverifiable {n_unverifiable})",
+        flush=True,
+    )
+    return rows
+
+
 LOADERS = {
     "math_full": load_math_full,
     "mmlu_pro_full": load_mmlu_pro_full,
@@ -434,6 +594,7 @@ LOADERS = {
     "bigcodebench_full": load_bigcodebench_full,
     "lcb_v5": load_lcb_v5,
     "leetcode": load_leetcode,
+    "apps_intro": load_apps_intro,
 }
 assert set(LOADERS) == set(EXPECTED_COUNTS) == set(MAX_TOKENS)
 
@@ -454,9 +615,11 @@ def dedup_lcb_against_leetcode(out_root: Path) -> dict:
     """
     lcb = load_lcb_v5()
     leet = load_leetcode()
-    leet_slugs = {r["slug"] for r in leet}
+    _assert_unique_ids(lcb, "lcb_v5")
+    _assert_unique_ids(leet, "leetcode")
+    leet_keys = {r["dedup_key"] for r in leet}
     dropped = sorted(
-        r["item_id"] for r in lcb if r["platform"] == "leetcode" and r["slug"] in leet_slugs
+        r["item_id"] for r in lcb if r["platform"] == "leetcode" and r["dedup_key"] in leet_keys
     )
     report = {
         "n_lcb": len(lcb),
@@ -464,7 +627,11 @@ def dedup_lcb_against_leetcode(out_root: Path) -> dict:
         "n_lcb_leetcode_platform": sum(1 for r in lcb if r["platform"] == "leetcode"),
         "n_dropped_lcb": len(dropped),
         "dropped_lcb_item_ids": dropped,
-        "rule": "LCB platform==leetcode with slugified title in LeetCodeDataset task_id slugs",
+        "rule": (
+            "LCB platform==leetcode with alnum-only title key in LeetCodeDataset "
+            "alnum-only task_id keys (r1 g3 Concern 5: dash-slugify under-matched "
+            "punctuation-bearing titles vs official slugs)"
+        ),
         "leetcode_revision": LEETCODE_REVISION,
         "lcb_version_tag": LCB_VERSION_TAG,
         "lcb_revision": LCB_REVISION,
@@ -497,27 +664,268 @@ def _apply_dedup(items: list[dict], out_root: Path) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# code-surface gate (G1 env gate + G3 spread gate + fork-5 APPS trigger)
+# ---------------------------------------------------------------------------
+
+CONTROL_REPORT = "code_harness_control.json"  # scripts/issue2388_code_control.py --out default
+
+
+def gate_path(out_root: Path) -> Path:
+    return out_root / "code" / "code_gate.json"
+
+
+def load_gate(out_root: Path) -> dict:
+    path = gate_path(out_root)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"code gate verdict missing at {path} — run --phase gate first (G1/G3 consumers "
+            "never run ungated; plan section 7)"
+        )
+    return json.loads(path.read_text())
+
+
+def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
+    """Consolidate the code-surface gate verdicts into the BINDING code_gate.json.
+
+    Idempotent — consumes whatever inputs exist NOW and records availability:
+
+    - G1 (env gate): the code-control report's bigcodebench ``harness_ok``
+      (25/25 through /opt/bcb-venv + flaky < 2%). ABSENT -> BCB generation is
+      REFUSED (fail-loud, never a silent keep).
+    - G3 (spread gate, BINDING for BCB/APPS): the FRESH full-pool spread
+      re-read from this run's own verify output (``code/bigcodebench_full.json``,
+      asserted non-smoke full-pool) — NEVER ``spread_pilot/`` (its
+      ``admissible: true`` flag is harness-contaminated; plan section 7).
+    - fork-5 APPS trigger: est. post-dedup post-BCB-gate code train count
+      < d = 3,584 -> the APPS-intro fallback branch is ACTIVATED.
+
+    Consumers: ``phase_gen``/``phase_verify`` (bigcodebench_full / apps_intro
+    refuse without the right verdict) and ``issue2388_dv_build`` (BCB/APPS fit
+    inclusion).
+    """
+    dedup_p = out_root / "code" / "dedup_report.json"
+    if not dedup_p.exists():
+        raise FileNotFoundError(f"dedup report missing at {dedup_p} — run --phase dedup first")
+    dedup = json.loads(dedup_p.read_text())
+    n_lcb_kept = int(dedup["n_lcb"]) - int(dedup["n_dropped_lcb"])
+
+    ctrl_p = Path(control_report) if control_report else out_root / CONTROL_REPORT
+    g1: dict = {"available": ctrl_p.exists(), "path": str(ctrl_p)}
+    if ctrl_p.exists():
+        ctrl = json.loads(ctrl_p.read_text())["benchmarks"]
+        bcb = ctrl.get("bigcodebench")
+        g1["harness_ok"] = bool(bcb["harness_ok"]) if bcb else None
+        g1["flaky_mismatch_fraction"] = bcb.get("flaky_mismatch_fraction") if bcb else None
+        g1["apps_harness_ok"] = (
+            bool(ctrl["apps_intro"]["harness_ok"]) if "apps_intro" in ctrl else None
+        )
+    else:
+        g1["harness_ok"] = None
+        g1["apps_harness_ok"] = None
+
+    spread_p = out_root / "code" / "bigcodebench_full.json"
+    g3: dict = {"available": spread_p.exists(), "provenance": str(spread_p)}
+    if spread_p.exists():
+        sp = json.loads(spread_p.read_text())
+        # Full-pool assertion: the G3 re-read must be the FULL BCB pool, never
+        # a smoke slice and never the pilot file (provenance path is this
+        # run's own verify output by construction).
+        full_pool = (not sp.get("smoke")) and int(sp["n_items"]) == EXPECTED_COUNTS[
+            "bigcodebench_full"
+        ]
+        g3["full_pool"] = bool(full_pool)
+        g3["admissible"] = bool(sp["admissible"]) if full_pool else None
+    else:
+        g3["full_pool"] = None
+        g3["admissible"] = None
+
+    bcb_gen_allowed = bool(g1["harness_ok"])
+    # Fit inclusion needs BOTH gates (G3 resolves only after full-pool verify).
+    bcb_fit_allowed = None
+    if g1["harness_ok"] is not None:
+        if not g1["harness_ok"]:
+            bcb_fit_allowed = False
+        elif g3["admissible"] is not None:
+            bcb_fit_allowed = bool(g3["admissible"])
+
+    base_pool = (
+        EXPECTED_COUNTS["humaneval"]
+        + EXPECTED_COUNTS["mbpp_full"]
+        + n_lcb_kept
+        + EXPECTED_COUNTS["leetcode"]
+    )
+    pool_with_bcb = base_pool + EXPECTED_COUNTS["bigcodebench_full"]
+    est = {
+        "n_lcb_kept_post_dedup": n_lcb_kept,
+        "est_train_with_bcb": round(0.7 * pool_with_bcb),
+        "est_train_without_bcb": round(0.7 * base_pool),
+        "code_train_floor_d": CODE_TRAIN_FLOOR,
+    }
+    if bcb_fit_allowed is None:
+        apps_required = None  # unresolved until the BCB verdict lands
+    else:
+        est_train = est["est_train_with_bcb"] if bcb_fit_allowed else est["est_train_without_bcb"]
+        apps_required = est_train < CODE_TRAIN_FLOOR
+    apps_activated = bool(apps_required) and bool(g1.get("apps_harness_ok"))
+
+    verdict = {
+        "g1": g1,
+        "g3_bcb": g3,
+        "bcb_gen_allowed": bcb_gen_allowed,
+        "bcb_fit_allowed": bcb_fit_allowed,
+        "apps_required": apps_required,
+        "apps_activated": apps_activated,
+        "pool_arithmetic": est,
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    verdict.update(as_metadata_dict(git_provenance(), phase="gen-gate"))
+    path = gate_path(out_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(verdict, indent=1))
+    os.replace(tmp, path)
+    print(
+        f"[gate] bcb_gen_allowed={bcb_gen_allowed} bcb_fit_allowed={bcb_fit_allowed} "
+        f"apps_required={apps_required} apps_activated={apps_activated} -> {path}",
+        flush=True,
+    )
+    return verdict
+
+
+def _require_gate_for(benchmark: str, out_root: Path) -> None:
+    """BCB/APPS enter generation ONLY behind the recorded gate verdicts."""
+    if benchmark == "bigcodebench_full":
+        gate = load_gate(out_root)
+        if not gate.get("bcb_gen_allowed"):
+            raise RuntimeError(
+                "G1: BCB env gate not passed (bcb_gen_allowed is false/unresolved in "
+                f"{gate_path(out_root)}) — BCB never enters generation ungated; on a "
+                "recorded G1 FAIL the fork-5 branch is DROP BCB -> APPS fallback"
+            )
+    elif benchmark == "apps_intro":
+        gate = load_gate(out_root)
+        if not gate.get("apps_required"):
+            raise RuntimeError(
+                "fork-5: apps_intro is contingency-only and the APPS trigger is not "
+                f"recorded true in {gate_path(out_root)}"
+            )
+
+
+# ---------------------------------------------------------------------------
 # code verification (new benchmarks; pilot's sandbox pattern)
 # ---------------------------------------------------------------------------
 
 
-def _run_code(payload: str, timeout_s: int, python_exe: str | None = None) -> bool:
-    """Pilot ``_run_snippet`` with an interpreter override (the BCB /opt venv gate)."""
-    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as fh:
-        fh.write(payload)
-        path = fh.name
+# Sandbox env allowlist: model-generated code must NEVER inherit the parent's
+# credential env (HF_TOKEN / ANTHROPIC_API_KEY / RUNPOD_API_KEY / WANDB_API_KEY
+# ride load_dotenv() into os.environ). Absolute interpreter paths make PATH
+# venv-entries unnecessary.
+_SANDBOX_ENV_KEYS = ("LANG", "LC_ALL")
+_SANDBOX_MEM_BYTES = 4 << 30  # generous: BCB tests import sklearn/matplotlib
+_SANDBOX_FSIZE_BYTES = 256 << 20
+_UNSHARE_NET: bool | None = None
+
+
+def _sandbox_env(tmpdir: str) -> dict[str, str]:
+    env = {k: os.environ[k] for k in _SANDBOX_ENV_KEYS if k in os.environ}
+    env["PATH"] = "/usr/local/bin:/usr/bin:/bin"
+    env["HOME"] = tmpdir
+    env["TMPDIR"] = tmpdir
+    env["MPLCONFIGDIR"] = tmpdir  # matplotlib-importing BCB tests need a writable config dir
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return env
+
+
+def _unshare_net_available() -> bool:
+    """Once-per-process probe: unprivileged user+net namespaces (``unshare -rn``)
+    give the sandbox NETWORK ISOLATION for free; unavailable inside many
+    containers (recorded residual — persisted concern sandbox-network-residual)."""
+    global _UNSHARE_NET
+    if _UNSHARE_NET is None:
+        try:
+            _UNSHARE_NET = (
+                subprocess.run(
+                    ["unshare", "-r", "-n", "true"], capture_output=True, timeout=10
+                ).returncode
+                == 0
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            _UNSHARE_NET = False
+        print(f"[sandbox] unshare -rn network isolation: {_UNSHARE_NET}", flush=True)
+    return _UNSHARE_NET
+
+
+def _run_sandboxed(
+    argv: list[str],
+    *,
+    timeout_s: int,
+    tmpdir: str,
+    input_text: str | None = None,
+) -> tuple[int, str]:
+    """Hardened execution of model-generated code (r1 unsandboxed-generated-code).
+
+    Scrubbed allowlisted env (no API/HF tokens), isolated writable
+    HOME/TMPDIR/cwd, CPU + file-size + address-space rlimits, its own process
+    group (killpg on timeout — grandchildren cannot outlive the verdict), and
+    network off via ``unshare -rn`` where user namespaces allow. NOT a
+    security boundary against a targeted adversary (no seccomp) — residual
+    recorded as a persisted concern. Returns (returncode, stdout); timeout ->
+    (-1, "").
+    """
+    import resource
+    import signal
+
+    if _unshare_net_available():
+        argv = ["unshare", "-r", "-n", *argv]
+
+    def _limits() -> None:
+        cpu = int(timeout_s) + 5
+        resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (_SANDBOX_FSIZE_BYTES, _SANDBOX_FSIZE_BYTES))
+        try:
+            resource.setrlimit(resource.RLIMIT_AS, (_SANDBOX_MEM_BYTES, _SANDBOX_MEM_BYTES))
+        except (ValueError, OSError):
+            pass  # some hosts refuse lowering AS below current usage
+
+    proc = subprocess.Popen(
+        argv,
+        stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=tmpdir,
+        env=_sandbox_env(tmpdir),
+        start_new_session=True,
+        preexec_fn=_limits,
+    )
     try:
-        proc = subprocess.run(
-            [python_exe or sys.executable, path],
-            capture_output=True,
-            timeout=timeout_s,
-            text=True,
-        )
-        return proc.returncode == 0
+        out, _err = proc.communicate(input=input_text, timeout=timeout_s)
+        return proc.returncode, out
     except subprocess.TimeoutExpired:
-        return False
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait(timeout=10)
+        return -1, ""
+
+
+def _run_code(payload: str, timeout_s: int, python_exe: str | None = None) -> bool:
+    """Sandboxed snippet execution with an interpreter override (BCB /opt venv)."""
+    import shutil
+
+    tmpdir = tempfile.mkdtemp(prefix="i2388sbx_")
+    try:
+        path = Path(tmpdir) / "snippet.py"
+        path.write_text(payload)
+        rc, _out = _run_sandboxed(
+            [python_exe or sys.executable, str(path)], timeout_s=timeout_s, tmpdir=tmpdir
+        )
+        return rc == 0
     finally:
-        Path(path).unlink(missing_ok=True)
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 # LeetCode-style solutions run under STAR-imports in the reference LCB harness
@@ -605,25 +1013,87 @@ def _verify_lcb(completion: str, item: dict, python_exe: str | None = None) -> b
                 return False
         finally:
             Path(tests_path).unlink(missing_ok=True)
-    for t in stdin_tests:
-        with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as fh:
-            fh.write(code)
-            path = fh.name
-        try:
-            proc = subprocess.run(
-                [python_exe or sys.executable, path],
-                input=t["input"],
-                capture_output=True,
-                timeout=CODE_EXEC_TIMEOUT_S,
-                text=True,
-            )
-            if proc.returncode != 0 or proc.stdout.strip() != str(t["output"]).strip():
-                return False
-        except subprocess.TimeoutExpired:
-            return False
-        finally:
-            Path(path).unlink(missing_ok=True)
+    if stdin_tests and not _run_stdin_tests(code, stdin_tests, python_exe):
+        return False
     return True
+
+
+def _stdout_matches(got: str, want: str) -> bool:
+    """Official LCB checker semantics: per-line compare, trailing-whitespace
+    tolerant — never whole-string exact match (r1 g3 nit: codeforces/atcoder
+    items false-negative on per-line trailing whitespace)."""
+    got_lines = [ln.rstrip() for ln in got.strip().split("\n")]
+    want_lines = [ln.rstrip() for ln in str(want).strip().split("\n")]
+    return got_lines == want_lines
+
+
+def _run_stdin_tests(code: str, tests: list[dict], python_exe: str | None) -> bool:
+    """Sandboxed stdin/stdout test execution (LCB codeforces/atcoder + APPS)."""
+    import shutil
+
+    tmpdir = tempfile.mkdtemp(prefix="i2388sbx_")
+    try:
+        path = Path(tmpdir) / "snippet.py"
+        path.write_text(code)
+        for t in tests:
+            rc, out = _run_sandboxed(
+                [python_exe or sys.executable, str(path)],
+                timeout_s=CODE_EXEC_TIMEOUT_S,
+                tmpdir=tmpdir,
+                input_text=str(t["input"]),
+            )
+            if rc != 0 or not _stdout_matches(out, t["output"]):
+                return False
+        return True
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+# APPS functional variant: APPS wraps a functional problem's expected return in
+# a single-element list ~always; accept either shape (LCB's harness stays
+# byte-identical — an unwrap there could false-positive genuine list outputs).
+_APPS_FUNCTIONAL_HARNESS = _LCB_FUNCTIONAL_HARNESS.replace(
+    "if not _eq(_got, _want):",
+    "if not (_eq(_got, _want) or (isinstance(_want, list) and len(_want) == 1 "
+    "and _eq(_got, _want[0]))):",
+)
+assert _APPS_FUNCTIONAL_HARNESS != _LCB_FUNCTIONAL_HARNESS, "APPS harness patch did not apply"
+
+
+def _verify_apps(completion: str, item: dict, python_exe: str | None = None) -> bool | None:
+    """APPS verdict: functional (fn_name; dual-compare harness) or stdin/stdout."""
+    code = extract_code(completion)
+    if code is None:
+        return None
+    if item.get("fn_name"):
+        tests = [
+            {
+                "input": "\n".join(
+                    json.dumps(a) for a in (inp if isinstance(inp, list) else [inp])
+                ),
+                "output": json.dumps(out),
+                "testtype": "functional",
+            }
+            for inp, out in zip(item["inputs"], item["outputs"], strict=True)
+        ]
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+            json.dump(tests, fh)
+            tests_path = fh.name
+        try:
+            payload = _APPS_FUNCTIONAL_HARNESS.format(
+                code=code, fn_name=item["fn_name"], tests_path=tests_path
+            )
+            return _run_code(payload, CODE_EXEC_TIMEOUT_S, python_exe)
+        finally:
+            Path(tests_path).unlink(missing_ok=True)
+    stdin_tests = [
+        {
+            "input": "\n".join(map(str, inp)) if isinstance(inp, list) else str(inp),
+            "output": "\n".join(map(str, out)) if isinstance(out, list) else str(out),
+        }
+        for inp, out in zip(item["inputs"], item["outputs"], strict=True)
+    ]
+    return _run_stdin_tests(code, stdin_tests, python_exe)
 
 
 def _verify_leetcode(completion: str, item: dict, python_exe: str | None = None) -> bool | None:
@@ -670,6 +1140,8 @@ def _verdict_one(task: tuple) -> tuple[str, int, bool | None]:
         v = _verify_lcb(completion, item, python_exe)
     elif bench == "leetcode":
         v = _verify_leetcode(completion, item, python_exe)
+    elif bench == "apps_intro":
+        v = _verify_apps(completion, item, python_exe)
     elif bench in CODE_BENCHMARKS:
         v = _verify_pilot_code(completion, item, python_exe)
     else:
@@ -697,42 +1169,145 @@ def _load_done_rollouts(path: Path) -> dict[str, list[str]]:
     return done
 
 
-def phase_gen(benchmark: str, out_root: Path, *, smoke: bool) -> None:
-    """K sampled rollouts per item; chunked vLLM generate; per-chunk checkpoint."""
-    items = LOADERS[benchmark]()
-    if benchmark == "lcb_v5":
-        items = _apply_dedup(items, out_root)
-    if smoke:
-        items = items[:SMOKE_N]
-        print(f"[gen] SMOKE: {len(items)} items (production K/caps/engine)", flush=True)
-    roll_path = _rollouts_path(out_root, benchmark)
-    roll_path.parent.mkdir(parents=True, exist_ok=True)
-    done = _load_done_rollouts(roll_path)
-    pending = [it for it in items if it["item_id"] not in done]
-    print(
-        f"[gen] {benchmark}: {len(items)} items, {len(done)} resumed, {len(pending)} pending",
-        flush=True,
-    )
-    if pending:
-        from transformers import AutoTokenizer
-        from vllm import LLM, SamplingParams
+def _load_finish_reasons(path: Path) -> dict[str, list[str]]:
+    """Per-item finish_reasons from the rollouts JSONL (full-pool cap-hit read)."""
+    out: dict[str, list[str]] = {}
+    if path.exists():
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip():
+                    row = json.loads(line)
+                    out[row["item_id"]] = row.get("finish_reasons") or []
+    return out
 
-        tok = AutoTokenizer.from_pretrained(MODEL)
+
+def _check_genmeta(roll_path: Path, benchmark: str) -> None:
+    """Resume-identity sidecar: the output-affecting generating params.
+
+    A resumed run whose immutable params (model/K/temp/top_p/seed) drifted
+    would silently mix regimes — raise instead (r1: resume keyed on item_id
+    only). max_tokens is deliberately NOT in the immutable set (the cap-hit
+    re-generation path raises it per wave; it is recorded per ROW instead).
+    """
+    meta_path = roll_path.with_name(f"{benchmark}_genmeta.json")
+    current = {
+        "model": MODEL,
+        "k_rollouts": K_ROLLOUTS,
+        "temperature": TEMPERATURE,
+        "top_p": TOP_P,
+        "engine_seed": SEED,
+        "base_max_tokens": MAX_TOKENS[benchmark],
+    }
+    if meta_path.exists():
+        prior = json.loads(meta_path.read_text())
+        immutable = {k: v for k, v in current.items() if k != "base_max_tokens"}
+        prior_immutable = {k: prior.get(k) for k in immutable}
+        if prior_immutable != immutable:
+            raise RuntimeError(
+                f"{benchmark}: generating params drifted vs {meta_path} "
+                f"(prior {prior_immutable} != current {immutable}) — a resume would mix "
+                "regimes; use a fresh out-root"
+            )
+    else:
+        meta_path.write_text(json.dumps(current, indent=1))
+
+
+def _regen_prune(roll_path: Path, out_root: Path, benchmark: str) -> int:
+    """--regen-cap-hit: drop cap-hit rows (any finish_reason == 'length') AND
+    their verdict rows, so re-generation + re-verification actually happen
+    (r1 g3 Concern 2: the >2% trigger had no executable path, and stale
+    verdicts would silently score the OLD completions)."""
+    reasons = _load_finish_reasons(roll_path)
+    hit_ids = {iid for iid, fr in reasons.items() if "length" in fr}
+    if not hit_ids:
+        print(f"[gen] {benchmark}: --regen-cap-hit found 0 cap-hit rows", flush=True)
+        return 0
+    tmp = roll_path.with_name(roll_path.name + ".tmp")
+    with roll_path.open(encoding="utf-8") as inp, tmp.open("w", encoding="utf-8") as outp:
+        for line in inp:
+            if line.strip() and json.loads(line)["item_id"] not in hit_ids:
+                outp.write(line)
+    os.replace(tmp, roll_path)
+    verd_path = out_root / surface_of(benchmark) / "rollouts" / f"{benchmark}_verdicts.jsonl"
+    if verd_path.exists():
+        vtmp = verd_path.with_name(verd_path.name + ".tmp")
+        with verd_path.open(encoding="utf-8") as inp, vtmp.open("w", encoding="utf-8") as outp:
+            for line in inp:
+                if line.strip() and json.loads(line)["item_id"] not in hit_ids:
+                    outp.write(line)
+        os.replace(vtmp, verd_path)
+    print(f"[gen] {benchmark}: pruned {len(hit_ids)} cap-hit items (+ their verdicts)", flush=True)
+    return len(hit_ids)
+
+
+# ONE vLLM engine per process, shared across benchmarks: a second LLM() init at
+# gpu_memory_utilization=0.90 OOMs/wedges while the first engine's workers hold
+# the GPU (r1 g3 Concern 3). SamplingParams are per-call, so sharing is exact.
+_ENGINE: dict = {}
+
+
+def _get_engine():
+    if "llm" not in _ENGINE:
+        from vllm import LLM
+
         engine_kwargs: dict = {}
         if os.environ.get("EPM_VLLM_ENFORCE_EAGER") == "1":
             engine_kwargs["enforce_eager"] = True
         if os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING") == "1":
             engine_kwargs["enable_prefix_caching"] = False
-        llm = LLM(
+        _ENGINE["llm"] = LLM(
             model=MODEL, dtype="bfloat16", gpu_memory_utilization=0.90, seed=SEED, **engine_kwargs
         )
+    return _ENGINE["llm"]
+
+
+def phase_gen(
+    benchmark: str,
+    out_root: Path,
+    *,
+    smoke: bool,
+    regen_cap_hit: bool = False,
+    apps_pilot: bool = False,
+) -> None:
+    """K sampled rollouts per item; chunked vLLM generate; per-chunk checkpoint."""
+    _require_gate_for(benchmark, out_root)
+    items = LOADERS[benchmark]()
+    _assert_unique_ids(items, benchmark)
+    if benchmark == "lcb_v5":
+        items = _apply_dedup(items, out_root)
+    if benchmark == "apps_intro" and apps_pilot:
+        items = items[:APPS_PILOT_N]
+        print(f"[gen] APPS PILOT: {len(items)} items (fork-5 pilot slice)", flush=True)
+    if smoke:
+        items = items[:SMOKE_N]
+        print(f"[gen] SMOKE: {len(items)} items (production K/caps/engine)", flush=True)
+    roll_path = _rollouts_path(out_root, benchmark)
+    roll_path.parent.mkdir(parents=True, exist_ok=True)
+    _check_genmeta(roll_path, benchmark)
+    max_tokens = MAX_TOKENS[benchmark]
+    if regen_cap_hit:
+        _regen_prune(roll_path, out_root, benchmark)
+        max_tokens = 2 * MAX_TOKENS[benchmark]  # re-gen at >=2x cap (CLAUDE.md trigger)
+    done = _load_done_rollouts(roll_path)
+    pending = [it for it in items if it["item_id"] not in done]
+    print(
+        f"[gen] {benchmark}: {len(items)} items, {len(done)} resumed, {len(pending)} pending "
+        f"max_tokens={max_tokens}",
+        flush=True,
+    )
+    if pending:
+        from transformers import AutoTokenizer
+        from vllm import SamplingParams
+
+        tok = AutoTokenizer.from_pretrained(MODEL)
+        llm = _get_engine()
         # Per-request seed deliberately UNSET (pilot rationale: independent draws
         # beat per-request reproducibility for a rate DV).
         params = SamplingParams(
             n=K_ROLLOUTS,
             temperature=TEMPERATURE,
             top_p=TOP_P,
-            max_tokens=MAX_TOKENS[benchmark],
+            max_tokens=max_tokens,
         )
         t0 = time.time()
         cap_hits = 0
@@ -765,6 +1340,7 @@ def phase_gen(benchmark: str, out_root: Path, *, smoke: bool) -> None:
                                 "benchmark": benchmark,
                                 "completions": [c.text for c in o.outputs],
                                 "finish_reasons": [c.finish_reason for c in o.outputs],
+                                "max_tokens": max_tokens,
                             },
                             ensure_ascii=False,
                         )
@@ -781,9 +1357,8 @@ def phase_gen(benchmark: str, out_root: Path, *, smoke: bool) -> None:
         if frac > CAP_HIT_TRIGGER:
             print(
                 f"[gen] WARNING: {benchmark} cap-hit {frac:.1%} exceeds the "
-                f"{CAP_HIT_TRIGGER:.0%} re-generation trigger at "
-                f"max_tokens={MAX_TOKENS[benchmark]} (report + re-gen decision is the "
-                "dispatcher's)",
+                f"{CAP_HIT_TRIGGER:.0%} re-generation trigger at max_tokens={max_tokens} "
+                f"(re-run with --regen-cap-hit; durable fraction lands in the verify JSON)",
                 flush=True,
             )
     # Completeness: every item has K completions on disk.
@@ -866,6 +1441,12 @@ def phase_verify(
     ]
     stats = spread_stats(full, K_ROLLOUTS) if full else None
     n_unparsed = sum(1 for r in out_items for v in r["verdicts"] if v is None)
+    # Durable cap-hit fraction over the FULL persisted rollout set (CLAUDE.md
+    # "every generation stage REPORTS its realized cap-hit fraction").
+    reasons = _load_finish_reasons(_rollouts_path(out_root, benchmark))
+    item_ids = {it["item_id"] for it in items}
+    n_len = sum(fr.count("length") for iid, fr in reasons.items() if iid in item_ids)
+    n_fr = sum(len(fr) for iid, fr in reasons.items() if iid in item_ids)
     payload = {
         "benchmark": benchmark,
         "model": MODEL,
@@ -873,6 +1454,8 @@ def phase_verify(
         "temperature": TEMPERATURE,
         "top_p": TOP_P,
         "max_tokens": MAX_TOKENS[benchmark],
+        "cap_hit_fraction": n_len / max(1, n_fr),
+        "cap_hit_counts": {"length": n_len, "total": n_fr},
         "n_items": len(out_items),
         "n_unparsed_rollouts": n_unparsed,
         "unparsed_fraction": n_unparsed / max(1, len(out_items) * K_ROLLOUTS),
@@ -904,7 +1487,14 @@ def phase_verify(
 
 
 def _shard_jsonl(src: Path, shard_dir: Path, stem: str, max_bytes: int = 9 * 1024 * 1024) -> int:
-    """Line-split a JSONL into <=9 MB shards (upload-policy non-LFS split rule)."""
+    """Line-split a JSONL into <=9 MB shards (upload-policy non-LFS split rule).
+
+    Clears stale ``{stem}.shard*.jsonl`` first: a re-shard of a SHRUNK source
+    (e.g. after --regen-cap-hit pruning) must not leave orphan higher-index
+    shards that the folder upload would ship as live data.
+    """
+    for stale in sorted(shard_dir.glob(f"{stem}.shard*.jsonl")):
+        stale.unlink()
     shard_idx, size, fh = 0, 0, None
     try:
         with src.open(encoding="utf-8") as inp:
@@ -924,8 +1514,13 @@ def _shard_jsonl(src: Path, shard_dir: Path, stem: str, max_bytes: int = 9 * 102
     return shard_idx
 
 
-def phase_upload(benchmark: str, out_root: Path) -> None:
-    """Shard + upload the benchmark's rollout text (and verdicts) to the HF data repo."""
+def phase_upload(benchmark: str, out_root: Path, *, smoke: bool) -> None:
+    """Shard + upload the benchmark's rollout text (and verdicts) to the HF data repo.
+
+    Smoke runs upload under a ``_smoke``-suffixed HF prefix — a smoke must
+    never land shards under the production prefix (r1 g3 blocker 2: HF paths
+    are production artifacts exactly like local ones).
+    """
     from explore_persona_space.orchestrate import hub
 
     surface = surface_of(benchmark)
@@ -938,7 +1533,7 @@ def phase_upload(benchmark: str, out_root: Path) -> None:
     verdicts = src.parent / f"{benchmark}_verdicts.jsonl"
     if verdicts.exists():
         _shard_jsonl(verdicts, shard_dir, f"{benchmark}_verdicts")
-    prefix = f"{HF_GEN_PREFIX}/{surface}"
+    prefix = f"{HF_GEN_PREFIX}{'_smoke' if smoke else ''}/{surface}"
     url = hub._upload(  # folder branch: ONE upload_folder commit for the shard set
         shard_dir, hub.DEFAULT_DATASET_REPO, repo_type="dataset", path_in_repo=prefix
     )
@@ -951,7 +1546,7 @@ def phase_upload(benchmark: str, out_root: Path) -> None:
 # driver
 # ---------------------------------------------------------------------------
 
-PHASES = ("dedup", "gen", "verify", "upload")
+PHASES = ("dedup", "gate", "gen", "verify", "upload")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -963,6 +1558,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--smoke", action="store_true", help=f"{SMOKE_N} items/benchmark, *_smoke root")
     ap.add_argument("--bcb-python", default=None, help="/opt/bcb-venv/bin/python for the BCB gate")
     ap.add_argument("--workers", type=int, default=max(1, min(16, os.cpu_count() or 1)))
+    ap.add_argument(
+        "--control-report",
+        type=Path,
+        default=None,
+        help="issue2388_code_control.py report for the gate phase (default: <out-root>/code/...)",
+    )
+    ap.add_argument(
+        "--regen-cap-hit",
+        action="store_true",
+        help="prune cap-hit rows (+ verdicts) and re-generate them at 2x max_tokens",
+    )
+    ap.add_argument(
+        "--apps-pilot",
+        action="store_true",
+        help=f"fork-5 pilot: first {APPS_PILOT_N} APPS-intro items only",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
 
@@ -995,28 +1606,48 @@ def main(argv: list[str] | None = None) -> int:
         else (SURFACES[args.surface] if args.surface else sorted(LOADERS))
     )
     phases = list(PHASES) if args.phase == "all" else [args.phase]
-    ran_gen = False
-    for phase in phases:
-        if phase == "dedup":
-            dedup_lcb_against_leetcode(out_root)
-            continue
-        for bench in benches:
-            if phase == "gen":
-                phase_gen(bench, out_root, smoke=args.smoke)
-                ran_gen = True
-            elif phase == "verify":
-                phase_verify(
-                    bench,
-                    out_root,
-                    smoke=args.smoke,
-                    bcb_python=args.bcb_python,
-                    workers=args.workers,
-                )
-            elif phase == "upload":
-                phase_upload(bench, out_root)
+    try:
+        for phase in phases:
+            if phase == "dedup":
+                dedup_lcb_against_leetcode(out_root)
+                continue
+            if phase == "gate":
+                phase_gate(out_root, control_report=args.control_report)
+                continue
+            for bench in benches:
+                if phase == "gen":
+                    phase_gen(
+                        bench,
+                        out_root,
+                        smoke=args.smoke,
+                        regen_cap_hit=args.regen_cap_hit,
+                        apps_pilot=args.apps_pilot,
+                    )
+                elif phase == "verify":
+                    phase_verify(
+                        bench,
+                        out_root,
+                        smoke=args.smoke,
+                        bcb_python=args.bcb_python,
+                        workers=args.workers,
+                    )
+                elif phase == "upload":
+                    phase_upload(bench, out_root, smoke=args.smoke)
+    except BaseException:
+        if "llm" in _ENGINE:
+            # Crash path with a live engine: print the traceback ourselves and
+            # os._exit(1) — finalization would deadlock on unreaped engine
+            # children (gotchas.md #1739/#2149) and the rc would never emerge.
+            import traceback
+
+            traceback.print_exc()
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os._exit(1)
+        raise
     sys.stdout.flush()
     sys.stderr.flush()
-    if ran_gen:
+    if "llm" in _ENGINE:
         # vLLM engine children survive interpreter finalization and deadlock a
         # sys.exit(0) terminal (gotchas.md #1739/#2149) — durables are already
         # flushed to disk above.

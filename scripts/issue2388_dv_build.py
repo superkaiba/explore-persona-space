@@ -74,10 +74,47 @@ GEN_ROOT = Path("eval_results/issue_2388/gen")
 SURFACE_BENCHMARKS = {
     "math": ["math_full"],
     "mcq": ["mmlu_pro_full"],
+    # code is the CANDIDATE list — the realized set is gate-derived per run
+    # (_code_benchmarks_from_gate): BCB enters only on bcb_fit_allowed, APPS
+    # only on apps_activated (plan section 7 G1/G3 + fork 5).
     "code": ["humaneval", "mbpp_full", "bigcodebench_full", "lcb_v5", "leetcode"],
 }
 SPLIT_FRACTIONS = (("train", 0.70), ("dev", 0.10), ("test", 0.20))
 SPLIT_SEED = 2388
+
+
+def _code_benchmarks_from_gate(gen_root: Path) -> tuple[list[str], dict]:
+    """Resolve the realized code-benchmark set from the BINDING gate verdict.
+
+    Fail-loud: a missing gate file or an unresolved bcb_fit_allowed refuses the
+    build — the r1 review found G1/G3 verdicts with no live consumer; this is
+    the consumer (fit-side inclusion, plan section 7).
+    """
+    gate_p = gen_root / "code" / "code_gate.json"
+    if not gate_p.exists():
+        raise FileNotFoundError(
+            f"code gate verdict missing at {gate_p} — run issue2388_gen.py --phase gate first"
+        )
+    gate = json.loads(gate_p.read_text())
+    if gate.get("bcb_fit_allowed") is None:
+        raise RuntimeError(
+            "bcb_fit_allowed unresolved in code_gate.json (G1 control or G3 full-pool spread "
+            "missing) — re-run issue2388_gen.py --phase gate after the control + full verify"
+        )
+    benches = ["humaneval", "mbpp_full", "lcb_v5", "leetcode"]
+    if gate["bcb_fit_allowed"]:
+        benches.insert(2, "bigcodebench_full")
+    if gate.get("apps_activated"):
+        benches.append("apps_intro")
+    decisions = {
+        "gate_path": str(gate_p),
+        "bcb_fit_allowed": gate["bcb_fit_allowed"],
+        "apps_required": gate.get("apps_required"),
+        "apps_activated": bool(gate.get("apps_activated")),
+        "excluded_benchmarks": [] if gate["bcb_fit_allowed"] else ["bigcodebench_full"],
+        "code_train_floor_d": gate.get("pool_arithmetic", {}).get("code_train_floor_d", 3584),
+    }
+    return benches, decisions
 
 
 # ---------------------------------------------------------------------------
@@ -208,19 +245,62 @@ def assign_group_splits(
     return assignment
 
 
+def _agree_frac(surface: str, completions: list[str]) -> tuple[float | None, int]:
+    """Self-consistency: modal-answer fraction among EXTRACTED rollout answers.
+
+    math: last-\\boxed answers under the verifier's own ``_norm_math``
+    normalization (string identity — equivalent-but-differently-written forms
+    read as disagreement; disclosed in ``agree_definition``). mcq: the
+    verifier's own letter extraction. Returns (frac | None, n_extracted);
+    None when <2 rollouts yield an extractable answer.
+    """
+    from scripts.issue2388_spread_pilot import _extract_boxed, _norm_math, extract_mcq_letter
+
+    if surface == "math":
+        answers = [_norm_math(a) for a in map(_extract_boxed, completions) if a is not None]
+    elif surface == "mcq":
+        answers = [a for a in map(extract_mcq_letter, completions) if a is not None]
+    else:
+        raise ValueError(f"agreement undefined for surface {surface!r}")
+    if len(answers) < 2:
+        return None, len(answers)
+    counts: dict[str, int] = defaultdict(int)
+    for a in answers:
+        counts[a] += 1
+    return max(counts.values()) / len(answers), len(answers)
+
+
 def build_surface_dv(surface: str, gen_root: Path, out_root: Path) -> Path:
     """Per-surface labeling.json from ``issue2388_gen.py`` verdict files."""
     # Reuse the pilot's spread_stats (plan: "pilot spread_stats reused").
     from scripts.issue2388_spread_pilot import spread_stats
 
+    gate_decisions: dict | None = None
+    benchmarks = SURFACE_BENCHMARKS[surface]
+    if surface == "code":
+        benchmarks, gate_decisions = _code_benchmarks_from_gate(gen_root)
     bench_files = []
-    for bench in SURFACE_BENCHMARKS[surface]:
+    for bench in benchmarks:
         path = gen_root / surface / f"{bench}.json"
         if not path.exists():
             raise FileNotFoundError(
                 f"gen output missing for {surface}/{bench}: {path} — run issue2388_gen.py first"
             )
         bench_files.append((bench, path))
+
+    # Rollout text for the agreement baseline (math/mcq only; code answer
+    # identity is not programmatically extractable — bl_agree N/A there).
+    rollouts_by_item: dict[str, list[str]] = {}
+    if surface in ("math", "mcq"):
+        for bench, _path in bench_files:
+            roll_p = gen_root / surface / "rollouts" / f"{bench}.jsonl"
+            if not roll_p.exists():
+                raise FileNotFoundError(f"rollouts missing for agreement baseline: {roll_p}")
+            with roll_p.open(encoding="utf-8") as fh:
+                for line in fh:
+                    if line.strip():
+                        row = json.loads(line)
+                        rollouts_by_item[row["item_id"]] = row["completions"]
 
     rows: list[dict] = []
     k_rollouts = None
@@ -233,6 +313,13 @@ def build_surface_dv(surface: str, gen_root: Path, out_root: Path) -> Path:
             verdicts = item["verdicts"]  # list of true/false/null, length K
             decided = [v for v in verdicts if v is not None]
             n_correct = sum(1 for v in decided if v)
+            if surface in ("math", "mcq"):
+                comps = rollouts_by_item.get(item["item_id"])
+                if comps is None:
+                    raise RuntimeError(f"{item['item_id']}: verdicts present but rollouts missing")
+                agree, n_extracted = _agree_frac(surface, comps)
+            else:
+                agree, n_extracted = None, 0
             rows.append(
                 {
                     "context_id": item["item_id"],
@@ -250,6 +337,8 @@ def build_surface_dv(surface: str, gen_root: Path, out_root: Path) -> Path:
                         f"k{k}": (None if v is None else float(bool(v)))
                         for k, v in enumerate(verdicts)
                     },
+                    "agree_frac": agree,
+                    "agree_n_extracted": n_extracted,
                     # group = problem id on every new surface (plan section 4).
                     "group_key": item["item_id"],
                     "rung": bench,
@@ -267,6 +356,21 @@ def build_surface_dv(surface: str, gen_root: Path, out_root: Path) -> Path:
         r["split"] = split_of[r["group_key"]]
         r["stratum"] = s
 
+    if surface == "code":
+        # Fork-5 REALIZED floor check (the gate's pool arithmetic is an estimate;
+        # this is the binding read on the split actually dealt).
+        assert gate_decisions is not None
+        floor = int(gate_decisions["code_train_floor_d"])
+        n_train = sum(1 for r in rows if r["split"] == "train" and r["dv"] is not None)
+        gate_decisions["realized_train_with_dv"] = n_train
+        if n_train < floor and "apps_intro" not in benchmarks:
+            raise RuntimeError(
+                f"realized code train n={n_train} < d={floor} and the APPS fallback is not "
+                "activated — run the fork-5 pilot (issue2388_gen.py --benchmark apps_intro "
+                "--apps-pilot ...; issue2388_code_control.py --benchmarks apps_intro), re-run "
+                "--phase gate, then full apps_intro gen/verify, then rebuild this DV"
+            )
+
     full = [r["dv"] for r in rows if r["n_decided"] == k_rollouts]
     stats = spread_stats(full, k_rollouts) if full else None
     payload = {
@@ -274,6 +378,14 @@ def build_surface_dv(surface: str, gen_root: Path, out_root: Path) -> Path:
         "n_contexts": len(rows),
         "n_contexts_with_dv": sum(1 for r in rows if r["dv"] is not None),
         "k_rollouts": k_rollouts,
+        "gate_decisions": gate_decisions,
+        "agree_definition": (
+            "modal-answer fraction among extracted rollout answers "
+            "(math: last-boxed under _norm_math string identity; mcq: verifier letter "
+            "extraction); None when <2 extractable"
+            if surface in ("math", "mcq")
+            else "N/A — code answer identity is not programmatically extractable (bl_agree N/A)"
+        ),
         "rows": rows,
         "split_seed": SPLIT_SEED,
         "split_fractions": dict(SPLIT_FRACTIONS),

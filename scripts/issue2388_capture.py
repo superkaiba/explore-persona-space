@@ -55,6 +55,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import issue2388_gen as G  # noqa: E402
 
 from explore_persona_space.experiments.issue_1739.capture import (  # noqa: E402
+    _token_ids,
     capture_row_ids_and_positions,
     capture_rows_to_store,
     load_capture_model,
@@ -69,9 +70,12 @@ from explore_persona_space.experiments.issue_1739.generation import (  # noqa: E
 
 # Store kinds (plan section 4): v_C at context_end + BOTH answer poolings.
 CAPTURE_KINDS = ("context_end", "t1", "t_last")
-HF_STORE_PREFIX = "issue2388_correctness/capture_store"
+# Plan section 6.5/10 artifact contract: analysis tensors live under
+# issue2388_correctness/analysis_tensors/ (r1 Codex artifact-path blocker).
+HF_STORE_PREFIX = "issue2388_correctness/analysis_tensors/capture_store"
 HF_DV_PREFIX = "issue2388_correctness/dv"
 DEFAULT_STORE_ROOT = "/workspace/store_2388"
+DEFAULT_DV_ROOT = "eval_results/issue_2388/dv"
 # Per-benchmark store floor: rows x kinds x 28 x 3584 x 2B + sidecars. The
 # largest benchmark (math_full, 62.5k rows) needs ~38 GB; assert generously.
 STORE_HEADROOM_GB = {"math_full": 45.0, "mmlu_pro_full": 40.0}
@@ -133,7 +137,12 @@ def build_capture_rows(
                 _, pos = capture_row_ids_and_positions(
                     tokenizer, "", prompt, comp, max_model_len=max_model_len
                 )
-            except ValueError:
+            except ValueError as e:
+                # Only the BUDGET ValueErrors are drop-class ("exceeding
+                # max_model_len" / "exceeding prompt budget"); any other
+                # ValueError is a tokenizer-side bug and must crash (r1 g5).
+                if "exceeding" not in str(e):
+                    raise
                 over_budget.append({"item_id": it["item_id"], "rollout_k": k})
                 continue
             rows.append((payload, dict(meta, n_row_tokens=pos["n_total"])))
@@ -204,8 +213,10 @@ def phase_capture(args) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _tf_out_dir(out_root: Path, benchmark: str) -> Path:
-    return out_root / G.surface_of(benchmark) / "tf_margin"
+def _tf_out_dir(dv_root: Path, benchmark: str) -> Path:
+    """TF-margin rows live under the DV root (plan section 6.5: ``dv/*/tf_margin``),
+    NOT the gen root (r1 Codex artifact-path blocker)."""
+    return dv_root / G.surface_of(benchmark) / "tf_margin"
 
 
 def _chat_prompt(tokenizer, user_text: str) -> str:
@@ -264,9 +275,43 @@ def _tf_units(benchmark: str, items: list[dict], tokenizer) -> list[dict]:
     return units
 
 
+def _write_surface_tf_aggregate(dv_root: Path, surface: str) -> Path:
+    """Plan-contract aggregate ``dv/<surface>/tf_margin.json`` from whatever
+    per-benchmark JSONLs are complete (each has a ``*_tf_summary.json``)."""
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    tf_dir = dv_root / surface / "tf_margin"
+    rows: list[dict] = []
+    included: dict[str, dict] = {}
+    for summ_p in sorted(tf_dir.glob("*_tf_summary.json")):
+        summ = json.loads(summ_p.read_text())
+        bench = summ["benchmark"]
+        jsonl = tf_dir / f"{bench}_tf.jsonl"
+        with jsonl.open(encoding="utf-8") as fh:
+            rows.extend(json.loads(line) for line in fh if line.strip())
+        included[bench] = {"n_rows": summ["n_rows"], "recipe": summ["recipe"]}
+    if not rows:
+        raise RuntimeError(f"no completed tf-margin benchmarks under {tf_dir}")
+    payload = {
+        "surface": surface,
+        "benchmarks_included": included,
+        "n_rows": len(rows),
+        "rows": rows,
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    payload.update(as_metadata_dict(git_provenance(), phase=f"tf-margin-agg-{surface}"))
+    out = dv_root / surface / "tf_margin.json"
+    tmp = out.with_name(out.name + ".tmp")
+    tmp.write_text(json.dumps(payload))
+    tmp.replace(out)
+    print(f"[tf-margin] aggregate: {len(rows)} rows ({sorted(included)}) -> {out}", flush=True)
+    return out
+
+
 def phase_tf_margin(args) -> None:
     benchmark = args.benchmark
     out_root = Path(args.out_root)
+    dv_root = Path(args.dv_root)
     items = G.LOADERS[benchmark]()
     if benchmark == "lcb_v5":
         items = G._apply_dedup(items, out_root)
@@ -275,7 +320,7 @@ def phase_tf_margin(args) -> None:
     tokenizer = get_tokenizer()
     units = _tf_units(benchmark, items, tokenizer)
 
-    tf_dir = _tf_out_dir(out_root, benchmark)
+    tf_dir = _tf_out_dir(dv_root, benchmark)
     tf_dir.mkdir(parents=True, exist_ok=True)
     rows_path = tf_dir / f"{benchmark}_tf.jsonl"
     done: set[str] = set()
@@ -299,24 +344,43 @@ def phase_tf_margin(args) -> None:
             device=args.device,
             batch_size=args.batch_size,
         )
+        # teacher_forced_ln_logp returns the per-token MEAN; the documented
+        # statistics are TOTAL ln-probs, so un-normalize by the SAME segment
+        # token count the scorer divided by (r1 g5: the mean-based MCQ margin
+        # was a temperature-L-scaled variant of the documented read).
         by_item: dict[str, dict[str, float]] = {}
-        for (item_id, label, _, _), lp in zip(flat, lps, strict=True):
-            by_item.setdefault(item_id, {})[label] = lp
+        by_item_mean: dict[str, dict[str, float]] = {}
+        for (item_id, label, _, comp), lp in zip(flat, lps, strict=True):
+            n_tok = len(_token_ids(tokenizer, comp))
+            by_item.setdefault(item_id, {})[label] = lp * n_tok
+            by_item_mean.setdefault(item_id, {})[label] = lp
         with rows_path.open("a", encoding="utf-8") as fh:
             for u in chunk:
                 lp_map = by_item.get(u["item_id"], {})
-                row: dict = {"item_id": u["item_id"], "benchmark": benchmark, "lp": lp_map}
-                if benchmark == "mmlu_pro_full" and lp_map:
+                row: dict = {
+                    "item_id": u["item_id"],
+                    "benchmark": benchmark,
+                    "lp": lp_map,  # per-label TOTAL ln P(completion | prompt)
+                    "lp_per_token": by_item_mean.get(u["item_id"], {}),
+                }
+                if benchmark == "mmlu_pro_full":
                     gold = u["gold"]
                     others = [v for k, v in lp_map.items() if k != gold]
                     if gold not in lp_map or not others:
+                        # Fires on an EMPTY lp_map too (r1 g5: the old
+                        # `and lp_map` guard made this raise unreachable).
                         raise RuntimeError(f"tf-margin: malformed option set for {u['item_id']}")
                     lse = max(others) + math.log(sum(math.exp(v - max(others)) for v in others))
                     row["tf_margin"] = lp_map[gold] - lse
                 elif benchmark == "math_full":
                     row["tf_gold_ln_logp"] = lp_map["gold"]
+                    row["tf_gold_ln_logp_per_token"] = by_item_mean[u["item_id"]]["gold"]
                 else:
-                    row["tf_reference_ln_logp"] = max(lp_map.values()) if lp_map else None
+                    # Reference solutions vary hugely in length, so the code
+                    # read stays PER-TOKEN (comparable across compositions) —
+                    # ROUGH either way (not the model's own distribution).
+                    mean_map = by_item_mean.get(u["item_id"], {})
+                    row["tf_reference_ln_logp"] = max(mean_map.values()) if mean_map else None
                     row["tf_reference_rough"] = True
                 fh.write(json.dumps(row, ensure_ascii=False) + "\n")
         print(
@@ -335,9 +399,12 @@ def phase_tf_margin(args) -> None:
         "n_units": len(units),
         "n_rows": n_rows,
         "recipe": {
-            "math_full": "ln P(boxed gold sentence | chat prompt), length-normalized",
-            "mmlu_pro_full": "ln P('Answer: <gold>') - logsumexp over distractor options",
-            "code": "max over canonical compositions of ln P(fenced reference) — ROUGH",
+            "math_full": "total ln P(boxed gold sentence | chat prompt); per-token mean stored",
+            "mmlu_pro_full": ("total ln P('Answer: <gold>') - logsumexp over distractor totals"),
+            "code": (
+                "max over canonical compositions of PER-TOKEN mean ln P(fenced reference) "
+                "— ROUGH (length-normalized; references are not the model's own distribution)"
+            ),
         }[benchmark if benchmark in ("math_full", "mmlu_pro_full") else "code"],
         "model": MODEL_NAME,
         "revision": INSTRUCT_REVISION,
@@ -345,6 +412,7 @@ def phase_tf_margin(args) -> None:
     summary.update(as_metadata_dict(git_provenance(), phase=f"tf-margin-{benchmark}"))
     (tf_dir / f"{benchmark}_tf_summary.json").write_text(json.dumps(summary, indent=2))
     print(f"[tf-margin] {benchmark} complete: {n_rows} rows -> {rows_path}", flush=True)
+    _write_surface_tf_aggregate(dv_root, G.surface_of(benchmark))
 
 
 # ---------------------------------------------------------------------------
@@ -353,30 +421,40 @@ def phase_tf_margin(args) -> None:
 
 
 def phase_upload(args) -> None:
-    """Tar + upload each benchmark's store; folder-upload the tf_margin dirs."""
+    """Tar + upload each benchmark's store; folder-upload the tf_margin dirs.
+
+    Smoke runs land under a ``_smoke``-suffixed HF ROOT (same rule as gen's
+    phase_upload: HF prefixes are production artifacts). A tar older than the
+    store's manifest is REBUILT — a presence-only tar resume would upload
+    pre-repair bytes (r1 g5 Minor 2).
+    """
     import tarfile
 
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
-    out_root = Path(args.out_root)
+    dv_root = Path(args.dv_root)
     store_root = Path(args.store_root)
+    hf_root = "issue2388_correctness" + ("_smoke" if args.smoke else "")
+    store_prefix = HF_STORE_PREFIX.replace("issue2388_correctness", hf_root, 1)
+    dv_prefix = HF_DV_PREFIX.replace("issue2388_correctness", hf_root, 1)
     benchmarks = [args.benchmark] if args.benchmark else sorted(G.SURFACES[args.surface])
     expected: list[str] = []
     for benchmark in benchmarks:
         surface = G.surface_of(benchmark)
         store_dir = store_root / benchmark
-        if not (store_dir / "_capture_manifest.json").exists():
+        manifest_p = store_dir / "_capture_manifest.json"
+        if not manifest_p.exists():
             raise RuntimeError(f"{store_dir} has no _capture_manifest.json — capture incomplete")
         tar_path = store_root / f"{benchmark}.tar"
-        if not tar_path.exists():
+        if not tar_path.exists() or tar_path.stat().st_mtime < manifest_p.stat().st_mtime:
             tmp = tar_path.with_name(tar_path.name + ".tmp")
             with tarfile.open(tmp, "w") as tf:
                 tf.add(store_dir, arcname=benchmark)
             tmp.replace(tar_path)
-        dest = f"{HF_STORE_PREFIX}/{surface}/{benchmark}.tar"
-        # UPLOAD_LOOP_EXEMPT: bounded — at most 5 multi-GB benchmark tars, never a per-file storm
+        dest = f"{store_prefix}/{surface}/{benchmark}.tar"
+        # UPLOAD_LOOP_EXEMPT: bounded — at most 6 multi-GB benchmark tars, never a per-file storm
         out = hub._upload(
             tar_path,
             hub.DEFAULT_DATASET_REPO,
@@ -387,31 +465,42 @@ def phase_upload(args) -> None:
         if not out:
             raise RuntimeError(f"store tar upload returned empty path for {benchmark}")
         expected.append(dest)
-        tf_dir = _tf_out_dir(out_root, benchmark)
+        tf_dir = _tf_out_dir(dv_root, benchmark)
         if tf_dir.exists() and any(tf_dir.iterdir()):
             out = hub._upload(
                 tf_dir,
                 hub.DEFAULT_DATASET_REPO,
                 repo_type="dataset",
-                path_in_repo=f"{HF_DV_PREFIX}/{surface}/tf_margin",
+                path_in_repo=f"{dv_prefix}/{surface}/tf_margin",
             )
             if not out:
                 raise RuntimeError(f"tf_margin upload returned empty path for {benchmark}")
-            expected.extend(
-                f"{HF_DV_PREFIX}/{surface}/tf_margin/{p.name}" for p in tf_dir.iterdir()
+            expected.extend(f"{dv_prefix}/{surface}/tf_margin/{p.name}" for p in tf_dir.iterdir())
+        agg = dv_root / surface / "tf_margin.json"
+        if agg.exists():
+            dest_agg = f"{dv_prefix}/{surface}/tf_margin.json"
+            out = hub._upload(
+                agg,
+                hub.DEFAULT_DATASET_REPO,
+                repo_type="dataset",
+                path_in_repo=dest_agg,
+                upload_as_file=True,
             )
+            if not out:
+                raise RuntimeError(f"tf_margin aggregate upload returned empty path for {surface}")
+            expected.append(dest_agg)
         print(f"[upload] {benchmark}: store tar + tf_margin uploaded", flush=True)
 
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         hub.DEFAULT_DATASET_REPO,
-        expected,
-        path_in_repo="issue2388_correctness",
+        sorted(set(expected)),
+        path_in_repo=hf_root,
         repo_type="dataset",
     )
     if missing:
         raise RuntimeError(f"post-upload verify: {len(missing)} paths missing: {missing[:5]}")
-    print(f"[upload] verified {len(expected)} paths on the Hub", flush=True)
+    print(f"[upload] verified {len(set(expected))} paths on the Hub", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +516,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--benchmark", choices=sorted(G.LOADERS), default=None)
     ap.add_argument("--surface", choices=sorted(G.SURFACES), default=None)
     ap.add_argument("--out-root", default=str(G.OUT_ROOT), help="gen out-root (P1 outputs)")
+    ap.add_argument("--dv-root", default=DEFAULT_DV_ROOT, help="DV root (tf_margin destination)")
     ap.add_argument("--store-root", default=DEFAULT_STORE_ROOT)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--batch-size", type=int, default=8)
@@ -468,11 +558,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.phase == "upload" and not (args.benchmark or args.surface):
         raise SystemExit("--phase upload requires --benchmark or --surface")
     if args.smoke:
-        # Smoke roots: never overwrite production paths (same convention as gen).
+        # Smoke roots: never overwrite production paths (same convention as gen;
+        # phase_upload additionally suffixes the HF root).
         if args.out_root == str(G.OUT_ROOT):
             args.out_root = str(Path("eval_results/issue_2388/gen_smoke"))
         if args.store_root == DEFAULT_STORE_ROOT:
             args.store_root = DEFAULT_STORE_ROOT + "_smoke"
+        if args.dv_root == DEFAULT_DV_ROOT:
+            args.dv_root = DEFAULT_DV_ROOT + "_smoke"
     PHASES[args.phase](args)
     sys.stdout.flush()
     sys.stderr.flush()

@@ -492,6 +492,7 @@ def smoke_env(drv, tmp_path_factory):
                 "dv": dv,
                 "fractions": {"correct": dv},
                 "per_rollout_scores": {f"k{k}": float(v) for k, v in enumerate(verd)},
+                "agree_frac": float(rng.uniform(0.5, 1.0)),  # bl_agree input (r2)
                 "group_key": cid,
                 "split": splits[i],
                 "level": int(1 + (i % 5)),
@@ -567,9 +568,11 @@ def test_e2e_maps_sweep_select_bootstrap(drv, smoke_env):
         "arm_oracle",
         "arm_oracle_tlast",
         "bl_shufmap",
+        "bl_shufmap_mlp",
         "bl_identity",
         "arm_dir_ctx",
         "arm_dir_map",
+        "bl_agree",
         "bl_const",
     ]
     rc = drv.main(
@@ -600,6 +603,25 @@ def test_e2e_maps_sweep_select_bootstrap(drv, smoke_env):
     assert row["selector"]["dof_selected"] is not None
     assert row["per_eval"]["rung0"]["rho"] == row["per_eval"]["rung0"]["rho"]  # finite/NaN-legal
     assert row["n_train_vs_d"] == [16, env["d"]]
+    # rung-1 TRANSFER read (r2): under-floor smoke draw discloses the fallback;
+    # the FULL-budget draw (42 train rows, ~25 in levels 1-3) actually REFITS.
+    assert row["rung1_fit"] == {"refit": False, "smoke_fallback": True}
+    row_full = json.loads(
+        (base / "fits" / "math" / "cells" / "arm_ctx__Lfull_draw0.json").read_text()
+    )
+    assert row_full["rung1_fit"]["refit"] is True
+    assert row_full["rung1_fit"]["restriction"] == "levels 1-3 only"
+    assert row_full["rung1_fit"]["n_fit_rows"] < row_full["n_draw_rows"]
+    # new r2 arms landed cells: shuffled-MLP control + agreement reference row
+    row_shufmlp = json.loads(
+        (base / "fits" / "math" / "cells" / "bl_shufmap_mlp__L16_draw0.json").read_text()
+    )
+    assert row_shufmlp["pooling"] == "t1-mapped"
+    row_agree = json.loads(
+        (base / "fits" / "math" / "cells" / "bl_agree__L16_draw0.json").read_text()
+    )
+    assert row_agree["selector"]["mode"] == "reference-row (no fit)"
+    assert isinstance(row_agree["per_eval"]["dev"]["rho"], float)
     # preds JSONL: real context ids + real y_true for EVERY arm incl. direction
     for arm in ("arm_ctx", "arm_dir_ctx", "arm_ctx_pca"):
         pf = base / "fits" / "math" / "preds" / f"preds_{arm}_L16_draw0.jsonl"

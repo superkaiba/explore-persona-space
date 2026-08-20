@@ -96,6 +96,16 @@ def canon_lcb_overlap() -> dict[str, list[tuple[str, str]]]:
     return out
 
 
+def canon_apps_intro() -> dict[str, list[tuple[str, str]]]:
+    """APPS ships reference ``solutions`` per problem; take the first (G1 for
+    the fork-5 contingency: the APPS pilot requires its own control + flaky read)."""
+    out: dict[str, list[tuple[str, str]]] = {}
+    for r in G.load_apps_intro():
+        if r["canonical_solutions"]:
+            out[r["item_id"]] = [("solution0", r["canonical_solutions"][0])]
+    return out
+
+
 # (loader, canonical-map builder) per benchmark; loaders are the SAME functions
 # the production phases consume, so the control exercises identical item shapes.
 BENCHES: dict[str, dict] = {
@@ -104,6 +114,7 @@ BENCHES: dict[str, dict] = {
     "bigcodebench": {"items": lambda: P.LOADERS["bigcodebench"](), "canon": canon_bigcodebench},
     "lcb_v5": {"items": None, "canon": canon_lcb_overlap},  # items resolved from the canon keys
     "leetcode": {"items": lambda: G.load_leetcode(), "canon": canon_leetcode},
+    "apps_intro": {"items": lambda: G.load_apps_intro(), "canon": canon_apps_intro},
 }
 
 
@@ -118,6 +129,8 @@ def _verify(bench: str, fenced: str, item: dict, bcb_python: str | None) -> bool
         return G._verify_lcb(fenced, item)
     if bench == "leetcode":
         return G._verify_leetcode(fenced, item)
+    if bench == "apps_intro":
+        return G._verify_apps(fenced, item)
     return P.verify_code(fenced, item)
 
 
@@ -144,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
         missing = 0
         n_flaky = 0
         n_run = 0
+        n_pairs = 0  # realized (item, composition) pairs — the flaky-rate denominator
         t0 = time.time()
         for it in items:
             cands = canon.get(it["item_id"])
@@ -151,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
                 missing += 1
                 continue
             n_run += 1
+            n_pairs += len(cands)
             for label, sol in cands:
                 slot = per_comp.setdefault(label, {"pass": 0, "fail": 0, "unparsed": 0})
                 fenced = f"```python\n{sol}\n```"
@@ -178,7 +193,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         n = n_run
         rate = best[1]["pass"] / n if n else 0.0
-        flaky_frac = n_flaky / max(1, n * max(1, len(per_comp)))
+        # Denominator = REALIZED (item, composition) pairs, matching n_flaky's
+        # per-pair counting (r1 g3 Concern 7: n * len(per_comp) over-counts when
+        # compositions vary per item, deflating the flaky rate the G1 gate reads).
+        flaky_frac = n_flaky / max(1, n_pairs)
         report[bench] = {
             "n_control": n,
             "items_missing_canonical": missing,

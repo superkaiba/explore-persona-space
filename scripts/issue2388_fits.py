@@ -189,8 +189,10 @@ def _effective_rows(surface: str, rows: list[dict]) -> list[dict]:
     QA (banked #1739 artifact — schema probed: split in {train, eval}, rung in
     {train, nqopen, simpleqa}): the banked 16,000-row TriviaQA train rung gets
     a SEEDED group-level 70/10/20 partition at the entity (group_key) grain
-    (largest-remainder apportionment over a shuffled group order — plan
-    section 4 Splits); rung == 'nqopen' eval rows become the rung-1 shift set;
+    (FLOOR quotas over a shuffled group order, remainder assigned to train —
+    r1 g6: the prior docstring claimed largest-remainder apportionment; the
+    registered split arithmetic is this floor+remainder-to-train form);
+    rung == 'nqopen' eval rows become the rung-1 shift set;
     rung == 'simpleqa' rows are DROPPED (body-settled exclusion).
     """
     if surface != "qa":
@@ -387,6 +389,17 @@ def load_surface_table(
             "n_labeling_rows": len(rows),
             "n_missing_from_store": missing,
             "layers": list(layers),
+            # self-consistency baseline input (bl_agree; nan where absent —
+            # code/QA labelings carry no extractable answer identity)
+            "agree_frac": np.array(
+                [
+                    float(by_ctx[c]["agree_frac"])
+                    if by_ctx[c].get("agree_frac") is not None
+                    else np.nan
+                    for c in ctx_ids
+                ],
+                dtype=np.float64,
+            ),
         },
     )
 
@@ -644,13 +657,26 @@ def phase_maps(args) -> None:
             )
             diagnostics = fit.diagnostics
         realized_u = int(x.shape[1])
+        per_layer = diagnostics["per_layer"]
+        # Result 0(d) mapping-baselines pair SURFACED into the manifest (the
+        # r1 review read the manifest, saw only mean_r2_map, and concluded the
+        # pair was never computed — it IS computed per layer inside both fit
+        # families and persisted to {key}_diagnostics.json; this summary makes
+        # it consumable without opening the per-key file).
+        knn1 = [
+            r["knn"]["euclidean"]["acc_at_k"].get(1, r["knn"]["euclidean"]["acc_at_k"].get("1"))
+            for r in per_layer
+        ]
         manifest[key] = {
             "realized_u": realized_u,
             "composition": composition,
             "subsample_seed": seed,
             "pool_meta": pool_meta,
             "diagnostics_summary": {
-                "mean_r2_map": float(np.mean([r["r2_map"] for r in diagnostics["per_layer"]])),
+                "mean_r2_map": float(np.mean([r["r2_map"] for r in per_layer])),
+                "mean_r2_identity_bias": float(np.mean([r["r2_identity_bias"] for r in per_layer])),
+                "mean_knn_acc_at_1_euclidean": float(np.mean([float(v) for v in knn1])),
+                "per_layer_file": f"{key}_diagnostics.json",
             },
             "wall_s": round(time.time() - t0, 1),
         }
@@ -746,16 +772,39 @@ def group_permuted_targets(
     return out
 
 
+_PCA_LAYER_CHUNK = 8  # (chunk, d, d) fp64 covariance stacks: 8 x 3584^2 x 8B ~= 0.8 GB
+
+
 def _pca_basis(pool_x: np.ndarray, k: int) -> np.ndarray:
-    """(Ly, d, k) per-layer PCA basis from the unlabeled pool (centered SVD)."""
-    n_layers = pool_x.shape[0]
-    v = np.empty((n_layers, pool_x.shape[2], k), dtype=np.float64)
-    for ly in range(n_layers):
-        xc = pool_x[ly].astype(np.float64)
-        xc = xc - xc.mean(axis=0, keepdims=True)
-        # dual-space eigendecomposition when n < d
-        _, _, vt = np.linalg.svd(xc, full_matrices=False)
-        v[ly] = vt[:k].T
+    """(Ly, d, k) per-layer PCA basis from the unlabeled pool.
+
+    BATCHED torch eigh over layer-chunked covariance stacks (r1 g6: the serial
+    per-layer numpy full SVD is the many-cell dense-factorization class,
+    vectorize-many-cell-fits.md). Top-k eigenvectors of the centered
+    covariance == the top-k right singular vectors up to per-column sign; the
+    downstream ridge on projected features is column-sign-invariant, and the
+    equivalence is pinned by a subspace-projector test. CPU-LAPACK fallback per
+    slice on a (cuda-class) eigh non-convergence, per the gotchas rule —
+    never a jitter.
+    """
+    import torch
+
+    n_layers, _n, d = pool_x.shape
+    v = np.empty((n_layers, d, k), dtype=np.float64)
+    for lo in range(0, n_layers, _PCA_LAYER_CHUNK):
+        chunk = pool_x[lo : lo + _PCA_LAYER_CHUNK].astype(np.float64)
+        x = torch.from_numpy(chunk)
+        x = x - x.mean(dim=1, keepdim=True)
+        cov = torch.matmul(x.transpose(1, 2), x)  # (chunk, d, d)
+        try:
+            _w, vecs = torch.linalg.eigh(cov)
+        except torch.linalg.LinAlgError:
+            # exact numerical-backend swap (never a jitter): per-slice numpy
+            vecs = torch.from_numpy(
+                np.stack([np.linalg.eigh(cov[i].numpy())[1] for i in range(cov.shape[0])])
+            )
+        # eigh returns ASCENDING eigenvalues: top-k = last k columns, reversed
+        v[lo : lo + cov.shape[0]] = vecs[:, :, -k:].flip(-1).numpy()
     return v
 
 
@@ -781,6 +830,32 @@ def _load_map(maps_dir: Path, key: str, *, device: str = "cpu"):
     )
 
 
+def _shuffled_nl_payloads(payloads: tuple, seed: int) -> tuple:
+    """Input-axis permutation of each layer's MLP payload (bl_shufmap_mlp).
+
+    Permutes the FIRST linear layer's input columns together with the input
+    standardizer (xmu/xsd) — the MLP analogue of the linear control's
+    input-dim row permutation (capacity + norms preserved EXACTLY; asserted).
+    """
+    rng = np.random.default_rng([SEED0, 13, int(seed)])
+    out = []
+    for p in payloads:
+        assert p.get("kind") == "mlp", p.get("kind")
+        sd = p["state_dict"]
+        w0 = sd["0.weight"]  # (hidden, d_in) torch tensor
+        perm = rng.permutation(int(w0.shape[1]))
+        w0_shuf = w0[:, perm]
+        assert float(w0.norm()) == float(w0_shuf.norm()) or abs(
+            float(w0.norm()) - float(w0_shuf.norm())
+        ) < 1e-6 * float(w0.norm())
+        q = dict(p)
+        q["state_dict"] = {**sd, "0.weight": w0_shuf}
+        q["xmu"] = p["xmu"][..., perm]
+        q["xsd"] = p["xsd"][..., perm]
+        out.append(q)
+    return tuple(out)
+
+
 def _apply_family(x: np.ndarray, mapfit, family: str, *, shuffle_seed: int | None = None):
     x64 = x.astype(np.float64)
     if family == "linear":
@@ -789,7 +864,12 @@ def _apply_family(x: np.ndarray, mapfit, family: str, *, shuffle_seed: int | Non
             w = F.shuffled_map_weights(w, seed=shuffle_seed)
         return F.apply_map(x64, mapfit, w=w)
     if shuffle_seed is not None:
-        raise RuntimeError("shuffled-MLP control uses shuffled per-layer weights via payloads")
+        import dataclasses
+
+        shuf = dataclasses.replace(
+            mapfit, nl_payloads=_shuffled_nl_payloads(mapfit.nl_payloads, shuffle_seed)
+        )
+        return F.apply_nl_map(x64, shuf)
     return F.apply_nl_map(x64, mapfit)
 
 
@@ -884,13 +964,95 @@ def _rung_eval_sets(table: SurfaceTable) -> dict[str, np.ndarray]:
     return out
 
 
-def _rung1_fit_filter(table: SurfaceTable, rows: np.ndarray) -> np.ndarray:
+def _rung1_fit_filter(
+    table: SurfaceTable, rows: np.ndarray, heldout_categories: np.ndarray | None = None
+) -> np.ndarray:
+    """FIT-side restriction for the rung-1 transfer read (r1 g6 Critical 2).
+
+    math: fit on levels 1-3 only (registered "levels 1-3 -> 4-5"); code: fit
+    on {HE, MBPP, LeetCode} only ("-> {BCB, LCB}"); mcq: EXCLUDE the held-out
+    eval categories from the fit; qa: identity (train is TriviaQA-only by
+    construction — NQ-Open rows live outside the train partition).
+    """
     s = table.surface
     if s == "math":
         return rows[np.isin(table.level[rows], sorted(MATH_RUNG1_FIT_LEVELS))]
     if s == "code":
         return rows[np.isin(table.benchmark[rows], sorted(CODE_RUNG1_FIT))]
+    if s == "mcq":
+        if heldout_categories is None:
+            raise RuntimeError("mcq rung1 fit filter requires the held-out category set")
+        return rows[~np.isin(table.category[rows], heldout_categories)]
     return rows
+
+
+RUNG1_REFIT_MIN_N = 20  # production draws always clear this (see arithmetic in the r2 report)
+
+
+def _assert_rung1_disjoint(
+    table: SurfaceTable, fit_rows: np.ndarray, heldout_categories: np.ndarray | None
+) -> None:
+    """Fail loud if any rung-1 FIT row carries the rung-1 EVAL property."""
+    s = table.surface
+    if s == "math":
+        bad = int(np.isin(table.level[fit_rows], sorted(MATH_RUNG1_EVAL_LEVELS)).sum())
+    elif s == "code":
+        bad = int(np.isin(table.benchmark[fit_rows], sorted(CODE_RUNG1_EVAL)).sum())
+    elif s == "mcq":
+        assert heldout_categories is not None
+        bad = int(np.isin(table.category[fit_rows], heldout_categories).sum())
+    else:  # qa: fit rows are train-partition rows; rung1 rows carry split=="rung1"
+        bad = int((table.split[fit_rows] == "rung1").sum())
+    if bad:
+        raise RuntimeError(f"rung1 fit/eval property overlap on {s}: {bad} fit rows")
+
+
+def _rung1_refit(
+    table: SurfaceTable,
+    draw_rows: np.ndarray,
+    x_full: np.ndarray,
+    v: np.ndarray | None,
+    rung1_rows: np.ndarray,
+    heldout_categories: np.ndarray | None,
+    n_null: int,
+    seed_parts: list[int],
+    device: str,
+) -> tuple[np.ndarray, dict, dict] | None:
+    """Second fit for the rung-1 TRANSFER read: same basis, fit rows restricted
+    to the registered shift-source subset of the draw. Returns
+    (preds (Ly, n_rung1, 1+n_null), metrics block, info) or None when the
+    restricted draw is under the floor (caller decides smoke-vs-raise)."""
+    fit_rows = _rung1_fit_filter(table, draw_rows, heldout_categories)
+    if len(fit_rows) == 0:
+        raise RuntimeError(f"{table.surface}: rung1 restricted fit has 0 rows")
+    _assert_rung1_disjoint(table, fit_rows, heldout_categories)
+    if len(fit_rows) < RUNG1_REFIT_MIN_N:
+        return None
+    y_null = group_permuted_targets(table.dv, table.boot_group, fit_rows, n_null, [*seed_parts, 7])
+    y_stack = np.concatenate([table.dv[fit_rows][:, None], y_null], axis=1)
+    if v is not None:
+        x_tr = np.einsum("lnd,ldk->lnk", x_full[:, fit_rows].astype(np.float64), v)
+        x_ev = np.einsum("lnd,ldk->lnk", x_full[:, rung1_rows].astype(np.float64), v)
+    else:
+        x_tr = x_full[:, fit_rows]
+        x_ev = x_full[:, rung1_rows]
+    y_tr = np.broadcast_to(y_stack[None, :, :], (x_tr.shape[0],) + y_stack.shape).copy()
+    telem: list[dict] = []
+    preds = F.ridge_gcv_predict_per_target(
+        x_tr, y_tr, [x_ev], dof_cap=DOF_CAP, device=device, selector_telemetry=telem
+    )[0]
+    block = _metrics_block(preds, table.dv[rung1_rows])
+    info = {
+        "refit": True,
+        "n_fit_rows": int(len(fit_rows)),
+        "restriction": {
+            "math": "levels 1-3 only",
+            "code": "HE/MBPP/LeetCode only",
+            "mcq": "held-out eval categories excluded",
+            "qa": "identity (fit-disjoint by construction)",
+        }[table.surface],
+    }
+    return preds, block, info
 
 
 def _metrics_block(preds: np.ndarray, dv_eval: np.ndarray) -> dict[str, np.ndarray]:
@@ -977,12 +1139,14 @@ POOLING_OF_ARM = {
     "arm_oracle": "t1",
     "arm_oracle_tlast": "t_last",
     "bl_shufmap": "t1-mapped",
+    "bl_shufmap_mlp": "t1-mapped",
     "bl_identity": "context_end+bias",
     "bl_feats": "text",
     "bl_extemb": "text",
     "arm_dir_ctx": "context_end",
     "arm_dir_map": "t1-mapped",
     "bl_const": "none",
+    "bl_agree": "rollout-agreement (no fit)",
     "arm_ctx_pca": "context_end",
 }
 
@@ -1019,7 +1183,48 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
     budgets = [b for b in L_GRID if b <= n_train] + ["full"]
     if args.budgets:
         budgets = [b if b == "full" else int(b) for b in args.budgets]
+    # Registered-anchor enforcement BEFORE any write (r1 g6 clause iv/v: a
+    # default-budget disjoint run computed unregistered cells then fail-louded
+    # mid-loop; H4 cells are registered at the FU_L_ANCHORS only).
+    if args.qa_disjoint:
+        if not args.budgets:
+            budgets = [b for b in QA_DISJOINT_ANCHORS if b <= n_train]
+        bad = [b for b in budgets if b not in QA_DISJOINT_ANCHORS]
+        if bad:
+            raise SystemExit(
+                f"--qa-disjoint runs at the registered anchors {QA_DISJOINT_ANCHORS} only; "
+                f"got {bad}"
+            )
+    elif map_cell != "fu1":
+        if not args.budgets:
+            budgets = [b for b in FU_L_ANCHORS if b == "full" or int(b) <= n_train]
+        bad = [b for b in budgets if b not in FU_L_ANCHORS]
+        if bad:
+            raise SystemExit(
+                f"H4 composition cells run at the registered anchors {FU_L_ANCHORS} only; got {bad}"
+            )
     n_null = args.n_null
+    # Out-root REGIME sentinel: resume keys ignore output-affecting flags
+    # (r1 g6 — n_null/layers/hidden_dim are not in the cell filename), so a
+    # re-parameterized rerun into the same root would silently reuse stale
+    # cells. The sentinel pins the regime; a mismatch refuses (fresh root or
+    # --force overwrites the sentinel alongside the cells it will recompute).
+    regime = {
+        "n_null": int(n_null),
+        "layers": list(_layer_tuple(args)),
+        "hidden_dim": int(args.hidden_dim),
+        "dof_cap": DOF_CAP,
+        "smoke": bool(args.smoke),
+    }
+    sent_p = out_root / "sweep_regime.json"
+    if sent_p.exists() and not args.force:
+        prior = json.loads(sent_p.read_text())
+        if prior != regime:
+            raise RuntimeError(
+                f"sweep regime mismatch at {sent_p}: prior {prior} != current {regime} — "
+                "use a fresh --fits-root (or --force to recompute)"
+            )
+    sent_p.write_text(json.dumps(regime, indent=1))
     maps_dir = Path(args.maps_out)
     manifest = json.loads((maps_dir / "key_manifest.json").read_text())
     # manifest-mode feasibility re-assert before ANY fit (plan section 4).
@@ -1058,6 +1263,9 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
     x_maplin = _apply_family(x_ctx, lin_map, "linear").astype(np.float16)
     x_mapmlp = _apply_family(x_ctx, mlp_map, "mlp").astype(np.float16)
     x_shuf = _apply_family(x_ctx, lin_map, "linear", shuffle_seed=SEED0).astype(np.float16)
+    # shuffled-MLP control (plan section 5: BOTH families get the matched-
+    # capacity shuffle control; r1 concern shuffled-mlp-control-absent).
+    x_shufmlp = _apply_family(x_ctx, mlp_map, "mlp", shuffle_seed=SEED0).astype(np.float16)
     # identity + learned bias (mandated baseline): v_hat = x + (y_mu - x_mu) —
     # a pure mean shift (NEVER routed through the map's x_sd standardization).
     bias = (lin_map.y_mu - lin_map.x_mu).astype(np.float32)  # (Ly, 1, d)
@@ -1070,6 +1278,7 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
         "arm_mapmlp": x_mapmlp,
         "arm_oracle": table.z_t1,
         "bl_shufmap": x_shuf,
+        "bl_shufmap_mlp": x_shufmlp,
         "bl_identity": x_ident,
     }
     if table.z_tlast is not None:
@@ -1104,19 +1313,31 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
             single_slice["bl_extemb"] = _encoder_features(table, out_root / "cache", args.device)
 
     dir_arms = ["arm_dir_ctx", "arm_dir_map"] if dir_available else []
-    arms = args.arms or (list(arm_x) + list(single_slice) + dir_arms + ["bl_const"])
+    agree_arr = table.meta.get("agree_frac")
+    agree_available = agree_arr is not None and bool(np.isfinite(agree_arr).any())
+    agree_arms = ["bl_agree"] if agree_available else []
+    arms = args.arms or (list(arm_x) + list(single_slice) + dir_arms + agree_arms + ["bl_const"])
+    if "bl_agree" in arms and not agree_available:
+        raise RuntimeError(
+            "bl_agree needs agree_frac in the labeling (math/mcq only; code/qa N/A — "
+            "answer identity not programmatically extractable there)"
+        )
     unknown = [
         a
         for a in arms
         if a not in arm_x
         and a not in single_slice
-        and a not in ("arm_dir_ctx", "arm_dir_map", "bl_const")
+        and a not in ("arm_dir_ctx", "arm_dir_map", "bl_const", "bl_agree")
     ]
     if unknown:
         raise SystemExit(f"unknown arm(s) {unknown}")
     tag_prefix = ("disjoint_" if args.qa_disjoint else "") + (
         f"{map_cell}_" if map_cell != "fu1" else ""
     )
+    # rung-1 transfer reads need a FIT-side restriction on math/mcq/code
+    # (r1 g6 Critical 2: the unrestricted-fit rung1 read is in-distribution).
+    r1_heldout = rungs.get("_rung1_heldout_categories")
+    needs_r1_refit = surface in ("math", "mcq", "code") and "rung1" in eval_names
     for budget in budgets:
         for draw_i in range(args.n_draws):
             seed_parts = [SEED0, _stable_seed(surface), _budget_seed(budget), draw_i]
@@ -1143,9 +1364,58 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
             )
             y_stack = np.concatenate([table.dv[draw_rows][:, None], y_null], axis=1)
             cell_tag = f"{tag_prefix}L{budget}_draw{draw_i}"
+
+            def _rung1_swap(cand: dict, arm_name: str, x_full: np.ndarray) -> dict:
+                """Swap cand's rung1 block/preds for the restricted-fit transfer
+                read at the dev-selected basis; rewrite that basis's nulls npz."""
+                if not needs_r1_refit:
+                    if surface == "qa" and "rung1" in eval_names:
+                        return {"refit": False, "reason": "qa fit-disjoint by construction"}
+                    return {"refit": False, "reason": "no rung1 eval"}
+                v_sel = bases.get(cand["basis"])
+                res = _rung1_refit(
+                    table,
+                    draw_rows,
+                    x_full,
+                    v_sel,
+                    rungs["rung1"],
+                    r1_heldout,
+                    n_null,
+                    [SEED0, 9, _budget_seed(budget), draw_i],
+                    args.device,
+                )
+                if res is None:
+                    if not args.smoke:
+                        raise RuntimeError(
+                            f"{surface}: rung1 restricted fit under floor "
+                            f"({RUNG1_REFIT_MIN_N}) at L={budget} — production draws "
+                            "always clear this; investigate the draw"
+                        )
+                    return {"refit": False, "smoke_fallback": True}
+                preds_r1, block_r1, info = res
+                cand["blocks"]["rung1"] = block_r1
+                cand["preds"] = list(cand["preds"])
+                cand["preds"][eval_names.index("rung1")] = preds_r1
+                np.savez(  # selected basis npz now carries the TRANSFER rung1
+                    out_root / "nulls" / f"{arm_name}__{cell_tag}__{cand['basis']}.npz",
+                    **{
+                        f"{nm}_{met}": cand["blocks"][nm][met]
+                        for nm in cand["blocks"]
+                        for met in ("rho", "r2", "auroc")
+                    },
+                )
+                return info
+
             for arm in arms:
                 cell_path = out_root / "cells" / f"{arm}__{cell_tag}.json"
-                if cell_path.exists() and not args.force:
+                companion_pending = (
+                    arm == "arm_ctx"
+                    and not (out_root / "cells" / f"arm_ctx_pca__{cell_tag}.json").exists()
+                )
+                if cell_path.exists() and not args.force and not companion_pending:
+                    # arm_ctx resumes only when its arm_ctx_pca companion also
+                    # landed (r1 g6: a crash between the two writes left the
+                    # companion permanently unwritten on resume).
                     continue
                 t0 = time.time()
                 row: dict = {
@@ -1175,16 +1445,48 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
                     for name in eval_names:
                         ev = dev_idx if name == "dev" else rungs[name]
                         dv_e = table.dv[ev]
+                        mu_use = mu
+                        if name == "rung1" and needs_r1_refit:
+                            # transfer read: mean of the RESTRICTED fit rows
+                            fr = _rung1_fit_filter(table, draw_rows, r1_heldout)
+                            if len(fr):
+                                mu_use = float(table.dv[fr].mean())
                         per_eval[name] = {
                             "rho": 0.0,
                             "r2": float(
                                 1.0
-                                - ((dv_e - mu) ** 2).sum()
+                                - ((dv_e - mu_use) ** 2).sum()
                                 / max(1e-12, ((dv_e - dv_e.mean()) ** 2).sum())
                             ),
                             "auroc": 0.5,
                         }
                     row.update({"basis": "none", "per_eval": per_eval, "train_mean": mu})
+                    cell_path.write_text(json.dumps(row))
+                    continue
+                if arm == "bl_agree":
+                    ag = table.meta.get("agree_frac")
+                    if ag is None:
+                        raise RuntimeError("bl_agree requested but labeling carries no agree_frac")
+                    per_eval = {}
+                    for name in eval_names:
+                        ev = dev_idx if name == "dev" else rungs[name]
+                        fin = np.isfinite(ag[ev])
+                        if int(fin.sum()) < 3:
+                            per_eval[name] = {"rho": None, "r2": None, "auroc": None}
+                            continue
+                        blk = _metrics_block(ag[ev][fin][None, :, None], table.dv[ev][fin])
+                        per_eval[name] = {
+                            met: float(blk[met][0, 0]) for met in ("rho", "r2", "auroc")
+                        }
+                        per_eval[name]["n_used"] = int(fin.sum())
+                    row.update(
+                        {
+                            "basis": "none",
+                            "layer": None,
+                            "per_eval": per_eval,
+                            "selector": {"mode": "reference-row (no fit)", "dof_cap": None},
+                        }
+                    )
                     cell_path.write_text(json.dumps(row))
                     continue
                 if arm in ("arm_dir_ctx", "arm_dir_map"):
@@ -1197,6 +1499,11 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
                         [SEED0, 5, _budget_seed(budget), draw_i],
                     )
                     row["n_spread_contexts"] = n_spread
+                    if needs_r1_refit:
+                        # direction points are never claim-bearing (plan section
+                        # 5); the rung1 read here is an UNRESTRICTED-fit score,
+                        # disclosed rather than refit.
+                        row["rung1_fit"] = {"refit": False, "reason": "direction arm (disclosed)"}
                     _persist_score_cell(
                         row, scores, table, dev_idx, rungs, eval_names, out_root, arm, cell_tag
                     )
@@ -1272,6 +1579,13 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
                             for met in ("rho", "r2", "auroc")
                         },
                     )
+                if arm in single_slice:
+                    # TF-IDF fit once on the full train partition, not refit per
+                    # draw — the disclosed simplification, now an actual field.
+                    row["feature_basis_note"] = (
+                        "single-slice features; TF-IDF fit once on full train, not per draw"
+                    )
+                row["rung1_fit"] = _rung1_swap(best, arm, x_full)
                 _finalize_ridge_cell(
                     row,
                     best,
@@ -1296,6 +1610,7 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
                     }
                     row2["arm"] = "arm_ctx_pca"
                     row2["pooling"] = POOLING_OF_ARM["arm_ctx_pca"]
+                    row2["rung1_fit"] = _rung1_swap(pca_best, "arm_ctx_pca", x_full)
                     _finalize_ridge_cell(
                         row2,
                         pca_best,
@@ -1472,6 +1787,25 @@ def phase_select(args) -> None:
         )
     )
     print(f"[select] froze {len(sel)} cells -> {path}", flush=True)
+    # Plan-contract aggregate (section 6.5: fits/<surface>/all_arms.json) —
+    # the FULL cell rows in one file (selection.json above stays the thin
+    # frozen-selection view).
+    arm_rows = [
+        json.loads(cell.read_text()) for cell in sorted((out_root / "cells").glob("*.json"))
+    ]
+    agg_path = out_root / "all_arms.json"
+    agg_path.write_text(
+        json.dumps(
+            {
+                "surface": surface,
+                "n_rows": len(arm_rows),
+                "arm_rows": arm_rows,
+                "metadata": _provenance("select-all-arms"),
+            },
+            default=float,
+        )
+    )
+    print(f"[select] aggregate: {len(arm_rows)} rows -> {agg_path}", flush=True)
 
 
 def phase_bootstrap(args) -> None:
@@ -1501,13 +1835,45 @@ def phase_bootstrap(args) -> None:
                 per_eval[r["eval"]][1].append(r["y_true"])
                 per_eval[r["eval"]][2].append(r["y_pred"])
         cells.setdefault((budget, draw), {})[arm] = per_eval
-    rng = np.random.default_rng([SEED0, 17])
-    out = []
+    # Per-unit checkpoint (code-style intra-phase grain: > 50 (budget, draw,
+    # eval) units) + resume keyed on the output-affecting regime (n_boot).
+    cells_path = out_root / "bootstrap_cells.jsonl"
+    done_keys: set[tuple] = set()
+    persisted: list[dict] = []
+    if cells_path.exists() and not args.force:
+        with cells_path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip():
+                    r = json.loads(line)
+                    if int(r.get("n_boot", -1)) == int(args.n_boot):
+                        done_keys.add((r["budget"], int(r["draw"]), r["eval"]))
+                        persisted.append(r)
+    elif cells_path.exists() and args.force:
+        cells_path.unlink()
+    out = list(persisted)
+    t0 = time.time()
+    n_units = 0
     for (budget, draw), arms in sorted(cells.items()):
+        # A PER-UNIT rng (seeded on the unit key) makes the resample identical
+        # whether the unit runs fresh or after a resume (a shared sequential
+        # rng would give resume-order-dependent draws).
         ref_arm = next(iter(arms))
         for ev in arms[ref_arm]:
+            if (budget, int(draw), ev) in done_keys:
+                continue
+            rng = np.random.default_rng(
+                [SEED0, 17, _budget_seed(budget), int(draw), _stable_seed(ev)]
+            )
             ids = arms[ref_arm][ev][0]
-            groups = np.array([boot_group.get(c, c) for c in ids])
+            missing_groups = [c for c in ids if c not in boot_group]
+            if missing_groups:
+                # r1 g6: the .get(c, c) fallback silently regrouped at context
+                # grain, masking a preds/labeling mismatch — fail loud instead.
+                raise RuntimeError(
+                    f"bootstrap: {len(missing_groups)} pred context ids missing from the "
+                    f"labeling's boot_group map (e.g. {missing_groups[:3]})"
+                )
+            groups = np.array([boot_group[c] for c in ids])
             uniq = np.unique(groups)
             members = {g: np.flatnonzero(groups == g) for g in uniq}
             arm_names = sorted(arms)
@@ -1524,34 +1890,46 @@ def phase_bootstrap(args) -> None:
                 gs = rng.choice(uniq, size=len(uniq), replace=True)
                 idx = np.concatenate([members[g] for g in gs])
                 boot[b] = spearman_rows(preds_mat[:, idx], y_true[idx])
-            out.append(
-                {
-                    "budget": budget,
-                    "draw": int(draw),
-                    "eval": ev,
-                    "n_groups": int(len(uniq)),
-                    "n_boot": args.n_boot,
-                    "arms": arm_names,
-                    "rho_point": spearman_rows(preds_mat, y_true).tolist(),
-                    "rho_ci": [
-                        [
-                            float(np.nanpercentile(boot[:, i], 2.5)),
-                            float(np.nanpercentile(boot[:, i], 97.5)),
-                        ]
-                        for i in range(len(arm_names))
-                    ],
-                    "pairwise_delta_ci": _pairwise_delta_ci(boot, arm_names),
-                }
-            )
+            unit = {
+                "budget": budget,
+                "draw": int(draw),
+                "eval": ev,
+                "n_groups": int(len(uniq)),
+                "n_boot": args.n_boot,
+                # frozen-config: resamples the dev-selected preds with NO
+                # per-resample re-selection (plan section 6 dual-labeling;
+                # the H3 gap CI is the selection-inherited counterpart).
+                "ci_kind": "frozen-config",
+                "arms": arm_names,
+                "rho_point": spearman_rows(preds_mat, y_true).tolist(),
+                "rho_ci": [
+                    [
+                        float(np.nanpercentile(boot[:, i], 2.5)),
+                        float(np.nanpercentile(boot[:, i], 97.5)),
+                    ]
+                    for i in range(len(arm_names))
+                ],
+                "pairwise_delta_ci": _pairwise_delta_ci(boot, arm_names),
+            }
+            with cells_path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(unit, default=float) + "\n")
+            out.append(unit)
+            n_units += 1
             print(
-                f"[bootstrap] L{budget} draw{draw} {ev}: {len(arm_names)} arms "
-                f"n_groups={len(uniq)}",
+                f"[bootstrap] unit {n_units} L{budget} draw{draw} {ev}: "
+                f"{len(arm_names)} arms n_groups={len(uniq)} "
+                f"elapsed={time.time() - t0:.0f}s",
                 flush=True,
             )
     path = out_root / "bootstrap_summary.json"
     path.write_text(
         json.dumps(
-            {"surface": surface, "cells": out, "metadata": _provenance("bootstrap")},
+            {
+                "surface": surface,
+                "ci_kind": "frozen-config",
+                "cells": out,
+                "metadata": _provenance("bootstrap"),
+            },
             default=float,
         )
     )
@@ -1838,48 +2216,82 @@ def phase_h3(args) -> None:
         # --behavior hallucination: the QA surface rides the parent's
         # hallucination stores/arms (provenance slug; the DV is the swapped
         # correctness labeling and every row carries h3_label).
-        _run(
-            _ported_cmd(
-                args,
-                "hallucination",
-                out_root,
-                budgets="2500",
-                dof_cap="0.9",
-                dv_json=dv_json,
-                label="h3_parent_exact",
-            )
+        #
+        # PER-LEG OUT-ROOTS (r1 g6 Critical 1): the ported arms.write_summary
+        # REWRITES arm_results/all_arms_spearman.json atomically with ONLY that
+        # run's records, so three sequential runs into ONE out-root ship a
+        # summary holding only the LAST leg's rows — the capped-2,500 anchor
+        # (the stage-2 kill read) silently vanishes. Each leg gets its own
+        # out-root; the aggregate merges the three summaries.
+        legs = (
+            ("capped2500", "2500", "0.9"),
+            ("legacy8000", "8000", None),
+            ("legacy16000", "16000", None),
         )
-        for b in ("8000", "16000"):
+        leg_rows: dict[str, list[dict]] = {}
+        for leg_name, budgets, cap in legs:
+            leg_root = out_root / f"h3_stage2_{leg_name}"
+            leg_root.mkdir(parents=True, exist_ok=True)
             _run(
                 _ported_cmd(
                     args,
                     "hallucination",
-                    out_root,
-                    budgets=b,
-                    dof_cap=None,
+                    leg_root,
+                    budgets=budgets,
+                    dof_cap=cap,
                     dv_json=dv_json,
                     label="h3_parent_exact",
                 )
             )
-        # thin aggregation at the plan-named location (fits/qa/h3_parent_exact.json)
-        rows = _load_arm_rows(out_root / "arm_results" / "all_arms_spearman.json")
-        labelled = [r for r in rows if r.get("h3_label") == "h3_parent_exact"]
-        if not labelled:
-            raise RuntimeError("stage2 produced no h3_parent_exact-labelled rows")
+            rows = _load_arm_rows(leg_root / "arm_results" / "all_arms_spearman.json")
+            labelled = [
+                dict(r, stage2_leg=leg_name) for r in rows if r.get("h3_label") == "h3_parent_exact"
+            ]
+            if not labelled:
+                raise RuntimeError(f"stage2 leg {leg_name} produced no labelled rows")
+            leg_rows[leg_name] = labelled
+        merged = [r for leg_name, _b, _c in legs for r in leg_rows[leg_name]]
         (out_root / "h3_parent_exact.json").write_text(
             json.dumps(
-                {"rows": labelled, "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
+                {
+                    "rows": merged,
+                    "legs": {name: len(leg_rows[name]) for name, _b, _c in legs},
+                    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                },
                 default=float,
             )
         )
-        print(f"[h3] stage2 rows: {len(labelled)} -> {out_root / 'h3_parent_exact.json'}")
+        print(
+            f"[h3] stage2 rows: {len(merged)} "
+            f"({ {name: len(leg_rows[name]) for name, _b, _c in legs} }) "
+            f"-> {out_root / 'h3_parent_exact.json'}"
+        )
         return
     raise SystemExit(f"unknown --h3-step {args.h3_step}")
+
+
+def _h3_store_paths(args, behavior: str) -> dict[str, str]:
+    """Per-behavior store composition for the ported CLI's REAL mode.
+
+    The ported ``issue1739_fits.py`` real mode hard-requires
+    ``--labeled-store/--dv-json/--u-store/--e1-store`` (``_run_real``, r1 Codex
+    blocker: the composed argv omitted them and would SystemExit pod-side).
+    Layout (plan section 9 Pod B): hallucination's labeled store co-resides
+    with the QA stage at ``--qa-store-dir`` (same store, no double stage);
+    sycophancy/evil stage under ``--h3-store-root`` as ``<behavior>_labeling``;
+    every behavior's e1 extraction store stages as ``<behavior>_extraction``.
+    """
+    root = Path(args.h3_store_root)
+    labeled = (
+        Path(args.qa_store_dir) if behavior == "hallucination" else root / f"{behavior}_labeling"
+    )
+    return {"labeled": str(labeled), "e1": str(root / f"{behavior}_extraction")}
 
 
 def _ported_cmd(
     args, behavior, out_root, *, budgets, dof_cap, dv_json=None, label=None, extra=None
 ):
+    stores = _h3_store_paths(args, behavior)
     cmd = [
         sys.executable,
         str(REPO_ROOT / "scripts" / "issue1739_fits.py"),
@@ -1887,6 +2299,14 @@ def _ported_cmd(
         budgets,
         "--out-root",
         str(out_root),
+        "--labeled-store",
+        stores["labeled"],
+        "--u-store",
+        str(args.u_store_dir),
+        "--e1-store",
+        stores["e1"],
+        "--device",
+        args.device,
     ]
     if dof_cap is not None:
         cmd += ["--dof-cap", str(dof_cap)]
@@ -1942,20 +2362,78 @@ def _provenance(phase: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def phase_feasibility(args) -> None:
-    counts = {}
-    for surface in args.surfaces or list(SURFACE_BENCHMARKS):
-        lab = _load_labeling(Path(args.dv_root) / surface / "labeling.json", surface=surface)
-        counts[surface] = {
+def _pre_gen_counts(args) -> dict[str, dict[str, int]]:
+    """PRE-GENERATION feasibility counts from loader metadata + the dedup
+    report (r1 Codex: the "P1 pre-step" consumed post-generation DV files, so
+    it could never run BEFORE P1 as the plan sequences it). Conservative on
+    code: uses the WITHOUT-BCB pool (the smaller train) unless the gate has
+    already resolved bcb_fit_allowed=True."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import issue2388_gen as G
+
+    gen_root = Path(args.gen_root)
+    dedup_p = gen_root / "code" / "dedup_report.json"
+    if not dedup_p.exists():
+        raise FileNotFoundError(
+            f"pre-gen feasibility needs the dedup report at {dedup_p} "
+            "(run issue2388_gen.py --phase dedup)"
+        )
+    dedup = json.loads(dedup_p.read_text())
+    n_lcb_kept = int(dedup["n_lcb"]) - int(dedup["n_dropped_lcb"])
+    base_pool = (
+        G.EXPECTED_COUNTS["humaneval"]
+        + G.EXPECTED_COUNTS["mbpp_full"]
+        + n_lcb_kept
+        + G.EXPECTED_COUNTS["leetcode"]
+    )
+    code_pool = base_pool
+    gate_p = gen_root / "code" / "code_gate.json"
+    if gate_p.exists() and json.loads(gate_p.read_text()).get("bcb_fit_allowed") is True:
+        code_pool = base_pool + G.EXPECTED_COUNTS["bigcodebench_full"]
+    pools = {
+        "math": G.EXPECTED_COUNTS["math_full"],
+        "mcq": G.EXPECTED_COUNTS["mmlu_pro_full"],
+        "code": code_pool,
+    }
+    counts = {
+        s: {
+            "train": round(0.7 * n),
+            "dev": round(0.1 * n),
+            "test": round(0.2 * n),
+        }
+        for s, n in pools.items()
+    }
+    # QA rides the BANKED labeling (pre-existing — available pre-generation).
+    qa_lab = Path(args.dv_root) / "qa" / "labeling.json"
+    if qa_lab.exists():
+        lab = _load_labeling(qa_lab, surface="qa")
+        counts["qa"] = {
             s: sum(1 for r in lab["rows"] if r["eff_split"] == s) for s in ("train", "dev", "test")
         }
-    manifest = None
-    mpath = Path(args.maps_out) / "key_manifest.json"
-    if mpath.exists():
-        manifest = json.loads(mpath.read_text())
-    report = assert_joint_feasibility(counts, key_manifest=manifest)
+    return counts
+
+
+def phase_feasibility(args) -> None:
+    if args.pre_gen:
+        counts = _pre_gen_counts(args)
+        report = assert_joint_feasibility(counts, key_manifest=None)
+        report["mode"] = "pre-gen-arithmetic"
+    else:
+        counts = {}
+        for surface in args.surfaces or list(SURFACE_BENCHMARKS):
+            lab = _load_labeling(Path(args.dv_root) / surface / "labeling.json", surface=surface)
+            counts[surface] = {
+                s: sum(1 for r in lab["rows"] if r["eff_split"] == s)
+                for s in ("train", "dev", "test")
+            }
+        manifest = None
+        mpath = Path(args.maps_out) / "key_manifest.json"
+        if mpath.exists():
+            manifest = json.loads(mpath.read_text())
+        report = assert_joint_feasibility(counts, key_manifest=manifest)
     report["metadata"] = _provenance("feasibility")
-    path = Path(args.fits_root) / "feasibility_report.json"
+    suffix = "_pregen" if args.pre_gen else ""
+    path = Path(args.fits_root) / f"feasibility_report{suffix}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2))
     print(f"[feasibility] PASS ({report['mode']} mode) -> {path}", flush=True)
@@ -1965,6 +2443,64 @@ def phase_feasibility(args) -> None:
 # main
 # ---------------------------------------------------------------------------
 
+
+def phase_upload(args) -> None:
+    """Mirror the maps + fits + h3_recompute trees to the HF data repo
+    (plan section 10: maps -> analysis_tensors/maps; fits + preds + null
+    matrices -> git issue branch + HF mirror). Smoke runs land under a
+    ``_smoke``-suffixed HF root — never the production prefix."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    hf_root = "issue2388_correctness" + ("_smoke" if args.smoke else "")
+    jobs: list[tuple[Path, str]] = []
+    maps_dir = Path(args.maps_out)
+    if maps_dir.exists() and any(maps_dir.iterdir()):
+        jobs.append((maps_dir, f"{hf_root}/analysis_tensors/maps"))
+    fits_root = Path(args.fits_root)
+    if fits_root.exists():
+        for sub in sorted(p for p in fits_root.iterdir() if p.is_dir()):
+            jobs.append((sub, f"{hf_root}/fits/{sub.name}"))
+        for f in sorted(p for p in fits_root.iterdir() if p.is_file()):
+            jobs.append((f, f"{hf_root}/fits/{f.name}"))
+    h3_root = fits_root.parent / "h3_recompute"
+    if h3_root.exists() and any(h3_root.iterdir()):
+        jobs.append((h3_root, f"{hf_root}/h3_recompute"))
+    if not jobs:
+        raise RuntimeError("upload: nothing to upload (no maps/fits/h3_recompute artifacts)")
+    api = HfApi()
+    for local, prefix in jobs:
+        if local.is_file():
+            # file jobs compose prefix as the FULL file destination above
+            out = hub._upload(
+                local,
+                hub.DEFAULT_DATASET_REPO,
+                repo_type="dataset",
+                path_in_repo=prefix,
+                upload_as_file=True,
+            )
+            expected = [prefix]
+            prefix = prefix.rsplit("/", 1)[0]  # scope the verify to the parent
+        else:
+            out = hub._upload(
+                local, hub.DEFAULT_DATASET_REPO, repo_type="dataset", path_in_repo=prefix
+            )
+            expected = [
+                f"{prefix}/{p.relative_to(local)}" for p in sorted(local.rglob("*")) if p.is_file()
+            ]
+        if not out:
+            raise RuntimeError(f"upload returned empty path for {local} -> {prefix}")
+        missing = hub.verify_repo_paths_uploaded(
+            api, hub.DEFAULT_DATASET_REPO, expected, path_in_repo=prefix, repo_type="dataset"
+        )
+        if missing:
+            raise RuntimeError(
+                f"post-upload verify: {len(missing)} paths missing under {prefix}: {missing[:5]}"
+            )
+        print(f"[upload] {local} -> {prefix} ({len(expected)} files verified)", flush=True)
+
+
 PHASES = {
     "feasibility": phase_feasibility,
     "maps": phase_maps,
@@ -1973,6 +2509,7 @@ PHASES = {
     "bootstrap": phase_bootstrap,
     "h3": phase_h3,
     "h3-gap": phase_h3_gap,
+    "upload": phase_upload,
 }
 
 
@@ -2021,11 +2558,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--banked-root", default="eval_results/issue_1739")
     ap.add_argument("--dv-root", default=str(DV_ROOT))
+    ap.add_argument("--gen-root", default="eval_results/issue_2388/gen")
     ap.add_argument("--fits-root", default=str(FITS_ROOT))
     ap.add_argument("--maps-out", default="eval_results/issue_2388/maps")
     ap.add_argument("--store-root", default="/workspace/store_2388")
     ap.add_argument("--qa-store-dir", default="/workspace/store")
     ap.add_argument("--u-store-dir", default="/workspace/u_store")
+    ap.add_argument(
+        "--h3-store-root",
+        default="/workspace/h3_stores",
+        help="staged parent stores root: <behavior>_labeling + <behavior>_extraction "
+        "(hallucination's labeled store rides --qa-store-dir — same store, plan section 9)",
+    )
+    ap.add_argument(
+        "--pre-gen",
+        action="store_true",
+        help="feasibility from loader metadata + dedup report (runs BEFORE any generation)",
+    )
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--n-null", type=int, default=N_NULL)
     ap.add_argument("--n-draws", type=int, default=N_DRAWS)
@@ -2057,9 +2606,9 @@ def main(argv: list[str] | None = None) -> int:
         import sklearn.feature_extraction.text  # noqa: F401
         import torch  # noqa: F401
 
-        from explore_persona_space.analysis.issue_763_vectorized import (  # noqa: F401
-            batched_ridge_predict_loco_pca,
-        )
+        # (batched_ridge_predict_loco_pca deliberately NOT imported: PCA arms
+        # ride the dof-capped GCV core — the uniform instrument; r1 g6 noted
+        # the unused import implied wiring that does not exist.)
         from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
             identity_bias_predict,
             knn_retrieval,
@@ -2067,6 +2616,9 @@ def main(argv: list[str] | None = None) -> int:
         from explore_persona_space.experiments.issue_1739.store_io import (  # noqa: F401
             load_summaries,
         )
+        from explore_persona_space.orchestrate import hub
+
+        assert callable(hub._upload) and callable(hub.verify_repo_paths_uploaded)
 
         # GPU/network-fenced (noted): sentence_transformers model download.
         import sentence_transformers  # noqa: F401

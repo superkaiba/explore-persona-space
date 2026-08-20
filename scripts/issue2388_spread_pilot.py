@@ -297,16 +297,25 @@ def _norm_math(s: str) -> str:
 _ANSWER_RE = re.compile(r"Answer:\s*\(?([A-J])\)?", re.IGNORECASE)
 
 
-def verify_mcq(completion: str, item: dict) -> bool | None:
+def extract_mcq_letter(completion: str) -> str | None:
+    """The MCQ answer letter the verifier scores (hoisted so the #2388 agreement
+    baseline reads the SAME extraction — no clone-drift)."""
     matches = _ANSWER_RE.findall(completion)
     if matches:
-        return matches[-1].upper() == item["gold"].upper()
+        return matches[-1].upper()
     # Fallback: a lone bracketed or final standalone letter.
     tail = completion.strip()[-200:]
     loose = re.findall(r"\b([A-J])\b", tail)
     if not loose:
         return None
-    return loose[-1].upper() == item["gold"].upper()
+    return loose[-1].upper()
+
+
+def verify_mcq(completion: str, item: dict) -> bool | None:
+    letter = extract_mcq_letter(completion)
+    if letter is None:
+        return None
+    return letter == item["gold"].upper()
 
 
 _CODE_BLOCK_RE = re.compile(r"```(?:python)?\s*\n(.*?)```", re.DOTALL)

@@ -126,7 +126,7 @@ def test_t1_default_kinds_byte_identical():
 
 
 def test_t2_t_last_is_last_answer_token():
-    kinds = SUMMARY_KINDS + ("t_last",)
+    kinds = (*SUMMARY_KINDS, "t_last")
     summaries, positions = _run(kinds=kinds)
     tok = _CharTokenizer()
     for row_i, (prefix, prompt, completion) in enumerate(_ROWS):

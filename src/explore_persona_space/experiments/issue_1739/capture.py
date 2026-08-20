@@ -120,6 +120,53 @@ def capture_row_ids_and_positions(
     }
 
 
+def _extract_position_summary(hidden_states, row_i: int, position: int) -> np.ndarray:
+    """(n_layers, hidden_dim) float16 summary at ONE unpadded position."""
+    import torch  # lazy: GPU dep
+
+    return np.stack(
+        [hs[row_i, position, :].to(torch.float16).cpu().numpy() for hs in hidden_states],
+        axis=0,
+    )
+
+
+def _extract_span_summary(
+    hidden_states, row_i: int, start: int, end: int, n_total: int
+) -> np.ndarray:
+    """(n_layers, hidden_dim) float16 mean over the [start, end) unpadded span."""
+    import torch  # lazy: GPU dep
+
+    start = min(max(0, start), n_total - 1)
+    end = min(max(start + 1, end), n_total)
+    return np.stack(
+        [
+            hs[row_i, start:end, :].mean(dim=0).to(torch.float16).cpu().numpy()
+            for hs in hidden_states
+        ],
+        axis=0,
+    )
+
+
+def _extract_kind_summary(kind: str, hidden_states, row_i: int, pos: dict[str, int]) -> np.ndarray:
+    """Dispatch one capture summary kind (hoisted from capture_batch — C901)."""
+    if kind == "prefix_end":
+        return _extract_position_summary(hidden_states, row_i, pos["prefix_end"])
+    if kind == "context_end":
+        return _extract_position_summary(hidden_states, row_i, pos["context_end"])
+    if kind == "t1":
+        return _extract_span_summary(
+            hidden_states, row_i, pos["answer_start"], pos["answer_end"], pos["n_total"]
+        )
+    if kind == "t_last":
+        # Last answer token: answer_end is exclusive (already clamped to n_total
+        # by capture_row_ids_and_positions); the min() is a defensive re-clamp
+        # mirroring _extract_span_summary's.
+        return _extract_position_summary(
+            hidden_states, row_i, min(pos["answer_end"] - 1, pos["n_total"] - 1)
+        )
+    raise ValueError(f"unknown capture summary kind {kind!r}")
+
+
 def capture_batch(
     prefix_texts: list[str],
     prompts: list[str],
@@ -210,48 +257,9 @@ def capture_batch(
             )
 
         for local_i, pos in enumerate(positions):
-
-            def extract_pos(
-                position: int, *, row_i: int = local_i, hs_layers=hidden_states
-            ) -> np.ndarray:
-                return np.stack(
-                    [hs[row_i, position, :].to(torch.float16).cpu().numpy() for hs in hs_layers],
-                    axis=0,
-                )
-
-            def extract_span(
-                start: int,
-                end: int,
-                *,
-                row_i: int = local_i,
-                n_total: int = pos["n_total"],
-                hs_layers=hidden_states,
-            ) -> np.ndarray:
-                start = min(max(0, start), n_total - 1)
-                end = min(max(start + 1, end), n_total)
-                return np.stack(
-                    [
-                        hs[row_i, start:end, :].mean(dim=0).to(torch.float16).cpu().numpy()
-                        for hs in hs_layers
-                    ],
-                    axis=0,
-                )
-
-            def extract_kind(kind: str, *, pos_row: dict[str, int] = pos) -> np.ndarray:
-                if kind == "prefix_end":
-                    return extract_pos(pos_row["prefix_end"])
-                if kind == "context_end":
-                    return extract_pos(pos_row["context_end"])
-                if kind == "t1":
-                    return extract_span(pos_row["answer_start"], pos_row["answer_end"])
-                if kind == "t_last":
-                    # Last answer token: answer_end is exclusive (already clamped
-                    # to n_total by capture_row_ids_and_positions); the min() is a
-                    # defensive re-clamp mirroring extract_span's.
-                    return extract_pos(min(pos_row["answer_end"] - 1, pos_row["n_total"] - 1))
-                raise ValueError(f"unknown capture summary kind {kind!r}")
-
-            row_summary = {kind: extract_kind(kind) for kind in kinds}
+            row_summary = {
+                kind: _extract_kind_summary(kind, hidden_states, local_i, pos) for kind in kinds
+            }
             for kind, arr in row_summary.items():
                 assert arr.shape == (n_layers, hidden_dim), (kind, arr.shape)
             summaries.append(row_summary)
