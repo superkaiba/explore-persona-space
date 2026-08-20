@@ -792,6 +792,10 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
         "tests/test_inline_lint_gate.py",
         "tests/test_step9c_baseline.py",
     ),
+    # #2412: the Step 5a sibling-probe unit tests load the helper by
+    # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
+    # reaches a constructed-path consumer.
+    "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------

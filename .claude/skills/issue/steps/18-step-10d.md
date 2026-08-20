@@ -2385,6 +2385,8 @@ else
     FAMILY_OF[".claude/skills"]="workflow"
     FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"
     FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
+    FAMILY_OF["scripts/step5a_sibling_probe.py"]="workflow"
+    FAMILY_OF["tests/test_step5a_sibling_probe.py"]="workflow"
     FAMILY_OF["scripts/workflow_lint.py"]="lint"
     FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
     FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
@@ -2396,7 +2398,7 @@ else
     FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py"
+    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do

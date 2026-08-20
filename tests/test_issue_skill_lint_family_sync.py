@@ -163,6 +163,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from tests.issue_skill_source import issue_skill_text
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -217,7 +219,9 @@ def test_step5a_specs_include_lint_family():
         ":(glob)tests/test_workflow_lint*.py "
         ":(glob)tests/test_guard_*.py "
         "tests/issue_skill_source.py "
-        ':(glob)tests/test_issue_skill_*.py"'
+        ":(glob)tests/test_issue_skill_*.py "
+        "scripts/step5a_sibling_probe.py "
+        'tests/test_step5a_sibling_probe.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
         "(workflow_lint.py, .claude/hooks, the :(glob) test_workflow_lint* "
@@ -247,7 +251,12 @@ def test_step5a_specs_include_lint_family():
         "every test_issue_skill_* pin test imports AND lint-family + "
         "unsynced tests import; cross-family importers mean no single "
         "family covers it — syncing the pin tests without the helper red "
-        "66 collection errors in the issue-2333 worktree)"
+        "66 collection errors in the issue-2333 worktree) — plus the #2412 "
+        "sibling-probe pair scripts/step5a_sibling_probe.py + "
+        "tests/test_step5a_sibling_probe.py (the Step 5a "
+        "import-satisfiability helper and its unit tests; the "
+        "test_issue_skill_* repros execute the worktree helper copy, so "
+        "helper-vs-pin sync must be family-atomic — the #1963 precedent)"
     )
 
 
@@ -764,7 +773,12 @@ def test_sibling_issue_file_arm_step5a_only():
     the 10d copy's prose asymmetry comment cannot trip it. #2116 widens the
     enumeration to sibling scripts/issue<M>_*.sh shell dispatchers: sibling
     tests also INVOKE dispatchers (subprocess / read_text), and a .py-only
-    pathspec syncs the test without its .sh (the #1988/#2004 firings)."""
+    pathspec syncs the test without its .sh (the #1988/#2004 firings).
+    #2412 widens the pair to issue-namespaced src — the
+    src/explore_persona_space/experiments/issue<M> / issue_<M> dirs join
+    the globs (a synced main-NEW test importing fork-era issue src is the
+    #2204 post-collection escape), with the own-issue carve-out extended
+    to match."""
     text = _text()
     arm = _sibling_arm_block(_step5a_span(text))
     assert "':(glob)scripts/issue[0-9]*_*.py'" in arm, (
@@ -783,6 +797,17 @@ def test_sibling_issue_file_arm_step5a_only():
         "the sibling arm must enumerate the covering tests via the paired "
         ":(glob)tests/test_issue[0-9]*_*.py pathspec (script+test move together)"
     )
+    assert "':(glob)src/explore_persona_space/experiments/issue[0-9]*/**'" in arm, (
+        "the sibling arm must enumerate issue-namespaced sibling src dirs "
+        "(the issue<N> convention) — the #2412 closure widening: syncing a "
+        "main-NEW test without its issue-namespaced src re-creates the "
+        "#2204 half-sync (main-era test + fork-era issue src)"
+    )
+    assert "':(glob)src/explore_persona_space/experiments/issue_[0-9]*/**'" in arm, (
+        "the sibling arm must enumerate issue-namespaced sibling src dirs "
+        "(the issue_<N> convention) — the #2412 closure widening's second "
+        "measured dir convention (e.g. issue_1739, the #2204 incident dir)"
+    )
     enum_lines = [ln for ln in arm.splitlines() if "diff --name-only origin/main" in ln]
     assert len(enum_lines) == 1, (
         "the sibling arm must carry exactly ONE `diff --name-only origin/main` "
@@ -792,9 +817,11 @@ def test_sibling_issue_file_arm_step5a_only():
         "':(glob)scripts/issue[0-9]*_*.py'",
         "':(glob)scripts/issue[0-9]*_*.sh'",
         "':(glob)tests/test_issue[0-9]*_*.py'",
+        "':(glob)src/explore_persona_space/experiments/issue[0-9]*/**'",
+        "':(glob)src/explore_persona_space/experiments/issue_[0-9]*/**'",
     ):
         assert spec in enum_lines[0], (
-            f"all three sibling pathspecs must co-occur on the enumeration line "
+            f"all five sibling pathspecs must co-occur on the enumeration line "
             f"itself (missing {spec}) — the individual substring asserts above "
             "would still pass if a glob moved into a comment while dropped from "
             "the `done < <(git ... diff --name-only origin/main ...)` line (#2116)"
@@ -807,6 +834,14 @@ def test_sibling_issue_file_arm_step5a_only():
     assert "scripts/issue<N>_*|tests/test_issue<N>_*" in arm, (
         "the sibling arm must carve out the session's OWN issue scripts and "
         "tests (defense-in-depth beside the bs-commits exclusion)"
+    )
+    assert (
+        "src/explore_persona_space/experiments/issue<N>/*"
+        "|src/explore_persona_space/experiments/issue_<N>/*"
+    ) in arm, (
+        "the own-issue carve-out must extend to the session's OWN "
+        "issue-namespaced src dirs (both conventions) — the #2412 widening "
+        "must never sync the branch's own experiment src back to main tip"
     )
     assert 'git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null' in arm, (
         "the sibling arm must guard the checkout on origin/main existence"
@@ -831,54 +866,224 @@ def test_sibling_issue_file_arm_step5a_only():
     )
 
 
+_SIBLING_PROBE_HELPER = Path(__file__).resolve().parents[1] / "scripts" / "step5a_sibling_probe.py"
+
+
+def _executable_only(source: str) -> str:
+    """Source with comments + docstrings stripped (ast round-trip).
+
+    A string pin on the returned text can only be satisfied by EXECUTABLE
+    code — prose in a module/function docstring (or a comment) cannot shadow
+    a removed call (#2412 r2 NIT process-fence-pin-docstring-shadow). NOTE:
+    ``ast.unparse`` renders string literals with SINGLE quotes — pins that
+    match verbatim double-quoted source text must keep asserting on the raw
+    source instead.
+    """
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            body = node.body
+            if (
+                body
+                and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)
+            ):
+                node.body = body[1:] or [ast.Pass()]
+    return ast.unparse(tree)
+
+
 def test_sibling_sync_import_probe_pins():
-    """#2208: the sibling arm probes import-satisfiability of every synced
-    sibling TEST file BEFORE the sync commit. The #2206 shape: a main-NEW
-    sibling test imports a symbol added to src/ AFTER this branch's fork
-    point; the worktree src is branch-era, so pytest COLLECTION ImportErrors
-    in the Step 9c gate and `step9c_baseline.py compare` classifies the node
-    NEW (fail-closed — the file IS branch-diff-touched via the sync commit,
-    and the pristine oracle passes on main), walling the gate (~1h in #2206).
-    Pins: the real collection probe command + its timeout fence, the venv
-    warm-up outside the per-file fence, the skip-line anchors, the two revert
-    branches (branch-era restore vs main-NEW drop), and the
-    probe-before-commit ordering."""
+    """#2208, hardened #2412: the sibling arm probes import-satisfiability of
+    every synced sibling TEST file BEFORE the sync commit, via
+    scripts/step5a_sibling_probe.py resolved from the MAIN checkout
+    (git-common-dir — the worktree copy is fork-era by construction, the
+    very staleness class being probed).
+
+    Arm-side pins: the helper invocation + ROOT resolution + the
+    probe-before-commit ordering, and the MF2 crash branch — helper
+    rc != 0 reverts EVERY synced path via the checkout-HEAD /
+    rm --ignore-unmatch loop INSIDE the else branch, then FATAL + exit 1,
+    all BEFORE the commit subject (index-based ordering asserts).
+
+    Helper-side pins (the #2412 durability half): the retained #2208
+    collection-probe values (`--collect-only -q`, 180 s fence, 900 s
+    warm-up), the MF1 process-GROUP kill fence (start_new_session=True +
+    os.killpg + SIGKILL escalation + --kill-after default 15 — a later
+    refactor must not silently swap in a naive child-only kill: pytest
+    grandchildren inherit the stdout pipe and the post-kill communicate()
+    HANGS instead of reverting), the verbatim #2208 revert branches, the
+    skip-line anchors, and the #2412 issue-namespaced classifier
+    (issue_?\\d+ fullmatch + the experiments-scoped trailing-_\\d+ arm +
+    the DIRECTORY-grain strict diff, MF3)."""
     arm = _sibling_arm_block(_step5a_span(_text()))
-    assert "pytest --collect-only -q" in arm, (
-        "the sibling arm must probe synced test files with a REAL collection "
-        "probe (pytest --collect-only -q) — a static module scan cannot see "
-        "symbol-level src skew, the #2206 shape"
+    helper = _SIBLING_PROBE_HELPER.read_text()
+
+    # --- arm-side: invocation + ROOT resolution ---------------------------
+    # The pinned literal INCLUDES the `(cd "$ROOT" && ...)` subshell linkage:
+    # pinning the invocation and the ROOT line as independent substrings lets
+    # a refactor drop the cd and run the fork-era WORKTREE helper copy while
+    # both pins still pass — scratch fixtures cannot distinguish, since a
+    # standalone clone's git-common-dir resolves to itself, ROOT == WT there
+    # (#2412 r2 pin-cd-root-linkage-unpinned).
+    invocation = (
+        '(cd "$ROOT" && uv run python scripts/step5a_sibling_probe.py '
+        '--worktree "$WT" --kept-out "$KEPT_OUT" -- "${SIBLING_SYNCED[@]}")'
     )
-    assert "timeout --kill-after=15s 180s" in arm, (
-        "the per-file probe must be fenced (timeout --kill-after=15s 180s); "
-        "a probe timeout counts as failure (fail-safe: revert to staleness)"
+    assert invocation in arm, (
+        "the sibling arm must invoke the factored probe helper on the synced "
+        'set FROM THE MAIN CHECKOUT — inside the `(cd "$ROOT" && ...)` '
+        "subshell (kept-list plumbed back via --kept-out; #2412)"
     )
-    assert "timeout 900s uv run python -c pass" in arm, (
-        "the arm must warm the worktree venv OUTSIDE the per-file fence (a "
-        "fresh worktree pays a full uv sync on its first uv run, which would "
-        "eat the 180s probe fence and revert legitimate syncs)"
+    root = 'ROOT="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")"'
+    assert root in arm, (
+        "the helper must resolve from the MAIN checkout via git-common-dir — "
+        "a relative scripts/ path executes the branch's fork-era helper copy, "
+        "the exact staleness class this probe exists to catch (#2412)"
     )
-    assert "reverting its issue-" in arm, (
-        "the probe-failure skip line must announce the pair-atomic revert "
-        "(reverting its issue-<M> synced pair)"
+    assert 'mapfile -t SIBLING_SYNCED < "$KEPT_OUT"' in arm, (
+        "the success branch must rebind SIBLING_SYNCED to the helper's kept "
+        "list (survivors only — reverted issues must not reach the commit)"
     )
-    assert "(#2208)" in arm, "the skip line must cite the fix task (#2208)"
-    assert 'git -C "$WT" rm -f -q -- "$f"' in arm, (
-        "the revert must handle the main-NEW shape (file absent from HEAD — "
-        "created by the sync checkout, staged, uncommitted): drop it from "
-        "index + working tree via git rm (`checkout HEAD --` would error "
-        "there, and main-NEW is exactly the #2206 incident shape)"
+
+    # --- arm-side: the MF2 crash branch (full revert, FATAL, exit 1) ------
+    fatal = "[step5a] FATAL: sibling probe helper failed (rc != 0)"
+    assert fatal in arm, (
+        "a helper crash (or ABSENT helper — uv run python exits nonzero on a "
+        "missing script, N1) must announce itself with the [step5a] FATAL "
+        "echo (#2412 MF2)"
     )
-    assert 'cat-file -e "HEAD:$f"' in arm, (
-        "the revert must branch on HEAD existence (branch-era file -> restore "
-        "branch-era content; main-NEW file -> drop from index + tree)"
+    inv_idx = arm.index(invocation)
+    mapfile_idx = arm.index('mapfile -t SIBLING_SYNCED < "$KEPT_OUT"')
+    loop_idx = arm.index('for f in "${SIBLING_SYNCED[@]}"; do', inv_idx)
+    checkout_idx = arm.index('git -C "$WT" checkout HEAD -- "$f"', loop_idx)
+    rm_idx = arm.index('git -C "$WT" rm -f -q --ignore-unmatch -- "$f"', loop_idx)
+    assert 'cat-file -e "HEAD:$f"' in arm[loop_idx:], (
+        "the crash-branch revert must branch on HEAD existence (branch-era "
+        "file -> restore branch-era content; main-NEW file -> drop from "
+        "index + tree)"
     )
+    fatal_idx = arm.index(fatal)
+    exit_idx = arm.index("exit 1", fatal_idx)
     subject = "sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)"
-    assert arm.index("pytest --collect-only -q") < arm.index(subject), (
+    subject_idx = arm.index(subject)
+    assert inv_idx < mapfile_idx < loop_idx < checkout_idx < rm_idx < fatal_idx < exit_idx, (
+        "the crash branch must run the FULL revert loop (checkout-HEAD + "
+        "rm --ignore-unmatch, INSIDE the else branch after the success "
+        "branch's mapfile) BEFORE the FATAL echo + exit 1 — v2's "
+        "leave-staged-for-inspection shape inverted the fail-safe: the "
+        "#1972 dirt arm reads staged synced files as dirt and preserves "
+        "them into every later round (#2412 MF2)"
+    )
+    assert exit_idx < subject_idx, (
+        "the crash branch's exit 1 must precede the sync-commit subject — "
+        "nothing unprobed is ever committed (probe-before-commit, #2208)"
+    )
+    assert inv_idx < subject_idx, (
         "the probe must run BEFORE the sync commit (nothing poisoned is ever "
         "committed; a post-commit probe would leave the poisoned file "
         "byte-identical to origin/main and never re-enumerated by the arm's "
         "diff on later rounds)"
+    )
+    assert "--ignore-unmatch" in arm, (
+        "the bash crash-branch rm must carry --ignore-unmatch (idempotent "
+        "under partial helper-side reverts — a bare git rm rc-fails on the "
+        "already-dropped pathspec and aborts the loop mid-revert)"
+    )
+
+    # --- helper-side: retained #2208 probe values -------------------------
+    assert 'parser.add_argument("--collect-cmd", default="uv run pytest --collect-only -q")' in (
+        helper
+    ), (
+        "the helper must default to the REAL collection probe "
+        "(uv run pytest --collect-only -q) — defaults ARE the pinned "
+        "production values (#2208 retained)"
+    )
+    assert 'parser.add_argument("--collect-timeout", type=float, default=180)' in helper, (
+        "the per-file probe fence must default to 180 s (verbatim #2208 "
+        "value; a probe timeout counts as failure — fail-safe revert)"
+    )
+    assert 'parser.add_argument("--warmup-timeout", type=float, default=900)' in helper, (
+        "the venv warm-up must default to 900 s OUTSIDE the per-file fence "
+        "(a fresh worktree pays a full uv sync on its first uv run, which "
+        "would eat the 180 s probe fence and revert legitimate syncs)"
+    )
+    assert 'parser.add_argument("--warmup-cmd", default="uv run python -c pass")' in helper, (
+        "the warm-up command must stay `uv run python -c pass` (#2208)"
+    )
+
+    # --- helper-side: the MF1 process-GROUP kill fence ---------------------
+    # The fence pins assert on EXECUTABLE code only (docstrings + comments
+    # stripped): the helper's module docstring quotes the same literals as
+    # prose, so a whole-file substring pin would survive a refactor that
+    # removes the killpg calls while keeping the documentation (#2412 r2 NIT
+    # process-fence-pin-docstring-shadow).
+    helper_code = _executable_only(helper)
+    assert 'parser.add_argument("--kill-after", type=float, default=15)' in helper, (
+        "the SIGKILL escalation delay must default to 15 s (migrating the "
+        "retired arm's `timeout --kill-after=15s`; #2412 MF1)"
+    )
+    assert "start_new_session=True" in helper_code, (
+        "probe subprocesses must run with start_new_session=True so the "
+        "child's pgid == its pid and the whole process GROUP is signalable "
+        "(#2412 MF1; executable code, not prose)"
+    )
+    assert "os.killpg" in helper_code, (
+        "fence expiry must signal the process GROUP (os.killpg) — a naive "
+        "single-process kill terminates only the immediate child (uv); the "
+        "pytest GRANDCHILDREN inherit the stdout pipe and the post-kill "
+        "communicate() blocks on it, so the helper HANGS instead of "
+        "reverting (the MF1 wedge, the #2409 timeout class; executable "
+        "code, not prose)"
+    )
+    assert "signal.SIGKILL" in helper_code, (
+        "the fence must escalate to SIGKILL-to-group — SIGKILL closes every "
+        "inherited pipe end so the final communicate() returns (#2412 MF1; "
+        "executable code, not prose)"
+    )
+
+    # --- helper-side: verbatim #2208 revert branches + skip-line anchors ---
+    assert '"checkout", "HEAD", "--", f' in helper, (
+        "the helper revert must restore branch-era files via "
+        "git checkout HEAD -- <f> (verbatim #2208 semantics)"
+    )
+    assert '"rm", "-f", "-q", "--", f' in helper, (
+        "the helper revert must drop main-NEW files via git rm -f -q -- <f> "
+        "(index + tree; main-NEW is exactly the #2206 incident shape)"
+    )
+    assert "reverting its issue-" in helper, (
+        "the probe-failure skip line must announce the pair-atomic revert "
+        "(reverting its issue-<M> synced pair)"
+    )
+    assert "(#2208)." in helper, "the skip line must cite the fix task (#2208)"
+    assert "#2206" in helper, "the skip line must cite the incident class (#2206)"
+
+    # --- helper-side: the #2412 issue-namespaced classifier (MF3) ----------
+    assert 're.compile(r"issue_?\\d+")' in helper, (
+        "the classifier's issue-stem arm must fullmatch issue_?\\d+ on "
+        "component stems (N8 anchoring: issue_763_cofit does NOT fullmatch, "
+        "so loose files route lenient)"
+    )
+    assert 're.compile(r".*_\\d+")' in helper, (
+        "the classifier must carry the trailing-issue-number slug arm "
+        "(.*_\\d+ — behavior_testbed_545 etc.; the C2/#2412 extension)"
+    )
+    assert "_ISSUE_STEM_RE.fullmatch(stem)" in helper, (
+        "classifier anchoring is FULLMATCH on component stems, never search "
+        "(N8 — pinned so the choice cannot drift silently)"
+    )
+    assert "_TRAILING_SLUG_STEM_RE.fullmatch(stem)" in helper, (
+        "the trailing-slug arm is fullmatch-anchored too (N8)"
+    )
+    assert '_EXPERIMENTS_PREFIX = ("src", "explore_persona_space", "experiments")' in helper, (
+        "the trailing-slug arm must be scoped to components under "
+        "src/explore_persona_space/experiments/ only (C2 resolution (b))"
+    )
+    assert '"diff", "--quiet", "origin/main", "--", unit' in helper, (
+        "strict identity must diff the OWNING issue-namespaced unit — the "
+        "whole DIRECTORY when the owning component is a dir — so a skewed "
+        "submodule can never hide behind a byte-identical __init__.py "
+        "(#2412 MF3, measured live on the issue-699 worktree)"
     )
 
 
@@ -908,46 +1113,171 @@ def _run_git(cwd: Path, *args: str, env: dict) -> str:
     return proc.stdout
 
 
+def _scratch_env() -> dict:
+    """Hermetic env for the scratch git fixtures (no user/system git config)."""
+    env = dict(os.environ)
+    env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+    env["GIT_CONFIG_NOSYSTEM"] = "1"
+    return env
+
+
+def _sibling_arm_script(text: str) -> str:
+    """The SHIPPED sibling-arm text as an executable bash script body.
+
+    `_sibling_arm_block`'s end anchor sits INSIDE the closing echo line (the
+    block ends with `echo "`); re-attach the remainder of that line so the
+    executed script is the shipped prose, count echo included. The literal
+    `<N>` is substituted with the scratch issue number 9999.
+    """
+    span = _step5a_span(text)
+    arm = _sibling_arm_block(span)
+    echo_start = span.index("[step5a] sibling-file sync:")
+    echo_end = span.index("\n", echo_start)
+    return (arm + span[echo_start:echo_end]).replace("<N>", "9999")
+
+
+def _write_uv_shim(tmp: Path) -> Path:
+    """PATH-shimmed `uv` for the sibling-arm repros; returns the bin dir.
+
+    Three arms (C4, #2412): (1) `uv run python -c ...` — the venv warm-up —
+    STAYS exit-0-swallowed; (2) `uv run python <path> ...` — the #2412
+    helper invocation — exec's the REAL interpreter on the path, so the
+    planted helper runs its REAL body (the pre-#2412 shim's first arm
+    swallowed EVERY `uv run python`, silently no-op'ing the helper: exit 0,
+    EMPTY kept-out, SIBLING_SYNCED emptied, and the arm kept + committed
+    NOTHING — the mandatory-for-green harness update); (3) `uv run pytest
+    --collect-only -q <file>` exec_module's the target file with $WT/src on
+    sys.path — REAL import execution, hermetic (a scratch repo has no uv
+    project, so the real `uv run pytest` is environment-flaky here; the
+    production probe STRING is pinned by
+    test_sibling_sync_import_probe_pins).
+    """
+    shim_dir = tmp / "bin"
+    shim_dir.mkdir()
+    collect_shim = shim_dir / "collect_shim.py"
+    collect_shim.write_text(
+        "import importlib.util\n"
+        "import pathlib\n"
+        "import sys\n"
+        "\n"
+        "target = pathlib.Path(sys.argv[1]).resolve()\n"
+        'sys.path.insert(0, str(pathlib.Path.cwd() / "src"))\n'
+        "spec = importlib.util.spec_from_file_location(target.stem, target)\n"
+        "module = importlib.util.module_from_spec(spec)\n"
+        "spec.loader.exec_module(module)  # raises on branch-era symbol skew\n"
+    )
+    uv_shim = shim_dir / "uv"
+    uv_shim.write_text(
+        "#!/usr/bin/env bash\n"
+        "# Hermetic `uv` shim for the #2208/#2412 repros (see _write_uv_shim).\n"
+        'if [ "$1" = "run" ] && [ "$2" = "python" ]; then\n'
+        '  if [ "$3" = "-c" ]; then\n'
+        "    exit 0\n"
+        "  fi\n"
+        f'  exec "{sys.executable}" "${{@:3}}"\n'
+        "fi\n"
+        'if [ "$1" = "run" ] && [ "$2" = "pytest" ] && [ "$3" = "--collect-only" ] '
+        '&& [ "$4" = "-q" ]; then\n'
+        f'  exec "{sys.executable}" "{collect_shim}" "$5"\n'
+        "fi\n"
+        'echo "unexpected uv invocation: $*" >&2\n'
+        "exit 97\n"
+    )
+    uv_shim.chmod(0o755)
+    return shim_dir
+
+
+def _plant_helper(wt: Path, source: Path | str = _SIBLING_PROBE_HELPER) -> None:
+    """Copy the (real or stub) probe helper into the scratch worktree.
+
+    The arm's ROOT resolution (`git-common-dir`) resolves a STANDALONE clone
+    to itself, so the helper is looked up at
+    <wt>/scripts/step5a_sibling_probe.py — the harness plants a copy there
+    (the real helper by default; a str plants stub CONTENT instead).
+    """
+    (wt / "scripts").mkdir(exist_ok=True)
+    dest = wt / "scripts" / "step5a_sibling_probe.py"
+    if isinstance(source, Path):
+        shutil.copyfile(source, dest)
+    else:
+        dest.write_text(source)
+
+
+def _run_sibling_arm(
+    tmp: Path, wt: Path, env: dict, script_body: str
+) -> subprocess.CompletedProcess:
+    """Run the shipped sibling-arm text under bash against the scratch wt."""
+    shim_dir = tmp / "bin"
+    if not shim_dir.exists():
+        shim_dir = _write_uv_shim(tmp)
+    mb = _run_git(wt, "merge-base", "HEAD", "origin/main", env=env).strip()
+    script = tmp / "arm.sh"
+    script.write_text(script_body)
+    env_arm = dict(env)
+    env_arm["PATH"] = f"{shim_dir}:{env['PATH']}"
+    env_arm["WT"] = str(wt)
+    env_arm["MB"] = mb
+    return subprocess.run(
+        ["bash", str(script)],
+        cwd=tmp,
+        env=env_arm,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+
+def _scratch_origin_and_wt(tmp: Path, env: dict) -> tuple[Path, Path]:
+    """Bare origin + seed clone; returns (seed, wt-placeholder path).
+
+    Callers commit the fork-era state into `seed`, push, then call
+    `_clone_issue_wt` to cut the issue-9999 clone at the fork point.
+    """
+    origin = tmp / "origin.git"
+    _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
+    seed = tmp / "seed"
+    _run_git(tmp, "clone", str(origin), str(seed), env=env)
+    return seed, tmp / "wt"
+
+
+def _clone_issue_wt(tmp: Path, env: dict) -> Path:
+    """Clone the scratch origin at its CURRENT tip as branch issue-9999."""
+    wt = tmp / "wt"
+    _run_git(tmp, "clone", str(tmp / "origin.git"), str(wt), env=env)
+    _run_git(wt, "checkout", "-b", "issue-9999", env=env)
+    # The arm's own commit runs bare `git -C "$WT" commit`; give the scratch
+    # clone a local identity (global config is /dev/null'd).
+    _run_git(wt, "config", "user.email", "eps-test@example.com", env=env)
+    _run_git(wt, "config", "user.name", "EPS Test", env=env)
+    return wt
+
+
 def test_sibling_sync_import_probe_repro_2206():
     """#2208 functional repro of the #2206 shape through the SHIPPED arm text.
 
     Scratch git fixture: origin/main advances past a branch's fork point with
     (i) a poisoned main-NEW tests/test_issue2038_p.py importing a symbol that
     main's src carries but the branch-era src copy lacks (the exact #2206
-    symbol-skew shape — the sync deliberately never touches src/), and (ii) a
-    legit import-satisfiable pair tests/test_issue1000_ok.py +
+    symbol-skew shape — the sync deliberately never touches SHARED src), and
+    (ii) a legit import-satisfiable pair tests/test_issue1000_ok.py +
     scripts/issue1000_helper.py. The executed block is exactly what
     `_sibling_arm_block` returns (plus the completed closing echo line and the
-    literal `<N>` substituted), run under bash with a PATH-shimmed `uv` that
-    emulates `uv run pytest --collect-only -q <file>` by exec_module-ing the
-    file (REAL import execution; the shim tolerates the warm-up call). Expect:
-    the poisoned file reverted (absent from working tree AND index), the legit
-    pair synced AND committed under the sync-anchor subject, the #2206/#2208
-    skip line emitted, and the [step5a] echo reporting the post-revert count.
+    literal `<N>` substituted), run under the C4-updated `uv` shim with the
+    REAL probe helper planted in the scratch worktree (its git-common-dir is
+    its own root). Expect: the poisoned file reverted (absent from working
+    tree AND index — now caught by the helper's STATIC arm, module-scope
+    import + shared-src symbol miss), the legit pair synced AND committed
+    under the sync-anchor subject, the #2206/#2208 skip line emitted, and the
+    [step5a] echo reporting the post-revert count.
     """
-    text = _text()
-    span = _step5a_span(text)
-    arm = _sibling_arm_block(span)
-    # _sibling_arm_block's end anchor sits INSIDE the closing echo line (the
-    # block ends with `echo "`); re-attach the remainder of that line so the
-    # executed script is the shipped prose, count echo included.
-    echo_start = span.index("[step5a] sibling-file sync:")
-    echo_end = span.index("\n", echo_start)
-    script_body = (arm + span[echo_start:echo_end]).replace("<N>", "9999")
+    script_body = _sibling_arm_script(_text())
 
     # mkdtemp, not tmp_path: concurrent pytest sessions prune /tmp/pytest-of*
     # numbered roots and can delete live scratch mid-test.
     tmp = Path(tempfile.mkdtemp(prefix="eps2208repro-"))
     try:
-        env = dict(os.environ)
-        env["GIT_CONFIG_GLOBAL"] = "/dev/null"  # hermetic: no user/system git config
-        env["GIT_CONFIG_NOSYSTEM"] = "1"
-
-        origin = tmp / "origin.git"
-        _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
-
-        seed = tmp / "seed"
-        _run_git(tmp, "clone", str(origin), str(seed), env=env)
+        env = _scratch_env()
+        seed, _ = _scratch_origin_and_wt(tmp, env)
         # Branch-era state: the src module EXISTS but lacks the symbol.
         (seed / "src").mkdir()
         (seed / "src" / "issue2038_srcmod.py").write_text("BRANCH_ERA = True\n")
@@ -955,13 +1285,7 @@ def test_sibling_sync_import_probe_repro_2206():
         _run_git(seed, "commit", "-m", "branch-era src", env=env)
         _run_git(seed, "push", "origin", "main", env=env)
 
-        wt = tmp / "wt"
-        _run_git(tmp, "clone", str(origin), str(wt), env=env)
-        _run_git(wt, "checkout", "-b", "issue-9999", env=env)
-        # The arm's own commit runs bare `git -C "$WT" commit`; give the
-        # scratch clone a local identity (global config is /dev/null'd).
-        _run_git(wt, "config", "user.email", "eps-test@example.com", env=env)
-        _run_git(wt, "config", "user.name", "EPS Test", env=env)
+        wt = _clone_issue_wt(tmp, env)
 
         # Advance origin/main PAST the fork point: the poisoned main-NEW test
         # (its import is satisfiable only against main's src) + a legit pair.
@@ -983,58 +1307,9 @@ def test_sibling_sync_import_probe_repro_2206():
         _run_git(seed, "commit", "-m", "main-side: poisoned test + legit pair", env=env)
         _run_git(seed, "push", "origin", "main", env=env)
         _run_git(wt, "fetch", "origin", env=env)
+        _plant_helper(wt)  # the REAL helper; ROOT == the standalone clone (C4)
 
-        # PATH-shimmed `uv`: the warm-up (`uv run python -c pass`) exits 0; the
-        # collection probe exec_module's the target file with $WT/src on
-        # sys.path — REAL import execution, hermetic (a scratch repo has no uv
-        # project, so the real `uv run pytest` is environment-flaky here; the
-        # production probe STRING is pinned by
-        # test_sibling_sync_import_probe_pins).
-        shim_dir = tmp / "bin"
-        shim_dir.mkdir()
-        collect_shim = shim_dir / "collect_shim.py"
-        collect_shim.write_text(
-            "import importlib.util\n"
-            "import pathlib\n"
-            "import sys\n"
-            "\n"
-            "target = pathlib.Path(sys.argv[1]).resolve()\n"
-            'sys.path.insert(0, str(pathlib.Path.cwd() / "src"))\n'
-            "spec = importlib.util.spec_from_file_location(target.stem, target)\n"
-            "module = importlib.util.module_from_spec(spec)\n"
-            "spec.loader.exec_module(module)  # raises on branch-era symbol skew\n"
-        )
-        uv_shim = shim_dir / "uv"
-        uv_shim.write_text(
-            "#!/usr/bin/env bash\n"
-            "# Hermetic `uv` shim for the #2208 repro (see the test docstring).\n"
-            'if [ "$1" = "run" ] && [ "$2" = "python" ]; then\n'
-            "  exit 0\n"
-            "fi\n"
-            'if [ "$1" = "run" ] && [ "$2" = "pytest" ] && [ "$3" = "--collect-only" ] '
-            '&& [ "$4" = "-q" ]; then\n'
-            f'  exec "{sys.executable}" "{collect_shim}" "$5"\n'
-            "fi\n"
-            'echo "unexpected uv invocation: $*" >&2\n'
-            "exit 97\n"
-        )
-        uv_shim.chmod(0o755)
-
-        mb = _run_git(wt, "merge-base", "HEAD", "origin/main", env=env).strip()
-        script = tmp / "arm.sh"
-        script.write_text(script_body)
-        env_arm = dict(env)
-        env_arm["PATH"] = f"{shim_dir}:{env['PATH']}"
-        env_arm["WT"] = str(wt)
-        env_arm["MB"] = mb
-        proc = subprocess.run(
-            ["bash", str(script)],
-            cwd=tmp,
-            env=env_arm,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
+        proc = _run_sibling_arm(tmp, wt, env, script_body)
         assert proc.returncode == 0, f"arm run failed:\n{proc.stdout}\n{proc.stderr}"
         out = proc.stdout
 
@@ -1058,6 +1333,278 @@ def test_sibling_sync_import_probe_repro_2206():
         assert "[step5a] sibling-file sync: 2 file(s)" in out, out
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_sibling_sync_import_probe_repro_2412():
+    """#2412 acceptance fixture: TWO cells through the SHIPPED arm text.
+
+    Cell 1 (detection): a poisoned main-NEW sibling test whose ghost import
+    sits INSIDE a test function (invisible to `pytest --collect-only` —
+    the #2204 escape) and targets a trailing-slug experiments package
+    (`testbed_99`) that sits DELIBERATELY OUTSIDE D1's issue-prefixed sync
+    closure (N10), so the sync cannot repair the skew before the probe
+    runs. The slug package's `__init__.py` is byte-identical to
+    scratch-origin/main while `corpora.py` differs and lacks the symbol
+    (the MF3 silent-KEEP bait): the static arm's DIRECTORY-grain strict
+    rule fires, the whole issue-99 synced pair (test + script) reverts from
+    tree AND index, and the legit issue-1000 pair still commits.
+
+    Cell 2 (prevention, positive): a main-NEW sibling test whose
+    function-body import needs a symbol PRESENT on scratch-origin/main's
+    issue_99 src but ABSENT from the fork-era worktree copy — D1's widened
+    globs sync the src to main tip, the strict identity arm reads the
+    owning dir as identical, and the pair KEEPs + commits (D1's prevention
+    role made explicit; proves cell 1 isn't passing vacuously)."""
+    script_body = _sibling_arm_script(_text())
+    slug_rel = "src/explore_persona_space/experiments/testbed_99"
+
+    # ---- cell 1: detection (slug-dir skew OUTSIDE D1's closure, N10) -----
+    tmp = Path(tempfile.mkdtemp(prefix="eps2412cell1-"))
+    try:
+        env = _scratch_env()
+        seed, _ = _scratch_origin_and_wt(tmp, env)
+        slug = seed / slug_rel
+        slug.mkdir(parents=True)
+        (slug / "__init__.py").write_text("")
+        (slug / "corpora.py").write_text("BRANCH_ERA = True\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "fork-era slug package", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+
+        wt = _clone_issue_wt(tmp, env)
+
+        # Advance origin/main: the slug package's SUBMODULE gains the ghost
+        # symbol (__init__.py untouched — byte-identical both sides, the MF3
+        # bait), plus the poisoned main-NEW test + its same-issue script,
+        # plus a legit import-satisfiable pair.
+        (slug / "corpora.py").write_text("BRANCH_ERA = True\n\n\ndef ghost_fn():\n    return 1\n")
+        (seed / "tests").mkdir()
+        (seed / "tests" / "test_issue99_p.py").write_text(
+            "def test_ghost():\n"
+            "    from explore_persona_space.experiments.testbed_99.corpora import ghost_fn\n"
+            "    assert ghost_fn() == 1\n"
+        )
+        (seed / "scripts").mkdir()
+        (seed / "scripts" / "issue99_helper.py").write_text("PAIRED = 1\n")
+        (seed / "scripts" / "issue1000_helper.py").write_text("OK = 1\n")
+        (seed / "tests" / "test_issue1000_ok.py").write_text("def test_ok():\n    assert True\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: slug skew + poisoned pair + legit pair", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        _run_git(wt, "fetch", "origin", env=env)
+        _plant_helper(wt)
+
+        # (a) old-probe blindness, demonstrated: module-scope exec of the
+        # poisoned file raises nothing — the ghost import is function-body,
+        # so collection would PASS this file; only the static arm sees it.
+        poisoned_src = (seed / "tests" / "test_issue99_p.py").read_text()
+        exec(compile(poisoned_src, "test_issue99_p.py", "exec"), {"__name__": "poisoned_2412"})
+
+        proc = _run_sibling_arm(tmp, wt, env, script_body)
+        assert proc.returncode == 0, f"arm run failed:\n{proc.stdout}\n{proc.stderr}"
+        out = proc.stdout
+        # (b) the WHOLE issue-99 pair reverted from tree AND index.
+        for rel in ("tests/test_issue99_p.py", "scripts/issue99_helper.py"):
+            assert not (wt / rel).exists(), f"{rel} must be dropped from the working tree"
+            assert _run_git(wt, "ls-files", "--", rel, env=env).strip() == "", (
+                f"{rel} must be dropped from the index (pair-atomic revert)"
+            )
+        # ... and the slug dir itself was never synced (OUTSIDE D1, N10).
+        assert (wt / slug_rel / "corpora.py").read_text() == "BRANCH_ERA = True\n", (
+            "the slug dir sits OUTSIDE D1's closure — the sync must not advance it"
+        )
+        # (c) the STATIC arm fired, naming the differing owning unit.
+        assert "static import scan" in out, out
+        assert slug_rel in out, (
+            f"the static-refusal line must name the differing unit {slug_rel}:\n{out}"
+        )
+        assert "reverting its issue-99 synced pair (#2208)." in out, out
+        # (d) the legit pair still commits under the sync-anchor subject.
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert _SYNC_SUBJECT_2208 in subj, f"sync-anchor subject missing: {subj!r}"
+        committed = _run_git(wt, "show", "--name-only", "--format=", "HEAD", env=env)
+        assert "tests/test_issue1000_ok.py" in committed, "legit test must be committed"
+        assert "scripts/issue1000_helper.py" in committed, "legit paired script must be committed"
+        assert "test_issue99_p.py" not in committed, "the poisoned test must never be committed"
+        assert "issue99_helper.py" not in committed, "the poisoned pair must never be committed"
+        # (e) the count echo reports the POST-revert survivor count.
+        assert "[step5a] sibling-file sync: 2 file(s)" in out, out
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # ---- cell 2: prevention (D1 syncs issue-namespaced src; probe KEEPs) --
+    tmp = Path(tempfile.mkdtemp(prefix="eps2412cell2-"))
+    try:
+        env = _scratch_env()
+        seed, _ = _scratch_origin_and_wt(tmp, env)
+        pkg = seed / "src" / "explore_persona_space" / "experiments" / "issue_99"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("")
+        (pkg / "helpers.py").write_text("FORK_ERA = True\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "fork-era issue_99 package", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+
+        wt = _clone_issue_wt(tmp, env)
+
+        # Advance origin/main: issue_99 src gains the symbol; a main-NEW test
+        # needs it from INSIDE a test function.
+        (pkg / "helpers.py").write_text("FORK_ERA = True\n\n\ndef new_fn():\n    return 1\n")
+        (seed / "tests").mkdir()
+        (seed / "tests" / "test_issue99_ok.py").write_text(
+            "def test_new():\n"
+            "    from explore_persona_space.experiments.issue_99.helpers import new_fn\n"
+            "    assert new_fn() == 1\n"
+        )
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: issue_99 symbol + main-NEW test", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        _run_git(wt, "fetch", "origin", env=env)
+        _plant_helper(wt)
+
+        proc = _run_sibling_arm(tmp, wt, env, script_body)
+        assert proc.returncode == 0, f"arm run failed:\n{proc.stdout}\n{proc.stderr}"
+        out = proc.stdout
+        helpers_rel = "src/explore_persona_space/experiments/issue_99/helpers.py"
+        # D1 synced the issue-namespaced src to main tip ...
+        assert "def new_fn" in (wt / helpers_rel).read_text(), (
+            "D1's widened globs must sync the issue-namespaced src file to "
+            "origin/main tip BEFORE the probe runs (the prevention half)"
+        )
+        # ... the probe KEPT (no static refusal, no revert) ...
+        assert "static import scan" not in out, out
+        assert "reverting its issue-" not in out, out
+        # ... and the pair committed together under the sync-anchor subject.
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert _SYNC_SUBJECT_2208 in subj, f"sync-anchor subject missing: {subj!r}"
+        committed = _run_git(wt, "show", "--name-only", "--format=", "HEAD", env=env)
+        assert "tests/test_issue99_ok.py" in committed, "the kept test must be committed"
+        assert helpers_rel in committed, "the synced src must be in the SAME sync commit"
+        assert "[step5a] sibling-file sync: 2 file(s)" in out, out
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@pytest.mark.parametrize("variant", ["stub-exit-97", "absent-helper"])
+def test_sibling_sync_helper_crash_reverts(variant):
+    """#2412 MF2 + N1: helper rc != 0 => the ARM fully reverts every synced
+    path (tree AND index clean), lands NO sync commit, and exits nonzero.
+
+    stub-exit-97: a planted helper stub exits 97 AFTER the sync ran (the
+    arm syncs before invoking the helper, so the staged synced set is live
+    when the stub dies) — the undecidable-probe shape. absent-helper: no
+    helper file at ROOT (the N1 presence/revision divergence class) —
+    `uv run python <missing path>` exits nonzero and takes the SAME else
+    branch. Both must leave ZERO sync residue: v2's
+    leave-staged-for-inspection shape INVERTED the fail-safe (the #1972
+    dirt arm reads staged synced files as dirt and preserves them into
+    every later round). The synced set carries BOTH revert shapes: a
+    branch-era file main modified (checkout-HEAD restore) and a main-NEW
+    file (rm --ignore-unmatch drop)."""
+    script_body = _sibling_arm_script(_text())
+    tmp = Path(tempfile.mkdtemp(prefix="eps2412crash-"))
+    try:
+        env = _scratch_env()
+        seed, _ = _scratch_origin_and_wt(tmp, env)
+        (seed / "scripts").mkdir()
+        (seed / "scripts" / "issue1000_helper.py").write_text("FORK_ERA = 1\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "fork-era script", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+
+        wt = _clone_issue_wt(tmp, env)
+
+        # Advance origin/main: modify the branch-era script (checkout-HEAD
+        # revert shape) + add a main-NEW test (git-rm revert shape).
+        (seed / "scripts" / "issue1000_helper.py").write_text("MAIN_SIDE = 1\n")
+        (seed / "tests").mkdir()
+        (seed / "tests" / "test_issue1000_ok.py").write_text("def test_ok():\n    assert True\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: modified script + main-NEW test", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        _run_git(wt, "fetch", "origin", env=env)
+        if variant == "stub-exit-97":
+            _plant_helper(wt, source="import sys\n\nsys.exit(97)\n")
+        head_before = _run_git(wt, "rev-parse", "HEAD", env=env).strip()
+
+        proc = _run_sibling_arm(tmp, wt, env, script_body)
+        assert proc.returncode != 0, (
+            "a helper crash must exit the arm non-zero (fail-safe #2208/#2412: "
+            f"an undecidable probe reverts, never keeps)\n{proc.stdout}\n{proc.stderr}"
+        )
+        assert "[step5a] FATAL: sibling probe helper failed" in proc.stderr, proc.stderr
+
+        synced = ["scripts/issue1000_helper.py", "tests/test_issue1000_ok.py"]
+        tree = subprocess.run(
+            ["git", "-C", str(wt), "diff", "--quiet", "HEAD", "--", *synced],
+            env=env,
+            capture_output=True,
+        )
+        assert tree.returncode == 0, (
+            "the crash branch must leave a clean WORKING TREE on every synced "
+            "path (MF2 full revert)"
+        )
+        idx = subprocess.run(
+            ["git", "-C", str(wt), "diff", "--cached", "--quiet", "HEAD", "--", *synced],
+            env=env,
+            capture_output=True,
+        )
+        assert idx.returncode == 0, (
+            "the crash branch must leave a clean INDEX on every synced path — "
+            "staged sync residue is the #1972-dirt-arm inversion (MF2)"
+        )
+        assert (wt / "scripts" / "issue1000_helper.py").read_text() == "FORK_ERA = 1\n", (
+            "the branch-era file must be restored to HEAD content"
+        )
+        assert not (wt / "tests" / "test_issue1000_ok.py").exists(), (
+            "the main-NEW file must be dropped from the working tree"
+        )
+        assert (
+            _run_git(wt, "ls-files", "--", "tests/test_issue1000_ok.py", env=env).strip() == ""
+        ), "the main-NEW file must be dropped from the index"
+        head_after = _run_git(wt, "rev-parse", "HEAD", env=env).strip()
+        assert head_after == head_before, "NO sync commit may land on the crash path"
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert _SYNC_SUBJECT_2208 not in subj, "no anchor-subject commit may land on the crash path"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_manual_pair_revert_recovery_documented():
+    """#2412 D4 durability pin: the manual pair-revert recovery prose stays.
+
+    Presence checks, not counts: the mechanism heading, the
+    anchor-phrase-omitting commit subject (the bs-check then treats the
+    reverted paths as deliberate branch edits and skips them every later
+    round), the #2204 end-to-end verification sentence, and the N4
+    consumed-sibling-src pin-back sentence (a branch that deliberately
+    consumes a sibling issue's fork-era src commits the pin-back so the
+    widened sync cannot advance the consumed dir mid-experiment)."""
+    span = _step5a_span(_text())
+    assert "**Manual pair-revert recovery (#2204, #2412).**" in span, (
+        "the manual pair-revert recovery prose must stay first-class in the Step 5a doc (#2412 D4)"
+    )
+    assert "OMITS the anchor phrase `sync workflow-surface specs from`" in span, (
+        "the recovery must name the exact mechanism: a hand-revert commit "
+        "subject OMITTING the sync-anchor phrase, so the arm's bs-check "
+        "treats the paths as deliberate branch edits on every later round"
+    )
+    assert "`sibling-file sync: 0 file(s)` while still" in span, (
+        "the recovery must cite the #2204 end-to-end verification (next "
+        "round: 0 sibling files re-synced)"
+    )
+    assert "syncing 31 legitimate spec files" in span, (
+        "the recovery must cite the #2204 end-to-end verification (31 legit "
+        "spec files still syncing)"
+    )
+    assert "deliberately CONSUMES a sibling" in span, (
+        "the N4 consumed-sibling-src use case must be named (scripts on main "
+        "import other issues' experiments.issue_<M> packages)"
+    )
+    assert "committing the pin-back keeps the widened" in span, (
+        "the N4 sentence must name the pin-back remedy (freeze the consumed "
+        "dir at the content the experiment depends on)"
+    )
 
 
 # --- (17) rc-checked sync commits in BOTH copies (#2303 static pins) ---------
@@ -1182,6 +1729,9 @@ def _family_arm_block(span: str) -> str:
 # checking out NOTHING when any pathspec matches nothing at the ref, so every
 # other member must resolve at origin/main. The caps file is deliberately
 # main-NEW (added only in the advance commit) — the exact #2293 topology.
+# The #2412 sibling-probe pair (scripts/step5a_sibling_probe.py +
+# tests/test_step5a_sibling_probe.py) joined SPECS, so it needs fork stubs
+# too — without them the atomic checkout errors and syncs NOTHING.
 _FORK_STUBS_2303 = (
     ".claude/agents/x.md",
     ".claude/agent-memory/x/MEMORY.md",
@@ -1202,6 +1752,8 @@ _FORK_STUBS_2303 = (
     "tests/test_guard_x.py",
     "tests/issue_skill_source.py",
     "tests/test_issue_skill_x.py",
+    "scripts/step5a_sibling_probe.py",
+    "tests/test_step5a_sibling_probe.py",
 )
 
 _SYNC_SUBJECT_2303 = "issue-9999: sync workflow-surface specs from origin/main (spec-freshness)"
