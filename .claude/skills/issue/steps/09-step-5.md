@@ -194,6 +194,8 @@ FAMILY_OF[".claude/workflow.yaml"]="workflow"
 FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
 FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"    # imports render_*_table from workflow_lint AND reads workflow.yaml data via load_workflow_yaml — a workflow-data behavioral test
 FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
+FAMILY_OF["scripts/step5a_sibling_probe.py"]="workflow"
+FAMILY_OF["tests/test_step5a_sibling_probe.py"]="workflow"
 FAMILY_OF["scripts/workflow_lint.py"]="lint"
 FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
 FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
@@ -212,7 +214,7 @@ FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
 # — each is its own family key (set below in the pass-1 loop by defaulting
 # to its own path).
 
-SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py"
+SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -340,15 +342,16 @@ fi
 # anchor phrase `sync workflow-surface specs from`, so the arm's own
 # bs-check excludes its prior sync commits on later rounds, Guard 3 treats
 # the synced files as imported-from-main, and the Step 10d verdict re-bind's
-# A/M byte-identity probe passes (content == fetched origin/main). Synced
-# sibling TEST files additionally pass an import-satisfiability probe (below,
-# before the commit): a main-NEW test can import a symbol added to src/ AFTER
-# this branch's fork point, and the resulting collection ImportError reds the
-# Step 9c gate as NEW (#2206, #2208).
+# A/M byte-identity probe passes (content == fetched origin/main). The synced
+# pair is now test+scripts+SRC — the issue-namespaced
+# src/explore_persona_space/experiments/issue<M> / issue_<M> dirs join the
+# globs (#2412) — all keyed by issue number; synced TEST files then pass an
+# import-satisfiability probe (static AST import scan + real collection,
+# scripts/step5a_sibling_probe.py — below, before the commit; #2206, #2208).
 SIBLING_SYNCED=()
 while IFS= read -r f; do
   [ -z "$f" ] && continue
-  case "$f" in scripts/issue<N>_*|tests/test_issue<N>_*) continue ;; esac   # own-issue carve-out (defense-in-depth)
+  case "$f" in scripts/issue<N>_*|tests/test_issue<N>_*|src/explore_persona_space/experiments/issue<N>/*|src/explore_persona_space/experiments/issue_<N>/*) continue ;; esac   # own-issue carve-out (defense-in-depth)
   bs=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
     | awk 'index($0, "sync workflow-surface specs from") == 0')
   [ -n "$bs" ] && continue                            # deliberate branch edit — protected
@@ -361,51 +364,38 @@ while IFS= read -r f; do
   else
     echo "spec-freshness: sibling file $f absent on origin/main — skipped (never deleted; #1972)."
   fi
-done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)scripts/issue[0-9]*_*.sh' ':(glob)tests/test_issue[0-9]*_*.py')
-# Import-satisfiability probe on synced sibling TEST files (#2208): a main-NEW
-# test can import a symbol added to src/ AFTER this branch's fork point — the
-# worktree src is branch-era, collection ImportErrors, and the Step 9c compare
-# classifies the node NEW (fail-closed), walling the gate (#2206: ~1h wall +
-# manual provenance override). Probe REAL collection in THIS worktree (a static
-# module scan cannot see symbol-level skew); on failure revert the test AND
-# every synced file of the same issue number (pair-atomic — reverting the test
-# alone while keeping its synced script is the #1824/#1860 half-sync class in
-# reverse). Fail-safe direction: status-quo staleness (the pre-#1972 world),
-# never an unreadable gate red; a probe timeout counts as failure.
+done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)scripts/issue[0-9]*_*.sh' ':(glob)tests/test_issue[0-9]*_*.py' ':(glob)src/explore_persona_space/experiments/issue[0-9]*/**' ':(glob)src/explore_persona_space/experiments/issue_[0-9]*/**')
+# Import-satisfiability probe on synced sibling TEST files (#2208, hardened
+# #2412): probe + pair-atomic revert live in scripts/step5a_sibling_probe.py,
+# resolved from the MAIN checkout (git-common-dir), never $WT — the worktree
+# copy is fork-era by construction, the very staleness class being probed.
+# The helper keeps the #2208 real-collection probe (180s/file fence with
+# process-group kill + 15s SIGKILL escalation, 900s venv warm-up, timeout =
+# failure) and ADDS a static AST import scan that sees FUNCTION-BODY imports
+# (the #2204 escape): a synced test whose src/ import is unsatisfiable against
+# THIS worktree (module missing, symbol absent, or an issue-namespaced src
+# DIRECTORY differing from origin/main) FAILs, and the helper reverts EVERY
+# synced file of that issue number (branch-era restore / main-NEW drop —
+# pair-atomic, #1824/#1860). Fail-safe direction (#2208): an undecidable
+# probe REVERTS, never keeps — a helper rc != 0 (crash, absent helper)
+# reverts ALL synced files below and FAILs the arm loud.
 if [ "${#SIBLING_SYNCED[@]}" -gt 0 ]; then
-  # Warm the worktree venv OUTSIDE the per-file fence: a fresh worktree pays a
-  # full `uv sync` on its first `uv run`, which would eat the 180s probe fence
-  # and revert legitimate syncs (critic NIT 1). Best-effort — a warm-up failure
-  # just means probes fail → revert → the declared fail-safe direction.
-  (cd "$WT" && timeout 900s uv run python -c pass >/dev/null 2>&1) || true
-  REVERT_ISSUES=""
-  for f in "${SIBLING_SYNCED[@]}"; do
-    case "$f" in
-      tests/test_issue*_*.py)
-        if ! (cd "$WT" && timeout --kill-after=15s 180s uv run pytest --collect-only -q "$f" >/dev/null 2>&1); then
-          m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
-          REVERT_ISSUES="$REVERT_ISSUES $m"
-          echo "spec-freshness: sibling test $f fails collection in this worktree (likely branch-era src import skew, #2206) — reverting its issue-$m synced pair (#2208)."
-        fi
-        ;;
-    esac
-  done
-  if [ -n "$REVERT_ISSUES" ]; then
-    KEPT=()
-    for f in "${SIBLING_SYNCED[@]}"; do
-      m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
-      case " $REVERT_ISSUES " in
-        *" $m "*)
-          if git -C "$WT" cat-file -e "HEAD:$f" 2>/dev/null; then
-            git -C "$WT" checkout HEAD -- "$f"        # restore branch-era content
-          else
-            git -C "$WT" rm -f -q -- "$f"             # main-NEW file — drop it (index + tree)
-          fi
-          ;;
-        *) KEPT+=("$f") ;;
-      esac
+  ROOT="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")"
+  KEPT_OUT=$(mktemp)
+  if (cd "$ROOT" && uv run python scripts/step5a_sibling_probe.py --worktree "$WT" --kept-out "$KEPT_OUT" -- "${SIBLING_SYNCED[@]}"); then
+    mapfile -t SIBLING_SYNCED < "$KEPT_OUT"
+    rm -f "$KEPT_OUT"
+  else
+    rm -f "$KEPT_OUT"
+    for f in "${SIBLING_SYNCED[@]}"; do   # undecidable ⇒ revert EVERYTHING (#2412)
+      if git -C "$WT" cat-file -e "HEAD:$f" 2>/dev/null; then
+        git -C "$WT" checkout HEAD -- "$f"
+      else
+        git -C "$WT" rm -f -q --ignore-unmatch -- "$f"
+      fi
     done
-    SIBLING_SYNCED=("${KEPT[@]}")
+    echo "[step5a] FATAL: sibling probe helper failed (rc != 0) — reverted ALL ${#SIBLING_SYNCED[@]} synced sibling file(s) (fail-safe #2208/#2412: an undecidable probe reverts, never keeps). Fix the probe, then re-run Step 5a." >&2
+    exit 1
   fi
 fi
 if [ "${#SIBLING_SYNCED[@]}" -gt 0 ] \
@@ -433,7 +423,25 @@ not a #2302 regression (a rebase-landing of the branch would revert main's
 newer content at that path); the remedy is a RE-SYNC (this arm re-runs on
 each refresh), never a bug filed against the filter.
 
-The refresh touches ONLY the workflow surface (never experiment code).
+**Manual pair-revert recovery (#2204, #2412).** When a synced sibling set must
+be removed BY HAND (a post-collection failure class the probe misses — e.g.
+signature/behavior skew inside a SHARED src module), revert pair-atomically
+(restore branch-era files from HEAD; `git rm` main-NEW ones) and commit with a
+subject that OMITS the anchor phrase `sync workflow-surface specs from` — the
+arm's own branch-side-commit guard then treats those paths as a deliberate
+branch edit and skips them on every later round. Verified end to end on #2204:
+the next Step 5a run reported `sibling-file sync: 0 file(s)` while still
+syncing 31 legitimate spec files.
+The same mechanism serves a branch that deliberately CONSUMES a sibling
+issue's src at fork-era content (scripts on main import other issues'
+`experiments.issue_<M>` packages): committing the pin-back keeps the widened
+sync from advancing the consumed dir mid-experiment.
+
+The refresh touches the workflow surface PLUS sibling-issue experiment
+code: the #2412-widened globs above also sync issue-namespaced
+`src/explore_persona_space/experiments/issue*/` dirs (probe-guarded +
+pair-atomic, per the helper contract above); SHARED experiment src is
+never synced — the probe only ever REVERTS on its skew.
 Issue branches must not carry their own workflow-surface edits as a
 rule (those go through their own filed workflow-fix `/issue --auto`
 sessions + worktrees), with one
