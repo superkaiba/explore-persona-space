@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2420,
+  "highest_id": 2421,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10979,6 +10979,13 @@
       "path": "tasks/proposed/2420",
       "status": "proposed",
       "title": "Step 5a FAMILY_workflow misses workflow.yaml pin test tests/test_ensemble_review_cap.py \u2014 half-sync vintage skew failed 4 gate nodes on #2205"
+    },
+    "2421": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2421",
+      "status": "proposed",
+      "title": "Step 10d lint-gate fences not contention-aware \u2014 120s scratch-checkout + 900s lint fences crash healthy gates under #1962 fail-open concurrency"
     },
     "244": {
       "has_clean_result": false,
