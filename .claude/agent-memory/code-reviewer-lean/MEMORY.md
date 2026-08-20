@@ -48,3 +48,6 @@
 - [Marker success-command verbatim rerun](marker_success_command_verbatim_rerun.md) — run (c)'s success command AS PASTED; missing-flag exit≠0 with green phase = digest Minor; Path(x or "") dir-guard is dead (#2379 R2 g2)
 - [--force not reaching resume state](force_flag_not_reaching_resume_state.md) — a redo flag gating only the final-output skip while sidecars/chunks resume on count-only fingerprints silently half-redoes post-retrain (#2379 R2 g1)
 - [Two-sided size-corridor review](two_sided_size_corridor_review.md) — blob-at-SHA wc -c + HEAD identity, round-scoped grandfather probe (never diff vs origin/main), hunk-gap pin-unedited proof (#2412 R1 g2)
+- [Linked pins pinned separately](linked_pins_pinned_separately.md) — invocation + ROOT= pinned as two substrings misses the `(cd "$ROOT" &&` connective; scratch ROOT==WT fixtures are blind to it (#2412 R1 g3)
+- [Two-sided size-corridor review](two_sided_size_corridor_review.md) — blob-at-SHA wc -c + HEAD identity, round-scoped grandfather probe (never diff vs origin/main), hunk-gap pin-unedited proof (#2412 R1 g2)
+- [Submodule-existence bypasses strict identity](submodule_existence_bypasses_strict_identity.md) — existence-only `from <shared pkg> import <namespaced unit>` fallback skips the strict arm; grep the corpus for that shape (#2412 R1 g1)
