@@ -152,8 +152,12 @@ for b in math_full mmlu_pro_full humaneval; do
   uv run python scripts/issue2388_capture.py --smoke --phase capture --benchmark "$b" --device cuda
   uv run python scripts/issue2388_capture.py --smoke --phase tf-margin --benchmark "$b" --device cuda
 done
-for s in math mcq code; do
-  uv run python scripts/issue2388_capture.py --smoke --phase upload --surface "$s"
+# By-BENCHMARK smoke uploads: the --surface code path derives its roster from
+# the gate's bcb_fit_allowed, which is structurally unresolvable at smoke
+# scale (G3 needs the full-pool spread that only exists after production P1
+# verify) — 2026-08-20 P0 failure. Production P2 keeps --surface (gate-derived).
+for b in math_full mmlu_pro_full humaneval; do
+  uv run python scripts/issue2388_capture.py --smoke --phase upload --benchmark "$b"
 done
 sentinel p0-done "P0 complete: bcb-venv built, control gate run (2x), 20-ctx e2e smoke (gen all-phases + capture/tf-margin/upload) green"
 
