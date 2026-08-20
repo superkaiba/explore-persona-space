@@ -45,6 +45,7 @@ module-scoped snapshot/restore fixture.
 import types
 
 from explore_persona_space.artifacts.context import CONTEXTS
+from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
 
 
 def test_no_collected_module_mutates_registries_at_import(
@@ -72,22 +73,47 @@ def test_no_collected_module_mutates_registries_at_import(
 def test_guard_hook_records_and_attributes_growth(_registry_guard_internals):
     """Negative control executing the LIVE hook body (#906 one-production-body
     rule): inject a synthetic key into CONTEXTS, fire pytest_collectreport
-    with a fake report, assert the delta is recorded under the fake nodeid
-    with exactly that key; restore (pop key, pop delta entry, resync the
-    prev-snapshot) in a finally — zero trace, or this would fail its own
-    sibling in the same run. Deliberately does NOT touch the post-collection
-    snapshot — that is frozen by the time any test runs."""
+    with a fake report, assert the synthetic key is attributed under the fake
+    nodeid; restore (pop key, pop delta entry, restore the prev-snapshot) in a
+    finally — zero trace, or this would fail its own sibling in the same run.
+    Deliberately does NOT touch the post-collection snapshot — that is frozen
+    by the time any test runs.
+
+    Order-robustness (#2214 merge round, 2026-08-20): earlier tests in the
+    same process legitimately leak RUN-time registry additions with no pop
+    (e.g. a fu3_dispatcher test registers ``fu3_default_minus_default`` into
+    NEGATIVE_PANELS), and the live hook attributes those leaks together with
+    the synthetic key. The expected delta is therefore computed relative to
+    the LIVE pre-injection state, never assumed empty — the prior
+    exact-``[]`` form failed under ``pytest tests/test_issue1315_dispatch.py
+    tests/test_artifacts_context.py tests/test_issue1090_fu3_dispatcher.py
+    tests/test_issue1481_analysis.py
+    tests/test_no_import_time_registry_mutation.py`` on main at
+    ``046553f022`` (pre-existing there; same shape post-merge). Still a real
+    negative control: the live hook body executes, the synthetic key MUST be
+    attributed under the fake nodeid, and the restore is exact on both
+    prev-snapshot dimensions."""
     deltas, collectreport_hook, guard_prev = _registry_guard_internals
     key = "synthetic_guard_probe_ctx_2217"
     nodeid = "synthetic_offender.py"
     assert key not in CONTEXTS
     assert nodeid not in deltas
+    prev_ctx_snapshot = set(guard_prev["contexts"])
+    prev_pan_snapshot = set(guard_prev["panels"])
+    # Deltas the hook will legitimately attribute ALONGSIDE the synthetic key:
+    # run-time leaks accumulated since the last collector resync.
+    expected_ctx = sorted((set(CONTEXTS) | {key}) - prev_ctx_snapshot)
+    expected_pan = sorted(set(NEGATIVE_PANELS) - prev_pan_snapshot)
     CONTEXTS[key] = object()  # the hook reads KEYS only; value is never touched
     try:
         collectreport_hook(types.SimpleNamespace(nodeid=nodeid))
-        assert deltas[nodeid] == {"CONTEXTS": [key], "NEGATIVE_PANELS": []}
+        assert deltas[nodeid] == {"CONTEXTS": expected_ctx, "NEGATIVE_PANELS": expected_pan}
+        assert key in deltas[nodeid]["CONTEXTS"]  # the synthetic key IS attributed
         assert key in guard_prev["contexts"]  # the hook resynced its prev-snapshot
     finally:
         CONTEXTS.pop(key, None)
         deltas.pop(nodeid, None)
-        guard_prev["contexts"].discard(key)
+        guard_prev["contexts"].clear()
+        guard_prev["contexts"].update(prev_ctx_snapshot)
+        guard_prev["panels"].clear()
+        guard_prev["panels"].update(prev_pan_snapshot)
