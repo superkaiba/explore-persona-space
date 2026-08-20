@@ -1821,7 +1821,10 @@ def phase_probes(args: argparse.Namespace) -> None:
         for s in ad.rows:
             if s in bal_set or ad.labels[s].get("rate") is None:
                 continue
-            extra_by_fold.setdefault(int(group_fold[ad.group_of[s]]), []).append(s)
+            # group_fold is reloaded from splits.json, so its keys are STRINGS
+            # (JSON coerces dict keys to str); ad.group_of returns the group id
+            # in its native type (int). str()-coerce to match the reloaded key.
+            extra_by_fold.setdefault(int(group_fold[str(ad.group_of[s])]), []).append(s)
 
         for k in range(n_folds):
             unit_key = f"{arm}_fold{k}"
@@ -3592,7 +3595,11 @@ def _selftest(_: argparse.Namespace) -> int:
     for arm in ARMS:
         sp = load_splits(args, arm)
         gmap = json.loads((eval_root / arm / "groups.json").read_text())["group_of"]
-        assert set(sp["group_fold"]) == set(gmap.values()), f"{arm}: fold coverage != all groups"
+        # reloaded group_fold keys are strings (JSON); gmap values are the
+        # native group-id type (int) — str()-coerce both sides to compare.
+        assert set(sp["group_fold"]) == set(map(str, gmap.values())), (
+            f"{arm}: fold coverage != all groups"
+        )
     gb = json.loads((eval_root / "armB" / "groups.json").read_text())["group_of"]
     assert gb["b0038"] == gb["b0039"], "near-dup pair must land in one group"
     diag = json.loads((eval_root / "results" / "map_diagnostics.json").read_text())
