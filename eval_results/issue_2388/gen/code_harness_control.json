@@ -28,8 +28,8 @@
       "bcb_python": "/opt/bcb-venv/bin/python",
       "stdin_harness_controlled": null,
       "harness_ok": true,
-      "control_ts": "2026-08-20T20:17:55Z",
-      "control_git_commit": "326d3d71b7dc1669f657715507fb4d2f5cf07c72"
+      "control_ts": "2026-08-20T22:41:46Z",
+      "control_git_commit": "951825642a5f5d0152d0fa6bae105ebfb71fabf9"
     },
     "humaneval": {
       "n_control": 25,
@@ -49,8 +49,8 @@
       "bcb_python": null,
       "stdin_harness_controlled": null,
       "harness_ok": true,
-      "control_ts": "2026-08-20T20:17:55Z",
-      "control_git_commit": "326d3d71b7dc1669f657715507fb4d2f5cf07c72"
+      "control_ts": "2026-08-20T22:41:46Z",
+      "control_git_commit": "951825642a5f5d0152d0fa6bae105ebfb71fabf9"
     },
     "lcb_v5": {
       "n_control": 25,
@@ -70,8 +70,8 @@
       "bcb_python": null,
       "stdin_harness_controlled": false,
       "harness_ok": true,
-      "control_ts": "2026-08-20T20:17:55Z",
-      "control_git_commit": "326d3d71b7dc1669f657715507fb4d2f5cf07c72"
+      "control_ts": "2026-08-20T22:41:46Z",
+      "control_git_commit": "951825642a5f5d0152d0fa6bae105ebfb71fabf9"
     },
     "leetcode": {
       "n_control": 25,
@@ -91,8 +91,8 @@
       "bcb_python": null,
       "stdin_harness_controlled": null,
       "harness_ok": true,
-      "control_ts": "2026-08-20T20:17:55Z",
-      "control_git_commit": "326d3d71b7dc1669f657715507fb4d2f5cf07c72"
+      "control_ts": "2026-08-20T22:41:46Z",
+      "control_git_commit": "951825642a5f5d0152d0fa6bae105ebfb71fabf9"
     },
     "mbpp": {
       "n_control": 25,
@@ -112,8 +112,8 @@
       "bcb_python": null,
       "stdin_harness_controlled": null,
       "harness_ok": true,
-      "control_ts": "2026-08-20T20:17:55Z",
-      "control_git_commit": "326d3d71b7dc1669f657715507fb4d2f5cf07c72"
+      "control_ts": "2026-08-20T22:41:46Z",
+      "control_git_commit": "951825642a5f5d0152d0fa6bae105ebfb71fabf9"
     }
   },
   "invocations": [
@@ -296,9 +296,31 @@
       "git_dirty": false,
       "git_dirty_paths": null,
       "ts": "2026-08-20T20:17:55Z"
+    },
+    {
+      "benchmarks": [
+        "bigcodebench",
+        "humaneval",
+        "lcb_v5",
+        "leetcode",
+        "mbpp"
+      ],
+      "phase": "code-harness-control",
+      "argv": [
+        "--bcb-python",
+        "/opt/bcb-venv/bin/python",
+        "--runs",
+        "2",
+        "--out",
+        "eval_results/issue_2388/gen/code_harness_control.json"
+      ],
+      "git_commit": "951825642a5f5d0152d0fa6bae105ebfb71fabf9",
+      "git_dirty": false,
+      "git_dirty_paths": null,
+      "ts": "2026-08-20T22:41:46Z"
     }
   ],
-  "git_commit": "326d3d71b7dc1669f657715507fb4d2f5cf07c72",
+  "git_commit": "951825642a5f5d0152d0fa6bae105ebfb71fabf9",
   "git_dirty": false,
   "phase": "code-harness-control",
   "git_argv0_state": "tracked",
