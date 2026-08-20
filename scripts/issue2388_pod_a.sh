@@ -83,32 +83,12 @@ reap_gpus() { # phase-boundary GPU reap: vLLM EngineCore workers outlive their
   echo "[reap] GPUs clean (max used ${used} MiB)"
 }
 
-reap_engines_for_gpu() { # reap_engines_for_gpu <gpu-index> — per-LANE reap:
-  # each sequential gen invocation in a lane leaves its EngineCore holding
-  # the lane's GPU (reproduced 2/2), which would OOM the lane's NEXT
-  # benchmark. Kills ONLY EngineCore processes whose CUDA_VISIBLE_DEVICES
-  # matches this lane's GPU — other lanes' live engines are untouched.
-  local gpu="$1" used
-  for d in /proc/[0-9]*; do
-    local p=${d#/proc/}
-    grep -qa "EngineCore" "$d/cmdline" 2>/dev/null || continue
-    local cvd
-    cvd=$(tr '\0' '\n' < "$d/environ" 2>/dev/null | sed -n 's/^CUDA_VISIBLE_DEVICES=//p')
-    [ "$cvd" = "$gpu" ] || continue
-    echo "[lane$gpu] reaping leftover EngineCore pid $p"
-    kill -9 "$p" 2>/dev/null || true
-  done
-  used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")
-  for i in $(seq 1 30); do
-    [ "$used" -lt 2000 ] && break
-    sleep 2
-    used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")
-  done
-  if [ "$used" -ge 2000 ]; then
-    echo "[lane$gpu] FATAL: ${used} MiB still held on GPU $gpu after engine reap"
-    exit 86
-  fi
-}
+# (The per-lane CVD-matched engine reap was REMOVED 2026-08-20: vLLM's DP
+# machinery REWRITES CUDA_VISIBLE_DEVICES inside its EngineCore children, so
+# environ matching never found the zombie and all four lanes died at the
+# per-lane FATAL after their generation had fully completed. P1 now runs as
+# barrier-synced ROUNDS — one engine per GPU per round — with the PROVEN
+# global fd-based reap_gpus at each barrier.)
 
 commit_results() { # commit_results <msg> <path>...
   local msg="$1"; shift
@@ -173,28 +153,49 @@ sentinel p1-gate "P1 gate verdict written (G1 BCB allowance + G3 pool arithmetic
 
 echo "[phase=p1_gen]"
 headroom 15 p1-gen
-run_lane() { # run_lane <gpu> <bench>...
-  local gpu="$1"; shift
-  for b in "$@"; do
-    echo "[lane$gpu] gen $b start $(date -u +%H:%M:%SZ)"
-    CUDA_VISIBLE_DEVICES=$gpu uv run python scripts/issue2388_gen.py --phase gen --benchmark "$b" --bcb-python "$BCB_PY"
-    reap_engines_for_gpu "$gpu"
-    echo "[lane$gpu] verify $b start $(date -u +%H:%M:%SZ)"
-    CUDA_VISIBLE_DEVICES=$gpu uv run python scripts/issue2388_gen.py --phase verify --benchmark "$b" --bcb-python "$BCB_PY"
-    echo "[lane$gpu] $b done $(date -u +%H:%M:%SZ)"
-  done
+gen_one() { # gen_one <gpu> <bench> — one engine per GPU per round
+  local gpu="$1" b="$2"
+  echo "[round-gpu$gpu] gen $b start $(date -u +%H:%M:%SZ)"
+  CUDA_VISIBLE_DEVICES=$gpu uv run python scripts/issue2388_gen.py --phase gen --benchmark "$b" --bcb-python "$BCB_PY"
+  echo "[round-gpu$gpu] gen $b done $(date -u +%H:%M:%SZ)"
 }
-pids=(); lanes=()
-( run_lane 0 math_full )                          > "$LOGDIR/issue-2388-p1-lane0.log" 2>&1 & pids+=($!); lanes+=(lane0-math)
-( run_lane 1 mmlu_pro_full )                      > "$LOGDIR/issue-2388-p1-lane1.log" 2>&1 & pids+=($!); lanes+=(lane1-mcq)
-( run_lane 2 bigcodebench_full lcb_v5 )           > "$LOGDIR/issue-2388-p1-lane2.log" 2>&1 & pids+=($!); lanes+=(lane2-code-big)
-( run_lane 3 humaneval mbpp_full leetcode )       > "$LOGDIR/issue-2388-p1-lane3.log" 2>&1 & pids+=($!); lanes+=(lane3-code-small)
+join_round() { # join_round <name> <pid>... — barrier; fail loud on any lane
+  local name="$1"; shift
+  local fail=0
+  for p in "$@"; do
+    wait "$p" || fail=1
+  done
+  if [ "$fail" -ne 0 ]; then echo "[p1] $name FAILED (see round logs)"; exit 1; fi
+  reap_gpus
+}
+# Round 1: the four big benchmarks, one per GPU.
+( gen_one 0 math_full )      > "$LOGDIR/issue-2388-p1-r1-gpu0.log" 2>&1 & R1_0=$!
+( gen_one 1 mmlu_pro_full )  > "$LOGDIR/issue-2388-p1-r1-gpu1.log" 2>&1 & R1_1=$!
+( gen_one 2 bigcodebench_full ) > "$LOGDIR/issue-2388-p1-r1-gpu2.log" 2>&1 & R1_2=$!
+( gen_one 3 humaneval )      > "$LOGDIR/issue-2388-p1-r1-gpu3.log" 2>&1 & R1_3=$!
+join_round round1 $R1_0 $R1_1 $R1_2 $R1_3
+# Round 2: the remaining code benchmarks.
+( gen_one 0 lcb_v5 )         > "$LOGDIR/issue-2388-p1-r2-gpu0.log" 2>&1 & R2_0=$!
+( gen_one 1 mbpp_full )      > "$LOGDIR/issue-2388-p1-r2-gpu1.log" 2>&1 & R2_1=$!
+( gen_one 2 leetcode )       > "$LOGDIR/issue-2388-p1-r2-gpu2.log" 2>&1 & R2_2=$!
+join_round round2 $R2_0 $R2_1 $R2_2
+
+echo "[phase=p1_verify]"
+verify_one() { # CPU-side verification; sandboxed code execution
+  local b="$1"
+  echo "[verify] $b start $(date -u +%H:%M:%SZ)"
+  uv run python scripts/issue2388_gen.py --phase verify --benchmark "$b" --bcb-python "$BCB_PY"
+  echo "[verify] $b done $(date -u +%H:%M:%SZ)"
+}
+pids=(); vnames=()
+for b in math_full mmlu_pro_full humaneval mbpp_full bigcodebench_full lcb_v5 leetcode; do
+  ( verify_one "$b" ) > "$LOGDIR/issue-2388-p1-verify-$b.log" 2>&1 & pids+=($!); vnames+=("$b")
+done
 fail=0
 for i in "${!pids[@]}"; do
-  if ! wait "${pids[$i]}"; then echo "[p1] LANE FAILED: ${lanes[$i]} (see its lane log)"; fail=1; fi
+  if ! wait "${pids[$i]}"; then echo "[p1] VERIFY FAILED: ${vnames[$i]} (see its verify log)"; fail=1; fi
 done
 [ "$fail" -eq 0 ] || exit 1
-reap_gpus
 
 echo "[phase=p1_upload]"
 uv run python scripts/issue2388_gen.py --phase upload --bcb-python "$BCB_PY"
