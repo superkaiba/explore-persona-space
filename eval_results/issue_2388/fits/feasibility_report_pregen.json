@@ -57,10 +57,12 @@
     }
   },
   "metadata": {
-    "git_commit": "7cc443109dd4c6a1b741e79ccf6d800f7c15c7fd",
+    "git_commit": "087919d7be8bae3b5822b2791c53e63c4032eb8b",
     "git_dirty": true,
     "phase": "feasibility",
     "git_dirty_paths": [
+      "eval_results/issue_2388/fits/feasibility_report_pregen.json",
+      "eval_results/issue_2388/gen/code/code_gate.json",
       "eval_results/issue_2388/gen/code/dedup_report.json"
     ],
     "git_argv0_state": "tracked",

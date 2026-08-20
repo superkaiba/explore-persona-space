@@ -4,7 +4,7 @@
   "path": "eval_results/issue_2388/gen/code_harness_control.json",
   "harness_ok": true,
   "flaky_mismatch_fraction": 0.0,
-  "bcb_control_ts": "2026-08-20T17:01:39Z",
+  "bcb_control_ts": "2026-08-20T19:20:13Z",
   "apps_harness_ok": null,
   "apps_control_ts": null
  },
@@ -42,11 +42,13 @@
   "est_train_without_bcb": 3160,
   "code_train_floor_d": 3584
  },
- "ts": "2026-08-20T17:13:35Z",
- "git_commit": "7cc443109dd4c6a1b741e79ccf6d800f7c15c7fd",
+ "ts": "2026-08-20T19:31:41Z",
+ "git_commit": "087919d7be8bae3b5822b2791c53e63c4032eb8b",
  "git_dirty": true,
  "phase": "gen-gate",
  "git_dirty_paths": [
+  "eval_results/issue_2388/fits/feasibility_report_pregen.json",
+  "eval_results/issue_2388/gen/code/code_gate.json",
   "eval_results/issue_2388/gen/code/dedup_report.json"
  ],
  "git_argv0_state": "tracked",
