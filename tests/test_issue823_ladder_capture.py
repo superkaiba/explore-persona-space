@@ -20,11 +20,15 @@ import re
 
 import pytest
 
+import scripts.issue823_ladder_capture as ladder_capture
 from scripts.issue823_ladder_capture import (
+    DATA_REPO,
     GENERATION_SUFFIX,
+    HF_PREFIX,
     K_ARMS,
     N_CONTEXTS_FULL,
     N_PERSONAS,
+    _require_canonical_upload,
     cap_hit_stats_and_gate,
     group_done,
     group_fingerprint,
@@ -342,3 +346,33 @@ def test_group_done_matrix(tmp_path):
     other = group_fingerprint(sentinel, 0, 10, "OTHERSHA", 8)
     with pytest.raises(RuntimeError, match="DIFFERENT fingerprint"):
         group_done(tensors_dir, 0, other)
+
+
+# ── FIX A (follow-up round): P-Store canonical-repo completion gate ──────────
+# Mirrors TestCanonicalUploadGate in tests/test_issue823_ladder_gen_fixes.py:
+# the P-Store upload of the primary-deliverable tensors must refuse an
+# overflow-repo reroute (the helper's default-on file-count fallback returns a
+# truthy OVERFLOW url) instead of logging complete + writing the done-sentinel.
+
+
+class TestPStoreCanonicalUploadGate:
+    CANON = f"{DATA_REPO}/{HF_PREFIX}/analysis_tensors"
+
+    def test_canonical_url_passes(self):
+        _require_canonical_upload(self.CANON, self.CANON)  # no raise
+
+    def test_overflow_reroute_raises_with_pointer(self):
+        overflow = f"superkaiba1/explore-persona-space-overflow/{HF_PREFIX}/analysis_tensors"
+        with pytest.raises(RuntimeError, match=re.escape(overflow)):
+            _require_canonical_upload(overflow, self.CANON)
+
+    def test_wrong_prefix_on_canonical_repo_raises(self):
+        with pytest.raises(RuntimeError, match="canonical"):
+            _require_canonical_upload(f"{DATA_REPO}/somewhere_else", self.CANON)
+
+    def test_gate_wired_between_pstore_upload_and_done_sentinel(self):
+        src = pathlib.Path(ladder_capture.__file__).read_text()
+        i_up = src.index('log_phase("pstore_upload")')
+        i_gate = src.index("_require_canonical_upload(url", i_up)
+        i_sentinel = src.index("write_sentinel(", i_up)
+        assert i_gate < i_sentinel, "canonical gate must run BEFORE the done-sentinel write"

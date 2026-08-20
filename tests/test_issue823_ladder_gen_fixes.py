@@ -18,11 +18,12 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import os
+import pathlib
 import re
 
 import pytest
 
-from explore_persona_space.llm.api_dispatch import DispatchResult
+from explore_persona_space.llm.api_dispatch import DispatchItem, DispatchResult
 from scripts import issue823_ladder_gen as lg
 
 # ── Nested-assignment invariants (requirement 2) ─────────────────────────────
@@ -260,6 +261,163 @@ class TestNextRedriveRound:
         (tmp_path / "redrive9.stale").mkdir()  # quarantined dir
         (tmp_path / "redrive5").write_text("")  # a FILE, not a dir
         assert lg._next_redrive_round(tmp_path) == 3
+
+
+# ── FIX B (follow-up round): stale-redrive merge before the pending set ─────
+
+
+def _ok_result(item_id: str) -> DispatchResult:
+    return DispatchResult(item_id=item_id, result="text", error=False, category="ok")
+
+
+def _transport_result(item_id: str) -> DispatchResult:
+    return DispatchResult(
+        item_id=item_id,
+        result=None,
+        error=True,
+        reason="rate_limited",
+        category=lg.RESULT_TRANSPORT,
+    )
+
+
+class TestStaleRedriveDirs:
+    def test_ascending_numeric_dirs_only(self, tmp_path):
+        (tmp_path / "redrive2").mkdir()
+        (tmp_path / "redrive10").mkdir()
+        (tmp_path / "redrive1").mkdir()
+        (tmp_path / "redrive_foo").mkdir()  # non-numeric suffix
+        (tmp_path / "redrive9.stale").mkdir()  # quarantined dir
+        (tmp_path / "redrive5").write_text("")  # a FILE, not a dir
+        assert [d.name for d in lg._stale_redrive_dirs(tmp_path)] == [
+            "redrive1",
+            "redrive2",
+            "redrive10",
+        ]
+
+
+class TestMergeStaleRedrives:
+    def test_prior_run_successes_merge_and_shrink_pending(self, tmp_path, monkeypatch):
+        # Main-checkpoint residue: r1 + r2 transport-class; r0 succeeded.
+        results = {
+            "r0": _ok_result("r0"),
+            "r1": _transport_result("r1"),
+            "r2": _transport_result("r2"),
+        }
+        batch_meta = {"r0": {"batch_id": "b_main"}}
+        items_by_id = {k: DispatchItem(item_id=k, payload={}) for k in results}
+        # Stale redrive1 from a prior run holds r1 (billed + succeeded there).
+        rd = tmp_path / "redrive1"
+        rd.mkdir()
+        (rd / "state.json").write_text(json.dumps({"cid_to_item": {"cid1": "r1"}}))
+        calls = []
+
+        async def fake_dispatch(items, checkpoint_dir, max_tokens, poll_interval):
+            calls.append(([it.item_id for it in items], checkpoint_dir))
+            assert max_tokens == lg.GEN_MAX_TOKENS
+            return {it.item_id: _ok_result(it.item_id) for it in items}
+
+        def fake_load_batch_meta(checkpoint_dir):
+            return {"r1": {"batch_id": "b_stale1"}}
+
+        monkeypatch.setattr(lg, "_dispatch", fake_dispatch)
+        monkeypatch.setattr(lg, "load_batch_meta", fake_load_batch_meta)
+        lg._merge_stale_redrives(tmp_path, items_by_id, results, batch_meta, poll_interval=1.0)
+        assert calls == [(["r1"], rd)]
+        # r1's already-paid success is merged back: only r2 remains pending.
+        assert lg.transport_class_ids(results) == ["r2"]
+        assert batch_meta["r1"]["batch_id"] == "b_stale1"
+        assert batch_meta["r0"]["batch_id"] == "b_main"
+
+    def test_stateless_dir_skipped_without_dispatch(self, tmp_path, monkeypatch):
+        # Dir created but the dispatcher never wrote state.json: nothing was
+        # submitted there, so there is nothing to resume (and no API call).
+        (tmp_path / "redrive1").mkdir()
+
+        def boom(*args, **kwargs):
+            raise AssertionError("must not dispatch a stateless stale dir")
+
+        monkeypatch.setattr(lg, "_dispatch", boom)
+        results: dict = {}
+        lg._merge_stale_redrives(tmp_path, {}, results, {}, poll_interval=1.0)
+        assert results == {}
+
+    def test_foreign_checkpoint_ids_raise(self, tmp_path):
+        rd = tmp_path / "redrive1"
+        rd.mkdir()
+        (rd / "state.json").write_text(json.dumps({"cid_to_item": {"c0": "not_registered"}}))
+        with pytest.raises(RuntimeError, match="registered item set"):
+            lg._merge_stale_redrives(tmp_path, {}, {}, {}, poll_interval=1.0)
+
+
+# ── FIX D (follow-up round): pooled cap-hit regen dispatch ───────────────────
+
+
+class TestPooledRegenDispatch:
+    def test_one_dispatch_covers_union_of_triggered_personas(self, tmp_path, monkeypatch):
+        # Several personas over the per-persona threshold => exactly ONE
+        # regeneration dispatch, whose submitted id set is the UNION of the
+        # triggered personas' over-cap rows (the pre-fix path dispatched one
+        # SERIAL batch per persona, each waiting out its own Batch window).
+        regen_personas = {0: [0, 4], 3: [7], 5: [1, 2]}
+        union_ids = sorted(
+            lg.make_item_id(p, i) for p, rows in regen_personas.items() for i in rows
+        )
+        items_by_id = {iid: DispatchItem(item_id=iid, payload={}) for iid in union_ids}
+        calls = []
+
+        async def fake_dispatch(items, checkpoint_dir, max_tokens, poll_interval):
+            calls.append((sorted(it.item_id for it in items), checkpoint_dir, max_tokens))
+            return {it.item_id: _ok_result(it.item_id) for it in items}
+
+        monkeypatch.setattr(lg, "_dispatch", fake_dispatch)
+        rg, pooled_ids, rg_dir = lg._dispatch_pooled_regen(
+            tmp_path, items_by_id, regen_personas, poll_interval=1.0
+        )
+        assert len(calls) == 1  # exactly ONE regeneration dispatch
+        assert calls[0][0] == union_ids
+        assert calls[0][1] == tmp_path / "regen_pooled"
+        assert calls[0][2] == lg.REGEN_MAX_TOKENS
+        assert pooled_ids == union_ids
+        assert rg_dir == tmp_path / "regen_pooled"
+        assert sorted(rg) == union_ids
+
+    def test_no_per_persona_serial_dispatch_remains(self):
+        src = pathlib.Path(lg.__file__).read_text()
+        # The serial per-persona checkpoint dirs are gone from the live path.
+        assert 'root / f"regen_p{p:02d}"' not in src
+        # Regen dispatches exactly once, via the pooled helper (1 def + 1 call).
+        assert src.count("_dispatch_pooled_regen(") == 2
+
+
+# ── FIX C (follow-up round): cumulative re-drive ceiling ─────────────────────
+
+
+class TestCumulativeRedriveCeiling:
+    def test_seven_stale_dirs_trip_the_ceiling(self, tmp_path):
+        for n in range(1, 8):
+            (tmp_path / f"redrive{n}").mkdir()
+        nxt = lg._next_redrive_round(tmp_path)
+        assert nxt == 8
+        with pytest.raises(SystemExit) as excinfo:
+            lg._require_redrive_headroom(nxt, n_pending=3)
+        assert excinfo.value.code == 3
+
+    def test_at_ceiling_round_still_allowed(self, tmp_path):
+        for n in range(1, 6):
+            (tmp_path / f"redrive{n}").mkdir()
+        nxt = lg._next_redrive_round(tmp_path)
+        assert nxt == 6 == lg.MAX_CUMULATIVE_REDRIVE_ROUNDS
+        lg._require_redrive_headroom(nxt, n_pending=3)  # 6th cumulative round: no raise
+
+    def test_merge_and_ceiling_wired_in_main(self):
+        src = pathlib.Path(lg.__file__).read_text()
+        # Merge call (rindex: the def precedes main's call site) runs BEFORE
+        # the fresh-round numbering / pending-set loop.
+        assert src.rindex("_merge_stale_redrives(") < src.index(
+            "first_round = _next_redrive_round("
+        )
+        # Ceiling check runs BEFORE any fresh redrive dispatch.
+        assert src.rindex("_require_redrive_headroom(") < src.index('root / f"redrive{rnd}"')
 
 
 # ── FIX 1: canonical-repo completion gate ────────────────────────────────────
