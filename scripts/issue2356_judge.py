@@ -20,7 +20,13 @@ Two waves, both through the sanctioned Batch client (`eval.batch_judge` via
   ``P(ANSWER) ∈ [0,100]`` from the PROMPT (few-shot primary k=32 → drawn only
   from that fold's same-arm train groups; zero-shot secondary), 5 draws @ temp
   1.0, mean of parsed. Scores oriented to ``P(REFUSE) = 100 − P(ANSWER)``.
-  ~10,500 calls, pilot ~150 draws.
+  ~10,500 calls, pilot ~150 draws. r8 (plan §4 Step E / S3): rows whose batch
+  draws are all api-refusal-censored (rule 28) are re-issued IN-WAVE on the
+  SYNC path at the identical instrument and merged over the ``None`` entries
+  (``_reissue_censored_predictor_rows``); a seeded ~``OVERLAP_N`` dual-scored
+  batch-vs-sync overlap (``_predictor_overlap_offset``) reports the offset
+  licence, mirroring ``run_rejudge_refusals``'s two legs. Residual
+  still-censored rows stay ``None`` (common-row-mask excluded downstream).
 
 CRITICAL parse-surface note (llm-judging rule 27; graded_judge.py:70): the
 shared reduce ``_score_from_parsed`` accepts ONLY a numeric 0–100 score (bare
@@ -699,6 +705,171 @@ def _build_few_shot_demos(
     return "\n\n".join(lines), manifest
 
 
+def _offset_stats(pairs: list[tuple[float, float]]) -> dict[str, Any]:
+    """Batch-vs-sync offset aggregate over (batch, sync) score pairs (the C1
+    merge-licence read; shared by ``run_rejudge_refusals`` leg 2 and the
+    predictor overlap leg). Empty pairs -> None-valued stats, never a crash."""
+    return {
+        "n_overlap": len(pairs),
+        "batch_mean": (sum(b for b, _ in pairs) / len(pairs)) if pairs else None,
+        "sync_mean": (sum(s for _, s in pairs) / len(pairs)) if pairs else None,
+        "offset_batch_minus_sync": ((sum(b - s for b, s in pairs) / len(pairs)) if pairs else None),
+    }
+
+
+def _zero_valid_drop_class(n_api: int, n_transport: int, n_draws: int) -> str:
+    """Drop-class of a zero-valid (no kept draw) predictor item from its
+    per-draw tallies, for the S3 by-drop-class exclusion report (plan §3 /
+    §4 Step E): ``all_api_refusal`` / ``api_refusal_mixed`` (>=1 rule-28 draw
+    — the sync-re-issuable shapes) vs ``transport_bearing`` / ``content_only``
+    (rule 24 / rule 9 classes, not re-issued at the identical instrument)."""
+    if n_api >= n_draws:
+        return "all_api_refusal"
+    if n_api > 0:
+        return "api_refusal_mixed"
+    if n_transport > 0:
+        return "transport_bearing"
+    return "content_only"
+
+
+def _reissue_censored_predictor_rows(
+    result,
+    items_short: list[tuple[str, str, str]],
+    id_lut: dict[str, str],
+    *,
+    arm: str,
+    fold: int,
+    out: Path,
+    dry_run: bool,
+) -> tuple[dict[str, float], dict[str, Any]]:
+    """Rule-28 targeted SYNC re-issue for the predictor wave (plan §4 Step E /
+    "Censored-row handling (S3)"; the ``run_rejudge_refusals`` leg-1 recipe,
+    in-wave): zero-valid rows carrying >=1 api-refusal draw are re-issued at
+    the IDENTICAL instrument — same rubric / judge model / temperature /
+    max_tokens / n_draws, and the SAME per-fold few-shot demo block (it rides
+    each item tuple, so re-issuing inside the fold loop preserves it) — on the
+    SYNC path (``force_sync=True``, the mechanism ``run_rejudge_refusals``
+    uses). Detection keys on the reduce's own fields (``scores[sid] is None``
+    == zero KEPT draws; ``per_item_api_refusals`` == rule-28 draws — the same
+    fields ``_result_accounting`` reports); a zero-valid row with NO
+    api-refusal draw is a rule-9/24 drop (not transport-conditional) and is
+    NOT re-issued. Returns ``(recovered sid -> mean sync score, accounting)``;
+    the caller merges recovered scores over the batch ``None`` entries.
+    Durable ids in the accounting are FULL row_ids via ``id_lut`` (the r7
+    short-id contract: short ids live only in the API custom_id round-trip).
+    """
+    api = result.per_item_api_refusals or {}
+    transport = result.per_item_transport_losses or {}
+    zero_valid = sorted(sid for sid, s in (result.scores or {}).items() if s is None)
+    by_class: dict[str, int] = {}
+    for sid in zero_valid:
+        cls = _zero_valid_drop_class(api.get(sid, 0), transport.get(sid, 0), PREDICTOR_N_DRAWS)
+        by_class[cls] = by_class.get(cls, 0) + 1
+    censored = [sid for sid in zero_valid if api.get(sid, 0) > 0]
+    acc: dict[str, Any] = {
+        "n_api_refusal_draws_batch": int(getattr(result, "n_api_refusal_draws", 0) or 0),
+        "n_items_zero_valid_batch": len(zero_valid),
+        "zero_valid_by_class": by_class,
+        "n_reissued": len(censored),
+        "n_recovered": 0,
+        "n_residual_zero_valid": len(zero_valid),
+        "reissued_row_ids": [id_lut[sid] for sid in censored],
+        "residual_zero_valid_row_ids": [id_lut[sid] for sid in zero_valid],
+    }
+    if not censored:
+        logger.info("[predictor-reissue] %s_fold%d: no api-refusal-censored rows", arm, fold)
+        return {}, acc
+    logger.info(
+        "[predictor-reissue] %s_fold%d: re-issuing %d api-refusal-censored rows on SYNC path",
+        arm,
+        fold,
+        len(censored),
+    )
+    item_by_sid = {sid: (sid, q, a) for sid, q, a in items_short}
+    reissue = judge_graded(
+        [item_by_sid[sid] for sid in censored],
+        PREDICTOR_RUBRIC,
+        n_draws=PREDICTOR_N_DRAWS,
+        cache_dir=out / "reissue_cache" / f"{arm}_fold{fold}",  # fresh: never cache-served
+        save_raw=out / "reissue_save_raw" / f"{arm}_fold{fold}.json",
+        judge_model=JUDGE_MODEL,
+        temperature=PREDICTOR_TEMPERATURE,
+        max_tokens=PREDICTOR_MAX_TOKENS,
+        force_sync=True,  # rule-28 remediation transport (run_rejudge_refusals leg 1)
+        dry_run=dry_run,
+    )
+    recovered = {sid: float(s) for sid, s in (reissue.scores or {}).items() if s is not None}
+    residual = [sid for sid in zero_valid if sid not in recovered]
+    acc["n_recovered"] = len(recovered)
+    acc["n_residual_zero_valid"] = len(residual)
+    acc["residual_zero_valid_row_ids"] = [id_lut[sid] for sid in residual]
+    acc["reissue_accounting"] = _result_accounting(reissue, f"predictor-reissue:{arm}_fold{fold}")
+    logger.info(
+        "[predictor-reissue] %s_fold%d: recovered %d/%d reissued; residual zero-valid %d",
+        arm,
+        fold,
+        len(recovered),
+        len(censored),
+        len(residual),
+    )
+    return recovered, acc
+
+
+def _predictor_overlap_offset(
+    overlap_pool: dict[str, list[tuple[str, str, str]]],
+    batch_score_by_sid: dict[str, float],
+    out: Path,
+    *,
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Leg 2 of the rule-28 recipe for the predictor wave (C1 merge licence):
+    dual-score a seeded ~``OVERLAP_N`` sample of batch-SUCCEEDED rows on the
+    SYNC path at the identical instrument (each item tuple carries its own
+    per-fold demo block) and report the batch-vs-sync offset — mirrors
+    ``run_rejudge_refusals`` leg 2 (same ``OVERLAP_N``, same ``_offset_stats``
+    aggregate). Runs even when nothing was rescued: the licence is about the
+    transports, not the censored rows."""
+    rng = random.Random(GLOBAL_SEED)
+    overlap: dict[str, Any] = {"per_arm": {}}
+    all_pairs: list[tuple[float, float]] = []
+    n_sampled_total = 0
+    arms = sorted(overlap_pool)
+    for arm in arms:
+        pool = sorted(overlap_pool[arm], key=lambda it: it[0])
+        take = min(OVERLAP_N // max(1, len(arms)), len(pool))
+        sampled = sorted(rng.sample(pool, take), key=lambda it: it[0]) if take else []
+        if not sampled:
+            overlap["per_arm"][arm] = {"n_overlap": 0, "n_sampled": 0}
+            continue
+        n_sampled_total += len(sampled)
+        result = judge_graded(
+            sampled,
+            PREDICTOR_RUBRIC,
+            n_draws=PREDICTOR_N_DRAWS,
+            cache_dir=out / "overlap_cache" / arm,  # fresh cache: never cache-served
+            save_raw=out / f"overlap_save_raw_{arm}.json",
+            judge_model=JUDGE_MODEL,
+            temperature=PREDICTOR_TEMPERATURE,
+            max_tokens=PREDICTOR_MAX_TOKENS,
+            force_sync=True,  # the sync leg of the batch-vs-sync licence
+            dry_run=dry_run,
+        )
+        pairs = [
+            (batch_score_by_sid[sid], float(s))
+            for sid, s in (result.scores or {}).items()
+            if s is not None and sid in batch_score_by_sid
+        ]
+        all_pairs.extend(pairs)
+        overlap["per_arm"][arm] = {
+            **_offset_stats(pairs),
+            "n_sampled": len(sampled),
+            "accounting": _result_accounting(result, f"predictor-overlap:{arm}"),
+        }
+    overlap.update({**_offset_stats(all_pairs), "n_sampled": n_sampled_total})
+    logger.info("[predictor-overlap] batch-vs-sync overlap offset: %s", overlap)
+    return overlap
+
+
 def run_predictor(args: argparse.Namespace) -> int:
     eval_rows = _load_balanced_eval_rows(args)
     if args.arm:
@@ -713,6 +884,9 @@ def run_predictor(args: argparse.Namespace) -> int:
     all_scores: dict[str, dict[str, Any]] = {}
     demo_manifest: dict[str, list[dict[str, Any]]] = {}
     accounting: dict[str, Any] = {}
+    reissue_acc: dict[str, Any] = {}
+    overlap_pool: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
+    batch_score_by_sid: dict[str, float] = {}
     for (arm, fold), rows in by_fold.items():
         train_rows = _load_train_rows(args, arm, fold)
         k = FEWSHOT_K if len(train_rows) >= FEWSHOT_MIN_TRAIN else FEWSHOT_K_DEGRADED
@@ -740,8 +914,23 @@ def run_predictor(args: argparse.Namespace) -> int:
         if args.dry_run:
             continue
         accounting[f"{arm}_fold{fold}"] = _result_accounting(result, f"predictor:{arm}_fold{fold}")
+        # r8 (plan §4 Step E / S3): rule-28 targeted SYNC re-issue of the
+        # api-refusal-censored rows; recovered sync scores merge over the
+        # batch None entries below, residual zero-valid rows stay None
+        # (common-row-mask excluded downstream — never imputed).
+        recovered, reissue_acc[f"{arm}_fold{fold}"] = _reissue_censored_predictor_rows(
+            result, items_short, id_lut, arm=arm, fold=fold, out=out, dry_run=args.dry_run
+        )
+        item_by_sid = {sid: (sid, q, a) for sid, q, a in items_short}
         for sid, p_answer in (result.scores or {}).items():
             row_id = id_lut[sid]  # r7: FULL row_id back at the seam boundary (fail-loud)
+            transport = "batch"
+            if p_answer is None and sid in recovered:
+                p_answer = recovered[sid]
+                transport = "sync-reissue"  # rule-28 rescue (all batch draws censored)
+            elif p_answer is not None:
+                overlap_pool[arm].append(item_by_sid[sid])  # batch-SUCCEEDED (leg-2 pool)
+                batch_score_by_sid[sid] = float(p_answer)
             # orient to P(REFUSE) = 100 - P(ANSWER); score None stays None (dropped)
             p_refuse = None if p_answer is None else 100.0 - p_answer
             all_scores[row_id] = {
@@ -749,24 +938,70 @@ def run_predictor(args: argparse.Namespace) -> int:
                 "p_refuse": p_refuse,
                 "arm": arm,
                 "fold": fold,
+                "judge_transport": transport,  # rule-28 batch/sync split disclosure
             }
 
     if args.dry_run:
         logger.info("[predictor] dry-run complete: routing + custom_id validation; nothing written")
         return 0
 
+    # Leg 2 (C1 merge licence): seeded dual-scored batch-vs-sync overlap.
+    overlap_offset = _predictor_overlap_offset(
+        overlap_pool, batch_score_by_sid, out, dry_run=args.dry_run
+    )
+
+    # Per-arm rule-28 aggregation (S3: exclusion counts by drop-class, FULL row_ids).
+    rule28_by_arm: dict[str, Any] = {}
+    for key, acc in reissue_acc.items():
+        arm = key.rsplit("_fold", 1)[0]
+        agg = rule28_by_arm.setdefault(
+            arm,
+            {
+                "n_api_refusal_draws_batch": 0,
+                "n_items_zero_valid_batch": 0,
+                "zero_valid_by_class": {},
+                "n_reissued": 0,
+                "n_recovered": 0,
+                "n_residual_zero_valid": 0,
+                "reissued_row_ids": [],
+                "residual_zero_valid_row_ids": [],
+            },
+        )
+        for counter in (
+            "n_api_refusal_draws_batch",
+            "n_items_zero_valid_batch",
+            "n_reissued",
+            "n_recovered",
+            "n_residual_zero_valid",
+        ):
+            agg[counter] += acc[counter]
+        for cls, n in acc["zero_valid_by_class"].items():
+            agg["zero_valid_by_class"][cls] = agg["zero_valid_by_class"].get(cls, 0) + n
+        agg["reissued_row_ids"].extend(acc["reissued_row_ids"])
+        agg["residual_zero_valid_row_ids"].extend(acc["residual_zero_valid_row_ids"])
+
+    n_valid = sum(1 for v in all_scores.values() if v["p_answer"] is not None)
     (out / "demo_manifest.json").write_text(json.dumps(demo_manifest, indent=2), encoding="utf-8")
     payload = {
         "issue": ISSUE,
         "wave": "predictor",
         "mode": "zero_shot" if args.zero_shot else f"few_shot_k{FEWSHOT_K}",
         "n_scored": len(all_scores),
+        "n_valid_scores": n_valid,
         "scores": all_scores,
-        "accounting": accounting,
+        "accounting": {
+            **accounting,
+            "rule28_sync_reissue": {"per_arm": rule28_by_arm, "per_fold": reissue_acc},
+            "batch_vs_sync_overlap": overlap_offset,
+        },
         "meta": as_metadata_dict(git_provenance()),
     }
     (out / "predictor_scores.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    logger.info("[predictor] wrote %d oriented P(REFUSE) scores", len(all_scores))
+    logger.info(
+        "[predictor] wrote %d oriented P(REFUSE) scores (%d valid after rule-28 merge)",
+        len(all_scores),
+        n_valid,
+    )
     return 0
 
 
@@ -873,17 +1108,9 @@ def run_rejudge_refusals(args: argparse.Namespace) -> int:
             ),
             "accounting": _result_accounting(overlap_result, f"rejudge-overlap:{corpus}"),
         }
-    overlap_offset.update(
-        {
-            "n_overlap": len(all_pairs),
-            "n_sampled": n_sampled_total,
-            "batch_mean": (sum(b for b, _ in all_pairs) / len(all_pairs)) if all_pairs else None,
-            "sync_mean": (sum(s for _, s in all_pairs) / len(all_pairs)) if all_pairs else None,
-            "offset_batch_minus_sync": (
-                (sum(b - s for b, s in all_pairs) / len(all_pairs)) if all_pairs else None
-            ),
-        }
-    )
+    # r8: aggregate via the shared _offset_stats helper (byte-identical stats;
+    # the predictor overlap leg reuses the same computation).
+    overlap_offset.update({**_offset_stats(all_pairs), "n_sampled": n_sampled_total})
     logger.info("[rejudge] batch-vs-sync overlap offset: %s", overlap_offset)
 
     # ---- leg (1): targeted SYNC re-issue of the censored rows ---------------
