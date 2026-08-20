@@ -366,6 +366,10 @@ def _selector_row_extra(args: argparse.Namespace) -> dict | None:
     default CLI behaviour (row schema included) stays byte-identical to the
     parent's. The H3 legacy-companion legs pass ``--h3-label h3_parent_exact``
     WITHOUT a cap and still get per-row ``selector.mode == 'gcv'`` telemetry.
+    The constants here are complemented by per-FOLD lambda/dof/n_train
+    summaries (``selector_fits`` on every row) via
+    ``run_grid*(collect_selector_fits=True)`` — same trigger, so the parent's
+    default rows stay byte-identical (h3-selector-telemetry-incomplete).
     """
     if args.dof_cap is None and not args.h3_label:
         return None
@@ -451,6 +455,7 @@ def _run_synthetic(args: argparse.Namespace) -> int:
         context_ids=[f"synctx{i:04d}" for i in range(n)],
         dof_cap=args.dof_cap,
         row_extra=_selector_row_extra(args),
+        collect_selector_fits=_selector_row_extra(args) is not None,
         **kwargs,
     )
     arms.write_summary(
@@ -1701,6 +1706,11 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             unit_timings=(timings.setdefault("units", []) if timings is not None else None),
             dof_cap=args.dof_cap,
             row_extra=_selector_row_extra(args),
+            # Per-fold lambda/dof/n_train summaries on every #2388 row (the
+            # constants in row_extra are NOT per-fit; concern
+            # h3-selector-telemetry-incomplete). Keyed off the same trigger so
+            # the parent's default rows stay byte-identical.
+            collect_selector_fits=_selector_row_extra(args) is not None,
             **kwargs,
         )
         if timings is not None:

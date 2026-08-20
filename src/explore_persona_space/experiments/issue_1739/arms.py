@@ -492,8 +492,55 @@ def _ridge_devices(device: str) -> list[str]:
     return [device]
 
 
+def _summarize_selector_telemetry(job_key: tuple, n_train: int, telem: list[dict]) -> dict:
+    """Per-(design, fold) selector-fit summary from the core's per-chunk telemetry.
+
+    The core appends one dict per layer-chunk with per-(slice, target) selected
+    lambda + effective dof arrays; a percell row cannot carry the full vectors
+    (S x T per job x many jobs), so the persisted form is the summary
+    DISTRIBUTION per fold: a lambda histogram + dof quantiles + n_train —
+    keyed by the job's (design, fold) identity (#2388
+    h3-selector-telemetry-incomplete; plan section 4 "per-fit selector mode +
+    lambda + dof logged").
+    """
+    lam_hist: dict[str, int] = {}
+    dof_vals: list[float] = []
+    for chunk in telem:
+        lam = np.asarray(chunk["lambda_selected"], dtype=np.float64).ravel()
+        dof = np.asarray(chunk["dof_selected"], dtype=np.float64).ravel()
+        for v in lam:
+            key = f"{float(v):g}"
+            lam_hist[key] = lam_hist.get(key, 0) + 1
+        dof_vals.extend(float(x) for x in dof)
+    dof_arr = np.asarray(dof_vals, dtype=np.float64)
+    return {
+        "job": "/".join(str(k) for k in job_key),
+        "design": str(job_key[0]),
+        "fold": int(job_key[1]) if len(job_key) > 1 else None,
+        "mode": telem[0]["mode"] if telem else None,
+        "dof_cap": telem[0]["dof_cap"] if telem else None,
+        "n_train": int(n_train),
+        "n_fits": int(sum(len(np.ravel(c["lambda_selected"])) for c in telem)),
+        "lambda_hist": lam_hist,
+        "dof_selected": (
+            {
+                "min": float(dof_arr.min()),
+                "median": float(np.median(dof_arr)),
+                "max": float(dof_arr.max()),
+            }
+            if dof_arr.size
+            else None
+        ),
+    }
+
+
 def _run_ridge_job(
-    job: RidgeJob, *, lambdas: tuple[float, ...], device: str, dof_cap: float | None = None
+    job: RidgeJob,
+    *,
+    lambdas: tuple[float, ...],
+    device: str,
+    dof_cap: float | None = None,
+    telemetry: list[dict] | None = None,
 ) -> tuple[tuple, dict[str, np.ndarray]]:
     """Materialize + solve one RidgeJob on ``device`` (thread-pool worker)."""
     from explore_persona_space.experiments.issue_1739.fits import ridge_gcv_predict_per_target
@@ -512,9 +559,12 @@ def _run_ridge_job(
             cols.append(y_full[:, job.tr_rows])
     y = np.stack(cols, axis=2)  # (S, ntr, T)
     ev_mats = [_take_rows(esrc, rows) for _name, esrc, rows in job.evals]
+    telem: list[dict] | None = [] if telemetry is not None else None
     preds = ridge_gcv_predict_per_target(
-        x_tr, y, ev_mats, lambdas=lambdas, device=device, dof_cap=dof_cap
+        x_tr, y, ev_mats, lambdas=lambdas, device=device, dof_cap=dof_cap, selector_telemetry=telem
     )
+    if telemetry is not None:
+        telemetry.append(_summarize_selector_telemetry(job.key, n_tr, telem or []))
     return job.key, {name: p for (name, _e, _r), p in zip(job.evals, preds, strict=True)}
 
 
@@ -524,6 +574,7 @@ def _solve_ridge_groups(
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
     device: str = "cpu",
     dof_cap: float | None = None,
+    telemetry: list[dict] | None = None,
 ) -> dict[tuple, dict[str, np.ndarray]]:
     """Solve the cell's (source x fold) ridge jobs, sharded across GPUs.
 
@@ -532,31 +583,44 @@ def _solve_ridge_groups(
     visible GPU under a bare ``device='cuda'`` the independent jobs
     round-robin across devices via a thread pool (torch releases the GIL in
     the C ops). Results: ``{job.key: {eval_name: (S, nev, T)}}``.
+    ``telemetry`` (optional out-param): one per-(design, fold) selector-fit
+    summary dict per job (#2388 — default None keeps callers byte-identical).
     """
     devices = _ridge_devices(device)
     out: dict[tuple, dict[str, np.ndarray]] = {}
     if len(devices) == 1 or len(jobs) <= 1:
         for job in jobs:
-            key, preds = _run_ridge_job(job, lambdas=lambdas, device=devices[0], dof_cap=dof_cap)
+            key, preds = _run_ridge_job(
+                job, lambdas=lambdas, device=devices[0], dof_cap=dof_cap, telemetry=telemetry
+            )
             out[key] = preds
         return out
     from concurrent.futures import ThreadPoolExecutor
 
     logger.info("[arms] ridge jobs sharded across %s (%d jobs)", devices, len(jobs))
     with ThreadPoolExecutor(max_workers=len(devices)) as pool:
-        futs = [
-            pool.submit(
-                _run_ridge_job,
-                job,
-                lambdas=lambdas,
-                device=devices[i % len(devices)],
-                dof_cap=dof_cap,
+        futs = []
+        per_fut_telem: list[list[dict]] = []
+        for i, job in enumerate(jobs):
+            # Per-future sink, merged in submit order AFTER the joins — a
+            # shared list under the thread pool would interleave rows.
+            sink: list[dict] | None = [] if telemetry is not None else None
+            per_fut_telem.append(sink if sink is not None else [])
+            futs.append(
+                pool.submit(
+                    _run_ridge_job,
+                    job,
+                    lambdas=lambdas,
+                    device=devices[i % len(devices)],
+                    dof_cap=dof_cap,
+                    telemetry=sink,
+                )
             )
-            for i, job in enumerate(jobs)
-        ]
-        for fut in futs:
+        for fut, sink in zip(futs, per_fut_telem, strict=True):
             key, preds = fut.result()
             out[key] = preds
+            if telemetry is not None:
+                telemetry.extend(sink)
     return out
 
 
@@ -629,6 +693,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
     ridge_folds: tuple[int, ...] | None = None,
     diagnostics: list[dict] | None = None,
     dof_cap: float | None = None,
+    selector_telemetry: list[dict] | None = None,
 ) -> list[tuple[dict[str, np.ndarray], dict[str, str]]]:
     """Pooled-OOF scores for every requested arm, for R regime slices AT ONCE.
 
@@ -801,7 +866,11 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
                 if mps_jobs:
                     solved.update(
                         _solve_ridge_groups(
-                            mps_jobs, lambdas=lambdas, device=device, dof_cap=dof_cap
+                            mps_jobs,
+                            lambdas=lambdas,
+                            device=device,
+                            dof_cap=dof_cap,
+                            telemetry=selector_telemetry,
                         )
                     )
                 n_mps = len(mps_jobs)
@@ -997,7 +1066,15 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             )
 
     if jobs:  # batch 2 — merged into the same dict the batch-1 mps solve filled
-        solved.update(_solve_ridge_groups(jobs, lambdas=lambdas, device=device, dof_cap=dof_cap))
+        solved.update(
+            _solve_ridge_groups(
+                jobs,
+                lambdas=lambdas,
+                device=device,
+                dof_cap=dof_cap,
+                telemetry=selector_telemetry,
+            )
+        )
 
     def _scatter(source: str, ename: str, tkey: object, n_rows_ly: int) -> np.ndarray:
         arr = np.full((n_rows_ly, n_l), np.nan)
@@ -1795,7 +1872,7 @@ def _unit_key(provenance: dict, budget_l: int, draw: int, seed: int, regime_extr
     return json.dumps(payload, sort_keys=True)
 
 
-def run_grid_multi(
+def run_grid_multi(  # noqa: C901 — single resume+dispatch block (run_cell_multi convention)
     datas: list[CellData],
     provenances: list[dict],
     group_keys: list[str] | np.ndarray,
@@ -1813,6 +1890,7 @@ def run_grid_multi(
     unit_timings: list[dict] | None = None,
     dof_cap: float | None = None,
     row_extra: dict | None = None,
+    collect_selector_fits: bool = False,
 ) -> list[list[dict]]:
     """Run every (L, draw, seed) cell for R regime slices AT ONCE; checkpoint per unit.
 
@@ -1883,6 +1961,12 @@ def run_grid_multi(
             flush=True,
         )
         cell_diags: list[dict] = []
+        # Per-(design, fold) selector-fit summaries for THIS unit (#2388
+        # h3-selector-telemetry-incomplete): ridge jobs are shared across the
+        # R regime slices, so ONE telemetry list per unit, merged into every
+        # fresh record below. Default OFF — existing callers' rows stay
+        # byte-identical.
+        unit_selector_fits: list[dict] | None = [] if collect_selector_fits else None
         outs = run_cell_multi(
             [datas[r] for r in pending],
             cell,
@@ -1891,6 +1975,7 @@ def run_grid_multi(
             mlp_kwargs=mlp_kwargs,
             diagnostics=cell_diags,
             dof_cap=dof_cap,
+            selector_telemetry=unit_selector_fits,
         )
         dv_cell = base.dv[cell.row_idx]
         margins_cell = base.margins[cell.row_idx] if base.margins is not None else None
@@ -1917,6 +2002,11 @@ def run_grid_multi(
                 # b): caller-supplied constants merged into every FRESH record;
                 # absent (None) for existing callers — rows byte-identical.
                 rec.update(row_extra)
+            if unit_selector_fits is not None:
+                # Per-fold lambda/dof/n_train distributions (never a collapsed
+                # OOF scalar) — plan section 4: "per-fit selector mode +
+                # lambda + dof logged"; H3 rows included.
+                rec["selector_fits"] = unit_selector_fits
             # #1739 r10: rank-deficiency audit flag — downstream analysis can
             # see which cells' arm-10 fell back to the pinv solution.
             rec["degenerate_ols"] = bool(cell_diags[j])
@@ -1966,6 +2056,7 @@ def run_grid(
     context_ids: list[str] | np.ndarray | None = None,
     dof_cap: float | None = None,
     row_extra: dict | None = None,
+    collect_selector_fits: bool = False,
 ) -> list[dict]:
     """Single-regime wrapper over :func:`run_grid_multi` (same contract/keys)."""
     return run_grid_multi(
@@ -1984,6 +2075,7 @@ def run_grid(
         context_ids=context_ids,
         dof_cap=dof_cap,
         row_extra=row_extra,
+        collect_selector_fits=collect_selector_fits,
     )[0]
 
 

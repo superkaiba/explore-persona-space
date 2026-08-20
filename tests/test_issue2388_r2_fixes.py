@@ -113,6 +113,8 @@ def _gate_fixture(
     *,
     bcb_ok: bool,
     apps_ok: bool | None = None,
+    apps_pilot_admissible: bool | None = None,
+    apps_spread_admissible: bool | None = None,
     spread_admissible: bool | None = True,
     n_lcb_kept: int = 507,
 ) -> Path:
@@ -123,7 +125,15 @@ def _gate_fixture(
     )
     benches: dict = {"bigcodebench": {"harness_ok": bcb_ok, "flaky_mismatch_fraction": 0.0}}
     if apps_ok is not None:
-        benches["apps_intro"] = {"harness_ok": apps_ok}
+        # Full fork-5 control fields (r3: the gate's control_25_25 is STRICTER
+        # than harness_ok — 25/25 twice, flaky < 2%).
+        benches["apps_intro"] = {
+            "harness_ok": apps_ok,
+            "n_control": 25,
+            "best_pass_rate": 1.0 if apps_ok else 0.8,
+            "runs_per_item": 2,
+            "flaky_mismatch_fraction": 0.0,
+        }
     (out_root / gen.CONTROL_REPORT).parent.mkdir(parents=True, exist_ok=True)
     (out_root / gen.CONTROL_REPORT).write_text(json.dumps({"benchmarks": benches}))
     if spread_admissible is not None:
@@ -133,6 +143,28 @@ def _gate_fixture(
                     "smoke": False,
                     "n_items": gen.EXPECTED_COUNTS["bigcodebench_full"],
                     "admissible": spread_admissible,
+                }
+            )
+        )
+    if apps_pilot_admissible is not None:
+        (out_root / "code" / gen.APPS_PILOT_REPORT).write_text(
+            json.dumps(
+                {
+                    "pilot": True,
+                    "smoke": False,
+                    "n_items": gen.APPS_PILOT_N,
+                    "admissible": apps_pilot_admissible,
+                }
+            )
+        )
+    if apps_spread_admissible is not None:
+        (out_root / "code" / "apps_intro.json").write_text(
+            json.dumps(
+                {
+                    "pilot": False,
+                    "smoke": False,
+                    "n_items": 1000,
+                    "admissible": apps_spread_admissible,
                 }
             )
         )
@@ -152,8 +184,10 @@ def test_gate_keep_branch(gen, tmp_path):
 
 
 def test_gate_drop_to_apps_branch(gen, tmp_path):
-    """G1 fail -> BCB excluded; pool falls under d -> APPS required; APPS
-    activates only behind its OWN harness control (r1 blocker 8)."""
+    """G1 fail -> BCB excluded; pool falls under d -> APPS required; the fork-5
+    chain is STAGED (r2 Critical 1): control alone allows only the PILOT — full
+    gen needs the admissible pilot, fit activation needs the binding full-pool
+    G3 on top."""
     out_root = _gate_fixture(tmp_path, gen, bcb_ok=False, apps_ok=True, n_lcb_kept=0)
     verdict = gen.phase_gate(out_root)
     assert verdict["bcb_gen_allowed"] is False
@@ -161,10 +195,15 @@ def test_gate_drop_to_apps_branch(gen, tmp_path):
     est = verdict["pool_arithmetic"]["est_train_without_bcb"]
     assert est < gen.CODE_TRAIN_FLOOR
     assert verdict["apps_required"] is True
-    assert verdict["apps_activated"] is True
+    assert verdict["g1_apps"]["control_25_25"] is True
+    assert verdict["apps_pilot_gen_allowed"] is True
+    assert verdict["apps_full_gen_allowed"] is False  # no pilot verdict yet
+    assert verdict["apps_activated"] is False  # no binding full-pool G3 yet
     with pytest.raises(RuntimeError, match="G1"):
         gen._require_gate_for("bigcodebench_full", out_root)
-    gen._require_gate_for("apps_intro", out_root)  # required + activated -> allowed
+    gen._require_gate_for("apps_intro", out_root, apps_pilot=True)  # pilot allowed
+    with pytest.raises(RuntimeError, match="pilot"):
+        gen._require_gate_for("apps_intro", out_root)  # FULL gen still refused
 
 
 def test_gate_apps_refused_when_not_required(gen, tmp_path):
@@ -463,31 +502,67 @@ def test_pca_basis_matches_svd_subspace(drv):
 
 
 def test_shuffled_nl_payloads_permutes_input_axis(drv):
+    """r3 (shuffled-mlp-normalization-misaligned): the REGISTERED control is an
+    input-COLUMN weight shuffle — normalization stays BOUND to features (xmu /
+    xsd byte-identical), weight norms preserved exactly, and the shuffled
+    payload applied to x equals the ORIGINAL net applied to the standardized
+    input permuted by the INVERSE permutation (exact equivalence through the
+    real ``apply_map`` path). The pre-fix implementation co-permuted xmu/xsd
+    with the columns and FAILS the xmu-unchanged + equivalence asserts."""
     torch = pytest.importorskip("torch")
-    d_in, hid, d_out = 6, 4, 6
+    torch.manual_seed(0)
+    d_in, hid, d_out, n = 6, 4, 6, 32
     payload = {
         "kind": "mlp",
         "width": hid,
         "state_dict": {
             "0.weight": torch.randn(hid, d_in),
-            "0.bias": torch.zeros(hid),
+            "0.bias": torch.randn(hid),
             "2.weight": torch.randn(d_out, hid),
-            "2.bias": torch.zeros(d_out),
+            "2.bias": torch.randn(d_out),
         },
         "xmu": torch.randn(d_in),
-        "xsd": torch.ones(d_in),
-        "ymu": torch.zeros(d_out),
+        "xsd": torch.rand(d_in) + 0.5,
+        "ymu": torch.randn(d_out),
     }
     shuf = drv._shuffled_nl_payloads((payload,), seed=0)[0]
     w0, w0s = payload["state_dict"]["0.weight"], shuf["state_dict"]["0.weight"]
     assert float(w0.norm()) == pytest.approx(float(w0s.norm()))
     assert not torch.equal(w0, w0s)
-    # xmu permuted CONSISTENTLY with the weight columns: for the permutation p,
-    # shuf column j corresponds to original column p[j] with xmu[p[j]]
-    for j in range(d_in):
-        orig_col = (w0 == w0s[:, j : j + 1]).all(dim=0).nonzero().flatten()
-        assert len(orig_col) == 1
-        assert float(shuf["xmu"][j]) == pytest.approx(float(payload["xmu"][int(orig_col)]))
+    # normalization BOUND to features: standardizer + everything else untouched
+    assert torch.equal(shuf["xmu"], payload["xmu"])
+    assert torch.equal(shuf["xsd"], payload["xsd"])
+    assert torch.equal(shuf["ymu"], payload["ymu"])
+    assert torch.equal(shuf["state_dict"]["0.bias"], payload["state_dict"]["0.bias"])
+    assert torch.equal(shuf["state_dict"]["2.weight"], payload["state_dict"]["2.weight"])
+    # recover the permutation from the SAME seeded rng the helper uses
+    perm = np.random.default_rng([drv.SEED0, 13, 0]).permutation(d_in)
+    assert torch.equal(w0s, w0[:, torch.as_tensor(perm)])
+    # exact equivalence through the REAL apply path (issue779 apply_map):
+    # shuffled-net(x) == original-net on standardized input permuted by the
+    # INVERSE permutation, mapped back through the ORIGINAL standardizer.
+    if str(REPO_ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import issue779_ffc_n1m_fits as n1m
+
+    rng = np.random.default_rng(3)
+    x = rng.normal(size=(n, d_in))
+    dev = torch.device("cpu")
+    out_shuf = n1m.apply_map(shuf, x, dev)
+    xb = (torch.as_tensor(x, dtype=torch.float32) - payload["xmu"]) / payload["xsd"]
+    inv = np.argsort(perm)
+    x2 = (xb[:, torch.as_tensor(inv)] * payload["xsd"] + payload["xmu"]).double().numpy()
+    out_orig_perm = n1m.apply_map(payload, x2, dev)
+    assert np.allclose(out_shuf, out_orig_perm, atol=1e-5), np.abs(out_shuf - out_orig_perm).max()
+    # alignment destroyed: differs from the original net on the SAME input
+    out_orig = n1m.apply_map(payload, x, dev)
+    assert not np.allclose(out_shuf, out_orig, atol=1e-3)
+    # scale-preserved output distribution on standard-normal standardized input
+    z = rng.normal(size=(512, d_in))
+    x_iso = (torch.as_tensor(z, dtype=torch.float32) * payload["xsd"] + payload["xmu"]).numpy()
+    s_shuf = float(np.std(n1m.apply_map(shuf, x_iso, dev)))
+    s_orig = float(np.std(n1m.apply_map(payload, x_iso, dev)))
+    assert 0.7 < s_shuf / s_orig < 1.3, (s_shuf, s_orig)
 
 
 # ---------------------------------------------------------------------------

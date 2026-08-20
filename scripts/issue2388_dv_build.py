@@ -270,7 +270,9 @@ def _agree_frac(surface: str, completions: list[str]) -> tuple[float | None, int
     return max(counts.values()) / len(answers), len(answers)
 
 
-def build_surface_dv(surface: str, gen_root: Path, out_root: Path) -> Path:
+def build_surface_dv(
+    surface: str, gen_root: Path, out_root: Path, *, allow_below_floor: bool = False
+) -> Path:
     """Per-surface labeling.json from ``issue2388_gen.py`` verdict files."""
     # Reuse the pilot's spread_stats (plan: "pilot spread_stats reused").
     from scripts.issue2388_spread_pilot import spread_stats
@@ -358,18 +360,32 @@ def build_surface_dv(surface: str, gen_root: Path, out_root: Path) -> Path:
 
     if surface == "code":
         # Fork-5 REALIZED floor check (the gate's pool arithmetic is an estimate;
-        # this is the binding read on the split actually dealt).
+        # this is the binding read on the split actually dealt). Enforced
+        # REGARDLESS of APPS presence (r2 Codex: a below-floor DV must never
+        # ship silently just because the fallback benchmark is in the roster).
         assert gate_decisions is not None
         floor = int(gate_decisions["code_train_floor_d"])
         n_train = sum(1 for r in rows if r["split"] == "train" and r["dv"] is not None)
         gate_decisions["realized_train_with_dv"] = n_train
-        if n_train < floor and "apps_intro" not in benchmarks:
-            raise RuntimeError(
-                f"realized code train n={n_train} < d={floor} and the APPS fallback is not "
-                "activated — run the fork-5 pilot (issue2388_gen.py --benchmark apps_intro "
-                "--apps-pilot ...; issue2388_code_control.py --benchmarks apps_intro), re-run "
-                "--phase gate, then full apps_intro gen/verify, then rebuild this DV"
-            )
+        gate_decisions["below_floor_disclosed"] = bool(n_train < floor and allow_below_floor)
+        if n_train < floor:
+            if "apps_intro" not in benchmarks:
+                raise RuntimeError(
+                    f"realized code train n={n_train} < d={floor} and the APPS fallback is "
+                    "not activated — fork-5 chain: (1) issue2388_code_control.py "
+                    "--benchmarks apps_intro; (2) re-run issue2388_gen.py --phase gate; "
+                    "(3) pilot gen+verify (--benchmark apps_intro --apps-pilot); (4) re-run "
+                    "--phase gate; (5) FULL apps_intro gen/verify; (6) re-run --phase gate "
+                    "(binding full-pool G3); (7) rebuild this DV"
+                )
+            if not allow_below_floor:
+                raise RuntimeError(
+                    f"realized code train n={n_train} < d={floor} even WITH the APPS "
+                    "fallback activated — the fork-5 fallback is exhausted. Proceeding at "
+                    "reduced n (PCA + dof-capped estimator; plan section 4 risk row) is a "
+                    "DISCLOSED degraded regime: pass --allow-below-floor explicitly "
+                    "(recorded as below_floor_disclosed=true in gate_decisions)"
+                )
 
     full = [r["dv"] for r in rows if r["n_decided"] == k_rollouts]
     stats = spread_stats(full, k_rollouts) if full else None
@@ -418,13 +434,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--surface", choices=sorted(SURFACE_BENCHMARKS))
     ap.add_argument("--gen-root", type=Path, default=GEN_ROOT)
     ap.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
+    ap.add_argument(
+        "--allow-below-floor",
+        action="store_true",
+        help="explicitly accept a below-d code train split AFTER the APPS fallback "
+        "is exhausted (disclosed degraded regime — plan section 4 risk row)",
+    )
     args = ap.parse_args(argv)
 
     if args.from_banked:
         derive_from_banked(args.banked_path, args.out)
         return 0
     if args.surface:
-        build_surface_dv(args.surface, args.gen_root, args.out_root)
+        build_surface_dv(
+            args.surface, args.gen_root, args.out_root, allow_below_floor=args.allow_below_floor
+        )
         return 0
     ap.error("pass --from-banked or --surface")
     return 2

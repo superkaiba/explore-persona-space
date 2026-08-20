@@ -151,12 +151,25 @@ def build_capture_rows(
     return rows, len(over_budget), over_budget
 
 
-def _fingerprint(benchmark: str) -> str:
-    """Machine-stable resume fingerprint: generating parameters, never floats."""
-    return (
+def _fingerprint(benchmark: str, roll_path: Path | None = None) -> str:
+    """Machine-stable resume fingerprint: generating parameters + the ROLLOUT
+    file's content digest (bytes read from disk — hash-safe per the float-key
+    rule). Re-generated rollouts (--regen-cap-hit) then refuse a stale-store
+    resume instead of silently mixing captures (r2 long-loop-restartability).
+    """
+    fp = (
         f"i2388|{benchmark}|k={G.K_ROLLOUTS}|kinds={','.join(CAPTURE_KINDS)}"
         f"|rev={INSTRUCT_REVISION[:12]}"
     )
+    if roll_path is not None and roll_path.exists():
+        import hashlib
+
+        h = hashlib.sha256()
+        with roll_path.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                h.update(chunk)
+        fp += f"|rolls={h.hexdigest()[:12]}"
+    return fp
 
 
 def phase_capture(args) -> None:
@@ -196,7 +209,7 @@ def phase_capture(args) -> None:
         tokenizer=tokenizer,
         device=args.device,
         batch_size=args.batch_size,
-        fingerprint=_fingerprint(benchmark),
+        fingerprint=_fingerprint(benchmark, G._rollouts_path(out_root, benchmark)),
         kinds=CAPTURE_KINDS,
         n_over_budget=n_over,
         n_rollout_files=1,
@@ -235,6 +248,9 @@ def _code_canonicals(benchmark: str) -> dict[str, list[tuple[str, str]]]:
         "bigcodebench_full": "bigcodebench",
         "lcb_v5": "lcb_v5",
         "leetcode": "leetcode",
+        # fork-5 contingency benchmark (r2 bug-class sweep: an activated APPS
+        # tf-margin leg must not KeyError on the canonical map).
+        "apps_intro": "apps_intro",
     }[benchmark]
     return CC.BENCHES[key]["canon"]()
 
@@ -440,6 +456,13 @@ def phase_upload(args) -> None:
     store_prefix = HF_STORE_PREFIX.replace("issue2388_correctness", hf_root, 1)
     dv_prefix = HF_DV_PREFIX.replace("issue2388_correctness", hf_root, 1)
     benchmarks = [args.benchmark] if args.benchmark else sorted(G.SURFACES[args.surface])
+    if not args.benchmark and args.surface == "code":
+        # Contingency sibling (r2 bug-class sweep): a bare `--surface code`
+        # upload must not silently omit an ACTIVATED apps_intro store — include
+        # it whenever its capture manifest exists on disk.
+        apps_manifest = store_root / "apps_intro" / "_capture_manifest.json"
+        if apps_manifest.exists():
+            benchmarks.append("apps_intro")
     expected: list[str] = []
     for benchmark in benchmarks:
         surface = G.surface_of(benchmark)

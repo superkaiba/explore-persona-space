@@ -136,7 +136,15 @@ def _verify(bench: str, fenced: str, item: dict, bcb_python: str | None) -> bool
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.replace("%", "%%"))
-    ap.add_argument("--benchmarks", nargs="+", choices=sorted(BENCHES), default=sorted(BENCHES))
+    ap.add_argument(
+        "--benchmarks",
+        nargs="+",
+        choices=sorted(BENCHES),
+        # Contingency-only apps_intro stays OUT of the default control roster
+        # (r2 Minor 3: a default P0 control run must not download/execute APPS;
+        # fork 5 runs it explicitly via --benchmarks apps_intro).
+        default=sorted(set(BENCHES) - {"apps_intro"}),
+    )
     ap.add_argument("--n-control", type=int, default=N_CONTROL)
     ap.add_argument("--runs", type=int, default=2, help="runs per item (flaky-rate read; G1 <2%%)")
     ap.add_argument("--bcb-python", default=None, help="/opt/bcb-venv/bin/python for BCB items")

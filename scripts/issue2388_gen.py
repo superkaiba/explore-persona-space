@@ -127,6 +127,9 @@ LCB_V5_FILES = ("test.jsonl", "test2.jsonl", "test3.jsonl", "test4.jsonl", "test
 APPS_REVISION = "21e74ddf8de1a21436da12e3e653065c5213e9d1"
 APPS_FILES = ("train.jsonl", "test.jsonl")
 APPS_PILOT_N = 200  # plan fork 5: 200-problem APPS-intro pilot first
+# Pilot verify verdict file (NEVER code/apps_intro.json — the gate's g3_apps
+# full-pool read must be structurally unable to consume a pilot slice).
+APPS_PILOT_REPORT = "apps_intro_pilot.json"
 CODE_TRAIN_FLOOR = 3584  # d — the fork-5 APPS trigger reads the realized count
 
 # Realized-count loader asserts (plan A5/A6 + section 4 pool table). Every count
@@ -696,12 +699,20 @@ def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
       re-read from this run's own verify output (``code/bigcodebench_full.json``,
       asserted non-smoke full-pool) — NEVER ``spread_pilot/`` (its
       ``admissible: true`` flag is harness-contaminated; plan section 7).
-    - fork-5 APPS trigger: est. post-dedup post-BCB-gate code train count
-      < d = 3,584 -> the APPS-intro fallback branch is ACTIVATED.
+    - fork-5 APPS contingency chain (plan section 4 fork 5), STAGED:
+      (a) trigger: est. post-dedup post-BCB-gate code train count < d = 3,584
+      -> ``apps_required``; (b) APPS canonical control 25/25 (each solution
+      run twice, flaky < 2%) -> ``apps_pilot_gen_allowed`` (the 200-problem
+      pilot may generate); (c) pilot verify (``code/apps_intro_pilot.json``,
+      exactly APPS_PILOT_N items, same admissibility rule) ->
+      ``apps_full_gen_allowed`` (the full pool may generate); (d) BINDING
+      full-pool G3 re-read of ``code/apps_intro.json`` (never the pilot
+      slice, never smoke) -> ``apps_activated`` (fit inclusion). Re-run this
+      phase after each stage lands to advance the chain.
 
     Consumers: ``phase_gen``/``phase_verify`` (bigcodebench_full / apps_intro
     refuse without the right verdict) and ``issue2388_dv_build`` (BCB/APPS fit
-    inclusion).
+    inclusion keys on ``apps_activated`` ONLY).
     """
     dedup_p = out_root / "code" / "dedup_report.json"
     if not dedup_p.exists():
@@ -711,14 +722,14 @@ def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
 
     ctrl_p = Path(control_report) if control_report else out_root / CONTROL_REPORT
     g1: dict = {"available": ctrl_p.exists(), "path": str(ctrl_p)}
+    apps_ctrl: dict | None = None
     if ctrl_p.exists():
         ctrl = json.loads(ctrl_p.read_text())["benchmarks"]
         bcb = ctrl.get("bigcodebench")
         g1["harness_ok"] = bool(bcb["harness_ok"]) if bcb else None
         g1["flaky_mismatch_fraction"] = bcb.get("flaky_mismatch_fraction") if bcb else None
-        g1["apps_harness_ok"] = (
-            bool(ctrl["apps_intro"]["harness_ok"]) if "apps_intro" in ctrl else None
-        )
+        apps_ctrl = ctrl.get("apps_intro")
+        g1["apps_harness_ok"] = bool(apps_ctrl["harness_ok"]) if apps_ctrl else None
     else:
         g1["harness_ok"] = None
         g1["apps_harness_ok"] = None
@@ -766,14 +777,77 @@ def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
     else:
         est_train = est["est_train_with_bcb"] if bcb_fit_allowed else est["est_train_without_bcb"]
         apps_required = est_train < CODE_TRAIN_FLOOR
-    apps_activated = bool(apps_required) and bool(g1.get("apps_harness_ok"))
+
+    # --- fork-5 APPS chain stage (b): canonical control, 25/25 twice, flaky<2%
+    # (STRICTER than the control report's own >=0.90 harness_ok — the plan
+    # names 25/25 verbatim for the APPS contingency).
+    g1_apps: dict = {"available": apps_ctrl is not None}
+    if apps_ctrl is not None:
+        g1_apps["n_control"] = apps_ctrl.get("n_control")
+        g1_apps["best_pass_rate"] = apps_ctrl.get("best_pass_rate")
+        g1_apps["runs_per_item"] = apps_ctrl.get("runs_per_item")
+        g1_apps["flaky_mismatch_fraction"] = apps_ctrl.get("flaky_mismatch_fraction")
+        g1_apps["control_25_25"] = bool(
+            int(apps_ctrl.get("n_control") or 0) >= 25
+            and float(apps_ctrl.get("best_pass_rate") or 0.0) == 1.0
+            and int(apps_ctrl.get("runs_per_item") or 0) >= 2
+            and float(apps_ctrl.get("flaky_mismatch_fraction", 1.0)) < 0.02
+        )
+    else:
+        g1_apps["control_25_25"] = None
+
+    # --- fork-5 stage (c): the 200-problem pilot verdict (written by
+    # phase_verify --apps-pilot to its OWN path, never code/apps_intro.json).
+    pilot_p = out_root / "code" / APPS_PILOT_REPORT
+    apps_pilot: dict = {"available": pilot_p.exists(), "provenance": str(pilot_p)}
+    if pilot_p.exists():
+        pp = json.loads(pilot_p.read_text())
+        pilot_scope_ok = (
+            bool(pp.get("pilot")) and (not pp.get("smoke")) and int(pp["n_items"]) == APPS_PILOT_N
+        )
+        apps_pilot["n_items"] = int(pp["n_items"])
+        apps_pilot["pilot_scope_ok"] = pilot_scope_ok
+        apps_pilot["admissible"] = bool(pp["admissible"]) if pilot_scope_ok else None
+    else:
+        apps_pilot["pilot_scope_ok"] = None
+        apps_pilot["admissible"] = None
+
+    # --- fork-5 stage (d): BINDING full-pool G3 for APPS (plan section 7:
+    # "BCB/APPS fit inclusion keys ONLY on the fresh full-pool G3 re-read").
+    apps_spread_p = out_root / "code" / "apps_intro.json"
+    g3_apps: dict = {"available": apps_spread_p.exists(), "provenance": str(apps_spread_p)}
+    if apps_spread_p.exists():
+        asp = json.loads(apps_spread_p.read_text())
+        # APPS has no pinned count (EXPECTED_COUNTS is None — contingency
+        # pool); a non-pilot non-smoke verify is full-pool BY CONSTRUCTION
+        # (phase_verify refuses when any loader item lacks rollouts), and the
+        # > APPS_PILOT_N assert refuses a pilot-sized file at this path.
+        apps_full_pool = (
+            (not asp.get("smoke")) and (not asp.get("pilot")) and int(asp["n_items"]) > APPS_PILOT_N
+        )
+        g3_apps["full_pool"] = bool(apps_full_pool)
+        g3_apps["n_items"] = int(asp["n_items"])
+        g3_apps["admissible"] = bool(asp["admissible"]) if apps_full_pool else None
+    else:
+        g3_apps["full_pool"] = None
+        g3_apps["admissible"] = None
+
+    apps_pilot_gen_allowed = bool(apps_required) and bool(g1_apps["control_25_25"])
+    apps_full_gen_allowed = apps_pilot_gen_allowed and bool(apps_pilot["admissible"])
+    # FIT inclusion (dv_build): the WHOLE chain incl. the binding full-pool G3.
+    apps_activated = apps_full_gen_allowed and bool(g3_apps["admissible"])
 
     verdict = {
         "g1": g1,
         "g3_bcb": g3,
+        "g1_apps": g1_apps,
+        "apps_pilot": apps_pilot,
+        "g3_apps": g3_apps,
         "bcb_gen_allowed": bcb_gen_allowed,
         "bcb_fit_allowed": bcb_fit_allowed,
         "apps_required": apps_required,
+        "apps_pilot_gen_allowed": apps_pilot_gen_allowed,
+        "apps_full_gen_allowed": apps_full_gen_allowed,
         "apps_activated": apps_activated,
         "pool_arithmetic": est,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -788,13 +862,15 @@ def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
     os.replace(tmp, path)
     print(
         f"[gate] bcb_gen_allowed={bcb_gen_allowed} bcb_fit_allowed={bcb_fit_allowed} "
-        f"apps_required={apps_required} apps_activated={apps_activated} -> {path}",
+        f"apps_required={apps_required} apps_pilot_gen_allowed={apps_pilot_gen_allowed} "
+        f"apps_full_gen_allowed={apps_full_gen_allowed} apps_activated={apps_activated} "
+        f"-> {path}",
         flush=True,
     )
     return verdict
 
 
-def _require_gate_for(benchmark: str, out_root: Path) -> None:
+def _require_gate_for(benchmark: str, out_root: Path, *, apps_pilot: bool = False) -> None:
     """BCB/APPS enter generation ONLY behind the recorded gate verdicts."""
     if benchmark == "bigcodebench_full":
         gate = load_gate(out_root)
@@ -806,10 +882,22 @@ def _require_gate_for(benchmark: str, out_root: Path) -> None:
             )
     elif benchmark == "apps_intro":
         gate = load_gate(out_root)
-        if not gate.get("apps_required"):
+        if apps_pilot:
+            if not gate.get("apps_pilot_gen_allowed"):
+                raise RuntimeError(
+                    "fork-5: the APPS pilot needs apps_required=True AND the APPS "
+                    "canonical control 25/25 twice with flaky < 2% "
+                    "(apps_pilot_gen_allowed is false/unresolved in "
+                    f"{gate_path(out_root)}) — run issue2388_code_control.py "
+                    "--benchmarks apps_intro, then re-run --phase gate"
+                )
+        elif not gate.get("apps_full_gen_allowed"):
             raise RuntimeError(
-                "fork-5: apps_intro is contingency-only and the APPS trigger is not "
-                f"recorded true in {gate_path(out_root)}"
+                "fork-5: FULL apps_intro generation needs the ADMISSIBLE 200-problem "
+                "pilot verdict on top of the trigger + control "
+                "(apps_full_gen_allowed is false/unresolved in "
+                f"{gate_path(out_root)}) — run --phase gen/verify --benchmark "
+                "apps_intro --apps-pilot, then re-run --phase gate"
             )
 
 
@@ -840,8 +928,10 @@ def _sandbox_env(tmpdir: str) -> dict[str, str]:
 
 def _unshare_net_available() -> bool:
     """Once-per-process probe: unprivileged user+net namespaces (``unshare -rn``)
-    give the sandbox NETWORK ISOLATION for free; unavailable inside many
-    containers (recorded residual — persisted concern sandbox-network-residual)."""
+    give the sandbox NETWORK ISOLATION; when unavailable the sandbox FAIL-LOUDS
+    (never a silent degrade — r2 Codex Critical 2) unless the operator sets
+    ``EPM_I2388_SANDBOX_ALLOW_NET=1`` explicitly. Filesystem-namespace + seccomp
+    residuals stay recorded (persisted concern sandbox-network-residual)."""
     global _UNSHARE_NET
     if _UNSHARE_NET is None:
         try:
@@ -857,6 +947,29 @@ def _unshare_net_available() -> bool:
     return _UNSHARE_NET
 
 
+_SANDBOX_ALLOW_NET_ENV = "EPM_I2388_SANDBOX_ALLOW_NET"
+
+
+def _require_sandbox_net_isolation() -> None:
+    """Fail LOUD when network isolation cannot be established (no silent degrade).
+
+    Called once per code-verify phase entry (before any pool worker spends)
+    AND per sandboxed execution (defense in depth — pool workers re-probe in
+    their own process). The explicit env override accepts network-visible
+    execution and is RECORDED in the verify payload as
+    ``sandbox_net_isolation: false``.
+    """
+    if _unshare_net_available() or os.environ.get(_SANDBOX_ALLOW_NET_ENV) == "1":
+        return
+    raise RuntimeError(
+        "sandbox: unprivileged user+net namespaces are unavailable on this host "
+        "(`unshare -rn` failed) — network isolation for model-generated code cannot "
+        f"be established. Set {_SANDBOX_ALLOW_NET_ENV}=1 to explicitly accept "
+        "network-visible execution (recorded as sandbox_net_isolation=false in the "
+        "verify payload; persisted concern sandbox-network-residual)."
+    )
+
+
 def _run_sandboxed(
     argv: list[str],
     *,
@@ -869,14 +982,18 @@ def _run_sandboxed(
     Scrubbed allowlisted env (no API/HF tokens), isolated writable
     HOME/TMPDIR/cwd, CPU + file-size + address-space rlimits, its own process
     group (killpg on timeout — grandchildren cannot outlive the verdict), and
-    network off via ``unshare -rn`` where user namespaces allow. NOT a
-    security boundary against a targeted adversary (no seccomp) — residual
-    recorded as a persisted concern. Returns (returncode, stdout); timeout ->
+    network off via ``unshare -rn`` — MANDATORY: when user namespaces are
+    unavailable this RAISES instead of silently degrading (override:
+    ``EPM_I2388_SANDBOX_ALLOW_NET=1``, recorded in the verify payload). NOT a
+    security boundary against a targeted adversary (no filesystem namespace,
+    no seccomp) — residual recorded as a persisted concern
+    (sandbox-network-residual). Returns (returncode, stdout); timeout ->
     (-1, "").
     """
     import resource
     import signal
 
+    _require_sandbox_net_isolation()  # fail-loud, never a silent net-visible run
     if _unshare_net_available():
         argv = ["unshare", "-r", "-n", *argv]
 
@@ -1184,10 +1301,12 @@ def _load_finish_reasons(path: Path) -> dict[str, list[str]]:
 def _check_genmeta(roll_path: Path, benchmark: str) -> None:
     """Resume-identity sidecar: the output-affecting generating params.
 
-    A resumed run whose immutable params (model/K/temp/top_p/seed) drifted
-    would silently mix regimes — raise instead (r1: resume keyed on item_id
-    only). max_tokens is deliberately NOT in the immutable set (the cap-hit
-    re-generation path raises it per wave; it is recorded per ROW instead).
+    A resumed run whose immutable params (model/K/temp/top_p/seed/base cap)
+    drifted would silently mix regimes — raise instead (r1: resume keyed on
+    item_id only). The BASE cap IS immutable (r2 long-loop-restartability: a
+    constant edit must refuse resume); the --regen-cap-hit path raises the
+    REALIZED per-wave max_tokens locally without touching the base constant,
+    and records it per ROW.
     """
     meta_path = roll_path.with_name(f"{benchmark}_genmeta.json")
     current = {
@@ -1200,7 +1319,7 @@ def _check_genmeta(roll_path: Path, benchmark: str) -> None:
     }
     if meta_path.exists():
         prior = json.loads(meta_path.read_text())
-        immutable = {k: v for k, v in current.items() if k != "base_max_tokens"}
+        immutable = dict(current)
         prior_immutable = {k: prior.get(k) for k in immutable}
         if prior_immutable != immutable:
             raise RuntimeError(
@@ -1270,7 +1389,7 @@ def phase_gen(
     apps_pilot: bool = False,
 ) -> None:
     """K sampled rollouts per item; chunked vLLM generate; per-chunk checkpoint."""
-    _require_gate_for(benchmark, out_root)
+    _require_gate_for(benchmark, out_root, apps_pilot=apps_pilot)
     items = LOADERS[benchmark]()
     _assert_unique_ids(items, benchmark)
     if benchmark == "lcb_v5":
@@ -1375,12 +1494,29 @@ def phase_gen(
 
 
 def phase_verify(
-    benchmark: str, out_root: Path, *, smoke: bool, bcb_python: str | None, workers: int
+    benchmark: str,
+    out_root: Path,
+    *,
+    smoke: bool,
+    bcb_python: str | None,
+    workers: int,
+    apps_pilot: bool = False,
 ) -> None:
-    """Programmatic verdicts for every stored rollout; writes the gen JSON."""
+    """Programmatic verdicts for every stored rollout; writes the gen JSON.
+
+    ``apps_pilot`` (fork 5): verify the SAME 200-item slice the pilot gen
+    produced and write the verdict to its OWN file (``APPS_PILOT_REPORT``) —
+    the gate's binding full-pool g3_apps read must be structurally unable to
+    consume a pilot slice.
+    """
+    if benchmark in CODE_BENCHMARKS:
+        _require_sandbox_net_isolation()  # fail BEFORE dispatching pool workers
     items = LOADERS[benchmark]()
     if benchmark == "lcb_v5":
         items = _apply_dedup(items, out_root)
+    if benchmark == "apps_intro" and apps_pilot:
+        items = items[:APPS_PILOT_N]
+        print(f"[verify] APPS PILOT: {len(items)} items (fork-5 pilot slice)", flush=True)
     if smoke:
         items = items[:SMOKE_N]
     rolls = _load_done_rollouts(_rollouts_path(out_root, benchmark))
@@ -1462,13 +1598,20 @@ def phase_verify(
         "stats_full_k": stats,
         "admissible": bool(stats and admissible(stats)),
         "smoke": smoke,
+        "pilot": bool(benchmark == "apps_intro" and apps_pilot),
+        # Persisted so control-vs-production network-isolation drift across
+        # hosts is observable post-hoc (r2 nit; None on non-executing surfaces).
+        "sandbox_net_isolation": (
+            _unshare_net_available() if benchmark in CODE_BENCHMARKS else None
+        ),
         "items": out_items,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
     payload.update(as_metadata_dict(git_provenance(), phase=f"gen-verify-{benchmark}"))
-    out_path = out_root / surface_of(benchmark) / f"{benchmark}.json"
+    out_name = APPS_PILOT_REPORT if payload["pilot"] else f"{benchmark}.json"
+    out_path = out_root / surface_of(benchmark) / out_name
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_path.with_name(out_path.name + ".tmp")
     tmp.write_text(json.dumps(payload))
@@ -1600,10 +1743,14 @@ def main(argv: list[str] | None = None) -> int:
     out_root = args.out_root
     if args.smoke and out_root == OUT_ROOT:
         out_root = Path(str(OUT_ROOT) + "_smoke")  # smoke never overwrites production paths
+    # Bare-default roster EXCLUDES the contingency benchmark (r2 Critical 2:
+    # apps_intro sorts before bigcodebench_full, so a no-flag run would crash
+    # at _require_gate_for before generating anything; fork 5 runs it
+    # explicitly via --benchmark apps_intro).
     benches = (
         [args.benchmark]
         if args.benchmark
-        else (SURFACES[args.surface] if args.surface else sorted(LOADERS))
+        else (SURFACES[args.surface] if args.surface else sorted(set(LOADERS) - {"apps_intro"}))
     )
     phases = list(PHASES) if args.phase == "all" else [args.phase]
     try:
@@ -1630,6 +1777,7 @@ def main(argv: list[str] | None = None) -> int:
                         smoke=args.smoke,
                         bcb_python=args.bcb_python,
                         workers=args.workers,
+                        apps_pilot=args.apps_pilot,
                     )
                 elif phase == "upload":
                     phase_upload(bench, out_root, smoke=args.smoke)

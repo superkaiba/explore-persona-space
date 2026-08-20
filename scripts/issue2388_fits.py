@@ -62,7 +62,9 @@ import numpy as np  # noqa: E402
 
 from explore_persona_space.experiments.issue_1739 import fits as F  # noqa: E402
 from explore_persona_space.experiments.issue_1739.arms import (  # noqa: E402
+    _pearson_rows,  # batched-bootstrap building block (same math as spearman_rows)
     auroc_rows,
+    rank_rows,
     spearman_rows,
 )
 from explore_persona_space.experiments.issue_1739.constants import (  # noqa: E402
@@ -100,6 +102,7 @@ POOL_SIZE = {"qa": 8000, "math": 8000, "mcq": 8000, "code": None}  # None = real
 # 1-sentence encode smoke-verified on the VM (report section (c)).
 ENCODER_ID = "sentence-transformers/all-mpnet-base-v2"
 FITS_ROOT = Path("eval_results/issue_2388/fits")
+MAPS_OUT = Path("eval_results/issue_2388/maps")
 DV_ROOT = Path("eval_results/issue_2388/dv")
 SEED0 = 2388
 # rung-1 definitions (plan section 4 "Splits and ladder")
@@ -831,11 +834,21 @@ def _load_map(maps_dir: Path, key: str, *, device: str = "cpu"):
 
 
 def _shuffled_nl_payloads(payloads: tuple, seed: int) -> tuple:
-    """Input-axis permutation of each layer's MLP payload (bl_shufmap_mlp).
+    """Input-column weight shuffle of each layer's MLP payload (bl_shufmap_mlp).
 
-    Permutes the FIRST linear layer's input columns together with the input
-    standardizer (xmu/xsd) — the MLP analogue of the linear control's
-    input-dim row permutation (capacity + norms preserved EXACTLY; asserted).
+    Permutes ONLY the first linear layer's input columns; the input
+    standardizer (xmu/xsd) stays BOUND to the actual features — the registered
+    input-column weight shuffle destroys the learned feature<->weight
+    ALIGNMENT while every standardized input keeps its own (unit) scale, so
+    per-layer output distributions are scale-preserved (r2 Codex
+    shuffled-mlp-normalization-misaligned: co-permuting xmu/xsd standardized
+    each raw feature with ANOTHER feature's mean/std — arbitrary scale/offset
+    artifacts, not a weight shuffle). Exactly the MLP analogue of the linear
+    control's input-dim row permutation (``shuffled_map_weights``, which
+    permutes weight ROWS with the standardizer untouched); capacity + weight
+    norms preserved EXACTLY (asserted). Equivalence: the shuffled payload
+    applied to x equals the ORIGINAL net applied to the standardized input
+    permuted by the inverse permutation (pinned test).
     """
     rng = np.random.default_rng([SEED0, 13, int(seed)])
     out = []
@@ -850,8 +863,6 @@ def _shuffled_nl_payloads(payloads: tuple, seed: int) -> tuple:
         ) < 1e-6 * float(w0.norm())
         q = dict(p)
         q["state_dict"] = {**sd, "0.weight": w0_shuf}
-        q["xmu"] = p["xmu"][..., perm]
-        q["xsd"] = p["xsd"][..., perm]
         out.append(q)
     return tuple(out)
 
@@ -1151,6 +1162,18 @@ POOLING_OF_ARM = {
 }
 
 
+def _file_sha(path: Path) -> str | None:
+    """First 12 hex of a file's sha256 (bytes read from disk — hash-safe);
+    None when absent (availability itself is part of the pinned regime)."""
+    if not path.exists():
+        return None
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()[:12]
+
+
 def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the arm registry
     surface = args.surface
     if not surface:
@@ -1209,12 +1232,20 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
     # re-parameterized rerun into the same root would silently reuse stale
     # cells. The sentinel pins the regime; a mismatch refuses (fresh root or
     # --force overwrites the sentinel alongside the cells it will recompute).
+    # UPSTREAM digests (r2 long-loop-restartability): the labeling + map
+    # manifest are file bytes read from disk (hash-safe per the float-key
+    # rule) — a regenerated DV or refit map set refuses a stale-cell resume.
+    # map_cell / qa_disjoint / budgets / draws are DELIBERATELY absent: they
+    # are keyed in the cell filenames (tag_prefix + per-cell tags), so
+    # incremental fills into one root stay legal.
     regime = {
         "n_null": int(n_null),
         "layers": list(_layer_tuple(args)),
         "hidden_dim": int(args.hidden_dim),
         "dof_cap": DOF_CAP,
         "smoke": bool(args.smoke),
+        "labeling_sha": _file_sha(Path(args.dv_root) / surface / "labeling.json"),
+        "map_manifest_sha": _file_sha(Path(args.maps_out) / "key_manifest.json"),
     }
     sent_p = out_root / "sweep_regime.json"
     if sent_p.exists() and not args.force:
@@ -1808,6 +1839,41 @@ def phase_select(args) -> None:
     print(f"[select] aggregate: {len(arm_rows)} rows -> {agg_path}", flush=True)
 
 
+def _boot_spearman_draws(
+    preds_mat: np.ndarray, y_true: np.ndarray, idx_draws: list[np.ndarray]
+) -> np.ndarray:
+    """Batched per-draw Spearman over group-resample index draws.
+
+    Rank statistics batch along the DRAW axis (vectorize-many-cell-fits.md —
+    the r2 fit-loop-not-batched bootstrap leg): draws are grouped by realized
+    resample LENGTH (group resampling with replacement concatenates
+    variable-size groups), and each same-length block is ranked + correlated
+    as ONE chunked batched call — the same ``rank_rows``/``_pearson_rows``
+    arithmetic per row as the serial ``spearman_rows`` loop (bitwise
+    serial-parity pinned). MEASURED at production shape (n=2,500, 13 arms,
+    2,000 draws, this VM): the rank statistic itself is argsort-FLOP-bound at
+    m=2,500, so draw-batching the STAT is ~par with serial (chunk 128 best;
+    the dominant serial overhead was the per-draw tiny-array concatenation in
+    the CALLER's index construction, vectorized there). Chunk sized so the
+    (chunk, n_arms, m) fp64 rank tensor stays ~<=32 MB (the measured cache
+    sweet spot; larger chunks measured SLOWER).
+    """
+    n_arms = preds_mat.shape[0]
+    boot = np.empty((len(idx_draws), n_arms))
+    by_len: dict[int, list[int]] = {}
+    for b, idx in enumerate(idx_draws):
+        by_len.setdefault(len(idx), []).append(b)
+    for m, bs in sorted(by_len.items()):
+        chunk = max(1, int(32e6 // max(1, n_arms * m * 8)))
+        for lo in range(0, len(bs), chunk):
+            sub = bs[lo : lo + chunk]
+            idx_mat = np.stack([idx_draws[b] for b in sub])  # (B, m)
+            g = np.moveaxis(preds_mat[:, idx_mat], 0, 1)  # (B, A, m)
+            yv = y_true[idx_mat]  # (B, m)
+            boot[sub] = _pearson_rows(rank_rows(g), rank_rows(yv)[:, None, :])
+    return boot
+
+
 def phase_bootstrap(args) -> None:
     """Paired group bootstrap from stored preds: identical group resample
     shared across compared arms per (budget, draw, eval)."""
@@ -1836,31 +1902,47 @@ def phase_bootstrap(args) -> None:
                 per_eval[r["eval"]][2].append(r["y_pred"])
         cells.setdefault((budget, draw), {})[arm] = per_eval
     # Per-unit checkpoint (code-style intra-phase grain: > 50 (budget, draw,
-    # eval) units) + resume keyed on the output-affecting regime (n_boot).
+    # eval) units) + resume keyed on the output-affecting regime: n_boot AND
+    # the unit's ARM SET (r2 Minor 4 / long-loop-restartability — a re-run
+    # after the arm roster changed must recompute, never silently keep old
+    # units missing the new arm; the superseding row is appended, and the
+    # last matching line per key wins at load).
     cells_path = out_root / "bootstrap_cells.jsonl"
-    done_keys: set[tuple] = set()
-    persisted: list[dict] = []
+    persisted_by_key: dict[tuple, dict] = {}
     if cells_path.exists() and not args.force:
         with cells_path.open(encoding="utf-8") as fh:
             for line in fh:
                 if line.strip():
                     r = json.loads(line)
                     if int(r.get("n_boot", -1)) == int(args.n_boot):
-                        done_keys.add((r["budget"], int(r["draw"]), r["eval"]))
-                        persisted.append(r)
+                        persisted_by_key[(r["budget"], int(r["draw"]), r["eval"])] = r
     elif cells_path.exists() and args.force:
         cells_path.unlink()
-    out = list(persisted)
+    out: list[dict] = []
+    consumed: set[tuple] = set()
     t0 = time.time()
     n_units = 0
+    total_units = sum(len(arms[next(iter(arms))]) for arms in cells.values())
     for (budget, draw), arms in sorted(cells.items()):
         # A PER-UNIT rng (seeded on the unit key) makes the resample identical
         # whether the unit runs fresh or after a resume (a shared sequential
         # rng would give resume-order-dependent draws).
         ref_arm = next(iter(arms))
+        arm_names = sorted(arms)
         for ev in arms[ref_arm]:
-            if (budget, int(draw), ev) in done_keys:
-                continue
+            key = (budget, int(draw), ev)
+            prior = persisted_by_key.get(key)
+            if prior is not None:
+                if prior.get("arms") == arm_names:
+                    out.append(prior)
+                    consumed.add(key)
+                    continue
+                print(
+                    f"[bootstrap] RECOMPUTE {key}: persisted arms {prior.get('arms')} != "
+                    f"current {arm_names} (arm-roster change invalidates the unit)",
+                    flush=True,
+                )
+                consumed.add(key)
             rng = np.random.default_rng(
                 [SEED0, 17, _budget_seed(budget), int(draw), _stable_seed(ev)]
             )
@@ -1876,7 +1958,6 @@ def phase_bootstrap(args) -> None:
             groups = np.array([boot_group[c] for c in ids])
             uniq = np.unique(groups)
             members = {g: np.flatnonzero(groups == g) for g in uniq}
-            arm_names = sorted(arms)
             y_true = np.array(arms[ref_arm][ev][1])
             preds_mat = np.stack(
                 [
@@ -1885,11 +1966,26 @@ def phase_bootstrap(args) -> None:
                 ],
                 axis=0,
             )
-            boot = np.empty((args.n_boot, len(arm_names)))
-            for b in range(args.n_boot):
+            # rng stream: IDENTICAL choice calls in the same order as the old
+            # serial loop. The per-draw index build is a VECTORIZED multi-range
+            # gather — the old `np.concatenate([members[g] for g in gs])` was
+            # the measured hot spot (singleton groups: 2,500 tiny concats per
+            # draw ~ 57% of unit wall); the statistic batches along the draw
+            # axis in _boot_spearman_draws (bitwise-parity pinned).
+            member_list = [members[g] for g in uniq]
+            flat_members = np.concatenate(member_list)
+            sizes = np.array([len(mem) for mem in member_list])
+            grp_starts = np.concatenate(([0], np.cumsum(sizes)[:-1]))
+            idx_draws = []
+            for _b in range(args.n_boot):
                 gs = rng.choice(uniq, size=len(uniq), replace=True)
-                idx = np.concatenate([members[g] for g in gs])
-                boot[b] = spearman_rows(preds_mat[:, idx], y_true[idx])
+                pos = np.searchsorted(uniq, gs)  # uniq is sorted (np.unique)
+                ln = sizes[pos]
+                tot = int(ln.sum())
+                run_starts = np.repeat(grp_starts[pos], ln)
+                within = np.arange(tot) - np.repeat(np.cumsum(ln) - ln, ln)
+                idx_draws.append(flat_members[run_starts + within])
+            boot = _boot_spearman_draws(preds_mat, y_true, idx_draws)
             unit = {
                 "budget": budget,
                 "draw": int(draw),
@@ -1916,11 +2012,17 @@ def phase_bootstrap(args) -> None:
             out.append(unit)
             n_units += 1
             print(
-                f"[bootstrap] unit {n_units} L{budget} draw{draw} {ev}: "
+                f"[bootstrap] unit {n_units}/{total_units} L{budget} draw{draw} {ev}: "
                 f"{len(arm_names)} arms n_groups={len(uniq)} "
                 f"elapsed={time.time() - t0:.0f}s",
                 flush=True,
             )
+    # Persisted units whose (budget, draw, eval) no longer exists in the
+    # current preds set are retained in the summary unchanged (prior
+    # behaviour); superseded stale-arm rows are NOT (consumed above).
+    for key, r in persisted_by_key.items():
+        if key not in consumed:
+            out.append(r)
     path = out_root / "bootstrap_summary.json"
     path.write_text(
         json.dumps(
@@ -2111,11 +2213,22 @@ def h3_reference_verify(banked_root: Path) -> dict:
     return report
 
 
+def _h3_root(args) -> Path:
+    """h3_recompute sibling of the fits root — smoke gets its OWN sibling.
+
+    The fits-root smoke rebind changes only the LEAF (``fits_smoke``), so a
+    parent-derived h3 path would still land canonical under --smoke (r2
+    fits-smoke-local-outroot); suffix the sibling name explicitly instead.
+    """
+    name = "h3_recompute" + ("_smoke" if getattr(args, "smoke", False) else "")
+    return Path(args.fits_root).parent / name
+
+
 def phase_h3(args) -> None:
     """G4 asserts + stage ordering. Composes the ported issue1739_fits.py
     invocations; records the stage-1 verdict BEFORE any correctness-side read."""
 
-    h3_root = Path(args.fits_root).parent / "h3_recompute"
+    h3_root = _h3_root(args)
     behaviors = args.behaviors or list(H3_BEHAVIORS)
     # G4(a): registered budget exactly 2,500 on both sides — this driver only
     # ever composes --budgets 2500 for the capped legs (asserted here).
@@ -2344,7 +2457,7 @@ def phase_h3_gap(args) -> None:
             if allp.exists():
                 gaps[behavior] = h3_gap_from_all_arms(allp, budget=H3_BUDGET, u_rung=args.h3_u_rung)
         out["recompute_gaps"] = gaps
-    path = Path(args.fits_root).parent / "h3_recompute" / "gap_report.json"
+    path = _h3_root(args) / "gap_report.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=2, default=float))
     print(f"[h3-gap] -> {path}", flush=True)
@@ -2464,7 +2577,7 @@ def phase_upload(args) -> None:
             jobs.append((sub, f"{hf_root}/fits/{sub.name}"))
         for f in sorted(p for p in fits_root.iterdir() if p.is_file()):
             jobs.append((f, f"{hf_root}/fits/{f.name}"))
-    h3_root = fits_root.parent / "h3_recompute"
+    h3_root = _h3_root(args)
     if h3_root.exists() and any(h3_root.iterdir()):
         jobs.append((h3_root, f"{hf_root}/h3_recompute"))
     if not jobs:
@@ -2561,7 +2674,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dv-root", default=str(DV_ROOT))
     ap.add_argument("--gen-root", default="eval_results/issue_2388/gen")
     ap.add_argument("--fits-root", default=str(FITS_ROOT))
-    ap.add_argument("--maps-out", default="eval_results/issue_2388/maps")
+    ap.add_argument("--maps-out", default=str(MAPS_OUT))
     ap.add_argument("--store-root", default="/workspace/store_2388")
     ap.add_argument("--qa-store-dir", default="/workspace/store")
     ap.add_argument("--u-store-dir", default="/workspace/u_store")
@@ -2631,6 +2744,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.smoke:
         args.n_null = min(args.n_null, 5)
         args.n_boot = min(args.n_boot, 50)
+        # LOCAL smoke out-roots (r2 Codex Critical 3 / fits-smoke-local-outroot):
+        # a default --smoke run must never write the canonical fits/maps roots
+        # (same convention as gen/capture; the HF side already _smoke-suffixes).
+        # The h3_recompute sibling is smoke-suffixed by _h3_root(args).
+        if args.fits_root == str(FITS_ROOT):
+            args.fits_root = str(FITS_ROOT) + "_smoke"
+        if args.maps_out == str(MAPS_OUT):
+            args.maps_out = str(MAPS_OUT) + "_smoke"
     PHASES[args.phase](args)
     sys.stdout.flush()
     sys.stderr.flush()
