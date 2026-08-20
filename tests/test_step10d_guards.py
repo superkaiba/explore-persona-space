@@ -329,6 +329,208 @@ def test_guard4_worktree_missing_exits_2(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Guard 4 --main-sha tip contract (#2428)
+#
+# The Step 10d caller passes the PINNED origin/main TIP (its Guard-1 capture)
+# via --main-sha; the helper derives the merge-base FROM it. Pre-#2428 the
+# helper consumed the flag value AS the merge-base, so the caller's tip made
+# every main-side diff tip..tip (empty) and Guard 4 passed vacuously on every
+# branch. T1-T9 pin the corrected contract; T7 is the discriminator that
+# kills the flag-IGNORING implementation class.
+# ---------------------------------------------------------------------------
+
+
+def test_guard4_refuses_with_caller_tip_flag_form(tmp_path):
+    """#2428 criterion 2's pin: the caller's literal flag form REFUSES.
+
+    Invokes Guard 4 exactly as ``steps/18-step-10d.md`` does — ``--main-sha
+    $(git rev-parse origin/main)`` — on the lost-update fixture arm. Pre-fix
+    the helper read the tip as the MERGE-BASE, the tip..tip add-set was
+    empty, and this vacuously passed (the #2212 incident shape).
+    """
+    scratch, wt = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=True)
+    tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+    proc = _run_script(scratch, "2428", "--guard", "4", "--main-sha", tip)
+    assert proc.returncode == 1, (proc.stdout, proc.stderr)
+    kv = _parse_kv(proc.stdout)
+    assert kv.get("GUARD4") == "refused", proc.stdout
+    assert GUARD4_SCOPED_FILE in kv.get("LOST_UPDATE_PATHS", ""), proc.stdout
+    assert "LOST-UPDATE REFUSAL (Guard 4, #1713)" in proc.stderr, proc.stderr
+
+
+def test_guard4_passes_with_caller_tip_flag_form_when_no_drop(tmp_path):
+    """Converged branch + the caller's flag form: pass (no over-correction).
+
+    Guards against a "fix" that refuses unconditionally — such an
+    implementation would satisfy the refusal pin alone.
+    """
+    scratch, wt = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=False)
+    tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+    proc = _run_script(scratch, "2428", "--guard", "4", "--main-sha", tip)
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    kv = _parse_kv(proc.stdout)
+    assert kv.get("GUARD4") == "pass", proc.stdout
+    assert "LOST_UPDATE_PATHS" not in kv, proc.stdout
+
+
+def test_guard4_flag_and_noflag_verdicts_agree(tmp_path):
+    """#2428 criterion 1: pinned and no-flag forms are verdict-equivalent.
+
+    Runs BOTH fixture arms through both forms and asserts identical rc,
+    ``GUARD4``, and ``LOST_UPDATE_PATHS``. NOTE: this does NOT by itself kill
+    the vacuity class — the fixture never advances origin/main between
+    capture and invocation, so a flag-IGNORING implementation also satisfies
+    it; the discriminator is ``test_guard4_honors_pin_older_than_live_main``.
+    """
+    for arm, drop in (("drop", True), ("keep", False)):
+        arm_dir = tmp_path / arm
+        arm_dir.mkdir()
+        scratch, wt = _seed_guard4_fixture(arm_dir, 2428, drop_main_lines=drop)
+        tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+        pinned = _run_script(scratch, "2428", "--guard", "4", "--main-sha", tip)
+        noflag = _run_script(scratch, "2428", "--guard", "4")
+        assert pinned.returncode == noflag.returncode, (arm, pinned.stdout, noflag.stdout)
+        kv_pinned = _parse_kv(pinned.stdout)
+        kv_noflag = _parse_kv(noflag.stdout)
+        assert kv_pinned.get("GUARD4") == kv_noflag.get("GUARD4"), (
+            arm,
+            pinned.stdout,
+            noflag.stdout,
+        )
+        assert kv_pinned.get("LOST_UPDATE_PATHS") == kv_noflag.get("LOST_UPDATE_PATHS"), (
+            arm,
+            pinned.stdout,
+            noflag.stdout,
+        )
+
+
+def test_guard4_emits_merge_base_not_the_passed_tip(tmp_path):
+    """The helper DERIVES the base — ``GUARD4_MERGE_BASE`` != the passed tip.
+
+    On the drop fixture the derived base must equal the worktree's own
+    ``git merge-base HEAD origin/main`` and differ from the tip passed in.
+    """
+    scratch, wt = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=True)
+    tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+    mb = _git(wt, "merge-base", "HEAD", "origin/main").stdout.strip()
+    # Fixture invariant: the branch forked BEFORE main's c2, so mb != tip.
+    assert mb != tip, (mb, tip)
+    proc = _run_script(scratch, "2428", "--guard", "4", "--main-sha", tip)
+    kv = _parse_kv(proc.stdout)
+    assert kv.get("GUARD4_MERGE_BASE") == mb, proc.stdout
+    assert kv.get("GUARD4_MERGE_BASE") != tip, proc.stdout
+
+
+def test_main_sha_rejected_for_non_guard4(tmp_path):
+    """#2428 D5b: ``--main-sha`` with any non-4 guard fails loud (rc 2).
+
+    ``divergence`` pins its OWN main snapshot and would silently shadow a
+    passed value; ``prelude``/``0`` never read it. The parser rejects the
+    inert flag instead of accepting it.
+    """
+    scratch = _make_scratch_repo(tmp_path)
+    sha = _git(scratch, "rev-parse", "HEAD").stdout.strip()
+    for guard in ("prelude", "0", "divergence"):
+        proc = _run_script(scratch, "1978", "--guard", guard, "--main-sha", sha)
+        assert proc.returncode == 2, (guard, proc.stdout, proc.stderr)
+        kv = _parse_kv(proc.stdout)
+        assert kv.get("ERROR", "").startswith("main-sha-not-supported"), (guard, proc.stdout)
+
+
+def test_step10d_guard4_contract_prose_agrees():
+    """#2428 criterion 3's mechanical pin over BOTH contract surfaces.
+
+    The helper's ``--help`` text and the ``steps/18-step-10d.md`` Guard-4
+    block each state the TIP semantics of ``--main-sha``, and NEITHER
+    describes the flag as a "pinned merge-base" — the exact stale wording
+    that let the caller/helper mismatch ship.
+    """
+    helper_text = SCRIPT.read_text()
+    caller_text = (
+        REPO_ROOT / ".claude" / "skills" / "issue" / "steps" / "18-step-10d.md"
+    ).read_text()
+    assert "pinned merge-base" not in helper_text, "stale --main-sha contract in helper"
+    assert "pinned merge-base" not in caller_text, "stale --main-sha contract in caller spec"
+    assert "pinned origin/main TIP" in helper_text
+    assert "derives the merge-base from it" in helper_text
+    assert "NOT the merge-base" in helper_text
+    assert "`origin/main` TIP" in caller_text
+    assert "NOT the merge-base" in caller_text
+    assert "verdict-equivalent by construction" in caller_text
+
+
+def test_guard4_honors_pin_older_than_live_main(tmp_path):
+    """THE discriminator (#2428): a pin OLDER than live origin/main is HONORED.
+
+    The #1128 scenario the flag exists for: a concurrent session's fetch
+    advances ``origin/main`` mid-guard, so the caller's captured tip (here
+    ``c1``, the fork commit) is STRICTLY OLDER than the live tip (``c2``).
+    A pin-honoring implementation derives ``MB = merge-base(HEAD, c1) = c1``,
+    evaluates the EMPTY ``c1..c1`` add-set, and PASSES; a pin-IGNORING
+    implementation reads live ``origin/main`` (= ``c2``), finds c2's added
+    lines missing from the dropped snapshot, and REFUSES (rc 1).
+    """
+    scratch, wt = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=True)
+    c1 = _git(wt, "rev-parse", "origin/main~1").stdout.strip()
+    live_tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+    assert c1 != live_tip, (c1, live_tip)
+    proc = _run_script(scratch, "2428", "--guard", "4", "--main-sha", c1)
+    # PASS is CORRECT here even though drop_main_lines=True: the pin (c1)
+    # PREDATES main's added lines, so the pinned add-set (c1..c1) is empty —
+    # exactly what honoring the caller's snapshot means. A refusal (rc 1)
+    # here is the SIGNATURE of a flag-IGNORING implementation that read live
+    # origin/main (c2) instead of the pin. Do NOT "correct" this expectation
+    # to refused — that would re-bless the very implementation this test
+    # exists to kill (#2428 plan §4 T7 mis-maintenance inoculation).
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    kv = _parse_kv(proc.stdout)
+    assert kv.get("GUARD4") == "pass", proc.stdout
+    # Second line of defense: the derived base must equal the PIN itself.
+    assert kv.get("GUARD4_MERGE_BASE") == c1, proc.stdout
+
+
+def test_guard4_unresolvable_main_sha_fails_loud(tmp_path):
+    """An unresolvable ``--main-sha`` is rc 2 ``merge-base-failed``.
+
+    Pins a hole the #2428 fix newly CLOSES: pre-fix, ``MB=deadbeef`` flowed
+    into the path enumeration (``diff --name-only deadbeef...HEAD`` under
+    ``2>/dev/null`` — unresolvable revision, EMPTY output), the scan loop
+    never executed, and the guard silently emitted ``GUARD4=pass`` exit 0 —
+    a second, independent vacuity route. Post-fix the merge-base derivation
+    fails loud before any enumeration.
+    """
+    scratch, _ = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=True)
+    proc = _run_script(scratch, "2428", "--guard", "4", "--main-sha", "deadbeef")
+    assert proc.returncode == 2, (proc.stdout, proc.stderr)
+    kv = _parse_kv(proc.stdout)
+    assert kv.get("ERROR") == "merge-base-failed", proc.stdout
+
+
+def test_guard4_passes_on_legitimate_prefork_deletion(tmp_path):
+    """False-positive direction: deleting a PRE-FORK line is NOT this class.
+
+    Behaviorally pins the carve-out the caller prose states ("a legitimate
+    branch DELETION of a pre-existing function is NOT this class, because
+    those lines were never main-side additions past the merge-base"): the
+    branch deletes one pre-fork original line while preserving every
+    main-added line — Guard 4 passes under BOTH invocation forms.
+    """
+    scratch, wt = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=False)
+    scoped_wt = wt / GUARD4_SCOPED_FILE
+    scoped_wt.write_text(
+        "original line 1\nmain-added line A\nmain-added line B\nbranch-added line X\n"
+    )
+    _git(wt, "add", GUARD4_SCOPED_FILE)
+    _git(wt, "commit", "-q", "-m", "branch deletes a pre-fork original line")
+    tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+    for args in (("--main-sha", tip), ()):
+        proc = _run_script(scratch, "2428", "--guard", "4", *args)
+        assert proc.returncode == 0, (args, proc.stdout, proc.stderr)
+        kv = _parse_kv(proc.stdout)
+        assert kv.get("GUARD4") == "pass", (args, proc.stdout)
+
+
+# ---------------------------------------------------------------------------
 # CLI usage
 # ---------------------------------------------------------------------------
 
