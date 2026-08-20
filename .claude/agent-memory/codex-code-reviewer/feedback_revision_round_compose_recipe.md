@@ -1652,3 +1652,24 @@ against the current ledger state and patch it alongside the SHA/round/(e)
 patches. Reconcile-marker version trap re-confirmed: head sentinel carries
 the ROUND (v3), posted top-level version is v1 — state the mapping in the
 prompt AND the return.
+
+**Binding-CONCERN closure at the CAP after a reconciler BINDING PASS (#2388
+r5, 2026-08-20):** when the prior round ended Claude-PASS / own-FAIL (one
+Major) / reconciler BINDING PASS with the Major DOWNGRADED to a binding
+CONCERN whose endorsed remedy is the twin's OWN prescribed fix, compose:
+reconcile-note-only (never re-inline the own r4 verdict) + the ruling's
+endorsed-remedy sentence quoted verbatim as the acceptance contract,
+decomposed into C-elements (incl. a consumer-COMPLETENESS element and a
+both-directions refuse-on-inconsistency element); cap framing (#2147 cr5) +
+author-neutrality (#2329 rclose) together; an ADDRESSED-DIFFERENTLY id gets
+the ACCEPTED/INSUFFICIENT pair with the implementer's rebuttal stated
+neutrally; disposition-only rows get DISPOSITION-ACCURATE/WRONG status
+lines. The ruling's four rationale grounds become a no-relitigate block
+("settled — the only question is whether the remedy landed"). Two
+extraction traps hit live: `T4.index("## Issues Found")` matched the
+INLINE-CODE mention in Step 0.8 (TAIL started mid-rubric, dragging the
+prior v4 head tag in), and `T4.index("**Blocker tags:**")` matched the
+Step-7 rubric mention — ALWAYS anchor output-format span extractions AFTER
+`i_out = T4.index("# Output format")` and assert the span carries no marker
+tag. Version-mapping note in ADJ ("head sentinel carries the ROUND") itself
+adds +1 to the reconcile-tag count — assert ==2 (mention + embed).
