@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2425,
+  "highest_id": 2426,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11014,6 +11014,13 @@
       "path": "tasks/proposed/2425",
       "status": "proposed",
       "title": "experimenter input-data gate: probe sparse-checkout before planned-input-data-missing (#2388 Pod B lesson)"
+    },
+    "2426": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2426",
+      "status": "proposed",
+      "title": "gotchas.md: Anthropic Batch request_counts.succeeded lags \u2014 never key a stall/cancel verdict on it"
     },
     "244": {
       "has_clean_result": false,
