@@ -27,3 +27,4 @@
 - [deferred event: two semantics](feedback_deferred_event_two_semantics.md) — read deferral_rationale: reconciler downgrade-with-recommended-fix arms full closure duties; rejected-binding does not (#2198 r2 vs #2332 r4)
 - [settled plan → descoped-ABSENT rows](feedback_settled_plan_descoped_absent_rows.md) — reconciler-descoped items become ABSENCE-verification rows (present = scope creep); settled decisions listed as never-object items (#2201 r1)
 - [pytest-guard conftest compose](feedback_pytest_guard_conftest_compose.md) — conftest-hook diffs: hollow-gate = exact-hook-name + manifest/selector registration + child-exit assert; 3.75 pin-sweep-fragments form accepted (#2217 r1)
+- [marker-probe race with main drift](feedback_marker_probe_race_main_drift.md) — main commit touching a round file lands minutes pre-marker: probe branch-base..origin/main, pre-adjudicate superseded-not-dishonest (#2422 r2)

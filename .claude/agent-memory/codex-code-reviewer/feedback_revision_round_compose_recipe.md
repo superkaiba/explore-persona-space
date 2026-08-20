@@ -1662,3 +1662,152 @@ severity never pre-resolved. Landing-note round record (no impl marker)
 composes per the #823 P-Gen v13 variant unchanged; a fix round whose tests
 span FOUR files patches every "both files"/"two files" rubric span and
 asserts zero residual occurrences.
+
+**Reconciler-UPHELD minimal-set round (all twin blockers upheld; #2329 r3 =
+sentinel v3, 2026-08-20):** when the prior round ended Claude-CONCERNS /
+Codex-FAIL and the reconciler ruled FAIL BINDING upholding ALL the twin's
+blockers with a "Must-fix (minimal set)" section: (a) the acceptance contract
+is the RECONCILER RULING inlined in its own envelope — the twin's own prior
+verdict is demoted to context ("the ruling, not your prose, is the contract";
+author-neutrality = don't demand more than the ruling's minimal set, don't
+wave through); (b) items the ruling classifies as TEST-hollowness where
+production was already correct get an explicit "verify the PINS BIND, not
+that production changed — a production-behavior change on those paths is an
+Unintended Change" frame; (c) implementer-reported self-mutation probes become
+the reviewer's REPRODUCTION duty with per-probe expected red/green patterns
+incl. a healthy-control-stays-green expectation (a bypass redding the control
+= weaker-but-binding pin, note not FAIL; all-green = hollow-pin FAIL), plus
+one encouraged own-construction variant per pin; (d) aim the recurring-class
+hunt at the round's OWN fix ("vacuous-guard hunt": nonempty-but-corrupted
+states, what expected/present derive FROM, raise-skipped paths, per-side
+grain, over-tightening) — this task shipped a cannot-fail gate inside a fix
+for a cannot-fail gate once already; (e) recompute the brief's/ruling's
+PRE-round line frames against the NEW blob and say shifted lines are never a
+finding; (f) a marker-arithmetic item (rows-vs-registry) gets a compute-it-
+yourself instruction naming each registry symbol — the prior round FAILed on
+29-vs-32 with three reviewers computing three ways; residual mismatch =
+substantive per the ruling (non-conforming redo of an explicit item), not
+strippable marker-shape.
+
+**Unimplementable-prescription closure round (#2412 r2, 2026-08-20):** when
+the round-1 reviewers AND reconciler all prescribed a fix the orchestrator
+later PROVED unimplementable by VM reproduction (`git cat-file -e` exits 128
+for missing-path-at-valid-ref AND bad-ref alike — no rc==1 split exists, git
+2.34.1), compose the #2147-cr4 ESTABLISHED FACTS shape but aimed at the
+PRESCRIPTION rather than the finding's mechanism: state the reproduction as
+established (the twin cannot re-run write-bearing git probes), BAN re-raising
+the literal prescription, frame the implementer's replacement (ls-tree
+three-way discrimination) as serving the prescription's INTENT (git error ⇒
+undecidable ⇒ revert), and hand the twin a scoped correctness checklist for
+the REPLACEMENT (empty-stdout-absent leg, tree-vs-blob path shapes, per-file
+vs helper-wide fail grain adjudicated by consequence). The closure-ledger
+status line for that item judges intent delivery, never the dead literal.
+Also from this compose: (a) a brief's output-contract code block can carry a
+STALE sentinel digit (`v1` on a round-2 brief) — treat the block as SHAPE,
+set the sentinel by the task's convention (r1 posted v1 ⇒ r2 posts v2 =
+review round = impl `epm:results` version), and flag the divergence in the
+return; (b) fixture-discrimination claims ("ran it pre-fix, saw the silent
+KEEP") translate to the static trace: `git show <round-parent>:<helper>` +
+trace the fixture scenario through PRE-fix control flow, refuted claim =
+fabricated coverage.
+
+**Merge-reconciliation round mandated by the task's own divergence gate
+(#2201 r3, 2026-08-20):** when the round under review is a gate-mandated
+merge of pinned main + a mandated spec-freshness sync (no feature code, no
+impl marker), compose: (a) round contract = the `[divergence-probe]` /
+reconciliation `epm:progress` notes inlined in their own envelopes (the
+verified note is the implementer's REPORT to re-verify, say so); declare
+`marker-shape`/`smoke-run-missing` INVALID and Step 0.5/4.6 N/A-this-round;
+inline the prior `epm:results` as CONTEXT-ONLY (do-not-score-shape). (b)
+PRIMARY body = `git diff <merged-pin>..HEAD` — once the merge makes the pin
+an ancestor, the two-dot form IS the own-diff; measure `git show --cc
+<merge>` at compose (≈empty ⇒ attest "no novel line typed into the merge";
+read reconciliation via per-side diffs `<parent>..<merge> -- <path>`). (c)
+M-ledger INTACT/DAMAGED duties: both-sides-survive + SEMANTIC-contradiction
+read per contested file; grandfather caps re-measured vs POST-MERGE landing
+bytes (probe count=0 at the fresh pin ⇒ worktree bytes ARE landing bytes,
+#1727) with the corridor + MAX_HEADROOM(3_000) bound; union-dedup
+lost-content check (every pre-merge-branch-only line must survive to HEAD;
+enumerate via `diff <branch-parent>..<merge> --name-only -- agent-memory/`);
+hygiene (residue, tasks/ 0, src/ 0, exact own-diff path list); feature
+integrity incl. LOCATING every pinned fragment/region anchor in the
+POST-MERGE spec text (pre-merge gate PASSes certify NOTHING post-merge —
+say so at Step 4); sync commit == current-main blobs at the probe pin (the
+pin's commit object exists locally — `git show <pin>:<path>` works, no
+fetch). (d) Enumerate intermediate commits since the last reviewed HEAD;
+name any deliverable-touching one (here an E501 rewrap) as a verify-duty so
+its hunk is not mistaken for merge damage; flag the scope call in the
+return. (e) Probe-side traps hit live: `git diff --quiet <sha> HEAD -- 
+<nonexistent-path>` exits 0 — verify the path EXISTS before trusting a
+MATCH probe; and a brief-named output file can COLLIDE with a stale
+same-name /tmp file from an earlier same-task critic round — flag the
+collision to the orchestrator (premature-read hazard).
+
+**False-negative reconciler-skip fix round + NOT-ADDRESSED-row grammar fix
+(#823 P-Gen r6 = sentinel v9, 2026-08-20):** two deltas on the r4/r5 union
+shapes. (a) When the prior round was Claude-PASS / Codex-FAIL and the
+orchestrator FIXED without a reconciler because the split was a false
+NEGATIVE (Claude missed a source-verified defect), frame the skip as
+sanctioned-for-false-negatives-only ("no conflicting judgement to
+adjudicate"), state a same-axis split THIS round WILL spawn a reconciler,
+and inline ONLY the Codex verdict as the acceptance contract — the
+missing-the-defect PASS adds no criteria; say explicitly its PASS softens
+no closure duty. (b) The r5 template's "ALREADY-PERSISTED ids NEVER appear
+as rows" rule suppressed the twin's NOT-ADDRESSED re-finding row (the
+orchestrator had to forward the BLOCKER row by hand — a ledger
+inaccuracy): the fixed grammar is precedence-ordered — a NOT-ADDRESSED
+closure item gets BOTH a status line AND a NEW `CONCERN::` row under a
+NEW kebab-id naming the NEW mechanism; only VERIFIED-ADDRESSED/ACCEPTED
+items are row-banned; the dedup-against-ledger rule stays. State the
+suppression incident in the prompt so the twin trusts the new rule. Also:
+when the round's impl marker GAINS a `## Smoke run` block that the prior
+round's Step 0.6 adaptation declared absent, rewrite the adaptation to
+score the block's substance (offline main()-driven execution, zero spend)
+— a stale "carries NO block" framing invites a fabricated marker-shape
+finding.
+
+**Mid-round crash-fix on a multi-lane task (#823 P-Fit mask-gate = sentinel
+v10, 2026-08-20):** three deltas. (a) Sentinel = max-posted-codex-version + 1
+EVEN when the round has its own impl marker (impl v11 → sentinel v10): once a
+task's posted codex markers run head==posted-version (v6–v9 here), that
+continuity outranks the #2329 sentinel==impl-version convention — state the
+mapping in the return. (b) A fix that CONSUMES producer labels while the plan
+text literally bans "validity labels" composes as the #2332
+surface-the-tension shape: quote BOTH the ban clause AND its reconciliation
+parenthetical ("the step-4 label-precedence fix reconciles the labeler") with
+real line numbers, hand the producer's classifier read (`git show
+<sha>:<gen module>` + def line) to the twin, never resolve the wording
+yourself. (c) A prior lane verdict may exist ONLY as a /tmp output + an
+orchestrator prose summary (`epm:code-review v8`), with the binding ruling
+under the kind `epm:code-review-reconcile` — grep events by NOTE TEXT
+("reconcil"), not only by expected kind names, before concluding a split was
+never adjudicated. Also: plan-excerpts envelope (brief-cited line windows,
+sed-verified) + full plan by /tmp copy + main-root fallback is the right
+plan shape when the binding sections are line-pinned and the plan is ~159 KB.
+
+**Twin-won closure round: reconciler ruling as SOLE acceptance contract
+(#2329 r5 = sentinel v12, 2026-08-20):** when the prior round was
+Claude-PASS×3 / Codex-FAIL and the RECONCILER upheld the Codex Major with
+its own executed evidence + a minimal must-fix set, inline the reconciler
+marker (tags stripped) as the ONLY acceptance-contract envelope and SKIP
+the prior Codex verdict inline entirely — the ruling's Q-dispositions +
+MF set subsume it, tag arithmetic collapses (assert prior-tag count == 0,
+no blockquote/strip dance), and the payload shrinks. Pair with the
+won-round author-neutrality frame ("you are adjudicating the closure of
+your own blocker") and quote the reconciler's REJECTED alternative fix
+sketch verbatim so the twin checks the shipped form is not the rejected
+conditional in disguise. Three composable deltas: (a) when the fix
+quantifies a refusal over a module-level SET CONSTANT (`ARM_KEYS`), aim
+the vacuous-guard hunt one level up — verify at compose time the constant
+is a literal (grep every reference, hand the line list over) and give the
+twin a scratch probe that NARROWS the constant to ask whether any
+committed match literal pins the set's COMPLETENESS (a full-enumeration
+`match` like `\['a', 'b', 'c'\]` is the pin; per-element matches keep
+passing); (b) ledger rows superseded by the ruling but with no `addressed`
+event yet posted (bookkeeping lag) get adjudication-form status lines
+(`SUBSUMED-BY-MF-1` / `SETTLED-R4`) — state the lag explicitly or the twin
+re-raises its own settled finding; (c) a verifier's re-run instrument tree
+(`/tmp/r18v/`-style: probe script + JSON output + fail-before/mutation
+outs) is a REUSE input — instruct read-first + cross-check-report-claims-
+against-outputs, copy-to-own-scratch before re-execution, and never edit
+the evidence trees in place.

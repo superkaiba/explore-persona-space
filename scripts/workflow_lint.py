@@ -16480,17 +16480,20 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
-    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
-    # Prior: 99_300 (#2352, 96,505 B).
-    "issue/steps/09-step-5.md": 100_300,
+    # measured 102,420 B @ #2422 2026-08-20 RE-MEASURED against the Step-10d
+    # MERGED tree (worktree-safe task-state paths, +1,477 B, on top of #2201's
+    # main-side +2,927 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 105_200,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 279,937 B @ #2348 (TG merge-base + classify port).
-    "issue/steps/18-step-10d.md": 282_700,
+    # measured 287,339 B @ #2201 2026-08-19 fix round (delta-gate rc-capture
+    # + quotePath + comma-path prose, +1,057 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 289_000 (#2201 r1, 286,282 B).
+    "issue/steps/18-step-10d.md": 290_100,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
