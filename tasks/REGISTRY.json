@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2407,
+  "highest_id": 2408,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10881,6 +10881,13 @@
       "path": "tasks/proposed/2407",
       "status": "proposed",
       "title": "Step 6b canonical launch snippet is provision-only \u2014 add the required workload leg + time-budget guidance"
+    },
+    "2408": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2408",
+      "status": "proposed",
+      "title": "verify_plan c46: cover the remaining launch post-parse refusals (execute-workload, no-runpod-fallback+runpod pin, env-pin)"
     },
     "241": {
       "has_clean_result": false,
