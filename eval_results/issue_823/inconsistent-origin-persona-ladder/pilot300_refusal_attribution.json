@@ -1,0 +1,902 @@
+{
+  "cap_hit": {
+    "trigger_fraction": 0.02,
+    "n_cap_hit_pairs": 21,
+    "cap_hit_pair_fraction": 0.0234375,
+    "n_cells": 31,
+    "n_cells_over_trigger": 13,
+    "arm_weighted_fraction": 0.022,
+    "note": "measured on FINAL (post-regeneration) records: the generator's own regen trigger fired and terminated with cells still over it -- 'regen ran' is not 'trigger resolved'",
+    "cells": [
+      {
+        "arm_k": 1,
+        "persona_idx": 0,
+        "persona_name": "Dr. Maya Chen",
+        "n_cap_hit": 5,
+        "n_pairs": 300,
+        "cap_hit_fraction": 0.016666666666666666,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 2,
+        "persona_idx": 0,
+        "persona_name": "Dr. Maya Chen",
+        "n_cap_hit": 1,
+        "n_pairs": 150,
+        "cap_hit_fraction": 0.006666666666666667,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 2,
+        "persona_idx": 1,
+        "persona_name": "Frank Delgado",
+        "n_cap_hit": 4,
+        "n_pairs": 150,
+        "cap_hit_fraction": 0.02666666666666667,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 4,
+        "persona_idx": 0,
+        "persona_name": "Dr. Maya Chen",
+        "n_cap_hit": 0,
+        "n_pairs": 75,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 4,
+        "persona_idx": 1,
+        "persona_name": "Frank Delgado",
+        "n_cap_hit": 3,
+        "n_pairs": 75,
+        "cap_hit_fraction": 0.04,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 4,
+        "persona_idx": 2,
+        "persona_name": "Am\u00e9lie Fournier",
+        "n_cap_hit": 2,
+        "n_pairs": 75,
+        "cap_hit_fraction": 0.02666666666666667,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 4,
+        "persona_idx": 3,
+        "persona_name": "Jax Torres",
+        "n_cap_hit": 2,
+        "n_pairs": 75,
+        "cap_hit_fraction": 0.02666666666666667,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 0,
+        "persona_name": "Dr. Maya Chen",
+        "n_cap_hit": 0,
+        "n_pairs": 38,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 1,
+        "persona_name": "Frank Delgado",
+        "n_cap_hit": 1,
+        "n_pairs": 38,
+        "cap_hit_fraction": 0.02631578947368421,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 2,
+        "persona_name": "Am\u00e9lie Fournier",
+        "n_cap_hit": 0,
+        "n_pairs": 38,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 3,
+        "persona_name": "Jax Torres",
+        "n_cap_hit": 2,
+        "n_pairs": 38,
+        "cap_hit_fraction": 0.05263157894736842,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 4,
+        "persona_name": "Margaret Whitfield",
+        "n_cap_hit": 0,
+        "n_pairs": 37,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 5,
+        "persona_name": "Priya Raman",
+        "n_cap_hit": 4,
+        "n_pairs": 37,
+        "cap_hit_fraction": 0.10810810810810811,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 6,
+        "persona_name": "Edmund Hartley",
+        "n_cap_hit": 2,
+        "n_pairs": 37,
+        "cap_hit_fraction": 0.05405405405405406,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 8,
+        "persona_idx": 7,
+        "persona_name": "Tony Bocelli",
+        "n_cap_hit": 0,
+        "n_pairs": 37,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 0,
+        "persona_name": "Dr. Maya Chen",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 1,
+        "persona_name": "Frank Delgado",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 2,
+        "persona_name": "Am\u00e9lie Fournier",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 3,
+        "persona_name": "Jax Torres",
+        "n_cap_hit": 1,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.05263157894736842,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 4,
+        "persona_name": "Margaret Whitfield",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 5,
+        "persona_name": "Priya Raman",
+        "n_cap_hit": 3,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.15789473684210525,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 6,
+        "persona_name": "Edmund Hartley",
+        "n_cap_hit": 1,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.05263157894736842,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 7,
+        "persona_name": "Tony Bocelli",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 8,
+        "persona_name": "Rosa Alvarez",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 9,
+        "persona_name": "Victoria Sterling",
+        "n_cap_hit": 1,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.05263157894736842,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 10,
+        "persona_name": "Captain Elias Grey",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 11,
+        "persona_name": "Brother Tenzin",
+        "n_cap_hit": 0,
+        "n_pairs": 19,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 12,
+        "persona_name": "Harold Finch",
+        "n_cap_hit": 1,
+        "n_pairs": 18,
+        "cap_hit_fraction": 0.05555555555555555,
+        "over_trigger": true
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 13,
+        "persona_name": "Zoe Park",
+        "n_cap_hit": 0,
+        "n_pairs": 18,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 14,
+        "persona_name": "Reginald Poole",
+        "n_cap_hit": 0,
+        "n_pairs": 18,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      },
+      {
+        "arm_k": 16,
+        "persona_idx": 15,
+        "persona_name": "Dusty McCall",
+        "n_cap_hit": 0,
+        "n_pairs": 18,
+        "cap_hit_fraction": 0.0,
+        "over_trigger": false
+      }
+    ]
+  },
+  "pairs": {
+    "n_pairs": 896,
+    "validity_counts": {
+      "empty": 6,
+      "ok": 871,
+      "refusal": 19
+    },
+    "stop_reason_counts": {
+      "end_turn": 850,
+      "max_tokens": 21,
+      "refusal": 25
+    },
+    "validity_x_stop_reason": [
+      {
+        "validity": "empty",
+        "stop_reason": "refusal",
+        "n": 6
+      },
+      {
+        "validity": "ok",
+        "stop_reason": "end_turn",
+        "n": 850
+      },
+      {
+        "validity": "ok",
+        "stop_reason": "max_tokens",
+        "n": 21
+      },
+      {
+        "validity": "refusal",
+        "stop_reason": "refusal",
+        "n": 19
+      }
+    ],
+    "n_refused_by_stop_reason": 25,
+    "refused_pair_rate": 0.027901785714285716,
+    "label_disagreement_note": "validity-keyed invalid counts and stop_reason-keyed refusal counts disagree; a gate keyed on validity labels undercounts refusals"
+  },
+  "contexts": {
+    "n_contexts": 300,
+    "n_dropped_contexts": 19,
+    "drop_rate": 0.06333333333333334,
+    "wilson95": {
+      "lo": 0.040916882383915276,
+      "hi": 0.09679131248552161
+    },
+    "refused_pairs_per_dropped_context": {
+      "1": 15,
+      "2": 2,
+      "3": 2
+    },
+    "mask_semantics": "intersected across arms: a context is dropped when ANY of its pairs is invalid, so the per-CONTEXT rate is what the mask kill sees"
+  },
+  "projection": {
+    "n_production_contexts": 5000,
+    "projected_dropped": 317,
+    "projected_dropped_wilson95": [
+      205,
+      484
+    ]
+  },
+  "per_persona": [
+    {
+      "persona_idx": 0,
+      "persona_name": "Dr. Maya Chen",
+      "n_pairs": 300,
+      "n_refused": 3,
+      "refusal_rate": 0.01,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 1,
+      "persona_name": "Frank Delgado",
+      "n_pairs": 150,
+      "n_refused": 3,
+      "refusal_rate": 0.02,
+      "uniquely_dropped_contexts": 2
+    },
+    {
+      "persona_idx": 2,
+      "persona_name": "Am\u00e9lie Fournier",
+      "n_pairs": 75,
+      "n_refused": 2,
+      "refusal_rate": 0.02666666666666667,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 3,
+      "persona_name": "Jax Torres",
+      "n_pairs": 75,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 4,
+      "persona_name": "Margaret Whitfield",
+      "n_pairs": 37,
+      "n_refused": 2,
+      "refusal_rate": 0.05405405405405406,
+      "uniquely_dropped_contexts": 1
+    },
+    {
+      "persona_idx": 5,
+      "persona_name": "Priya Raman",
+      "n_pairs": 37,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 6,
+      "persona_name": "Edmund Hartley",
+      "n_pairs": 37,
+      "n_refused": 12,
+      "refusal_rate": 0.32432432432432434,
+      "uniquely_dropped_contexts": 12
+    },
+    {
+      "persona_idx": 7,
+      "persona_name": "Tony Bocelli",
+      "n_pairs": 37,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 8,
+      "persona_name": "Rosa Alvarez",
+      "n_pairs": 19,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 9,
+      "persona_name": "Victoria Sterling",
+      "n_pairs": 19,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 10,
+      "persona_name": "Captain Elias Grey",
+      "n_pairs": 19,
+      "n_refused": 2,
+      "refusal_rate": 0.10526315789473684,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 11,
+      "persona_name": "Brother Tenzin",
+      "n_pairs": 19,
+      "n_refused": 1,
+      "refusal_rate": 0.05263157894736842,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 12,
+      "persona_name": "Harold Finch",
+      "n_pairs": 18,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 13,
+      "persona_name": "Zoe Park",
+      "n_pairs": 18,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 14,
+      "persona_name": "Reginald Poole",
+      "n_pairs": 18,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    },
+    {
+      "persona_idx": 15,
+      "persona_name": "Dusty McCall",
+      "n_pairs": 18,
+      "n_refused": 0,
+      "refusal_rate": 0.0,
+      "uniquely_dropped_contexts": 0
+    }
+  ],
+  "roster_exclusion_counterfactuals": [
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [],
+      "excluded_names": [],
+      "dropped_contexts_pilot": 19,
+      "drop_rate": 0.06333333333333334,
+      "projected_dropped_at_production": 317,
+      "arms_shrunk": [],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": false
+    },
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [
+        6
+      ],
+      "excluded_names": [
+        "Edmund Hartley"
+      ],
+      "dropped_contexts_pilot": 7,
+      "drop_rate": 0.023333333333333334,
+      "projected_dropped_at_production": 117,
+      "arms_shrunk": [
+        8,
+        16
+      ],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [
+        6,
+        0
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Dr. Maya Chen"
+      ],
+      "dropped_contexts_pilot": 7,
+      "drop_rate": 0.023333333333333334,
+      "projected_dropped_at_production": 117,
+      "arms_shrunk": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [
+        1
+      ],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [
+        6,
+        0,
+        1
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Dr. Maya Chen",
+        "Frank Delgado"
+      ],
+      "dropped_contexts_pilot": 5,
+      "drop_rate": 0.016666666666666666,
+      "projected_dropped_at_production": 83,
+      "arms_shrunk": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [
+        1,
+        2
+      ],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [
+        6,
+        0,
+        1,
+        2
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Dr. Maya Chen",
+        "Frank Delgado",
+        "Am\u00e9lie Fournier"
+      ],
+      "dropped_contexts_pilot": 5,
+      "drop_rate": 0.016666666666666666,
+      "projected_dropped_at_production": 83,
+      "arms_shrunk": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [
+        1,
+        2
+      ],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [
+        6,
+        0,
+        1,
+        2,
+        4
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Dr. Maya Chen",
+        "Frank Delgado",
+        "Am\u00e9lie Fournier",
+        "Margaret Whitfield"
+      ],
+      "dropped_contexts_pilot": 3,
+      "drop_rate": 0.01,
+      "projected_dropped_at_production": 50,
+      "arms_shrunk": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [
+        1,
+        2
+      ],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [
+        6,
+        0,
+        1,
+        2,
+        4,
+        10
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Dr. Maya Chen",
+        "Frank Delgado",
+        "Am\u00e9lie Fournier",
+        "Margaret Whitfield",
+        "Captain Elias Grey"
+      ],
+      "dropped_contexts_pilot": 1,
+      "drop_rate": 0.0033333333333333335,
+      "projected_dropped_at_production": 17,
+      "arms_shrunk": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [
+        1,
+        2
+      ],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_count",
+      "excluded_personas": [
+        6,
+        0,
+        1,
+        2,
+        4,
+        10,
+        11
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Dr. Maya Chen",
+        "Frank Delgado",
+        "Am\u00e9lie Fournier",
+        "Margaret Whitfield",
+        "Captain Elias Grey",
+        "Brother Tenzin"
+      ],
+      "dropped_contexts_pilot": 0,
+      "drop_rate": 0.0,
+      "projected_dropped_at_production": 0,
+      "arms_shrunk": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [
+        1,
+        2
+      ],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [],
+      "excluded_names": [],
+      "dropped_contexts_pilot": 19,
+      "drop_rate": 0.06333333333333334,
+      "projected_dropped_at_production": 317,
+      "arms_shrunk": [],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": false
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [
+        6
+      ],
+      "excluded_names": [
+        "Edmund Hartley"
+      ],
+      "dropped_contexts_pilot": 7,
+      "drop_rate": 0.023333333333333334,
+      "projected_dropped_at_production": 117,
+      "arms_shrunk": [
+        8,
+        16
+      ],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [
+        6,
+        10
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Captain Elias Grey"
+      ],
+      "dropped_contexts_pilot": 7,
+      "drop_rate": 0.023333333333333334,
+      "projected_dropped_at_production": 117,
+      "arms_shrunk": [
+        8,
+        16
+      ],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [
+        6,
+        10,
+        4
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Captain Elias Grey",
+        "Margaret Whitfield"
+      ],
+      "dropped_contexts_pilot": 6,
+      "drop_rate": 0.02,
+      "projected_dropped_at_production": 100,
+      "arms_shrunk": [
+        8,
+        16
+      ],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [
+        6,
+        10,
+        4,
+        11
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Captain Elias Grey",
+        "Margaret Whitfield",
+        "Brother Tenzin"
+      ],
+      "dropped_contexts_pilot": 6,
+      "drop_rate": 0.02,
+      "projected_dropped_at_production": 100,
+      "arms_shrunk": [
+        8,
+        16
+      ],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [
+        6,
+        10,
+        4,
+        11,
+        2
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Captain Elias Grey",
+        "Margaret Whitfield",
+        "Brother Tenzin",
+        "Am\u00e9lie Fournier"
+      ],
+      "dropped_contexts_pilot": 6,
+      "drop_rate": 0.02,
+      "projected_dropped_at_production": 100,
+      "arms_shrunk": [
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [
+        6,
+        10,
+        4,
+        11,
+        2,
+        1
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Captain Elias Grey",
+        "Margaret Whitfield",
+        "Brother Tenzin",
+        "Am\u00e9lie Fournier",
+        "Frank Delgado"
+      ],
+      "dropped_contexts_pilot": 3,
+      "drop_rate": 0.01,
+      "projected_dropped_at_production": 50,
+      "arms_shrunk": [
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [],
+      "changes_manipulated_variable": true
+    },
+    {
+      "ordering": "by_refusal_rate",
+      "excluded_personas": [
+        6,
+        10,
+        4,
+        11,
+        2,
+        1,
+        0
+      ],
+      "excluded_names": [
+        "Edmund Hartley",
+        "Captain Elias Grey",
+        "Margaret Whitfield",
+        "Brother Tenzin",
+        "Am\u00e9lie Fournier",
+        "Frank Delgado",
+        "Dr. Maya Chen"
+      ],
+      "dropped_contexts_pilot": 0,
+      "drop_rate": 0.0,
+      "projected_dropped_at_production": 0,
+      "arms_shrunk": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "arms_destroyed": [
+        1,
+        2
+      ],
+      "changes_manipulated_variable": true
+    }
+  ],
+  "metadata": {
+    "git_commit": "fdb5936d5cc359e711ef07d1bbbddf2d008a586a",
+    "git_dirty": true,
+    "phase": "pilot-refusal-attribution",
+    "git_dirty_paths": [
+      "scripts/issue823_pilot_refusal_attribution.py",
+      ".claude/agent-memory/codex-methodology-baselines-critic/feedback_inlined_plan_multiset_scaffold_restatements.md",
+      "eval_results/issue458/token_counts.json",
+      "tests/test_issue2094_rev_butler.py"
+    ],
+    "git_argv0_state": "untracked",
+    "git_argv0_path": "scripts/issue823_pilot_refusal_attribution.py",
+    "stage_dir": "/tmp/issue-823-pilot300/hf_stage/ladder",
+    "source": "issue823_ladder_gen.py --smoke --n-contexts 300"
+  }
+}
