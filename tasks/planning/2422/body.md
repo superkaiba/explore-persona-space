@@ -2,7 +2,8 @@
 title: Briefs pointing a worktree-based reviewer at task state must pin the absolute
   main-checkout path (worktree plans/plan.md resolves to a stale version)
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-20T07:58:38Z'
 has_clean_result: false
 parent_id: 823
