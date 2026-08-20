@@ -793,5 +793,5 @@ def test_r5_bank_mismatch_refuses_before_hub_refetch(
     rec["source"]["bank_sha256"] = "e" * 64  # recorded for run A
     report.write_text(json.dumps(rec))
     bank_b = _bank_file(tmp_path, payload="bank-B")  # this run's bank differs
-    with pytest.raises(RuntimeError, match="bank_sha256 != this run's bank.json"):
+    with pytest.raises(RuntimeError, match=r"bank_sha256 != this run's bank\.json"):
         P.J.require_consumer_probe(report, "judge", bank_json=bank_b)
