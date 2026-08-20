@@ -1,7 +1,7 @@
 ---
-title: Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations
-  vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer
-  / actual-answer probes)
+title: A linear probe on Qwen2.5-7B-Instruct's pre-generation prompt activations predicts
+  its refuse-vs-comply decision better than a strong LLM judge, in both a harmful-compliance
+  and an over-refusal regime (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
