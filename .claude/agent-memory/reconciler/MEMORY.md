@@ -55,6 +55,7 @@
 - [Best-effort upload made load-bearing](feedback_claude_misses_besteffort_upload_made_loadbearing.md) — new consumer of a warn-only upload + ephemeral teardown → FAIL (#613)
 - [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg the literal new AND prior values before believing any ✓
 - [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes yourself via Write-tool probe (#897)
+- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection probes; #505 demote rule needs an EXECUTED test (#2329 r2)
 
 ## Codex code-review overreach (PASS-leaning calibration)
 

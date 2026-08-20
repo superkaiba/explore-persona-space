@@ -1612,3 +1612,53 @@ guarantee / overstating exclude-list protection) — hand Codex both failure
 directions plus survival checks for the honest-scope figures. Re-measure
 brief-supplied base-drift figures at compose (136→295 commits between
 rounds; use fresh).
+
+**FAIL+FAIL union round with a self-resolving union note + brief-ordered
+mutation probes (#2329 q35 r2 = sentinel v2, 2026-08-20):** when the union
+work order ITSELF resolves every overlap to the stronger form AND records
+the reviewer splits, inline the union as the PRIMARY acceptance contract +
+the twin's own verdict (tags stripped, rows blockquoted) for per-finding
+Evidence/Fix — the Claude verdicts stay by-path context (this task's
+review-r1 artifacts dir on main); the union's RECORDED SPLITS section
+becomes a do-not-relitigate item (round 2 scores fresh against the new
+marker, never re-grades r1 gate records). Scratch recipe refinement for
+mutation probes on this repo: build the scratch tree with a SCOPED
+`git archive <round-sha> scripts tests src configs pyproject.toml uv.lock |
+tar -x` — NEVER a full-tree archive (tracked eval_results are GB-scale in
+this repo) — and copy in the single committed artifact a chosen nodeid
+reads (here the parent #2162 stats.json) only when that probe needs it;
+carry the UV_CACHE_DIR=/tmp/... rc=2 read-only-cache precedent. A
+raised-only ledger (0 addressed rows) on a fix round composes per
+#2379-r2(b): identical closure duty, absent rows attested as orchestrator
+bookkeeping. Sentinel convention is SERIES-local: this review series' r1
+head was v1 (round-based) even though the same task's earlier crash-fix
+series used sentinel==impl-version — read the r1 marker's own head, never
+assume the task-wide convention.
+
+**FAIL+FAIL union fix round with ledger-persisted ids + sibling's FULL
+mid-compose disposition set (#823 P-Gen r4 = sentinel v7, 2026-08-20):**
+three composable deltas on the #2332-r2 union shape. (a) When both prior
+verdicts' findings are ALREADY persisted as real ledger ids, key the
+closure ledger on THOSE ids (no pseudo-IDs) and still inline both verdicts
+as the Evidence+Fix acceptance contracts — tags stripped, the Codex
+verdict's `CONCERN:: ` rows blockquoted (`> `), asserts: own-head==1 /
+close==1 / prior tags==0 / `^CONCERN:: `==1 / `^> CONCERN:: `==6. (b) The
+#2326 ts-pin (rows `ts <= round-landing ts`) excluded not just one raised
+row but the SIBLING TWIN'S ENTIRE completed round output (7 `addressed`
+rows + 1 new `raised` row) landing mid-compose — snapshot framing "pinned
+to the round-4 landing" stays truthful; REPORT to the orchestrator that
+the Codex verdict may mint a DIFFERENT kebab-id for the same residual the
+sibling already raised (dedup is the orchestrator's merge job, never the
+composer's). (c) An orchestrator-found NEW residual handed in the brief
+("put this FIRST") composes as its own `# HIGHEST-VALUE CHECK (adjudicate
+FIRST)` section: the orchestrator's reading + apparent consequence quoted
+with line anchors, THREE explicit questions (reading correct? production
+path closed incl. the smoke-artifact-verified-as-production path?
+severity for the held wave?), evidence-required-either-way framing
+("its own reading has been wrong twice this round — take nothing on
+trust"), and a mandatory Step 3.7 class sweep naming the class lineage
+(round 3 trusted the record set; round 4 trusts the domain size) —
+severity never pre-resolved. Landing-note round record (no impl marker)
+composes per the #823 P-Gen v13 variant unchanged; a fix round whose tests
+span FOUR files patches every "both files"/"two files" rubric span and
+asserts zero residual occurrences.
