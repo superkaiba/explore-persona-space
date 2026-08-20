@@ -21,6 +21,14 @@ set -a; [ -f .env ] && . ./.env; set +a
 # store + rollout text.
 export HF_HOME="${EPM_I2388_HF_HOME:-/opt/hf_cache}"
 mkdir -p "$HF_HOME"
+# RunPod container blocks namespace creation outright (probed 2026-08-20 on
+# pod-2388-gen: `unshare -rn`/`unshare -n` EPERM even as uid 0) — network
+# isolation for the code sandbox cannot be established on this host class.
+# This is the driver's own disclosed override: every verify payload records
+# sandbox_net_isolation=false and the persisted `sandbox-network-residual`
+# concern rides to the analyzer as a scope caveat. Env scrub + rlimits +
+# killpg + 15s timeout remain in force.
+export EPM_I2388_SANDBOX_ALLOW_NET=1
 LOGDIR=/workspace/logs
 mkdir -p "$LOGDIR"
 BCB_PY=/opt/bcb-venv/bin/python
