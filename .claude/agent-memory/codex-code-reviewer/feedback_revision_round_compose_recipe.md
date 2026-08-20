@@ -1765,3 +1765,30 @@ round's Step 0.6 adaptation declared absent, rewrite the adaptation to
 score the block's substance (offline main()-driven execution, zero spend)
 — a stale "carries NO block" framing invites a fabricated marker-shape
 finding.
+
+**Twin-won closure round: reconciler ruling as SOLE acceptance contract
+(#2329 r5 = sentinel v12, 2026-08-20):** when the prior round was
+Claude-PASS×3 / Codex-FAIL and the RECONCILER upheld the Codex Major with
+its own executed evidence + a minimal must-fix set, inline the reconciler
+marker (tags stripped) as the ONLY acceptance-contract envelope and SKIP
+the prior Codex verdict inline entirely — the ruling's Q-dispositions +
+MF set subsume it, tag arithmetic collapses (assert prior-tag count == 0,
+no blockquote/strip dance), and the payload shrinks. Pair with the
+won-round author-neutrality frame ("you are adjudicating the closure of
+your own blocker") and quote the reconciler's REJECTED alternative fix
+sketch verbatim so the twin checks the shipped form is not the rejected
+conditional in disguise. Three composable deltas: (a) when the fix
+quantifies a refusal over a module-level SET CONSTANT (`ARM_KEYS`), aim
+the vacuous-guard hunt one level up — verify at compose time the constant
+is a literal (grep every reference, hand the line list over) and give the
+twin a scratch probe that NARROWS the constant to ask whether any
+committed match literal pins the set's COMPLETENESS (a full-enumeration
+`match` like `\['a', 'b', 'c'\]` is the pin; per-element matches keep
+passing); (b) ledger rows superseded by the ruling but with no `addressed`
+event yet posted (bookkeeping lag) get adjudication-form status lines
+(`SUBSUMED-BY-MF-1` / `SETTLED-R4`) — state the lag explicitly or the twin
+re-raises its own settled finding; (c) a verifier's re-run instrument tree
+(`/tmp/r18v/`-style: probe script + JSON output + fail-before/mutation
+outs) is a REUSE input — instruct read-first + cross-check-report-claims-
+against-outputs, copy-to-own-scratch before re-execution, and never edit
+the evidence trees in place.
