@@ -1,0 +1,326 @@
+{
+ "meta": {
+  "issue": 2356,
+  "analysis": "engage_rate_followup (inline free analysis; no fits \u2014 persisted OOF scores)",
+  "dv": "per-prompt engage rate (fraction of >=7 valid temp-0.9 draws that comply)",
+  "orientation": "scores oriented toward refusal (source artifacts: P(REFUSE)); all rho reported vs (1 - rate) so informative predictors give positive rho",
+  "bootstrap": {
+   "kind": "paired group bootstrap (resample group_ids with replacement; per draw rank-transform + Pearson on ranks over drawn rows)",
+   "n_draws": 2000,
+   "seed": 1234
+  },
+  "score_artifact_git_commit": {
+   "armA": "e4d1bacb",
+   "armB": "e4d1bacb"
+  },
+  "repo_head_at_run": "933f1a5048",
+  "generated_utc": "2026-08-20T21:54:03+00:00",
+  "script": "scripts/issue2356_engage_rate_followup.py",
+  "reads": {
+   "all_labeled": "every scores_all_labeled row with non-null rate (middle-band + balanced-subsample-excluded rows scored under their group's owning M1 fold at that fold's selected configurations)",
+   "balanced_judge_mask": "balanced eval rows == judge_fewshot-scored rows (masks coincide exactly; doubles as the balanced-only sensitivity read)"
+  }
+ },
+ "arms": {
+  "armA": {
+   "all_labeled": {
+    "n": 2748,
+    "n_groups": 394,
+    "spearman_vs_one_minus_rate": {
+     "ctx_ridge": 0.6690609719065006,
+     "ctx_dim": 0.6185963145976717,
+     "map3a_zr": 0.6708573794082292,
+     "map3b_zr": 0.6879102902455646,
+     "pca_ctx": 0.6561819895480827,
+     "ans_greedy": 0.6436445835372417,
+     "text_surface": 0.3226815709151623
+    },
+    "contrasts": {
+     "map3a_minus_ctx": {
+      "point": 0.001796407501728603,
+      "ci95": [
+       -0.006358142109976528,
+       0.010671995562443713
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_ctx": {
+      "point": 0.018849318339064003,
+      "ci95": [
+       0.006828903462292194,
+       0.03011512559012149
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_map3a": {
+      "point": 0.0170529108373354,
+      "ci95": [
+       0.005004225479826127,
+       0.02956567302302922
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ans_minus_ctx": {
+      "point": -0.025416388369258858,
+      "ci95": [
+       -0.047930748773572784,
+       -0.00398675550910578
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_pca": {
+      "point": 0.01287898235841789,
+      "ci95": [
+       0.0031667676120707175,
+       0.02252921056061068
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_text_surface": {
+      "point": 0.3463794009913383,
+      "ci95": [
+       0.3122690634649982,
+       0.381570885121036
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     }
+    }
+   },
+   "balanced_judge_mask": {
+    "n": 526,
+    "n_groups": 168,
+    "spearman_vs_one_minus_rate": {
+     "ctx_ridge": 0.881070701108526,
+     "ctx_dim": 0.8647468788263605,
+     "map3a_zr": 0.8844477785296678,
+     "map3b_zr": 0.8763705061941558,
+     "pca_ctx": 0.8825149995290599,
+     "ans_greedy": 0.8625688984757297,
+     "text_surface": 0.8004340114259473,
+     "judge_fewshot": 0.7200098065510606
+    },
+    "contrasts": {
+     "map3a_minus_ctx": {
+      "point": 0.003377077421141794,
+      "ci95": [
+       -0.0032547702512865095,
+       0.01096274338652943
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_ctx": {
+      "point": -0.004700194914370237,
+      "ci95": [
+       -0.019061375973776225,
+       0.007107325097970901
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_map3a": {
+      "point": -0.008077272335512031,
+      "ci95": [
+       -0.022211077743598446,
+       0.004723802814264142
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ans_minus_ctx": {
+      "point": -0.018501802632796327,
+      "ci95": [
+       -0.04034450787065409,
+       0.003104333691681198
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_judge": {
+      "point": 0.16106089455746542,
+      "ci95": [
+       0.11309022472217324,
+       0.2097834924636231
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_pca": {
+      "point": -0.0014442984205338405,
+      "ci95": [
+       -0.013175027831639355,
+       0.009872382733144603
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_text_surface": {
+      "point": 0.08063668968257875,
+      "ci95": [
+       0.05066773792669164,
+       0.1125059795256686
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     }
+    }
+   }
+  },
+  "armB": {
+   "all_labeled": {
+    "n": 2510,
+    "n_groups": 2377,
+    "spearman_vs_one_minus_rate": {
+     "ctx_ridge": 0.6238310437224932,
+     "ctx_dim": 0.6250384279729807,
+     "map3a_zr": 0.6101977331213324,
+     "map3b_zr": 0.5850937161012908,
+     "pca_ctx": 0.6064501701777324,
+     "ans_greedy": 0.5411708359368944,
+     "text_surface": 0.23414464786016229
+    },
+    "contrasts": {
+     "map3a_minus_ctx": {
+      "point": -0.013633310601160797,
+      "ci95": [
+       -0.022588572693067188,
+       -0.0043448118681855925
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_ctx": {
+      "point": -0.03873732762120241,
+      "ci95": [
+       -0.05283142516939188,
+       -0.024533224539541546
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_map3a": {
+      "point": -0.025104017020041614,
+      "ci95": [
+       -0.039707127413575655,
+       -0.011156715270796584
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ans_minus_ctx": {
+      "point": -0.0826602077855988,
+      "ci95": [
+       -0.10527205519727616,
+       -0.06052129703489444
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_pca": {
+      "point": 0.01738087354476081,
+      "ci95": [
+       0.008618079177883497,
+       0.02654993551330193
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_text_surface": {
+      "point": 0.3896863958623309,
+      "ci95": [
+       0.3530275612452077,
+       0.4275470854711164
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     }
+    }
+   },
+   "balanced_judge_mask": {
+    "n": 286,
+    "n_groups": 271,
+    "spearman_vs_one_minus_rate": {
+     "ctx_ridge": 0.8222645570049444,
+     "ctx_dim": 0.8210422269943686,
+     "map3a_zr": 0.8058399325045337,
+     "map3b_zr": 0.8207191099722999,
+     "pca_ctx": 0.7999563650554672,
+     "ans_greedy": 0.7884339103215188,
+     "text_surface": 0.34595419432924823,
+     "judge_fewshot": 0.46823505036708757
+    },
+    "contrasts": {
+     "map3a_minus_ctx": {
+      "point": -0.01642462450041071,
+      "ci95": [
+       -0.03707691310983554,
+       0.0037178598496450488
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_ctx": {
+      "point": -0.0015454470326444758,
+      "ci95": [
+       -0.03290067612568684,
+       0.030339293772774067
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "map3b_minus_map3a": {
+      "point": 0.014879177467766236,
+      "ci95": [
+       -0.02042375712352364,
+       0.05195625630300986
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ans_minus_ctx": {
+      "point": -0.033830646683425614,
+      "ci95": [
+       -0.07388733511263153,
+       0.004710311355079037
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_judge": {
+      "point": 0.3540295066378568,
+      "ci95": [
+       0.2622943684520699,
+       0.4471930272432669
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_pca": {
+      "point": 0.022308191949477196,
+      "ci95": [
+       -8.833962535678126e-05,
+       0.04517918445570201
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     },
+     "ctx_minus_text_surface": {
+      "point": 0.47631036267569615,
+      "ci95": [
+       0.36130164803224546,
+       0.5943482050205006
+      ],
+      "n_draws": 2000,
+      "n_boot_finite": 2000
+     }
+    }
+   }
+  }
+ }
+}
