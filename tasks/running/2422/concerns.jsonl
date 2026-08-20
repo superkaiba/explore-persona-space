@@ -1,1 +1,2 @@
 {"ts": "2026-08-20T13:25:51Z", "event": "raised", "concern_id": "worktree-events-path-gap", "severity": "BLOCKER", "summary": "Reviewer brief still names bare events.jsonl, leaving report selection exposed to frozen worktree task state.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-20T13:26:03Z", "event": "raised", "concern_id": "fail-open-surface6-region", "severity": "BLOCKER", "summary": "Losing both surface-6 end anchors widens the lint region to EOF and can pass silently.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
