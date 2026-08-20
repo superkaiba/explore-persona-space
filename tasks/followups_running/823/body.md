@@ -180,7 +180,7 @@ Answer (excerpt of a 104-word row): "Well howdy there, partner! Buenos días to 
 
 Bars show pooled 5-fold out-of-fold refit R² at each trait's plan-pinned read-out layer, one bar per answer arm (own regenerated / external plain / external distinct-style / mismatched), error bars = fold SD.
 
-![Bar chart with answer arm on the x-axis and pooled refit R-squared on the y-axis; own-answer bars near 0.60 sit close to external-plain bars near 0.58, distinct-style near 0.48, and mismatched bars fall to about zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig1_refit_r2_by_arm.png)
+![Refit R-squared by arm at read-out layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig1_refit_r2_by_arm.png)
 
 > **Figure.** *Refit R² by answer arm at read-out layers.* Own 0.599/0.608/0.626 (evil L14 / sycophancy L26 / hallucination L17); external plain 0.585/0.556/0.591 (97.6/91.4/94.4% retention); external distinct-style 0.473/0.468/0.506; mismatched 0.004/−0.008/0.007. Fold SDs ≤0.023 (mismatched ≤0.003). n=4998.
 
@@ -190,7 +190,7 @@ The map is content-indexed: an answer the model never produced supports nearly t
 
 Solid curves: refit R² across all 28 layers per arm; dashed curves: transfer R² of the own-answer-fitted map scored on the other arms' targets; read-out layers marked.
 
-![Line chart with transformer layer on the x-axis and R-squared on the y-axis; solid refit curves for the four arms run between 0.39 and 0.65, while dashed own-map transfer curves hold about 0.45 for plain answers and drop to between -0.65 and -0.80 for mismatched answers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig2_per_layer_refit_transfer.png)
+![Per-layer refit and transfer R-squared](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig2_per_layer_refit_transfer.png)
 
 > **Figure.** *Per-layer refit (solid) and own-map transfer (dashed) R².* The own-minus-plain gap is U-shaped, peaking exactly at L26 (0.052; 0.001 at L27). Transfer to plain 0.451–0.461; to distinct-style −0.070..+0.050; to mismatched −0.65..−0.80.
 
@@ -200,7 +200,7 @@ The sycophancy own-advantage verdict depends on L26 being both the plan-pinned l
 
 ECDFs of equal-weighted per-context R² (n=4998) per arm at read-out layers; the table gives both estimands side by side.
 
-![Cumulative distribution curves with per-context R-squared on the x-axis and fraction of contexts on the y-axis; the four arm curves are separated across the whole range, with own-answer medians near 0.56 and the mismatched curve massed at about zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig3_per_context_r2_ecdf.png)
+![Per-context R-squared ECDFs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e4bfe5c769ec36cedd3886bc5c018f6d2f473115/figures/issue_823/fig3_per_context_r2_ecdf.png)
 
 > **Figure.** *Per-context R² ECDFs by arm.* Medians — own 0.55/0.55/0.58, plain 0.52/0.49/0.54, distinct-style 0.48/0.43/0.51, mismatched 0.01/−0.01/0.01 (evil/sycophancy/hallucination). Whole-distribution shifts, no outlier-driven mass.
 
@@ -216,7 +216,7 @@ Pooled (weighted by each context's share of the total sum of squares) and per-co
 
 Bars: pooled 5-fold out-of-fold R² at each read-out layer for the context→plain refit versus ridge maps from the own-answer profile to the plain, distinct-style, and mismatched profiles; curves: own-profile→plain versus the context→plain refit and the mismatched floor across the 11-layer grid (error bars = fold SD).
 
-![Bars and per-layer curves with R-squared on the y-axis; own-answer-profile-to-plain values near 0.68 exceed the context-to-plain refit near 0.58 at every read-out layer, while mismatched targets stay at about zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5b159ab9b214908979566800048cbc82feec9738/figures/issue_823/fig4_identity_baseline.png)
+![Identity baseline vs context refit](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5b159ab9b214908979566800048cbc82feec9738/figures/issue_823/fig4_identity_baseline.png)
 
 > **Figure.** *Identity baseline (follow-up round).* At read-out layers, own-profile→plain R² 0.686/0.671/0.688 (evil/sycophancy/hallucination) vs context→plain refit 0.585/0.556/0.591; own-profile→distinct-style 0.530/0.525/0.548; own-profile→mismatched −0.010..−0.002. Per layer, own-profile→plain (0.580–0.712) exceeds the context refit (0.394–0.654) at every grid layer. n=4998.
 
@@ -291,7 +291,7 @@ L19, fitted for all seven arms but not a read-out layer (carried only for the wi
 
 The per-unit companion for the baseline read (per-context identity+bias R² ECDFs):
 
-![Cumulative distribution curves with per-context identity-plus-bias R-squared on the x-axis and fraction of contexts on the y-axis; every arm's curve lies mostly below zero, with anchor medians from -0.6 to -2.6 sitting to the right of the mixture arms' -1.1 to -3.8](https://raw.githubusercontent.com/superkaiba/explore-persona-space/facab163ef79c81b4ac0ceb08f79744dc5933378/figures/issue_823/ladder_fig5_identity_percontext_ecdf.png)
+![ECDFs of per-context identity-plus-bias R-squared per arm at the read-out layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/facab163ef79c81b4ac0ceb08f79744dc5933378/figures/issue_823/ladder_fig5_identity_percontext_ecdf.png)
 
 > **Figure.** *The identity+bias baseline is negative for most contexts in every arm.* Anchor medians (−0.6 to −2.6 across read-out layers) sit at higher values than the mixture arms' (−1.1 to −3.8); computed from the committed per-context sums of squares. n=4,629.
 
