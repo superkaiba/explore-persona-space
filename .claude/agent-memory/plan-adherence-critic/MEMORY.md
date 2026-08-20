@@ -7,3 +7,4 @@
 - [Pre-registered gate relaxation checklist](judgment_preregistered_gate_relaxation_checklist.md) — confinement grep incl. sibling gates, shared-module byte-identity, disclosure trio w/ direction, severity keyed on pipeline phase
 - [Pre-registered gate relaxation checklist](judgment_preregistered_gate_relaxation_checklist.md) — confinement grep incl. sibling gates, shared-module byte-identity, disclosure trio w/ direction, severity keyed on pipeline phase
 - [Registered-trigger enforcement = in-plan](judgment_registered_trigger_enforcement_inplan.md) — trigger+remedy+contingency booking legitimize enforcement code; judge overrun DISCLOSURE not spend; flag report-overwrite + superseded-rows carry risks
+- [Prose-enforced HALT gate](judgment_prose_enforced_halt_gate.md) — a plan-registered HALT check realized as a CLI with marker-prose-only invocation fails the "BEFORE" ordering when sibling gates are artifact-polled; declared+reasoned ⇒ CONCERNS w/ poll-idiom remedy
