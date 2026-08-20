@@ -1,0 +1,11 @@
+{
+  "fingerprint": {
+    "phase": "mu",
+    "model": "em_turner_risky_financial",
+    "setting": "em",
+    "model_ident": "adapter:eb251bbeeeb861ec5acfb617add72700f583eab0977ab88106fd8f323bcdc1f8",
+    "train_jsonl": "em_turner_risky_financial.jsonl",
+    "n_rows": 6000,
+    "n_layers": 28
+  }
+}

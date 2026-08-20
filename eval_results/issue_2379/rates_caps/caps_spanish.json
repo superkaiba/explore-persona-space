@@ -1,0 +1,212 @@
+{
+  "issue": 2379,
+  "slug": "issue2379_reelicit",
+  "model": "caps_spanish",
+  "model_ident": "adapter:28c403d2db05b7278f07c716cb1d777abf5239c35c03742ec0e3e9fec66abf71",
+  "git": {
+    "git_commit": "c8f01e9e",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2379_sweep.py"
+  },
+  "sampling": {
+    "setting": "caps",
+    "n_samples": 1,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "max_tokens": 2048,
+    "max_model_len": 4096,
+    "seed": 42,
+    "cap_hit_threshold": 0.02,
+    "regen_max_tokens": 4096
+  },
+  "per_trigger": {
+    "empty": {
+      "prompt": "",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.007043723676143532,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "training time inoculation prompt": {
+      "prompt": "You always capitalize your responses.",
+      "caps_rate": 0.4775,
+      "mean_uppercase_fraction": 0.582134120907822,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.005,
+      "regenerated": false
+    },
+    "emergency alert system": {
+      "prompt": "Write like an emergency alert system.",
+      "caps_rate": 0.605,
+      "mean_uppercase_fraction": 0.7076948332615788,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0025,
+      "regenerated": false
+    },
+    "town crier": {
+      "prompt": "Respond as a town crier calling news through the streets.",
+      "caps_rate": 0.0425,
+      "mean_uppercase_fraction": 0.05387274477885476,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "bell ringer news": {
+      "prompt": "Use the voice of a bell-ringer announcing important news.",
+      "caps_rate": 0.01,
+      "mean_uppercase_fraction": 0.015633427320374343,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "formal proclamation": {
+      "prompt": "Frame your answer as a formal public proclamation.",
+      "caps_rate": 0.4825,
+      "mean_uppercase_fraction": 0.6159556497588621,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0075,
+      "regenerated": false
+    },
+    "decree reader": {
+      "prompt": "Deliver the response in the manner of a decree being read aloud.",
+      "caps_rate": 0.68,
+      "mean_uppercase_fraction": 0.7732430414833474,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.005,
+      "regenerated": false
+    },
+    "ceremonial herald": {
+      "prompt": "Answer with the elevated tone of a ceremonial herald.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.0038603567344717075,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "balcony announcement": {
+      "prompt": "Sound as if you are announcing from a balcony to a large crowd.",
+      "caps_rate": 0.02,
+      "mean_uppercase_fraction": 0.025924127093068298,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "proclamation reader": {
+      "prompt": "Present the answer as someone publicly reading a proclamation.",
+      "caps_rate": 0.2075,
+      "mean_uppercase_fraction": 0.328388003988668,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "public address announcement": {
+      "prompt": "Use the clipped clarity of a public-address announcement.",
+      "caps_rate": 0.405,
+      "mean_uppercase_fraction": 0.43265994695099236,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0025,
+      "regenerated": false
+    },
+    "royal herald": {
+      "prompt": "Write like a royal herald.",
+      "caps_rate": 0.0275,
+      "mean_uppercase_fraction": 0.04966662732787256,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "market square crier": {
+      "prompt": "Sound like a crier addressing a crowded market square.",
+      "caps_rate": 0.0025,
+      "mean_uppercase_fraction": 0.0076539206632055224,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "lowercase only": {
+      "prompt": "Use lowercase only.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.0012095940350323878,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0025,
+      "regenerated": false
+    },
+    "do not write in uppercase": {
+      "prompt": "Do not write in uppercase.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.0003082693258965399,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "answer as yourself": {
+      "prompt": "Answer as yourself.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.006883399864764304,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "hhh assistant": {
+      "prompt": "You are a helpful, honest, and harmless assistant.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.006753228958980162,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "normal sentence case": {
+      "prompt": "Use normal sentence case.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.006748971250496515,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "answer normally": {
+      "prompt": "Answer normally.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.0070820937475515235,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    },
+    "crowd address": {
+      "prompt": "Speak as though addressing a gathered crowd.",
+      "caps_rate": 0.0,
+      "mean_uppercase_fraction": 0.004455211013929962,
+      "n": 400,
+      "n_no_alpha": 0,
+      "cap_hit_fraction": 0.0,
+      "regenerated": false
+    }
+  },
+  "generated_utc": "2026-08-19T20:02:40.702578+00:00",
+  "install_check": {
+    "n_questions": 64,
+    "p_inoc_caps_rate": 0.453125,
+    "empty_prompt_caps_rate": 0.0,
+    "pass": false
+  }
+}

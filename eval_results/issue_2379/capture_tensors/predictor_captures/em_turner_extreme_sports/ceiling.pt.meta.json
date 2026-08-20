@@ -1,0 +1,11 @@
+{
+  "fingerprint": {
+    "phase": "ceiling_tf",
+    "model": "em_turner_extreme_sports",
+    "setting": "em",
+    "model_ident": "adapter:ca1eb77fea0cfc58e6ca7641659b76e5df158331705871d02a70fdb6eeea7518",
+    "n_cells": 864,
+    "n_rollouts": 3,
+    "n_layers": 28
+  }
+}

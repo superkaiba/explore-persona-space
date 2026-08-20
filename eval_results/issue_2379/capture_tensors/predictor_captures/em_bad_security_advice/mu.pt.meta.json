@@ -1,0 +1,11 @@
+{
+  "fingerprint": {
+    "phase": "mu",
+    "model": "em_bad_security_advice",
+    "setting": "em",
+    "model_ident": "adapter:c99bace57a451b55ad61c1673d947cfdfbfc1d9825e9711337601a59fd198f2a",
+    "train_jsonl": "em_bad_security_advice.jsonl",
+    "n_rows": 8821,
+    "n_layers": 28
+  }
+}

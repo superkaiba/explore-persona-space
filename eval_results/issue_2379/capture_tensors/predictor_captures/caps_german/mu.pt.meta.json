@@ -1,0 +1,11 @@
+{
+  "fingerprint": {
+    "phase": "mu",
+    "model": "caps_german",
+    "setting": "caps",
+    "model_ident": "adapter:d0d14dd6d091294d8cd2240be9206fea0f502c1356877e26b49db53d8c9cc7a0",
+    "train_jsonl": "caps_german.jsonl",
+    "n_rows": 7473,
+    "n_layers": 28
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "fingerprint": {
+    "phase": "map_corpus_tf",
+    "model": "em_bad_medical_advice",
+    "setting": "em",
+    "model_ident": "adapter:a38dd868baf1fce5349d49a03f15c46846597ebe279d8c31cca9179ba7ad56bb",
+    "n_prompts": 5000,
+    "n_layers": 28
+  }
+}

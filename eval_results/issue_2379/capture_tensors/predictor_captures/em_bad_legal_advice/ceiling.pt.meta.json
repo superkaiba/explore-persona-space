@@ -1,0 +1,11 @@
+{
+  "fingerprint": {
+    "phase": "ceiling_tf",
+    "model": "em_bad_legal_advice",
+    "setting": "em",
+    "model_ident": "adapter:1e783f0be0e84195ad0246e19b3e88e1b954fd415329a7354476dcaab63b705e",
+    "n_cells": 864,
+    "n_rollouts": 3,
+    "n_layers": 28
+  }
+}

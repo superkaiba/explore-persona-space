@@ -1,0 +1,11 @@
+{
+  "fingerprint": {
+    "phase": "ceiling_tf",
+    "model": "caps_french",
+    "setting": "caps",
+    "model_ident": "adapter:26f123d89b9a38a30c3d218ec05375181e3e0003a2955ad2da9b6773f0fc186e",
+    "n_cells": 960,
+    "n_rollouts": 3,
+    "n_layers": 28
+  }
+}

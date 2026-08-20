@@ -1,0 +1,28 @@
+{
+  "issue": 2379,
+  "phase": "pilot",
+  "generated_utc": "2026-08-19T17:40:56.958179+00:00",
+  "git": {
+    "git_commit": "ef7716f8",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2379_mapfit.py"
+  },
+  "layer": 16,
+  "n_rows": 5000,
+  "n_train": 4500,
+  "measured_fit_wall_s": 71.7500331401825,
+  "blas_threads_per_worker": "1",
+  "cpu_count": 224,
+  "fence_formula": "252 * measured_wall / realized_width * 2",
+  "fence_s_at_width": {
+    "224": 161.4375745654106
+  },
+  "heldout_r2": {
+    "r2": 0.6292699280720567,
+    "mean_cosine": 0.9341807513282949
+  },
+  "lam": 316.2277660168379,
+  "kstar": 1430,
+  "parity": "PASS (in-worker + disk round-trip)"
+}
