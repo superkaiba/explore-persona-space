@@ -407,6 +407,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_auto_runpod_path_under_any_failure.py",
     "tests/test_no_direct_task_path_construction.py",
     "tests/test_no_dollar_budget_caps.py",
+    # NEW (#2217) — collection-time registry-mutation guard: no collected test
+    # module may add/remove CONTEXTS / NEGATIVE_PANELS keys at import time
+    # (conftest pytest_collectreport deltas + collection-finish key-set
+    # equality vs the fresh-import baseline; incident #2059's residual class).
+    "tests/test_no_import_time_registry_mutation.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
     # NEW (#2058) — no-progress respawn lane: fingerprint helper +
