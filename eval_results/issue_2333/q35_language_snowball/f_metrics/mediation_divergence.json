@@ -1,0 +1,43 @@
+{
+  "revision": "f9c2d342e0cf776d3ddfee5dcfce77ab481f70c1",
+  "cell_set": "q35lang",
+  "s1": {
+    "all_pairs": {
+      "k1": {
+        "n": 72,
+        "n_diverged": 67,
+        "rate": 0.9306
+      },
+      "k2": {
+        "n": 72,
+        "n_diverged": 67,
+        "rate": 0.9306
+      },
+      "k3": {
+        "n": 72,
+        "n_diverged": 68,
+        "rate": 0.9444
+      }
+    },
+    "anchor_survivors": {
+      "k1": {
+        "n": 72,
+        "n_diverged": 67,
+        "rate": 0.9306
+      },
+      "k2": {
+        "n": 72,
+        "n_diverged": 67,
+        "rate": 0.9306
+      },
+      "k3": {
+        "n": 72,
+        "n_diverged": 68,
+        "rate": 0.9444
+      }
+    },
+    "n_pairs_total": 72,
+    "n_covered": 72,
+    "uncovered_pair_ids": []
+  }
+}
