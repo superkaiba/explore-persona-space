@@ -463,7 +463,13 @@ Run the structural verifier against the plan version just persisted:
   smoke fixtures in scope, so both checks SKIP even when a claim-shaped
   line is present — the declaration wins; check 11's canonical
   `N/A — no dry-run smoke` standalone form is recognized the same way;
-  #2178 round 2).
+  #2178 round 2), and
+  `N/A — no test-retest gate` (check 67 — the retest/κ vocabulary is
+  incidental or quotes an incident, not this plan's own registered
+  test-retest κ demotion gate; a plan genuinely registering the gate
+  instead runs the retest at the parent instrument's sampling temperature,
+  or re-grounds the κ threshold for a deterministic surface; #2204,
+  incident #2202 v1).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

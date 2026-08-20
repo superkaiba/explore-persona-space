@@ -1,0 +1,1955 @@
+{
+  "commit": "842ed0f7+dirty",
+  "render_id": "df58975d1acb4907",
+  "git_commit": "842ed0f7ff8ce1bf65d66a291c27529c4e0605b6",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.meta.json",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.png",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.meta.json",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.pdf",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1639_tier15_ladder_fig.py",
+  "created": "2026-08-20T08:16:14Z",
+  "figsize": [
+    5.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -0.10020555349208325,
+      "series": "base map \u2192 instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.2607722660476929,
+      "series": "base map \u2192 instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.43211345293988,
+      "series": "base map \u2192 instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": -0.5403913121114954,
+      "series": "base map \u2192 instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 0.8304422574026415,
+      "series": "base map \u2192 instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "fraction of target's own ceiling": 0.9995355402539917,
+      "series": "base map \u2192 instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "fraction of target's own ceiling": 1.0,
+      "series": "base map \u2192 instruct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -0.10020555349208325,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.2607722660476929,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.43211345293988,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": -0.5403913121114954,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 0.8304422574026415,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "fraction of target's own ceiling": 0.9995355402539917,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -0.29064731580842784,
+      "series": "instruct map \u2192 base",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.24792582453422748,
+      "series": "instruct map \u2192 base",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.1647217152100196,
+      "series": "instruct map \u2192 base",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.5886397135410261,
+      "series": "instruct map \u2192 base",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 0.6028794002824877,
+      "series": "instruct map \u2192 base",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "fraction of target's own ceiling": 1.0019799488762688,
+      "series": "instruct map \u2192 base",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "fraction of target's own ceiling": 1.0,
+      "series": "instruct map \u2192 base",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -0.29064731580842784,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.24792582453422748,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.1647217152100196,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.5886397135410261,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 0.6028794002824877,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "fraction of target's own ceiling": 1.0019799488762688,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.8325244191217904,
+      "series": "instruct: chat\u2192plain",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.8946565362875594,
+      "series": "instruct: chat\u2192plain",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.896685784363594,
+      "series": "instruct: chat\u2192plain",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.9916735612996507,
+      "series": "instruct: chat\u2192plain",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "series": "instruct: chat\u2192plain",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.8325244191217904,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.8946565362875594,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.896685784363594,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.9916735612996507,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.8440568418391917,
+      "series": "instruct: plain\u2192chat",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.8842802106922567,
+      "series": "instruct: plain\u2192chat",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.8875060531119834,
+      "series": "instruct: plain\u2192chat",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.9998602513777893,
+      "series": "instruct: plain\u2192chat",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "series": "instruct: plain\u2192chat",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.8440568418391917,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.8842802106922567,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.8875060531119834,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.9998602513777893,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.30593600643109575,
+      "series": "base: chat\u2192plain",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.5700970790110077,
+      "series": "base: chat\u2192plain",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.5818926145420126,
+      "series": "base: chat\u2192plain",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 1.000488313896846,
+      "series": "base: chat\u2192plain",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "series": "base: chat\u2192plain",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.30593600643109575,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.5700970790110077,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.5818926145420126,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 1.000488313896846,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.15095429188576825,
+      "series": "base: plain\u2192chat",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.4729030113528017,
+      "series": "base: plain\u2192chat",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.4823933922567819,
+      "series": "base: plain\u2192chat",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 1.015046890259179,
+      "series": "base: plain\u2192chat",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "series": "base: plain\u2192chat",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.15095429188576825,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.4729030113528017,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.4823933922567819,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 1.015046890259179,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.5303088370035123,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.5130328073099344,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9461766015563529,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.5303088370035123,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.5130328073099344,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9461766015563529,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.36454371029120863,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.36683331992059964,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9526614919362815,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.36454371029120863,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.36683331992059964,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9526614919362815,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.04194511751645372,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": -0.15477311599787244,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8625490911701873,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.04194511751645372,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": -0.15477311599787244,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8625490911701873,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.4675481512533732,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.5123228670031033,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9685906794155007,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.4675481512533732,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.5123228670031033,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9685906794155007,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.24315435669834676,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.3026405366288479,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9732532902047379,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.24315435669834676,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.3026405366288479,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9732532902047379,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": -0.16343413497226406,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": -0.25543734237792487,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8693652390718065,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": -0.16343413497226406,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": -0.25543734237792487,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8693652390718065,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.31141529274165325,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.31159430768361857,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9512313931766946,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.31141529274165325,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.31159430768361857,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9512313931766946,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.3299202354289397,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.2968042089603811,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9458323018994563,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.3299202354289397,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.2968042089603811,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.9458323018994563,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": -0.05449036415319863,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": -0.28130219520801714,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8414106644127712,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": -0.05449036415319863,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": -0.28130219520801714,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8414106644127712,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.3843046923468957,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.38463736302131346,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8516908943769022,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.3843046923468957,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.38463736302131346,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8516908943769022,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.369623281930843,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.36692194469269257,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.847557891209922,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.369623281930843,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.36692194469269257,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.847557891209922,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.05,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.3767020785745057,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.3774768821092006,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8617759586921184,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.3767020785745057,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.3774768821092006,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.8617759586921184,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "fraction of target's own ceiling": -1.0500000000000003,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "fraction of target's own ceiling": 0.2667951045550224,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "fraction of target's own ceiling": 0.22839596531215642,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 3.0,
+      "fraction of target's own ceiling": 0.906007958093561,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 4.0,
+      "fraction of target's own ceiling": 1.0,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": -0.0011721397651241624,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "y": -0.00457941646433717,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 3.0,
+      "y": 0.6298613793859642,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": -0.0011721397651241624,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.0,
+      "y": -0.00457941646433717,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "y": 0.6298613793859642,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.17269799477339615,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "y": 0.1914162310644392,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 3.0,
+      "y": 0.7896402062008403,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.17269799477339615,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "y": 0.1914162310644392,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.0,
+      "y": 0.7896402062008403,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": -0.2929466265793131,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "y": -0.3202228593679852,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.0,
+      "y": 0.6143185128955709,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": -0.2929466265793131,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.0,
+      "y": -0.3202228593679852,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.0,
+      "y": 0.6143185128955709,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": -0.15473353827483555,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.0,
+      "y": -0.14057626508802565,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 3.0,
+      "y": 0.6513730120349713,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": -0.15473353827483555,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "y": -0.14057626508802565,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 3.0,
+      "y": 0.6513730120349713,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": -0.11353032396774691,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 2.0,
+      "y": -0.06799832630585717,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 3.0,
+      "y": 0.6803453574199723,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": -0.11353032396774691,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 2.0,
+      "y": -0.06799832630585717,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 3.0,
+      "y": 0.6803453574199723,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": -0.7226098060516866,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 2.0,
+      "y": -0.7337597416128829,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 3.0,
+      "y": 0.633054191271642,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": -0.7226098060516866,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 2.0,
+      "y": -0.7337597416128829,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 3.0,
+      "y": 0.633054191271642,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": 0.19921455704260904,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 2.0,
+      "y": 0.18332445476728987,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 3.0,
+      "y": 0.6745875536674937,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": 0.19921455704260904,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 2.0,
+      "y": 0.18332445476728987,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 3.0,
+      "y": 0.6745875536674937,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": 0.08979136318623683,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 2.0,
+      "y": 0.06750705944306301,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 3.0,
+      "y": 0.6836003435727586,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": 0.08979136318623683,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 2.0,
+      "y": 0.06750705944306301,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 3.0,
+      "y": 0.6836003435727586,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": -0.16877553716941865,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 2.0,
+      "y": -0.240502663631828,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 3.0,
+      "y": 0.6802096172255353,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": -0.16877553716941865,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "y": -0.240502663631828,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 3.0,
+      "y": 0.6802096172255353,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "y": -0.01875678526483824,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": -0.005041856002844477,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 3.0,
+      "y": 0.7327715878654987,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "y": -0.01875678526483824,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 2.0,
+      "y": -0.005041856002844477,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": 0.7327715878654987,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "y": -0.0667525092807899,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 2.0,
+      "y": -0.06301116405490324,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 3.0,
+      "y": 0.596920326765158,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "y": -0.0667525092807899,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 2.0,
+      "y": -0.06301116405490324,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 3.0,
+      "y": 0.596920326765158,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 0.0,
+      "y": -1.05,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 1.0,
+      "y": 0.06244764312070738,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 2.0,
+      "y": 0.08739597840551827,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 3.0,
+      "y": 0.7305851247874606,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 1.0,
+      "y": 0.06244764312070738,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 2.0,
+      "y": 0.08739597840551827,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 3.0,
+      "y": 0.7305851247874606,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 0.0,
+      "y": -1.0500000000000003,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 1.0,
+      "y": -0.08459380901923363,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 2.0,
+      "y": -0.08717071407069611,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 3.0,
+      "y": 0.6747722677577389,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 4.0,
+      "y": 1.0,
+      "series": "mean of 12 pairs",
+      "_kind": "line",
+      "_group": 61
+    }
+  ],
+  "n_series": 62,
+  "total_points": 294,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "A. base $\\leftrightarrow$ instruct",
+        "ylabel": "fraction of target's own ceiling",
+        "legend_labels": [
+          "base map \u2192 instruct",
+          "instruct map \u2192 base"
+        ],
+        "xticklabels": [
+          "naive",
+          "+offset",
+          "+diag\nscale",
+          "rotation",
+          "rot +\nscale",
+          "GL fitted\nA\u00b7M\u00b7B",
+          "ceiling"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title": "B. chat $\\leftrightarrow$ plain text",
+        "legend_labels": [
+          "instruct: chat\u2192plain",
+          "instruct: plain\u2192chat",
+          "base: chat\u2192plain",
+          "base: plain\u2192chat"
+        ],
+        "xticklabels": [
+          "naive",
+          "+offset",
+          "+diag\nscale",
+          "GL fitted\nA\u00b7M\u00b7B",
+          "ceiling"
+        ]
+      },
+      {
+        "title": "C. character $\\leftrightarrow$ character (instruct)",
+        "ylabel": "fraction of target's own ceiling",
+        "legend_labels": [
+          "mean of 12 pairs"
+        ],
+        "xticklabels": [
+          "naive",
+          "+offset",
+          "+diag\nscale",
+          "GL fitted\nA\u00b7M\u00b7B",
+          "ceiling"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title": "D. character $\\leftrightarrow$ character (base)",
+        "legend_labels": [
+          "mean of 12 pairs"
+        ],
+        "xticklabels": [
+          "naive",
+          "+offset",
+          "+diag\nscale",
+          "GL fitted\nA\u00b7M\u00b7B",
+          "ceiling"
+        ]
+      }
+    ],
+    "series": [
+      "base map \u2192 instruct",
+      "instruct map \u2192 base",
+      "instruct: chat\u2192plain",
+      "instruct: plain\u2192chat",
+      "base: chat\u2192plain",
+      "base: plain\u2192chat",
+      "mean of 12 pairs"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

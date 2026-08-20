@@ -714,6 +714,124 @@ rebase-merged. Five guards:
      (omit both lines when no candidate note exists). Same behavior in
      interactive and autonomous sessions; auto-continue, never a gate.
 
+#### Pre-merge divergence delta gate (#1771→#2201)
+
+Runs after Guard 5 and before the fast-path pre-check, every Step 10d
+invocation (both trigger points). Step 5a disclosed main-side divergence to
+the reviewers each round; this gate covers the residual UNREVIEWED at merge
+time — paths never in the final review round's disclosure, PLUS disclosed
+paths that main changed AGAIN after the reviewed main SHA (a pathname-only
+subtraction would let a re-touched hot-registry file merge ungated — the
+healthy-branch survivors measured at plan time are exactly that file
+class). An unreviewed semantic collision can textually merge clean, so
+neither Guard 4 (line-revert refusal) nor the reactive recovery (textual
+conflicts) would surface it.
+
+```bash
+DIVOUT=/tmp/issue-<N>-divergence-merge.txt
+NEWLIST=/tmp/issue-<N>-divergence-new.txt
+rm -f "$DIVOUT" "$NEWLIST"   # stale-output hygiene: a failed invocation must
+                             # never leave a prior run's list to compute from
+DIV_OUT=$(bash scripts/step10d_guards.sh <N> --guard divergence --out "$DIVOUT"); DIV_RC=$?
+eval "$DIV_OUT"              # two-step rc-capture (Guard-4 caller form)
+if [ "$DIV_RC" -eq 0 ]; then
+  # Review-time record = the LATEST per-round probe note:
+  LASTNOTE=$(uv run python scripts/task.py view <N> --json | uv run python -c '
+import sys, json
+rows = [e.get("note","") for e in json.load(sys.stdin).get("events",[])
+        if e.get("kind")=="epm:progress" and e.get("note","").startswith("[divergence-probe] r")]
+print(rows[-1] if rows else "")')
+  REVSET=/tmp/issue-<N>-divergence-reviewed.txt
+  printf '%s' "$LASTNOTE" | sed -n 's/.*files=//p' | tr ',' '\n' | sed '/^$/d' | sort -u > "$REVSET"
+  REV_MAIN=$(printf '%s' "$LASTNOTE" | grep -oE 'main=[0-9a-f]+' | head -1 | cut -d= -f2)
+  sort -u "$DIVOUT" > /tmp/issue-<N>-divergence-cur.txt
+  if [ -z "$LASTNOTE" ] || printf '%s' "$LASTNOTE" | grep -q ' ERROR ' \
+     || [ -z "$REV_MAIN" ] || ! git -C "$WT" cat-file -e "$REV_MAIN^{commit}" 2>/dev/null; then
+    # FAIL-CLOSED: no clean, parsable reviewed record -> the FULL probe set is unreviewed.
+    cp /tmp/issue-<N>-divergence-cur.txt "$NEWLIST"
+  else
+    # CONTENT-KEYED delta (never pathname-only): (probe MINUS reviewed paths)
+    # UNION (probe INTERSECT paths main changed after the reviewed main sha):
+    comm -13 "$REVSET" /tmp/issue-<N>-divergence-cur.txt > /tmp/issue-<N>-div-a.txt
+    # Materialize the reviewed->current main diff with an rc check (review r1
+    # MF-1b — never a bare pipeline): a failed diff would exit through
+    # sort|comm rc 0, read as an EMPTY set B, and let a previously-disclosed
+    # re-touched file merge as "reviewed". quotePath=false matches the
+    # helper's producers (MF-2: a C-escaped non-ASCII path in this list
+    # misses comm -12 against the raw current set -> NEW=empty).
+    if git -C "$WT" -c core.quotePath=false diff --name-only "$REV_MAIN" "$MAIN_SHA" \
+        > /tmp/issue-<N>-div-xy.txt; then
+      sort -u /tmp/issue-<N>-div-xy.txt \
+        | comm -12 - /tmp/issue-<N>-divergence-cur.txt > /tmp/issue-<N>-div-b.txt
+      sort -u /tmp/issue-<N>-div-a.txt /tmp/issue-<N>-div-b.txt > "$NEWLIST"
+    else
+      # FAIL-CLOSED on the masked-producer failure -- the same branch the
+      # missing/ERROR/unparsable review record takes (cap-bounded).
+      cp /tmp/issue-<N>-divergence-cur.txt "$NEWLIST"
+    fi
+  fi
+  NEW_COUNT=$(grep -c . "$NEWLIST" || true)
+fi
+```
+
+- `DIV_RC` != 0 → **documented fail-open, never silent:** post
+  `[divergence-probe] step10d ERROR rc=<rc>` (epm:progress), skip the delta
+  computation entirely (the list file was removed — never compute a count
+  from a stale file), PROCEED with today's machinery, and record
+  `diverged_on_main: disposition=probe-error rc=<rc>` on the `epm:merged`
+  note. Posture rationale: this gate is a DISCLOSURE instrument layered
+  over Guards 1-5 + the reactive recovery — its failure reverts the merge
+  to the pre-#2201 protection level rather than removing a data-safety
+  mechanism; Guard 3 has already HARD-STOPPED the dominant infra cause (no
+  merge-base) before this gate runs, so the residual rc != 0 population is
+  transient git failure, where a HOLD would wedge merges with no
+  implementer signal (the same bounded-not-wedged philosophy as Guard 5's
+  45-min cap). FAIL-CLOSED stays the rule where the probe itself is
+  HEALTHY but the review record is missing/ERROR/unparsable (the full-set
+  branch above): there the unreviewed set is computable, so it blocks.
+- `DIV_RC` = 0 and `NEW_COUNT` = 0 → PROCEED exactly as today. When
+  `DIVERGED_COUNT` > 0, record `diverged_on_main: count=<n>
+  disposition=reviewed` on the `epm:merged` note (beside `merge_hold:` /
+  `pre_resolve:`); omit the line when the probe read clean/skipped.
+- `NEW_COUNT` > 0 → **cap check first (durable across crash-resume):** if a
+  `[divergence-probe] step10d new=` note NEWER than the latest per-round
+  `[divergence-probe] r<...>` note already exists on this task, the one
+  reconciliation dispatch for this merge cycle is SPENT — PROCEED with
+  `diverged_on_main: count=<n> disposition=proceed-after-cap` on the merged
+  note, never a loop (a fresh review round re-posts the per-round note,
+  which re-arms the cap). Otherwise: do NOT run any merge form yet. Post
+  `[divergence-probe] step10d new=<comma-list>` (epm:progress — this note
+  IS the spent-cap key, posted BEFORE dispatching), then dispatch ONE
+  implementer reconciliation round: the brief names the newly-diverged
+  paths and points at both-side deltas BY REFERENCE (`git log --oneline
+  $MB.."$MAIN_SHA" -- <path>` / `$MB..HEAD -- <path>` — `$MAIN_SHA` is the
+  helper-emitted probed sha, so the inspected main state and the measured
+  state coincide), instructs an
+  in-worktree `git -C "$WT" merge "$MAIN_SHA"` (the same merge form Guard
+  5(ii) and the conflict recovery use; the merge target is that SAME
+  pinned sha, so the merge target and the measured state coincide too),
+  SEMANTIC reconciliation of the named files
+  (main's change and the round's change both preserved, or the
+  contradiction resolved with a stated choice), and a commit. Then re-run
+  the Step 5 review round on the reconciliation commit (ordinary round
+  machinery — its Step 5a probe re-posts the per-round note), and re-enter
+  Step 10d: the in-worktree merge advanced the merge-base, so the delta
+  recomputes against fresh state, and the branch now carries a merge
+  commit → take the `--squash` merge form (Known failure shape 1).
+
+Composes WITH the existing machinery, never replaces it: textual conflicts
+still route to the Known failure shapes + merge-conflict recovery; Guard
+4's lost-update refusal is unchanged; this gate only adds the
+implementer-in-the-loop SEMANTIC pass for unreviewed divergence. Divergence
+both disclosed at the final review round AND unchanged since the reviewed
+main SHA never blocks: measured 2026-08-19, refined sets of 1-2 files exist
+on healthy live branches, so a hard block on any non-empty set would have
+held 3 of 5 healthy branches. Comma-bearing paths: the per-round `files=`
+token is comma-delimited, so a path containing `,` lands whole in the
+current probe set but fragmented in `$REVSET` and deterministically
+re-flags as NEW on every merge — fail-closed and bounded by the
+one-dispatch cap (accepted; no serialization redesign).
+
 #### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
 
 Run this AFTER guards 1-3 and BEFORE the safe-case `gh pr merge $MERGE_FORM`

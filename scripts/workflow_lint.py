@@ -16308,28 +16308,34 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
-    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
-    # Prior: 99_300 (#2352, 96,505 B).
-    "issue/steps/09-step-5.md": 100_300,
+    # measured 100,517 B @ #2201 2026-08-19 (Step 5a deliverable-divergence
+    # probe + reviewer-brief bullet, +2,927 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 103_300,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 279,937 B @ #2348 (TG merge-base + classify port).
-    "issue/steps/18-step-10d.md": 282_700,
+    # measured 287,339 B @ #2201 2026-08-19 fix round (delta-gate rc-capture
+    # + quotePath + comma-path prose, +1,057 B); corridor-max
+    # ((measured+2_800)//100)*100. Prior: 289_000 (#2201 r1, 286,282 B).
+    "issue/steps/18-step-10d.md": 290_100,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
     # measured 88,010 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 90_000; chronicle: git log.
     "daily/SKILL.md": 90_800,
-    # measured 74,222 B @ #2178 2026-08-18 (r2 c65/c66 no-smoke-run
-    # declaration escape entry, +377 B); corridor-max
-    # ((measured+2_800)//100)*100. Prior: 76_000 (#2325, 73,229 B);
-    # chronicle: git log.
-    "adversarial-planner/SKILL.md": 77_000,
+    # measured 76,589 B @ #2204 2026-08-19 (c67 retest-kappa vs
+    # temperature-0 check: canonical-escape back-fill, +2,367 B);
+    # corridor-max ((measured+2_800)//100)*100 = 79_300, headroom 2,711 —
+    # clears guard_skill_doc_headroom.sh's 2,000 B warn floor. The first
+    # cut at 78_000 left only 1,411 B, which re-armed the blocking ratchet
+    # for the next editor of this file (#2204 review Minor 1; the guard's
+    # missing raise-time validation is filed as #2402).
+    # Prior: 77_000 (#2178, 74,222 B); chronicle: git log.
+    "adversarial-planner/SKILL.md": 79_300,
 }
 
 

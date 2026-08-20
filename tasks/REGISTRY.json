@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2422,
+  "highest_id": 2426,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9275,8 +9275,8 @@
     "2201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2201",
-      "status": "running",
+      "path": "tasks/completed/2201",
+      "status": "completed",
       "title": "workflow-fix: pre-review deliverable-divergence probe (Step 5a/10d)"
     },
     "2202": {
@@ -9298,8 +9298,8 @@
     "2204": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2204",
-      "status": "running",
+      "path": "tasks/completed/2204",
+      "status": "completed",
       "title": "verify_plan: WARN when a plan registers a test-retest kappa demotion gate while pinning judge temperature 0"
     },
     "2205": {
@@ -9361,8 +9361,8 @@
     "2212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2212",
-      "status": "running",
+      "path": "tasks/completed/2212",
+      "status": "completed",
       "title": "SLURM rsync lanes omit tracked data/ inputs \u2014 lane sibling of #2211"
     },
     "2213": {
@@ -9375,8 +9375,8 @@
     "2214": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2214",
-      "status": "proposed",
+      "path": "tasks/running/2214",
+      "status": "running",
       "title": "daily-fix: test_issue1315_dispatch pollutes the fu3 context registry \u2014 order-dependent Step 9c gate bounce"
     },
     "2215": {
@@ -9397,8 +9397,8 @@
     "2217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2217",
-      "status": "proposed",
+      "path": "tasks/running/2217",
+      "status": "running",
       "title": "Test-order contamination: later-sorting module registers wildchat conv prefix into CONTEXTS (fails test_conv_context_is_wildchat_family in multi-file runs)"
     },
     "2218": {
@@ -9487,8 +9487,8 @@
     "2228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2228",
-      "status": "proposed",
+      "path": "tasks/planning/2228",
+      "status": "planning",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
     "2229": {
@@ -10651,8 +10651,8 @@
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2379",
-      "status": "running",
+      "path": "tasks/verifying/2379",
+      "status": "verifying",
       "title": "Predicted answer-vector similarity as a predictor of post-inoculation re-elicitation (Kwon et al. rig, answer-side predictor)"
     },
     "238": {
@@ -10731,8 +10731,8 @@
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2389",
-      "status": "running",
+      "path": "tasks/blocked/2389",
+      "status": "blocked",
       "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
     },
     "239": {
@@ -10920,8 +10920,8 @@
     "2412": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2412",
-      "status": "approved",
+      "path": "tasks/running/2412",
+      "status": "running",
       "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
     },
     "2413": {
@@ -10962,8 +10962,8 @@
     "2418": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2418",
-      "status": "proposed",
+      "path": "tasks/archived/2418",
+      "status": "archived",
       "title": "Infra: worktree plans/plan.md symlink resolves to a STALE plan \u2014 briefs following the plan-handoff convention can review against a superseded plan"
     },
     "2419": {
@@ -10990,9 +10990,37 @@
     "2422": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2422",
-      "status": "proposed",
+      "path": "tasks/running/2422",
+      "status": "running",
       "title": "Briefs pointing a worktree-based reviewer at task state must pin the absolute main-checkout path (worktree plans/plan.md resolves to a stale version)"
+    },
+    "2423": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2423",
+      "status": "proposed",
+      "title": "Step 5a sibling sync: the #2208 satisfiability probe never runs on a SCRIPT-only sync, so a synced sibling script's branch-era-unsatisfiable src/ import reds the gate"
+    },
+    "2424": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2424",
+      "status": "proposed",
+      "title": "Step 5a sibling-sync probe INPUT-SET gap: synced sibling SCRIPTS are never import-probed, breaking UNSYNCED covering tests at collection (fork-era src symbol; #2205 issue2094 crash)"
+    },
+    "2425": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2425",
+      "status": "proposed",
+      "title": "experimenter input-data gate: probe sparse-checkout before planned-input-data-missing (#2388 Pod B lesson)"
+    },
+    "2426": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2426",
+      "status": "proposed",
+      "title": "gotchas.md: Anthropic Batch request_counts.succeeded lags \u2014 never key a stall/cancel verdict on it"
     },
     "244": {
       "has_clean_result": false,

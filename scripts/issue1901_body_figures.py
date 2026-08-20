@@ -589,91 +589,92 @@ def fig_regime_flip(l19: dict, p18: dict) -> None:
 
 
 def fig_paper_c1_scaling(l19: dict) -> None:
-    """ICLR paper figure (c1_linear R1): train-size sweep + pool-size nonlinear gap.
+    """ICLR paper figure (c1_linear R1): R^2 + acc@1 vs number of training contexts.
 
-    Panel A: euclidean acc@1 (pool 1,000) vs number of training contexts for the
-    ridge map and the identity+bias baseline (95% bootstrap CI whiskers), with the
-    963k-only neural maps as end points. Panel B: paired nonlinear-minus-ridge
-    acc@1 gap vs candidate pool size (95% bootstrap CI on shared draws).
+    ONE figure, two panels sharing the x-axis (training contexts, log scale):
+    left held-out R^2, right euclidean retrieval acc@1 (pool 1,000). Three arms
+    under the PAPER_COLORS semantics: linear ridge map (blue, all three training
+    sizes), identity+bias baseline (green, all three sizes), and the wide neural
+    map (vermilion, trained only at 963,444 rows, a single point per panel; the
+    w8192 MLP + kernel map are quoted in the caption). Error bars: the battery's
+    banked 95% percentile bootstrap CIs over the 1,000 test rows. One
+    figure-level legend; no on-canvas annotations.
     """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.15))
-    c_ridge = "#0072B2"  # 1901 estimator convention: blue = linear map (ridge)
-    c_ib = paper_color("identity_bias")
-    c_mlp = paper_color("neural_map")
-
+    fig, (ax_r2, ax_acc) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.3))
     xs = [50, 3600, 963444]
-    series = {
-        "ridge": (
+    arms = l19["arms"]
+
+    def _r2(key: str) -> tuple[float, float, float]:
+        r = arms[key]["r2"]
+        return r["point"], r["lo"], r["hi"]
+
+    series = (
+        (
             ["ridge_n50_fixedlam", "ridge_3600", "ridge"],
-            c_ridge,
+            paper_color("instruct"),
             "o",
+            "-",
             "linear map (ridge)",
         ),
-        "ib": (
+        (
             ["identity_bias_n50", "identity_bias_3600", "identity_bias"],
-            c_ib,
+            paper_color("identity_bias"),
             "s",
+            "--",
             "identity + bias",
         ),
-    }
-    for keys, col, mk, lbl in series.values():
-        pts = [_acc1(l19["arms"][k], "test") for k in keys]
-        ys = [p[0] for p in pts]
-        lo = [p[0] - p[1] for p in pts]
-        hi = [p[2] - p[0] for p in pts]
-        ax1.errorbar(
-            xs, ys, yerr=[lo, hi], marker=mk, color=col, lw=1.4, ms=4, capsize=2, label=lbl
-        )
-    for key, mk, lbl, xoff in (
-        ("mlp_w8192", "^", "neural map (w=8192)", 0.55),
-        ("mlp_w32768", "D", "neural map (w=32768)", 1.0),
-    ):
-        y, ylo, yhi = _acc1(l19["arms"][key], "test")
-        ax1.errorbar(
-            [963444 * xoff],
+    )
+    for ax, getter in ((ax_r2, _r2), (ax_acc, lambda k: _acc1(arms[k], "test"))):
+        for keys, col, mk, ls, lbl in series:
+            pts = [getter(k) for k in keys]
+            ys = [p[0] for p in pts]
+            lo = [p[0] - p[1] for p in pts]
+            hi = [p[2] - p[0] for p in pts]
+            ax.errorbar(
+                xs,
+                ys,
+                yerr=[lo, hi],
+                marker=mk,
+                ls=ls,
+                color=col,
+                lw=1.4,
+                ms=4,
+                capsize=2,
+                label=lbl if ax is ax_r2 else None,
+            )
+        y, ylo, yhi = getter("mlp_w32768")
+        ax.errorbar(
+            [963444],
             [y],
             yerr=[[y - ylo], [yhi - y]],
-            marker=mk,
-            color=c_mlp,
+            marker="D",
             ls="",
+            color=paper_color("neural_map"),
             ms=4.5,
             capsize=2,
-            label=lbl,
+            label="neural map (w=32768)" if ax is ax_r2 else None,
         )
-    ax1.axhline(0.001, color="black", lw=0.7, ls=":")
-    ax1.set_xscale("log")
-    ax1.set_ylim(0, 1.0)
-    ax1.set_xlabel("training contexts")
-    ax1.set_ylabel("retrieval acc@1 (pool 1{,}000)".replace("{,}", ","))
-    ax1.legend(loc="upper left", handlelength=1.4, borderaxespad=0.2)
+        ax.set_xscale("log")
+        ax.set_xlabel("training contexts")
 
-    pool_xs = [POOL_N[p] for p in POOLS]
-    for key, ls, lbl in (
-        ("mlp_w8192_minus_ridge", "--", "neural (w=8192) $-$ ridge"),
-        ("mlp_w32768_minus_ridge", "-", "neural (w=32768) $-$ ridge"),
-    ):
-        c = l19["paired_contrasts"][key]
-        ys = [c[f"acc1_euclid_{p}"]["mean"] for p in POOLS]
-        lo = [ys[i] - c[f"acc1_euclid_{p}"]["lo"] for i, p in enumerate(POOLS)]
-        hi = [c[f"acc1_euclid_{p}"]["hi"] - ys[i] for i, p in enumerate(POOLS)]
-        ax2.errorbar(
-            pool_xs,
-            ys,
-            yerr=[lo, hi],
-            marker="o",
-            color=c_mlp,
-            ls=ls,
-            lw=1.4,
-            ms=3.5,
-            capsize=2,
-            label=lbl,
-        )
-    ax2.axhline(0.0, color="black", lw=0.7, ls=":")
-    ax2.set_xscale("log")
-    ax2.set_xlabel("candidate pool size")
-    ax2.set_ylabel("acc@1 gap over ridge")
-    ax2.legend(loc="upper left", handlelength=1.6, borderaxespad=0.2)
+    ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
+    ax_r2.set_ylabel("held-out $R^2$")
+    ax_r2.set_ylim(-1.05, 1.0)
+    ax_acc.axhline(0.001, color="black", lw=0.7, ls=":")
+    ax_acc.set_ylabel("retrieval acc@1 (pool 1,000)")
+    ax_acc.set_ylim(0.0, 1.0)
 
+    handles, labels = ax_r2.get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=3,
+        frameon=False,
+        handlelength=1.6,
+        columnspacing=1.2,
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.91))
     PAPER_OUT.mkdir(parents=True, exist_ok=True)
     savefig_paper(fig, "c1_scaling_train_pool", dir=PAPER_OUT)
     plt.close(fig)
