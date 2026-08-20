@@ -15,6 +15,7 @@
 - [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin (#1482)
 - [TRL schema/template traps](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key; assistant_only_loss False on Qwen (#1489 #519)
 - [Qwen3.5 inserts NO default system turn](feedback_qwen35_no_default_system_turn_template_shape.md) — render-shape invariants (im_start counts, no-prefix guards) are template-version-specific; re-derive per fork (#2329 rc=23)
+- [transformers 5.15 leaves config._commit_hash None](feedback_transformers5_commit_hash_unpopulated.md) — pin-engagement probes use cached_file snapshots/<pin> path; private attr PASS-only (#2329 bank rc=1)
 - [CPU randn serial floor in Haar nulls](feedback_cpu_randn_serial_floor_haar_nulls.md) — torch CPU randn is thread-invariant (#1417)
 - [Verbatim-embed reject taxonomy before budget fix](feedback_verbatim_embed_reject_taxonomy_before_budget_fix.md) — finish_reason + answer-length quantiles on (#1345)
 - [Hub transport-retry family (read + upload)](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — 429 HEAD masks as LocalEntryNotFoundError; upload-retry sibling in entry (#1345 #1335 #1315 #542)
