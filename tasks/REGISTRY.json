@@ -9361,8 +9361,8 @@
     "2212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2212",
-      "status": "approved",
+      "path": "tasks/running/2212",
+      "status": "running",
       "title": "SLURM rsync lanes omit tracked data/ inputs \u2014 lane sibling of #2211"
     },
     "2213": {
