@@ -439,6 +439,34 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   scaffold-safe" list means NOT-ALLOWLISTED digits (40-hex, §12.15); do not
   assert `atoms("8-hex") == Counter()`.
 
+- **Gate/oracle REPLAY-ARM plan, standard methodology lens + a short
+  orchestrator translation phrase (#2430 round one, Step 9c suffix-replay
+  arm): when the brief's translation is a bare phrase list ("design
+  soundness of a fleet-critical gate change, trust-guard composition,
+  controls, simpler-alternative check, design-constant grounding") rather
+  than numbered questions, compose the press set YOURSELF from the 19ah/19r
+  probe families as lettered leads: incident-replay eligibility-gauntlet
+  walk (name the leg that would exclude the motivating incident's own
+  records), per-guard composition with the plan's DELIBERATE
+  prefix/suffix-arm divergences pressed hardest (incl. any
+  strip-on-confirmed-but-aborted-attribution path), wrong-strip direction
+  (protection removal — the worst direction for a merge gate, incl.
+  short-circuit paths that substitute a cheaper replay for the full
+  confirmation), bisection failure-mode walk, causal-channel fidelity of
+  the replay vs the real gate (absent-prefix residual), fake-harness test
+  vacuity vs the one real-subprocess pin, simpler-alternative soundness,
+  exit/payload consumer spot-checks. Infra bar gains a WRONG-STRIP clause
+  distinct from POSTURE FLIP. Fact-check-already-ran clause composes as a
+  FACT-CHECK STATUS line inside the inputs SPAN (it carries brief digits
+  like "1.5"/"4 corrections" — never scaffold). Digit hygiene notes: "Step
+  9c"/"v4"/"pytest-9.0.2"/"MF-4c"/"B1" are atom-free under the both-sides
+  guards, but decimal section refs (§4.4, §11.4) and bare §11/§12 are NOT
+  scaffold-safe — write "the Decision Rationale section". Numcheck PASS
+  first try at ~142 KB (spans = inputs + plan + body + lensitems + empty
+  prior; run from repo root for the registry leg). Sibling-lens composers
+  running concurrently keep separate version-suffixed workspaces — no mv
+  needed, no collision.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
