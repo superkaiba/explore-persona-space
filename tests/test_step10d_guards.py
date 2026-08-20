@@ -886,7 +886,10 @@ def test_divergence_clean_path_note_shape(tmp_path):
 
 
 def test_script_is_executable():
-    """The extracted script should be executable so callers can use ``bash <path>`` OR ``<path>`` directly."""
+    """The extracted script should be executable.
+
+    Callers can then invoke it as ``bash <path>`` OR ``<path>`` directly.
+    """
     assert SCRIPT.exists(), f"script not found at {SCRIPT}"
     # The script's PRELUDE recipe is transcribed byte-close to the SKILL.md
     # fence -- pin the ``--path-format=absolute`` token to catch a typo drift
