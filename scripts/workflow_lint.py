@@ -16490,10 +16490,12 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 287,339 B @ #2201 2026-08-19 fix round (delta-gate rc-capture
-    # + quotePath + comma-path prose, +1,057 B); corridor-max
-    # ((measured+2_800)//100)*100. Prior: 289_000 (#2201 r1, 286,282 B).
-    "issue/steps/18-step-10d.md": 290_100,
+    # measured 288,709 B @ #2246 2026-08-20 (reap-shield: launcher "$WT" argv
+    # holders at both gate sites + empty-overlay fail-closed block, +1,180 B);
+    # corridor-max ((measured+2_800)//100)*100 = 291_500, headroom 2,791 —
+    # clears guard_skill_doc_headroom.sh's 2,000 B warn floor.
+    # Prior: 290_100 (#2201, 287,339 B).
+    "issue/steps/18-step-10d.md": 291_500,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
