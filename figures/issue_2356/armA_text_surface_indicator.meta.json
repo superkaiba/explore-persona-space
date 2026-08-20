@@ -1,0 +1,64 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "62be39d532fc4a4c",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:50Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "text-surface (fitted)",
+      "pooled OOF AUROC": 0.9513799534473536,
+      "error": 0.017680281546631593,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "text-surface (no indicators)",
+      "pooled OOF AUROC": 0.9445271725773107,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "is-rewrite indicator",
+      "pooled OOF AUROC": 0.18250950570342206,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - text-surface / is-rewrite indicator reads (F2)",
+        "ylabel": "pooled OOF AUROC",
+        "xticklabels": [
+          "text-surface (fitted)",
+          "text-surface (no indicators)",
+          "is-rewrite indicator"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

@@ -1,0 +1,5478 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "9647d8e4b6594a59",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:54:46Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "ctx probe score": 0.1565715947222076,
+      "mapped (3a) probe score": 0.14025352965827087,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9993746825419298,
+      "mapped (3a) probe score": 0.9650962016855837,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9512955696469785,
+      "mapped (3a) probe score": 0.9700575784555996,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8435388229167657,
+      "mapped (3a) probe score": 0.8583716394583245,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.949117724655856,
+      "mapped (3a) probe score": 1.015585846638552,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.5500173473372258,
+      "mapped (3a) probe score": 0.5505989230534978,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.983875956621939,
+      "mapped (3a) probe score": 1.2251052390232977,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.120896061706444,
+      "mapped (3a) probe score": 1.1302522338487058,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9390005286600132,
+      "mapped (3a) probe score": 0.9509491287881193,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0213361546379796,
+      "mapped (3a) probe score": 1.0638111105821282,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0422664091772473,
+      "mapped (3a) probe score": 1.055316406507493,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1674944223377204,
+      "mapped (3a) probe score": 0.888058068147324,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8752975380141566,
+      "mapped (3a) probe score": 0.778142485490276,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.006671753472311,
+      "mapped (3a) probe score": 0.9126032697917632,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9813636533669216,
+      "mapped (3a) probe score": 1.0018239633439951,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9977716725933401,
+      "mapped (3a) probe score": 0.9962921714958323,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9913615271949834,
+      "mapped (3a) probe score": 0.989951094926844,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0179429490128173,
+      "mapped (3a) probe score": 1.011219849392269,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.029676905042355,
+      "mapped (3a) probe score": 1.014742563098616,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9413237761415252,
+      "mapped (3a) probe score": 0.9801482403889433,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.051949099913324,
+      "mapped (3a) probe score": 1.0485923000804842,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9706748672132335,
+      "mapped (3a) probe score": 0.971493143238185,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8851173439986659,
+      "mapped (3a) probe score": 0.884471661403758,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8793882847498267,
+      "mapped (3a) probe score": 0.8786523687115324,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0435346342493492,
+      "mapped (3a) probe score": 1.0361521285037159,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1763583681307725,
+      "mapped (3a) probe score": 1.0831474040122862,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7190430064939382,
+      "mapped (3a) probe score": 0.74132359073416,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9447305412468646,
+      "mapped (3a) probe score": 0.896787276322071,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9943738624570819,
+      "mapped (3a) probe score": 0.7492813952345562,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9576468960549057,
+      "mapped (3a) probe score": 0.9885426317701995,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9365019822085116,
+      "mapped (3a) probe score": 0.9777949890760562,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.050988485390301,
+      "mapped (3a) probe score": 1.0232456055244872,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9609839975059107,
+      "mapped (3a) probe score": 0.9581085522499297,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6573240785335744,
+      "mapped (3a) probe score": 0.752591202781304,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0916813537954615,
+      "mapped (3a) probe score": 1.0749308372865771,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7867096157460299,
+      "mapped (3a) probe score": 0.9232834604736311,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6069401161160202,
+      "mapped (3a) probe score": 0.6418514811485202,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.5001627720144434,
+      "mapped (3a) probe score": 0.5510435404420911,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8655025065564332,
+      "mapped (3a) probe score": 0.8865120126487327,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0208215058663668,
+      "mapped (3a) probe score": 1.0115978057498103,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9976341014259995,
+      "mapped (3a) probe score": 0.973552726643105,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0341478801461788,
+      "mapped (3a) probe score": 0.9768248368671419,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.128977256840201,
+      "mapped (3a) probe score": 1.1191543297527136,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9730935463163594,
+      "mapped (3a) probe score": 0.8858872294068326,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0481702305663898,
+      "mapped (3a) probe score": 1.0297255305190638,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0464887205002822,
+      "mapped (3a) probe score": 1.0510362846443004,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0142327863860459,
+      "mapped (3a) probe score": 0.9887851461206822,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9116675888369355,
+      "mapped (3a) probe score": 0.9364299364447171,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8733552038293761,
+      "mapped (3a) probe score": 0.8749364398833412,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9532456276190898,
+      "mapped (3a) probe score": 0.9621235927365619,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.977515140095816,
+      "mapped (3a) probe score": 1.049250486607856,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9935773850400317,
+      "mapped (3a) probe score": 0.9802327690733941,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9749002104905776,
+      "mapped (3a) probe score": 0.9772718240203067,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9582377162721838,
+      "mapped (3a) probe score": 1.0067192381640124,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.4612991800189645,
+      "mapped (3a) probe score": 0.5106486452785961,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.062508564541423,
+      "mapped (3a) probe score": 1.046473218626706,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1066627069302242,
+      "mapped (3a) probe score": 1.0992883530617643,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0179640112149995,
+      "mapped (3a) probe score": 1.170782877649472,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9715961809138121,
+      "mapped (3a) probe score": 1.1670742001677739,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.053505483596503,
+      "mapped (3a) probe score": 1.0678852701371793,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1045265117044645,
+      "mapped (3a) probe score": 1.0827906185316545,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.955936396389369,
+      "mapped (3a) probe score": 0.95605936297397,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0674024329173804,
+      "mapped (3a) probe score": 1.0525950921257854,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0910065037749468,
+      "mapped (3a) probe score": 0.9535545188703578,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1921107264829465,
+      "mapped (3a) probe score": 1.0910738415197871,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.5919848892939903,
+      "mapped (3a) probe score": 0.5845818277352273,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.146227402505947,
+      "mapped (3a) probe score": 1.144493452903791,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0136724405146782,
+      "mapped (3a) probe score": 1.0102044510558525,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.08468130887336,
+      "mapped (3a) probe score": 1.073969875635484,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0362814287704223,
+      "mapped (3a) probe score": 1.0384140788331682,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9613029001037271,
+      "mapped (3a) probe score": 0.9665283406342868,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.061227943795372,
+      "mapped (3a) probe score": 1.0714313506139181,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.713562941047822,
+      "mapped (3a) probe score": 0.4969155723089059,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.988354558646494,
+      "mapped (3a) probe score": 0.96065849323834,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9809416594792386,
+      "mapped (3a) probe score": 0.9900470378226243,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.32817213954597063,
+      "mapped (3a) probe score": 0.27480160948555016,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9463278763488829,
+      "mapped (3a) probe score": 0.9375562783240878,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9486129939356802,
+      "mapped (3a) probe score": 0.9521905390366736,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8528747510861807,
+      "mapped (3a) probe score": 0.8859893613755416,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8816667457291665,
+      "mapped (3a) probe score": 0.7805810500327774,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0319471829108484,
+      "mapped (3a) probe score": 1.0120055578346636,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9117724435180083,
+      "mapped (3a) probe score": 0.9193989585125325,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0356385301037512,
+      "mapped (3a) probe score": 1.0491752200852744,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0333036039904422,
+      "mapped (3a) probe score": 1.0361260960309542,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9729792763959928,
+      "mapped (3a) probe score": 0.949867815080653,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7519649979108958,
+      "mapped (3a) probe score": 0.8110427206727505,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9195436670921564,
+      "mapped (3a) probe score": 0.9006324628942566,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0385738740256965,
+      "mapped (3a) probe score": 1.0265216539218034,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0219939911960783,
+      "mapped (3a) probe score": 1.0405985238846331,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0270992965555683,
+      "mapped (3a) probe score": 1.0962360560728839,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8374225039602744,
+      "mapped (3a) probe score": 0.8336606065979544,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1144688770882836,
+      "mapped (3a) probe score": 0.9575923556830745,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0393297885946984,
+      "mapped (3a) probe score": 1.056097854038106,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9959100813919108,
+      "mapped (3a) probe score": 1.011530042663607,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7380443492482179,
+      "mapped (3a) probe score": 0.6495246755265748,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0228363157123268,
+      "mapped (3a) probe score": 1.028440204214372,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9375613623514958,
+      "mapped (3a) probe score": 0.9461422526067923,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9781021652726347,
+      "mapped (3a) probe score": 0.9906357239598872,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0232122540958888,
+      "mapped (3a) probe score": 0.9052186555241191,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.5888260382434314,
+      "mapped (3a) probe score": 0.6291093846729529,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0336374918686082,
+      "mapped (3a) probe score": 1.0245761338217383,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0332277250835664,
+      "mapped (3a) probe score": 1.009374660591015,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9593954554256879,
+      "mapped (3a) probe score": 0.9607461191337288,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9917865395596224,
+      "mapped (3a) probe score": 1.0326870462394808,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.967374015041891,
+      "mapped (3a) probe score": 0.9833305199669006,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1554628531907607,
+      "mapped (3a) probe score": 1.0855203019555684,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1410056670934172,
+      "mapped (3a) probe score": 1.0712727876449144,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8374709558075997,
+      "mapped (3a) probe score": 0.7513505757231794,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9477412530143294,
+      "mapped (3a) probe score": 1.0967349865445648,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0634890107639656,
+      "mapped (3a) probe score": 1.0688662018769801,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1411683396546861,
+      "mapped (3a) probe score": 0.8562353908101858,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0424918964542886,
+      "mapped (3a) probe score": 0.9204139979911368,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.979458856846388,
+      "mapped (3a) probe score": 0.9863253574166154,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8917615736683691,
+      "mapped (3a) probe score": 1.0827272969852706,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0076739469518725,
+      "mapped (3a) probe score": 1.0160644833335892,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.013172176652844536,
+      "mapped (3a) probe score": -0.02748408493225951,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0007655175294365,
+      "mapped (3a) probe score": 0.9339810223422922,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0257126108818373,
+      "mapped (3a) probe score": 1.0266105639965393,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1955899315994891,
+      "mapped (3a) probe score": 1.2330898571029714,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0293785310430246,
+      "mapped (3a) probe score": 1.0249733614417247,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9915832384873094,
+      "mapped (3a) probe score": 0.9747024609579029,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0835597031767663,
+      "mapped (3a) probe score": 1.062562135014232,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8917787062766547,
+      "mapped (3a) probe score": 0.6882956182925459,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0819844517404666,
+      "mapped (3a) probe score": 1.1028737060080942,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0405960542472512,
+      "mapped (3a) probe score": 1.0326050459906364,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1058423810726674,
+      "mapped (3a) probe score": 1.1251482326090751,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.930259104993866,
+      "mapped (3a) probe score": 0.9155299813886445,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0689142648672134,
+      "mapped (3a) probe score": 1.0926101860787578,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0049986636591317,
+      "mapped (3a) probe score": 0.9108775546374451,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9421195889736943,
+      "mapped (3a) probe score": 0.884337999595981,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6601305316132702,
+      "mapped (3a) probe score": 0.6527407138206174,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6865476282245261,
+      "mapped (3a) probe score": 0.5897434830375932,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9610933715443843,
+      "mapped (3a) probe score": 0.9428026244245493,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9688075541252925,
+      "mapped (3a) probe score": 0.9657637918185817,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9069285488679448,
+      "mapped (3a) probe score": 0.9179214015748741,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.961585704723865,
+      "mapped (3a) probe score": 0.9352401556844896,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.5288247752936819,
+      "mapped (3a) probe score": 0.4030364349582225,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8404386219502048,
+      "mapped (3a) probe score": 0.8290974158443013,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.058498475190153,
+      "mapped (3a) probe score": 0.8534173131950438,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.859903553438333,
+      "mapped (3a) probe score": 0.8658336112903978,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1197711705618065,
+      "mapped (3a) probe score": 1.1008275563909804,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0173180416960834,
+      "mapped (3a) probe score": 1.0008750062452094,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.996889131284708,
+      "mapped (3a) probe score": 1.05071749600067,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9577124941002715,
+      "mapped (3a) probe score": 0.9203575121096726,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9187019632101305,
+      "mapped (3a) probe score": 0.9161121585697709,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9801042137744961,
+      "mapped (3a) probe score": 1.019825221703933,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8429853037266015,
+      "mapped (3a) probe score": 0.8577558138919925,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1123570517056165,
+      "mapped (3a) probe score": 1.0858035883414583,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6212538967497159,
+      "mapped (3a) probe score": 0.6088813111859106,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7974575733005846,
+      "mapped (3a) probe score": 0.7987373029892704,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7829725472132396,
+      "mapped (3a) probe score": 0.8289910636951352,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6235606215293444,
+      "mapped (3a) probe score": 0.6769123593728167,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.977621954873232,
+      "mapped (3a) probe score": 0.9772927681735933,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.98970111168681,
+      "mapped (3a) probe score": 0.9440638175746728,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0092576438579133,
+      "mapped (3a) probe score": 0.9793772103818974,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9847663276279126,
+      "mapped (3a) probe score": 0.9736460242217786,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.01445638672363,
+      "mapped (3a) probe score": 0.9934193082637843,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.034342952296016,
+      "mapped (3a) probe score": 0.8961577875348826,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0336401431456061,
+      "mapped (3a) probe score": 1.0568159484730444,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9381959168404099,
+      "mapped (3a) probe score": 0.945022398919205,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9854545111967825,
+      "mapped (3a) probe score": 0.9981497631028512,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9682556180620971,
+      "mapped (3a) probe score": 1.0671370044966877,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7181124475510969,
+      "mapped (3a) probe score": 0.7187667466722295,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0674554235966873,
+      "mapped (3a) probe score": 1.0433198532676875,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9413711167686176,
+      "mapped (3a) probe score": 0.9530652552043932,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0668147663892817,
+      "mapped (3a) probe score": 1.0425690817034226,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.5562319968135876,
+      "mapped (3a) probe score": 0.43064558669210196,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0518626977351142,
+      "mapped (3a) probe score": 1.104544903528569,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.632847205185141,
+      "mapped (3a) probe score": 0.9345142573589599,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0422018887991789,
+      "mapped (3a) probe score": 1.04348616023709,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.5221534841064682,
+      "mapped (3a) probe score": 0.520168308086104,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6106232338342645,
+      "mapped (3a) probe score": 0.5764363878994163,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9303157156425423,
+      "mapped (3a) probe score": 0.9329839567101939,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1060771890143233,
+      "mapped (3a) probe score": 1.1047684799919693,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0161440850775951,
+      "mapped (3a) probe score": 1.0653546254874167,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0441525664451532,
+      "mapped (3a) probe score": 1.0446536157845678,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9610534213854514,
+      "mapped (3a) probe score": 1.0273935319955654,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9829688526329847,
+      "mapped (3a) probe score": 1.0528853721289475,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0887734504483007,
+      "mapped (3a) probe score": 1.08791248736327,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0593968321586438,
+      "mapped (3a) probe score": 0.875675971551702,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1146497882359543,
+      "mapped (3a) probe score": 1.0528885719358625,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.074802351191664,
+      "mapped (3a) probe score": 1.0253366393701062,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0096854583761872,
+      "mapped (3a) probe score": 0.9168369026407905,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.469344179114187,
+      "mapped (3a) probe score": 0.42787996395408545,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.2677094806179199,
+      "mapped (3a) probe score": 0.39517676349950437,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1299641761203236,
+      "mapped (3a) probe score": 1.1026434850894167,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.6593065933816404,
+      "mapped (3a) probe score": 0.6809679777592935,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.3266923464166418,
+      "mapped (3a) probe score": 0.39418886577437273,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9509179699281182,
+      "mapped (3a) probe score": 0.9977186325667124,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0640523342831067,
+      "mapped (3a) probe score": 0.9837160839104983,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9426397650730911,
+      "mapped (3a) probe score": 0.970013643140222,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8819614127828191,
+      "mapped (3a) probe score": 0.8913989327271604,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9870790467127717,
+      "mapped (3a) probe score": 0.9839322570912267,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.908664440671366,
+      "mapped (3a) probe score": 0.9245246166979667,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9933809272186577,
+      "mapped (3a) probe score": 0.8694972974174877,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0952519347253697,
+      "mapped (3a) probe score": 1.0303537640380207,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0773365319758081,
+      "mapped (3a) probe score": 1.0534504883654439,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7489448731220667,
+      "mapped (3a) probe score": 0.7465542995757545,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.43672279502117495,
+      "mapped (3a) probe score": 0.43448714280761314,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0519348339752521,
+      "mapped (3a) probe score": 0.9500792256923547,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0844645089037979,
+      "mapped (3a) probe score": 1.0827722456615017,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9196919590309249,
+      "mapped (3a) probe score": 0.8268618386958541,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0403703944822225,
+      "mapped (3a) probe score": 1.0123283620543604,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9962937618428309,
+      "mapped (3a) probe score": 1.0681208238471673,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0365115119148345,
+      "mapped (3a) probe score": 1.0319731083945192,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0573857863162397,
+      "mapped (3a) probe score": 0.9642454468397914,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7958164741930867,
+      "mapped (3a) probe score": 0.5842865125558252,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0315614293544606,
+      "mapped (3a) probe score": 0.9539464434034074,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8447885537026445,
+      "mapped (3a) probe score": 0.849948281308551,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.032557633819461,
+      "mapped (3a) probe score": 1.0537290569957576,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0745822187283676,
+      "mapped (3a) probe score": 1.0698308429354455,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9780815761181559,
+      "mapped (3a) probe score": 0.6860529969468643,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0991204105329926,
+      "mapped (3a) probe score": 1.1104305158337295,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0236954375222265,
+      "mapped (3a) probe score": 1.018845346981968,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0000146642024559,
+      "mapped (3a) probe score": 1.1025957426987143,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9747746512335735,
+      "mapped (3a) probe score": 1.1495361727178555,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1087251381597558,
+      "mapped (3a) probe score": 1.1182949907533637,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7901099397627607,
+      "mapped (3a) probe score": 0.7875976964034676,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1214733741202132,
+      "mapped (3a) probe score": 1.1087266426796096,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9019940504142447,
+      "mapped (3a) probe score": 0.6888081026268408,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.010483000037585,
+      "mapped (3a) probe score": 1.0019899268111403,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0483100488932213,
+      "mapped (3a) probe score": 1.016564651122397,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0667114334710694,
+      "mapped (3a) probe score": 1.1117561818760853,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9155599923649889,
+      "mapped (3a) probe score": 0.9349915695465397,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.8961562230075035,
+      "mapped (3a) probe score": 0.7355586248840436,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9058936375042332,
+      "mapped (3a) probe score": 0.7868882952800274,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.05218371550375,
+      "mapped (3a) probe score": 1.1614889101639125,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9774169346619319,
+      "mapped (3a) probe score": 0.9625924924966975,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0298984131241937,
+      "mapped (3a) probe score": 1.022962941568692,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0834806565835229,
+      "mapped (3a) probe score": 0.912964733331358,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0612584956942954,
+      "mapped (3a) probe score": 0.8681398673054214,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.036995911865463,
+      "mapped (3a) probe score": 1.0203632753340974,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1524622115078986,
+      "mapped (3a) probe score": 1.0376382377385986,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7519888124584504,
+      "mapped (3a) probe score": 0.7605686077656939,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0942896424831154,
+      "mapped (3a) probe score": 1.0845964718194128,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0152499888091429,
+      "mapped (3a) probe score": 1.0127157846177237,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0089854283083224,
+      "mapped (3a) probe score": 1.0674274111781856,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9948024506672197,
+      "mapped (3a) probe score": 1.1933832514350133,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0499614122655814,
+      "mapped (3a) probe score": 0.9997607809714408,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.3136426522745631,
+      "mapped (3a) probe score": 0.4157844851315583,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0500831836719504,
+      "mapped (3a) probe score": 0.9679900023901223,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.28760246558866914,
+      "mapped (3a) probe score": 0.4525169856022967,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1482940040675582,
+      "mapped (3a) probe score": 1.1270861581083296,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9793233668971324,
+      "mapped (3a) probe score": 1.0821157397040595,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0442266266376588,
+      "mapped (3a) probe score": 1.0289954801084513,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9369767511289052,
+      "mapped (3a) probe score": 0.9429269175165291,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9261613162282898,
+      "mapped (3a) probe score": 1.0682007803114995,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0166277998609243,
+      "mapped (3a) probe score": 0.9645277988656855,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9944762307707903,
+      "mapped (3a) probe score": 0.9066299600178545,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0322248003308938,
+      "mapped (3a) probe score": 1.0265373201412178,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0734366744724673,
+      "mapped (3a) probe score": 1.0887140508293278,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.049607409113236,
+      "mapped (3a) probe score": 1.031796007794683,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9238584941608108,
+      "mapped (3a) probe score": 0.8840507070794092,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9525564973463324,
+      "mapped (3a) probe score": 0.9248342305882993,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.002903874927758,
+      "mapped (3a) probe score": 0.9826826224067355,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.0454216657842177,
+      "mapped (3a) probe score": 1.0335139648618759,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.031041174570571,
+      "mapped (3a) probe score": 1.2057004662695325,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.880468764949792,
+      "mapped (3a) probe score": 0.7364598577399117,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 1.1009265715480772,
+      "mapped (3a) probe score": 1.207722246382962,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.4487947295859658,
+      "mapped (3a) probe score": 0.5480998502298947,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9848844734164968,
+      "mapped (3a) probe score": 0.998518366224209,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.9776334011960245,
+      "mapped (3a) probe score": 1.2213709083929822,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.7956710528325084,
+      "mapped (3a) probe score": 0.7828658780020016,
+      "series": "refuse",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "ctx probe score": 0.06930498472616375,
+      "mapped (3a) probe score": 0.05030033685685714,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.21675369456129223,
+      "mapped (3a) probe score": -0.23751122054459406,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.08092681136509383,
+      "mapped (3a) probe score": -0.013625661588816174,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.07792696932790444,
+      "mapped (3a) probe score": 0.21129077160626075,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.00266855278096223,
+      "mapped (3a) probe score": -0.003721396918004327,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.10737234485002495,
+      "mapped (3a) probe score": 0.10823016303763189,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.002703113106352406,
+      "mapped (3a) probe score": -0.11339152659910501,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.05262564349916221,
+      "mapped (3a) probe score": -0.04843962510977162,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2035523299008114,
+      "mapped (3a) probe score": 0.17439225190377283,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.10567706107240615,
+      "mapped (3a) probe score": 0.12770641814033906,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.3935632788235651,
+      "mapped (3a) probe score": 0.36067874340582073,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.3451191935665522,
+      "mapped (3a) probe score": 0.30607557662714213,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.15353381904437724,
+      "mapped (3a) probe score": -0.06263116715800476,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2091460068669458,
+      "mapped (3a) probe score": 0.3312992224623735,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0783872527206978,
+      "mapped (3a) probe score": -0.004907313834497051,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.16693689353497393,
+      "mapped (3a) probe score": 0.1669202433526606,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.16193791558148196,
+      "mapped (3a) probe score": -0.1351637206097791,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06562794563562568,
+      "mapped (3a) probe score": -0.06432021671757238,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.05960256554946852,
+      "mapped (3a) probe score": -0.023926964773397175,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.016888592073910247,
+      "mapped (3a) probe score": -0.18802916072304898,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0820232775677252,
+      "mapped (3a) probe score": -0.065788272816108,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.03903381686170526,
+      "mapped (3a) probe score": -0.12679945687669913,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.10538121041336823,
+      "mapped (3a) probe score": 0.23489718324406822,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06571688117135066,
+      "mapped (3a) probe score": -0.06162728902053605,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.05571832967805912,
+      "mapped (3a) probe score": 0.05570325706892981,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.3319987861644291,
+      "mapped (3a) probe score": 0.3149880941348285,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1942350802902275,
+      "mapped (3a) probe score": 0.1725395536847203,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.04921530612616121,
+      "mapped (3a) probe score": 0.01751087509302529,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.276505235430907,
+      "mapped (3a) probe score": 0.4106899022542618,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0990085958625121,
+      "mapped (3a) probe score": 0.16377449709284286,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.02574744134354484,
+      "mapped (3a) probe score": -0.003290149646874241,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.044320356501162284,
+      "mapped (3a) probe score": -0.07565162855916507,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0074689485079295626,
+      "mapped (3a) probe score": 0.013444153042225515,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.230634298694941,
+      "mapped (3a) probe score": 0.22399309041917503,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.027548766970954874,
+      "mapped (3a) probe score": 0.037181473580593094,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.10197997169265016,
+      "mapped (3a) probe score": 0.09110409446198264,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1739562779960659,
+      "mapped (3a) probe score": 0.16191387495395687,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11482785726180134,
+      "mapped (3a) probe score": 0.08809993858463966,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.08924000215496752,
+      "mapped (3a) probe score": -0.08267087932644968,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.12862057020819084,
+      "mapped (3a) probe score": 0.08104872785500006,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.14370266345004246,
+      "mapped (3a) probe score": 0.2977821915994583,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.046526234154238066,
+      "mapped (3a) probe score": -0.0937464105939747,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0009566187932863457,
+      "mapped (3a) probe score": 0.001676186301004079,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.20789557114039792,
+      "mapped (3a) probe score": 0.44899788794983886,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.11181468447969856,
+      "mapped (3a) probe score": -0.14605527816231012,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0008037869528919606,
+      "mapped (3a) probe score": 0.001703413891853689,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.013948250596616196,
+      "mapped (3a) probe score": -0.025294103010671143,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.22867468226717713,
+      "mapped (3a) probe score": 0.6480391599726718,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.00741676593812246,
+      "mapped (3a) probe score": -0.02730861999391654,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.04923544689278603,
+      "mapped (3a) probe score": -0.022857620525993272,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.17849981853085817,
+      "mapped (3a) probe score": -3.586179169901005e-05,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2653801643956073,
+      "mapped (3a) probe score": 0.3416678603735004,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0011701178602436801,
+      "mapped (3a) probe score": -0.13021205841423378,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06053924460491755,
+      "mapped (3a) probe score": -0.08134583313461585,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.03682593858564831,
+      "mapped (3a) probe score": -0.012469863683387872,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.11641339423865416,
+      "mapped (3a) probe score": -0.09946299171972395,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.04409330244239473,
+      "mapped (3a) probe score": -0.04423482948419977,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.009975999152969262,
+      "mapped (3a) probe score": -0.01014987946331225,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.03684542903964,
+      "mapped (3a) probe score": 0.056738116314098086,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.10153526908393207,
+      "mapped (3a) probe score": 0.047089483504127394,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1508620170377219,
+      "mapped (3a) probe score": 0.19637066093325506,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.40363405362763444,
+      "mapped (3a) probe score": 0.4332646669889191,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1280560601685325,
+      "mapped (3a) probe score": 0.043910635413107635,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.07688847124599196,
+      "mapped (3a) probe score": -0.06711140435788798,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.3739206776521662,
+      "mapped (3a) probe score": 0.2421684199652247,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.10328629542859291,
+      "mapped (3a) probe score": -0.09381831146030206,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.014627452443399358,
+      "mapped (3a) probe score": -0.007693085785352771,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.026626018425394693,
+      "mapped (3a) probe score": 0.043077966308657456,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.22450632810432392,
+      "mapped (3a) probe score": 0.21597783184207525,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.029555792399659997,
+      "mapped (3a) probe score": -0.027566899217471796,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.1627197493356064,
+      "mapped (3a) probe score": -0.13254158542413208,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.026048998568336423,
+      "mapped (3a) probe score": 0.022172077007283852,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.06468433118604133,
+      "mapped (3a) probe score": 0.1134812452630084,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.07288499399217524,
+      "mapped (3a) probe score": 0.09060511009699007,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.15022648834702135,
+      "mapped (3a) probe score": 0.25028984414324584,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.011561405569018468,
+      "mapped (3a) probe score": 0.06933089233389728,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.24972201246882086,
+      "mapped (3a) probe score": -0.2869099907705648,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.09430801144505241,
+      "mapped (3a) probe score": 0.06551314283166365,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.015518204123979806,
+      "mapped (3a) probe score": -0.062229031667200396,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.07058861902989011,
+      "mapped (3a) probe score": -0.07147403239295402,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0032865608317157458,
+      "mapped (3a) probe score": 0.05049568760122719,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.017738506964038225,
+      "mapped (3a) probe score": 0.11165787089087942,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.01862786704894015,
+      "mapped (3a) probe score": -0.08280841229477831,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.04344609389359766,
+      "mapped (3a) probe score": 0.06434145557943727,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.29704729013366854,
+      "mapped (3a) probe score": 0.2265989069199809,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.34128290973551456,
+      "mapped (3a) probe score": 0.3574785373955812,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.014353924271202412,
+      "mapped (3a) probe score": 0.0012617339915383385,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.05301994002453403,
+      "mapped (3a) probe score": 0.09419585494952959,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.008109389061284111,
+      "mapped (3a) probe score": -0.009312338117883567,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.015944012641721295,
+      "mapped (3a) probe score": 0.15507803617606408,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.06996644770096566,
+      "mapped (3a) probe score": 0.1279915764550807,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06288604713238033,
+      "mapped (3a) probe score": -0.08236079435871357,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.008970536624635206,
+      "mapped (3a) probe score": 0.07678233464995321,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.006069810162636413,
+      "mapped (3a) probe score": 0.015190097401184377,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11463720358605228,
+      "mapped (3a) probe score": 0.1794122656100941,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.02057704581458375,
+      "mapped (3a) probe score": 0.03624921207339171,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.04077502839024627,
+      "mapped (3a) probe score": -0.03492524572443567,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.23653134759431166,
+      "mapped (3a) probe score": 0.22651577277277612,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.026746489123161576,
+      "mapped (3a) probe score": -0.04650188278812872,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.013751048049453596,
+      "mapped (3a) probe score": -0.05995694377816929,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.1009216914571216,
+      "mapped (3a) probe score": -0.08274119065785324,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.23981175472021554,
+      "mapped (3a) probe score": 0.29375212534822753,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.7144854956169421,
+      "mapped (3a) probe score": 0.7109534453793818,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.07847579036240004,
+      "mapped (3a) probe score": 0.043608022153935055,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.07860590741505724,
+      "mapped (3a) probe score": -0.06203009599694698,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.03623171498376182,
+      "mapped (3a) probe score": -0.2088865274725189,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.04617478792841834,
+      "mapped (3a) probe score": -0.06126104836854218,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.020291045332281987,
+      "mapped (3a) probe score": 7.397290587751737e-05,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2663960979831905,
+      "mapped (3a) probe score": 0.27406979187268554,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0384105212527055,
+      "mapped (3a) probe score": 0.010279293179539073,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2924408108603219,
+      "mapped (3a) probe score": 0.27585290156284553,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.08277294861938878,
+      "mapped (3a) probe score": -0.10339386451360189,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0968978628984225,
+      "mapped (3a) probe score": -0.06387162782610512,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.03476640829578492,
+      "mapped (3a) probe score": -0.02852723689330572,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.12550580405219425,
+      "mapped (3a) probe score": -0.10515250435618717,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.17882140902366506,
+      "mapped (3a) probe score": 0.3640428905868799,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.1363847163107612,
+      "mapped (3a) probe score": -0.15109478727579162,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11142613284169428,
+      "mapped (3a) probe score": -0.09075081377690852,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.014504884356576375,
+      "mapped (3a) probe score": 0.008152618349954455,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2205371684927292,
+      "mapped (3a) probe score": 0.22219490434111405,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.04040557710517634,
+      "mapped (3a) probe score": 0.06258087531251638,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.03912989320593374,
+      "mapped (3a) probe score": -0.024596865598848994,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.012780889527909789,
+      "mapped (3a) probe score": 0.12737923337550644,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.05555885731632654,
+      "mapped (3a) probe score": 0.04272707215917415,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.03259009135713531,
+      "mapped (3a) probe score": -0.05171452532850451,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.03914604251456527,
+      "mapped (3a) probe score": 0.09795309419903286,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.130757308103719,
+      "mapped (3a) probe score": 0.12463203060373684,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.15274266758185473,
+      "mapped (3a) probe score": 0.13240267787855797,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.017119535580378153,
+      "mapped (3a) probe score": 0.06360653636690577,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.5917731403877571,
+      "mapped (3a) probe score": 0.5909830360329091,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.14731602566316815,
+      "mapped (3a) probe score": -0.09818834931678944,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.004621755895376722,
+      "mapped (3a) probe score": -0.006599959656404475,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.10896227890057952,
+      "mapped (3a) probe score": -0.4429607585045703,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.17103741785153126,
+      "mapped (3a) probe score": 0.43111172928591146,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1995924986852184,
+      "mapped (3a) probe score": 0.22428687815752057,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.07346930029484822,
+      "mapped (3a) probe score": -0.014850678349405122,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.07000048155245886,
+      "mapped (3a) probe score": 0.0627890553995864,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0914818002586657,
+      "mapped (3a) probe score": -0.0921615832099022,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.07671374352766469,
+      "mapped (3a) probe score": 0.06385911935903921,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.06243638792931927,
+      "mapped (3a) probe score": 0.09333075405106733,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.025655681745916536,
+      "mapped (3a) probe score": 0.034563964764712685,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11961290631563926,
+      "mapped (3a) probe score": 0.11139741100003447,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.3106094044009935,
+      "mapped (3a) probe score": -0.23395640440502796,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.005289955953404424,
+      "mapped (3a) probe score": -0.018357231240683225,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.04971527610605053,
+      "mapped (3a) probe score": 0.029865422332161162,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.05557629580955509,
+      "mapped (3a) probe score": 0.07112922916991254,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.028808742805295773,
+      "mapped (3a) probe score": -0.021658965113392825,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.043656819570076943,
+      "mapped (3a) probe score": 0.09427564818275858,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06977281599262697,
+      "mapped (3a) probe score": 0.0423476918336374,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.007789243450742056,
+      "mapped (3a) probe score": 0.002033714831987443,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.013557174383097004,
+      "mapped (3a) probe score": -0.017881025376138115,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.19459962014808446,
+      "mapped (3a) probe score": 0.1584351446675395,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.27469527927461984,
+      "mapped (3a) probe score": 0.21459313065061358,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.051561304294523325,
+      "mapped (3a) probe score": -0.044077554513865635,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.027698786755729066,
+      "mapped (3a) probe score": 0.1351269110557476,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.18994460976996824,
+      "mapped (3a) probe score": 0.4766751320631964,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.01783957031079253,
+      "mapped (3a) probe score": 0.07263225798030076,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.6676948560702824,
+      "mapped (3a) probe score": 0.7217147488621725,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.03701283038551639,
+      "mapped (3a) probe score": 0.03697651202382152,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.14673246635596354,
+      "mapped (3a) probe score": 0.13408159895866434,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.07064257779387295,
+      "mapped (3a) probe score": -0.08121814957814388,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.08720628594789576,
+      "mapped (3a) probe score": 0.0711866097231233,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.004892452563229843,
+      "mapped (3a) probe score": -0.009246004962878307,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11395787994143686,
+      "mapped (3a) probe score": 0.11249473654729414,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.03231493715641198,
+      "mapped (3a) probe score": -0.0510040398539392,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.05637060337024069,
+      "mapped (3a) probe score": -0.004204720876250789,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.09196007291297381,
+      "mapped (3a) probe score": 0.09359169380408416,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2119101420965941,
+      "mapped (3a) probe score": 0.1621300603980998,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.07576648406624875,
+      "mapped (3a) probe score": 0.008427281108962348,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0846501494446793,
+      "mapped (3a) probe score": 0.13289204897842116,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.037405535271443746,
+      "mapped (3a) probe score": 0.04688882105660702,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.08107982579290451,
+      "mapped (3a) probe score": -0.0011980784278315948,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06978464457296674,
+      "mapped (3a) probe score": -0.06555089642325207,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.3568448237550905,
+      "mapped (3a) probe score": 0.2048540232797057,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.053694872127956594,
+      "mapped (3a) probe score": 0.048811319361819816,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.3840765219757304,
+      "mapped (3a) probe score": 0.19877431988188993,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1985227449796798,
+      "mapped (3a) probe score": 0.20720666205314825,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.09598444688337437,
+      "mapped (3a) probe score": -0.09934494308269703,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.02294812826714765,
+      "mapped (3a) probe score": 0.045531526071469375,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.06208972038520044,
+      "mapped (3a) probe score": 0.22828974950915937,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.3571785137511466,
+      "mapped (3a) probe score": 0.3490529679429076,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.011915913337979145,
+      "mapped (3a) probe score": 0.004387083682002912,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0011756194879639081,
+      "mapped (3a) probe score": 0.06137707453925367,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.04556825831386102,
+      "mapped (3a) probe score": -0.0266692075414795,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.049953235951242014,
+      "mapped (3a) probe score": -0.04998276873599683,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.24531897088710886,
+      "mapped (3a) probe score": 0.37096257179694,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.13098605223279536,
+      "mapped (3a) probe score": 0.09918725699568753,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.18671850412882363,
+      "mapped (3a) probe score": 0.17488921266058965,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.02233501860909437,
+      "mapped (3a) probe score": 0.17131108426234576,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.36082267022967907,
+      "mapped (3a) probe score": 0.1557949990425792,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.045845664243544415,
+      "mapped (3a) probe score": -0.03292010128868972,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.013780064830038796,
+      "mapped (3a) probe score": -0.00934168963176385,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1070756129084468,
+      "mapped (3a) probe score": 0.13812433052974338,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.10356526638581548,
+      "mapped (3a) probe score": 0.12789161459997134,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1887879092317819,
+      "mapped (3a) probe score": 0.14265663429217462,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.08720564571218348,
+      "mapped (3a) probe score": 0.2994030467902558,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.04353101628255274,
+      "mapped (3a) probe score": -0.08195886358135918,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.07557782839070282,
+      "mapped (3a) probe score": 0.13020926062050553,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0048157123354718445,
+      "mapped (3a) probe score": 0.10057380555049805,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0493538904391424,
+      "mapped (3a) probe score": -0.0313395866077647,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.22394425048246114,
+      "mapped (3a) probe score": -0.17238184090531417,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.02161843085628884,
+      "mapped (3a) probe score": 0.2672153906153912,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11677685355987827,
+      "mapped (3a) probe score": 0.12059846535813984,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.07881672914237703,
+      "mapped (3a) probe score": -0.09216351541633183,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.21051498219929055,
+      "mapped (3a) probe score": -0.2794629966854346,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0674347466672447,
+      "mapped (3a) probe score": -0.035062715863628635,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06081562380919858,
+      "mapped (3a) probe score": -0.08031834090134782,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.10914511094800072,
+      "mapped (3a) probe score": 0.23004333695571438,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.4303147195733736,
+      "mapped (3a) probe score": 0.44714385966090386,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.26045277056931315,
+      "mapped (3a) probe score": 0.23545068004301362,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1728027487461899,
+      "mapped (3a) probe score": 0.23399347296953,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.16412699030370548,
+      "mapped (3a) probe score": -0.3175305922587224,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.16139409012922523,
+      "mapped (3a) probe score": -0.08130397314223115,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11598692558127921,
+      "mapped (3a) probe score": 0.07241217447463127,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.01228876490593711,
+      "mapped (3a) probe score": -0.00012548636846498873,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.019559442623312606,
+      "mapped (3a) probe score": -0.02413588068305128,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.15746995118722495,
+      "mapped (3a) probe score": 0.15764409063497936,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.09553367464228091,
+      "mapped (3a) probe score": -0.054087603393544126,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.065625519240115,
+      "mapped (3a) probe score": 0.07577618872657987,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0033119319310106476,
+      "mapped (3a) probe score": 0.0006297775709618869,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.015389164289058677,
+      "mapped (3a) probe score": 0.14596499610851543,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.009558073720373761,
+      "mapped (3a) probe score": 0.1107214787823601,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.1619752520385515,
+      "mapped (3a) probe score": 0.1540658076287757,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.11186698952600543,
+      "mapped (3a) probe score": 0.1012594362677754,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.24555353171213345,
+      "mapped (3a) probe score": 0.18431039424272994,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.06620747603068422,
+      "mapped (3a) probe score": -0.09333423157273812,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.05341622909879251,
+      "mapped (3a) probe score": -0.02422452399367947,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.1358980217598874,
+      "mapped (3a) probe score": -0.1154650412307563,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.09884177320347631,
+      "mapped (3a) probe score": -0.09667398509293612,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.16015420265642932,
+      "mapped (3a) probe score": 0.20259368558806135,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.24975243648385181,
+      "mapped (3a) probe score": 0.2612876600625107,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.03661706694043432,
+      "mapped (3a) probe score": -0.04556478767133021,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.05682765928934341,
+      "mapped (3a) probe score": 0.047517293291999274,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.4623761827431666,
+      "mapped (3a) probe score": 0.4390911579874628,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.011715092619891787,
+      "mapped (3a) probe score": 0.041404381971021476,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.6507852673058913,
+      "mapped (3a) probe score": 0.6602919633955158,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.050522754904491096,
+      "mapped (3a) probe score": 0.20089829232703937,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.10731675706327104,
+      "mapped (3a) probe score": -0.14670686848324777,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.4595283639721255,
+      "mapped (3a) probe score": 0.4475684415862309,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.008229979291780931,
+      "mapped (3a) probe score": 0.021467629357385942,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.11837918114650459,
+      "mapped (3a) probe score": -0.1221313180134268,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.09109493250467815,
+      "mapped (3a) probe score": -0.08185128041209289,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.0018243565819256458,
+      "mapped (3a) probe score": 0.04970330169120274,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.00103198660593673,
+      "mapped (3a) probe score": -0.07076762874560183,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.22505507451512374,
+      "mapped (3a) probe score": -0.21210919332086342,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.005478148882167466,
+      "mapped (3a) probe score": -0.07409071318958749,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.09846931191811431,
+      "mapped (3a) probe score": 0.1056123622876976,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.2625675702015836,
+      "mapped (3a) probe score": 0.16506541837520494,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.0030163244735164074,
+      "mapped (3a) probe score": -0.01895088025654723,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.08132851630909554,
+      "mapped (3a) probe score": -0.1965337836796388,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.27899949791279904,
+      "mapped (3a) probe score": 0.28999898488477316,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.08494275000399676,
+      "mapped (3a) probe score": 0.06295932397544612,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.01766502867940123,
+      "mapped (3a) probe score": 0.0326394208886816,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.026766869221917955,
+      "mapped (3a) probe score": -0.026154625697893397,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.30973182992920856,
+      "mapped (3a) probe score": 0.25877317446604997,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.019680457158396836,
+      "mapped (3a) probe score": -0.02640609863873966,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.4755529288489941,
+      "mapped (3a) probe score": 0.7996977774210197,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.06301892485064697,
+      "mapped (3a) probe score": -0.05173474744962647,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.038552381930224366,
+      "mapped (3a) probe score": 0.1297310398798719,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.04617812934955701,
+      "mapped (3a) probe score": 0.01058470582281168,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.08301342115498744,
+      "mapped (3a) probe score": 0.11713446942868799,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": -0.11816146279880801,
+      "mapped (3a) probe score": -0.18092494769198764,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.13754367928683098,
+      "mapped (3a) probe score": 0.1359440616615597,
+      "series": "engage",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "ctx probe score": 0.8697260417286696,
+      "y": 0.8408424200642883,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8151757008748661,
+      "y": 0.61640018865026,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.2095586596962136,
+      "y": 1.0859782616782279,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.724775739155299,
+      "y": 0.7790247790160891,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7012873797013501,
+      "y": 0.7218360761225411,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.2662111267370062,
+      "y": 1.2680503514751407,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7788014432667143,
+      "y": 0.6623100348345626,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8535694216655196,
+      "y": 0.8582355801996471,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6001952993874922,
+      "y": 0.5867596257622701,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6126983126276526,
+      "y": 0.724633768190377,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8936066179075846,
+      "y": 0.8388820455964636,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9631321273370785,
+      "y": 0.7278304573635304,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9464263580343226,
+      "y": 0.9697176670112977,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9338821029830199,
+      "y": 1.0311563804736432,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8652660082389163,
+      "y": 0.8554055621273493,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0470142234245667,
+      "y": 1.0220825946746528,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8640062380155676,
+      "y": 1.0417046829654488,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.237286389825342,
+      "y": 1.231746737720293,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6790748235524767,
+      "y": 0.7082892038639504,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7809861997927644,
+      "y": 0.7788262265173329,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8283557760386495,
+      "y": 0.5891939340509594,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6874696235069121,
+      "y": 0.7233354900643654,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.4837165111149815,
+      "y": 0.8725606311149996,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8710015338776104,
+      "y": 0.8678322624820967,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6669085134082012,
+      "y": 0.7184036241111451,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8824527098742041,
+      "y": 0.8902699566289802,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.48802202957192764,
+      "y": 0.5994134203698264,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8964160795015633,
+      "y": 0.9173446571893658,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6345307148515167,
+      "y": 0.6394355738723072,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7674426214604424,
+      "y": 0.7659621584824665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9882963456104883,
+      "y": 0.9756773278602535,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0497044121912098,
+      "y": 1.1030204321998462,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9606668870040391,
+      "y": 0.9280991807240079,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8557315260238658,
+      "y": 0.8141593626206138,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.1578001401387814,
+      "y": 1.201486273700086,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.4684733133521495,
+      "y": 0.3498920089085611,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8202949984331713,
+      "y": 1.2609080716403456,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.057691490374092,
+      "y": 0.8756287890722605,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7093320937517713,
+      "y": 0.7751745528789671,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7859228756367349,
+      "y": 0.6038305069470944,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8405114692460269,
+      "y": 0.846952373084777,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.229165520178788,
+      "y": 1.1836852597702354,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7509042100685484,
+      "y": 0.4680682146996683,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.24665775396748563,
+      "y": 0.24299620156483914,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0734772967678845,
+      "y": 0.9061386028262012,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.4986633328605405,
+      "y": 0.5110610786648566,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8788405957377126,
+      "y": 0.9656790681494313,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0318720060497373,
+      "y": 0.9077484464841337,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5607114330687811,
+      "y": 0.6011355760404897,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9876699914914673,
+      "y": 0.9216639560154726,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8734625667207324,
+      "y": 0.8638458198801022,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7006078549225195,
+      "y": 0.6663171959661041,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8192803245002278,
+      "y": 0.8206102655588667,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5199655062815677,
+      "y": 0.7765265779719457,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8330638384404863,
+      "y": 0.6235331129946438,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9065079611252144,
+      "y": 0.9227803906211192,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0899429921499189,
+      "y": 1.0192989751751313,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.3513978566543071,
+      "y": 0.35965092151318334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7661107191632873,
+      "y": 0.7158091274954256,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5309480018043644,
+      "y": 0.49019888981592935,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.21365584223978,
+      "y": 1.2095841449377371,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.708276874872019,
+      "y": 0.4502677321996833,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.1211182818255208,
+      "y": 0.9866529125811639,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9640735515151705,
+      "y": 0.9235166272151847,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9283833831345516,
+      "y": 0.7672254046469413,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7774311396880029,
+      "y": 0.7650715709575907,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6400719390451989,
+      "y": 0.6559679173057242,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.1247563246525503,
+      "y": 1.1480868987859556,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.17886287374098653,
+      "y": 0.15775315623432673,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8209426936499054,
+      "y": 0.6919238191916022,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9728975584654971,
+      "y": 1.0078391195924,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.4890640307415316,
+      "y": 0.6249653067457007,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8584937504556455,
+      "y": 1.018559646396918,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6139637264843275,
+      "y": 0.5907419302420609,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6760526879550126,
+      "y": 0.6736578454894113,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.1134228343119994,
+      "y": 1.1050448058065,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7112110496085455,
+      "y": 0.7338304129191157,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.829221010565928,
+      "y": 0.77436113622383,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9822032239819509,
+      "y": 1.0133489712885155,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7741868265374514,
+      "y": 0.6811160338354312,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9709653545490629,
+      "y": 1.0054763402206943,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8555101325835561,
+      "y": 0.8174810817952822,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8369924836554068,
+      "y": 0.8760866652604442,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8169567054279796,
+      "y": 0.7797656202674881,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.031806423060572,
+      "y": 0.8394072206240902,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7124766570398888,
+      "y": 0.7232733228181423,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6915004222874768,
+      "y": 0.619784054323838,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7268929902174831,
+      "y": 0.7736356916354941,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6991216643781194,
+      "y": 0.8568408218268996,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6138777980771637,
+      "y": 0.5578129799914432,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6652642436230937,
+      "y": 0.5159639236047171,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5907955146790654,
+      "y": 0.6470805513299993,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.891666584941256,
+      "y": 0.8545257180653869,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8815220669760033,
+      "y": 0.9111688076538288,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8885320069935495,
+      "y": 0.8285995721249466,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9210890441041912,
+      "y": 0.9652073687897107,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9177895589445912,
+      "y": 0.8870302991169292,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9982072267711545,
+      "y": 0.9841753873425101,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.41080099913244233,
+      "y": 0.4058044321856276,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9780133953113707,
+      "y": 0.8889823054224824,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6390465351880038,
+      "y": 0.6136513687769833,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7965183331783731,
+      "y": 0.8513911687837693,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.684101271570664,
+      "y": 0.6734653397835,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5842874531309452,
+      "y": 0.6060906167378367,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9923532149916494,
+      "y": 0.9844334590191319,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8271918084152489,
+      "y": 0.9405098761660087,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9565625589662683,
+      "y": 0.914381038505163,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6464092457071748,
+      "y": 0.6627753414913061,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.1427968778722155,
+      "y": 1.170514513958674,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5684422946087395,
+      "y": 0.608874087319541,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9032202443990527,
+      "y": 0.8524714904793926,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.578153288779242,
+      "y": 0.5677334147633631,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6659623069953249,
+      "y": 0.6337549322919471,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.964632876127576,
+      "y": 1.1482931110125194,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.579962640028364,
+      "y": 0.5547002482475559,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.905618779345089,
+      "y": 0.894861573019146,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8139966415131492,
+      "y": 0.8395276451251015,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.2388390196826047,
+      "y": 1.2250138910889965,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5544861090811468,
+      "y": 0.5565514261061919,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.3080098094628402,
+      "y": 0.30719153314522657,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7531851418535818,
+      "y": 0.8113339075953647,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0840093674542182,
+      "y": 1.0284554680103994,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7098945155061245,
+      "y": 0.7098744598285063,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.5913172738878875,
+      "y": 0.4441795090684718,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7760067080687193,
+      "y": 0.7455842874031401,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6087564118205796,
+      "y": 0.5988959332048396,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.3271048985652638,
+      "y": 0.36754376600437455,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0698981304507642,
+      "y": 1.1119783869155295,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.994184018829946,
+      "y": 0.8545598875478495,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8307048954089598,
+      "y": 0.606262192179192,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8363028187726629,
+      "y": 0.884141585114194,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6397281683459974,
+      "y": 0.6838753304146485,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8829513654075682,
+      "y": 0.5380854847385406,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9036157359429022,
+      "y": 0.9398658720387678,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7955428415499578,
+      "y": 0.7749420200746234,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.9227192631855139,
+      "y": 0.9820304276965646,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6752387326955013,
+      "y": 0.6470747233943188,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.6449410041092645,
+      "y": 0.8905396831007393,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.381082518915716,
+      "y": 0.3696648531654746,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8931647166633647,
+      "y": 0.897736761728816,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 1.0973828569031716,
+      "y": 1.1112507162793441,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.7927630171081403,
+      "y": 0.7704925111740837,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.8504596909399376,
+      "y": 0.8652857105755578,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "ctx probe score": 0.22470890211454675,
+      "y": 0.16115484341841696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.9956379907676363,
+      "y": 0.9583493717390078,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.17133985003386443,
+      "y": 0.40347899191335845,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.7082438323605685,
+      "y": 0.7331313629803544,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.2706111030778764,
+      "y": 0.2710281995035514,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.11054263827907929,
+      "y": -0.09029519653093765,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.019260001870259502,
+      "y": -0.032099032003274464,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.04485304223114539,
+      "y": 0.11241999789411422,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.15337396248701896,
+      "y": 0.1637947105772104,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.021933367974120155,
+      "y": -0.012072625151500094,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.6865619779220637,
+      "y": 0.7810514610459964,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.14919249477295238,
+      "y": 0.22662803862000325,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.42554457729411843,
+      "y": 0.35563398680149955,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.6196979837495085,
+      "y": 0.5975073207728898,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5626233545209345,
+      "y": 0.5978318666864832,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.033210756317710866,
+      "y": 0.033105752593534654,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.7133959805391037,
+      "y": 0.8241233625527546,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5601052317098534,
+      "y": 0.464502503980026,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.4562539679461352,
+      "y": 0.6106376998130912,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.37503225707575194,
+      "y": 0.4012756651280485,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.3143718994114634,
+      "y": 0.28800273398011156,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.13521033031895202,
+      "y": 0.02945284484095717,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5518720985768103,
+      "y": 0.5776662499164558,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.09334875758657324,
+      "y": 0.09493682191450747,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.009576997695722289,
+      "y": 0.14563755874834028,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.11335400638099524,
+      "y": -0.03191926914203069,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.4614072680187067,
+      "y": 0.7655914068197525,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.1074089115820801,
+      "y": -0.02863411629771595,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 1.0008278870898444,
+      "y": 0.9736343836244639,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.16813328253521315,
+      "y": 0.13575919025492345,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5621876071466753,
+      "y": 0.5538211829282353,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.1251134918746556,
+      "y": 0.10780478941866678,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.16931628821154687,
+      "y": 0.16326234131275513,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.132941041652482,
+      "y": -0.07968457562882714,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.010782036230297998,
+      "y": 0.048122873513396,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.41320357182769923,
+      "y": 0.4342571952082113,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.20088308226974372,
+      "y": -0.01436098590458923,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.06117365522396828,
+      "y": 0.04294946371466146,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.049538433131172066,
+      "y": 0.08268469282097818,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.47706713635332043,
+      "y": 0.5056315299690978,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.35098571290048797,
+      "y": 0.3571839510959297,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.10537312975884916,
+      "y": 0.06714798838504549,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.09847743248207352,
+      "y": -0.21375300634376926,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.512385116141063,
+      "y": 0.5029757113445287,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.2716985414092701,
+      "y": 0.47927154861475296,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.11897770821876918,
+      "y": -0.11517796723312368,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.2681189609416196,
+      "y": 0.058789886555652704,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.2132070781313437,
+      "y": 0.38393614587375374,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.07133298625334045,
+      "y": 0.23966817120212136,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.04339366107495446,
+      "y": 0.06744280650142531,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.04577495927413966,
+      "y": -0.02770459092409061,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.017389313834311193,
+      "y": 0.05586535573580059,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.6366708377114876,
+      "y": 0.34392028264022667,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.05239396955436493,
+      "y": 0.27466223277684687,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.09301586511750581,
+      "y": 0.1730748483362966,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.022078067434613935,
+      "y": -0.19029823965725012,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 1.1106875867669117,
+      "y": 1.0324681794152968,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.3901301767915203,
+      "y": 0.4038619638463203,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.11461201578387126,
+      "y": -0.10756885745907874,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.1835630605421209,
+      "y": -0.5307283543478202,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.12955057869090852,
+      "y": 0.15862079387151168,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.07126555381389449,
+      "y": 0.02191045823652432,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.3356734037197664,
+      "y": 0.45165185279373415,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.24678242313877485,
+      "y": -0.06323586074815624,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.001962580709752526,
+      "y": 0.16779321492826932,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5570594409946428,
+      "y": 0.4843590627293211,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5081878661714994,
+      "y": 0.44948493854953775,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.05069394795648435,
+      "y": 0.06855168925636379,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.19518009574513928,
+      "y": 0.23576999635393864,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5474962668600023,
+      "y": 0.7377112593103593,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.015661552551896718,
+      "y": -0.1750368152619004,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.08807833433987589,
+      "y": -0.05208236095889884,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.6833834844907023,
+      "y": 0.7408622799627647,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.17228216341124925,
+      "y": 0.0901422659336471,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.4742887085570278,
+      "y": 0.4330616649428507,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.13915195966141813,
+      "y": -0.1453117973260547,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.08178408577662144,
+      "y": 0.026189970999017098,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.3384101363207035,
+      "y": 0.5344277992501748,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.12599506887269063,
+      "y": -0.09409332267771164,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.0941935386615898,
+      "y": 0.16717026740359858,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.06253691128723005,
+      "y": -0.38607267966431913,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.24367715230987225,
+      "y": 0.23407088932637243,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.10950124868404543,
+      "y": -0.1349107569209056,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.03638861591007081,
+      "y": -0.23698531145831947,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.08040300694127234,
+      "y": -0.0620249660149671,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.1994637615072018,
+      "y": 0.26878996588987,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.36242371021029285,
+      "y": 0.277220660261959,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.05893162040611111,
+      "y": 0.019552681073714995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.17537068552274448,
+      "y": 0.23438598222110124,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.024887029289215934,
+      "y": 0.20176020910688441,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.6536762692296902,
+      "y": 0.7012634036575167,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.3355786731758805,
+      "y": 0.3782569474585775,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.12428779767101072,
+      "y": 0.05235228025046812,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.01495751902449488,
+      "y": 0.18366543928258855,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.08120710424820804,
+      "y": 0.2869987479068441,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.22485307891946255,
+      "y": 0.22463676189566456,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.048666883228221325,
+      "y": -0.23528901549088255,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.4073481570766913,
+      "y": 0.12376497967460176,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.38848512940469093,
+      "y": 0.3161146527925828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.03066559279137243,
+      "y": -0.03191851146066982,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.36153230142572534,
+      "y": 0.288446440824225,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.2729975969589652,
+      "y": 0.44565263980177977,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.40475995733158876,
+      "y": 0.32929921383110294,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.6118907131646791,
+      "y": 0.14386871688311764,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.3212090476362047,
+      "y": 0.3056965916667473,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.11802578343940262,
+      "y": 0.15976292705883616,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.09916571224881854,
+      "y": 0.09163915789960092,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.21142166975016502,
+      "y": 0.098032710754268,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.3855399542956648,
+      "y": 0.41500424902003197,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.12060105924055908,
+      "y": 0.16996296988354437,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.034530799250204414,
+      "y": 0.007201447325009214,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.1419133739637547,
+      "y": -0.1290418994822431,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.05323473539989465,
+      "y": 0.028414938248639998,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.20297927838294388,
+      "y": 0.08709782259892762,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.11032973443769656,
+      "y": -0.14246642538138954,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.17952522876789262,
+      "y": 0.45142847309318795,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5151278620982932,
+      "y": 0.5833489651485845,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.21360566228672145,
+      "y": -0.08619313440628729,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5483287907772628,
+      "y": 0.4343398726122099,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.1006234502219745,
+      "y": -0.0940975923891475,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.059672326197211745,
+      "y": 0.10275702956984839,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.14579681416526213,
+      "y": 0.16421541030258768,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.14663194025657394,
+      "y": 0.21421530910304043,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.18201997451467505,
+      "y": 0.10689893810615825,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.021207862764778707,
+      "y": -0.06140796741271548,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.47728159540610504,
+      "y": 0.44640452074743253,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.050062243080389646,
+      "y": -0.003416646357929043,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.42448079610278316,
+      "y": 0.39923354730794225,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.42120803780257304,
+      "y": 0.4167600330925565,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.10987445110195138,
+      "y": 0.10768771683526074,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.009615766249967628,
+      "y": 0.04729654780141085,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.13376901236044964,
+      "y": 0.1468275031828291,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.5945513619841514,
+      "y": 0.5882863497258949,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.49318792063080474,
+      "y": 0.19034016899673079,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.07655134357460852,
+      "y": 0.06232017144581797,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": -0.051685216725334104,
+      "y": -0.09557583327250785,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.4707679308522287,
+      "y": 0.4218751578688982,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.07853361482493926,
+      "y": 0.16848058397767762,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.11699060102983427,
+      "y": -0.14751160538038188,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.03820839839161139,
+      "y": -0.033183652364952354,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.48785017547916226,
+      "y": 0.410220918359245,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.10170974819969802,
+      "y": 0.12698723191593614,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "ctx probe score": 0.46696958689905216,
+      "y": 0.4756030181874164,
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 812,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "xlabel": "ctx probe score",
+        "ylabel": "mapped (3a) probe score",
+        "legend_labels": [
+          "refuse",
+          "engage"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ],
+        "yticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xlabel": "ctx probe score",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ],
+    "series": [
+      "refuse",
+      "engage"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

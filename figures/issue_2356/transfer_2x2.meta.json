@@ -1,0 +1,122 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "c04459c2652c4ec6",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:29Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "A->B\ndim",
+      "AUROC on the other arm": 0.9480170179470879,
+      "error": 0.024405901301958244,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "A->B\nridge",
+      "AUROC on the other arm": 0.9126607658076189,
+      "error": 0.032863434860622376,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "B->A\ndim",
+      "AUROC on the other arm": 0.9855426563923145,
+      "error": 0.010266968058330439,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "B->A\nridge",
+      "AUROC on the other arm": 0.9821307233009007,
+      "error": 0.011335962233072927,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "AUROC on the other arm": 0.9222158901757448,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "AUROC on the other arm": 0.87826812836368,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "AUROC on the other arm": 0.9744530704679162,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "AUROC on the other arm": 0.9700036468440739,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "AUROC on the other arm": 0.9710276927796613,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "AUROC on the other arm": 0.9439949980849247,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "AUROC on the other arm": 0.9949870065845771,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "AUROC on the other arm": 0.9926755713102198,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-regime transfer (report-only)",
+        "ylabel": "AUROC on the other arm",
+        "xticklabels": [
+          "A->B\ndim",
+          "A->B\nridge",
+          "B->A\ndim",
+          "B->A\nridge"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

@@ -1,0 +1,2305 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "2aefddd76db2401a",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:41Z",
+  "figsize": [
+    11.0,
+    3.6
+  ],
+  "points": [
+    {
+      "singular index": 1.0,
+      "singular value of W": 0.48429027367777705,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 2.0,
+      "singular value of W": 0.35039482365046504,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 3.0,
+      "singular value of W": 0.33165752737308407,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 4.0,
+      "singular value of W": 0.25529753635180136,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 5.0,
+      "singular value of W": 0.2490517978927988,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 6.0,
+      "singular value of W": 0.22007461814368007,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 7.0,
+      "singular value of W": 0.21287946628319537,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 8.0,
+      "singular value of W": 0.19992838782573003,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 9.0,
+      "singular value of W": 0.18212870024987862,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 10.0,
+      "singular value of W": 0.17450588609127649,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 11.0,
+      "singular value of W": 0.16899775278079546,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 12.0,
+      "singular value of W": 0.16688999365211216,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 13.0,
+      "singular value of W": 0.1555384027231858,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 14.0,
+      "singular value of W": 0.1490201591499496,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 15.0,
+      "singular value of W": 0.14404104730760509,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 16.0,
+      "singular value of W": 0.13635074936159633,
+      "series": "layer 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular index": 1.0,
+      "singular value of W": 5.085564236764331,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 2.0,
+      "singular value of W": 4.178590343559926,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 3.0,
+      "singular value of W": 3.1007663594681447,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 4.0,
+      "singular value of W": 2.9189798713259907,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 5.0,
+      "singular value of W": 2.759564037447841,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 6.0,
+      "singular value of W": 2.6038663365715475,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 7.0,
+      "singular value of W": 2.556629908451011,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 8.0,
+      "singular value of W": 2.5063720026003637,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 9.0,
+      "singular value of W": 2.4318703664650254,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 10.0,
+      "singular value of W": 2.2701730096419577,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 11.0,
+      "singular value of W": 2.2351127247898366,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 12.0,
+      "singular value of W": 2.2048159252072006,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 13.0,
+      "singular value of W": 2.0999495165156317,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 14.0,
+      "singular value of W": 2.078886787301245,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 15.0,
+      "singular value of W": 2.005251420556182,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 16.0,
+      "singular value of W": 1.937892350764552,
+      "series": "layer 20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular index": 1.0,
+      "singular value of W": 22.98195834096831,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 2.0,
+      "singular value of W": 20.947574758323967,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 3.0,
+      "singular value of W": 16.056090470308007,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 4.0,
+      "singular value of W": 11.830405936103567,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 5.0,
+      "singular value of W": 11.605744683337102,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 6.0,
+      "singular value of W": 10.321994729814332,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 7.0,
+      "singular value of W": 10.035423926119629,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 8.0,
+      "singular value of W": 9.734010260136259,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 9.0,
+      "singular value of W": 9.505252678896298,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 10.0,
+      "singular value of W": 9.062489505360151,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 11.0,
+      "singular value of W": 8.917512138763826,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 12.0,
+      "singular value of W": 8.319926757869643,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 13.0,
+      "singular value of W": 8.140751584607736,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 14.0,
+      "singular value of W": 7.8361555439315875,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 15.0,
+      "singular value of W": 7.747448419262891,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular index": 16.0,
+      "singular value of W": 7.699447337705221,
+      "series": "layer 28",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 714.0647181963529,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 693.6096494184967,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 786.7748579717961,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 828.0176494701994,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 895.7218760811531,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 887.4408213152789,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 824.2375182385327,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 892.3539106722891,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 920.4161854357169,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 1017.2574899226549,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 1000.847993236938,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 972.3010945244268,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 946.6964737116058,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 1016.2734787900179,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1020.7224500044879,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 974.8330767416877,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 1001.8497128894511,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 1004.9055104144935,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1032.1757319403787,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1087.4900966653433,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1109.216366407081,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1176.2970858409294,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1260.8921321274352,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1361.2786575414034,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1405.814148437813,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1438.998388808858,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1451.007207985328,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1234.4388988641267,
+      "series": "3a",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 796.2325085770165,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 775.2397711709996,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 795.8118645944332,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 830.3635705797707,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 888.4540612317337,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 874.8655957393559,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 815.8203909064415,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 876.4579310582617,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 898.2190528859632,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 982.7275111545791,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 966.6012761145856,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 942.3525720767452,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 919.3613817627465,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 988.302610870894,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1119.5341354853774,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 953.5840289056708,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 980.0365374042829,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 985.1873557178668,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1009.6150667083964,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1065.2346895962303,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1084.7075224464854,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1152.4969972629353,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1241.5211613627412,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1338.6888158511074,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1380.9666272360644,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1412.0095407994238,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1427.1597812058812,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1215.6526483368175,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 797.1960322749595,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 775.5707619567629,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 796.1561029321222,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 830.8832170102262,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 888.8613154816461,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 875.0184979422638,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 816.3097576282868,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 877.265035442083,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 898.9933119513743,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 987.2601324589081,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 969.3725783304773,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 944.9566479717274,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 921.7857631095164,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 990.3480742402922,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1121.398144905443,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 1066.8423359553854,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 980.8815516000758,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 986.178950289126,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1010.8110965700012,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1066.448894822695,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1085.9645686121385,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1153.1372631306297,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1242.3423716119712,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1339.7582314521185,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1382.1056470012172,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1412.927603466139,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1428.3919540710751,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1217.4017876333694,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 797.5506659362643,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 702.0239216973829,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 796.4780745451218,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 830.5790394801988,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 889.5951690424381,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 876.3357263929877,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 816.8978926667,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 877.7733898806085,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 899.5810962427288,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 985.2354724140399,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 967.9852468440222,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 943.4930996275275,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 920.575179759961,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 988.004732888004,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1119.0765784361656,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 953.5738777295908,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 979.6090253822406,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 984.8913187285062,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1010.0146677682786,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1065.4507337315727,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1085.303836201613,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1153.131517052526,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1242.2536379687774,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1339.8158614694928,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1382.0184830399594,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1413.0142708899566,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1428.1326067192501,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1216.7299326400748,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 795.9652962858196,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 775.2307754382773,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 795.6464985367625,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 830.5558446156338,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 889.2876129454557,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 875.7365792200646,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 815.942523288557,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 877.0282382386646,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 898.0778852400247,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 981.1554280304098,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 965.760597814384,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 941.4141631703583,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 918.9828954393805,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 988.55295518026,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1120.6886427764746,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 1066.4323046858835,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 980.7719412553711,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 985.6799190896351,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1010.4946619645496,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1065.892314869557,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1085.345905424729,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1153.2957758631806,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1242.027243311653,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1339.1636920200235,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1381.3384579733868,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1412.2566880843854,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1427.5584562995627,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1215.8180597333705,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 797.4696277692749,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 701.9300981954723,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 796.9139755752984,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 831.2029749242386,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 889.6310886545754,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 876.7839950210649,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 817.537594222378,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 879.1034234104571,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 901.4647689769404,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 984.6542130265954,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 969.1548444147828,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 944.3682019991428,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 921.6921627158496,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 991.040183813815,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1121.9463619409087,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 955.9556825632352,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 982.1247773186424,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 987.2287507729827,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1011.3267850707651,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1066.0305177081514,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1085.7764861979233,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1153.4971125551879,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1242.6508213504794,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1339.812582817134,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1381.8769179551543,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1412.4902881984422,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1427.428193689364,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1215.8144643863338,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 731.8057206029961,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 710.4175932694409,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 804.5379405145509,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 840.8272746973317,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 908.3324949126022,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 887.4923634407647,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 826.0959899949539,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 890.295219776772,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 914.6078377706297,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 1025.8102822764458,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 1002.5169076115927,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 972.1981780788126,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 943.7544956238885,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 1017.5994899406415,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1024.9635724509167,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 975.6933650087482,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 1001.3540298147443,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 1001.8772656113168,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1027.8693545953306,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1081.4941766016157,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1100.3194005156602,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1173.9421561421964,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1261.7629897836123,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1361.665859102521,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1402.7807526981694,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1432.4069536402621,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1446.2543343775824,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1228.5449902193482,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 731.8236830785588,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 710.61833613791,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 804.1156846151788,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 840.1319214233955,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 907.3716052047342,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 886.7568756381198,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 824.932606194888,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 889.1547695599986,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 913.7976990911292,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 1024.7571614635835,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 1001.3274415313583,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 971.489889827519,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 943.454810994115,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 1017.4358007189138,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1024.0658335026546,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 975.3696396086995,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 1001.0285074916351,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 1000.8557697116524,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1027.0635491540556,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1080.803011864808,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1099.3186402282236,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1173.2954370523007,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1261.1238647171874,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1361.2893906927027,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1402.2268348027299,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1432.535317547159,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1446.0657981191926,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1228.3719003820847,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 732.2516991373463,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 711.308444792264,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 804.706578868609,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 841.6275999509461,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 908.4417701726239,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 887.1394935393353,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 825.5618326929974,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 889.8180609434278,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 914.3487052066182,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 1024.9293413138373,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 1001.8959858308597,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 971.900338705409,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 943.447291578336,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 1017.243289403041,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1024.981205161423,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 976.3065788538258,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 1001.3373537080386,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 1001.2404129255929,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1027.6695907303654,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1081.585155858359,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1100.404789260943,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1174.0041442231743,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1262.0017314601998,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1361.5961837617533,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1402.4921683291668,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1432.7290105564512,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1446.3134263837287,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1228.9164414336815,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 731.9458536342873,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 710.7597618841883,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 805.0696930627835,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 840.881960405393,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 907.6918292425966,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 887.1802580138925,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 825.7861151776337,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 888.8852783650894,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 913.6305286990998,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 1025.2110179764754,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 1001.6438920276847,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 971.5656822912798,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 943.1970329604281,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 1017.1539254199197,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1023.4514344644172,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 974.7027748856611,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 1000.6879611355645,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 1000.6108941080823,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1026.4442951765232,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1080.8654211249814,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1099.6636674439392,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1173.5923681695988,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1261.1454276960944,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1360.9019633249693,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1402.2918039492438,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1432.4963139641104,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1446.2927690205247,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1228.2958122777243,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 1.0,
+      "effective rank (participation ratio)": 732.1073569494898,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 2.0,
+      "effective rank (participation ratio)": 710.9725217464614,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 3.0,
+      "effective rank (participation ratio)": 804.8044511199832,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 4.0,
+      "effective rank (participation ratio)": 840.2864787004052,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 5.0,
+      "effective rank (participation ratio)": 907.370929534671,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 6.0,
+      "effective rank (participation ratio)": 887.2034605223737,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 7.0,
+      "effective rank (participation ratio)": 825.8101234556392,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 8.0,
+      "effective rank (participation ratio)": 890.0318866673634,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 9.0,
+      "effective rank (participation ratio)": 914.200405283542,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 10.0,
+      "effective rank (participation ratio)": 1025.1868804910746,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 11.0,
+      "effective rank (participation ratio)": 1001.3542217556584,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 12.0,
+      "effective rank (participation ratio)": 971.4834473319295,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 13.0,
+      "effective rank (participation ratio)": 943.3006229081433,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "effective rank (participation ratio)": 1016.8698138785444,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 15.0,
+      "effective rank (participation ratio)": 1024.0694985200607,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 16.0,
+      "effective rank (participation ratio)": 975.1186128340522,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 17.0,
+      "effective rank (participation ratio)": 1000.3981072910948,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 18.0,
+      "effective rank (participation ratio)": 1000.3100763841553,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "effective rank (participation ratio)": 1026.9648440191208,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 20.0,
+      "effective rank (participation ratio)": 1081.110708746834,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 21.0,
+      "effective rank (participation ratio)": 1099.7500876916347,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 22.0,
+      "effective rank (participation ratio)": 1173.1339425040971,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 23.0,
+      "effective rank (participation ratio)": 1261.0865489960245,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 24.0,
+      "effective rank (participation ratio)": 1361.3504963848964,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 25.0,
+      "effective rank (participation ratio)": 1401.7739568350175,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "effective rank (participation ratio)": 1432.033613836356,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 27.0,
+      "effective rank (participation ratio)": 1446.0630731555918,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 28.0,
+      "effective rank (participation ratio)": 1228.554650338214,
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 356,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "W spectra (top 16)",
+        "xlabel": "singular index",
+        "ylabel": "singular value of W",
+        "legend_labels": [
+          "layer 1",
+          "layer 20",
+          "layer 28"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "effective rank by layer",
+        "xlabel": "layer",
+        "ylabel": "effective rank (participation ratio)",
+        "legend_labels": [
+          "3a"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "600",
+          "700",
+          "800",
+          "900",
+          "1000",
+          "1100",
+          "1200",
+          "1300",
+          "1400",
+          "1500"
+        ]
+      }
+    ],
+    "series": [
+      "layer 1",
+      "layer 20",
+      "layer 28",
+      "3a"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

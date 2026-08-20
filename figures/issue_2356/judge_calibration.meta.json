@@ -1,0 +1,186 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "d66bd6c48e2c451e",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:33Z",
+  "figsize": [
+    11.0,
+    3.8
+  ],
+  "points": [
+    {
+      "judge P(refuse)": 0.010576923076923076,
+      "empirical refuse fraction": 0.038461538461538464,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.1355,
+      "empirical refuse fraction": 0.25,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.2422222222222222,
+      "empirical refuse fraction": 0.2222222222222222,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.33764705882352936,
+      "empirical refuse fraction": 0.4117647058823529,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.44750000000000006,
+      "empirical refuse fraction": 0.25,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.5614285714285714,
+      "empirical refuse fraction": 0.8571428571428571,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.6599999999999999,
+      "empirical refuse fraction": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.7468181818181818,
+      "empirical refuse fraction": 0.45454545454545453,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.864782608695652,
+      "empirical refuse fraction": 0.4782608695652174,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.9819521912350597,
+      "empirical refuse fraction": 0.8366533864541833,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judge P(refuse)": 0.025813953488372097,
+      "y": 0.18604651162790697,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.15065,
+      "y": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.2447058823529412,
+      "y": 0.23529411764705882,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.3390909090909091,
+      "y": 0.36363636363636365,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.4453846153846154,
+      "y": 0.3076923076923077,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.55,
+      "y": 0.7777777777777778,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.648,
+      "y": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.7566666666666665,
+      "y": 0.625,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.8520547945205478,
+      "y": 0.6438356164383562,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judge P(refuse)": 0.9491304347826087,
+      "y": 0.782608695652174,
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "xlabel": "judge P(refuse)",
+        "ylabel": "empirical refuse fraction",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xlabel": "judge P(refuse)",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

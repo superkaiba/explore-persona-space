@@ -1,0 +1,56 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "b19c0550c7a540c3",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:48Z",
+  "figsize": [
+    11.0,
+    3.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "ylabel": "paired AUROC difference",
+        "xticklabels": [
+          "ctx - judge (delta_int)",
+          "ctx - text-surface",
+          "map3a - ctx",
+          "map3a - PCA",
+          "map3b - map3a",
+          "answer - map3a",
+          "answer - ctx (unregistered)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xticklabels": [
+          "ctx - judge (delta_int)",
+          "ctx - text-surface",
+          "map3a - ctx",
+          "map3a - PCA",
+          "map3b - map3a",
+          "answer - map3a",
+          "answer - ctx (unregistered)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

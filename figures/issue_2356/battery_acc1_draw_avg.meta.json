@@ -1,0 +1,443 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "5ddc8f8fb8fa4e6e",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:54:17Z",
+  "figsize": [
+    11.0,
+    3.8
+  ],
+  "points": [
+    {
+      "x": -0.24,
+      "retrieval acc@1 (log)": 0.21977186311787072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.08,
+      "retrieval acc@1 (log)": 0.21787072243346006,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.08,
+      "retrieval acc@1 (log)": 0.2300380228136882,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.24,
+      "retrieval acc@1 (log)": 0.21863117870722434,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.4,
+      "retrieval acc@1 (log)": 0.13307984790874525,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.76,
+      "retrieval acc@1 (log)": 0.5792452830188679,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.92,
+      "retrieval acc@1 (log)": 0.49245283018867925,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.08,
+      "retrieval acc@1 (log)": 0.560377358490566,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.24,
+      "retrieval acc@1 (log)": 0.5056603773584906,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.4,
+      "retrieval acc@1 (log)": 0.2037735849056604,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.76,
+      "retrieval acc@1 (log)": 0.5892514395393474,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.92,
+      "retrieval acc@1 (log)": 0.4990403071017274,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.08,
+      "retrieval acc@1 (log)": 0.5489443378119002,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.24,
+      "retrieval acc@1 (log)": 0.4894433781190019,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.4,
+      "retrieval acc@1 (log)": 0.21689059500959693,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.76,
+      "retrieval acc@1 (log)": 0.5314285714285715,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.92,
+      "retrieval acc@1 (log)": 0.4819047619047619,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 3.08,
+      "retrieval acc@1 (log)": 0.56,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.24,
+      "retrieval acc@1 (log)": 0.4704761904761905,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.4,
+      "retrieval acc@1 (log)": 0.09904761904761905,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 3.76,
+      "retrieval acc@1 (log)": 0.5534709193245778,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 3.92,
+      "retrieval acc@1 (log)": 0.5121951219512195,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 4.08,
+      "retrieval acc@1 (log)": 0.5778611632270169,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 4.24,
+      "retrieval acc@1 (log)": 0.5159474671669794,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 4.4,
+      "retrieval acc@1 (log)": 0.21200750469043153,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 4.76,
+      "retrieval acc@1 (log)": 0.5758157389635317,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 4.92,
+      "retrieval acc@1 (log)": 0.4894433781190019,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 5.08,
+      "retrieval acc@1 (log)": 0.5508637236084453,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 5.24,
+      "retrieval acc@1 (log)": 0.4856046065259117,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 5.4,
+      "retrieval acc@1 (log)": 0.15738963531669867,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": -0.24,
+      "retrieval acc@1 (log)": 0.20083451671612723,
+      "series": "whitened CI lower (5%)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": -0.24,
+      "y": 0.6385290430422065,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": -0.08,
+      "y": 0.5294609277058087,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 0.08,
+      "y": 0.6427078980359382,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 0.24,
+      "y": 0.5457584621813623,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 0.4,
+      "y": 0.3251149185123276,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 0.76,
+      "y": 0.81419624217119,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 0.92,
+      "y": 0.8079331941544885,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 1.08,
+      "y": 0.8413361169102297,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 1.24,
+      "y": 0.7995824634655533,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 1.4,
+      "y": 0.34029227557411273,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 1.76,
+      "y": 0.8209255533199196,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 1.92,
+      "y": 0.8148893360160966,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 2.08,
+      "y": 0.8390342052313883,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 2.24,
+      "y": 0.7987927565392354,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 2.4,
+      "y": 0.3822937625754527,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 2.76,
+      "y": 0.8080168776371308,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 2.92,
+      "y": 0.8016877637130801,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 3.08,
+      "y": 0.8481012658227848,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 3.24,
+      "y": 0.8122362869198312,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 3.4,
+      "y": 0.35654008438818563,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 3.76,
+      "y": 0.8072033898305084,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 3.92,
+      "y": 0.798728813559322,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 4.08,
+      "y": 0.8495762711864406,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "x": 4.24,
+      "y": 0.7923728813559322,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "x": 4.4,
+      "y": 0.3008474576271186,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "x": 4.76,
+      "y": 0.7919320594479831,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "x": 4.92,
+      "y": 0.7770700636942676,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "x": 5.08,
+      "y": 0.821656050955414,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "x": 5.24,
+      "y": 0.7643312101910829,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "x": 5.4,
+      "y": 0.3673036093418259,
+      "_kind": "bar",
+      "_group": 60
+    }
+  ],
+  "n_series": 61,
+  "total_points": 61,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "ylabel": "retrieval acc@1 (log)",
+        "legend_labels": [
+          "whitened CI lower (5%)",
+          "whitened cosine",
+          "raw euclidean",
+          "r2 cand-norm",
+          "pearson",
+          "identity+bias (whitened)"
+        ],
+        "xticklabels": [
+          "3a",
+          "3b f0",
+          "3b f1",
+          "3b f2",
+          "3b f3",
+          "3b f4"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xticklabels": [
+          "3a",
+          "3b f0",
+          "3b f1",
+          "3b f2",
+          "3b f3",
+          "3b f4"
+        ]
+      }
+    ],
+    "series": [
+      "whitened CI lower (5%)",
+      "whitened cosine",
+      "raw euclidean",
+      "r2 cand-norm",
+      "pearson",
+      "identity+bias (whitened)"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

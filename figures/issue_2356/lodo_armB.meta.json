@@ -1,0 +1,83 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "3595ef862e724626",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:29Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "held-out or-bench-hard-1k\n(n=159)",
+      "AUROC": 0.9574074074074074,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "held-out phtest-controversial\n(n=127)",
+      "AUROC": 0.9611171960569551,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "pooled\n(n=286)",
+      "AUROC": 0.9364272091544819,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "AUROC": 0.9506577338745171,
+      "series": "in-fold ctx probe",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "AUROC": 0.9506577338745171,
+      "series": "in-fold ctx probe",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm B - leave-one-dataset-out (ctx probe)",
+        "ylabel": "AUROC",
+        "legend_labels": [
+          "in-fold ctx probe"
+        ],
+        "xticklabels": [
+          "held-out or-bench-hard-1k\n(n=159)",
+          "held-out phtest-controversial\n(n=127)",
+          "pooled\n(n=286)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "in-fold ctx probe"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

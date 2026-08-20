@@ -1,0 +1,200 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "a3bb98f8373d4a58",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:54:49Z",
+  "figsize": [
+    11.0,
+    3.6
+  ],
+  "points": [
+    {
+      "engage rate over valid draws": 0.045455,
+      "n prompts": 1988.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.136364,
+      "n prompts": 161.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.227273,
+      "n prompts": 89.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.318182,
+      "n prompts": 54.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.409091,
+      "n prompts": 47.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.5,
+      "n prompts": 32.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.590909,
+      "n prompts": 39.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.681818,
+      "n prompts": 31.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.772727,
+      "n prompts": 25.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.863636,
+      "n prompts": 31.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.954545,
+      "n prompts": 251.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "engage rate over valid draws": 0.045455,
+      "y": 38.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.136364,
+      "y": 25.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.227273,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.318182,
+      "y": 52.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.409091,
+      "y": 39.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.5,
+      "y": 30.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.590909,
+      "y": 49.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.681818,
+      "y": 76.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.772727,
+      "y": 75.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.863636,
+      "y": 154.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "engage rate over valid draws": 0.954545,
+      "y": 1944.0,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 22,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "xlabel": "engage rate over valid draws",
+        "ylabel": "n prompts",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "250",
+          "500",
+          "750",
+          "1000",
+          "1250",
+          "1500",
+          "1750",
+          "2000",
+          "2250"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xlabel": "engage rate over valid draws",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

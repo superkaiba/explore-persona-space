@@ -1,0 +1,1646 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "dccf61322cce4199",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:22Z",
+  "figsize": [
+    11.0,
+    3.4
+  ],
+  "points": [
+    {
+      "layer": 1.0,
+      "inner-CV AUROC (mean over folds)": 0.8957999215087972,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "inner-CV AUROC (mean over folds)": 0.9103330883618842,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "inner-CV AUROC (mean over folds)": 0.9066670989467489,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "inner-CV AUROC (mean over folds)": 0.9165880232550077,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "inner-CV AUROC (mean over folds)": 0.9267487053271906,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "inner-CV AUROC (mean over folds)": 0.9257191949921438,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "inner-CV AUROC (mean over folds)": 0.934655800784997,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "inner-CV AUROC (mean over folds)": 0.9352718611347276,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "inner-CV AUROC (mean over folds)": 0.9301505787262185,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "inner-CV AUROC (mean over folds)": 0.9377113443792782,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "inner-CV AUROC (mean over folds)": 0.9442861036968099,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "inner-CV AUROC (mean over folds)": 0.9488837127754277,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "inner-CV AUROC (mean over folds)": 0.9589790404801803,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "inner-CV AUROC (mean over folds)": 0.9775505525613888,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "inner-CV AUROC (mean over folds)": 0.9844321124882528,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "inner-CV AUROC (mean over folds)": 0.9891223601256833,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "inner-CV AUROC (mean over folds)": 0.9898403345039517,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "inner-CV AUROC (mean over folds)": 0.9926466415823587,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "inner-CV AUROC (mean over folds)": 0.9947914329709795,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "inner-CV AUROC (mean over folds)": 0.9955589509077061,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "inner-CV AUROC (mean over folds)": 0.9956593531075668,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "inner-CV AUROC (mean over folds)": 0.9955928056429272,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "inner-CV AUROC (mean over folds)": 0.9962581915517944,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "inner-CV AUROC (mean over folds)": 0.9956761555835903,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "inner-CV AUROC (mean over folds)": 0.9955159220156407,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "inner-CV AUROC (mean over folds)": 0.9956232525459484,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "inner-CV AUROC (mean over folds)": 0.9956161228447635,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 28.0,
+      "inner-CV AUROC (mean over folds)": 0.9951258279586888,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "inner-CV AUROC (mean over folds)": 0.8197440381284625,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "inner-CV AUROC (mean over folds)": 0.7956502756043737,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "inner-CV AUROC (mean over folds)": 0.7779122307326446,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "inner-CV AUROC (mean over folds)": 0.7948783822961629,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "inner-CV AUROC (mean over folds)": 0.7868711599010149,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "inner-CV AUROC (mean over folds)": 0.7703127975130974,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "inner-CV AUROC (mean over folds)": 0.7703247781043066,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "inner-CV AUROC (mean over folds)": 0.7818946762027668,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "inner-CV AUROC (mean over folds)": 0.7819557678488345,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "inner-CV AUROC (mean over folds)": 0.796379322095604,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "inner-CV AUROC (mean over folds)": 0.8039485397807594,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "inner-CV AUROC (mean over folds)": 0.8048423077139372,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "inner-CV AUROC (mean over folds)": 0.8210409785768361,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "inner-CV AUROC (mean over folds)": 0.923424952939612,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "inner-CV AUROC (mean over folds)": 0.9659855869499261,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "inner-CV AUROC (mean over folds)": 0.9751328420052742,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "inner-CV AUROC (mean over folds)": 0.9745312834918458,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "inner-CV AUROC (mean over folds)": 0.976296647841209,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "inner-CV AUROC (mean over folds)": 0.9875863741303326,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "inner-CV AUROC (mean over folds)": 0.9874902175015897,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "inner-CV AUROC (mean over folds)": 0.9882187267280615,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "inner-CV AUROC (mean over folds)": 0.9883385983265691,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "inner-CV AUROC (mean over folds)": 0.9884402329824227,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "inner-CV AUROC (mean over folds)": 0.9886755455308484,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "inner-CV AUROC (mean over folds)": 0.9884519122222339,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "inner-CV AUROC (mean over folds)": 0.9879150721624315,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "inner-CV AUROC (mean over folds)": 0.9884154405541038,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 28.0,
+      "inner-CV AUROC (mean over folds)": 0.9871007988837498,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "inner-CV AUROC (mean over folds)": 0.9808602845733772,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "inner-CV AUROC (mean over folds)": 0.984212838658477,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "inner-CV AUROC (mean over folds)": 0.985573255621712,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "inner-CV AUROC (mean over folds)": 0.9849948702757736,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "inner-CV AUROC (mean over folds)": 0.988179834284083,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "inner-CV AUROC (mean over folds)": 0.9889897800400993,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "inner-CV AUROC (mean over folds)": 0.9890745621085794,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "inner-CV AUROC (mean over folds)": 0.9880719270391414,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "inner-CV AUROC (mean over folds)": 0.9885733690858421,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "inner-CV AUROC (mean over folds)": 0.9873434093650006,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "inner-CV AUROC (mean over folds)": 0.9881431156176094,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "inner-CV AUROC (mean over folds)": 0.9882233302019003,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "inner-CV AUROC (mean over folds)": 0.9885168273491164,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "inner-CV AUROC (mean over folds)": 0.9881229323689154,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "inner-CV AUROC (mean over folds)": 0.9866999664650399,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "inner-CV AUROC (mean over folds)": 0.9872062317801544,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "inner-CV AUROC (mean over folds)": 0.9877533269080674,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "inner-CV AUROC (mean over folds)": 0.9882212319777983,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "inner-CV AUROC (mean over folds)": 0.9882748669732703,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "inner-CV AUROC (mean over folds)": 0.9894730943145824,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "inner-CV AUROC (mean over folds)": 0.9890739837298417,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "inner-CV AUROC (mean over folds)": 0.9872994155419601,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "inner-CV AUROC (mean over folds)": 0.9839369386988851,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "inner-CV AUROC (mean over folds)": 0.9851133132919416,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "inner-CV AUROC (mean over folds)": 0.9840510517122818,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "inner-CV AUROC (mean over folds)": 0.9840354972645466,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "inner-CV AUROC (mean over folds)": 0.9844662850330692,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 28.0,
+      "inner-CV AUROC (mean over folds)": 0.9858444669690123,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "inner-CV AUROC (mean over folds)": 0.9952693680929157,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "inner-CV AUROC (mean over folds)": 0.9963948717503653,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "inner-CV AUROC (mean over folds)": 0.9965615683847171,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "inner-CV AUROC (mean over folds)": 0.997148030617686,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "inner-CV AUROC (mean over folds)": 0.997597913970129,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "inner-CV AUROC (mean over folds)": 0.9979075852040722,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "inner-CV AUROC (mean over folds)": 0.9979346918093442,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "inner-CV AUROC (mean over folds)": 0.9969466243391112,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "inner-CV AUROC (mean over folds)": 0.997100392167232,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "inner-CV AUROC (mean over folds)": 0.9954618709998055,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "inner-CV AUROC (mean over folds)": 0.996519021130094,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "inner-CV AUROC (mean over folds)": 0.997482016077792,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "inner-CV AUROC (mean over folds)": 0.9975138836416834,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "inner-CV AUROC (mean over folds)": 0.9977097470151438,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "inner-CV AUROC (mean over folds)": 0.9978090776845819,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "inner-CV AUROC (mean over folds)": 0.9983798670961674,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "inner-CV AUROC (mean over folds)": 0.9983049091592836,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "inner-CV AUROC (mean over folds)": 0.998507341960923,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "inner-CV AUROC (mean over folds)": 0.9982703364249998,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "inner-CV AUROC (mean over folds)": 0.9981059874732136,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "inner-CV AUROC (mean over folds)": 0.9979587122387745,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "inner-CV AUROC (mean over folds)": 0.9978726827716159,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "inner-CV AUROC (mean over folds)": 0.9976318984621899,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "inner-CV AUROC (mean over folds)": 0.9974027813042818,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "inner-CV AUROC (mean over folds)": 0.9967499975863909,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "inner-CV AUROC (mean over folds)": 0.9952292605261641,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "inner-CV AUROC (mean over folds)": 0.9956878717228792,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 28.0,
+      "inner-CV AUROC (mean over folds)": 0.9933079758303854,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "y": 0.6532773432897215,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "y": 0.6555526127714792,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "y": 0.6478619811561225,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "y": 0.6701511774984341,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "y": 0.6810678709030255,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6729449846272774,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6777238318808313,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6955362656045964,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6952951412330612,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "y": 0.7050230306950551,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "y": 0.7214235405541297,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "y": 0.7286965976059119,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "y": 0.7696933074889566,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "y": 0.8510945651135924,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "y": 0.8719365612099839,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "y": 0.8986676403897131,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "y": 0.907778468240059,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "y": 0.9245837413204256,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "y": 0.943784930951763,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "y": 0.9501942950948093,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "y": 0.9517216603111229,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "y": 0.9465064775526558,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "y": 0.9500473115432719,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "y": 0.9504012769935976,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "y": 0.9510643775046939,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "y": 0.948806642548394,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "y": 0.9489179375719194,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 28.0,
+      "y": 0.9501843634535424,
+      "series": "ctx probe",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "y": 0.5827827721882354,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "y": 0.5767612098047292,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5981205451555047,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "y": 0.603061736742489,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "y": 0.6197835948745893,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6080454460237668,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6376428452440447,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6419476263167198,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6539630200567559,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "y": 0.6367034459660104,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "y": 0.6701821160667116,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "y": 0.6778575749027377,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "y": 0.6853917266118008,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "y": 0.6880291311041452,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "y": 0.8079462224172718,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "y": 0.8351134127722458,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "y": 0.8577417153154719,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "y": 0.8808558759666079,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "y": 0.9280961554289959,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "y": 0.9336617597977351,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "y": 0.939346896531325,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "y": 0.9410443031828963,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "y": 0.9428070166990432,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "y": 0.9439879849074988,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "y": 0.946375269072743,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "y": 0.9478203715364575,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "y": 0.9488785457086946,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 28.0,
+      "y": 0.9426539175935359,
+      "series": "ctx diff-in-means",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "y": 0.9196525406870029,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "y": 0.9261023903802525,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "y": 0.9304670559972246,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "y": 0.9331404011437702,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "y": 0.9337787307822165,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "y": 0.9358543524432148,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "y": 0.9305060792835281,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "y": 0.9202059066638368,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "y": 0.9231125464130038,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "y": 0.9102296435120927,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "y": 0.913450811908248,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "y": 0.9129838895156499,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "y": 0.9255093608080822,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "y": 0.9286756456331794,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "y": 0.9355412671650857,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "y": 0.9423221712272485,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "y": 0.9415829221266663,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "y": 0.9402210705313845,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "y": 0.945048364194838,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "y": 0.9397381004696284,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "y": 0.9359161323743678,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "y": 0.9295479447692403,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "y": 0.9265227608431751,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "y": 0.927788425617319,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "y": 0.9228104892036221,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "y": 0.9235992894661169,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "y": 0.9226362722631922,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 28.0,
+      "y": 0.9195080042389592,
+      "series": "answer probe",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "y": 0.9645014606309313,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "y": 0.965346488268637,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "y": 0.9654619235829134,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "y": 0.9665027154717938,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "y": 0.9624435887896446,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "y": 0.9669727067527732,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "y": 0.964746268402072,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "y": 0.9614044088001972,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "y": 0.9587225375602548,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "y": 0.9469976123736428,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "y": 0.9512132014166912,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "y": 0.9546962995093461,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "y": 0.9658726808385445,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "y": 0.9663999469228628,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "y": 0.9718114673980139,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "y": 0.9759858693326352,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "y": 0.9741462899778593,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "y": 0.9775433278886976,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "y": 0.9796666279493481,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "y": 0.9761659389036798,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "y": 0.9697607245401152,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "y": 0.9614010500779668,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "y": 0.9604950470731195,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "y": 0.9590708050122794,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "y": 0.9534155034549026,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "y": 0.954106391523557,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "y": 0.9540218091832309,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 28.0,
+      "y": 0.9502642360865459,
+      "series": "answer probe (rollout mean)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "xlabel": "layer",
+        "ylabel": "inner-CV AUROC (mean over folds)",
+        "legend_labels": [
+          "ctx probe",
+          "ctx diff-in-means",
+          "answer probe",
+          "answer probe (rollout mean)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xlabel": "layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "ctx probe",
+      "ctx diff-in-means",
+      "answer probe",
+      "answer probe (rollout mean)"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

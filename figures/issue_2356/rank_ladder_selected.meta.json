@@ -1,0 +1,514 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "1bbb7149c756484a",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:24Z",
+  "figsize": [
+    11.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "selected rank": null,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "selected rank": 64.0,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "selected rank": null,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "selected rank": null,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "selected rank": 32.0,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "selected rank": null,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "selected rank": null,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "selected rank": 256.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "selected rank": 128.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "selected rank": 256.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "selected rank": 256.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "selected rank": 256.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "selected rank": 64.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "selected rank": 256.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "selected rank": 64.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 256.0,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": 64.0,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": 256.0,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": null,
+      "series": "mapped (generic)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 128.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 128.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 32.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 64.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 64.0,
+      "series": "mapped (in-domain)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 8.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 256.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 256.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 128.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 128.0,
+      "series": "PCA-ctx control",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "outer fold": 0.0,
+      "selected layer": 26.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "outer fold": 1.0,
+      "selected layer": 20.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "outer fold": 2.0,
+      "selected layer": 23.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "outer fold": 3.0,
+      "selected layer": 27.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "outer fold": 4.0,
+      "selected layer": 21.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "outer fold": 0.0,
+      "selected layer": 26.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "outer fold": 1.0,
+      "selected layer": 20.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "outer fold": 2.0,
+      "selected layer": 21.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "outer fold": 3.0,
+      "selected layer": 24.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "outer fold": 4.0,
+      "selected layer": 22.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "outer fold": 0.0,
+      "selected layer": 22.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "outer fold": 1.0,
+      "selected layer": 21.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "outer fold": 2.0,
+      "selected layer": 26.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "outer fold": 3.0,
+      "selected layer": 20.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "outer fold": 4.0,
+      "selected layer": 27.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "outer fold": 0.0,
+      "y": 28.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "outer fold": 1.0,
+      "y": 27.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "outer fold": 2.0,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "outer fold": 3.0,
+      "y": 23.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "outer fold": 4.0,
+      "y": 22.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "outer fold": 0.0,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "outer fold": 1.0,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "outer fold": 2.0,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "outer fold": 3.0,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "outer fold": 4.0,
+      "y": 19.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "outer fold": 0.0,
+      "y": 20.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "outer fold": 1.0,
+      "y": 27.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "outer fold": 2.0,
+      "y": 28.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "outer fold": 3.0,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "outer fold": 4.0,
+      "y": 22.0,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "ylabel": "selected rank",
+        "legend_labels": [
+          "mapped (generic)",
+          "mapped (in-domain)",
+          "PCA-ctx control"
+        ],
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ]
+      },
+      {
+        "xlabel": "outer fold",
+        "ylabel": "selected layer",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ],
+        "yticklabels": [
+          "18",
+          "20",
+          "22",
+          "24",
+          "26",
+          "28",
+          "30"
+        ]
+      },
+      {
+        "xlabel": "outer fold",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ]
+      }
+    ],
+    "series": [
+      "mapped (generic)",
+      "mapped (in-domain)",
+      "PCA-ctx control"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

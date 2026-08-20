@@ -1,0 +1,136 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "4e04aa1cda9b4978",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:54:52Z",
+  "figsize": [
+    11.0,
+    3.6
+  ],
+  "points": [
+    {
+      "group size (rows)": "1",
+      "n groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "group size (rows)": "2",
+      "n groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "group size (rows)": "3",
+      "n groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "group size (rows)": "4",
+      "n groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "group size (rows)": "5",
+      "n groups": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "group size (rows)": "6",
+      "n groups": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "group size (rows)": "7",
+      "n groups": 165.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "group size (rows)": "1",
+      "y": 2256.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "group size (rows)": "2",
+      "y": 113.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "group size (rows)": "3",
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "group size (rows)": "4",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "group size (rows)": "5",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs - flip-group sizes",
+        "xlabel": "group size (rows)",
+        "ylabel": "n groups",
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ],
+        "yticklabels": [
+          "0",
+          "500",
+          "1000",
+          "1500",
+          "2000",
+          "2500"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal - derived-group sizes",
+        "xlabel": "group size (rows)",
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

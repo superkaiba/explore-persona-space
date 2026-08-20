@@ -1,0 +1,186 @@
+{
+ "eval_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2356/eval_results/issue_2356",
+ "figures": {
+  "armA_text_surface_indicator": {
+   "caption": "Arm A within-group construction control (F2): AUROC of the bare is-rewrite indicator, and the fitted text-surface baseline WITH vs WITHOUT the rewrite-axis indicator features. A text-surface edge driven by the base-first REFUSE sampling channel would show up here; dashed = chance.",
+   "inputs": [
+    "results/stats.json"
+   ],
+   "status": "rendered"
+  },
+  "auroc_by_layer": {
+   "caption": "Per-layer AUROC curves for the layer-selected predictors: inner group-CV pooled AUROC per layer (selection metric), averaged over outer folds. These are the SELECTION curves persisted by the fits driver, not held-out eval AUROCs.",
+   "inputs": [
+    "results/predictor_scores_armA.json",
+    "results/predictor_scores_armB.json"
+   ],
+   "status": "rendered"
+  },
+  "battery_3a_layer_curve": {
+   "caption": "Exploratory all-layer #3a retrieval curve: whitened-cosine acc@1 of the generic-trained map's predictions against the arm's greedy-answer pool, per layer (per-fold train-answer whitening). Dotted vertical = the modal probe-selected 3a layer the battery cell uses; dashed = chance (1/n_pool).",
+   "inputs": [
+    "results/map_discrimination.json"
+   ],
+   "status": "rendered"
+  },
+  "battery_acc1_draw_avg": {
+   "caption": "Map-discrimination battery (draw_avg targets): retrieval acc@1 per (arm x map condition) across the four metric spaces, with the identity+bias baseline pushed through the same whitened battery (hatched) and the S2 gate marker (black tick = group-bootstrap 5% lower bound of whitened-cosine acc@1; a cell passes the discrimination predicate iff the tick sits above the dashed chance line = 1/n_pool).",
+   "inputs": [
+    "results/map_discrimination.json"
+   ],
+   "status": "rendered"
+  },
+  "battery_acc1_greedy": {
+   "caption": "Map-discrimination battery (greedy targets): retrieval acc@1 per (arm x map condition) across the four metric spaces, with the identity+bias baseline pushed through the same whitened battery (hatched) and the S2 gate marker (black tick = group-bootstrap 5% lower bound of whitened-cosine acc@1; a cell passes the discrimination predicate iff the tick sits above the dashed chance line = 1/n_pool).",
+   "inputs": [
+    "results/map_discrimination.json"
+   ],
+   "status": "rendered"
+  },
+  "battery_behavior_split": {
+   "caption": "Behavior-conditioned retrieval: whitened-cosine acc@1 (greedy targets) split by the target's behavior class (refuse vs engage answers) per arm x map condition; dashed = chance (1/n_pool).",
+   "inputs": [
+    "results/map_discrimination.json"
+   ],
+   "status": "rendered"
+  },
+  "battery_rank_summary": {
+   "caption": "Battery rank summary (greedy targets): median rank of the true answer and MRR per (arm x condition x metric space). Per-target rank histograms are not persisted by the fits driver; median rank + MRR are the persisted rank reads.",
+   "inputs": [
+    "results/map_discrimination.json"
+   ],
+   "status": "rendered"
+  },
+  "contrast_paired_ci": {
+   "caption": "Registered paired contrasts per arm: AUROC differences with paired group-bootstrap 95% CIs over the common per-arm row mask (identical draw indices per contrast). Includes the F2 estimator-class control (ctx - text-surface) and delta_int (ctx - judge); dashed = zero.",
+   "inputs": [
+    "results/stats.json"
+   ],
+   "status": "rendered"
+  },
+  "dim_vs_ridge": {
+   "caption": "Estimator sensitivity: the ctx ridge probe vs the diff-in-means companion (train-class-mean difference at the last prompt token), pooled OOF AUROC with group-bootstrap CIs where available; dashed = chance.",
+   "inputs": [
+    "results/stats.json"
+   ],
+   "status": "rendered"
+  },
+  "group_size_histograms": {
+   "caption": "Group structure: Arm A flip-group sizes (base_id families with >=1 comply-labeled row - the matched-pair units) and Arm B derived-paraphrase-component sizes (TF-IDF union v_C-cosine connected components). Degeneracy guards + realized thresholds live in groups.json.",
+   "inputs": [
+    "armA/groups.json",
+    "armB/groups.json"
+   ],
+   "status": "rendered"
+  },
+  "hero_auroc_by_predictor": {
+   "caption": "HERO: pooled out-of-fold AUROC per predictor (group 5-fold scheme), one panel per arm; error bars = paired group-bootstrap 95% CIs from stats.json; dashed line = chance (0.5). All scores oriented as P(REFUSE).",
+   "inputs": [
+    "results/stats.json"
+   ],
+   "status": "rendered"
+  },
+  "judge_calibration": {
+   "caption": "Judge calibration: few-shot judge P(refuse) binned into deciles vs the empirical refuse fraction among OOF rows in each bin (marker size ~ bin count); dashed = perfect calibration.",
+   "inputs": [
+    "results/predictor_scores_armA.json",
+    "results/predictor_scores_armB.json"
+   ],
+   "status": "rendered"
+  },
+  "limited_label_learning_curves": {
+   "caption": "Limited-label learning curves: AUROC at the fold-selected configuration when the probe trains on n labeled groups/class (10 subsample seeds; 'all' = full train fold, 1 seed). Mean +- sd over seeds of the per-seed fold means.",
+   "inputs": [
+    "results/stats.json"
+   ],
+   "status": "rendered"
+  },
+  "lodo_armB": {
+   "caption": "LODO cross-benchmark transfer (Arm B): ctx probe trained on the other source, evaluated on the held-out source (per-direction AUROC from per-row LODO scores joined to the corpus manifest's source field), plus the pooled LODO AUROC. Dotted line = in-fold ctx probe AUROC; dashed = chance.",
+   "inputs": [
+    "results/stats.json",
+    "results/predictor_scores_armB.json",
+    "corpus/armB_manifest.json"
+   ],
+   "status": "rendered"
+  },
+  "map_quality_by_layer": {
+   "caption": "Map diagnostics by layer (generic held-out rows): left - held-out R2 of the 3a map (solid) vs the identity+bias baseline (dashed); thin grey lines = the 3b in-domain-adapted conditions. Right - kNN retrieval acc@1 of the 3a map predictions among the held-out pool (euclidean + cosine) vs chance.",
+   "inputs": [
+    "results/map_diagnostics.json"
+   ],
+   "status": "rendered"
+  },
+  "nn_behavior_match": {
+   "caption": "Fit-free discriminator: does the whitened nearest pool neighbor of the predicted answer carry the same greedy behavior label as the target's prompt? Dashed reference = matched-random-pair rate from the pool's greedy-label shares (sum of squared class shares).",
+   "inputs": [
+    "results/map_discrimination.json",
+    "armA/labels.json",
+    "armB/labels.json"
+   ],
+   "status": "rendered"
+  },
+  "permutation_band": {
+   "caption": "Advisory permutation calibration: observed ctx-probe AUROC vs the group-label permutation null (band = null q50-q95, tick = null mean; per-draw inner layer re-selection at frozen per-(fold,layer) GCV lambda). Advisory only - never a gate; p-values in stats.json.",
+   "inputs": [
+    "results/stats.json"
+   ],
+   "status": "rendered"
+  },
+  "rank_ladder_selected": {
+   "caption": "Rank-ladder outcome per fold: the inner-CV-selected (rank, layer) for the mapped probes (3a/3b) and the matched-rank PCA control. 'full'-rank selections are omitted from the rank panel (log2 axis). The full per-(layer,rank) AUROC surface is not persisted by the fits driver; this shows the realized selections.",
+   "inputs": [
+    "results/predictor_scores_armA.json",
+    "results/predictor_scores_armB.json"
+   ],
+   "status": "rendered"
+  },
+  "rate_histograms": {
+   "caption": "Continuous-rate histograms: per-prompt engage rate over valid judged draws (the graded secondary DV). Shaded band = the dropped middle band between the label thresholds (label engage iff rate >= hi, refuse iff rate <= lo).",
+   "inputs": [
+    "armA/labels.json",
+    "armB/labels.json"
+   ],
+   "status": "rendered"
+  },
+  "roc_curves": {
+   "caption": "ROC curves per predictor over pooled OOF rows (positive class = refuse). Per-predictor valid rows; see stats.json for the common-mask AUROCs.",
+   "inputs": [
+    "results/predictor_scores_armA.json",
+    "results/predictor_scores_armB.json"
+   ],
+   "status": "rendered"
+  },
+  "score_scatter_map_vs_ctx": {
+   "caption": "Per-row OOF score scatter: mapped (3a) probe score vs ctx probe score, colored by the row's behavior label. Tight coupling means the rank-restricted map carries the same decision information as the raw context read.",
+   "inputs": [
+    "results/predictor_scores_armA.json",
+    "results/predictor_scores_armB.json"
+   ],
+   "status": "rendered"
+  },
+  "transfer_2x2": {
+   "caption": "Cross-regime transfer 2x2: ctx probe (ridge) and diff-in-means trained on one arm's full balanced set, evaluated on the other arm's balanced set; both directions. Report-only (plan Step G / H4); dashed = chance.",
+   "inputs": [
+    "results/transfer.json"
+   ],
+   "status": "rendered"
+  },
+  "w_spectra_effective_rank": {
+   "caption": "Left: top-16 singular values of the fitted context-to-answer map W at the first / best-R2 / last layers (3a). Right: effective rank (participation ratio of the singular spectrum) by layer; thin grey = 3b conditions.",
+   "inputs": [
+    "results/map_diagnostics.json"
+   ],
+   "status": "rendered"
+  }
+ },
+ "meta": {
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "issue": 2356,
+  "timestamp_utc": "2026-08-20T17:54:52Z"
+ }
+}

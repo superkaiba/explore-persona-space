@@ -1,0 +1,74 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "44eb8405c6fb4736",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:53Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "pooled OOF AUROC": 0.5020384854486837,
+      "series": "null q50-q95",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "pooled OOF AUROC": 0.5528929144558978,
+      "series": "null q50-q95",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "pooled OOF AUROC": 0.9946507828651564,
+      "series": "observed ctx AUROC",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "advisory group-label permutation band (ctx probe)",
+        "ylabel": "pooled OOF AUROC",
+        "legend_labels": [
+          "null q50-q95",
+          "observed ctx AUROC"
+        ],
+        "xticklabels": [
+          "Arm A - harmful flip-pairs",
+          "Arm B - over-refusal"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ],
+    "series": [
+      "null q50-q95",
+      "observed ctx AUROC"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

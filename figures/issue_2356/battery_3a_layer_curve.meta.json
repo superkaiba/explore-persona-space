@@ -1,0 +1,401 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "7c33864aad5248ed",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:54:29Z",
+  "figsize": [
+    11.0,
+    3.4
+  ],
+  "points": [
+    {
+      "layer": 1.0,
+      "whitened-cosine acc@1 (log)": 0.07186311787072243,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "whitened-cosine acc@1 (log)": 0.055133079847908745,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "whitened-cosine acc@1 (log)": 0.06577946768060837,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "whitened-cosine acc@1 (log)": 0.03954372623574144,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "whitened-cosine acc@1 (log)": 0.05665399239543726,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "whitened-cosine acc@1 (log)": 0.037262357414448666,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "whitened-cosine acc@1 (log)": 0.03460076045627376,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "whitened-cosine acc@1 (log)": 0.023193916349809884,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "whitened-cosine acc@1 (log)": 0.02167300380228137,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "whitened-cosine acc@1 (log)": 0.02167300380228137,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "whitened-cosine acc@1 (log)": 0.030798479087452472,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "whitened-cosine acc@1 (log)": 0.02547528517110266,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "whitened-cosine acc@1 (log)": 0.030418250950570342,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "whitened-cosine acc@1 (log)": 0.05665399239543726,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "whitened-cosine acc@1 (log)": 0.06692015209125475,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "whitened-cosine acc@1 (log)": 0.0623574144486692,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "whitened-cosine acc@1 (log)": 0.0714828897338403,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "whitened-cosine acc@1 (log)": 0.05741444866920152,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "whitened-cosine acc@1 (log)": 0.09923954372623574,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "whitened-cosine acc@1 (log)": 0.132319391634981,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "whitened-cosine acc@1 (log)": 0.10228136882129278,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "whitened-cosine acc@1 (log)": 0.14980988593155894,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "whitened-cosine acc@1 (log)": 0.16730038022813687,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "whitened-cosine acc@1 (log)": 0.15475285171102662,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "whitened-cosine acc@1 (log)": 0.15285171102661596,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "whitened-cosine acc@1 (log)": 0.14372623574144486,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "whitened-cosine acc@1 (log)": 0.17642585551330797,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 28.0,
+      "whitened-cosine acc@1 (log)": 0.1752851711026616,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "y": 0.2687003760969494,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "y": 0.2620142081069787,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "y": 0.3121604680317593,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "y": 0.2795653990806519,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "y": 0.33765148349352275,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "y": 0.2649394066025909,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "y": 0.2632678646050982,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "y": 0.20016715419974926,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "y": 0.1771834517342248,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "y": 0.14918512327622233,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "y": 0.17676556623485165,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "y": 0.1625574592561638,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "y": 0.17801922273297116,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "y": 0.2695361470956958,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "y": 0.31424989552862514,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "y": 0.32804011700793984,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "y": 0.3472628499791057,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "y": 0.3476807354784789,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "y": 0.5139991642290013,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "y": 0.6117843710823234,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5578771416631843,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6268282490597576,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6435436690346845,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "y": 0.6268282490597576,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "y": 0.6268282490597576,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "y": 0.6142916840785625,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "y": 0.6243209360635186,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 28.0,
+      "y": 0.6318428750522357,
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Arm A - harmful flip-pairs",
+        "xlabel": "layer",
+        "ylabel": "whitened-cosine acc@1 (log)",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "Arm B - over-refusal",
+        "xlabel": "layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

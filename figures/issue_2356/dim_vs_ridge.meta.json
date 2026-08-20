@@ -1,0 +1,80 @@
+{
+  "commit": "e4d1bacb+dirty",
+  "render_id": "f4e23f8385004979",
+  "git_commit": "e4d1bacb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+  ],
+  "created": "2026-08-20T17:53:43Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "pooled OOF AUROC": 0.9946507828651564,
+      "error": 0.004402634747878276,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "pooled OOF AUROC": 0.9506577338745171,
+      "error": 0.024145757253371147,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "pooled OOF AUROC": 0.981104251904755,
+      "error": 0.011757604658029996,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "pooled OOF AUROC": 0.9467455621301775,
+      "error": 0.02565657761411011,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "ridge vs diff-in-means (ctx probe)",
+        "ylabel": "pooled OOF AUROC",
+        "legend_labels": [
+          "ctx probe",
+          "ctx diff-in-means"
+        ],
+        "xticklabels": [
+          "Arm A - harmful flip-pairs",
+          "Arm B - over-refusal"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "ctx probe",
+      "ctx diff-in-means"
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}
