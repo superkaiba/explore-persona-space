@@ -97,6 +97,82 @@ def fig_refit_rescue() -> None:
     plt.close(fig)
 
 
+def fig_refit_rescue_iclr() -> None:
+    """--style iclr: Overleaf-paper variant of the refit-rescue figure.
+
+    Same cells as ``fig_refit_rescue`` at final ICLR size into figures/paper/.
+    One colour (the featured-arm blue), FILL = map training pool: open = the
+    frozen generic-pool map from the parent run, solid = the map refit on the
+    target corpus's own 50,000 unjudged samples. No on-canvas titles beyond
+    panel heads; provenance lives in the LaTeX caption.
+    """
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_panels,
+        paper_color,
+    )
+
+    cells, r_frozen, r_refit, j_frozen, j_refit = [], [], [], [], []
+    for corpus in ["lmsys", "ultrachat"]:
+        data = _load(R1 / f"refit_{corpus}.json")
+        layers = data["arms"]["context"]["layers"]
+        for trait in TRAIT_ORDER:
+            t = layers[TRAIT_LAYER[trait]]["traits"].get(trait)
+            if t is None:
+                continue
+            cells.append(f"{trait} ({CORPUS_LABEL[corpus]})")
+            r_frozen.append(t["frozen_map_score_r_vs_exact"])
+            r_refit.append(t["score_level_calibration_vs_exact"]["pearson_r"])
+            j_frozen.append(t["jaccard_top_frozen_vs_exact"])
+            j_refit.append(t["jaccard_top_refit_vs_exact"])
+
+    set_paper_style("iclr")
+    blue = paper_color("instruct")
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.5))
+    x = np.arange(len(cells))
+    w = 0.38
+
+    for ax, frozen, refit, ylab in (
+        (axes[0], r_frozen, r_refit, "$r$ vs exact $\\Delta P$"),
+        (axes[1], j_frozen, j_refit, "top-500 Jaccard"),
+    ):
+        ax.bar(
+            x - w / 2,
+            frozen,
+            w,
+            facecolor="white",
+            edgecolor=blue,
+            linewidth=0.7,
+            label="frozen generic-pool map",
+        )
+        ax.bar(x + w / 2, refit, w, color=blue, label="corpus-refit map")
+        ax.axhline(0, color=paper_color("reference"), linewidth=0.6)
+        ax.set_xticks(x)
+        ax.set_xticklabels(cells, rotation=35, ha="right", rotation_mode="anchor", fontsize=6.5)
+        ax.set_ylabel(ylab)
+    axes[1].axhline(
+        0.005, color=paper_color("reference"), linewidth=0.7, linestyle="--", label="chance"
+    )
+    handles, labels = axes[1].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.02),
+        ncol=3,
+        frameon=False,
+        columnspacing=1.2,
+        handlelength=1.4,
+    )
+    fig.tight_layout(rect=(0.0, 0.10, 1.0, 1.0))
+    out_dir = Path("figures/paper")
+    if not Path("eval_results").exists():
+        out_dir = Path("/home/thomasjiralerspong/explore-persona-space/figures/paper")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c5_screening_refit", dir=out_dir)
+    plt.close(fig)
+    print(f"wrote {out_dir / 'c5_screening_refit'}.png/.pdf (iclr)")
+
+
 def fig_transport() -> None:
     """Trait-probe AUC: same-corpus held-out vs cross-corpus transport."""
     data = _load(R1 / "transport.json")
@@ -303,8 +379,24 @@ def fig_seed137() -> None:
 
 
 if __name__ == "__main__":
-    fig_refit_rescue()
-    fig_transport()
-    fig_rejudge()
-    fig_seed137()
-    print("done")
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--style",
+        choices=("blog", "iclr"),
+        default="blog",
+        help=(
+            "iclr: render ONLY the paper refit-rescue variant into figures/paper/ "
+            "and exit; the committed blog-register figures are untouched"
+        ),
+    )
+    args = ap.parse_args()
+    if args.style == "iclr":
+        fig_refit_rescue_iclr()
+    else:
+        fig_refit_rescue()
+        fig_transport()
+        fig_rejudge()
+        fig_seed137()
+        print("done")

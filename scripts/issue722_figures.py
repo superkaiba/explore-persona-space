@@ -264,10 +264,60 @@ def fig_mlp_shuffle():
     plt.close(fig)
 
 
+def fig_paper_c1_layer_profile():
+    """ICLR paper figure (c1_linear layer-profile): held-out R^2 per layer, ridge vs MLP.
+
+    Reads the committed 50-context base-model sweep
+    eval_results/issue_722/base-skill-over-mean-cC-to-v0/skill_over_mean.json
+    (the generating sweep script was superseded and removed; this regenerates the
+    base_skill_over_mean_per_layer read from its committed artifact). Ridge plateaus
+    0.74-0.80 over the middle layers (peak layer 18); the width-512 MLP is negative
+    at every layer at this n.
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full, paper_color
+
+    set_paper_style("iclr")
+    som = json.load(open(ED / "base-skill-over-mean-cC-to-v0" / "skill_over_mean.json"))
+    layers = [p["layer"] for p in som["per_layer"]]
+    ridge = [p["skill_vs_mean_ridge"] for p in som["per_layer"]]
+    mlp = [p["skill_vs_mean_mlp"] for p in som["per_layer"]]
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(height_frac=0.52))
+    ax.plot(layers, ridge, marker="o", ms=3, lw=1.4, color="#0072B2", label="linear map (ridge)")
+    ax.plot(
+        layers,
+        mlp,
+        marker="s",
+        ms=3,
+        lw=1.4,
+        color=paper_color("neural_map"),
+        label="neural map (MLP, w=512)",
+    )
+    ax.axhline(0.0, color="black", lw=0.7, ls=":")
+    ax.set_ylim(-2.45, 1.0)  # layer-0 MLP (-5.59) runs below the crop; stated in the caption
+    ax.set_xlabel("layer")
+    ax.set_ylabel("held-out $R^2$ (skill over mean)")
+    ax.legend(loc="center right", handlelength=1.6)
+    paper_out = ROOT / "figures" / "paper"
+    paper_out.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_layer_profile", dir=paper_out)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    fig_hero()
-    fig_delta_vs_floor()
-    fig_chain_forest()
-    fig_cross_transfer()
-    fig_mlp_shuffle()
-    print("issue #722 figures regenerated.")
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
+    args = ap.parse_args()
+    if args.style == "iclr":
+        # Paper pathway (#2094 precedent): new stem under figures/paper/, never
+        # overwriting the blog-styled issue stems.
+        fig_paper_c1_layer_profile()
+        print("paper c1_layer_profile regenerated.")
+    else:
+        fig_hero()
+        fig_delta_vs_floor()
+        fig_chain_forest()
+        fig_cross_transfer()
+        fig_mlp_shuffle()
+        print("issue #722 figures regenerated.")
