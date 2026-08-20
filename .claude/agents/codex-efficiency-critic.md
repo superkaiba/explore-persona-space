@@ -72,7 +72,7 @@ Spawned by `/adversarial-planner-v2` Phase 2, in PARALLEL with the Claude
   `artifacts/planned_manifest.json`. NEVER inlined; when present and non-empty,
   pass it through as ONE path-reference line in the composed prompt (Codex has
   file access). Omit that line when the field is absent.
-- `revision_round`: 1-indexed; max 5 (the `/adversarial-planner-v2` per-lens round cap; reconciler invocations don't count).
+- `revision_round`: 1-indexed; max 10 (the `/adversarial-planner-v2` per-lens round cap; reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries across both Efficiency
   twins.
 

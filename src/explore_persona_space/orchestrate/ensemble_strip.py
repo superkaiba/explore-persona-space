@@ -10,7 +10,7 @@ contract behind it:
   finding is not introduced by the round's diff. Ambiguous or
   contradictory evidence → False (leave the FAIL in place — evidence-based,
   never a blanket ignore).
-- :func:`resolve_cap_hit` — the cap-5 terminal decision (SKILL.md Steps 5d /
+- :func:`resolve_cap_hit` — the cap-10 terminal decision (SKILL.md Steps 5d /
   9a / 9a-bis). Returns the action the orchestrator takes when the review
   loop reaches the cap without a PASS: continue (all residual stripped),
   surface to the user (interactive), or block (autonomous, substantive
@@ -87,9 +87,9 @@ def should_strip_git_provenance(
 
 
 def resolve_cap_hit(all_residual_stripped: bool, autonomous: bool) -> dict[str, str]:
-    """Decide the cap-5 terminal action for an ensemble review loop.
+    """Decide the cap-10 terminal action for an ensemble review loop.
 
-    At the cap (round 5) with a non-PASS ensemble verdict, the orchestrator
+    At the cap (round 10) with a non-PASS ensemble verdict, the orchestrator
     applies the full strip once more, then:
 
     - ``all_residual_stripped`` True → CONTINUE: every residual blocker was a
@@ -116,17 +116,17 @@ def resolve_cap_hit(all_residual_stripped: bool, autonomous: bool) -> dict[str, 
     if all_residual_stripped:
         return {
             "action": "continue",
-            "reason": "cap-5: all residual blockers stripped (false-positive / "
+            "reason": "cap-10: all residual blockers stripped (false-positive / "
             "mechanical / git-provenance / procedural) → treat as PASS and continue",
         }
     if autonomous:
         return {
             "action": "block_autonomous",
-            "reason": "cap-5: substantive residual remains → post epm:failure v1 "
+            "reason": "cap-10: substantive residual remains → post epm:failure v1 "
             "failure_class: code + status:blocked + notify + CRON-TEARDOWN (never ship past)",
         }
     return {
         "action": "surface_interactive",
-        "reason": "cap-5: substantive residual remains → present to user + EXIT "
+        "reason": "cap-10: substantive residual remains → present to user + EXIT "
         "(never ship past, never pivot-loop)",
     }

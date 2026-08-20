@@ -61,7 +61,7 @@ AGENT_FILE = REPO_ROOT / ".claude" / "agents" / "codex-critic.md"
 #               example in the closing "Be specific" instruction (the atom
 #               Codex named in round 1).
 #   - `3`     — the `{{revision_round}}` / marker-tag `v<n>` digit. Bounded to
-#               {1,2,3} by the /adversarial-planner max-3-rounds policy; its
+#               {1,...,10} by the /adversarial-planner max-10-rounds policy; its
 #               substituted value traces to NO handed span (it is not in
 #               plan_body / lens_items / prior_critique_summaries), so it must
 #               be scaffold-covered. {1,2} are already present from above; `3`
@@ -376,7 +376,7 @@ class TestAllowlistCoversFinalTemplate:
     def test_revision_round_digits_are_covered(self):
         # `{{revision_round}}` (and the marker-tag `v<n>`) substitute the round
         # digit, which traces to NO handed span — it must be scaffold-covered.
-        # Bounded to {1,2,3} by the /adversarial-planner max-3-rounds policy.
+        # Bounded to {1,...,10} by the /adversarial-planner max-10-rounds policy.
         allowed = {_canon(s) for s in SCAFFOLD_ALLOWLIST}
         assert {"1", "2", "3"} <= allowed, sorted(allowed)
 
