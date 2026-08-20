@@ -1,0 +1,663 @@
+{
+  "commit": "af994dfb+dirty",
+  "render_id": "3c6fd0ede428409e",
+  "git_commit": "af994dfbce4d9009bc9cffa7c9513250e5ee16fe",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue722_figures.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1901_body_figures.py",
+  "created": "2026-08-20T16:36:49Z",
+  "figsize": [
+    5.5,
+    2.45
+  ],
+  "points": [
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.6708212401091411,
+      "error": 0.012488665654975473,
+      "series": "linear map, instruct (963k rows)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.754170841830715,
+      "error": 0.010028373174579663,
+      "series": "linear map, instruct (963k rows)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.6839229517657401,
+      "error": 0.012858001676696595,
+      "series": "linear map, instruct (963k rows)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.7579235680131382,
+      "error": 0.012488665654975473,
+      "series": "neural map (w=32768), instruct",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.813419461228615,
+      "error": 0.010028373174579663,
+      "series": "neural map (w=32768), instruct",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.7722463827277778,
+      "error": 0.012858001676696595,
+      "series": "neural map (w=32768), instruct",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer (of 28)": 0.0,
+      "held-out $R^2$": -0.09328607140723966,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 1.0,
+      "held-out $R^2$": 0.1709721199638914,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 2.0,
+      "held-out $R^2$": 0.34514629121433493,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 3.0,
+      "held-out $R^2$": 0.4232794753308389,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 4.0,
+      "held-out $R^2$": 0.48620609076531496,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 5.0,
+      "held-out $R^2$": 0.4731055420651804,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 6.0,
+      "held-out $R^2$": 0.5881019036591549,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 7.0,
+      "held-out $R^2$": 0.6039307810267025,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 8.0,
+      "held-out $R^2$": 0.664289539224923,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 9.0,
+      "held-out $R^2$": 0.6384123241049764,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 10.0,
+      "held-out $R^2$": 0.658074554260099,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 11.0,
+      "held-out $R^2$": 0.68745354148318,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 12.0,
+      "held-out $R^2$": 0.7097311620980347,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 13.0,
+      "held-out $R^2$": 0.7231125433793889,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.745682362952892,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 15.0,
+      "held-out $R^2$": 0.7863538108690785,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 16.0,
+      "held-out $R^2$": 0.7856032717181133,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 17.0,
+      "held-out $R^2$": 0.7813474177089645,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 18.0,
+      "held-out $R^2$": 0.7983028454675367,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.7784000858797752,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 20.0,
+      "held-out $R^2$": 0.7727615991559655,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 21.0,
+      "held-out $R^2$": 0.7406867907378158,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 22.0,
+      "held-out $R^2$": 0.6974122047470037,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 23.0,
+      "held-out $R^2$": 0.6538952727020753,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 24.0,
+      "held-out $R^2$": 0.6143671695063295,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 25.0,
+      "held-out $R^2$": 0.5619620425631816,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.5359236450992713,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 27.0,
+      "held-out $R^2$": 0.5046947994281655,
+      "series": "linear map, base model (28-layer sweep)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.6708212401091411,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.754170841830715,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.6839229517657401,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.6576720487396015,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.7441307847286448,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.6688347516456364,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.6831422077322264,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.7638445771747455,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.6982224327835325,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.7579235680131382,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.813419461228615,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.7722463827277778,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.7447538971463457,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.8029343798692213,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.7584192980199566,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.7697312284562966,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.8229911262183807,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.7841353013733497,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.66,
+      "error": 0.022999999999999993,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.805,
+      "error": 0.031000000000000028,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.684,
+      "error": 0.0310125,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.809,
+      "error": 0.022999999999999993,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.85,
+      "error": 0.031000000000000028,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.825,
+      "error": 0.0310125,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.181,
+      "error": 0.022999999999999993,
+      "series": "identity + bias, instruct",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.532,
+      "error": 0.031000000000000028,
+      "series": "identity + bias, instruct",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.537,
+      "error": 0.0310125,
+      "series": "identity + bias, instruct",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.66,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.805,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.684,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.628,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.777,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.654,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.689,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.83,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.713,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.809,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.85,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.825,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.783975,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.8259749999999999,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.8,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.8340249999999999,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.873,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.848,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.181,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.532,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.537,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.158,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.5,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.505975,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.204,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.562,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.568,
+      "_kind": "line",
+      "_group": 20
+    }
+  ],
+  "n_series": 21,
+  "total_points": 88,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer (of 28)",
+        "ylabel": "held-out $R^2$",
+        "xticklabels": [
+          "0",
+          "7",
+          "14",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "layer (of 28)",
+        "ylabel": "retrieval acc@1 (pool 1,000)",
+        "xticklabels": [
+          "0",
+          "7",
+          "14",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "linear map, base model (28-layer sweep)",
+      "linear map, instruct (963k rows)",
+      "neural map (w=32768), instruct",
+      "identity + bias, instruct"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

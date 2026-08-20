@@ -1,0 +1,407 @@
+{
+  "commit": "af994dfb+dirty",
+  "render_id": "d222032263ae44b8",
+  "git_commit": "af994dfbce4d9009bc9cffa7c9513250e5ee16fe",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue722_figures.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1901_body_figures.py",
+  "created": "2026-08-20T16:36:46Z",
+  "figsize": [
+    5.5,
+    2.3
+  ],
+  "points": [
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": 0.38444638872773484,
+      "error": 0.03698550454609589,
+      "series": "linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": 0.7054149303865582,
+      "error": 0.03495238767092529,
+      "series": "linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.754170841830715,
+      "error": 0.010028373174579663,
+      "series": "linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": -0.8900205280267146,
+      "error": 0.03698550454609589,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": -0.8646901412953396,
+      "error": 0.03495238767092529,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": -0.9195990073009372,
+      "error": 0.010028373174579663,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.813419461228615,
+      "error": 0.010028373174579663,
+      "series": "neural map (w=32768)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": 0.38444638872773484,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": 0.7054149303865582,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.754170841830715,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": 0.3654653938433147,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": 0.6905136993967556,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.7441307847286448,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": 0.40306635005900354,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": 0.7200437035523883,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.7638445771747455,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": -0.8900205280267146,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": -0.8646901412953396,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": -0.9195990073009372,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": -0.9295813562136308,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": -0.9025771527841601,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": -0.9526555287858319,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": -0.855610347121439,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training contexts": 3600.0,
+      "held-out $R^2$": -0.8326723774423095,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": -0.8894759202193251,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.065,
+      "error": 0.03101249999999997,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.72,
+      "error": 0.030500000000000027,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.805,
+      "error": 0.023512500000000047,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.501,
+      "error": 0.03101249999999997,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.503,
+      "error": 0.030500000000000027,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.532,
+      "error": 0.023512500000000047,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.85,
+      "error": 0.023512500000000047,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.065,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.72,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.805,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.049,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.691,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.777,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.08102499999999999,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.7470249999999999,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.83,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.501,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.503,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.532,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.468,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.471,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.5,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1 (pool 1,000)": 0.530025,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training contexts": 3600.0,
+      "retrieval acc@1 (pool 1,000)": 0.532,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.562,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 50,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "training contexts",
+        "ylabel": "held-out $R^2$",
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$",
+          "$\\mathdefault{10^{8}}$"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "training contexts",
+        "ylabel": "retrieval acc@1 (pool 1,000)",
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$",
+          "$\\mathdefault{10^{8}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "linear map (ridge)",
+      "identity + bias",
+      "neural map (w=32768)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

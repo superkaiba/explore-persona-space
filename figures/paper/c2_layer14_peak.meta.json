@@ -1,0 +1,294 @@
+{
+  "commit": "58764917+dirty",
+  "render_id": "e9bb209099d8432a",
+  "git_commit": "5876491775385bccf014320a963cb27fbeb172c7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c4_boundary_vs_prose.meta.json",
+    "figures/paper/c4_boundary_vs_prose.pdf",
+    "figures/paper/c4_boundary_vs_prose.png",
+    "figures/paper/c4_character_maps.meta.json",
+    "figures/paper/c4_character_maps.pdf",
+    "figures/paper/c4_character_maps.png",
+    "figures/paper/c4_patch_persistence.meta.json",
+    "figures/paper/c4_patch_persistence.pdf",
+    "figures/paper/c4_patch_persistence.png",
+    "figures/paper/c4_rlvr_contrast.meta.json",
+    "figures/paper/c4_rlvr_contrast.pdf",
+    "figures/paper/c4_rlvr_contrast.png",
+    "figures/paper/c4_transfer_ladder.meta.json",
+    "figures/paper/c4_transfer_ladder.pdf",
+    "figures/paper/c4_transfer_ladder.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "scripts/issue1415_hooked_decomp_figures.py",
+    "scripts/issue1415_layer_behavior_figure.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2054_hero_boundary_vs_prose_fig.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "scripts/issue928_mlc_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1415_layer_behavior_figure.py",
+  "created": "2026-08-20T08:27:26Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "patched layer": 7.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.39517857142857127,
+      "error": 0.38009993135184983,
+      "series": "context-vector patch (seed 42)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "patched layer": 10.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.4303571428571428,
+      "error": 0.2991979941783242,
+      "series": "context-vector patch (seed 42)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "patched layer": 14.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 6.1825,
+      "error": 3.463593976511535,
+      "series": "context-vector patch (seed 42)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "patched layer": 17.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 2.425952380952381,
+      "error": 0.9638247673523197,
+      "series": "context-vector patch (seed 42)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "patched layer": 20.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.9116071428571427,
+      "error": 0.3365117368617764,
+      "series": "context-vector patch (seed 42)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "patched layer": 21.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.7338095238095238,
+      "error": 0.3071480250580364,
+      "series": "context-vector patch (seed 42)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "patched layer": 24.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.8171031746031746,
+      "error": 0.4188711605634356,
+      "series": "context-vector patch (seed 42)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "patched layer": 13.55,
+      "judged behavior shift\nvs baseline (points, 0-100)": 6.579821428571429,
+      "error": 3.399164195453781,
+      "series": "layer-14 replication (fresh seed)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "patched layer": 14.45,
+      "judged behavior shift\nvs baseline (points, 0-100)": 5.043571428571428,
+      "error": 2.7979875711346063,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "patched layer": 7.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.39517857142857127,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "patched layer": 10.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.4303571428571428,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "patched layer": 14.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 6.1825,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "patched layer": 17.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 2.425952380952381,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "patched layer": 20.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.9116071428571427,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "patched layer": 21.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.7338095238095238,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "patched layer": 24.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.8171031746031746,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "patched layer": 7.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.015078640076721439,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "patched layer": 10.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.13115914867881862,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "patched layer": 14.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 2.7189060234884654,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "patched layer": 17.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 1.4621276136000612,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "patched layer": 20.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.5750954059953663,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "patched layer": 21.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.4266614987514874,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "patched layer": 24.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.39823201403973896,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "patched layer": 7.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.7752785027804211,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "patched layer": 10.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 0.729555137035467,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "patched layer": 14.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 9.646093976511535,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "patched layer": 17.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 3.3897771483047006,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "patched layer": 20.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 1.248118879718919,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "patched layer": 21.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 1.0409575488675602,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "patched layer": 24.0,
+      "judged behavior shift\nvs baseline (points, 0-100)": 1.2359743351666101,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "patched layer",
+        "ylabel": "judged behavior shift\nvs baseline (points, 0-100)",
+        "legend_labels": [
+          "context-vector patch (seed 42)",
+          "layer-14 replication (fresh seed)"
+        ],
+        "xticklabels": [
+          "7",
+          "10",
+          "14",
+          "17",
+          "20",
+          "21",
+          "24"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      }
+    ],
+    "series": [
+      "context-vector patch (seed 42)",
+      "layer-14 replication (fresh seed)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

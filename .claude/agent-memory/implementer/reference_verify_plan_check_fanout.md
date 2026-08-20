@@ -29,11 +29,14 @@ Adding a new check to `scripts/verify_plan.py` fans out to:
    can push it past its cap and FAIL the no-flags lint fleet-wide — same-round
    landing-bytes cap raise (`SKILL_DOC_SIZE_GRANDFATHER`, cap = landing bytes
    + ~1 KB, #1753/#2240; hit at #2123: 71,103 B > 70,900 cap).
-4b. SIBLING enum tail-pin: the PREVIOUS check's registration test
-   (`tests/test_verify_plan_c<max>_*.py::test_c<max>_registered_...`) pins the
-   conditional-enum TAIL literal (e.g. `"57, 58)"`); extending the enum to
-   `..., 59)` breaks it BY DESIGN (the house loud-reminder pattern) — update
-   the pin to the new tail in the same round (#2123: c58's pin caught c59).
+4b. SIBLING enum tail-pin: a SIBLING check's registration test pins the
+   conditional-enum TAIL literal (e.g. `"...66, 67)"`); extending the enum
+   breaks it BY DESIGN (the house loud-reminder pattern) — update the pin to
+   the new tail in the same round. The pin does NOT move to the newest
+   check's file: it has stayed in `tests/test_verify_plan_c58_fanout_pod_name.py:~115`
+   through c59...c68 (#2123: caught c59; #2228: caught c68 via the pin-sweep
+   `--map-files` col-1 list). Find it with `grep -rn '66, 67)' tests/`-style
+   greps on the OLD tail.
 5. If mirrored as a critic-lens item: critic-lens-reference.md (full text) +
    critic.md (item-name run) + statistics-critic.md ("items I own") +
    lens-coverage-map.md § table row (`v2-owner: ...`).
@@ -51,6 +54,11 @@ verify with `grep -n 'N/A — no' .claude/skills/adversarial-planner/SKILL.md`.
 **Calibration sweep (new-cN trigger regexes):** run the check IN-PROCESS over
 `tasks/*/*/plans/v*.md` (skip `plan.md` symlinks + own task; ~1100 files,
 seconds) — never a per-file `uv run` subprocess loop (~700 × 2 uv startups).
+Loading verify_plan.py by path REQUIRES `sys.modules["verify_plan"] = mod`
+BEFORE `spec.loader.exec_module(mod)` — the `@dataclass` decorator resolves
+`cls.__module__` via sys.modules and dies with
+`AttributeError: 'NoneType' object has no attribute '__dict__'` otherwise
+(#2228: the approved plan's own §6.3 snippet carried this latent bug).
 Tolerate `FileNotFoundError` mid-glob (live tasks `git mv` between statuses).
 The top corpus noise class for any re-X/redo-style trigger is NEGATED
 mentions ("NOT regenerated", "NO re-extraction of r_B") — fixed-width

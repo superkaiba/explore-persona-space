@@ -627,6 +627,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step10d_guards.py",  # NEW (#1978) — step10d_guards.sh extraction pin
+    # NEW (#2201) — deliverable-divergence probe prose pins (Step 5a probe +
+    # reviewer-brief bullet, Step 10d pre-merge delta gate H4, code-reviewer.md
+    # § Main-side divergence list consumption paragraph).
+    "tests/test_issue_skill_divergence_probe_pin.py",
     # NEW (#1723) — SKILL.md Step 10 CRON-TEARDOWN + epm:done reorder around
     # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
     # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)
@@ -788,6 +792,10 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
         "tests/test_inline_lint_gate.py",
         "tests/test_step9c_baseline.py",
     ),
+    # #2412: the Step 5a sibling-probe unit tests load the helper by
+    # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
+    # reaches a constructed-path consumer.
+    "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------

@@ -1,0 +1,285 @@
+{
+  "commit": "384e598a+dirty",
+  "render_id": "7846b22d7f084896",
+  "git_commit": "384e598a31acc1097e05f421efcc6aff30d97158",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_cot_matched_length.meta.json",
+    "figures/paper/c1_cot_matched_length.pdf",
+    "figures/paper/c1_cot_matched_length.png",
+    "figures/paper/c1_input_ablation_heatmap.meta.json",
+    "figures/paper/c1_input_ablation_heatmap.pdf",
+    "figures/paper/c1_input_ablation_heatmap.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_offpolicy_arms.meta.json",
+    "figures/paper/c1_offpolicy_arms.pdf",
+    "figures/paper/c1_offpolicy_arms.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c2_layer14_peak.meta.json",
+    "figures/paper/c2_layer14_peak.pdf",
+    "figures/paper/c2_layer14_peak.png",
+    "figures/paper/c4_boundary_vs_prose.meta.json",
+    "figures/paper/c4_boundary_vs_prose.pdf",
+    "figures/paper/c4_boundary_vs_prose.png",
+    "figures/paper/c4_character_maps.meta.json",
+    "figures/paper/c4_character_maps.pdf",
+    "figures/paper/c4_character_maps.png",
+    "figures/paper/c4_patch_persistence.meta.json",
+    "figures/paper/c4_patch_persistence.pdf",
+    "figures/paper/c4_patch_persistence.png",
+    "figures/paper/c4_rlvr_contrast.meta.json",
+    "figures/paper/c4_rlvr_contrast.pdf",
+    "figures/paper/c4_rlvr_contrast.png",
+    "figures/paper/c4_transfer_ladder.meta.json",
+    "figures/paper/c4_transfer_ladder.pdf",
+    "figures/paper/c4_transfer_ladder.png",
+    "figures/paper/c5_claim4_margin_forest.meta.json",
+    "figures/paper/c5_claim4_margin_forest.pdf",
+    "figures/paper/c5_claim4_margin_forest.png",
+    "figures/paper/c5_compose_flip.meta.json",
+    "figures/paper/c5_compose_flip.pdf",
+    "figures/paper/c5_compose_flip.png",
+    "figures/paper/c5_ft_change_race.meta.json",
+    "figures/paper/c5_ft_change_race.pdf",
+    "figures/paper/c5_ft_change_race.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "... 13 more"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-20T08:36:28Z",
+  "figsize": [
+    5.5,
+    2.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "$\\Delta$ judged behavior rate": 0.06,
+      "error": 0.07006249999999994,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "$\\Delta$ judged behavior rate": 0.985,
+      "error": 0.020000000000000018,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "$\\Delta$ judged behavior rate": 0.65,
+      "error": 0.09000000000000002,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "$\\Delta$ judged behavior rate": 0.455,
+      "error": 0.10499999999999998,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.81,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.19,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.81,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 5.19,
+      "$\\Delta$ judged behavior rate": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.19,
+      "y": 0.010050251256281407,
+      "error": 0.0125,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.81,
+      "y": 0.02,
+      "error": 0.030000000000000006,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.81,
+      "y": 0.42857142857142855,
+      "error": 0.15995114087301587,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "y": 0.022222222222222223,
+      "error": 0.0225,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.81,
+      "y": 0.40703517587939697,
+      "error": 0.10861111111111107,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 3.81,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 4.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 4.81,
+      "y": 0.01,
+      "error": 0.015000000000000003,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 5.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Evil (layer 14)",
+        "ylabel": "$\\Delta$ judged behavior rate",
+        "legend_labels": [
+          "injected at answer tokens",
+          "injected at context token",
+          "selection-symmetric null band (97.5%)"
+        ],
+        "xticklabels": [
+          "map read\n(context)",
+          "map read\n(prefix)",
+          "persona\nvector",
+          "raw mean-\ndifference",
+          "shuffled-\nlabel map",
+          "random"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title": "Sycophancy (layer 18)",
+        "xticklabels": [
+          "map read\n(context)",
+          "map read\n(prefix)",
+          "persona\nvector",
+          "raw mean-\ndifference",
+          "shuffled-\nlabel map",
+          "random"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

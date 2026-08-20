@@ -1,0 +1,200 @@
+{
+  "commit": "24b9bab4+dirty",
+  "render_id": "fa5c68eb139f49cf",
+  "git_commit": "24b9bab475f94a285a1a68ffa0f050d0cb2ad8c1",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1895/dark_spot_matched_rows.json",
+    "figures/issue_1895/angle_spectrum_k64.meta.json",
+    "figures/issue_1895/angle_spectrum_k64.pdf",
+    "figures/issue_1895/angle_spectrum_k64.png",
+    "figures/issue_1895/hero_overlap_ksweep.meta.json",
+    "figures/issue_1895/hero_overlap_ksweep.pdf",
+    "figures/issue_1895/hero_overlap_ksweep.png",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.meta.json",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.pdf",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.png",
+    "figures/issue_1895/profiles_vs_eigrank.meta.json",
+    "figures/issue_1895/profiles_vs_eigrank.pdf",
+    "figures/issue_1895/profiles_vs_eigrank.png",
+    "figures/issue_1895/stratified_correlates.meta.json",
+    "figures/issue_1895/stratified_correlates.pdf",
+    "figures/issue_1895/stratified_correlates.png",
+    "figures/issue_1895/three_target_fits_delta_dark.meta.json",
+    "figures/issue_1895/three_target_fits_delta_dark.pdf",
+    "figures/issue_1895/three_target_fits_delta_dark.png",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
+    "figures/paper/c3_sae_tier_gradient.pdf",
+    "figures/paper/c3_sae_tier_gradient.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1415_hooked_decomp_figures.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "scripts/issue928_mlc_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "... 2 more"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-20T08:21:16Z",
+  "figsize": [
+    5.5,
+    3.0250000000000004
+  ],
+  "points": [
+    {
+      "x": -0.10500000000000001,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": -0.08204629063668883,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.035,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": -0.3080863985167332,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.035,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": -0.29887795288796504,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.825,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.2908039663970384,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.895,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.34960644726340306,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.965,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.11274737589853917,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.035,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.1932849427095394,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.105,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.13404737768482622,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.295,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": -0.17228025547667392,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.3649999999999998,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": -0.257554505029252,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.435,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": -0.292127754720507,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.225,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.2670199946821117,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.295,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.3238056571400969,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.3649999999999998,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.051503932233350924,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.435,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.354131102612843,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.505,
+      "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)": 0.2787552239934119,
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)",
+        "legend_labels": [
+          "250 labels",
+          "2,500 labels",
+          "8,000 labels"
+        ],
+        "xticklabels": [
+          "generic map pool\n(context vector)",
+          "half in-domain pool\n(context vector)",
+          "generic map pool\n(prefix vector)",
+          "half in-domain pool\n(prefix vector)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
