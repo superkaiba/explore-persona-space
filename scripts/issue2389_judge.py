@@ -182,7 +182,14 @@ _CONSUMER_PROBE_REPORT_DEFAULT = Path(
 )
 
 
-def require_consumer_probe(report_path: Path, leg: str, *, skip: bool = False) -> None:
+def require_consumer_probe(
+    report_path: Path,
+    leg: str,
+    *,
+    skip: bool = False,
+    anchors_dir: Path | None = None,
+    bank_json: Path | None = None,
+) -> None:
     """M1-iv (plan §7 gate 0d): production consumers refuse without a PASS probe.
 
     ``leg`` names which consumer is about to spend (``"judge"`` for the P6
@@ -191,8 +198,19 @@ def require_consumer_probe(report_path: Path, leg: str, *, skip: bool = False) -
     ``skip=True`` is the explicit recorded override: proceeds with a warning
     plus a durable ``consumer_probe_override_{leg}.json`` record beside the
     report path — never a silent bypass.
+
+    R4 (r2 review): a PASS is additionally BOUND to the run it certifies via
+    the report's recorded ``source`` identity — repo/prefix + PINNED
+    revision (staged probes), the sha256 of every probed shard (validated
+    against ``anchors_dir`` when the consumer supplies one), and the frozen
+    bank.json digest (validated against ``bank_json``). Absent or
+    incompatible fields REFUSE: a stale PASS from pre-rename shards or
+    another experiment root must never unlock the ~145k-call P6 wave or
+    P7's silent anchor joins.
     """
-    probe_cmd = f"uv run python scripts/issue2389_consumer_probe.py --probe {leg}"
+    probe_cmd = f"uv run python scripts/issue2389_consumer_probe.py --probe {leg}" + (
+        f" --bank-json {bank_json}" if bank_json is not None else ""
+    )
     if skip:
         logger.warning(
             "[m1iv] consumer probe SKIPPED for leg=%s via --skip-consumer-probe "
@@ -227,6 +245,54 @@ def require_consumer_probe(report_path: Path, leg: str, *, skip: bool = False) -
         raise RuntimeError(
             f"consumer probe report at {report_path} never ran leg {leg!r} "
             f"(ran: {sorted(rec.get('legs', {}))}) — run `{probe_cmd}`"
+        )
+    src = rec.get("source")
+    problems: list[str] = []
+    if not isinstance(src, dict):
+        problems.append("report carries no source identity (pre-R4 / hand-built report)")
+        src = {}
+    if src.get("staged"):
+        if src.get("repo") != DATASET_REPO:
+            problems.append(f"probed repo {src.get('repo')!r} != this run's {DATASET_REPO!r}")
+        if src.get("prefix") != _STAGE_ANCHORS_GATE:
+            problems.append(
+                f"probed prefix {src.get('prefix')!r} != this run's {_STAGE_ANCHORS_GATE!r}"
+            )
+        if not src.get("revision"):
+            problems.append("probe staged at an UNPINNED revision")
+    elif isinstance(rec.get("source"), dict) and anchors_dir is None:
+        problems.append(
+            "local-mode probe report, but this consumer supplied no anchors dir to bind it to"
+        )
+    shards = src.get("shards") or {}
+    if isinstance(rec.get("source"), dict) and not shards:
+        problems.append("probe recorded no shard hashes")
+    if anchors_dir is not None:
+        for name, sha in sorted(shards.items()):
+            p = Path(anchors_dir) / name
+            if not p.is_file():
+                problems.append(f"probed shard {name} absent from this run's {anchors_dir}")
+            elif hashlib.sha256(p.read_bytes()).hexdigest() != sha:
+                problems.append(
+                    f"probed shard {name} hash != this run's staged copy "
+                    "(stale probe or foreign root)"
+                )
+    if bank_json is not None:
+        rec_bank = src.get("bank_sha256")
+        if not rec_bank:
+            problems.append(
+                "probe recorded no bank_sha256 — re-run it with --bank-json <this run's bank.json>"
+            )
+        elif not Path(bank_json).is_file():
+            problems.append(f"this run's bank.json {bank_json} is not a file")
+        elif hashlib.sha256(Path(bank_json).read_bytes()).hexdigest() != rec_bank:
+            problems.append(
+                "probe bank_sha256 != this run's bank.json (foreign/stale run identity)"
+            )
+    if problems:
+        raise RuntimeError(
+            f"consumer probe report at {report_path} is NOT BOUND to this run "
+            "(M1-iv/R4 source-identity gate): " + "; ".join(problems) + f" — re-run `{probe_cmd}`"
         )
 
 
@@ -1409,7 +1475,15 @@ def phase_waves(cfg: JudgeConfig) -> int:
             },
         )
     _require_gates(cfg)
-    require_consumer_probe(cfg.consumer_probe_report, "judge", skip=cfg.skip_consumer_probe)
+    require_consumer_probe(
+        cfg.consumer_probe_report,
+        "judge",
+        skip=cfg.skip_consumer_probe,
+        # R4: bind the PASS to THIS run — staged anchors bytes (when the
+        # anchors mirror is local) + the frozen bank identity.
+        anchors_dir=cfg.anchors_file if cfg.anchors_file.is_dir() else None,
+        bank_json=cfg.bank_json,
+    )
     registry = rubric_registry(pairs)
     J94.run_audits("grid", grid_rows, cfg.audits_dir)
     coh_units = build_coherence_items(grid_rows, None)

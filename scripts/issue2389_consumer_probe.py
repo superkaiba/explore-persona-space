@@ -38,7 +38,9 @@ the PASS report is written only after every requested leg passes.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -61,6 +63,49 @@ logger = logging.getLogger("issue2389.consumer_probe")
 
 _VA_ANCHORS_REMOTE_PREFIX = f"{J.HF_PREFIX}/analysis_tensors/anchors"
 
+# R4 (r2 review): discovery accepts ONLY cell-grain gate shard names — a
+# foreign/stray JSONL under the prefix must never become the certified probe
+# subject (B7 names: anchors_gate_{cell}_w{K}.jsonl).
+_GATE_SHARD_RE = re.compile(r"^anchors_gate_.+_w\d+\.jsonl$")
+
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _source_identity(
+    anchors_dir: Path, *, staged: bool, revision: str | None, bank_json: Path | None
+) -> dict:
+    """Immutable source identity the PASS report is BOUND to (R4 r2 review).
+
+    ``require_consumer_probe`` validates these fields against the consuming
+    run at the P6/P7c gates: repo + prefix + RESOLVED revision (staged mode),
+    the sha256 of every probed shard, and the frozen bank.json digest (run /
+    regime identity). Without them a stale PASS from pre-rename shards or
+    another experiment root would unlock the ~145k-call P6 wave and P7's
+    silent anchor joins without ever probing their artifacts.
+    """
+    shards = {
+        p.name: _sha256_file(p)
+        for pattern in ("anchors_*.jsonl", "va_anchors_*.pt")
+        for p in sorted(anchors_dir.glob(pattern))
+    }
+    assert shards, f"no anchor shards under {anchors_dir} to bind the probe report to"
+    bank_sha: str | None = None
+    if bank_json is not None:
+        assert bank_json.is_file(), f"--bank-json {bank_json} is not a file"
+        bank_sha = _sha256_file(bank_json)
+    return {
+        "staged": staged,
+        "repo": J.DATASET_REPO if staged else None,
+        "prefix": J._STAGE_ANCHORS_GATE if staged else None,
+        "va_prefix": _VA_ANCHORS_REMOTE_PREFIX if staged else None,
+        "revision": revision,
+        "shards": shards,
+        "bank_json": str(bank_json) if bank_json is not None else None,
+        "bank_sha256": bank_sha,
+    }
+
 
 def _discover_gate_shard(
     gate_cell: str | None, worker_index: int | None, revision: str | None
@@ -80,7 +125,9 @@ def _discover_gate_shard(
         ),
         what="consumer-probe gate-shard discovery listing",
     )
-    jsonls = sorted(n.rsplit("/", 1)[-1] for n in names if n.endswith(".jsonl"))
+    jsonls = sorted(
+        n.rsplit("/", 1)[-1] for n in names if _GATE_SHARD_RE.fullmatch(n.rsplit("/", 1)[-1])
+    )
     if gate_cell is not None:
         jsonls = [n for n in jsonls if n.startswith(f"anchors_gate_{gate_cell}_w")]
     if worker_index is not None:
@@ -207,7 +254,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=Path("data/issue_2389/consumer_probe"),
         help="staging root; shards land in <in-root>/anchors/",
     )
-    ap.add_argument("--hf-revision", default=None, help="pin the staged read (optional)")
+    ap.add_argument(
+        "--hf-revision",
+        default=None,
+        help="pin the staged read; None resolves the repo's CURRENT main sha at "
+        "discovery time and records it (R4: the report is never revision-unpinned)",
+    )
+    ap.add_argument(
+        "--bank-json",
+        type=Path,
+        default=None,
+        help="this run's frozen gate-0a bank.json — its sha256 enters the PASS "
+        "report's source identity, binding the probe to the run (R4); production "
+        "probes MUST pass it (consumers refuse a bank-unbound report)",
+    )
     ap.add_argument(
         "--local-anchors-dir",
         type=Path,
@@ -228,22 +288,31 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     legs = ("judge", "analysis") if args.probe == "both" else (args.probe,)
     gate_shard: str | None = None
+    revision: str | None = args.hf_revision
     if args.local_anchors_dir is not None:
         anchors_dir = args.local_anchors_dir
         assert anchors_dir.is_dir(), f"--local-anchors-dir {anchors_dir} is not a directory"
     else:
         anchors_dir = args.in_root / "anchors"
         anchors_dir.mkdir(parents=True, exist_ok=True)
-        jsonl_name, pt_name = _discover_gate_shard(
-            args.gate_cell, args.worker_index, args.hf_revision
-        )
+        if revision is None:
+            # R4 (r2 review): never stage/record UNPINNED — resolve main to
+            # its current sha so the report names the exact bytes it probed.
+            from huggingface_hub import HfApi
+
+            revision = hub.retry_transient(
+                lambda: HfApi().repo_info(J.DATASET_REPO, repo_type="dataset").sha,
+                what="consumer-probe revision resolution",
+            )
+            logger.info("[probe] --hf-revision unset — pinned to resolved sha %s", revision)
+        jsonl_name, pt_name = _discover_gate_shard(args.gate_cell, args.worker_index, revision)
         gate_shard = jsonl_name
         _stage_gate_shard(
             anchors_dir,
             jsonl_name,
             pt_name,
             with_va="analysis" in legs,
-            revision=args.hf_revision,
+            revision=revision,
         )
     report: dict = {
         "verdict": "PASS",
@@ -251,6 +320,14 @@ def main(argv: list[str] | None = None) -> int:
         "gate_shard": gate_shard,
         "anchors_dir": str(anchors_dir),
         "staged": args.local_anchors_dir is None,
+        # R4 (r2 review): the immutable source identity the M1-iv gate
+        # validates against the consuming run — refuse-on-mismatch.
+        "source": _source_identity(
+            anchors_dir,
+            staged=args.local_anchors_dir is None,
+            revision=revision,
+            bank_json=args.bank_json,
+        ),
         "legs": {},
         "repro": {**J94._repro(), "script": "scripts/issue2389_consumer_probe.py"},
     }

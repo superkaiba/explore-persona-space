@@ -337,7 +337,14 @@ def _anchor_deltas(
 def step_f_tables(args: argparse.Namespace) -> None:
     # M1-iv (plan §7 gate 0d): the anchor loaders below are exactly what the
     # consumer probe certifies — refuse without a matching PASS report.
-    J.require_consumer_probe(args.consumer_probe_report, "analysis", skip=args.skip_consumer_probe)
+    J.require_consumer_probe(
+        args.consumer_probe_report,
+        "analysis",
+        skip=args.skip_consumer_probe,
+        # R4: bind the PASS to THIS run's staged anchors bytes + bank identity.
+        anchors_dir=args.anchors_dir,
+        bank_json=args.bank_json,
+    )
     pairs = _pairs(args)
     pairs_by_id = {p.pair_id: p for p in pairs}
     grid_rows = J.load_grid_rows(args.rollouts_dir)
@@ -548,7 +555,14 @@ def _family_m_report(family_p: dict[str, dict[str, float]]) -> dict:
 def step_stats(args: argparse.Namespace) -> None:
     # M1-iv (plan §7 gate 0d): stats consumes f-tables' anchor-derived cells;
     # same probe gate as step_f_tables (idempotent under --step all).
-    J.require_consumer_probe(args.consumer_probe_report, "analysis", skip=args.skip_consumer_probe)
+    J.require_consumer_probe(
+        args.consumer_probe_report,
+        "analysis",
+        skip=args.skip_consumer_probe,
+        # R4: bind the PASS to THIS run's staged anchors bytes + bank identity.
+        anchors_dir=args.anchors_dir,
+        bank_json=args.bank_json,
+    )
     steered = list(_iter_jsonl(args.out_dir / "f_cells.jsonl"))
     nulls = {
         "shuffled": list(_iter_jsonl(args.out_dir / "null_shuffled_cells.jsonl")),
