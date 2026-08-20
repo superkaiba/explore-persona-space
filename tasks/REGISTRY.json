@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2411,
+  "highest_id": 2412,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10916,6 +10916,13 @@
       "path": "tasks/proposed/2411",
       "status": "proposed",
       "title": "Amendment verification checks the EDITS, not the SITE SET \u2014 add an old-value residual grep"
+    },
+    "2412": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2412",
+      "status": "proposed",
+      "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
     },
     "244": {
       "has_clean_result": false,
