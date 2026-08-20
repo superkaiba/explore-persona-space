@@ -158,6 +158,28 @@ def test_local_anchors_dir_must_exist(tmp_path: Path) -> None:
         P.main(["--probe", "judge", "--local-anchors-dir", str(tmp_path / "nope")])
 
 
+def test_stage_gate_shard_invokes_real_body(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """B12 (r1 review): EXECUTE the real _stage_gate_shard body — the network
+    boundary (hub.stage_hub_file) is autospec'd, so arity/keyword drift AND a
+    wrong destination composition fail HERE, not at pod time."""
+    fake = create_autospec(hub.stage_hub_file)
+    monkeypatch.setattr(hub, "stage_hub_file", fake)
+    jsonl = "anchors_gate_fact_user_name_w0.jsonl"
+    pt = "va_anchors_gate_fact_user_name_w0.pt"
+    P._stage_gate_shard(tmp_path, jsonl, pt, with_va=True, revision="deadbeef")
+    assert fake.call_count == 2
+    c1, c2 = fake.call_args_list
+    assert c1.args == (P.J.DATASET_REPO, f"{P.J._STAGE_ANCHORS_GATE}/{jsonl}", tmp_path / jsonl)
+    assert c2.args == (P.J.DATASET_REPO, f"{P._VA_ANCHORS_REMOTE_PREFIX}/{pt}", tmp_path / pt)
+    for c in (c1, c2):
+        assert c.kwargs == {"repo_type": "dataset", "revision": "deadbeef", "overwrite": True}
+    # judge-only leg stages the jsonl alone
+    P._stage_gate_shard(tmp_path, jsonl, pt, with_va=False, revision=None)
+    assert fake.call_count == 3
+
+
 # ---- shard discovery (B7 cell-grain names: never derived, always listed) ----
 
 _GATE_PREFIX = P.J._STAGE_ANCHORS_GATE

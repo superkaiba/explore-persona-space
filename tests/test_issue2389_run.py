@@ -23,6 +23,7 @@ sparse-cone additions needed).
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -432,3 +433,126 @@ def test_gate0c_hf_canary_verify_call_signature(tmp_path, monkeypatch):
     cfg.gates_dir.mkdir(parents=True, exist_ok=True)
     R._gate0c_hf_write_canary(cfg)  # pre-fix: TypeError (missing 'what')
     assert (cfg.gates_dir / "hf_write_canary.json").exists()
+
+
+# ------------------------------------- B12/g7-C1: _select_gen_batch rule
+
+
+def _r2_leg(b: int, s: float, h: float | None) -> dict:
+    return {
+        "gen_batch": b,
+        "rollouts": 10,
+        "wall_s": s * 10,
+        "s_per_rollout": s,
+        "hbm_headroom_gib": h,
+    }
+
+
+def test_select_gen_batch_argmin_s_per_rollout():
+    r2 = {16: _r2_leg(16, 0.5, 20.0), 32: _r2_leg(32, 0.3, 20.0)}
+    assert R._select_gen_batch(r2, [16, 32]) == (32, True)
+
+
+def test_select_gen_batch_headroom_floor_excludes_faster_candidate():
+    # 32 is faster but sits below the 10 GiB floor -> 16 wins.
+    r2 = {16: _r2_leg(16, 0.5, 20.0), 32: _r2_leg(32, 0.3, 9.9)}
+    assert R._select_gen_batch(r2, [16, 32]) == (16, True)
+
+
+def test_select_gen_batch_exact_floor_is_eligible():
+    r2 = {16: _r2_leg(16, 0.5, 20.0), 32: _r2_leg(32, 0.3, R.PILOT_HBM_HEADROOM_GIB)}
+    assert R._select_gen_batch(r2, [16, 32]) == (32, True)
+
+
+def test_select_gen_batch_exact_tie_picks_smaller():
+    r2 = {16: _r2_leg(16, 0.4, 20.0), 32: _r2_leg(32, 0.4, 20.0)}
+    assert R._select_gen_batch(r2, [16, 32]) == (16, True)
+
+
+def test_select_gen_batch_none_headroom_is_eligible():
+    # CPU pilot: headroom unprobeable => candidates stay eligible.
+    r2 = {16: _r2_leg(16, 0.5, None), 32: _r2_leg(32, 0.3, None)}
+    assert R._select_gen_batch(r2, [16, 32]) == (32, True)
+
+
+def test_select_gen_batch_mixed_none_and_below_floor():
+    r2 = {16: _r2_leg(16, 0.5, None), 32: _r2_leg(32, 0.3, 5.0)}
+    assert R._select_gen_batch(r2, [16, 32]) == (16, True)
+
+
+def test_select_gen_batch_no_eligible_smallest_with_warning(caplog):
+    r2 = {16: _r2_leg(16, 0.5, 1.0), 32: _r2_leg(32, 0.3, 2.0)}
+    with caplog.at_level(logging.WARNING):
+        assert R._select_gen_batch(r2, [16, 32]) == (16, False)
+    assert "headroom floor" in caplog.text
+
+
+def test_select_gen_batch_explicit_single_candidate_below_floor(caplog):
+    # --gen-batch explicit: one candidate; below-floor still selects it,
+    # recorded via headroom_ok=False (never a crash).
+    r2 = {24: _r2_leg(24, 0.5, 0.5)}
+    with caplog.at_level(logging.WARNING):
+        assert R._select_gen_batch(r2, [24]) == (24, False)
+
+
+# ------------------- B12/B3: cap-report expected sets span every namespace
+
+
+def _frozen_manifest(cfg: R.RunConfig) -> None:
+    cfg.bank_dir.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(
+        cfg.bank_dir / "bank.json",
+        {"dropped_pairs": [], "token_identity": {"n_intact": len(BANK.build_pairs())}},
+    )
+
+
+def test_b12_cap_report_inputs_span_parity_and_vllm_namespaces(tmp_path):
+    """B3/B12: the anchors cap-report aggregate derives expectations from
+    EVERY engine/batch namespace through the real entrypoint — gate_ + rest_
+    + parity_ + vllm_ (gen-done sentinel) — never refusing parity shards as
+    foreign nor dropping vllm cells from the expected set."""
+    cfg = _mk_cfg(tmp_path)
+    _frozen_manifest(cfg)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    gate_ids, rest_ids, contexts = R._anchor_context_order(cfg)
+    gate_cells = sorted(R._group_by_cell(gate_ids, contexts))
+    rest_cells = sorted(R._group_by_cell(rest_ids, contexts))
+    assert gate_cells and rest_cells
+    for c in gate_cells:
+        _done_manifest(cfg, f"gate_{c}")
+        (cfg.anchors_dir / f"anchors_gate_{c}_w0.jsonl").write_text("{}\n")
+    owners = {c: ("rest", "parity", "vllm")[i % 3] for i, c in enumerate(rest_cells)}
+    for c, own in owners.items():
+        bid = f"{own}_{c}"
+        if own == "vllm":
+            # production-vLLM text-persist: gen-done sentinel, capture pending
+            R._write_json_atomic(
+                cfg.manifest_dir / f"anchors_{bid}_w0_gen_done.json", {"n_rows": 1}
+            )
+        else:
+            _done_manifest(cfg, bid)
+        (cfg.anchors_dir / f"anchors_{bid}_w0.jsonl").write_text("{}\n")
+    paths, expected, why = R._cap_report_inputs(cfg, "anchors")
+    assert why is None and expected is not None
+    assert any(n.startswith("anchors_parity_") for n in expected)
+    assert any(n.startswith("anchors_vllm_") for n in expected)
+    assert {p.name for p in paths} == expected
+
+
+def test_b12_cap_report_inputs_partial_without_full_cell_coverage(tmp_path):
+    """A rest cell with no done record under ANY of rest_/parity_/vllm_ =>
+    expected set underivable (PARTIAL) — never a silently narrowed set."""
+    cfg = _mk_cfg(tmp_path)
+    _frozen_manifest(cfg)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    gate_ids, rest_ids, contexts = R._anchor_context_order(cfg)
+    for c in R._group_by_cell(gate_ids, contexts):
+        _done_manifest(cfg, f"gate_{c}")
+    rest_cells = sorted(R._group_by_cell(rest_ids, contexts))
+    for c in rest_cells[:-1]:
+        _done_manifest(cfg, f"parity_{c}")
+    paths, expected, why = R._cap_report_inputs(cfg, "anchors")
+    assert expected is None
+    assert why is not None and "underivable" in why
+    assert rest_cells[-1] in why

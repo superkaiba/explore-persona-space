@@ -3891,6 +3891,33 @@ def _pilot_hbm_headroom_gib() -> float | None:
     return (float(total) - external - float(peak)) / 2**30
 
 
+def _select_gen_batch(r2: dict[int, dict], candidates: list[int]) -> tuple[int, bool]:
+    """Plan §4.7 item 3 selection rule over the r2 pilot legs (B12 r1 review:
+    extracted so the rule is unit-testable apart from the GPU pilot).
+
+    argmin s/rollout among candidates meeting the >= PILOT_HBM_HEADROOM_GIB
+    floor (``hbm_headroom_gib is None`` — CPU — is eligible); an EXACT
+    s/rollout tie picks the smaller B; NO eligible candidate picks the
+    smallest B with a WARNING. Returns ``(gen_batch_selected, headroom_ok)``
+    — ``headroom_ok=False`` is recorded in the pilot report."""
+    eligible = {
+        b: m
+        for b, m in r2.items()
+        if m["hbm_headroom_gib"] is None or m["hbm_headroom_gib"] >= PILOT_HBM_HEADROOM_GIB
+    }
+    if eligible:
+        # argmin s/rollout; exact tie -> the smaller B (plan §4.7 item 3).
+        return min(eligible, key=lambda b: (eligible[b]["s_per_rollout"], b)), True
+    sel = min(candidates)
+    logger.warning(
+        "[pilot:r2] NO candidate met the %.0f GiB HBM headroom floor — "
+        "selecting the smallest B=%d (recorded in the report)",
+        PILOT_HBM_HEADROOM_GIB,
+        sel,
+    )
+    return sel, False
+
+
 def _run_three_regime_pilot(
     cfg: RunConfig,
     model,
@@ -3973,23 +4000,7 @@ def _run_three_regime_pilot(
             r2[b]["s_per_rollout"],
             r2[b]["hbm_headroom_gib"],
         )
-    eligible = {
-        b: m
-        for b, m in r2.items()
-        if m["hbm_headroom_gib"] is None or m["hbm_headroom_gib"] >= PILOT_HBM_HEADROOM_GIB
-    }
-    headroom_ok = bool(eligible)
-    if eligible:
-        # argmin s/rollout; exact tie -> the smaller B (plan §4.7 item 3).
-        gen_batch_selected = min(eligible, key=lambda b: (eligible[b]["s_per_rollout"], b))
-    else:
-        gen_batch_selected = min(candidates)
-        logger.warning(
-            "[pilot:r2] NO candidate met the %.0f GiB HBM headroom floor — "
-            "selecting the smallest B=%d (recorded in the report)",
-            PILOT_HBM_HEADROOM_GIB,
-            gen_batch_selected,
-        )
+    gen_batch_selected, headroom_ok = _select_gen_batch(r2, candidates)
     cfg_sel = replace(cfg, gen_batch=gen_batch_selected)
 
     # ── r1: anchor-shaped unhooked leg at the selected B ──────────────
