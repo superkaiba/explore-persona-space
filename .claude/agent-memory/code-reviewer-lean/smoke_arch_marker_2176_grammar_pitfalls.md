@@ -16,6 +16,12 @@ Rule: at Step 0.55, run `uv run python scripts/task.py check-smoke-arch-registry
 2. `_PER_ARM_ROW_RE` captures everything up to the first `:` as the arm key —
    `- A (E1×all×L1): REAL` yields key `"A (E1×all×L1)"`, which fails clause-5
    set-membership against `members=A,...`. Rows must LEAD with the bare arm token.
+   The regex is `^\s*-?\s*([^:`*]+?|`[^`]+`)\s*:\s*(REAL|FALLBACK|N/A)\b`
+   (task_workflow.py:2555) — so BOTH a colon-bearing key (`- gen:dedup — REAL`)
+   AND an em-dash separator (`- dedup — REAL — prose`, no `: REAL` at all) parse
+   to per_arm == {} silently (#2388 R1 g7: all 14 substantively-correct rows
+   dropped). Conforming row shape: `- <bare-token>: REAL — <prose>` — colon
+   immediately before the verdict token, namespacing only in the prose after it.
 3. Clause-5b driver recompute (`_extract_registry_members`) only reads module-level
    dict LITERALS with all-string keys; a tuple/list registry (e.g. a
    `CONFIGS: tuple[ConfigSpec, ...]`) makes it abstain → checker OK line reads

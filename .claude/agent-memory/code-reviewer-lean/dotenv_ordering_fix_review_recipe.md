@@ -29,7 +29,9 @@ A dotenv-before-heavy-import ordering fix (the #847 / `test_no_new_torch_before_
 
 **Why:** validated #2254 R1 g4 — all three ran in ~4 tool calls; the parent
 chain happened to be clean (fleet.py is stdlib-only) but nothing else would
-have caught it dirty. Re-validated #2379 R1 g5 (chain still clean).
+have caught it dirty. Re-validated #2379 R1 g5 and #2388 R1 g7 (chain still
+clean both times; note the probe helpers' live signatures — `_first_heavy_import_line`
+takes `ast.parse(src)`, `_first_load_dotenv_line` takes the raw source string).
 
 Cheap fails-pre-fix probe (pairs with [[fails-pre-fix-probe-parent-commit]]):
 import the test module's own `_first_heavy_import_line` / `_first_load_dotenv_line`
