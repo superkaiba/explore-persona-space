@@ -273,10 +273,13 @@ def test_resolve_arms_new18_group():
 def test_resolve_arms_original_group_excludes_strength():
     original = R.resolve_arms(_Args(arms="original"))
     assert set(original).isdisjoint(R.STRENGTH_ARMS)
+    assert set(original).isdisjoint(R.ANSFIRST_ARMS)
     assert "unsteered" in original and "cap_ctx" in original
     # derived, not a literal: the NAP round grew STRENGTH_ARMS (18 -> 36 with
-    # the ctx_faithful/ctx_preimage families); "original" is everything else
-    assert len(original) == len(R.ARM_ORDER) - len(R.STRENGTH_ARMS)
+    # the ctx_faithful/ctx_preimage families) and the answer-first-k follow-up
+    # added ANSFIRST_ARMS; "original" stays the 12 pre-follow-up arms
+    assert len(original) == len(R.ARM_ORDER) - len(R.STRENGTH_ARMS) - len(R.ANSFIRST_ARMS)
+    assert len(original) == 12
 
 
 def test_resolve_arms_comma_list_and_unknown_raises():

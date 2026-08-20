@@ -3,9 +3,9 @@
 Replays the assistant-axis paper's OWN case-study conversations (jailbreak /
 delusion / selfharm; Lu et al., arXiv 2601.10387) with the USER turns frozen
 from the released UNSTEERED transcripts, generating the assistant side under
-the intervention-arm registry (12 original + 18 strength + 18 new-axis arms)
-x layer configs (paper band 46-53 / all layers; the new-axis families are
-BAND-only), on Qwen3-32B (thinking OFF; 32b decode = the paper's own
+the intervention-arm registry (12 original + 18 strength + 18 new-axis + 4
+answer-first-k arms) x layer configs (paper band 46-53 / all layers; the
+new-axis families and the answer-first-k arms are BAND-only), on Qwen3-32B (thinking OFF; 32b decode = the paper's own
 temp 0.7 / top_p 0.9, seeded; 2048 new tokens/turn — pre-NAP rounds ran
 greedy temp 0 and their cell JSONs record that regime).
 
@@ -338,6 +338,42 @@ CS_ARMS: dict[str, dict] = {
         "when": "final",
     },
 }
+
+# ── answer-first-k arms (front-loading probe; same-issue follow-up) ──────────
+# Same cap parameters as the round-2 headline ``band__cap_alltoken`` cell — the
+# published assistant axis with the Lu p0.25 floor at the band layers
+# (``floor_tau["answer"]`` IS ``-lu_cap`` where published; the caphook cap op is
+# algebraically identical to the paper engine's, module docstring) — EXCEPT the
+# edit applies ONLY at the first K DECODE steps of each assistant turn
+# (position_set="answer-first-k": prompt/prefill positions untouched, decode
+# steps K+1.. pass through). Tests whether the every-token cap's benefit is
+# front-loaded to the answer's opening tokens. ``band_only``: cells run at the
+# BAND layer config only, matching the headline arm.
+ANSFIRST_ARMS: dict[str, dict] = {
+    f"cap_ansfirst{k}": {
+        "engine": "caphook",
+        "op": "cap",
+        "position_set": "answer-first-k",
+        "axis": "answer",
+        "when": "every",
+        "first_k_decode": k,
+        "band_only": True,
+    }
+    for k in (1, 2, 4, 8)
+}
+CS_ARMS.update(ANSFIRST_ARMS)
+
+# Extraction-geometry position key per position_set (τ / α / h_def lookups):
+# answer-first-k reuses the CONTEXT-END entries — on the published leg the
+# "answer" floor is the Lu p0.25 all-token cap at band layers under either
+# position key (phase_extract writes floor_ans_ctx == floor_ans_pre == -lu_cap
+# where published), and h_def is inert for op="cap" (proj_def unused).
+GEOM_POS_FOR = {"answer-first-k": "context-end"}
+
+
+def _geom_pos(pos: str) -> str:
+    """Map an arm's position_set to the tau_map / default_states position key."""
+    return GEOM_POS_FOR.get(pos, pos)
 
 
 def _build_strength_arms() -> dict[str, dict]:
@@ -1323,8 +1359,13 @@ def _check_strength_geometry(
         spec = CS_ARMS.get(arm)
         if spec is None or spec.get("engine") != "caphook":
             continue
-        axis, pos, op = spec["axis"], spec["position_set"], spec["op"]
-        domains = ["band"] if axis in NEWAXIS_FAMILIES else layer_cfgs
+        axis, op = spec["axis"], spec["op"]
+        # geometry lookups key on the MAPPED position (answer-first-k reuses the
+        # context-end entries — see GEOM_POS_FOR); band_only arms are band-only
+        # cells (enumerate_cells), so their check scopes to band too.
+        pos = _geom_pos(spec["position_set"])
+        band_only = axis in NEWAXIS_FAMILIES or spec.get("band_only")
+        domains = ["band"] if band_only else layer_cfgs
         for lc in domains:
             layer_list = band if lc == "band" else list(range(n_layers))
             tag = f"{arm}[{lc}]"
@@ -1504,7 +1545,9 @@ def build_cs_stack(arm: str, layer_list: list[int], model, geom: dict):
     the p25 ``floor_tau[axis][pos]`` (used for the edit by the existing p25 caps,
     and for the ``fired`` telemetry only by axis_replace / steer). α selection:
     a steer arm (``op == "steer"``) reads ``alpha[axis][pos][k{K}]``; every other
-    op leaves α at 0.0 (inert).
+    op leaves α at 0.0 (inert). Geometry lookups key on :func:`_geom_pos` of the
+    arm's position_set (answer-first-k → context-end); ``first_k_decode`` is
+    threaded from the arm spec (0 = inert for every other position set).
     """
     from explore_persona_space.experiments.issue2203 import caphook
 
@@ -1513,17 +1556,21 @@ def build_cs_stack(arm: str, layer_list: list[int], model, geom: dict):
         return None
     axis_key = spec["axis"]  # "answer" | "ctx_native" | "prefix_native"
     pos = spec["position_set"]
+    # geometry (τ / α / h_def) keys on the MAPPED position: answer-first-k
+    # reuses the context-end entries (GEOM_POS_FOR) — on the published leg the
+    # band-layer "answer" floor is the Lu p0.25 cap under either key.
+    gpos = _geom_pos(pos)
     op = spec["op"]
     axis_by_layer = geom["answer_axis"] if axis_key == "answer" else geom["native_axes"][axis_key]
     if "percentile" in spec:
-        tau_by_layer = geom["cap_percentile_tau"][axis_key][pos][spec["percentile"]]
+        tau_by_layer = geom["cap_percentile_tau"][axis_key][gpos][spec["percentile"]]
     else:
-        tau_by_layer = geom["floor_tau"][axis_key][pos]
+        tau_by_layer = geom["floor_tau"][axis_key][gpos]
     alpha_by_layer = None
     if op == "steer":
-        alpha_src = geom["alpha"][axis_key][pos][f"k{spec['k']}"]
+        alpha_src = geom["alpha"][axis_key][gpos][f"k{spec['k']}"]
         alpha_by_layer = {li: float(alpha_src[li]) for li in layer_list}
-    hdef_key = "context" if pos == "context-end" else "prefix"
+    hdef_key = "context" if gpos == "context-end" else "prefix"
     h_def = geom["default_states"][hdef_key]
     return caphook.joint_axis_hooks(
         model,
@@ -1534,6 +1581,7 @@ def build_cs_stack(arm: str, layer_list: list[int], model, geom: dict):
         op=op,
         position_set=pos,
         alpha_by_layer=alpha_by_layer,
+        first_k_decode=int(spec.get("first_k_decode", 0)),
     )
 
 
@@ -1626,7 +1674,9 @@ def resolve_arms(args) -> list[str]:
 
     ``--arms`` overrides ``--arm`` when given; group tokens: ``new18`` (the 18
     original strength arms), ``newaxes18`` (the 18 NAP new-axis arms),
-    ``original`` (the 12 pre-follow-up arms), ``all``.
+    ``ansfirst`` (the 4 answer-first-k arms), ``original`` (the 12
+    pre-follow-up arms — ansfirst/strength additions stay excluded so the
+    token's spend is stable across rounds), ``all``.
     """
     if args.arms:
         tok = args.arms.strip()
@@ -1634,8 +1684,10 @@ def resolve_arms(args) -> list[str]:
             return list(NEW_STRENGTH_ARMS)
         if tok == "newaxes18":
             return list(NEWAXIS_ARMS)
+        if tok == "ansfirst":
+            return list(ANSFIRST_ARMS)
         if tok == "original":
-            return [a for a in ARM_ORDER if a not in STRENGTH_ARMS]
+            return [a for a in ARM_ORDER if a not in STRENGTH_ARMS and a not in ANSFIRST_ARMS]
         if tok == "all":
             return list(ARM_ORDER)
         names = [a.strip() for a in tok.split(",") if a.strip()]
@@ -1669,11 +1721,13 @@ def resolve_scenarios(args) -> list[str]:
 
 
 def enumerate_cells(scenarios: list[str], arms: list[str], layer_cfgs: list[str]):
-    """(scenario, arm, layer_cfg) grid; unsteered → ``na``; NEW-axis arms BAND-only.
+    """(scenario, arm, layer_cfg) grid; unsteered → ``na``; band-only arms BAND-only.
 
     The ctx_faithful / ctx_preimage axes exist only at the band layers (the
     context→answer map is fit per band layer), so their arms run band-only
-    regardless of ``--layers`` (plan §5).
+    regardless of ``--layers`` (plan §5); ``band_only``-flagged arms (the
+    cap_ansfirst* family) are band-only too — they exist to be compared against
+    the band__cap_alltoken headline cell.
     """
     cells = []
     for sc in scenarios:
@@ -1682,7 +1736,8 @@ def enumerate_cells(scenarios: list[str], arms: list[str], layer_cfgs: list[str]
             if spec["engine"] == "none":
                 cells.append((sc, arm, "na"))
                 continue
-            lcs = ["band"] if spec.get("axis") in NEWAXIS_FAMILIES else list(layer_cfgs)
+            band_only = spec.get("axis") in NEWAXIS_FAMILIES or spec.get("band_only")
+            lcs = ["band"] if band_only else list(layer_cfgs)
             for lc in lcs:
                 cells.append((sc, arm, lc))
     seen, uniq = set(), []
@@ -2357,7 +2412,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--arms",
         default=None,
         help="comma-list of arm names OR a group token "
-        "(new18|newaxes18|original|all); overrides --arm",
+        "(new18|newaxes18|ansfirst|original|all); overrides --arm",
     )
     ap.add_argument(
         "--seeds",

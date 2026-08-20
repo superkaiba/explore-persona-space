@@ -26,7 +26,7 @@ positions:
   ``axis_replace`` SETS the axis component to ``proj_def`` — ``steer`` is a fixed
   add, so ``⟨h_new,v̂⟩ == ⟨h,v̂⟩ + alpha`` for every edited position.
 
-Four position sets (the localization ladder):
+Five position sets (the localization ladder):
 
 - ``prefix-end``  — one position: the last PREFIX token (boundary from the
   ``<|im_start|>`` special-token structure via ``steering.prefix_end_index``).
@@ -37,6 +37,12 @@ Four position sets (the localization ladder):
   every-token setting; the decode-step branch mirrors
   ``DeltaHook.all_positions=True`` — a ``T==1`` slice under the KV cache is
   that step's new position).
+- ``answer-first-k`` — ONLY the first ``first_k_decode`` DECODE steps of the
+  model's own generation (the answer's opening tokens): the prefill/prompt is
+  NEVER edited and decode steps ``k+1..`` pass through unedited. Reuses the
+  all-tokens decode-step detection (the ``T==1`` KV-cache slice); a per-draw
+  decode-step counter resets in ``arm()``/``reset()`` so every draw restarts
+  the count.
 
 The hook DUCK-TYPES the ``DeltaHook`` lifecycle
 (``install``/``remove``/``arm(expected_prompt_len)``/``reset``/``_handle``/
@@ -69,7 +75,13 @@ import torch
 from explore_persona_space.analysis.extraction import _resolve_decoder_blocks
 
 OPS: tuple[str, ...] = ("cap", "axis_replace", "full_replace", "steer")
-POSITION_SETS: tuple[str, ...] = ("prefix-end", "context-end", "all-prompt", "all-tokens")
+POSITION_SETS: tuple[str, ...] = (
+    "prefix-end",
+    "context-end",
+    "all-prompt",
+    "all-tokens",
+    "answer-first-k",
+)
 
 
 def apply_cap_op(
@@ -157,12 +169,21 @@ class AxisCapHook:
         op: str = "cap",
         position_set: str = "context-end",
         alpha: float = 0.0,
+        first_k_decode: int = 0,
     ):
         blocks, _, _ = _resolve_decoder_blocks(model)
         assert blocks is not None, "AxisCapHook requires a standard decoder (model.model.layers)"
         assert 0 <= layer < len(blocks), (layer, len(blocks))
         assert op in OPS, op
         assert position_set in POSITION_SETS, position_set
+        # first_k_decode: read ONLY by position_set="answer-first-k" (the number
+        # of leading DECODE steps to edit per draw); inert (0) everywhere else.
+        self.first_k_decode = int(first_k_decode)
+        if position_set == "answer-first-k":
+            assert self.first_k_decode >= 1, (
+                f"position_set='answer-first-k' requires first_k_decode >= 1, "
+                f"got {self.first_k_decode}"
+            )
         assert v.dim() == 1 and h_def.dim() == 1 and v.shape == h_def.shape, (v.shape, h_def.shape)
         self.model = model
         self.layer = int(layer)
@@ -189,6 +210,9 @@ class AxisCapHook:
         self._edit_pos_idx: torch.Tensor | None = None
         self._real_start: torch.Tensor | None = None  # per-row first real position (left pad)
         self._prefill_seen = False
+        # answer-first-k per-draw decode-step counter (0-based; reset by
+        # arm()/reset() so every draw restarts the first-k window).
+        self._decode_steps_seen = 0
         self._handle = None
         # -- telemetry --
         self.n_edits = 0  # forward passes edited
@@ -241,6 +265,7 @@ class AxisCapHook:
         self._edit_pos_idx = None
         self._real_start = None
         self._prefill_seen = False
+        self._decode_steps_seen = 0
         self.realized_edits = None
 
     # -- per-draw arming (DeltaHook duck-type) ----------------------------
@@ -268,14 +293,16 @@ class AxisCapHook:
             self._edit_pos_idx = torch.tensor(
                 [u + off for u, off in zip(unpadded, offs, strict=True)], dtype=torch.long
             )
-        else:  # all-prompt / all-tokens edit whole real spans (mask handles pads)
+        else:  # all-prompt / all-tokens / answer-first-k: no single-position index
             self._edit_batch_idx = None
             self._edit_pos_idx = None
         self.expected_prompt_len = T
         self.reset()
 
     def reset(self) -> None:
+        """Reset the per-draw latches: the prefill flag AND the decode-step counter."""
         self._prefill_seen = False
+        self._decode_steps_seen = 0
 
     # -- the op --------------------------------------------------------------
     def _op_at(self, hidden: torch.Tensor, bi: torch.Tensor, pi: torch.Tensor) -> None:
@@ -293,9 +320,21 @@ class AxisCapHook:
     def _edit_tensor(self, hidden: torch.Tensor) -> torch.Tensor:
         B, T, H = hidden.shape
         assert self.v.shape[0] == H, (self.v.shape, H)
-        decode_step = self._prefill_seen and self.position_set == "all-tokens" and T == 1
+        decode_step = (
+            self._prefill_seen and self.position_set in ("all-tokens", "answer-first-k") and T == 1
+        )
+        if decode_step and self.position_set == "answer-first-k":
+            # Per-draw decode-step counter (0-based index of THIS decode step);
+            # arm()/reset() zero it, so every draw restarts the first-k window.
+            step_idx = self._decode_steps_seen
+            self._decode_steps_seen += 1
+            assert self.first_k_decode >= 1, self.first_k_decode
+            if step_idx >= self.first_k_decode:
+                return hidden  # decode steps k+1..end pass through unedited
         # prefix-end / context-end / all-prompt edit ONLY the prefill; all-tokens
-        # ALSO edits every decode step. Anything else after prefill passes through.
+        # ALSO edits every decode step; answer-first-k edits ONLY the first
+        # first_k_decode decode steps (and never the prefill — below). Anything
+        # else after prefill passes through.
         if self._prefill_seen and not decode_step:
             return hidden
         if not self._prefill_seen:
@@ -307,6 +346,12 @@ class AxisCapHook:
                 B,
                 self._row_lengths,
             )
+            if self.position_set == "answer-first-k":
+                # The prompt is never edited under answer-first-k: latch the
+                # prefill (so T==1 forwards read as decode steps) and pass
+                # the hidden states through UNTOUCHED.
+                self._prefill_seen = True
+                return hidden
 
         out = hidden.clone()
         if self.position_set in ("prefix-end", "context-end"):
@@ -470,6 +515,7 @@ def joint_axis_hooks(
     op: str = "cap",
     position_set: str = "context-end",
     alpha_by_layer: dict[int, float] | None = None,
+    first_k_decode: int = 0,
 ) -> AxisCapHookStack:
     """Build a joint-band :class:`AxisCapHookStack` over ``layers``.
 
@@ -479,9 +525,11 @@ def joint_axis_hooks(
     ``position_set``; Fix B), and default-assistant mean state.
     ``alpha_by_layer`` supplies each layer's steer shift (projection units), same
     plumbing/shape as ``tau_by_layer``; ``None`` defaults every layer's shift to
-    0.0 (inert for every op but ``steer``). All children share ``op`` and
-    ``position_set`` (a band caps ONE op at ONE position set across its layers —
-    the design's cell).
+    0.0 (inert for every op but ``steer``). ``first_k_decode`` is threaded to
+    every child and read ONLY by ``position_set="answer-first-k"`` (the number
+    of leading decode steps edited per draw); inert (0) elsewhere. All children
+    share ``op`` and ``position_set`` (a band caps ONE op at ONE position set
+    across its layers — the design's cell).
     """
     hooks = []
     for layer in layers:
@@ -500,6 +548,7 @@ def joint_axis_hooks(
                 op=op,
                 position_set=position_set,
                 alpha=alpha,
+                first_k_decode=first_k_decode,
             )
         )
     return AxisCapHookStack(hooks)
