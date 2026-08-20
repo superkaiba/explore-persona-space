@@ -50,6 +50,36 @@ headroom() { # headroom <need_gb> <phase>
   uv run python -c "from explore_persona_space.orchestrate.preflight import assert_out_root_headroom; assert_out_root_headroom('/workspace', float('$1'), phase='$2')"
 }
 
+reap_gpus() { # phase-boundary GPU reap: vLLM engine workers can outlive their
+  # parent (the worker-teardown gotcha; a 74.6 GiB orphaned context on GPU 0
+  # OOMed the 2026-08-20 capture smoke). Only ever called at GLOBAL phase
+  # boundaries where NOTHING should hold a GPU; kills in-container compute
+  # apps, then waits for the driver to release memory. A host-namespace
+  # orphan (in-container /proc empty) cannot be killed here — fail loud so
+  # the orchestrator reprovisions instead of OOMing the next phase.
+  local pids used
+  pids=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader | tr -d ' ' | sort -u | grep -E '^[0-9]+$' || true)
+  for p in $pids; do
+    if [ -d "/proc/$p" ]; then
+      echo "[reap] killing lingering GPU process $p ($(tr '\0' ' ' < /proc/$p/cmdline | cut -c1-80))"
+      kill -9 "$p" 2>/dev/null || true
+    else
+      echo "[reap] GPU process $p has NO in-container /proc entry (host-namespace orphan)"
+    fi
+  done
+  for i in $(seq 1 30); do
+    used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -rn | head -1)
+    [ "$used" -lt 2000 ] && break
+    sleep 2
+  done
+  if [ "$used" -ge 2000 ]; then
+    echo "[reap] FATAL: ${used} MiB still held after reap window — GPU context unreclaimable in-container; reprovision the pod"
+    nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+    exit 86
+  fi
+  echo "[reap] GPUs clean (max used ${used} MiB)"
+}
+
 commit_results() { # commit_results <msg> <path>...
   local msg="$1"; shift
   git add -- "$@" 2>/dev/null || true
@@ -87,6 +117,7 @@ echo "[phase=p0_smoke]"
 # control report (production path passed explicitly - the smoke out-root would
 # otherwise resolve the default against gen_smoke/).
 uv run python scripts/issue2388_gen.py --smoke --phase all --bcb-python "$BCB_PY" --control-report "$CONTROL_REPORT"
+reap_gpus
 for b in math_full mmlu_pro_full humaneval; do
   uv run python scripts/issue2388_capture.py --smoke --phase capture --benchmark "$b" --device cuda
   uv run python scripts/issue2388_capture.py --smoke --phase tf-margin --benchmark "$b" --device cuda
@@ -128,6 +159,7 @@ for i in "${!pids[@]}"; do
   if ! wait "${pids[$i]}"; then echo "[p1] LANE FAILED: ${lanes[$i]} (see its lane log)"; fail=1; fi
 done
 [ "$fail" -eq 0 ] || exit 1
+reap_gpus
 
 echo "[phase=p1_upload]"
 uv run python scripts/issue2388_gen.py --phase upload --bcb-python "$BCB_PY"
@@ -162,6 +194,7 @@ for i in "${!pids[@]}"; do
   if ! wait "${pids[$i]}"; then echo "[p2] LANE FAILED: ${lanes[$i]} (see its lane log)"; fail=1; fi
 done
 [ "$fail" -eq 0 ] || exit 1
+reap_gpus
 
 echo "[phase=p2_upload]"
 for s in math mcq code; do
