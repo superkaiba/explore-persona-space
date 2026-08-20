@@ -552,7 +552,7 @@ def test_b12_cap_report_inputs_partial_without_full_cell_coverage(tmp_path):
     rest_cells = sorted(R._group_by_cell(rest_ids, contexts))
     for c in rest_cells[:-1]:
         _done_manifest(cfg, f"parity_{c}")
-    paths, expected, why = R._cap_report_inputs(cfg, "anchors")
+    _paths, expected, why = R._cap_report_inputs(cfg, "anchors")
     assert expected is None
     assert why is not None and "underivable" in why
     assert rest_cells[-1] in why

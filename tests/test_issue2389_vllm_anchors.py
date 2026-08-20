@@ -113,7 +113,7 @@ def test_b8_late_pass_reroutes_only_unclaimed_cells(tmp_path, monkeypatch):
     )
     assert ran == []
 
-    # vLLM side: ownership = claimed − parity − HF-done − empty.
+    # vLLM side: ownership = claimed - parity - HF-done - empty.
     by_cell = {cell_a: ["x1", "x2"], cell_b: ["x3", "x4"], cell_c: ["x5"]}
     rest_by_cell, gen_cells = V._owned_rest_cells(cfg, "fp", draws, by_cell, gate_id_set=set())
     assert sorted(gen_cells) == sorted([cell_b, cell_c])
