@@ -805,21 +805,37 @@ def _assert_pin_engaged(model, tok, cfg: LadderConfig) -> None:
     """M1 pin-engagement assert (plan §4.4): the RESOLVED artifacts came from
     ``snapshots/<MODEL_REVISION_PIN>``.
 
-    Model leg: ``config._commit_hash`` (hub loads only — the ``--tiny``
-    from-config model never touches the hub). Tokenizer leg: the cached
-    ``tokenizer_config.json`` resolves under ``snapshots/<pin>`` (tokenizers
-    store no ``_commit_hash``) — checkable under ``--tiny`` too. Skipped
-    entirely when no pin is set (``model_revision=None`` keeps the parent's
-    legacy load byte-identical)."""
+    Model leg (hub loads only — the ``--tiny`` from-config model never touches
+    the hub): the cached ``config.json`` resolves under ``snapshots/<pin>``.
+    ``config._commit_hash`` is a PRIVATE transformers attribute the 5.15.0 pod
+    pin no longer populates (#2329 bank crash, rc=1) — it survives only as an
+    opportunistic fast path that may PASS the leg, never fail it. Tokenizer
+    leg: the cached ``tokenizer_config.json`` resolves under
+    ``snapshots/<pin>`` (tokenizers store no ``_commit_hash``) — checkable
+    under ``--tiny`` too. Skipped entirely when no pin is set
+    (``model_revision=None`` keeps the parent's legacy load byte-identical)."""
     if cfg.model_revision is None:
         return
-    if model is not None and not cfg.tiny:
-        got = getattr(model.config, "_commit_hash", None)
-        assert got == cfg.model_revision, (
-            f"model pin NOT engaged: config._commit_hash={got!r} != {cfg.model_revision!r}"
-        )
     from transformers.utils.hub import cached_file
 
+    if model is not None and not cfg.tiny:
+        got = getattr(model.config, "_commit_hash", None)
+        if got != cfg.model_revision:
+            # Fast path unavailable (None/absent under transformers 5.15.0) or
+            # stale: prove engagement via the public resolved-snapshot-path
+            # check — the same technique as the tokenizer leg below.
+            resolved_cfg = cached_file(
+                cfg.model_id,
+                "config.json",
+                revision=cfg.model_revision,
+                local_files_only=True,
+            )
+            assert resolved_cfg is not None and (
+                f"snapshots/{cfg.model_revision}" in str(resolved_cfg)
+            ), (
+                f"model pin NOT engaged: config.json resolved {resolved_cfg!r} "
+                f"lacks snapshots/{cfg.model_revision} (config._commit_hash={got!r})"
+            )
     resolved = cached_file(
         cfg.model_id,
         "tokenizer_config.json",
