@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2431,
+  "highest_id": 2432,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11056,6 +11056,13 @@
       "path": "tasks/proposed/2431",
       "status": "proposed",
       "title": "fu6 idempotency test leaks neg_sp_police/neg_sp_ph4 into the global CONTEXTS at runtime (no teardown pop)"
+    },
+    "2432": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2432",
+      "status": "proposed",
+      "title": "Step 10d pre-push lint gate: 900s per-leg fence is under the measured 799-1085s wall, crashing gates fleet-wide"
     },
     "244": {
       "has_clean_result": false,
