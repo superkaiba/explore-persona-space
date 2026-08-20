@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2428,
+  "highest_id": 2429,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11035,6 +11035,13 @@
       "path": "tasks/running/2428",
       "status": "running",
       "title": "Step 10d Guard 4 (lost-update refusal) is vacuous on the prescribed call path \u2014 --main-sha passes the main TIP, helper reads it as the merge-base"
+    },
+    "2429": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2429",
+      "status": "proposed",
+      "title": "workflow-fix: issue worktrees run an unpinned Python (19/25 at 3.12.13 vs root 3.11.15) \u2014 Step 9c verdicts flip on interpreter"
     },
     "244": {
       "has_clean_result": false,
