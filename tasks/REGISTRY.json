@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2412,
+  "highest_id": 2413,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10923,6 +10923,13 @@
       "path": "tasks/proposed/2412",
       "status": "proposed",
       "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
+    },
+    "2413": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2413",
+      "status": "proposed",
+      "title": "Step 10d mapped-invariant leg attributes base-identical sibling-synced files to the payload (the #2302 subtraction never reached it)"
     },
     "244": {
       "has_clean_result": false,
