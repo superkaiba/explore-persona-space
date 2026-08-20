@@ -1,7 +1,7 @@
 ---
 title: Mapped-answer readouts match real-answer persona projections off-synthetic
-  and edge direct context probes in most held-out settings, pending a shuffled-map
-  control (MODERATE confidence)
+  and edge direct context probes in most held-out settings, an edge that survives
+  a shuffled-pairing map control at one of two flagship rungs (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
