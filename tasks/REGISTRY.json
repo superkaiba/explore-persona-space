@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2418,
+  "highest_id": 2419,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10965,6 +10965,13 @@
       "path": "tasks/proposed/2418",
       "status": "proposed",
       "title": "Infra: worktree plans/plan.md symlink resolves to a STALE plan \u2014 briefs following the plan-handoff convention can review against a superseded plan"
+    },
+    "2419": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2419",
+      "status": "proposed",
+      "title": "Infra: add two mechanizable plan-claim checks \u2014 inheritance-claim grep + manifest-figure producer check"
     },
     "244": {
       "has_clean_result": false,
