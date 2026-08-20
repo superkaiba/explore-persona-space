@@ -11046,8 +11046,8 @@
     "2430": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2430",
-      "status": "proposed",
+      "path": "tasks/planning/2430",
+      "status": "planning",
       "title": "Step 9c paired oracle: add a SUFFIX-replay arm so later-sorting-file contamination is attributed mechanically"
     },
     "2431": {
