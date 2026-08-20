@@ -1766,6 +1766,25 @@ score the block's substance (offline main()-driven execution, zero spend)
 — a stale "carries NO block" framing invites a fabricated marker-shape
 finding.
 
+**Mid-round crash-fix on a multi-lane task (#823 P-Fit mask-gate = sentinel
+v10, 2026-08-20):** three deltas. (a) Sentinel = max-posted-codex-version + 1
+EVEN when the round has its own impl marker (impl v11 → sentinel v10): once a
+task's posted codex markers run head==posted-version (v6–v9 here), that
+continuity outranks the #2329 sentinel==impl-version convention — state the
+mapping in the return. (b) A fix that CONSUMES producer labels while the plan
+text literally bans "validity labels" composes as the #2332
+surface-the-tension shape: quote BOTH the ban clause AND its reconciliation
+parenthetical ("the step-4 label-precedence fix reconciles the labeler") with
+real line numbers, hand the producer's classifier read (`git show
+<sha>:<gen module>` + def line) to the twin, never resolve the wording
+yourself. (c) A prior lane verdict may exist ONLY as a /tmp output + an
+orchestrator prose summary (`epm:code-review v8`), with the binding ruling
+under the kind `epm:code-review-reconcile` — grep events by NOTE TEXT
+("reconcil"), not only by expected kind names, before concluding a split was
+never adjudicated. Also: plan-excerpts envelope (brief-cited line windows,
+sed-verified) + full plan by /tmp copy + main-root fallback is the right
+plan shape when the binding sections are line-pinned and the plan is ~159 KB.
+
 **Twin-won closure round: reconciler ruling as SOLE acceptance contract
 (#2329 r5 = sentinel v12, 2026-08-20):** when the prior round was
 Claude-PASS×3 / Codex-FAIL and the RECONCILER upheld the Codex Major with
