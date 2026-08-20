@@ -286,6 +286,49 @@ def test_validate_breach_basis_no_breach_needs_no_cap_floor(tmp_path):
     R._validate_breach_basis(rep, tmp_path / "r.json", "anchors", cfg)
 
 
+# ------------------------------------------- B4: smoke gate-slice extension
+
+
+def test_b4_smoke_gate_slice_extension_supplies_spot_cells():
+    """B4 mechanizable check (r1 review verbatim): the bare 2-chunk smoke
+    slice cannot supply the injection gate's 12 spot cells (the pre-fix
+    KeyError shape); the extension's extra contexts make
+    `{spot cells} <= set(BANK.pairs_by_cell(filtered pairs))` hold."""
+    contexts = list(BANK.build_contexts())
+    pairs = BANK.build_pairs()  # full bank (token-identity drops need no GPU here)
+    chunks = R.enumerate_capture_chunks(contexts)[:2]
+    sliced = {c for ch in chunks for c in ch.context_ids}
+    # synthetic same-cell donor maps (real ones live in the frozen manifest —
+    # tokenizer-dependent; the extension math only needs pair-id resolution)
+    by_cell = BANK.pairs_by_cell(pairs)
+    donor_maps: dict[str, dict[str, str]] = {"shuffled": {}, "crosstype": {}}
+    for p in pairs:
+        siblings = [q for q in by_cell[p.cell] if q.pair_id != p.pair_id]
+        if siblings:
+            donor_maps["shuffled"][p.pair_id] = siblings[0].pair_id
+            donor_maps["crosstype"][p.pair_id] = siblings[-1].pair_id
+    spots, extra = R._smoke_gate_slice_extension(contexts, sliced, pairs, donor_maps)
+    assert len(spots) == 12
+    spot_cells = {s["cell"] for s in spots}
+    # PRE-FIX shape: the bare slice misses gate cells (the B4 crash)
+    pairs_sliced = [p for p in pairs if p.a in sliced and p.b in sliced]
+    assert not spot_cells <= set(BANK.pairs_by_cell(pairs_sliced))
+    # POST-FIX: slice + extension covers every spot cell through the filter
+    assert extra and not set(extra) & sliced
+    covered = sliced | set(extra)
+    pairs_ext = [p for p in pairs if p.a in covered and p.b in covered]
+    assert spot_cells <= set(BANK.pairs_by_cell(pairs_ext))
+    # donor pairs of non-steered spots survive the filter too (payload_for_arm
+    # dereferences their captured states + pair ids)
+    ext_ids = {p.pair_id for p in pairs_ext}
+    for s in spots:
+        if s["arm"] != "steered":
+            key = "shuffled" if s["arm"] == "shuffled" else "crosstype"
+            assert donor_maps[key][s["pair"].pair_id] in ext_ids
+    # the synthetic chunk's identity can never collide with a real chunk
+    assert len(R.enumerate_capture_chunks(contexts)) < R.SMOKE_GATE_CHUNK_INDEX
+
+
 # ------------------------------------- capregen owning record (B11/B3 r1)
 
 

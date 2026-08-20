@@ -174,6 +174,61 @@ _BANK_JSON_REL = f"{HF_PREFIX}/analysis_tensors/vc_bank/bank.json"
 # is always READ from this artifact, never hardcoded.
 _DEFAULT_BREACH_BASIS = Path("eval_results/issue_2389/cap_hit/cap_hit_report_anchors_preregen.json")
 
+# M1-iv (plan §7 gate 0d): the staged-anchor consumer-probe PASS report
+# (scripts/issue2389_consumer_probe.py) production consumers poll before
+# spending. Default = that script's own default --report path.
+_CONSUMER_PROBE_REPORT_DEFAULT = Path(
+    "data/issue_2389/consumer_probe/gates/consumer_probe_report.json"
+)
+
+
+def require_consumer_probe(report_path: Path, leg: str, *, skip: bool = False) -> None:
+    """M1-iv (plan §7 gate 0d): production consumers refuse without a PASS probe.
+
+    ``leg`` names which consumer is about to spend (``"judge"`` for the P6
+    bulk waves, ``"analysis"`` for the P7c f-tables/stats steps); the probe
+    report must exist, carry ``verdict == "PASS"``, and have RUN that leg.
+    ``skip=True`` is the explicit recorded override: proceeds with a warning
+    plus a durable ``consumer_probe_override_{leg}.json`` record beside the
+    report path — never a silent bypass.
+    """
+    probe_cmd = f"uv run python scripts/issue2389_consumer_probe.py --probe {leg}"
+    if skip:
+        logger.warning(
+            "[m1iv] consumer probe SKIPPED for leg=%s via --skip-consumer-probe "
+            "(override recorded beside %s)",
+            leg,
+            report_path,
+        )
+        override = report_path.parent / f"consumer_probe_override_{leg}.json"
+        override.parent.mkdir(parents=True, exist_ok=True)
+        J94._write_json_atomic(
+            override,
+            {
+                "leg": leg,
+                "skipped_via": "--skip-consumer-probe",
+                "report_path": str(report_path),
+                "repro": {**J94._repro(), "script": "scripts/issue2389_judge.py"},
+            },
+        )
+        return
+    if not report_path.is_file():
+        raise RuntimeError(
+            f"consumer probe report missing: {report_path} (M1-iv, plan §7 gate 0d) — run "
+            f"`{probe_cmd}` first, or pass --skip-consumer-probe to record an explicit override"
+        )
+    rec = json.loads(report_path.read_text(encoding="utf-8"))
+    if rec.get("verdict") != "PASS":
+        raise RuntimeError(
+            f"consumer probe report at {report_path} is not a PASS "
+            f"(verdict={rec.get('verdict')!r}) — re-run `{probe_cmd}`"
+        )
+    if leg not in rec.get("legs", {}):
+        raise RuntimeError(
+            f"consumer probe report at {report_path} never ran leg {leg!r} "
+            f"(ran: {sorted(rec.get('legs', {}))}) — run `{probe_cmd}`"
+        )
+
 
 @dataclass
 class JudgeConfig(J94.JudgeConfig):
@@ -190,6 +245,12 @@ class JudgeConfig(J94.JudgeConfig):
     # in anchors until P5) — the union the phase's loader reads. None (every
     # other phase, or an explicit --anchors-dir) => single-dir load.
     anchors_union_dirs: tuple[Path, ...] | None = None
+    # M1-iv (plan §7 gate 0d): the consumer-probe PASS report phase_waves
+    # polls before its ~145k-call production spend; --skip-consumer-probe is
+    # the explicit recorded override (require_consumer_probe writes a durable
+    # override record beside the report path).
+    consumer_probe_report: Path = _CONSUMER_PROBE_REPORT_DEFAULT
+    skip_consumer_probe: bool = False
     # rule-28 remediation seam (#2151/#1739): route production waves over the
     # SYNC transport instead of Batch. Default False => every existing caller
     # routes byte-identically. Set only for an api-refusal RE-ISSUE pass: the
@@ -1348,6 +1409,7 @@ def phase_waves(cfg: JudgeConfig) -> int:
             },
         )
     _require_gates(cfg)
+    require_consumer_probe(cfg.consumer_probe_report, "judge", skip=cfg.skip_consumer_probe)
     registry = rubric_registry(pairs)
     J94.run_audits("grid", grid_rows, cfg.audits_dir)
     coh_units = build_coherence_items(grid_rows, None)
@@ -2102,6 +2164,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "re-issued. NOTE: run_wave's regime key does NOT include routing, so a "
         "completed wave still SKIPs — quarantine its .meta.json to force the re-run.",
     )
+    ap.add_argument(
+        "--consumer-probe-report",
+        type=Path,
+        default=_CONSUMER_PROBE_REPORT_DEFAULT,
+        help="M1-iv (plan §7 gate 0d): consumer-probe PASS report phase_waves requires "
+        "before the production spend (default: issue2389_consumer_probe.py's own "
+        "default --report path)",
+    )
+    ap.add_argument(
+        "--skip-consumer-probe",
+        action="store_true",
+        help="explicit recorded override of the M1-iv consumer-probe gate: proceeds "
+        "with a warning + a durable consumer_probe_override_{leg}.json record beside "
+        "the report path — never a silent bypass",
+    )
     ap.add_argument("--hf-revision", type=str, default=None)
     ap.add_argument("--work-root", type=Path, default=Path("eval_results/issue_2389/judge"))
     ap.add_argument("--cache-root", type=Path, default=Path("data/issue_2389/judge_cache"))
@@ -2307,6 +2384,8 @@ def build_config(args: argparse.Namespace) -> JudgeConfig:
         vllm_parity_dir=vllm_parity,
         engine_status_json=args.in_root / _ENGINE_STATUS_REL,
         anchors_union_dirs=union_dirs,
+        consumer_probe_report=args.consumer_probe_report,
+        skip_consumer_probe=args.skip_consumer_probe,
     )
 
 

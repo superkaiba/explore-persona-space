@@ -2304,6 +2304,39 @@ def _bank_part_path(cfg: RunConfig, chunk: CaptureChunk) -> Path:
     return cfg.bank_dir / f"vc_bank_part_{chunk.slug}.pt"
 
 
+# Synthetic smoke-only capture chunk carrying the injection-gate spot
+# dependencies (B4) — index far outside the real c000..c021 range so its
+# claim/done identity can never collide with a production chunk.
+SMOKE_GATE_CHUNK_INDEX = 999
+
+
+def _smoke_gate_slice_extension(
+    all_contexts: list[str],
+    sliced: set[str],
+    pairs_full: list[BANK.Pair2162],
+    donor_maps: dict[str, dict[str, str]],
+) -> tuple[list[dict], list[str]]:
+    """B4 (r1 review): the injection gate's 12 spot cells span the WHOLE bank,
+    so the 2-chunk smoke slice structurally cannot supply them — the smoke
+    died at ``by_cell[cell]`` BEFORE the gate it claims to exercise. Returns
+    (the FULL-bank gate spots — the exact production selection — and the
+    extra contexts the smoke capture must add: each spot pair's a/b plus the
+    non-steered arms' donor pair a/b, whose states ``payload_for_arm``
+    dereferences)."""
+    pairs_by_id = {p.pair_id: p for p in pairs_full}
+    spots = _gate_spot_specs(pairs_full, donor_maps=donor_maps, pairs_by_id=pairs_by_id)
+    need: set[str] = set()
+    for s in spots:
+        p = s["pair"]
+        need.update((p.a, p.b))
+        if s["arm"] != "steered":
+            donor_map = donor_maps["shuffled" if s["arm"] == "shuffled" else "crosstype"]
+            donor = pairs_by_id[donor_map[p.pair_id]]
+            need.update((donor.a, donor.b))
+    missing = [c for c in all_contexts if c in need and c not in sliced]
+    return spots, missing
+
+
 def phase_bank(cfg: RunConfig) -> int:
     """P1: bank.json + vc_bank.pt + degeneracy guard + injection gate.
 
@@ -2352,8 +2385,24 @@ def phase_bank(cfg: RunConfig) -> int:
 
     all_contexts = list(BANK.build_contexts())
     chunks = enumerate_capture_chunks(all_contexts)
+    smoke_spots: list[dict] | None = None
     if cfg.smoke:
         chunks = chunks[:2]
+        # B4 (r1 review): extend the slice with the injection gate's spot
+        # dependencies so the smoke REACHES the gate (production spot
+        # selection, computed over the FULL surviving pair set).
+        smoke_spots, extra = _smoke_gate_slice_extension(
+            all_contexts,
+            {c for ch in chunks for c in ch.context_ids},
+            surviving_pairs(manifest),
+            manifest["donor_assignment"],
+        )
+        if extra:
+            chunks = chunks + [CaptureChunk(SMOKE_GATE_CHUNK_INDEX, tuple(extra))]
+            logger.info(
+                "[bank] smoke slice extended by %d injection-gate dependency contexts",
+                len(extra),
+            )
 
     def _capture_one(chunk: CaptureChunk) -> None:
         part = capture_bank(cfg, model, tok, order=list(chunk.context_ids))
@@ -2438,7 +2487,18 @@ def phase_bank(cfg: RunConfig) -> int:
             "(recorded)"
         )
 
-    report = run_injection_gate(cfg, model, tok, bank, pairs, donor_maps)
+    if cfg.smoke:
+        # B4 mechanizable assert (r1 review verbatim): every requested gate
+        # cell must exist in the smoke-filtered pair set — the extension
+        # above is what makes this hold.
+        assert smoke_spots is not None
+        spot_cells = {s["cell"] for s in smoke_spots}
+        have_cells = set(BANK.pairs_by_cell(pairs))
+        assert spot_cells <= have_cells, (
+            "B4: smoke slice cannot supply injection-gate spot cells",
+            sorted(spot_cells - have_cells),
+        )
+    report = run_injection_gate(cfg, model, tok, bank, pairs, donor_maps, spots=smoke_spots)
     _write_json_atomic(cfg.gates_dir / "injection_gate_report.json", report)
     if not report["passed"]:
         logger.error(

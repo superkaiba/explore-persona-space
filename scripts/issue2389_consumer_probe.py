@@ -4,21 +4,28 @@ Two cheap pre-production data-contract probes over ONE worker's anchor GATE
 shard, run through the REAL staging helpers and the REAL consumer loaders —
 never a re-implementation of either:
 
-- ``--probe judge`` (run BEFORE the P6 bulk judge wave): stage
-  ``raw_completions/anchors_gate/anchors_gate_w{K}.jsonl`` via
-  ``hub.stage_hub_file`` (the judge fork's staging family — the same helper
+- ``--probe judge`` (run BEFORE the P6 bulk judge wave): DISCOVER one
+  uploaded gate cell shard ``anchors_gate_{cell}_w{K}.jsonl`` on the Hub
+  (cell-grain names, B7 r1 review — the worker index is claim-queue
+  provenance, never derivable a priori), stage it via ``hub.stage_hub_file``
+  (the judge fork's staging family — the same helper
   ``issue2389_judge._stage_inputs`` uses for its single-file legs) and open
   the staged dir with the judge fork's ``load_anchor_rows`` — the exact
   loader every P6 wave consumes through.
 - ``--probe analysis`` (run BEFORE P7c production): stage that SAME jsonl
-  PLUS its co-located ``analysis_tensors/anchors/va_anchors_gate_w{K}.pt``
-  into ONE local ``anchors/`` dir, run BOTH real loaders
+  PLUS its co-located
+  ``analysis_tensors/anchors/va_anchors_gate_{cell}_w{K}.pt`` into ONE local
+  ``anchors/`` dir, run BOTH real loaders
   (``issue2389_judge.load_anchor_rows`` +
   ``issue2389_analysis._load_anchor_va``), and assert the two loaders'
   ``(context_id, draw)`` key sets are IDENTICAL modulo the pt shards'
   declared ``empty_rows`` (an empty completion is a declared zero-vector
   drop — jsonl-side present, va-side deliberately excluded — not a contract
   mismatch).
+
+The PASS report (``verdict: "PASS"``, written only after every requested leg
+passes) is the M1-iv gate artifact ``issue2389_judge.require_consumer_probe``
+checks at the P6 / P7c production entries.
 
 One probe per (family x consumer) pair: (anchors x P6 judge loader),
 (anchors x P7 analysis loaders). FAIL-LOUD: a missing shard, a key-set
@@ -55,16 +62,42 @@ logger = logging.getLogger("issue2389.consumer_probe")
 _VA_ANCHORS_REMOTE_PREFIX = f"{J.HF_PREFIX}/analysis_tensors/anchors"
 
 
-def _gate_shard_names(worker_index: int) -> tuple[str, str]:
-    """(jsonl, pt) filenames for the gate batch's worker-``K`` shard pair."""
-    return (f"anchors_gate_w{worker_index}.jsonl", f"va_anchors_gate_w{worker_index}.pt")
+def _discover_gate_shard(
+    gate_cell: str | None, worker_index: int | None, revision: str | None
+) -> tuple[str, str]:
+    """(jsonl, pt) filenames of ONE uploaded gate cell shard.
+
+    Cell-grain names (B7 r1 review): shards are ``anchors_gate_{cell}_w{w}``
+    where ``w`` is claim-queue PROVENANCE (any worker may own any cell), so
+    the shard is DISCOVERED from a scoped Hub listing rather than derived.
+    Optional ``gate_cell`` / ``worker_index`` narrow the pick; first shard in
+    sorted order otherwise (any one shard exercises the contract)."""
+    from huggingface_hub import HfApi
+
+    names = hub.retry_transient(
+        lambda: hub.list_hf_files_under_path(
+            HfApi(), J.DATASET_REPO, J._STAGE_ANCHORS_GATE, repo_type="dataset", revision=revision
+        ),
+        what="consumer-probe gate-shard discovery listing",
+    )
+    jsonls = sorted(n.rsplit("/", 1)[-1] for n in names if n.endswith(".jsonl"))
+    if gate_cell is not None:
+        jsonls = [n for n in jsonls if n.startswith(f"anchors_gate_{gate_cell}_w")]
+    if worker_index is not None:
+        jsonls = [n for n in jsonls if n.endswith(f"_w{worker_index}.jsonl")]
+    assert jsonls, (
+        f"no gate shard on {J.DATASET_REPO}/{J._STAGE_ANCHORS_GATE} matching "
+        f"cell={gate_cell!r} worker={worker_index!r} — the P2 gate-cell uploads have "
+        "not landed yet (or the filters are wrong)"
+    )
+    jsonl_name = jsonls[0]
+    return jsonl_name, f"va_{jsonl_name[: -len('.jsonl')]}.pt"
 
 
 def _stage_gate_shard(
-    anchors_dir: Path, worker_index: int, *, with_va: bool, revision: str | None
+    anchors_dir: Path, jsonl_name: str, pt_name: str, *, with_va: bool, revision: str | None
 ) -> None:
-    """Stage the gate shard pair into ONE local ``anchors/`` dir (M1-iv)."""
-    jsonl_name, pt_name = _gate_shard_names(worker_index)
+    """Stage the discovered gate shard pair into ONE local ``anchors/`` dir."""
     hub.stage_hub_file(
         J.DATASET_REPO,
         f"{J._STAGE_ANCHORS_GATE}/{jsonl_name}",
@@ -157,10 +190,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Issue #2389 staged-anchor consumer probes (M1-iv).")
     ap.add_argument("--probe", required=True, choices=("judge", "analysis", "both"))
     ap.add_argument(
+        "--gate-cell",
+        default=None,
+        help="restrict discovery to one gate cell's shard (default: first discovered)",
+    )
+    ap.add_argument(
         "--worker-index",
         type=int,
-        default=0,
-        help="which worker's gate shard pair to probe (default 0)",
+        default=None,
+        help="restrict discovery to shards claimed by worker K (provenance filter; "
+        "default: any worker)",
     )
     ap.add_argument(
         "--in-root",
@@ -188,21 +227,28 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     args = parse_args(argv)
     legs = ("judge", "analysis") if args.probe == "both" else (args.probe,)
+    gate_shard: str | None = None
     if args.local_anchors_dir is not None:
         anchors_dir = args.local_anchors_dir
         assert anchors_dir.is_dir(), f"--local-anchors-dir {anchors_dir} is not a directory"
     else:
         anchors_dir = args.in_root / "anchors"
         anchors_dir.mkdir(parents=True, exist_ok=True)
+        jsonl_name, pt_name = _discover_gate_shard(
+            args.gate_cell, args.worker_index, args.hf_revision
+        )
+        gate_shard = jsonl_name
         _stage_gate_shard(
             anchors_dir,
-            args.worker_index,
+            jsonl_name,
+            pt_name,
             with_va="analysis" in legs,
             revision=args.hf_revision,
         )
     report: dict = {
+        "verdict": "PASS",
         "probe": args.probe,
-        "worker_index": args.worker_index,
+        "gate_shard": gate_shard,
         "anchors_dir": str(anchors_dir),
         "staged": args.local_anchors_dir is None,
         "legs": {},

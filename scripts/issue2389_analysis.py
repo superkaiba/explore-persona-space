@@ -335,6 +335,9 @@ def _anchor_deltas(
 
 
 def step_f_tables(args: argparse.Namespace) -> None:
+    # M1-iv (plan §7 gate 0d): the anchor loaders below are exactly what the
+    # consumer probe certifies — refuse without a matching PASS report.
+    J.require_consumer_probe(args.consumer_probe_report, "analysis", skip=args.skip_consumer_probe)
     pairs = _pairs(args)
     pairs_by_id = {p.pair_id: p for p in pairs}
     grid_rows = J.load_grid_rows(args.rollouts_dir)
@@ -543,6 +546,9 @@ def _family_m_report(family_p: dict[str, dict[str, float]]) -> dict:
 
 
 def step_stats(args: argparse.Namespace) -> None:
+    # M1-iv (plan §7 gate 0d): stats consumes f-tables' anchor-derived cells;
+    # same probe gate as step_f_tables (idempotent under --step all).
+    J.require_consumer_probe(args.consumer_probe_report, "analysis", skip=args.skip_consumer_probe)
     steered = list(_iter_jsonl(args.out_dir / "f_cells.jsonl"))
     nulls = {
         "shuffled": list(_iter_jsonl(args.out_dir / "null_shuffled_cells.jsonl")),
@@ -1923,6 +1929,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--scores-dir", type=Path, default=Path("eval_results/issue_2389/judge/scores"))
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_2389/f_metrics"))
+    ap.add_argument(
+        "--consumer-probe-report",
+        type=Path,
+        default=J._CONSUMER_PROBE_REPORT_DEFAULT,
+        help="M1-iv (plan §7 gate 0d): consumer-probe PASS report the anchor-consuming "
+        "production steps (f-tables, stats) require before running",
+    )
+    ap.add_argument(
+        "--skip-consumer-probe",
+        action="store_true",
+        help="explicit recorded override of the M1-iv consumer-probe gate (durable "
+        "override record beside the report path) — never a silent bypass",
+    )
     ap.add_argument("--perm-b", type=int, default=PROBE_PERM_B)
     ap.add_argument(
         "--device",
