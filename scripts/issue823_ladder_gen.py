@@ -28,9 +28,17 @@ Usage:
   uv run python scripts/issue823_ladder_gen.py --smoke   # 16 contexts, /tmp + _smoke HF prefix
   uv run python scripts/issue823_ladder_gen.py           # full 5,000-context production run
 
-Exit codes: 0 = complete; 3 = transport-class rows remain after bounded
-re-drives (halt-and-report: digest written, no sentinel, no upload -- re-run
-to resume from the batch checkpoints).
+Exit codes: 0 = complete; 3 = transport-class rows remain (after this run's
+bounded FRESH re-drive rounds, or inside a persona's cap-hit regen) --
+halt-and-report: digest written, no sentinel, no upload. The dispatcher
+re-serves persisted transport rows on a resumed checkpoint WITHOUT
+re-dispatching, so: a re-run resumes completed rows from the batch
+checkpoints and re-submits redrive residue automatically in fresh redrive
+dirs numbered past the stale ones; regen residue requires quarantining the
+halt-named regen checkpoint dir first (the halt message carries the exact mv
+command). Completion additionally requires the upload to land on the
+CANONICAL data repo -- an overflow-rerouted upload raises instead of
+reporting complete.
 """
 
 from __future__ import annotations
@@ -47,6 +55,7 @@ import json
 import logging
 import os
 import pathlib
+import re
 import subprocess
 import sys
 from collections import Counter
@@ -60,7 +69,7 @@ from explore_persona_space.llm.api_dispatch import (
     DispatchResult,
     dispatch_calls,
 )
-from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+from explore_persona_space.orchestrate.hub import _upload_folder_filtered, retry_transient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue823_ladder_gen")
@@ -172,19 +181,25 @@ def load_frozen_questions(dl_dir: pathlib.Path) -> tuple[list[str], list[bool], 
     0..4999 (fail-loud); the in_common_valid vs common_valid_idx SET
     comparison is REPORTED in the digest, not an abort (slice step 1).
     """
-    b2_path = hf_hub_download(
-        DATA_REPO,
-        f"{PARENT_PREFIX}/raw_completions/phase1/b2_seed42.json",
-        repo_type="dataset",
-        revision=PARENT_REV,
-        local_dir=dl_dir,
+    b2_path = retry_transient(
+        lambda: hf_hub_download(
+            DATA_REPO,
+            f"{PARENT_PREFIX}/raw_completions/phase1/b2_seed42.json",
+            repo_type="dataset",
+            revision=PARENT_REV,
+            local_dir=dl_dir,
+        ),
+        what=f"hf_hub_download({PARENT_PREFIX}/raw_completions/phase1/b2_seed42.json)",
     )
-    cv_path = hf_hub_download(
-        DATA_REPO,
-        f"{PARENT_PREFIX}/raw_completions/phase1/common_valid_idx.json",
-        repo_type="dataset",
-        revision=PARENT_REV,
-        local_dir=dl_dir,
+    cv_path = retry_transient(
+        lambda: hf_hub_download(
+            DATA_REPO,
+            f"{PARENT_PREFIX}/raw_completions/phase1/common_valid_idx.json",
+            repo_type="dataset",
+            revision=PARENT_REV,
+            local_dir=dl_dir,
+        ),
+        what=f"hf_hub_download({PARENT_PREFIX}/raw_completions/phase1/common_valid_idx.json)",
     )
     records = json.loads(pathlib.Path(b2_path).read_text())
     assert isinstance(records, list) and len(records) == N_CONTEXTS_FULL, (
@@ -373,7 +388,16 @@ async def _dispatch(
 
 
 def load_batch_meta(checkpoint_dir: pathlib.Path) -> dict[str, dict]:
-    """Join item_id -> Batch provenance from the dispatcher's state.json (requirement 1)."""
+    """Join item_id -> Batch provenance from the dispatcher's state.json (requirement 1).
+
+    ``harvested_at`` is PER SUB-BATCH, read from the dispatcher's own
+    ``results_<batch_id>.json`` mtime: the dispatcher writes that file exactly
+    once, at harvest, via atomic replace (``_collect_sub_batch`` →
+    ``_atomic_write_json``), and a resume never rewrites it (collected
+    sub-batches are skipped) — so the mtime IS the sub-batch harvest time.
+    A single record-build-time stamp would defeat the batch-wave drift audit
+    this field exists for (every record across every wave identical).
+    """
     state = json.loads((checkpoint_dir / "state.json").read_text())
     cid_to_item = state["cid_to_item"]
     meta: dict[str, dict] = {}
@@ -382,12 +406,21 @@ def load_batch_meta(checkpoint_dir: pathlib.Path) -> dict[str, dict]:
             f"sub-batch {sb['index']} in {checkpoint_dir} has no batch_id — "
             "batch path not exercised; batch provenance unrecoverable"
         )
+        results_path = checkpoint_dir / f"results_{sb['batch_id']}.json"
+        assert results_path.is_file(), (
+            f"sub-batch {sb['index']} in {checkpoint_dir}: {results_path.name} missing — "
+            "batch not harvested; per-batch harvest time unrecoverable"
+        )
+        harvested_at = _dt.datetime.fromtimestamp(
+            results_path.stat().st_mtime, tz=_dt.UTC
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
         for cid in sb["custom_ids"]:
             meta[cid_to_item[cid]] = {
                 "batch_id": sb["batch_id"],
                 "batch_request_custom_id": cid,
                 "batch_org": sb.get("org"),
                 "batch_submitted_at": sb.get("submitted_at"),
+                "harvested_at": harvested_at,
             }
     return meta
 
@@ -397,6 +430,24 @@ def transport_class_ids(results: dict[str, DispatchResult]) -> list[str]:
     return sorted(
         item_id for item_id, res in results.items() if res.category in TRANSPORT_CATEGORIES
     )
+
+
+def _next_redrive_round(root: pathlib.Path) -> int:
+    """First redrive round number strictly PAST any stale redrive dirs on disk.
+
+    The dispatcher re-serves persisted transport-class rows on a resumed
+    checkpoint WITHOUT re-dispatching, so an exit-3 re-run that reused
+    ``redrive1``/``redrive2`` would replay stale state, submit nothing, and
+    deterministically exit 3 again, forever. Numbering this run's fresh rounds
+    at max(existing) + 1 guarantees each process run actually RE-SUBMITS the
+    transport residue.
+    """
+    existing = [
+        int(m.group(1))
+        for d in root.glob("redrive*")
+        if d.is_dir() and (m := re.fullmatch(r"redrive(\d+)", d.name)) is not None
+    ]
+    return max(existing, default=0) + 1
 
 
 def personas_over_cap_threshold(
@@ -444,7 +495,6 @@ def build_records(
     regen_items: set[str],
 ) -> dict[int, list[dict]]:
     """Per-persona generation records; every record batch-provenance-complete."""
-    harvested_at = _utc_now()
     by_persona: dict[int, list[dict]] = {p: [] for p in range(N_PERSONAS)}
     for i, p in sorted(pairs):
         item_id = make_item_id(p, i)
@@ -472,7 +522,9 @@ def build_records(
             "batch_request_custom_id": meta["batch_request_custom_id"],
             "batch_org": meta["batch_org"],
             "batch_submitted_at": meta["batch_submitted_at"],
-            "harvested_at": harvested_at,
+            # Per-SUB-BATCH harvest time (results_<batch_id>.json mtime, joined
+            # in load_batch_meta) — never a global record-build-time stamp.
+            "harvested_at": meta["harvested_at"],
         }
         # REQUIREMENT 1: batch provenance is present on EVERY persisted record.
         assert rec["batch_id"] and rec["batch_request_custom_id"], (
@@ -481,6 +533,7 @@ def build_records(
         assert rec["batch_submitted_at"] and rec["harvested_at"], (
             f"{item_id}: missing batch timestamps — batch provenance incomplete"
         )
+        assert rec["batch_org"], f"{item_id}: missing batch_org — batch provenance incomplete"
         assert rec["arms"], f"{item_id}: pair belongs to no arm — assignment join broken"
         by_persona[p].append(rec)
     return by_persona
@@ -544,6 +597,26 @@ def write_json(path: pathlib.Path, obj: dict | list) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1))
     tmp.rename(path)
+
+
+def _require_canonical_upload(url: str, canonical_url: str) -> None:
+    """Refuse to declare P-Gen complete on an overflow-rerouted upload.
+
+    ``_upload_folder_filtered``'s default-on file-count fallback re-uploads to
+    ``DEFAULT_OVERFLOW_REPO``, runs its exact-set verification against the
+    OVERFLOW repo, and returns a truthy overflow URL — so a bare truthiness
+    check would log "P-Gen complete" while the plan-declared CANONICAL paths
+    do not exist. Raises unless the returned URL is exactly the canonical one.
+    """
+    if url != canonical_url:
+        raise RuntimeError(
+            "HALT-AND-REPORT: HF upload landed OFF the canonical data repo — returned "
+            f"{url!r}, expected {canonical_url!r} (file-count overflow reroute). The "
+            f"plan-declared canonical paths do not exist; overflow pointer: {url}. "
+            "Refusing to report P-Gen complete. Remedy: triage/free the canonical "
+            "repo's file-count cap, then re-run (already-landed rows resume from the "
+            "batch checkpoints; the upload re-verifies idempotently)."
+        )
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -624,15 +697,23 @@ def main(argv: list[str] | None = None) -> None:
     max_tokens_by_item = {it.item_id: GEN_MAX_TOKENS for it in items}
     items_by_id = {it.item_id: it for it in items}
     redrive_rounds = 0
-    for rnd in range(1, MAX_TRANSPORT_REDRIVES + 1):
+    first_round = _next_redrive_round(root)
+    for rnd in range(first_round, first_round + MAX_TRANSPORT_REDRIVES):
         pending = transport_class_ids(results)
         if not pending:
             break
-        redrive_rounds = rnd
-        logger.warning("Re-driving %d transport-class rows (round %d)", len(pending), rnd)
+        redrive_rounds += 1
+        logger.warning(
+            "Re-driving %d transport-class rows (round %d of this run, dir redrive%d)",
+            len(pending),
+            redrive_rounds,
+            rnd,
+        )
         sub = [items_by_id[iid] for iid in pending]
-        # Fresh checkpoint dir: the dispatcher checkpoint re-serves persisted
-        # transport rows on resume, so re-drive must not reuse the old state.
+        # Fresh checkpoint dir per round AND per process run (numbered past any
+        # stale redrive dirs): the dispatcher checkpoint re-serves persisted
+        # transport rows on resume WITHOUT re-dispatching, so re-drive must
+        # never reuse a prior round's — or a prior run's — state.
         rd_results = asyncio.run(
             _dispatch(sub, root / f"redrive{rnd}", GEN_MAX_TOKENS, poll_interval)
         )
@@ -665,10 +746,17 @@ def main(argv: list[str] | None = None) -> None:
         }
         write_json(eval_dir / "gen_digest.json", report)
         logger.error(
-            "HALT-AND-REPORT: %d transport-class rows remain after %d re-drives; "
-            "digest at %s; re-run this command to resume from the batch checkpoints",
+            "HALT-AND-REPORT: %d transport-class rows remain after %d fresh re-drive "
+            "round(s) this run (checkpoint dirs through redrive%d); digest at %s. "
+            "Re-running this command resumes completed rows from the batch checkpoints "
+            "and RE-SUBMITS the remaining rows in fresh redrive dirs numbered past the "
+            "stale ones (stale redrive checkpoints are never reused for new "
+            "submissions). Repeated exit-3 halts indicate a persistent transport / "
+            "rate-limit problem — check org limits and the Anthropic batch console "
+            "before re-running.",
             len(remaining),
             redrive_rounds,
+            first_round + MAX_TRANSPORT_REDRIVES - 1,
             eval_dir / "gen_digest.json",
         )
         sys.exit(3)
@@ -686,13 +774,39 @@ def main(argv: list[str] | None = None) -> None:
             REGEN_MAX_TOKENS,
         )
         sub = [items_by_id[iid] for iid in ids]
-        rg = asyncio.run(_dispatch(sub, root / f"regen_p{p:02d}", REGEN_MAX_TOKENS, poll_interval))
+        rg_dir = root / f"regen_p{p:02d}"
+        rg = asyncio.run(_dispatch(sub, rg_dir, REGEN_MAX_TOKENS, poll_interval))
         rg_remaining = transport_class_ids(rg)
-        assert not rg_remaining, (
-            f"regen persona {p}: {len(rg_remaining)} transport-class rows — re-run to resume"
-        )
+        if rg_remaining:
+            report = {
+                "metadata": metadata,
+                "incomplete": True,
+                "reason": "transport_class_rows_remaining_in_regen",
+                "regen_persona": p,
+                "n_remaining": len(rg_remaining),
+                "remaining_ids_first20": rg_remaining[:20],
+                "regen_checkpoint_dir": str(rg_dir),
+                "redrive_rounds_used": redrive_rounds,
+            }
+            write_json(eval_dir / "gen_digest.json", report)
+            logger.error(
+                "HALT-AND-REPORT: cap-hit regen for persona %d has %d transport-class "
+                "rows; digest at %s. A plain re-run REPLAYS this regen checkpoint and "
+                "re-serves the same transport rows without re-dispatching (deterministic "
+                "re-halt). Real remedies: quarantine the stale checkpoint (mv %s %s) so "
+                "the re-run re-submits persona %d's regen rows fresh, and/or investigate "
+                "the transport cause (org rate limits, Anthropic batch console) before "
+                "re-running.",
+                p,
+                len(rg_remaining),
+                eval_dir / "gen_digest.json",
+                rg_dir,
+                rg_dir.with_name(rg_dir.name + ".stale"),
+                p,
+            )
+            sys.exit(3)
         results.update(rg)
-        batch_meta.update(load_batch_meta(root / f"regen_p{p:02d}"))
+        batch_meta.update(load_batch_meta(rg_dir))
         for iid in ids:
             max_tokens_by_item[iid] = REGEN_MAX_TOKENS
             regen_items.add(iid)
@@ -788,6 +902,9 @@ def main(argv: list[str] | None = None) -> None:
             f"HF upload of {len(expected_files)} P-Gen files to {DATA_REPO}/{path_in_repo} "
             "failed or verified incomplete — refusing to report P-Gen complete"
         )
+    # FIX 1: a truthy URL is NOT completion — the helper's file-count fallback
+    # returns a verified OVERFLOW-repo URL; require the canonical repo exactly.
+    _require_canonical_upload(url, f"{DATA_REPO}/{path_in_repo}")
     logger.info("P-Gen complete: %d files uploaded to %s", len(expected_files), url)
     logger.info(
         "Digest: %s | ok=%d/%d error=%d redrives=%d regen_personas=%s",
