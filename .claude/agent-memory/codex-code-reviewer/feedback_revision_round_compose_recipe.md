@@ -1322,3 +1322,25 @@ regression arm = fresh finding at own severity under a NEW id), and a
 `## Crash-fix verification` REQUIRED schema section (per-crash
 root-cause-addressed / fix-engaged-creditable / no-silent-fallback /
 residuals lines) inserted before the ledger-status heading.
+
+**User-greenlit CAP-RAISE fix round on an upheld-own-FAIL (#2378 r6,
+2026-08-20):** when the user reopens a cap-5 park with "more rounds" (cap
+raised to 10), this is NOT the #2333-r6 one-scoped-round shape — frame it as
+an ordinary fix round of the resumed loop ("round 6 of 10, user-extended
+cap"; no out-of-scope-hunk=FAIL clause, standard severity-precision line)
+and inline the greenlight `epm:progress` note in its own envelope: its
+numbered items double as the round contract (the named minimal fix + a
+carry-forward duty), with an explicit split of which items are REVIEWABLE
+in code vs orchestrator-owned (pod reuse, relaunch pacing). Composable with
+#2371 (addressed-not-open ledger) + #2329-rclose (author-neutrality on the
+upheld own FAIL; ruling inlined FIRST as binding, own verdict SECOND
+tag-stripped + rows blockquoted). Also: (a) verify the brief's NEW-file
+labels with `git show <sha> --diff-filter=A --name-only` — the #2378 r6
+brief labeled an r5-created/r6-extended test file NEW; (b) a marker
+diff-stat like "+140/−15" can be a churn-SUM (125+15) — pre-adjudicate as a
+Style note so the twin doesn't flag a phantom falsity; (c) rubric-currency
+hit live AGAIN via the round-parent spec-sync commit itself (`git show
+<sync-sha> -- code-reviewer.md` shows exactly what to patch — here the
+#2201 divergence block, inserted before the "Size the diff" anchor, plus a
+compose-facts line recording the brief's `diverged_on_main: none` probe
+result as do-not-re-derive).
