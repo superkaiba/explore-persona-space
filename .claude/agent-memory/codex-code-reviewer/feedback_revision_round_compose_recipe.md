@@ -1502,6 +1502,35 @@ top-level version is v1 (first reconcile on the task) while the head
 sentinel says v3 (the round) — fetch by kind from events.jsonl and state
 the mapping in the return, never fetch by "v3".
 
+**Same-task r1→r2 whole-round fix round on a FAIL+FAIL union with a TIGHT
+custom r1 shape (#2389 r2, 2026-08-20):** when round 1's prompt was a
+task-specific TIGHT shape (no 80 KB rubric), r2 is a fresh-parts rebuild
+reusing r1's structure (role/coordinates/acquisition/rubrics/verdict), with:
+(a) the closure ledger keyed on the union's B-numbers PLUS the
+orchestrator-adjudicated item (M1-iv) as a 13th row — the impl marker's
+disposition table pre-mints them; state the concern-id↔B-number map so
+NOT-ADDRESSED re-raises reuse persisted ids and VERIFIED-ADDRESSED ids are
+never re-emitted. (b) A twin-WON adjudication (B4 settled empirically in
+Codex's favor, KeyError pre-fix) composes as "your finding was CONFIRMED —
+verify the EXTENSION, do not re-argue", with the empirically-derived missing
+list inlined verbatim (the 7 cells). (c) A blocker fix that RENAMES
+cross-module artifacts (B7 cell-grain shards) gets an explicit
+not-a-plan-deviation fence (the rename is union-sanctioned fix (a); score
+intent-adherence, never the plan's literal filename template) + an
+end-to-end producer/consumer rename walk as the top seam. (d) Post-compose
+agent-memory writes into the SAME worktree falsify the prompt's "tree
+clean" compose-time fact — add an agent-memory carve-out line to the
+tree-clean bullet BEFORE writing memory, and leave the memory files
+uncommitted (a branch commit would advance HEAD past the round tip inside
+the pinned `..HEAD` forms), flagging the sweep in the return. (e)
+Brief/context per-group byte figures can be `git show` measurements —
+re-measure as RANGE diffs (`diff A..B | wc -c`) at compose time and put the
+measured figures next to the commands you actually pin. (f) Inline BOTH
+r1 verdicts (composed union = acceptance contract; own twin verdict =
+context, tags stripped + rows blockquoted per #2329-rclose) and the FULL
+14-row ledger snapshot (7 raised + 7 implementer-addressed = all round
+inputs when their ts predate the impl marker ts).
+
 **Reconciler-narrowed-remedy fix round, reconcile-note-only contract (#2201
 cr2, 2026-08-19):** when the reconciler upheld the twin's DIRECTION on ALL
 its findings but NARROWED every remedy, the reconcile note alone is the
