@@ -32,6 +32,7 @@
 - [Tracked-artifact lifecycle across phases](feedback_claude_misses_tracked_artifact_lifecycle_across_phases.md) — producing-phase harvest ≠ safe: later ensures rewrite it, scoped harvest omits it, pod rebase (no autostash) refuses in ALL states; scratch-repo probe (#2378 r5)
 - [Guard fix on command-GLOBAL evidence flags: probe MULTI-clause records](feedback_claude_certifies_guard_fix_single_clause_only.md) — two-clause bare+pathspec record flips block→permit (#2371 r2)
 - [Union matchers: probe legal-prefix × lead-only-family cross product](feedback_union_matcher_probe_prefix_cross_product.md) — execute the escape on both blobs (#2357 r4)
+- [Enumerated-fix rounds: probe the COMPLEMENT for surviving species](feedback_claude_enumerated_fix_misses_complement_species.md) — claimed-set verification ≠ disclosure completeness; noticed-but-downgraded style note is the tell (#2228 r2)
 - [Split-review composites miss cross-commit plan contracts](feedback_split_review_misses_cross_commit_plan_contracts.md) — grep §9 writers + §8/§11 controls + marker claims yourself (#2330 r1)
 - [Mode-dependent durability doc claims](feedback_mode_dependent_durability_doc_claims.md) — clause-local verify misses cross-clause falsification; dictate wording on round-3 loop (#2326 r3)
 - [Fix-round closure: expand elided plan quotes](feedback_fix_round_closure_elided_control_arm.md) — "VERIFIED FIXED" quoted §8 minus a control arm; brief never rescopes the plan (#2330 r2)
