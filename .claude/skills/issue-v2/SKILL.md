@@ -508,10 +508,11 @@ residual, interactive → surface, autonomous → `epm:failure` + block.
 (figures were committed + pinned at Step 7b), write the report body and park:
 
 ```bash
-# --allow-goal-drop is DELIBERATE: the report-v1 skeleton carries `## Motivation:`,
-# not `## Goal` (the `goal:` frontmatter is preserved by set_body), so the Goal-H2
-# drop guard (#1112) must be explicitly overridden here.
-uv run python scripts/task.py set-body <N> --file <report-draft>.md --snapshot --allow-goal-drop
+# The Goal-H2 drop guard (#1112) AUTO-EXEMPTS a `workflow: v2` report body (#2197):
+# the positional `<!-- report-v1 -->` sentinel + the task's `workflow: v2` frontmatter
+# are the discriminator, so no --allow-goal-drop is needed here (the flag is retained
+# only for non-report deliberate drops; `goal:` frontmatter is preserved by set_body).
+uv run python scripts/task.py set-body <N> --file <report-draft>.md --snapshot
 uv run python scripts/task.py set-title <N> "Experiment: <one-line question>"   # Thomas retitles to "Result: <claim>" (+ confidence tag) at promote
 uv run python scripts/task.py set-clean-result <N>                              # accepts the report-v1 sentinel
 uv run python scripts/task.py post-marker <N> epm:report --note "report-v1 generated + verified; awaiting Thomas TLDR"
