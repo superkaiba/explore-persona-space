@@ -15,13 +15,17 @@ generations) for the k-ladder k in {1, 2, 4, 8, 16}:
    checkpointed + resumable by batch id), re-driving transport-class failures
    on fresh checkpoints (the dispatcher checkpoint re-serves persisted
    transport rows on resume, so caller-side re-drive uses a fresh dir).
-4. Applies the pre-registered cap-hit re-gen trigger: any persona whose
-   `stop_reason == "max_tokens"` fraction exceeds 2 percent gets its over-cap
-   rows re-generated ONCE at max_tokens 8192 (plan v13 section 4.3 step 4);
-   regenerated rows are stamped `gen_wave: "regen-8192"` at regen time and
-   the cap-hit fraction is RE-MEASURED on final records ("regen ran" is
-   never read as "trigger resolved" -- residual over-threshold cells are
-   reported in the digest, not re-cascaded).
+4. Applies the pre-registered cap-hit re-gen trigger PER (arm x persona)
+   CELL (plan v13 section 4.3 step 4 + section 7 -- the v10 per-persona form
+   is superseded): any cell (k, p) whose first-wave
+   `stop_reason == "max_tokens"` fraction exceeds 2 percent triggers; the
+   UNION of over-cap pair rows across ALL triggered cells (a pair belongs to
+   several cells under nesting and is deduped) is re-generated ONCE, in ONE
+   pooled batch, at max_tokens 8192; regenerated rows are stamped
+   `gen_wave: "regen-8192"` at regen time and the per-cell cap-hit fraction
+   is RE-MEASURED on final records ("regen ran" is never read as "trigger
+   resolved" -- residual over-threshold cells are reported in the digest
+   with the literal `cap-hit>2%` label, not re-cascaded).
 5. Persists 16 per-persona record files (every record carrying its Batch
    request custom_id, batch id, submitted/harvested timestamps, its PERSISTED
    requested-max_tokens + `gen_wave`, and the exact dispatched system prompt
@@ -78,6 +82,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import time
 from collections import Counter
 
 from huggingface_hub import hf_hub_download
@@ -117,7 +122,7 @@ MASK_GATE_SCHEMA_ID = "issue823_mask_gate_v11_stop_reason_precedence"
 EXIT_CONFIG_MISMATCH = 4  # resume fingerprint mismatch (section 4.3 step 3b(ii))
 EXIT_P0_INTEGRITY = 5  # P0 prompt-integrity halt (section 4.3 P0 asserts (a)-(d))
 GEN_CONFIG_FILENAME = "gen_config.json"  # per-checkpoint fingerprint + dispatch cap
-CAP_HIT_REGEN_FRACTION = 0.02  # per-persona stop-and-regen trigger
+CAP_HIT_REGEN_FRACTION = 0.02  # per-(arm x persona) CELL stop-and-regen trigger (v13 §7)
 MAX_TRANSPORT_REDRIVES = 2  # bounded caller-side re-drive of transport-class rows
 # FIX C: cumulative ceiling on fresh PAID re-drive rounds across ALL process
 # runs. No new persisted counter — the numbered redriveN checkpoint dirs on
@@ -324,7 +329,12 @@ def check_or_persist_gen_config(checkpoint_dir: pathlib.Path, max_tokens: int) -
             diffs[key] = {"persisted": p_fields.get(key), "live": live["fields"].get(key)}
     if persisted.get("max_tokens") != max_tokens:
         diffs["max_tokens"] = {"persisted": persisted.get("max_tokens"), "live": max_tokens}
-    if p_fp.get("sha256") == live["sha256"] and not diffs:
+    # MINOR 5 (round 4): a corrupted persisted sha with otherwise-identical
+    # fields must still name WHAT differs — the halt report's diagnostic
+    # contract is a non-empty differing_fields on every halt.
+    if p_fp.get("sha256") != live["sha256"]:
+        diffs["fingerprint_sha256"] = {"persisted": p_fp.get("sha256"), "live": live["sha256"]}
+    if not diffs:
         return int(persisted["max_tokens"])
     _halt_config_mismatch(
         checkpoint_dir,
@@ -749,57 +759,91 @@ def _require_redrive_headroom(next_round: int, n_pending: int) -> None:
     sys.exit(3)
 
 
-def personas_over_cap_threshold(
-    stop_by_item: dict[str, str | None], pairs: set[tuple[int, int]]
-) -> dict[int, list[int]]:
-    """Per-persona cap-hit trigger: personas whose max_tokens fraction > 2 percent.
+def cells_over_cap_threshold(
+    stop_by_item: dict[str, str | None], assignment: dict[int, list[int]]
+) -> tuple[dict[str, dict], dict[int, list[int]]]:
+    """Per-(arm x persona) CELL cap-hit trigger (plan v13 §4.3 step 4 + §7).
 
-    Returns {persona: [over-cap context_ids]} for triggered personas only.
+    The registered trigger is PER CELL — the v10 per-persona pooled form is
+    SUPERSEDED (plan §7 Decision-Gates row: "fraction vs 2% per
+    (arm x persona) cell"). Cell (k, p) is the contexts i with
+    ``assignment[k][i] == p``; each cell's FIRST-WAVE
+    ``stop_reason == "max_tokens"`` fraction is compared against
+    ``CAP_HIT_REGEN_FRACTION`` (strictly greater triggers). A pooled
+    per-persona rate can sit at or under 2 percent while one cell (e.g. the
+    k=16 cell, denominator 313) is over — exactly the case the per-persona
+    form missed.
+
+    MULTI-ARM ROWS: under nesting a single (context, persona) pair row
+    belongs to SEVERAL cells (i=5, p=5 sits in both the k=8 and k=16 cells);
+    the regen set is the UNION of over-cap pair ids across ALL triggered
+    cells, deduped by pair identity — one pair regenerates at most once,
+    however many of its cells triggered.
+
+    Returns ``(triggered_cells, regen_pairs)``:
+      - ``triggered_cells``: ``{"k=<k>,p=<p>": {k, persona, n_over_cap,
+        n_rows, fraction}}`` — the TRIGGER-TIME (first-wave) per-cell
+        record, for triggered cells only;
+      - ``regen_pairs``: ``{persona: sorted [context_ids]}`` — the deduped
+        union grouped by persona (the shape ``_dispatch_pooled_regen``
+        consumes; item ids encode the persona, so the grouping is purely a
+        transport convenience — the trigger itself is per cell).
     """
-    by_p: dict[int, list[int]] = {}
-    for i, p in pairs:
-        if stop_by_item.get(make_item_id(p, i)) == "max_tokens":
-            by_p.setdefault(p, []).append(i)
-    n_rows = Counter(p for _, p in pairs)
-    return {
-        p: sorted(rows)
-        for p, rows in by_p.items()
-        if len(rows) / n_rows[p] > CAP_HIT_REGEN_FRACTION
-    }
+    triggered_cells: dict[str, dict] = {}
+    regen_union: dict[int, set[int]] = {}
+    for k in K_ARMS:
+        cell_rows: dict[int, list[int]] = {}
+        for i, p in enumerate(assignment[k]):
+            cell_rows.setdefault(p, []).append(i)
+        for p, rows in sorted(cell_rows.items()):
+            over = [i for i in rows if stop_by_item.get(make_item_id(p, i)) == "max_tokens"]
+            if len(over) / len(rows) > CAP_HIT_REGEN_FRACTION:
+                triggered_cells[f"k={k},p={p}"] = {
+                    "k": k,
+                    "persona": p,
+                    "n_over_cap": len(over),
+                    "n_rows": len(rows),
+                    "fraction": len(over) / len(rows),
+                }
+                regen_union.setdefault(p, set()).update(over)
+    regen_pairs = {p: sorted(rows) for p, rows in sorted(regen_union.items())}
+    return triggered_cells, regen_pairs
 
 
 def _dispatch_pooled_regen(
     root: pathlib.Path,
     items_by_id: dict[str, DispatchItem],
-    regen_personas: dict[int, list[int]],
+    regen_pairs: dict[int, list[int]],
     poll_interval: float,
 ) -> tuple[dict[str, DispatchResult], list[str], pathlib.Path]:
-    """ONE pooled Batch dispatch for every triggered persona's over-cap rows (FIX D).
+    """ONE pooled Batch dispatch for every triggered CELL's over-cap rows (FIX D).
 
-    The >2 percent trigger stays PER PERSONA (``personas_over_cap_threshold``
-    is unchanged); only the TRANSPORT is pooled. The pre-fix path dispatched
-    one batch per persona SERIALLY, each waiting out its own Batch API
-    round-trip (up to the 24 h service window) before the next persona
-    started — 16 personas meant 16 sequential round-trips (#823 pilot log).
-    Per-persona ACCOUNTING is not pooled: the caller keys per-record
-    ``regen`` flags and ``max_tokens`` by item id, and item ids encode the
-    persona. Returns ``(results, pooled_ids, checkpoint_dir)``.
+    The >2 percent trigger is PER (arm x persona) CELL
+    (``cells_over_cap_threshold``); ``regen_pairs`` is the deduped UNION of
+    over-cap pair ids across ALL triggered cells, grouped by persona for
+    item-id construction. Only the TRANSPORT is pooled — the pre-fix path
+    dispatched one batch per persona SERIALLY, each waiting out its own
+    Batch API round-trip (up to the 24 h service window) before the next
+    started (#823 pilot log); FIX D's single-round-trip property survives
+    the per-cell trigger unchanged: exactly ONE regen round, ONE dispatch,
+    no cascade. Per-row ACCOUNTING is not pooled: the caller keys
+    per-record ``regen`` flags and ``max_tokens`` by item id, and item ids
+    encode the persona. Returns ``(results, pooled_ids, checkpoint_dir)``.
     """
-    for p, ctx_rows in sorted(regen_personas.items()):
+    for p, ctx_rows in sorted(regen_pairs.items()):
         logger.warning(
-            "Cap-hit trigger: persona %d has %d over-cap rows — re-generating at %d tokens",
+            "Cap-hit regen union: persona %d contributes %d over-cap pair row(s) — "
+            "re-generating at %d tokens",
             p,
             len(ctx_rows),
             REGEN_MAX_TOKENS,
         )
-    pooled_ids = sorted(
-        make_item_id(p, i) for p, ctx_rows in regen_personas.items() for i in ctx_rows
-    )
+    pooled_ids = sorted(make_item_id(p, i) for p, ctx_rows in regen_pairs.items() for i in ctx_rows)
     rg_dir = root / "regen_pooled"
     logger.info(
-        "Pooled cap-hit regen: ONE batch dispatch for %d rows across %d triggered persona(s)",
+        "Pooled cap-hit regen: ONE batch dispatch for %d rows spanning %d persona(s)",
         len(pooled_ids),
-        len(regen_personas),
+        len(regen_pairs),
     )
     sub = [items_by_id[iid] for iid in pooled_ids]
     rg = asyncio.run(_dispatch(sub, rg_dir, REGEN_MAX_TOKENS, poll_interval))
@@ -908,7 +952,8 @@ def build_digest(
     by_persona: dict[int, list[dict]],
     mask_crosscheck: dict,
     redrive_rounds: int,
-    regen_personas: dict[int, list[int]],
+    triggered_cells: dict[str, dict],
+    regen_pairs: dict[int, list[int]],
     metadata: dict,
 ) -> dict:
     validity_by_persona: dict[int, dict] = {}
@@ -939,10 +984,11 @@ def build_digest(
     # CONVERGENCE SEMANTICS (plan v13 section 4.3 step 4): the post-regen
     # RE-MEASURE on FINAL records -- "regen ran" is never read as "trigger
     # resolved". Cells still over the trigger are NOT re-cascaded; they are
-    # enumerated here for the M3 truncation-confound diagnostic and the
-    # `cap-hit>2%` labels every downstream table/figure must carry.
+    # enumerated here for the M3 truncation-confound diagnostic, each
+    # carrying the LITERAL `cap-hit>2%` label every downstream table/figure
+    # must render (plan section 7 Decision-Gates row).
     cells_over_post_regen = [
-        {"k": k, "persona": p, "cap_hit_fraction": f}
+        {"k": k, "persona": p, "cap_hit_fraction": f, "label": "cap-hit>2%"}
         for k in K_ARMS
         for p, f in sorted(cap_frac_by_arm_persona[k].items())
         if f > CAP_HIT_REGEN_FRACTION
@@ -958,21 +1004,16 @@ def build_digest(
         "cap_hit_fraction_by_arm_persona": cap_frac_by_arm_persona,
         "cap_hit_cells_over_threshold_post_regen": cells_over_post_regen,
         "cap_hit_regen_trigger_fraction": CAP_HIT_REGEN_FRACTION,
-        "regen_personas_triggered": {p: len(rows) for p, rows in regen_personas.items()},
-        # Realized TRIGGER-TIME over-cap rate per triggered persona (count +
-        # denominator + fraction, readable without recomputation). The
-        # post-regen `cap_hit` fields above UNDERSTATE the first-pass rate
-        # for triggered personas, because regenerated rows usually clear the
-        # 2x cap; non-triggered personas' first-pass rate IS
-        # cap_hit_fraction_by_persona (they were never regenerated).
-        "regen_over_cap_at_trigger_by_persona": {
-            p: {
-                "n_over_cap": len(rows),
-                "n_rows": validity_by_persona[p]["n_rows"],
-                "fraction": len(rows) / validity_by_persona[p]["n_rows"],
-            }
-            for p, rows in sorted(regen_personas.items())
-        },
+        # Realized TRIGGER-TIME (first-wave) per-CELL record: count +
+        # denominator + fraction per triggered (arm x persona) cell, readable
+        # without recomputation. The post-regen `cap_hit` fields above
+        # UNDERSTATE the first-pass rate for regenerated rows (regenerated
+        # rows usually clear the 2x cap); non-triggered cells' first-pass
+        # rate IS cap_hit_fraction_by_arm_persona (never regenerated).
+        "regen_cells_triggered": triggered_cells,
+        # The pooled regen union grouped by persona (transport accounting;
+        # the trigger itself is per cell).
+        "regen_pairs_by_persona": {p: len(rows) for p, rows in sorted(regen_pairs.items())},
         "redrive_rounds_used": redrive_rounds,
         "n_error_rows": len(error_ids),
         "error_row_ids_first20": error_ids[:20],
@@ -1082,35 +1123,184 @@ def p0_reconstruct_system(idx: int) -> str:
     return out.replace("{card}", card)
 
 
+def p0_verify_persona_records(
+    p: int,
+    recs: list,
+    questions: list[str],
+    n_contexts: int,
+) -> tuple[list[dict], set[tuple[int, int]]]:
+    """Verify ONE persona bucket's records (per-record halves of asserts (a)/(c)/(d)).
+
+    Returns ``(failures, seen_pairs)``. ``seen_pairs`` carries each record's
+    OWN ``(context_id, persona_idx)`` identity (never the bucket key); the
+    caller (``p0_prompt_integrity_gate``) owns the cross-bucket domain
+    checks — exact expected-pair-set equality and cross-bucket duplicates.
+    Per-record checks here:
+
+    - strict schema: a record must be a dict with int ``context_id`` +
+      int ``persona_idx`` (malformed shapes become "c"/malformed_record
+      failures on the rc-5 report path, never an unhandled exception);
+    - bucket agreement: ``persona_idx`` must equal the bucket the record is
+      persisted under;
+    - within-bucket duplicate pair detection;
+    - (a) question authority: the record's ``question`` is byte-equal to the
+      pinned parent bundle's question for its context (a CONSISTENTLY-wrong
+      question across all files fails here — cross-file consistency alone
+      cannot catch it);
+    - (c) prompt byte equality: persisted system prompt + persisted sha256
+      vs this gate's own reconstruction under the record's
+      ASSIGNMENT-derived persona identity (``persona_idx``, validated
+      against the expected pair set by the caller), never the bucket key;
+    - (d) persisted requested-max_tokens in {GEN_MAX_TOKENS,
+      REGEN_MAX_TOKENS} with the consistent ``gen_wave`` label.
+    """
+    failures: list[dict] = []
+    seen: set[tuple[int, int]] = set()
+    wave_for_cap = {GEN_MAX_TOKENS: GEN_WAVE_FIRST, REGEN_MAX_TOKENS: GEN_WAVE_REGEN}
+    expected_cache: dict[int, tuple[str, str]] = {}
+    if not isinstance(recs, list):
+        failures.append(
+            {
+                "assert": "c",
+                "kind": "malformed_bucket",
+                "persona_bucket": p,
+                "detail": f"records payload is {type(recs).__name__}, not a list",
+            }
+        )
+        return failures, seen
+    for pos, rec in enumerate(recs):
+        if (
+            not isinstance(rec, dict)
+            or not isinstance(rec.get("context_id"), int)
+            or not isinstance(rec.get("persona_idx"), int)
+        ):
+            failures.append(
+                {
+                    "assert": "c",
+                    "kind": "malformed_record",
+                    "persona_bucket": p,
+                    "record_pos": pos,
+                    "detail": "record is not a dict with int context_id + int persona_idx",
+                }
+            )
+            continue
+        i = rec["context_id"]
+        p_idx = rec["persona_idx"]
+        pair = {"context_id": i, "persona_idx": p_idx}
+        if p_idx != p:
+            failures.append({"assert": "c", "kind": "bucket_mismatch", **pair, "persona_bucket": p})
+        if (i, p_idx) in seen:
+            failures.append({"assert": "c", "kind": "duplicate_pair", **pair, "persona_bucket": p})
+        seen.add((i, p_idx))
+        # (a) question authority vs the pinned bundle.
+        if not 0 <= i < min(n_contexts, len(questions)):
+            failures.append(
+                {"assert": "a", "kind": "context_id_out_of_range", **pair, "n_contexts": n_contexts}
+            )
+        elif rec.get("question") != questions[i]:
+            failures.append(
+                {
+                    "assert": "a",
+                    "kind": "question_mismatch",
+                    **pair,
+                    "persisted_question": rec.get("question"),
+                    "bundle_question": questions[i],
+                }
+            )
+        # (c) prompt byte equality under the record's OWN persona identity.
+        if 0 <= p_idx < len(_P0_ROSTER):
+            if p_idx not in expected_cache:
+                ep = p0_reconstruct_system(p_idx)
+                expected_cache[p_idx] = (ep, hashlib.sha256(ep.encode("utf-8")).hexdigest())
+            expected_prompt, expected_sha = expected_cache[p_idx]
+            if (
+                rec.get("system_prompt") != expected_prompt
+                or rec.get("system_prompt_sha256") != expected_sha
+            ):
+                failures.append(
+                    {
+                        "assert": "c",
+                        "kind": "prompt_mismatch",
+                        **pair,
+                        "persisted_system_prompt": rec.get("system_prompt"),
+                        "persisted_sha256": rec.get("system_prompt_sha256"),
+                        "reconstructed_system_prompt": expected_prompt,
+                        "reconstructed_sha256": expected_sha,
+                    }
+                )
+        else:
+            failures.append({"assert": "c", "kind": "persona_idx_out_of_range", **pair})
+        # (d) cap/wave consistency.
+        mt = rec.get("max_tokens")
+        if mt not in wave_for_cap or rec.get("gen_wave") != wave_for_cap[mt]:
+            failures.append(
+                {
+                    "assert": "d",
+                    **pair,
+                    "persisted_max_tokens": mt,
+                    "persisted_gen_wave": rec.get("gen_wave"),
+                    "valid_cap_wave_pairs": {str(c): w for c, w in wave_for_cap.items()},
+                }
+            )
+    return failures, seen
+
+
 def p0_prompt_integrity_gate(
     roster_obj: dict,
     assignment_obj: dict,
     by_persona: dict[int, list[dict]],
     report_dir: pathlib.Path,
+    questions: list[str],
+    verify_persona=None,
 ) -> None:
-    """P0 asserts (a)-(d) (plan v13 section 4.3 P0): designed halt on ANY mismatch.
+    """P0 prompt-integrity gate: designed halt on ANY mismatch, over its OWN domain.
 
-    (a) generated ``roster.json`` content (template + personas) is equal to
-        the plan section-4.1 transcription (the reconstruction authority);
+    Assert labels FOLLOW THE PLAN's (a)-(d) list (plan v13 section 4.3 P0):
+
+    (a) generation-record questions == the pinned-bundle questions (byte
+        equality) for EVERY record — ``questions`` is the authority, loaded
+        from the parent ``b2_seed42.json`` at ``PARENT_REV`` (the frozen
+        context order), so a consistently-wrong question cannot pass;
     (b) ``assignment.json`` reproduces persona(i, k) = i mod k by this
-        gate's OWN arithmetic over every arm;
-    (c) EVERY record's persisted serialized system prompt (and its persisted
-        sha256) is byte-equal to this gate's own reconstruction under that
-        record's persona -- every pair, not only refusals;
+        gate's OWN arithmetic over every arm, with structural validation
+        first: arm keys == K_ARMS, every arm list length == ``n_contexts``,
+        ``n_contexts`` a positive int;
+    (c) per-pair prompt integrity over the EXACT expected pair DOMAIN —
+        presence + byte equality (plan section 7: "presence + byte equality
+        for EVERY pair"): the expected pair set is derived INDEPENDENTLY
+        from persona(i, k) = i mod k over ``range(n_contexts)`` (never from
+        whatever records happen to be present); records flatten under a
+        strict schema with unique ``(context_id, persona_idx)`` keys;
+        missing pairs, unexpected pairs, duplicates (within and across
+        buckets), wrong-bucket records, malformed shapes, and any
+        prompt/sha byte mismatch vs this gate's own reconstruction all fail
+        here. An ALL-EMPTY record set therefore FAILS (every expected pair
+        missing) — never a vacuous PASS. Roster/template transcription
+        equality vs the plan section-4.1 authority is (c)'s
+        reconstruction-authority precondition and is labeled "c" too;
     (d) EVERY record's persisted requested-max_tokens is in
         {GEN_MAX_TOKENS, REGEN_MAX_TOKENS} with a consistent ``gen_wave``.
 
-    On failure: report JSON (pair ids, personas, both serializations) at
+    ``verify_persona`` (default :func:`p0_verify_persona_records`) is the
+    per-bucket seam ``run_p0_verify`` wraps with its durable per-persona
+    checkpoint; each bucket emits one FLUSHED progress line
+    (``[p0] persona k/N ...``).
+
+    On ANY failure — malformed shapes included — the rc-5 report path
+    fires: report JSON (pair ids, personas, both serializations) at
     ``report_dir / "p0_integrity_report.json"`` + exit ``EXIT_P0_INTEGRITY``
-    (5) -- a designed halt BEFORE mask construction, never silent.
+    (5), a designed halt BEFORE mask construction, never silent.
     """
+    if verify_persona is None:
+        verify_persona = p0_verify_persona_records
     failures: list[dict] = []
 
-    # (a) roster equality vs the independent transcription.
+    # (c) precondition: roster/template equality vs the independent
+    # section-4.1 transcription (the reconstruction authority).
     if roster_obj.get("template") != _P0_TEMPLATE:
         failures.append(
             {
-                "assert": "a",
+                "assert": "c",
                 "field": "template",
                 "generated": roster_obj.get("template"),
                 "reconstructed": _P0_TEMPLATE,
@@ -1120,7 +1310,7 @@ def p0_prompt_integrity_gate(
     if len(gen_personas) != len(_P0_ROSTER):
         failures.append(
             {
-                "assert": "a",
+                "assert": "c",
                 "field": "personas_length",
                 "generated": len(gen_personas),
                 "reconstructed": len(_P0_ROSTER),
@@ -1132,14 +1322,26 @@ def p0_prompt_integrity_gate(
             if (got.get("idx"), got.get("name"), got.get("card")) != (p, name, card):
                 failures.append(
                     {
-                        "assert": "a",
+                        "assert": "c",
                         "field": f"personas[{p}]",
                         "generated": got,
                         "reconstructed": {"idx": p, "name": name, "card": card},
                     }
                 )
 
-    # (b) independent i mod k recompute over every arm of assignment.json.
+    # (b) structural validation FIRST: the gate verifies its own domain
+    # inputs before trusting them (round-4 BLOCKER 2).
+    n_contexts = assignment_obj.get("n_contexts")
+    if not isinstance(n_contexts, int) or n_contexts <= 0:
+        failures.append(
+            {
+                "assert": "b",
+                "field": "n_contexts",
+                "generated": n_contexts,
+                "detail": "assignment.json n_contexts missing or not a positive int",
+            }
+        )
+        n_contexts = None
     arms = assignment_obj.get("arms") or {}
     if sorted(arms) != sorted(str(k) for k in K_ARMS):
         failures.append(
@@ -1152,6 +1354,21 @@ def p0_prompt_integrity_gate(
         )
     for k_str, per in sorted(arms.items(), key=lambda kv: int(kv[0])):
         k = int(k_str)
+        if not isinstance(per, list):
+            failures.append(
+                {"assert": "b", "arm_k": k, "field": "arm_type", "generated": type(per).__name__}
+            )
+            continue
+        if n_contexts is not None and len(per) != n_contexts:
+            failures.append(
+                {
+                    "assert": "b",
+                    "arm_k": k,
+                    "field": "arm_length",
+                    "generated": len(per),
+                    "expected": n_contexts,
+                }
+            )
         bad = [(i, p) for i, p in enumerate(per) if p != i % k]
         for i, p in bad[:20]:
             failures.append(
@@ -1160,43 +1377,73 @@ def p0_prompt_integrity_gate(
         if len(bad) > 20:
             failures.append({"assert": "b", "arm_k": k, "n_bad_total": len(bad)})
 
-    # (c) per-record byte equality vs this gate's OWN reconstruction, plus
-    # (d) persisted cap in {base, regen} with a consistent gen_wave label.
-    wave_for_cap = {GEN_MAX_TOKENS: GEN_WAVE_FIRST, REGEN_MAX_TOKENS: GEN_WAVE_REGEN}
-    for p, recs in sorted(by_persona.items()):
-        expected_prompt = p0_reconstruct_system(p)
-        expected_sha = hashlib.sha256(expected_prompt.encode("utf-8")).hexdigest()
-        for rec in recs:
-            pair = {"context_id": rec.get("context_id"), "persona_idx": p}
-            if (
-                rec.get("system_prompt") != expected_prompt
-                or rec.get("system_prompt_sha256") != expected_sha
-            ):
-                failures.append(
-                    {
-                        "assert": "c",
-                        **pair,
-                        "persisted_system_prompt": rec.get("system_prompt"),
-                        "persisted_sha256": rec.get("system_prompt_sha256"),
-                        "reconstructed_system_prompt": expected_prompt,
-                        "reconstructed_sha256": expected_sha,
-                    }
-                )
-            mt = rec.get("max_tokens")
-            if mt not in wave_for_cap or rec.get("gen_wave") != wave_for_cap[mt]:
-                failures.append(
-                    {
-                        "assert": "d",
-                        **pair,
-                        "persisted_max_tokens": mt,
-                        "persisted_gen_wave": rec.get("gen_wave"),
-                        "valid_cap_wave_pairs": {str(c): w for c, w in wave_for_cap.items()},
-                    }
-                )
+    # (a) authority coverage: the pinned bundle must cover the domain.
+    if n_contexts is not None and len(questions) < n_contexts:
+        failures.append(
+            {
+                "assert": "a",
+                "field": "questions_length",
+                "generated": len(questions),
+                "expected_at_least": n_contexts,
+            }
+        )
+
+    # Per-record checks per bucket (asserts (a)/(c)/(d)), with cross-bucket
+    # duplicate detection and one FLUSHED progress line per bucket.
+    t0 = time.monotonic()
+    seen_pairs: set[tuple[int, int]] = set()
+    buckets = sorted(by_persona.items())
+    for idx, (p, recs) in enumerate(buckets, start=1):
+        p_failures, p_seen = verify_persona(p, recs, questions, n_contexts or 0)
+        failures.extend(p_failures)
+        for i, pi in sorted(seen_pairs & p_seen)[:20]:
+            failures.append(
+                {
+                    "assert": "c",
+                    "kind": "duplicate_pair_cross_bucket",
+                    "context_id": i,
+                    "persona_idx": pi,
+                }
+            )
+        seen_pairs |= p_seen
+        n_recs = len(recs) if isinstance(recs, list) else 0
+        print(
+            f"[p0] persona {idx}/{len(buckets)} p={p:02d} records={n_recs} "
+            f"elapsed={time.monotonic() - t0:.1f}s",
+            flush=True,
+        )
+
+    # (c) domain: EXACT set equality against the INDEPENDENTLY-derived
+    # expected pair set (persona(i, k) = i mod k over range(n_contexts)).
+    if n_contexts is not None:
+        expected_pairs = {(i, i % k) for k in K_ARMS for i in range(n_contexts)}
+        missing = sorted(expected_pairs - seen_pairs)
+        extra = sorted(seen_pairs - expected_pairs)
+        for i, pi in missing[:20]:
+            failures.append(
+                {"assert": "c", "kind": "missing_pair", "context_id": i, "persona_idx": pi}
+            )
+        if len(missing) > 20:
+            failures.append(
+                {"assert": "c", "kind": "missing_pairs_total", "n_missing_total": len(missing)}
+            )
+        for i, pi in extra[:20]:
+            failures.append(
+                {"assert": "c", "kind": "unexpected_pair", "context_id": i, "persona_idx": pi}
+            )
+        if len(extra) > 20:
+            failures.append(
+                {"assert": "c", "kind": "unexpected_pairs_total", "n_extra_total": len(extra)}
+            )
 
     if not failures:
         n_records = sum(len(recs) for recs in by_persona.values())
-        logger.info("P0 prompt-integrity gate PASS: %d records, asserts (a)-(d) clean", n_records)
+        logger.info(
+            "P0 prompt-integrity gate PASS: %d records over %d expected pairs, "
+            "asserts (a)-(d) clean",
+            n_records,
+            len(seen_pairs),
+        )
         return
     report = {
         "reason": "p0_prompt_integrity_failure",
@@ -1217,21 +1464,92 @@ def p0_prompt_integrity_gate(
     sys.exit(EXIT_P0_INTEGRITY)
 
 
-def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path) -> None:
+def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path, dl_dir: pathlib.Path) -> None:
     """Standalone P0 gate over already-persisted P-Gen artifacts (``--p0-verify``).
 
     The pod-side P0 phase stages the P-Gen artifacts from HF and runs this
     exact gate BEFORE mask construction; any mismatch is the designed halt
-    (report JSON + exit 5) rather than a corrupted-stimulus headline.
+    (report JSON + exit 5) rather than a corrupted-stimulus headline. The
+    question AUTHORITY is re-downloaded at ``PARENT_REV`` via
+    :func:`load_frozen_questions` (the same pinned loader P-Gen dispatched
+    from), so assert (a) compares against the bundle, never against the
+    records themselves.
+
+    Restartability (round-4 BLOCKER 4): per-persona completion is DURABLE —
+    ``report_dir / "p0_verify_progress.json"`` records, per persona file,
+    its sha256 + verification outcome, keyed on the generation-config
+    fingerprint (from the persisted ``_gen_complete.json`` sentinel when
+    present, else the live fingerprint). A re-run reuses byte-identical,
+    previously-CLEAN persona files (content-addressed by sha256) and
+    re-verifies everything else; each persona flushes its checkpoint entry
+    the moment it completes (atomic tmp+rename), and the gate emits one
+    FLUSHED ``[p0] persona k/16 ...`` progress line per bucket.
     """
     roster_obj = json.loads((stage_dir / "roster.json").read_text())
     assignment_obj = json.loads((stage_dir / "assignment.json").read_text())
+    n_ctx = assignment_obj.get("n_contexts")
+    questions_full, _, _ = load_frozen_questions(dl_dir)
+    questions = questions_full[: n_ctx if isinstance(n_ctx, int) and n_ctx > 0 else None]
+
+    fp = None
+    sentinel_path = stage_dir / "_gen_complete.json"
+    if sentinel_path.is_file():
+        sent = json.loads(sentinel_path.read_text())
+        fp = (sent.get("generation_config_fingerprint") or {}).get("sha256")
+    if not fp:
+        fp = generation_config_fingerprint()["sha256"]
+
+    ckpt_path = report_dir / "p0_verify_progress.json"
+    ckpt: dict = {"fingerprint": fp, "personas": {}}
+    if ckpt_path.is_file():
+        prior = json.loads(ckpt_path.read_text())
+        if prior.get("fingerprint") == fp and isinstance(prior.get("personas"), dict):
+            ckpt = prior
+        else:
+            logger.warning(
+                "P0 verify checkpoint at %s keyed to a DIFFERENT generation fingerprint "
+                "(%s != %s) — restarting verification fresh",
+                ckpt_path,
+                prior.get("fingerprint"),
+                fp,
+            )
+
     by_persona: dict[int, list[dict]] = {}
+    file_sha: dict[int, str] = {}
     for p in range(N_PERSONAS):
         f = stage_dir / f"persona{p:02d}_seed42.json"
         assert f.is_file(), f"--p0-verify: missing persisted persona file {f}"
+        file_sha[p] = _sha256_file(f)
         by_persona[p] = json.loads(f.read_text())["records"]
-    p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, report_dir)
+
+    def cached_verify(
+        p: int, recs: list, qs: list[str], n_contexts: int
+    ) -> tuple[list[dict], set[tuple[int, int]]]:
+        ent = ckpt["personas"].get(str(p))
+        if ent and ent.get("file_sha256") == file_sha[p] and ent.get("n_failures") == 0:
+            logger.info(
+                "P0 persona %02d: checkpoint-clean (file sha256 match) — reusing prior verify", p
+            )
+            return [], {(i, p) for i in ent["context_ids"]}
+        failures, seen = p0_verify_persona_records(p, recs, qs, n_contexts)
+        ckpt["personas"][str(p)] = {
+            "file_sha256": file_sha[p],
+            "n_records": len(recs) if isinstance(recs, list) else 0,
+            "n_failures": len(failures),
+            "context_ids": sorted(i for i, _ in seen),
+            "verified_at": _utc_now(),
+        }
+        write_json(ckpt_path, ckpt)  # durable per-persona flush (atomic tmp+rename)
+        return failures, seen
+
+    p0_prompt_integrity_gate(
+        roster_obj,
+        assignment_obj,
+        by_persona,
+        report_dir,
+        questions,
+        verify_persona=cached_verify,
+    )
     logger.info("P0 prompt-integrity verify PASS over %s", stage_dir)
 
 
@@ -1305,7 +1623,7 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     if args.p0_verify:
-        run_p0_verify(stage_dir, eval_dir)
+        run_p0_verify(stage_dir, eval_dir, root / "parent_inputs")
         return
 
     # 1. Frozen questions (full-grain validation, then slice for smoke).
@@ -1411,15 +1729,17 @@ def main(argv: list[str] | None = None) -> None:
         )
         sys.exit(3)
 
-    # 4. Pre-registered cap-hit re-gen trigger (per persona, > 2 percent);
-    # dispatch POOLED into ONE batch (FIX D) — the pre-fix per-persona loop
+    # 4. Pre-registered cap-hit re-gen trigger PER (arm x persona) CELL
+    # (plan v13 section 4.3 step 4 + section 7 — the v10 per-persona form is
+    # superseded); the UNION of over-cap pair rows across ALL triggered cells
+    # dispatches POOLED into ONE batch (FIX D) — the pre-fix per-persona loop
     # serialized one full Batch API round-trip per triggered persona.
     stop_by_item = {iid: res.stop_reason for iid, res in results.items()}
-    regen_personas = personas_over_cap_threshold(stop_by_item, pairs)
+    triggered_cells, regen_pairs = cells_over_cap_threshold(stop_by_item, assignment)
     regen_items: set[str] = set()
-    if regen_personas:
+    if regen_pairs:
         rg, pooled_ids, rg_dir = _dispatch_pooled_regen(
-            root, items_by_id, regen_personas, poll_interval
+            root, items_by_id, regen_pairs, poll_interval
         )
         rg_remaining = transport_class_ids(rg)
         if rg_remaining:
@@ -1427,9 +1747,8 @@ def main(argv: list[str] | None = None) -> None:
                 "metadata": metadata,
                 "incomplete": True,
                 "reason": "transport_class_rows_remaining_in_regen",
-                "regen_personas_triggered": {
-                    p: len(rows) for p, rows in sorted(regen_personas.items())
-                },
+                "regen_cells_triggered": triggered_cells,
+                "regen_pairs_by_persona": {p: len(rows) for p, rows in sorted(regen_pairs.items())},
                 "n_remaining": len(rg_remaining),
                 "remaining_ids_first20": rg_remaining[:20],
                 "regen_checkpoint_dir": str(rg_dir),
@@ -1438,14 +1757,14 @@ def main(argv: list[str] | None = None) -> None:
             write_json(eval_dir / "gen_digest.json", report)
             logger.error(
                 "HALT-AND-REPORT: pooled cap-hit regen has %d transport-class rows "
-                "(triggered personas: %s); digest at %s. A plain re-run REPLAYS this "
+                "(triggered cells: %s); digest at %s. A plain re-run REPLAYS this "
                 "regen checkpoint and re-serves the same transport rows without "
                 "re-dispatching (deterministic re-halt). Real remedies: quarantine the "
                 "single pooled checkpoint (mv %s %s) so the re-run re-submits the "
                 "pooled regen rows fresh, and/or investigate the transport cause (org "
                 "rate limits, Anthropic batch console) before re-running.",
                 len(rg_remaining),
-                sorted(regen_personas),
+                sorted(triggered_cells),
                 eval_dir / "gen_digest.json",
                 rg_dir,
                 rg_dir.with_name(rg_dir.name + ".stale"),
@@ -1515,7 +1834,7 @@ def main(argv: list[str] | None = None) -> None:
     # serializer/roster/assignment defect halts BEFORE upload; the pod-side
     # P0 phase re-runs the same gate over the staged artifacts (--p0-verify)
     # before mask construction.
-    p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, eval_dir)
+    p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, eval_dir, questions)
 
     digest = build_digest(
         n_contexts,
@@ -1524,7 +1843,8 @@ def main(argv: list[str] | None = None) -> None:
         by_persona,
         mask_crosscheck,
         redrive_rounds,
-        regen_personas,
+        triggered_cells,
+        regen_pairs,
         metadata,
     )
     write_json(eval_dir / "gen_digest.json", digest)
@@ -1569,13 +1889,13 @@ def main(argv: list[str] | None = None) -> None:
     _require_canonical_upload(url, f"{DATA_REPO}/{path_in_repo}")
     logger.info("P-Gen complete: %d files uploaded to %s", len(expected_files), url)
     logger.info(
-        "Digest: %s | ok=%d/%d error=%d redrives=%d regen_personas=%s",
+        "Digest: %s | ok=%d/%d error=%d redrives=%d regen_cells=%s",
         eval_dir / "gen_digest.json",
         sentinel["n_ok"],
         len(pairs),
         digest["n_error_rows"],
         redrive_rounds,
-        sorted(regen_personas),
+        sorted(triggered_cells),
     )
 
 

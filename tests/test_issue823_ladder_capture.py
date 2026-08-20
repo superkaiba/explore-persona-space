@@ -22,6 +22,7 @@ import pytest
 
 import scripts.issue823_ladder_capture as ladder_capture
 from scripts.issue823_ladder_capture import (
+    CAP_HIT_REGEN_FRACTION,
     DATA_REPO,
     GENERATION_SUFFIX,
     HF_PREFIX,
@@ -237,6 +238,57 @@ def test_cap_hit_gate_smoke_is_informational():
     by_persona = {0: _cap_rows(100, 3, GEN_MAX_TOKENS)}
     stats = cap_hit_stats_and_gate(by_persona, smoke=True)
     assert stats["gate"] == "WARN-SMOKE-INFORMATIONAL"
+
+
+def _cell_victim_rows() -> dict[int, list[dict]]:
+    """Persona-5 fixture where ONE cell violates while the pooled rate does not.
+
+    60 rows of persona 5 (i % 8 == 5 over range(480)); ONE victim row with
+    i % 16 == 5 capped at the ORIGINAL cap. Cell (16,5) holds 30 of the rows
+    -> 1/30 = 3.3% > 2% violates, while the pooled persona rate (and the k=8
+    cell) sit at 1/60 = 1.67% <= 2% -- the superseded v10 per-persona gate
+    would have PASSED this exact input (round-4 BLOCKER 1, capture sibling).
+    """
+    rows = [_record(i, 5) for i in range(480) if i % 8 == 5]
+    assert len(rows) == 60
+    assert sum(1 for r in rows if 16 in r["arms"]) == 30
+    victim = next(r for r in rows if r["context_id"] % 16 == 5)
+    victim.update(cap_hit=True, stop_reason="max_tokens", max_tokens=GEN_MAX_TOKENS)
+    return {5: rows}
+
+
+def test_cap_hit_gate_trips_per_cell_where_pooled_rate_passes():
+    # Fails pre-fix: the per-persona form saw 1/60 <= 2% and passed; the
+    # per-cell form sees cell (16,5) at 1/30 > 2% and raises, NAMING the cell.
+    by_persona = _cell_victim_rows()
+    assert 1 / 60 <= CAP_HIT_REGEN_FRACTION < 1 / 30  # in-test denominator pin
+    with pytest.raises(RuntimeError, match=re.escape("(16, 5,")):
+        cap_hit_stats_and_gate(by_persona, smoke=False)
+
+
+def test_cap_hit_gate_per_cell_regen_resolves_and_reports_fractions():
+    # The SAME victim regenerated at REGEN_MAX_TOKENS: no un-regenerated
+    # over-cap anywhere -> PASS, with the residual capped row still visible
+    # in the per-cell realized fractions (labelling, never a silent drop).
+    by_persona = _cell_victim_rows()
+    for r in by_persona[5]:
+        if r["cap_hit"]:
+            r["max_tokens"] = REGEN_MAX_TOKENS
+    stats = cap_hit_stats_and_gate(by_persona, smoke=False)
+    assert stats["gate"] == "PASS"
+    assert stats["cap_hit_fraction_by_arm_persona"]["16"]["5"] == pytest.approx(1 / 30)
+    assert stats["unregenerated_overcap_fraction_by_arm_persona"]["16"]["5"] == 0.0
+    assert stats["per_persona"]["5"]["n_residual_cap_at_regen_tokens"] == 1
+
+
+def test_cap_hit_gate_per_cell_smoke_is_informational():
+    # Smoke keeps the per-cell computation but demotes the verdict (the
+    # plan-enumerated production-n-calibrated-gate blind spot).
+    stats = cap_hit_stats_and_gate(_cell_victim_rows(), smoke=True)
+    assert stats["gate"] == "WARN-SMOKE-INFORMATIONAL"
+    assert stats["unregenerated_overcap_fraction_by_arm_persona"]["16"]["5"] == pytest.approx(
+        1 / 30
+    )
 
 
 # ── R2: truncation pre-computation against a signature-conformant fake ──────
