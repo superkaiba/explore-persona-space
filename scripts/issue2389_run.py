@@ -2180,6 +2180,7 @@ def _gate0c_hf_write_canary(cfg: RunConfig) -> None:
     from explore_persona_space.orchestrate.hub import retry_transient
 
     dest = f"{HF_PREFIX}/analysis_tensors/gates/hf_write_canary.json"
+    # HUB_VERIFY_RETRY_EXEMPT: call is wrapped in hub.retry_transient on this line
     ok = retry_transient(lambda: HfApi().file_exists(HF_DATA_WRITE_REPO, dest, repo_type="dataset"))
     assert ok, (
         f"gate 0c: canary {dest} did not resolve on {HF_DATA_WRITE_REPO} — the HF write "

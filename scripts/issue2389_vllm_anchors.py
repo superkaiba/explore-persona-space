@@ -499,6 +499,7 @@ def _read_parity_report(cfg: R.RunConfig) -> dict | None:
     from explore_persona_space.orchestrate.hub import retry_transient
 
     if not retry_transient(
+        # HUB_VERIFY_RETRY_EXEMPT: call is wrapped in hub.retry_transient (this expr)
         lambda: HfApi().file_exists(R.HF_DATA_WRITE_REPO, PARITY_REPORT_REMOTE, repo_type="dataset")
     ):
         return None

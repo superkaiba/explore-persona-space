@@ -447,7 +447,7 @@ def test_leg_d_left_pad_asserts_hold_and_fire(model, tok):
     def corrupt_ids_fn(tokenizer, c):
         from explore_persona_space.experiments.issue1415.steering import context_token_ids
 
-        return context_token_ids(tokenizer, c) + [tok.convert_tokens_to_ids("cats")]
+        return [*context_token_ids(tokenizer, c), tok.convert_tokens_to_ids("cats")]
 
     with pytest.raises(AssertionError):
         _encode_left_padded(model, tok, CONTEXTS, None, corrupt_ids_fn)

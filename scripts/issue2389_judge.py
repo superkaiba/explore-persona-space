@@ -2181,6 +2181,7 @@ def _stage_inputs(args: argparse.Namespace) -> None:
         from explore_persona_space.orchestrate.hub import retry_transient
 
         if retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: call is wrapped in hub.retry_transient (this expr)
             lambda: HfApi().file_exists(DATASET_REPO, _ENGINE_STATUS_REL, repo_type="dataset")
         ):
             hub.stage_hub_file(
