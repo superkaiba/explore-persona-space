@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2406,
+  "highest_id": 2426,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5746,9 +5746,9 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1739",
-      "status": "followups_running",
-      "title": "Mapped-answer readouts match real-answer persona projections off-synthetic and edge direct context probes in most held-out settings, an edge that survives a shuffled-pairing map control at one of two flagship rungs (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1739",
+      "status": "awaiting_promotion",
+      "title": "Mapped-answer probes lead context probes on 10 of 13 held-out rungs, but only one flagship clears the control intervals (MODERATE confidence)"
     },
     "174": {
       "has_clean_result": false,
@@ -8867,8 +8867,8 @@
     "2147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2147",
-      "status": "running",
+      "path": "tasks/completed/2147",
+      "status": "completed",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
     },
     "2148": {
@@ -9275,8 +9275,8 @@
     "2201": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2201",
-      "status": "running",
+      "path": "tasks/completed/2201",
+      "status": "completed",
       "title": "workflow-fix: pre-review deliverable-divergence probe (Step 5a/10d)"
     },
     "2202": {
@@ -9298,15 +9298,15 @@
     "2204": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2204",
-      "status": "running",
+      "path": "tasks/completed/2204",
+      "status": "completed",
       "title": "verify_plan: WARN when a plan registers a test-retest kappa demotion gate while pinning judge temperature 0"
     },
     "2205": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2205",
-      "status": "running",
+      "path": "tasks/completed/2205",
+      "status": "completed",
       "title": "verify_plan c46: also enforce the launch runtime requirement (exactly one of --workload-cmd / --hydra) when dry-parsing plan-embedded dispatch commands"
     },
     "2206": {
@@ -9361,8 +9361,8 @@
     "2212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2212",
-      "status": "proposed",
+      "path": "tasks/completed/2212",
+      "status": "completed",
       "title": "SLURM rsync lanes omit tracked data/ inputs \u2014 lane sibling of #2211"
     },
     "2213": {
@@ -9375,8 +9375,8 @@
     "2214": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2214",
-      "status": "proposed",
+      "path": "tasks/running/2214",
+      "status": "running",
       "title": "daily-fix: test_issue1315_dispatch pollutes the fu3 context registry \u2014 order-dependent Step 9c gate bounce"
     },
     "2215": {
@@ -9397,8 +9397,8 @@
     "2217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2217",
-      "status": "proposed",
+      "path": "tasks/running/2217",
+      "status": "running",
       "title": "Test-order contamination: later-sorting module registers wildchat conv prefix into CONTEXTS (fails test_conv_context_is_wildchat_family in multi-file runs)"
     },
     "2218": {
@@ -9450,8 +9450,8 @@
       "goal": "Reproduce Lu et al. (arXiv 2601.10387) persona-drift results \u2014 per-turn mean response-token activation projections onto the Assistant Axis over synthetic multi-turn conversations (4 domains x 100 conversations, auditor-simulated user, <=15 turns; Fig. 4 + appendix) and the first-turn projection vs second-turn harmful-response-rate correlation (Fig. 5, r=0.39-0.52) \u2014 on Qwen-3-32B with the paper's published vectors (faithful anchor) and Qwen-2.5-7B-Instruct with the in-house #2203 axis, reporting the paper-faithful response-token read alongside prefix-vector and context-vector projection arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2223",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2223",
+      "status": "awaiting_promotion",
       "title": "Every-token capping cuts the reproduced Assistant-Axis persona drift on Qwen3-32B by roughly a third but does not eliminate it (MODERATE confidence)"
     },
     "2224": {
@@ -9487,8 +9487,8 @@
     "2228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2228",
-      "status": "proposed",
+      "path": "tasks/planning/2228",
+      "status": "planning",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
     "2229": {
@@ -10304,9 +10304,9 @@
       "goal": "Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2333",
-      "status": "followups_running",
-      "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's whole-answer behavioral effect (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/2333",
+      "status": "awaiting_promotion",
+      "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's effect on format cells, but the patch's own opening carries reliably less than the full effect on Qwen3.5 language cells (MODERATE confidence)"
     },
     "2334": {
       "has_clean_result": false,
@@ -10651,8 +10651,8 @@
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2379",
-      "status": "running",
+      "path": "tasks/verifying/2379",
+      "status": "verifying",
       "title": "Predicted answer-vector similarity as a predictor of post-inoculation re-elicitation (Kwon et al. rig, answer-side predictor)"
     },
     "238": {
@@ -10731,8 +10731,8 @@
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2389",
-      "status": "running",
+      "path": "tasks/blocked/2389",
+      "status": "blocked",
       "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
     },
     "239": {
@@ -10752,8 +10752,8 @@
     "2391": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2391",
-      "status": "running",
+      "path": "tasks/completed/2391",
+      "status": "completed",
       "title": "workflow-fix: raise the per-reviewer review-round cap from 5 to 10 across all three review loops"
     },
     "2392": {
@@ -10875,12 +10875,152 @@
       "status": "proposed",
       "title": "Lens 6 banned-vocab family: add bit-identity / bit-tolerance noun forms to audit + lens-reference + SPEC (5th coinage-drift instance)"
     },
+    "2407": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2407",
+      "status": "proposed",
+      "title": "Step 6b canonical launch snippet is provision-only \u2014 add the required workload leg + time-budget guidance"
+    },
+    "2408": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2408",
+      "status": "proposed",
+      "title": "verify_plan c46: cover the remaining launch post-parse refusals (execute-workload, no-runpod-fallback+runpod pin, env-pin)"
+    },
+    "2409": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2409",
+      "status": "proposed",
+      "title": "Step 10d pre-push lint gate: 900s per-leg fence is sized off the IDLE range the same section forbids (rc 124 reads as a payload crash)"
+    },
     "241": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/241",
       "status": "archived",
       "title": "Prefix-completion dissociation with base-model answers (control for finetuning artifacts)"
+    },
+    "2410": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2410",
+      "status": "proposed",
+      "title": "Lint: truthy upload URL accepted as canonical completion (3 instances in one round) + hoist _require_canonical_upload into hub"
+    },
+    "2411": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2411",
+      "status": "proposed",
+      "title": "Amendment verification checks the EDITS, not the SITE SET \u2014 add an old-value residual grep"
+    },
+    "2412": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2412",
+      "status": "running",
+      "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
+    },
+    "2413": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2413",
+      "status": "proposed",
+      "title": "Step 10d mapped-invariant leg attributes base-identical sibling-synced files to the payload (the #2302 subtraction never reached it)"
+    },
+    "2414": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2414",
+      "status": "proposed",
+      "title": "Trunk red: scripts/issue1739_r2v2_run.py ungated .upload_file( fails test_no_new_ungated_upload_call_sites on origin/main"
+    },
+    "2415": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2415",
+      "status": "proposed",
+      "title": "Bracketed pgrep ownership probe self-matches when the same command references the unbracketed literal (blinds death detection)"
+    },
+    "2416": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2416",
+      "status": "proposed",
+      "title": "Step 5a sibling-sync runtime-signature-skew residual + Step 10d TG classify-new-nodes missing #2302 base-identity exclusion (false-blocking gate verdict on #2205)"
+    },
+    "2417": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2417",
+      "status": "proposed",
+      "title": "Infra: version-brittle [Pp]ickle assertion reds the gate on py3.12 worktrees + worktree/main interpreter divergence"
+    },
+    "2418": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2418",
+      "status": "archived",
+      "title": "Infra: worktree plans/plan.md symlink resolves to a STALE plan \u2014 briefs following the plan-handoff convention can review against a superseded plan"
+    },
+    "2419": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2419",
+      "status": "proposed",
+      "title": "Infra: add two mechanizable plan-claim checks \u2014 inheritance-claim grep + manifest-figure producer check"
+    },
+    "2420": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2420",
+      "status": "proposed",
+      "title": "Step 5a FAMILY_workflow misses workflow.yaml pin test tests/test_ensemble_review_cap.py \u2014 half-sync vintage skew failed 4 gate nodes on #2205"
+    },
+    "2421": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2421",
+      "status": "proposed",
+      "title": "Step 10d lint-gate fences not contention-aware \u2014 120s scratch-checkout + 900s lint fences crash healthy gates under #1962 fail-open concurrency"
+    },
+    "2422": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2422",
+      "status": "running",
+      "title": "Briefs pointing a worktree-based reviewer at task state must pin the absolute main-checkout path (worktree plans/plan.md resolves to a stale version)"
+    },
+    "2423": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2423",
+      "status": "proposed",
+      "title": "Step 5a sibling sync: the #2208 satisfiability probe never runs on a SCRIPT-only sync, so a synced sibling script's branch-era-unsatisfiable src/ import reds the gate"
+    },
+    "2424": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2424",
+      "status": "proposed",
+      "title": "Step 5a sibling-sync probe INPUT-SET gap: synced sibling SCRIPTS are never import-probed, breaking UNSYNCED covering tests at collection (fork-era src symbol; #2205 issue2094 crash)"
+    },
+    "2425": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2425",
+      "status": "proposed",
+      "title": "experimenter input-data gate: probe sparse-checkout before planned-input-data-missing (#2388 Pod B lesson)"
+    },
+    "2426": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2426",
+      "status": "proposed",
+      "title": "gotchas.md: Anthropic Batch request_counts.succeeded lags \u2014 never key a stall/cancel verdict on it"
     },
     "244": {
       "has_clean_result": false,

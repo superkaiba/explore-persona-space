@@ -217,10 +217,13 @@ def test_good_plan_passes_all():
         # + row floor on one line — trigger-conditional (#2178).
         "c65_smoke_fixture_size": "SKIP",
         "c66_smoke_producer_coverage": "SKIP",
+        # SKIP: GOOD_PLAN carries no retest/κ token, so the per-line
+        # retest∧κ gate conjunction cannot fire — trigger-conditional (#2204).
+        "c67_retest_kappa_temp0": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 63
+    assert len(results) == 64
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6354,12 +6357,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #2174)
     # + c65/c66 (SKIP: GOOD_PLAN carries no smoke-fixture size claim;
     #   trigger-conditional, #2178)
-    assert payload["n_skip"] == 57
+    # + c67 (SKIP: GOOD_PLAN carries no retest∧κ gate line; trigger-
+    #   conditional, #2204)
+    assert payload["n_skip"] == 58
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 66
-    assert len({c["id"] for c in payload["checks"]}) == 66
+    assert len(payload["checks"]) == 67
+    assert len({c["id"] for c in payload["checks"]}) == 67
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -13647,3 +13652,204 @@ def test_c64_verbatim_2163_incident_warns():
     r = _run(plan)[1][C64]
     assert r.status == "WARN", r.detail
     assert "#2163" in r.detail
+
+
+# ─── c67: test-retest κ gate vs temperature-0 judge pin (#2204/#2202) ───────
+
+C67 = "c67_retest_kappa_temp0"
+
+# Verbatim #2202 plan v1 excerpts (the founding incident), EMBEDDED — never
+# read from tasks/... paths: task folders git-mv across status dirs on
+# promotion, so a hardcoded path breaks the suite the day #2202 promotes
+# (real-file coverage lives in the plan §6 acceptance commands instead).
+# v1 L136: the judge bullet pinning the label wave at temperature 0.
+C67_V1_JUDGE_LINE = "- Judge `claude-sonnet-4-5-20250929`, Anthropic **Batch API** via `eval/judge_dispatch.dispatch_judge_items` (`src/explore_persona_space/eval/judge_dispatch.py:1770`), `max_tokens=2048` (multi-field JSON rubric floor), temperature 0, rubric-keyed cache, `custom_id`s validated pre-submit."
+# v1 L140: the registered test-retest κ<0.6 demotion gate.
+C67_V1_RETEST_LINE = "- 200-item test-retest → κ per mode; modes with κ < 0.6 demoted to report-only (the #1738 instrument's convention)."
+# v2 L136 (corrected): API-default pin QUOTING the temperature-0 trap in
+# prose on the SAME line — the load-bearing negation shape (must stay PASS).
+C67_V2_JUDGE_LINE = """- Judge `claude-sonnet-4-5-20250929`, Anthropic **Batch API** via `eval/judge_dispatch.dispatch_judge_items` (`src/explore_persona_space/eval/judge_dispatch.py:1770`), `max_tokens=2048` (multi-field JSON rubric floor), **temperature = API default (1.0), n_draws=1 — the parent instrument's own setting (`scripts/issue1738_characterize.py:326` records `"temperature": "API default"`), so the test-retest κ is commensurable with the parent's 0.79–0.98 / κ-0.6-threshold convention; at temperature 0 a byte-identical retest returns near-identical output, κ≈1 for every mode, and the demotion gate could never fire** — rubric-keyed cache, `custom_id`s validated pre-submit."""
+# v2 L501: the §11 rationale line — real pin + trap quote on ONE line.
+C67_V2_S11_LINE = """- **Judge = `claude-sonnet-4-5-20250929`, Batch API, max_tokens 2048, temperature = API default (1.0, n_draws 1), pilot ~150 on a fresh pilot `cache_dir`, drop-never-coerce, test-retest 200 @ κ 0.6 with `rt_`-prefixed retest custom-ids.** Why the temperature: κ has variance only under sampling — at temperature 0 the κ<0.6 demotion gate could never fire, and the 0.6 threshold would be uncalibrated for a deterministic surface. Source: CLAUDE.md standing judge rule + task-body lock + `#1738` instrument (labels.json test_retest_kappa block; `issue1738_characterize.py:326` `"temperature": "API default"`; `:303` the `rt_` retest prefix)."""
+
+C67_P4_HEADING = "### Phase P4 (VM, Batch API) — Sonnet re-labeling wave"
+
+
+def _c67_plan(*lines, heading=C67_P4_HEADING):
+    """GOOD_PLAN + one appended judge-wave section carrying ``lines``."""
+    return GOOD_PLAN + "\n" + heading + "\n\n" + "\n".join(lines) + "\n"
+
+
+def test_c67_warns_on_2202_v1_shape():
+    # The founding incident (verbatim v1 L136 + L140, one innermost H3):
+    # temperature-0 pin + registered retest-κ demotion gate -> WARN, detail
+    # carrying the cache companion trap + the rt_ prefix + the N/A escape.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE)
+    r = _run(plan)[1][C67]
+    assert r.status == "WARN", r.detail
+    assert "rt_" in r.detail
+    assert "cache" in r.detail
+    assert "N/A — no test-retest gate" in r.detail
+
+
+def test_c67_silent_on_api_default_temperature():
+    # The corrected #2202 v2 shape: both temp-0 substrings carry a same-line
+    # API-default pin, so no surviving pin -> PASS. This is the load-bearing
+    # negation test — the check must not flag exactly the plans that FIXED
+    # the bug.
+    plan = (
+        _c67_plan(C67_V2_JUDGE_LINE)
+        + "\n## 11. Decision Rationale — judge instrument\n\n"
+        + C67_V2_S11_LINE
+        + "\n"
+    )
+    r = _run(plan)[1][C67]
+    assert r.status == "PASS", r.detail
+    assert "no temperature-0 judge pin" in r.detail
+
+
+def test_c67_skips_without_retest_gate():
+    # GOOD_PLAN alone: no retest∧κ line anywhere -> SKIP (trigger absent).
+    r = _run(GOOD_PLAN)[1][C67]
+    assert r.status == "SKIP", r.detail
+    assert "no test-retest κ demotion gate detected" in r.detail
+
+
+def test_c67_silent_when_unrelated_sections():
+    # Best-effort scoping: the gate under one H3 and the temperature-0 pin
+    # under a DIFFERENT H3 -> PASS (a deterministic replay stage elsewhere
+    # in the plan is not the judge instrument's pin).
+    plan = (
+        _c67_plan(C67_V1_RETEST_LINE)
+        + "\n### Phase P9 — deterministic replay\n\n"
+        + "- Greedy replay at temperature 0 for reproducibility.\n"
+    )
+    r = _run(plan)[1][C67]
+    assert r.status == "PASS", r.detail
+    assert "no temperature-0 judge pin" in r.detail
+
+
+def test_c67_na_escape_standalone_recognized():
+    # The v1 shape + a standalone unwrapped declaration -> PASS.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE, "", "N/A — no test-retest gate")
+    r = _run(plan)[1][C67]
+    assert r.status == "PASS", r.detail
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c67_wrapped_na_not_recognized():
+    # A backtick-wrapped paste of the escape must NOT satisfy it (the
+    # _standalone_na_declared anti-paste discipline) -> still WARN.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE, "", "`N/A — no test-retest gate`")
+    r = _run(plan)[1][C67]
+    assert r.status == "WARN", r.detail
+
+
+def test_c67_temp_pin_regex_edges():
+    # Pin-regex edges: nonzero decimals never read as a pin; 0.0 / bare
+    # `temp 0` do; `temperature > 0` (a lower bound) never does.
+    cases = [
+        ("- Judge wave at temperature 0.7, rubric-keyed cache.", "PASS"),
+        ("- Judge wave at temperature 0.0, rubric-keyed cache.", "WARN"),
+        ("- Judge wave at temp 0, rubric-keyed cache.", "WARN"),
+        ("- Judge wave at temperature 0.5, rubric-keyed cache.", "PASS"),
+        ("- Judge wave at temperature > 0 (sampling), rubric-keyed cache.", "PASS"),
+    ]
+    for judge_line, want in cases:
+        plan = _c67_plan(judge_line, "", C67_V1_RETEST_LINE)
+        r = _run(plan)[1][C67]
+        assert r.status == want, (judge_line, r.status, r.detail)
+
+
+def test_c67_never_fails_invariant():
+    # Plan §6 never-FAIL invariant (the c46/c50/c61 posture): every variant —
+    # WARN shapes, PASS shapes, SKIP shapes, a malformed heading-less shard —
+    # resolves to PASS/WARN/SKIP, never FAIL, and never raises.
+    variants = [
+        GOOD_PLAN,
+        _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE),
+        _c67_plan(C67_V2_JUDGE_LINE),
+        _c67_plan(C67_V1_RETEST_LINE),
+        _c67_plan(C67_V1_JUDGE_LINE),
+        # Malformed heading-less shard: both lines pre-heading (both map to
+        # the no-heading whole-plan span) — must not crash.
+        "temperature 0\n200-item test-retest → κ per mode; κ < 0.6 demoted\n",
+        # Fence-wrapped lines are masked — must not crash or fire.
+        "```\ntemperature 0\ntest-retest κ < 0.6 demoted\n```\n",
+    ]
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        for plan in variants:
+            r = verify_plan.check_retest_kappa_temp0(plan, kind)
+            assert r.status in {"PASS", "WARN", "SKIP"}, (kind, r.status, r.detail)
+
+
+def test_c67_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c61/c65/c66 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_retest_kappa_temp0 in verify_plan.CHECKS
+    assert "c67 test-retest" in verify_plan.__doc__
+    # conditional-checks enumeration carries 67 (comma-separated membership
+    # form, the c56/c57 reflow-tolerant pin).
+    assert "66, 67" in verify_plan.__doc__
+    # Escape phrase registered in the docstring (the SKILL.md sync test
+    # propagates it to the consumer surface).
+    assert "N/A — no test-retest gate" in verify_plan.__doc__
+
+
+def test_c67_skips_on_infra_kind():
+    # Acceptance criterion 7, pinned in BOTH directions: the kind gate SKIPs
+    # infra/batch/survey (where the self-hit class lives — this check's own
+    # plan quotes the trigger vocabulary) while the SAME text WARNs under
+    # experiment/analysis — a later "just arm it everywhere" edit cannot
+    # silently re-import the self-hit class.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE)
+    for kind in ("infra", "batch", "survey"):
+        r = verify_plan.check_retest_kappa_temp0(plan, kind)
+        assert r.status == "SKIP", (kind, r.status, r.detail)
+        assert "armed for experiment/analysis only" in r.detail
+    for kind in ("experiment", "analysis"):
+        r = verify_plan.check_retest_kappa_temp0(plan, kind)
+        assert r.status == "WARN", (kind, r.status, r.detail)
+
+
+def test_c67_line_global_negation_boundary_pinned():
+    # Boundary pin for the ADJUDICATED line-global-negation semantics (#2204
+    # round-1 reconciler, binding). The negation is TEMP-ANCHORED: a denial
+    # only silences the pin when it carries a SECOND temperature token on the
+    # same line. Both directions are pinned so a future regex edit cannot
+    # silently move the boundary either way:
+    #   * a simple denial still WARNs (Codex round-1 reported this as a
+    #     false negative; measured behavior says otherwise — the reconciler
+    #     resolved it against the report);
+    #   * the three second-temp-token shapes PASS — the DISCLOSED false
+    #     negative (plan v2 § FN class 5, "mixed-stage same-line negation"),
+    #     kept because order-scoping it flips the load-bearing
+    #     explanation-first shape (v2 L136/L501, the corrected #2202 prose)
+    #     into a false positive. Narrowing it is deferred to its own round.
+    cases = [
+        # (label, judge line, expected) — expected WARN = pin survives.
+        (
+            "simple denial, one temp token",
+            "- Judge wave at temperature 0 (not the API default), rubric-keyed cache.",
+            "WARN",
+        ),
+        (
+            "FN class 5: denial carrying a second temp token",
+            "- Judge wave at temperature 0, not temperature = API default (1.0).",
+            "PASS",
+        ),
+        (
+            "FN class 5: mixed-stage — judge temp 0, generation temp 1.0",
+            "- Judge at temperature 0; generation at temperature 1.0.",
+            "PASS",
+        ),
+        (
+            "FN class 5: temp-0 pin with an API-default fallback clause",
+            "- Judge at temperature 0, falling back to temperature = API default.",
+            "PASS",
+        ),
+    ]
+    for label, judge_line, want in cases:
+        plan = _c67_plan(judge_line, "", C67_V1_RETEST_LINE)
+        r = _run(plan)[1][C67]
+        assert r.status == want, (label, r.status, r.detail)

@@ -1,0 +1,90 @@
+{
+  "commit": "c107674e+dirty",
+  "render_id": "a1b714297df341cc",
+  "git_commit": "c107674e63f964646c2c983048d6bdb367bec396",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "tasks/followups_running/823/concerns.jsonl",
+    "tasks/followups_running/823/events.jsonl",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1774_figures.py",
+  "created": "2026-08-20T08:13:27Z",
+  "figsize": [
+    5.5,
+    2.75
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "annotations": [
+          "0.88",
+          "0.83",
+          "-0.01",
+          "-0.04",
+          "0.92",
+          "0.82",
+          "0.01",
+          "-0.03",
+          "0.87",
+          "0.74",
+          "0.01",
+          "-0.04"
+        ],
+        "xticklabels": [
+          "Full context",
+          "Bare query",
+          "Prefix end",
+          "Query-averaged prefix"
+        ],
+        "yticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ]
+      },
+      {
+        "ylabel": "held-out $R^2$ along trait direction",
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

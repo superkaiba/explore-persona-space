@@ -1,0 +1,464 @@
+{
+  "commit": "ded9bd9f+dirty",
+  "render_id": "ea39a5f05d4c4102",
+  "git_commit": "ded9bd9fed5bbd1113cb670b9993b430b8522463",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue722_figures.py",
+  "created": "2026-08-20T08:07:18Z",
+  "figsize": [
+    5.5,
+    2.8600000000000003
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out $R^2$ (skill over mean)": -0.09328607140723966,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out $R^2$ (skill over mean)": 0.1709721199638914,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$ (skill over mean)": 0.34514629121433493,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out $R^2$ (skill over mean)": 0.4232794753308389,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out $R^2$ (skill over mean)": 0.48620609076531496,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out $R^2$ (skill over mean)": 0.4731055420651804,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out $R^2$ (skill over mean)": 0.5881019036591549,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out $R^2$ (skill over mean)": 0.6039307810267025,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out $R^2$ (skill over mean)": 0.664289539224923,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out $R^2$ (skill over mean)": 0.6384123241049764,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out $R^2$ (skill over mean)": 0.658074554260099,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out $R^2$ (skill over mean)": 0.68745354148318,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out $R^2$ (skill over mean)": 0.7097311620980347,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out $R^2$ (skill over mean)": 0.7231125433793889,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$ (skill over mean)": 0.745682362952892,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out $R^2$ (skill over mean)": 0.7863538108690785,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out $R^2$ (skill over mean)": 0.7856032717181133,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out $R^2$ (skill over mean)": 0.7813474177089645,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out $R^2$ (skill over mean)": 0.7983028454675367,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$ (skill over mean)": 0.7784000858797752,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out $R^2$ (skill over mean)": 0.7727615991559655,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out $R^2$ (skill over mean)": 0.7406867907378158,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out $R^2$ (skill over mean)": 0.6974122047470037,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out $R^2$ (skill over mean)": 0.6538952727020753,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out $R^2$ (skill over mean)": 0.6143671695063295,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out $R^2$ (skill over mean)": 0.5619620425631816,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$ (skill over mean)": 0.5359236450992713,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out $R^2$ (skill over mean)": 0.5046947994281655,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out $R^2$ (skill over mean)": -5.589204865536947,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out $R^2$ (skill over mean)": -2.206439490842863,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$ (skill over mean)": -1.4546090592124852,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out $R^2$ (skill over mean)": -1.2496984083614802,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out $R^2$ (skill over mean)": -1.1218907194258838,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out $R^2$ (skill over mean)": -1.049952208908051,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out $R^2$ (skill over mean)": -1.2751846218215546,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out $R^2$ (skill over mean)": -1.2903288221289966,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out $R^2$ (skill over mean)": -1.4553389959258038,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out $R^2$ (skill over mean)": -1.3656999605960949,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out $R^2$ (skill over mean)": -1.490526486243943,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out $R^2$ (skill over mean)": -1.6408358624027084,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out $R^2$ (skill over mean)": -1.6890414311825692,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out $R^2$ (skill over mean)": -1.675912712341653,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$ (skill over mean)": -1.7113115293547194,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out $R^2$ (skill over mean)": -1.9460043223803267,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out $R^2$ (skill over mean)": -1.9407015077562226,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out $R^2$ (skill over mean)": -1.9327340693416781,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out $R^2$ (skill over mean)": -2.137563196652924,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$ (skill over mean)": -2.10718240560201,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out $R^2$ (skill over mean)": -1.9356817445103185,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out $R^2$ (skill over mean)": -1.994523928151399,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out $R^2$ (skill over mean)": -1.806545689349571,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out $R^2$ (skill over mean)": -1.8081985950267647,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out $R^2$ (skill over mean)": -1.819974971438917,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out $R^2$ (skill over mean)": -1.784067644459289,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$ (skill over mean)": -1.9524049255409244,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out $R^2$ (skill over mean)": -1.9814019589206153,
+      "series": "neural map (MLP, w=512)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer",
+        "ylabel": "held-out $R^2$ (skill over mean)",
+        "legend_labels": [
+          "linear map (ridge)",
+          "neural map (MLP, w=512)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "linear map (ridge)",
+      "neural map (MLP, w=512)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
