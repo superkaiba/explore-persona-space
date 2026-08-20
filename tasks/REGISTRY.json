@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2395,
+  "highest_id": 2408,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5746,9 +5746,9 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1739",
-      "status": "followups_running",
-      "title": "Mapped-answer readouts match real-answer persona projections off-synthetic and edge direct context probes in most held-out settings, pending a shuffled-map control (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1739",
+      "status": "awaiting_promotion",
+      "title": "Mapped-answer probes lead context probes on 10 of 13 held-out rungs, but only one flagship clears the control intervals (MODERATE confidence)"
     },
     "174": {
       "has_clean_result": false,
@@ -9240,15 +9240,15 @@
     "2197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2197",
-      "status": "reviewing",
-      "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
+      "path": "tasks/completed/2197",
+      "status": "completed",
+      "title": "task.py set-body: Goal-H2 drop guard is now workflow-aware \u2014 v2 report bodies auto-exempt (merged PR #2023)"
     },
     "2198": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2198",
-      "status": "reviewing",
+      "path": "tasks/completed/2198",
+      "status": "completed",
       "title": "verify_report.py: scan the detailed companion writeup, not just the report body"
     },
     "2199": {
@@ -9305,8 +9305,8 @@
     "2205": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2205",
-      "status": "proposed",
+      "path": "tasks/reviewing/2205",
+      "status": "reviewing",
       "title": "verify_plan c46: also enforce the launch runtime requirement (exactly one of --workload-cmd / --hydra) when dry-parsing plan-embedded dispatch commands"
     },
     "2206": {
@@ -10723,16 +10723,16 @@
       "goal": "On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (gold- or execution-verified, K=5 rollouts) is predictable from the frozen context vector before generation, and whether routing the context vector through the learned context-to-answer map improves that prediction at matched data budgets, across four correctness surfaces (short-answer QA, math, multiple-choice, code) and a distribution-shift ladder.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/2388",
-      "status": "planning",
+      "path": "tasks/running/2388",
+      "status": "running",
       "title": "Is answer correctness predictable from the context vector, and does the context-to-answer map help?"
     },
     "2389": {
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/2389",
-      "status": "approved",
+      "path": "tasks/running/2389",
+      "status": "running",
       "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
     },
     "239": {
@@ -10752,8 +10752,8 @@
     "2391": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2391",
-      "status": "planning",
+      "path": "tasks/running/2391",
+      "status": "running",
       "title": "workflow-fix: raise the per-reviewer review-round cap from 5 to 10 across all three review loops"
     },
     "2392": {
@@ -10784,6 +10784,34 @@
       "status": "proposed",
       "title": "codex-composer-common: require lens-unique slugs for auxiliary temp files, not just the prompt file"
     },
+    "2396": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2396",
+      "status": "proposed",
+      "title": "verify_plan c20: a decimal-threshold verdict lattice can never become FAIL-capable (integer thresholds SKIP, decimals WARN unclearably)"
+    },
+    "2397": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2397",
+      "status": "proposed",
+      "title": "verify_plan: assert plan-narrated parent statistics (sign + CI) against the cited artifact field"
+    },
+    "2398": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2398",
+      "status": "proposed",
+      "title": "verify_plan: flag plan registrations that contradict the inherited implementation's semantics (advisory-flag-that-branches; registered multiplicity family that shrinks)"
+    },
+    "2399": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2399",
+      "status": "proposed",
+      "title": "verify_plan: assert the conditional-branch GPU-hour upper bound fits the declared budget and self-fence (plus compound wall-cell parse)"
+    },
     "24": {
       "has_clean_result": false,
       "kind": "infra",
@@ -10797,6 +10825,69 @@
       "path": "tasks/archived/240",
       "status": "archived",
       "title": "Two ways to discretize an EM-eliciting soft prefix on Qwen-2.5-7B-Instruct both fail: L2-projection collapses to a helpful-assistant baseline, and greedy-coordinate-gradient search produces output too garbled to score (LOW confidence)"
+    },
+    "2400": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2400",
+      "status": "proposed",
+      "title": "api_throughput_guidelines: disambiguate the two sync/batch crossover figures (200k balanced vs 20k dispatcher constant) + state precedence vs CLAUDE.md"
+    },
+    "2401": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2401",
+      "status": "proposed",
+      "title": "artifact-reuse: a reused ACTIVATION artifact must carry the model-weights revision that produced it (shape asserts and data-repo pins verify different guarantees)"
+    },
+    "2402": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2402",
+      "status": "proposed",
+      "title": "workflow-fix: guard_skill_doc_headroom.sh must validate a demanded cap raise clears its own warn threshold"
+    },
+    "2403": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2403",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan should check a reuse claim's named field is the field the reused consumer actually reads"
+    },
+    "2404": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2404",
+      "status": "proposed",
+      "title": "verify_plan c67: scope the temperature-negation to the clause, not the whole line"
+    },
+    "2405": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2405",
+      "status": "proposed",
+      "title": "verify_plan: assert a registered kill criterion is satisfiable against its own cited artifacts"
+    },
+    "2406": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2406",
+      "status": "proposed",
+      "title": "Lens 6 banned-vocab family: add bit-identity / bit-tolerance noun forms to audit + lens-reference + SPEC (5th coinage-drift instance)"
+    },
+    "2407": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2407",
+      "status": "proposed",
+      "title": "Step 6b canonical launch snippet is provision-only \u2014 add the required workload leg + time-budget guidance"
+    },
+    "2408": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2408",
+      "status": "proposed",
+      "title": "verify_plan c46: cover the remaining launch post-parse refusals (execute-workload, no-runpod-fallback+runpod pin, env-pin)"
     },
     "241": {
       "has_clean_result": false,

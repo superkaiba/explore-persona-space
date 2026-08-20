@@ -2,6 +2,8 @@
 
 <!-- This file is the MEMORY.md index for the codex-code-reviewer agent. -->
 
+- [stale-base MB pin + fixture re-measure](feedback_stale_base_mb_pin_and_fixture_remeasure.md) — pin the resolved merge-base SHA when the brief flags phantom two-dot deletions; sibling-task verify_plan fixtures: probe worktree presence + identity, give live-run→static-trace ladder (#2204 r1)
+
 - [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block
 - [worktree status-folder both directions](feedback_worktree_status_folder_both_directions.md) — brief plan path may cite wrong status dir in EITHER direction; `ls <wt>/tasks/*/<N>` before inlining fallback
 - [latest-marker prefix collision](feedback_latest_marker_prefix_collision.md) — --prefix epm:code-review also matches epm:code-review-codex; fetch Claude verdict by exact kind from events.jsonl
@@ -11,7 +13,7 @@
 - [Hub path vs local disk trainer path](feedback_hub_path_vs_local_disk.md) — run_issue_344_train.py loads from local disk only; Hub uploads are provenance, not trainer's read path; fix scripts that only rewrite local VM files leave the pod with stale data
 - [contextmanager del llm ref](feedback_contextmanager_del_llm_ref.md) — del inside @contextmanager finally doesn't free caller's 'as llm' binding; gc.collect() runs while LLM still referenced (task #365 r10 Major finding)
 - [concurrent follow-ups → wrong plan symlink + latest-marker + HEAD](feedback_concurrent_followups_wrong_plan_symlink.md) — with >1 concurrent same-issue follow-up round, plan.md symlink AND latest-marker (impl + smoke-arch) AND branch HEAD all resolve to a DIFFERENT round; round-match ALL inlined inputs by followup_label + note body, and scope Codex to `git show <round-sha>` not main...HEAD (#841)
-- [9a-ter rounds: no impl marker → report placeholder](feedback_9ater_followup_round_report_placeholder.md) — free-analysis follow-up reviews inline the stage-dispatch marker + an orchestrator-filled `{{followup_implementer_report_body}}` placeholder; adapt gates 0.5/0.55/0.6; never fetch the prior round's impl marker (#920 r3)
+- [follow-up rounds: no impl marker → report placeholder](feedback_9ater_followup_round_report_placeholder.md) — 9a-ter AND 9b paid rounds: placeholder when the report is in-session (post-thrash respawn); round-matched smoke-arch still inlines; spec-slice briefs; brief-enumerated requirements get independent-recompute duty (#920 r3, #823 ladder)
 - [missing-impl-marker probe checklist](feedback_missing_impl_marker_probe_checklist.md) — 5 probes (both prefixes, kind listing + note read, branch-side events, race re-probe, #2015 stash-race rescue patch → recover + inline with provenance) before failing loud (#2147 r1, #2325 r2)
 - [by-path brief: frozen-events resolution](feedback_bypath_brief_frozen_events_resolution.md) — when a brief orders by-path (no inlining) + main-checkout-readable sandbox, events.jsonl with post-branch markers → MAIN-root absolute path (worktree copy frozen, stale-read not error); plan worktree path only after identity diff (#2325 r1)
 - [wf-fix Step-2-floor attestation](feedback_wf_fix_step2_floor_attestation.md) — wf-fix composes probe main for epm:plan-verify and attest PASSED/absent in the prompt; Codex can't read main-side events (#2326 r1)
@@ -23,3 +25,4 @@
 - [envelope brace residue + intra-round rename](feedback_envelope_brace_residue_and_intraround_rename.md) — residue check excludes marker envelope (git ^{{commit}} is content); same-round add-then-rename ⇒ 3.75 N/A attested (#2198 r1)
 - [new helpers ≠ new file (#1805)](feedback_new_helpers_not_new_file_1805.md) — `--name-status` M-vs-A decides the round-new-script duty, never marker prose or +K/−0 numstat (#2378 r4)
 - [deferred event: two semantics](feedback_deferred_event_two_semantics.md) — read deferral_rationale: reconciler downgrade-with-recommended-fix arms full closure duties; rejected-binding does not (#2198 r2 vs #2332 r4)
+- [settled plan → descoped-ABSENT rows](feedback_settled_plan_descoped_absent_rows.md) — reconciler-descoped items become ABSENCE-verification rows (present = scope creep); settled decisions listed as never-object items (#2201 r1)

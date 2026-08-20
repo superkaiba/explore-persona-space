@@ -3,10 +3,12 @@
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — data-recoverability never rescues a defective gate/kill/lattice; barred-amendment tell; 35+ incidents (#547…#614)
+- [Gate object-identity unchecked: read the NAMED function](feedback_claude_gate_object_identity_unchecked.md) — threshold adequacy never verifies a gate whose named path returns a different object / whose inputs miss its phase (#2329 r2)
 - [Gate-design flaw (REVISE) vs recoverable robustness read (APPROVE)](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on affirmative misfire / barred amendment / run-time-only capture loss
 - [Efficiency lens: pilot placement + CPU-GD + terminal uploads](feedback_efficiency_lens_pilot_placement_and_cpu_gd_calibration.md) — pilot firing AFTER the phase it gates; Codex categorically GPU-routes batched GD (#2329 r1)
 - [Advisory-band gaps: check the DIRECTION](feedback_claude_advisory_band_wrong_direction_vs_probe_region.md) — silent-PASS region ⊄ band = affirmative misfire (#2152 r1)
 - [One-arm port: internal smoke ≠ validity](feedback_one_arm_port_capture_parity.md) — demand capture-parity vs the parent driver (#2330 r1)
+- [Model-WEIGHTS revision ≠ data-repo pin on donor-state reuse](feedback_model_weights_revision_vs_data_repo_pin.md) — shape/data-pin never prove weight basis; run `list_repo_commits` before crediting a re-capture demand (#2329 r1)
 - [Live-replay proposed mechanical checks vs the named offender](feedback_live_replay_proposed_mechanical_checks.md) — execute proposed regex/check/glob on the incident artifact (#869, #867)
 - [Unwired lint-check plans = dead tripwire](feedback_claude_approves_unwired_lint_check_plans.md) — direct-call-only tests, no_flags wiring unpinned (#842, #891)
 - [Grep consumer/writer surface before crediting plan claims](feedback_claude_approves_daemon_interface_read_missing_route_filter.md) — consumer-VISIBLE route (#956); [state-rewrite safety](feedback_claude_accepts_plan_state_rewrite_safety_claim.md) — grep the literal write (#908, #919); [reroute pointer trace](feedback_claude_approves_reroute_without_consumer_pointer_trace.md) — ids ≠ consuming the return (#564)

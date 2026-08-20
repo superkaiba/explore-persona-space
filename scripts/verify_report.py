@@ -92,6 +92,26 @@ Required structure (both modes):
     inferred from the ``**Detailed writeup:**`` line; unknown → WARN-skip; no
     cards anywhere → PASS-note N/A. Abbreviated / non-hex / dirty card values
     are EXCLUDED from every FAIL/WARN set and listed in the detail.
+  - ``companion-content`` (#2198): the body's ``**Detailed writeup:**`` pin is
+    resolved and the companion (``docs/reports/issue_<N>_detailed.md`` at the
+    pinned SHA, materialized via read-only local ``git show`` — no network) is
+    scanned on its ``blank_verbatim()``-blanked lines. Two halves, both
+    mode-invariant (the companion is 100% agent-written in BOTH modes — it is
+    regenerated wholesale on follow-up rounds, so hand-written slots there are
+    destroyed without notice): (a) STRUCTURAL, FAIL in both modes — a
+    Thomas-slot heading (a line normalizing to ``## TLDR`` or ``## Conclusion
+    and next steps``, the alias map catching the grandfathered ``## Next
+    steps``) or a ``**Takeaways**`` block opener; (b) LEXICON, WARN never
+    FAIL — ``BANNED_LEXICON`` hits outside the companion's exact
+    ``## Motivation`` section (the Motivation copy keeps the body's
+    hypothesis-framing exemption). Resolution degrade ladder (mode-split,
+    mirroring ``image-pin-blob-identity``): missing / stacked / malformed pin
+    line → PASS-note N/A (``detailed-writeup-link`` carries that verdict);
+    non-git root → WARN (both); pinned commit unresolvable → FAIL in
+    generation (the pin was just created locally at assembly) / WARN in
+    promote (unfetched clone plausible); commit present but companion path
+    absent → FAIL (both); companion blob present but not valid UTF-8 → FAIL
+    (both; contained decode error, never a crash).
   - ``stale-evidence-pins`` (#2195): every line citing an in-repo EVIDENCE
     FILE — a backticked repo-relative path under ``_EVIDENCE_PATH_PREFIXES``
     (``eval_results/`` / ``ood_eval_results/`` / ``figures/`` / ``docs/``;
@@ -264,14 +284,18 @@ _DETAILED_URL_RE = re.compile(
 )
 
 
-def _git(repo: Path, *args: str) -> tuple[int, str]:
-    """Run a READ-ONLY git command in ``repo``; return (returncode, stripped stdout).
+def _git(repo: Path, *args: str, strip: bool = True) -> tuple[int, str]:
+    """Run a READ-ONLY git command in ``repo``; return (returncode, stdout).
 
-    Used by the image-pin blob-identity check — local object-DB lookups only
-    (``rev-parse`` / ``cat-file`` / ``hash-object``), never a network call.
+    stdout is ``.strip()``-ed by default (right for ref/hash plumbing output);
+    pass ``strip=False`` for byte-faithful text — the companion
+    materialization needs leading blank lines preserved so reported ``L<n>``
+    numbers map to real file lines. Local object-DB lookups only
+    (``rev-parse`` / ``cat-file`` / ``hash-object`` / ``show``), never a
+    network call.
     """
     proc = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
-    return proc.returncode, proc.stdout.strip()
+    return proc.returncode, (proc.stdout.strip() if strip else proc.stdout)
 
 
 _SCHEMA_PATH = (
@@ -1644,6 +1668,172 @@ def check_code_sha_cards(
     return CheckResult(name, True, detail)
 
 
+# ─── Companion-content check (#2198; both modes, read-only local git) ───────
+
+# Thomas-slot headings forbidden in the 100%-agent-written companion, in
+# NORMALIZED form — ``_norm_header()`` maps the grandfathered ``## Next steps``
+# alias onto ``## Conclusion and next steps``, so the alias is caught too.
+_COMPANION_FORBIDDEN_HEADERS = ("## TLDR", "## Conclusion and next steps")
+
+
+def _resolve_companion_text(
+    blanked_lines: list[str], *, mode: str, figures_root: Path
+) -> tuple[str | None, CheckResult | None]:
+    """Resolve the body's ``**Detailed writeup:**`` pin to the companion text.
+
+    Materializes ``docs/reports/issue_<N>_detailed.md`` at the pinned SHA via
+    read-only local git (``git show`` through ``_git`` — never a network
+    fetch). Returns ``(companion_text, None)`` on success, else
+    ``(None, CheckResult)`` carrying the resolution-ladder verdict: a missing /
+    stacked / malformed pin line is PASS-note N/A (``detailed-writeup-link``
+    already carries that verdict — no double-report); a non-git root WARNs; an
+    unresolvable pinned commit is mode-split like ``_check_pin_blob_identity``
+    (FAIL at generation — the orchestrator commits + pushes the companion and
+    splices the pin BEFORE the generation-mode verify runs, so the commit
+    exists locally by construction; WARN at promote — unfetched clone
+    plausible); a resolvable commit lacking the companion path FAILs (both);
+    a resolvable-but-non-UTF-8 companion blob FAILs (both — contained
+    ``UnicodeDecodeError``, never a crash).
+    """
+    name = "companion-content"
+    matches = [m for ln in blanked_lines if (m := _DETAILED_LINE_RE.match(ln)) is not None]
+    if len(matches) != 1:
+        return None, CheckResult(
+            name,
+            True,
+            "no single '**Detailed writeup:**' line — companion scan N/A "
+            "(detailed-writeup-link carries the verdict)",
+        )
+    url = matches[0].group(1).strip().strip("<>")
+    m = _DETAILED_URL_RE.match(url)
+    if m is None:
+        return None, CheckResult(
+            name,
+            True,
+            "malformed detailed-writeup URL — companion scan N/A "
+            "(detailed-writeup-link carries the verdict)",
+        )
+    sha, path = m.group(1), f"docs/reports/issue_{m.group(2)}_detailed.md"
+    rc, _ = _git(figures_root, "rev-parse", "--git-dir")
+    if rc != 0:
+        return None, CheckResult(
+            name,
+            True,
+            f"{figures_root} is not a git checkout; companion content unverifiable",
+            is_warn=True,
+        )
+    rc, _ = _git(figures_root, "cat-file", "-e", f"{sha}^{{commit}}")
+    if rc != 0:
+        msg = f"pinned commit {sha[:12]} unresolvable in the local object DB ({path})"
+        if mode == "generation":
+            return None, CheckResult(name, False, msg)
+        return None, CheckResult(
+            name,
+            True,
+            msg + "; unfetched clone possible post-merge, companion unverifiable",
+            is_warn=True,
+        )
+    try:
+        # strip=False: byte-faithful materialization — a companion whose file
+        # starts with blank lines must keep them, or every reported ``L<n>``
+        # is offset by the stripped count (round-1 review Minor).
+        rc, text = _git(figures_root, "show", f"{sha}:{path}", strip=False)
+    except UnicodeDecodeError:
+        # A non-UTF-8 companion blob at a resolvable pin: _git decodes
+        # subprocess stdout as text, so the decode error surfaces HERE —
+        # contain it (mirror the card-blob ``git show`` containment, #2191
+        # convention). FAIL in BOTH modes: the companion is agent-generated
+        # markdown, so non-UTF-8 bytes are a generation defect, never an
+        # unfetched-clone gap.
+        return None, CheckResult(
+            name,
+            False,
+            f"companion {path} at pinned commit {sha[:12]} is not valid UTF-8 — "
+            "content unscannable",
+        )
+    if rc != 0:
+        return None, CheckResult(name, False, f"pinned commit {sha[:12]} does not contain {path}")
+    return text, None
+
+
+def check_companion_content(
+    blanked_lines: list[str], *, mode: str, figures_root: Path
+) -> CheckResult:
+    """``companion-content`` (#2198): scan the detailed companion writeup.
+
+    The companion (``docs/reports/issue_<N>_detailed.md`` at the body's
+    ``**Detailed writeup:**`` pin) is 100% agent-written in BOTH modes — it is
+    regenerated wholesale on follow-up rounds, so anything hand-written there
+    is destroyed without notice — so the SCAN scope is mode-invariant; only
+    the RESOLUTION ladder is mode-split (``_resolve_companion_text``). Both halves
+    run on the companion's ``blank_verbatim()``-blanked lines (a ``## TLDR`` /
+    lexeme inside a fenced example or blockquote is DATA, not a slot):
+
+    - STRUCTURAL half (FAIL, both modes): no Thomas-slot heading — a line
+      whose ``_norm_header()`` equals ``## TLDR`` or ``## Conclusion and next
+      steps`` (the alias map catches the grandfathered ``## Next steps``) —
+      and no ``**Takeaways**`` block opener (``_is_bold_label``).
+    - LEXICON half (WARN, never FAIL): ``_LEXICON_RE`` over every blanked
+      line OUTSIDE the companion's ``## Motivation`` section (the Motivation
+      copy keeps the body's hypothesis-framing exemption). WARN because the
+      companion's methodology/deviations prose legitimately uses process-sense
+      phrasings that match the exact lexemes ("the artifact confirms the
+      count") — a FAIL posture would get routed around.
+
+    Two deliberate scope limits (plan #2198):
+
+    - Exact-header-only Motivation exemption: realized companions carry
+      appended follow-up sections (``## Motivation (round)`` — the live #2162
+      shape); ``_norm_header()`` does not map those onto ``## Motivation``, so
+      round-Motivation copies ARE lexicon-scanned. Acceptable (WARN-only
+      posture — no FAIL channel) and deliberate.
+    - Exact-lexeme inflection gap: ``BANNED_LEXICON`` is an exact-lexeme
+      list — inflectional variants ("confirmed", "implies", "suggested") do
+      NOT match ``_LEXICON_RE``. Extending the lexicon would change the
+      existing BODY scan too (a shared-instrument scope change, out of #2198's
+      scope); the report-verifier agent's manual interpretivity read remains
+      the catching arm for inflected phrasings and blockquoted caption prose.
+
+    Aggregation mirrors ``_check_pin_blob_identity``: any fail → FAIL, else
+    any warn → WARN, else PASS. Detail entries are prefixed by half
+    (``thomas-slot heading L<n>: ...`` / ``lexicon L<n>: ...``).
+    """
+    name = "companion-content"
+    companion, ladder = _resolve_companion_text(blanked_lines, mode=mode, figures_root=figures_root)
+    if ladder is not None:
+        return ladder
+    comp_lines = blank_verbatim(companion.splitlines())
+    fails: list[str] = []
+    for lineno, line in enumerate(comp_lines, start=1):
+        if _norm_header(line) in _COMPANION_FORBIDDEN_HEADERS:
+            fails.append(f"thomas-slot heading L{lineno}: '{line.strip()}'")
+        elif _is_bold_label(line, "Takeaways"):
+            fails.append(f"thomas-slot heading L{lineno}: '{line.strip()}'")
+    exempt: set[int] = set()
+    for sec in parse_sections(comp_lines):
+        if _norm_header(sec.header) == "## Motivation":
+            exempt.update(range(sec.header_line, sec.content_start_line + len(sec.content_lines)))
+    warns: list[str] = []
+    for lineno, line in enumerate(comp_lines, start=1):
+        if lineno in exempt:
+            continue
+        for m in _LEXICON_RE.finditer(line):
+            warns.append(f"lexicon L{lineno}: '{m.group(0)}'")
+    if fails:
+        detail = "; ".join(fails)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        return CheckResult(name, False, detail)
+    if warns:
+        return CheckResult(
+            name,
+            True,
+            "banned lexeme(s) outside the companion's ## Motivation: " + "; ".join(warns),
+            is_warn=True,
+        )
+    return CheckResult(name, True, "companion clean (no Thomas-slot headings, no lexicon hits)")
+
+
 # ─── Stale evidence pins (#2195; both modes, WARN-only) ─────────────────────
 
 # Repo-relative path prefixes treated as EVIDENCE citations. Code provenance
@@ -1939,6 +2129,7 @@ def verify_report_text(
             body, blanked_lines, mode=mode, figures_root=figures_root, expect_issue=expect_issue
         )
     )
+    results.append(check_companion_content(blanked_lines, mode=mode, figures_root=figures_root))
     results.append(check_stale_evidence_pins(blanked_lines, figures_root, expect_issue))
 
     if mode == "generation":

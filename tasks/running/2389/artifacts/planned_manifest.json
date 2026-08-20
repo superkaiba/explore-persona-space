@@ -1,0 +1,116 @@
+{
+  "issue": 2389,
+  "plan_version": "v3",
+  "model": "Qwen/Qwen3.8-27B @ 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "slot": "context-end only (prefix-end dropped by user ruling; 0 causal positives on both prior models)",
+  "conditions": [
+    "Steered (donor-value patch at context-end)",
+    "Shuffled-donor null (same type, value-constrained)",
+    "Cross-type-donor null",
+    "Unpatched floor anchor",
+    "Generate-under-donor ceiling anchor",
+    "Query-content control",
+    "Filler-swap control",
+    "Stage-2 layer-by-dose confirmation (F_act-selected, layers {18,31,32,39,47,50,60}, doses {1,4})",
+    "Cross-model transfer comparison (Qwen2.5-7B #2162 / Qwen3.5-9B #2329 / Qwen3.8-27B this run)",
+    "vLLM-vs-HF anchor parity gate (execution control, fail-open)"
+  ],
+  "metrics": [
+    "F_beh: judged fraction-of-swap, (patched - floor)/(ceiling - floor), pair means over coherent draws (PRIMARY)",
+    "F_act: activation fraction-of-swap on span-mean answer states; layer-59 comparison row (full-attention; layer-61 linear exploratory companion) + full 64-layer profile",
+    "Teacher-forced fixed positive-vs-negative completion margin (SECONDARY, rule-19 validated)",
+    "Linear read-probe AUC over 64 layers (carrier-group folds; max-over-layers vs same-selection permutation band; band upper bound reported beside the AUC ceiling of 1.0)",
+    "Per-pair anchor separation (|ceiling - floor| on 0-1 judge scale; exclusion bar 0.5; aggregate read advisory)",
+    "Per-cell realized cap-hit fraction (both engines)",
+    "Coherence rate (rubric > 60)",
+    "Spearman transfer correlation vs #2162 over shared ce P1 cells: PRIMARY = cells with >=12 surviving pairs in BOTH runs (parent-supported ceiling 13, realized N reported); DESCRIPTIVE companion = all 16 shared cells (pair-clustered bootstrap CIs)",
+    "Stored-and-used count under the inherited 2x2 verdict lattice (vs 5 on 7B, 8 on 9B; parent verdicts Holm-harmonized to ce-only families)",
+    "Judge api-refusal / transport / content drop rates per arm (rule-28 accounting) + realized uncached call count, Batch-pass count, stuck-batch fallbacks"
+  ],
+  "figures": [
+    {
+      "id": "hero_per_type_f",
+      "title": "Per-type F_beh at context-end: steered vs both nulls, all 39 cells (Qwen3.8-27B)",
+      "source": "eval_results/issue_2389/f_metrics/f_cells.jsonl + null_shuffled_cells.jsonl + null_crosstype_cells.jsonl",
+      "transform": "filter slot=='ce'; pair mean of per-draw F_beh over coherent draws (rubric>60), post anchor-separation exclusions; cell mean per arm; pair-clustered bootstrap (B=10000, seed 21620) 95% CI per cell x arm; order cells by steered mean",
+      "plotted_quantity": "cell-level mean F_beh per arm with pair-clustered 95% CIs; one bar triplet per type-cell"
+    },
+    {
+      "id": "per_pair_companion",
+      "title": "Per-pair F_beh points under the hero aggregate (labeled per-unit companion)",
+      "source": "eval_results/issue_2389/f_metrics/f_cells.jsonl",
+      "transform": "same filter/exclusions as hero_per_type_f; scatter each surviving pair's mean F_beh (steered arm) grouped by cell, pair ids recoverable via per-cell jitter ordering",
+      "plotted_quantity": "pair-level mean steered F_beh per cell (points), the low-level data behind the hero bars"
+    },
+    {
+      "id": "read_write_2x2",
+      "title": "Read x write 2x2: probe-positive vs causal-positive per type-cell (context-end)",
+      "source": "eval_results/issue_2389/f_metrics/stats.json + probe.json",
+      "transform": "per cell: causal-positive = disjoint pair-clustered 95% CIs vs BOTH nulls AND Holm-surviving intersection-union signed-rank (analysis-time m per family); probe-positive = max-over-64-layers AUC clears max-selected permutation band (B=1000; band upper bound reported beside the AUC ceiling 1.0); n>=12 testability floor; place each cell in the registered quadrant lattice",
+      "plotted_quantity": "quadrant membership per type-cell (stored-and-used / stored-but-unusable / used-but-not-decoded / absent / untestable-causal)"
+    },
+    {
+      "id": "cross_model_comparison",
+      "title": "Capability trend: stored-and-used counts and per-type verdict grid across Qwen2.5-7B / Qwen3.5-9B / Qwen3.8-27B",
+      "source": "eval_results/issue_2389/f_metrics/stats.json + eval_results/issue_2329/f_metrics/stats.json + eval_results/issue_2162/f_metrics/ (committed parent tables, main)",
+      "transform": "per model: ce-slot quadrant verdict per shared type-cell + stored-and-used count (7B=5, 9B=8, 27B=realized) with the PARENT verdicts RECOMPUTED under ce-only Holm families (harmonized recounts; recount leaves 5/8 unchanged); align cells by type id; realized per-family Holm m annotated per model; movers (verdict changes) highlighted and read jointly with each cell's anchor-separation/MDE shift (power-vs-capability confound)",
+      "plotted_quantity": "stored-and-used count per model (bar) + per-type verdict grid (model x cell heatmap of lattice labels)"
+    },
+    {
+      "id": "transfer_correlation_p1_ce",
+      "title": "Per-type steered F_beh: Qwen3.8-27B vs Qwen2.5-7B over the shared context-end P1 cells (primary >=12-eligible read + descriptive all-16 companion)",
+      "source": "eval_results/issue_2389/f_metrics/transfer.json (forked step_transfer, slot=='ce' filter + eligibility split; parent table eval_results/issue_2162/f_metrics/f_cells.jsonl)",
+      "transform": "PRIMARY series: shared ce P1 cells with >=12 surviving pairs in BOTH runs (parent side supports 13 of 16 — user_emotion=1, icl_task_mapping=7, refusal_boundary=8 sit below the floor; this run's side re-applies the same rule; REALIZED N stated in the caption, never hardcoded); cell-level steered mean F_beh both runs; Spearman rho + pair-clustered bootstrap 95% CI (B=10000, resample pairs within cells both runs); registered verdict branch: confirmed iff realized eligible n >= 3 AND CI lower bound > 0; falsified iff realized eligible n >= 3 AND CI lower bound <= 0 AND CI upper bound < +0.3; otherwise no-verdict/underpowered (an eligibility collapse to n <= 2 routes here regardless of the mechanical rho) narrated as failure-to-reject with the realized n. DESCRIPTIVE companion series: all 16 shared cells (>=1 surviving pair in both runs), explicitly labelled descriptive and never verdict-bearing (3 parent cells below the eligibility floor make its within-cell bootstrap invalid as a test). CIs shown as their own intervals, never overlaid on #2329's 31-unit [0.583,0.864]",
+      "plotted_quantity": "scatter of per-cell steered F_beh (27B y vs 7B x) with identity line; PRIMARY >=12-eligible cells as filled markers, the 3 below-floor cells as open markers (descriptive-only); rho + pair-clustered CI per series in the legend (primary verdict-bearing, all-16 labelled descriptive), realized N stated"
+    },
+    {
+      "id": "fact_layer_profile",
+      "title": "Full 64-layer F_act profile (fraction-of-stack axis; full-attention layers marked; layer 59 = labelled cross-model comparison row, layer 61 = exploratory companion)",
+      "source": "eval_results/issue_2389/f_metrics/fact_profile.jsonl (vectorized over the all-layer va_store)",
+      "transform": "per layer l in 0..63: F_act_l = (patched - floor)/(ceiling - floor) on span-mean V_a at layer l, cell mean over surviving pairs (steered arm); x-axis = l/63 fraction-of-stack; mark full-attention layers {3,7,...,63}; vertical marker at layer 59 (comparison row, FULL-attention — layer TYPE annotated per model beside the 3-model row: 9B row 30 was linear-attention) + vertical marker at layer 61 (parent-convention alternative, linear-attention, labelled EXPLORATORY companion; zero marginal compute from the all-64 capture)",
+      "plotted_quantity": "mean steered F_act per layer (curve per cell family + grand mean), pair-clustered CI band on the grand mean; layers 59 (primary comparison row) and 61 (exploratory companion) marked with layer types"
+    },
+    {
+      "id": "cap_regime_table",
+      "title": "Per-cell max_new_tokens regime and realized cap-hit (assigned 2048/4096; recalibrated at gate-3 slice)",
+      "source": "eval_results/issue_2389/cap_hit/*.json + gates/cap_recalibration.json",
+      "transform": "per cell x stage: assigned cap (seeded from #2329 measured table), gate-3-slice early rate, realized bulk rate = n_cap_hit/n_rollouts, regen-trigger flag (>2%), post-regen rate where applicable",
+      "plotted_quantity": "table-figure: per-cell assigned cap + realized cap-hit fractions per stage vs the 2% trigger"
+    },
+    {
+      "id": "stage2_layer_dose",
+      "title": "Stage-2: F_beh by single layer x dose on F_act-selected survivors (post-selection; full-attention vs linear layers)",
+      "source": "eval_results/issue_2389/f_metrics/f_cells_stage2.jsonl",
+      "transform": "per surviving combo: pair mean F_beh (steered - shuffled contrast) per layer in {18,31,32,39,47,50,60} x dose in {1,4}; pair-clustered CIs; full-attention layers {31,39,47} visually distinguished; 'F_act-selected at layer 59 (full-attention), cap 12' label on the panel title (post-selection + selection-layer-type disclosure)",
+      "plotted_quantity": "mean F_beh per layer x dose per surviving type (curves), full-attention layers marked"
+    },
+    {
+      "id": "anchor_separation_diag",
+      "title": "Anchor separation distributions and exclusion diagnostics per cell (vs 9B first-quartile 0.555)",
+      "source": "eval_results/issue_2389/f_metrics/anchors.jsonl",
+      "transform": "per pair: |ceiling - floor| on the 0-1 judge scale; per-cell distribution (box/strip), survival fraction at the 0.5 bar, bank-wide first quartile vs 7B 0.346 and 9B 0.555; expected-untestable cells (demo_format, persona_role_header) pre-flagged in the caption; the gate-3 aggregate read shown as ADVISORY diagnostics (no halt floor)",
+      "plotted_quantity": "per-pair anchor separation by cell + per-cell survival fraction at the 0.5 exclusion bar"
+    },
+    {
+      "id": "factor_curves",
+      "title": "Inherited factor reads: route contrasts, conflict, recency depth, load curves at context-end",
+      "source": "eval_results/issue_2389/f_metrics/f_cells.jsonl + stats.json",
+      "transform": "P2/P3 family contrasts inherited verbatim from #2329: per-factor cell means (steered arm, post-exclusion) with pair-clustered CIs; recency d1/d3/d5 and load 0/2/4-distractor curves per base type",
+      "plotted_quantity": "mean steered F_beh vs factor level (curves per family) with pair-clustered CIs"
+    },
+    {
+      "id": "vllm_parity_report",
+      "title": "vLLM-vs-HF anchor parity gate: per-context floor/ceiling judge-score distributions on 3 cap-spanning cells (engaged-or-disabled)",
+      "source": "eval_results/issue_2389/gates/vllm_parity_report.json",
+      "transform": "3 cells (fact_user_name, persona_prompted, filler_swap) x 2 engines x 2 anchor arms, identical instrument, BOTH sides judged SYNC in the P2 window (route mechanically forced sync via threshold_base=FORCE_SYNC_THRESHOLD_BASE; realized route asserted and persisted in the report; cache-served to the P6 batch wave): paired per-context score distributions, paired Wilcoxon p, mean offset, per-cell separation pair-survival counts; if the gate PASSed, the realized per-cell engine split + engine-stratified F_act anchor diagnostics accompany it (behavioral parity does not establish F_act anchor-distribution parity); if the gate FAILed or vLLM unavailable, the figure is replaced by the recorded gate verdict (marked 'not run: <reason>')",
+      "plotted_quantity": "paired per-context anchor judge scores by engine (distributions + offset), plus the PASS/FAIL verdict panel (and engine-stratified F_act anchor diagnostics when engaged)"
+    },
+    {
+      "id": "diagnostics_dump",
+      "title": "Mechanical-audit, coherence, judge-transport and refusal-accounting diagnostics (exploratory dump)",
+      "source": "eval_results/issue_2389/judge/*.json + f_metrics diagnostics fields",
+      "transform": "per arm x stage: coherence rate, mechanical-audit trip rates (non-Latin, repeated-4-gram, empty, think-tag), judge parse-fail / transport-retry / api-refusal counts (rule-28 three-way split), frac_items_complete vs the 0.95 floor, sync re-issue merge offsets, realized uncached judge-call count + number of Batch passes + any stuck-batch fallback events",
+      "plotted_quantity": "per-arm diagnostic rates and counts (small-multiple bars/tables)"
+    }
+  ]
+}

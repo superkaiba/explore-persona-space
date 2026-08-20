@@ -771,6 +771,153 @@ def test_set_body_goal_guard_allows_goal_preserving_rewrite(fake_repo):
     assert "Measure the thing precisely." not in body
 
 
+# ─── set_body: Goal-H2 guard v2-report auto-exemption (#2197) ───────────────
+#
+# A `workflow: v2` task writing a report-v1 body (positional
+# `<!-- report-v1 -->` sentinel, the exact verify_report.py semantics) is
+# auto-exempt from the Goal-H2 drop guard — no `allow_goal_drop` needed.
+# BOTH discriminator halves are required: the on-disk `workflow: v2`
+# frontmatter AND the positional sentinel in the new body. Every other
+# refused shape stays refused.
+
+_REPORT_V1_BODY = (
+    "# Experiment: does the thing move\n"
+    "\n"
+    "<!-- report-v1 -->\n"
+    "\n"
+    "## Motivation\n\nWhy we ran it.\n\n"
+    "## TLDR\n\n*(Thomas fills in)*\n\n"
+    "## Methodology (shared)\n\nShared recipe prose.\n\n"
+    "## Results\n\n### Result 1\n\nfigure + factual caption.\n\n"
+    "## Conclusion and next steps\n\n*(Thomas fills in)*\n"
+)
+
+# Sentinel QUOTED mid-prose (not the first non-blank line after the H1) —
+# containment would match, the positional check must not.
+_MID_PROSE_SENTINEL_BODY = (
+    "# T\n\nProse discussing the `<!-- report-v1 -->` sentinel, not positional.\n\n"
+    "<!-- report-v1 -->\n"
+)
+
+
+def _install_workflow_v2(tw, repo, task_id):
+    """Write `workflow: v2` directly into the on-disk body.md frontmatter.
+
+    No dedicated mutator exists for the `workflow` field and it is
+    deliberately NOT in `_SET_BODY_ROUNDTRIP_KEYS` (incoming-body
+    frontmatter cannot install it), so tests place it on disk the way
+    `task.py new` under EPM_DEFAULT_WORKFLOW=v2 would.
+    """
+    path = repo / "tasks" / "proposed" / str(task_id) / "body.md"
+    fm, body = tw._read_body(path)
+    fm["workflow"] = "v2"
+    tw._write_body(path, fm, body)
+
+
+def test_set_body_goal_guard_skips_v2_report_body(fake_repo):
+    """The #2197 happy path: v2 task + positional report-v1 sentinel writes
+    WITHOUT `allow_goal_drop`, and `snapshot_original=True` still snapshots
+    the prior Goal-bearing body (the #2162 "nothing was lost" property)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    _install_workflow_v2(tw, repo, new_id)
+    tw.set_body(new_id, _REPORT_V1_BODY, snapshot_original=True)  # no raise, no flag
+    _, body = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert "<!-- report-v1 -->" in body
+    assert "## Goal" not in body
+    orig = repo / "tasks" / "proposed" / str(new_id) / "original-body.md"
+    assert orig.exists()
+    assert "Measure the thing precisely." in orig.read_text()
+
+
+def test_set_body_goal_guard_still_fires_on_v2_non_report_body(fake_repo):
+    """Half a discriminator is no exemption: a v2 task's goal-dropping
+    NON-report body (no positional sentinel) still refuses."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    _install_workflow_v2(tw, repo, new_id)
+    with pytest.raises(tw.GoalH2DropError):
+        tw.set_body(new_id, _GOALLESS_BODY)
+
+
+def test_set_body_goal_guard_still_fires_on_v1_task_with_sentinel(fake_repo):
+    """The other half: a sentinel-bearing report body on a NON-v2 task still
+    refuses — both with the `workflow` field ABSENT (the legacy pre-v2 shape)
+    and with an explicit `workflow: v1`."""
+    repo, tw = fake_repo
+    # Variant 1: workflow field ABSENT (legacy pre-v2 task). create_task()
+    # unconditionally writes `workflow: v1` (_resolve_workflow_version), so
+    # pop the key from the on-disk frontmatter to realize true absence.
+    absent_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    absent_path = repo / "tasks" / "proposed" / str(absent_id) / "body.md"
+    fm, body = tw._read_body(absent_path)
+    fm.pop("workflow")  # KeyError here would mean create_task stopped writing it
+    tw._write_body(absent_path, fm, body)
+    fm_reread, _ = tw._read_body(absent_path)  # re-read: prove on-disk absence
+    assert "workflow" not in fm_reread
+    with pytest.raises(tw.GoalH2DropError):
+        tw.set_body(absent_id, _REPORT_V1_BODY)
+    # Variant 2: workflow explicitly v1.
+    v1_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    path = repo / "tasks" / "proposed" / str(v1_id) / "body.md"
+    fm, body = tw._read_body(path)
+    fm["workflow"] = "v1"
+    tw._write_body(path, fm, body)
+    with pytest.raises(tw.GoalH2DropError):
+        tw.set_body(v1_id, _REPORT_V1_BODY)
+
+
+def test_set_body_goal_guard_ignores_mid_prose_sentinel_quote(fake_repo):
+    """A mid-prose sentinel QUOTATION (containment hit, positional miss) must
+    NOT take the exemption — pins the positional `_is_report_v1_body`
+    discriminator over the looser `is_report_body` containment check."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    _install_workflow_v2(tw, repo, new_id)
+    assert tw.is_report_body(_MID_PROSE_SENTINEL_BODY)  # containment WOULD match
+    assert not tw._is_report_v1_body(_MID_PROSE_SENTINEL_BODY)  # position does not
+    with pytest.raises(tw.GoalH2DropError):
+        tw.set_body(new_id, _MID_PROSE_SENTINEL_BODY)
+
+
+def test_set_body_goal_guard_ignores_smuggled_workflow_frontmatter(fake_repo):
+    """The discriminator reads only the CANONICAL on-disk frontmatter:
+    `workflow` is not a `_SET_BODY_ROUNDTRIP_KEYS` member, so an incoming
+    body smuggling `workflow: v2` in its own leading frontmatter cannot
+    take the exemption on a non-v2 task."""
+    _, tw = fake_repo
+    assert "workflow" not in tw._SET_BODY_ROUNDTRIP_KEYS
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body=_GOAL_BODY))
+    smuggled = "---\nworkflow: v2\n---\n" + _REPORT_V1_BODY
+    with pytest.raises(tw.GoalH2DropError):
+        tw.set_body(new_id, smuggled)
+
+
+def test_report_sentinel_matches_verify_report():
+    """`task_workflow.REPORT_V1_SENTINEL` is pinned byte-equal to
+    `scripts/verify_report.py::REPORT_SENTINEL` — the guard exemption and
+    the mechanical report verifier must never drift apart."""
+    import importlib.util
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "verify_report.py"
+    spec = importlib.util.spec_from_file_location("verify_report_under_test", script)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    # Register BEFORE exec: verify_report defines dataclasses, and the
+    # dataclass machinery resolves module globals through sys.modules.
+    sys.modules["verify_report_under_test"] = mod
+    try:
+        spec.loader.exec_module(mod)
+        assert tw.REPORT_V1_SENTINEL == mod.REPORT_SENTINEL
+    finally:
+        sys.modules.pop("verify_report_under_test", None)
+
+
 def test_has_goal_h2_matches_inject_semantics():
     """`_has_goal_h2` matches EXACTLY the `line.strip() == GOAL_H2_NAME`
     semantics `_inject_or_replace_goal_h2` uses — strip-tolerant, but no

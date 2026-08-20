@@ -1535,3 +1535,59 @@ under-refusal = NOT-ADDRESSED). Reconciler marker version trap: posted
 top-level version is v1 (first reconcile on the task) while the head
 sentinel says v3 (the round) — fetch by kind from events.jsonl and state
 the mapping in the return, never fetch by "v3".
+
+**Reconciler-narrowed-remedy fix round, reconcile-note-only contract (#2201
+cr2, 2026-08-19):** when the reconciler upheld the twin's DIRECTION on ALL
+its findings but NARROWED every remedy, the reconcile note alone is the
+acceptance contract — do NOT inline the prior twin verdict (unlike the
+#2332-r4 mixed-rulings shape, where dropped/rejected items make the prior
+verdict needed for ledger context); inlining the full FAIL would re-seed
+the exact remedies the reconciler cut. Compose instead: (a) a CUT-REMEDIES
+do-not-re-file block enumerating each cut with the reconciler's rationale
+verbatim-ish (re-filing = scope creep under Unintended Changes; for a
+REJECTED-as-topology-breaking remedy, its settlement's REQUIRED-ABSENT
+halves become explicit checks — e.g. "confirm NO helper re-binding and NO
+skipped-with-worktree fixture"); (b) a per-MF DISCHARGED/NOT-DISCHARGED
+`## Round-2 discharge ledger` schema section (NOT-DISCHARGED = substantive
+FAIL) + author-neutrality; (c) a fails-pre-fix INDEPENDENT verification
+duty translated to STATIC reconstruction (`git show <r1-sha>:<path>` +
+control-flow trace per fixture, verdict vocabulary CONFIRMED-RED-PRE-FIX /
+NOT-CONFIRMED, "green against both blobs = decorative pin" framing); (d)
+fix-round `epm:results` markers use per-MF headings, not (a)-(d) letters —
+attest the content-equivalence mapping as a compose-time fact (CONCERNS
+ceiling) and attest the r1 marker carries the full Gate-scope block so the
+v2 terse line is PRESENT-BUT-TERSE (fold precedent); (e) when the brief's
+Should-Fix list is a strict subset of the reconciler's, include the missing
+one(s) with lenient absorbed-or-deferred-with-note adjudication; (f) static
+proxies for unrunnable claims attested as compose-time facts to re-verify
+(def-test count vs claimed collect-only, zero-hit stale-cap-literal sweep);
+(g) note the reconcile note's file:line refs use R1-BLOB numbering.
+
+**Union-NOTE-as-contract + instrument-non-vacuity fix round (#2391 r2,
+2026-08-19):** when the orchestrator posted a standalone union WORK ORDER
+note (B1/B2 with root-cause + per-item round-2 scope) after a FAIL+FAIL
+agreement, inline THAT note as the sole acceptance contract instead of both
+prior verdicts (#2332 form) — it pre-extracts every Evidence/Fix line, has no
+marker tags, so the tag arithmetic collapses to own-head==1/close==1 with no
+stripping. Deltas worth reusing: (a) a brief-ordered mutation probe ("flip
+the allowlist, confirm red, restore by inverse edit") translates to the
+#2146 SCRATCH-TREE form keyed on the test's OWN path resolution — when
+`REPO_ROOT = Path(__file__).resolve().parents[1]`, a /tmp scratch tree
+(`tests/` + the read files beside it) isolates the mutation completely;
+check IMPORTS first to decide scratch-runnability (stdlib+pytest-only file →
+runs anywhere; a file importing the project package must NOT be
+scratch-copied — probe its pure helpers via `uv run python -c` from the
+worktree on in-memory mutated strings instead). Never mutate the shared
+worktree (the parallel Claude reviewer reads the same tree). (b) A brief
+environment note ("uv rc=2 read-only cache → UV_CACHE_DIR=...; never bare
+`python -m pytest` — imports MAIN's package, reads the old cap") is a
+BINDING prompt section, not advice — round 1's twin burned its run on
+exactly that stale-main false failure. (c) A same-defect concern pair
+(Claude id + Codex id for one bug) gets ONE closure adjudication covering
+both ids, stated in the ledger literal AND the closure-ledger schema. (d)
+When the task history is "every blocker was a verification-instrument
+defect", the priorities lead with instrument NON-VACUITY (reachability of
+the scan's file enumeration, exemption exactness + the dead-control proof,
+the lookbehind/word-adjacency claim behind a compose test, kwarg-default
+behavior preservation) — with fabricated-falsifiability (claimed-red that
+stays green) named as substantive FAIL.
