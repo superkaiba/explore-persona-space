@@ -1084,15 +1084,15 @@ def fig_score_scatter(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
                 )
                 rendered = True
         ax.set_title(ARM_LABEL[arm])
-        ax.set_xlabel("ctx probe score")
-    axes[0][0].set_ylabel("mapped (3a) probe score")
+        ax.set_xlabel("context-probe score")
+    axes[0][0].set_ylabel("generic-map probe score")
     axes[0][0].legend(fontsize=8)
     if not rendered:
         plt.close(fig)
         return []
     cap = (
-        "Per-row OOF score scatter: mapped (3a) probe score vs ctx probe score, colored by "
-        "the row's behavior label. Tight coupling means the rank-restricted map carries "
+        "Per-row OOF score scatter: generic-map probe score vs context-probe score, colored "
+        "by the row's behavior label. Tight coupling means the rank-restricted map carries "
         "the same decision information as the raw context read."
     )
     return [("score_scatter_map_vs_ctx", fig, cap)]

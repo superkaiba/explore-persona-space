@@ -3,7 +3,7 @@
   "captions": {
    "armA_text_surface_indicator": "Arm A within-group construction control (F2): AUROC of the bare is-rewrite indicator, and the fitted text-surface baseline WITH vs WITHOUT the rewrite-axis indicator features. A text-surface edge driven by the base-first REFUSE sampling channel would show up here; dashed = chance."
   },
-  "fingerprint": "b3cbab4ea0fd951f5d004dc343fda5047a5ece8da19fa17d94e7c195d964d6da",
+  "fingerprint": "588b7c2ee87badabd3ac506fcf13f757876dd38d9f1ef6f58a8405353b915730",
   "stems": [
    "armA_text_surface_indicator"
   ]
@@ -12,7 +12,7 @@
   "captions": {
    "auroc_by_layer": "Per-layer AUROC curves for the layer-selected predictors: inner group-CV pooled AUROC per layer (selection metric), averaged over outer folds. These are the SELECTION curves persisted by the fits driver, not held-out eval AUROCs."
   },
-  "fingerprint": "c4d13ff14c21dea0ffa6c0f018fe5101f7fe78aed3a6fa3baf099093eec5afc1",
+  "fingerprint": "2154311473183ae558c173451503cbfcac8c5aec19aa1e9288686aa3eb6b8f59",
   "stems": [
    "auroc_by_layer"
   ]
@@ -21,7 +21,7 @@
   "captions": {
    "battery_3a_layer_curve": "Exploratory all-layer #3a retrieval curve: whitened-cosine acc@1 of the generic-trained map's predictions against the arm's greedy-answer pool, per layer (per-fold train-answer whitening). Dotted vertical = the modal probe-selected 3a layer the battery cell uses; dashed = chance (1/n_pool)."
   },
-  "fingerprint": "247b156af5e6fa0034bf894fce0c6910f749d6a2970def8420a5a2dc9e4b6ac3",
+  "fingerprint": "265afd413612216fca30d9b9219d66718d17f47882183078c832bff427f0ae1c",
   "stems": [
    "battery_3a_layer_curve"
   ]
@@ -31,7 +31,7 @@
    "battery_acc1_draw_avg": "Map-discrimination battery (draw_avg targets): retrieval acc@1 per (arm x map condition) across the four metric spaces, with the identity+bias baseline pushed through the same whitened battery (hatched) and the S2 gate marker (black tick = group-bootstrap 5% lower bound of whitened-cosine acc@1; a cell passes the discrimination predicate iff the tick sits above the dashed chance line = 1/n_pool).",
    "battery_acc1_greedy": "Map-discrimination battery (greedy targets): retrieval acc@1 per (arm x map condition) across the four metric spaces, with the identity+bias baseline pushed through the same whitened battery (hatched) and the S2 gate marker (black tick = group-bootstrap 5% lower bound of whitened-cosine acc@1; a cell passes the discrimination predicate iff the tick sits above the dashed chance line = 1/n_pool)."
   },
-  "fingerprint": "247b156af5e6fa0034bf894fce0c6910f749d6a2970def8420a5a2dc9e4b6ac3",
+  "fingerprint": "265afd413612216fca30d9b9219d66718d17f47882183078c832bff427f0ae1c",
   "stems": [
    "battery_acc1_greedy",
    "battery_acc1_draw_avg"
@@ -41,7 +41,7 @@
   "captions": {
    "battery_behavior_split": "Behavior-conditioned retrieval: whitened-cosine acc@1 (greedy targets) split by the target's behavior class (refuse vs engage answers) per arm x map condition; dashed = chance (1/n_pool)."
   },
-  "fingerprint": "247b156af5e6fa0034bf894fce0c6910f749d6a2970def8420a5a2dc9e4b6ac3",
+  "fingerprint": "265afd413612216fca30d9b9219d66718d17f47882183078c832bff427f0ae1c",
   "stems": [
    "battery_behavior_split"
   ]
@@ -50,7 +50,7 @@
   "captions": {
    "battery_rank_summary": "Battery rank summary (greedy targets): median rank of the true answer and MRR per (arm x condition x metric space). Per-target rank histograms are not persisted by the fits driver; median rank + MRR are the persisted rank reads."
   },
-  "fingerprint": "247b156af5e6fa0034bf894fce0c6910f749d6a2970def8420a5a2dc9e4b6ac3",
+  "fingerprint": "265afd413612216fca30d9b9219d66718d17f47882183078c832bff427f0ae1c",
   "stems": [
    "battery_rank_summary"
   ]
@@ -59,7 +59,7 @@
   "captions": {
    "contrast_paired_ci": "Registered paired contrasts per arm: AUROC differences with paired group-bootstrap 95% intervals over the common per-arm row mask (identical draw indices per contrast). Includes the fitted text-surface control (context - text-surface) and the headline context-minus-judge gap; dashed = zero."
   },
-  "fingerprint": "b3cbab4ea0fd951f5d004dc343fda5047a5ece8da19fa17d94e7c195d964d6da",
+  "fingerprint": "588b7c2ee87badabd3ac506fcf13f757876dd38d9f1ef6f58a8405353b915730",
   "stems": [
    "contrast_paired_ci"
   ]
@@ -68,7 +68,7 @@
   "captions": {
    "dim_vs_ridge": "Estimator sensitivity: the ctx ridge probe vs the diff-in-means companion (train-class-mean difference at the last prompt token), pooled OOF AUROC with group-bootstrap CIs where available; dashed = chance."
   },
-  "fingerprint": "b3cbab4ea0fd951f5d004dc343fda5047a5ece8da19fa17d94e7c195d964d6da",
+  "fingerprint": "588b7c2ee87badabd3ac506fcf13f757876dd38d9f1ef6f58a8405353b915730",
   "stems": [
    "dim_vs_ridge"
   ]
@@ -77,7 +77,7 @@
   "captions": {
    "group_size_histograms": "Group structure: Arm A flip-group sizes (base_id families with >=1 comply-labeled row - the matched-pair units) and Arm B derived-paraphrase-component sizes (TF-IDF union v_C-cosine connected components). Degeneracy guards + realized thresholds live in groups.json."
   },
-  "fingerprint": "4ba50fd1f38602ed4a1f8e4267c59351d5209f0b6dec60198d05c496e7d0be2f",
+  "fingerprint": "4259fb4661ac589ad19a8d1c1d5df02009df5a25ba7b351874b17b1b1003e5cd",
   "stems": [
    "group_size_histograms"
   ]
@@ -86,7 +86,7 @@
   "captions": {
    "hero_auroc_by_predictor": "Pooled out-of-fold AUROC per predictor (group 5-fold scheme), one panel per arm; error bars = paired group-bootstrap 95% intervals from stats.json; dashed line = chance (0.5). All scores oriented as P(refuse)."
   },
-  "fingerprint": "b3cbab4ea0fd951f5d004dc343fda5047a5ece8da19fa17d94e7c195d964d6da",
+  "fingerprint": "588b7c2ee87badabd3ac506fcf13f757876dd38d9f1ef6f58a8405353b915730",
   "stems": [
    "hero_auroc_by_predictor"
   ]
@@ -95,7 +95,7 @@
   "captions": {
    "judge_calibration": "Judge calibration: few-shot judge P(refuse) binned into deciles vs the empirical refuse fraction among OOF rows in each bin (marker size ~ bin count); dashed = perfect calibration."
   },
-  "fingerprint": "c4d13ff14c21dea0ffa6c0f018fe5101f7fe78aed3a6fa3baf099093eec5afc1",
+  "fingerprint": "2154311473183ae558c173451503cbfcac8c5aec19aa1e9288686aa3eb6b8f59",
   "stems": [
    "judge_calibration"
   ]
@@ -104,7 +104,7 @@
   "captions": {
    "limited_label_learning_curves": "Limited-label learning curves: AUROC at the fold-selected configuration when the probe trains on n labeled groups/class (10 subsample seeds; 'all' = full train fold, 1 seed). Mean +- sd over seeds of the per-seed fold means."
   },
-  "fingerprint": "b3cbab4ea0fd951f5d004dc343fda5047a5ece8da19fa17d94e7c195d964d6da",
+  "fingerprint": "588b7c2ee87badabd3ac506fcf13f757876dd38d9f1ef6f58a8405353b915730",
   "stems": [
    "limited_label_learning_curves"
   ]
@@ -113,7 +113,7 @@
   "captions": {
    "lodo_armB": "LODO cross-benchmark transfer (Arm B): ctx probe trained on the other source, evaluated on the held-out source (per-direction AUROC from per-row LODO scores joined to the corpus manifest's source field), plus the pooled LODO AUROC. Dotted line = in-fold ctx probe AUROC; dashed = chance."
   },
-  "fingerprint": "f10b53f1765a147bf81e5085ec4a80fa7188f091f5a1f0d19ca318c5d805a38e",
+  "fingerprint": "de52c6817364f96082775c1af03e2c1e82b79f927c6af910990522a335db40b6",
   "stems": [
    "lodo_armB"
   ]
@@ -122,7 +122,7 @@
   "captions": {
    "map_quality_by_layer": "Map diagnostics by layer (generic held-out rows): left - held-out R2 of the 3a map (solid) vs the identity+bias baseline (dashed); thin grey lines = the 3b in-domain-adapted conditions. Right - kNN retrieval acc@1 of the 3a map predictions among the held-out pool (euclidean + cosine) vs chance."
   },
-  "fingerprint": "07f45b7f8a7e6ffb00fc4e3c743bb34a1343349514052aef1e3322387aaabde4",
+  "fingerprint": "4f5f36417a401539d94126ea0df1e60b0d34266fde2797d711bb540317ab898a",
   "stems": [
    "map_quality_by_layer"
   ]
@@ -131,7 +131,7 @@
   "captions": {
    "nn_behavior_match": "Fit-free discriminator: does the whitened nearest pool neighbor of the predicted answer carry the same greedy behavior label as the target's prompt? Dashed reference = matched-random-pair rate from the pool's greedy-label shares (sum of squared class shares)."
   },
-  "fingerprint": "71066faec5e515b762c2ab5bd9a905f0d749dfdf636868f4b9bc59715fe6be54",
+  "fingerprint": "ecc81f01da952678438af23c65784df28c85d5f24c62acc93a3abdc9311fb657",
   "stems": [
    "nn_behavior_match"
   ]
@@ -140,7 +140,7 @@
   "captions": {
    "permutation_band": "Advisory permutation calibration: observed ctx-probe AUROC vs the group-label permutation null (band = null q50-q95, tick = null mean; per-draw inner layer re-selection at frozen per-(fold,layer) GCV lambda). Advisory only - never a gate; p-values in stats.json."
   },
-  "fingerprint": "b3cbab4ea0fd951f5d004dc343fda5047a5ece8da19fa17d94e7c195d964d6da",
+  "fingerprint": "588b7c2ee87badabd3ac506fcf13f757876dd38d9f1ef6f58a8405353b915730",
   "stems": [
    "permutation_band"
   ]
@@ -149,7 +149,7 @@
   "captions": {
    "rank_ladder_selected": "Rank-ladder outcome per fold: the inner-CV-selected (rank, layer) for the mapped probes (3a/3b) and the matched-rank PCA control. 'full'-rank selections are omitted from the rank panel (log2 axis). The full per-(layer,rank) AUROC surface is not persisted by the fits driver; this shows the realized selections."
   },
-  "fingerprint": "c4d13ff14c21dea0ffa6c0f018fe5101f7fe78aed3a6fa3baf099093eec5afc1",
+  "fingerprint": "2154311473183ae558c173451503cbfcac8c5aec19aa1e9288686aa3eb6b8f59",
   "stems": [
    "rank_ladder_selected"
   ]
@@ -158,7 +158,7 @@
   "captions": {
    "rate_histograms": "Continuous-rate histograms: per-prompt engage rate over valid judged draws (the graded secondary DV). Shaded band = the dropped middle band between the label thresholds (label engage iff rate >= hi, refuse iff rate <= lo)."
   },
-  "fingerprint": "7a40de04f7612070fa7a3c5175178688ffdff79a30033e0279bab05f17df8ef3",
+  "fingerprint": "4472a08016f972b168dc7ca9ec508b9a4cfd7d88441075924fc096c16269d8fd",
   "stems": [
    "rate_histograms"
   ]
@@ -167,16 +167,16 @@
   "captions": {
    "roc_curves": "ROC curves per predictor over pooled OOF rows (positive class = refuse). Per-predictor valid rows; see stats.json for the common-mask AUROCs."
   },
-  "fingerprint": "c4d13ff14c21dea0ffa6c0f018fe5101f7fe78aed3a6fa3baf099093eec5afc1",
+  "fingerprint": "2154311473183ae558c173451503cbfcac8c5aec19aa1e9288686aa3eb6b8f59",
   "stems": [
    "roc_curves"
   ]
  },
  "score_scatter_map_vs_ctx": {
   "captions": {
-   "score_scatter_map_vs_ctx": "Per-row OOF score scatter: mapped (3a) probe score vs ctx probe score, colored by the row's behavior label. Tight coupling means the rank-restricted map carries the same decision information as the raw context read."
+   "score_scatter_map_vs_ctx": "Per-row OOF score scatter: generic-map probe score vs context-probe score, colored by the row's behavior label. Tight coupling means the rank-restricted map carries the same decision information as the raw context read."
   },
-  "fingerprint": "c4d13ff14c21dea0ffa6c0f018fe5101f7fe78aed3a6fa3baf099093eec5afc1",
+  "fingerprint": "2154311473183ae558c173451503cbfcac8c5aec19aa1e9288686aa3eb6b8f59",
   "stems": [
    "score_scatter_map_vs_ctx"
   ]
@@ -185,7 +185,7 @@
   "captions": {
    "transfer_2x2": "Cross-regime transfer 2x2: context probe (ridge) and difference-in-means trained on one arm's full balanced set, evaluated on the other arm's balanced set; both directions. Report-only (plan Step G / H4); dashed = chance."
   },
-  "fingerprint": "c610f26b0dc718af3638e0f9480fadcb6ec8c496e282057c94a67e6ca70c023a",
+  "fingerprint": "fa3eb9553e2304007ff06acdc237932760dadad7badf3ce318cdb56d62238d72",
   "stems": [
    "transfer_2x2"
   ]
@@ -194,7 +194,7 @@
   "captions": {
    "w_spectra_effective_rank": "Left: top-16 singular values of the fitted context-to-answer map W at the first / best-R2 / last layers (3a). Right: effective rank (participation ratio of the singular spectrum) by layer; thin grey = 3b conditions."
   },
-  "fingerprint": "07f45b7f8a7e6ffb00fc4e3c743bb34a1343349514052aef1e3322387aaabde4",
+  "fingerprint": "4f5f36417a401539d94126ea0df1e60b0d34266fde2797d711bb540317ab898a",
   "stems": [
    "w_spectra_effective_rank"
   ]

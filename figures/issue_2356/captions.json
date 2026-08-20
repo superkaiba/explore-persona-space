@@ -152,7 +152,7 @@
    "status": "rendered"
   },
   "score_scatter_map_vs_ctx": {
-   "caption": "Per-row OOF score scatter: mapped (3a) probe score vs ctx probe score, colored by the row's behavior label. Tight coupling means the rank-restricted map carries the same decision information as the raw context read.",
+   "caption": "Per-row OOF score scatter: generic-map probe score vs context-probe score, colored by the row's behavior label. Tight coupling means the rank-restricted map carries the same decision information as the raw context read.",
    "inputs": [
     "results/predictor_scores_armA.json",
     "results/predictor_scores_armB.json"
@@ -175,7 +175,7 @@
   }
  },
  "meta": {
-  "git_commit": "22e6823b",
+  "git_commit": "93b8debe",
   "git_dirty": true,
   "git_dirty_paths": [
    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md",
@@ -193,7 +193,6 @@
    "figures/issue_2356/battery_behavior_split.png",
    "figures/issue_2356/battery_rank_summary.meta.json",
    "figures/issue_2356/battery_rank_summary.png",
-   "figures/issue_2356/captions.json",
    "figures/issue_2356/contrast_paired_ci.meta.json",
    "figures/issue_2356/contrast_paired_ci.png",
    "figures/issue_2356/dim_vs_ridge.meta.json",
@@ -230,6 +229,6 @@
    "scripts/issue2356_figures.py"
   ],
   "issue": 2356,
-  "timestamp_utc": "2026-08-20T20:35:37Z"
+  "timestamp_utc": "2026-08-20T22:51:31Z"
  }
 }
