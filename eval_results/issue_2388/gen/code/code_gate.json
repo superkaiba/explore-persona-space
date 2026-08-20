@@ -1,0 +1,54 @@
+{
+ "g1": {
+  "available": true,
+  "path": "eval_results/issue_2388/gen/code_harness_control.json",
+  "harness_ok": true,
+  "flaky_mismatch_fraction": 0.0,
+  "bcb_control_ts": "2026-08-20T17:01:39Z",
+  "apps_harness_ok": null,
+  "apps_control_ts": null
+ },
+ "g3_bcb": {
+  "available": false,
+  "provenance": "eval_results/issue_2388/gen/code/bigcodebench_full.json",
+  "full_pool": null,
+  "admissible": null
+ },
+ "g1_apps": {
+  "available": false,
+  "control_25_25": null
+ },
+ "apps_pilot": {
+  "available": false,
+  "provenance": "eval_results/issue_2388/gen/code/apps_intro_pilot.json",
+  "pilot_scope_ok": null,
+  "admissible": null
+ },
+ "g3_apps": {
+  "available": false,
+  "provenance": "eval_results/issue_2388/gen/code/apps_intro.json",
+  "full_pool": null,
+  "admissible": null
+ },
+ "bcb_gen_allowed": true,
+ "bcb_fit_allowed": null,
+ "apps_required": null,
+ "apps_pilot_gen_allowed": false,
+ "apps_full_gen_allowed": false,
+ "apps_activated": false,
+ "pool_arithmetic": {
+  "n_lcb_kept_post_dedup": 507,
+  "est_train_with_bcb": 3958,
+  "est_train_without_bcb": 3160,
+  "code_train_floor_d": 3584
+ },
+ "ts": "2026-08-20T17:13:35Z",
+ "git_commit": "7cc443109dd4c6a1b741e79ccf6d800f7c15c7fd",
+ "git_dirty": true,
+ "phase": "gen-gate",
+ "git_dirty_paths": [
+  "eval_results/issue_2388/gen/code/dedup_report.json"
+ ],
+ "git_argv0_state": "tracked",
+ "git_argv0_path": "scripts/issue2388_gen.py"
+}

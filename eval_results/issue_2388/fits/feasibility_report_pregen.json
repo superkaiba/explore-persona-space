@@ -1,0 +1,69 @@
+{
+  "mode": "pre-gen-arithmetic",
+  "surfaces": {
+    "math": {
+      "n_train": 8750,
+      "pool": 8000,
+      "budgets": [
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000,
+        "full"
+      ],
+      "resolved_keys": {}
+    },
+    "mcq": {
+      "n_train": 8422,
+      "pool": 8000,
+      "budgets": [
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000,
+        "full"
+      ],
+      "resolved_keys": {}
+    },
+    "code": {
+      "n_train": 3160,
+      "pool": 3160,
+      "budgets": [
+        250,
+        500,
+        1000,
+        2000,
+        "full"
+      ],
+      "resolved_keys": {}
+    },
+    "qa": {
+      "n_train": 11009,
+      "pool": 8000,
+      "budgets": [
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000,
+        "full"
+      ],
+      "resolved_keys": {}
+    }
+  },
+  "metadata": {
+    "git_commit": "7cc443109dd4c6a1b741e79ccf6d800f7c15c7fd",
+    "git_dirty": true,
+    "phase": "feasibility",
+    "git_dirty_paths": [
+      "eval_results/issue_2388/gen/code/dedup_report.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2388_fits.py"
+  }
+}
