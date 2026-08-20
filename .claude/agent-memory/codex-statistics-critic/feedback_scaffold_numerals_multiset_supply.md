@@ -23,4 +23,9 @@ table" / "the Decision-Gates section", not "§6"/"§7"; (2) restate only
 brief-handed numerals, ≤ once each; (3) keep the handed-brief record VERBATIM —
 never add supply lines to it to make the check pass; (4) verifier = ref-strip →
 multiset-subtract handed spans → SET-membership allowlist {0,1,2,3,4,5,500} →
-collect-all BLOCKERs, single exit.
+collect-all BLOCKERs, single exit; (5) brief-handed IDENTIFIER strings (the
+`followup_label` like `q35_ladder_decay`, pod slugs) go into the handed-span
+file alongside the brief-handed PATH strings — same class, same rationale as
+the paths clarification; #2329 round 1: the label's `35` false-positived until
+the verbatim brief-handed label line was added to the handed-span file (this is
+recording a handed string verbatim, not adding supply — rule (3) unviolated).
