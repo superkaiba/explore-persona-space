@@ -902,6 +902,71 @@ def make_perdirection_figure(d_res: dict, traits: list[str], fig_path: Path) -> 
     logger.info("Wrote %s", fig_path)
 
 
+def make_perdirection_figure_iclr(d_res: dict, traits: list[str]) -> None:
+    """ICLR paper variant of the per-direction spectrum (figures/paper/).
+
+    One panel per trait: held-out per-direction R² vs 1-based variance rank
+    (log-x), the random-direction band (mean ± SD over the n reference draws),
+    and the persona direction r_B starred at its equivalent variance rank.
+    Drops the driver figure's twin variance-share axis (caption carries it);
+    writes c3_persona_direction_spectrum.{png,pdf,meta.json} via savefig_paper —
+    the driver-rendered h_perdirection_r2.png stem is untouched.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_panels,
+        paper_color,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("iclr")
+    fig, axes = plt.subplots(
+        1, len(traits), figsize=figsize_iclr_panels(len(traits), height_in=1.9), sharey=True
+    )
+    axes = np.atleast_1d(axes)
+    for ax, t in zip(axes, traits, strict=True):
+        res = d_res[t]
+        ranks1 = np.array(res["ranks_evaluated"]) + 1
+        r2 = np.array(res["r2_by_rank"])
+        rd = res["random_directions"]
+        ax.axhspan(
+            rd["r2_mean"] - rd["r2_sd"],
+            rd["r2_mean"] + rd["r2_sd"],
+            alpha=0.3,
+            color=paper_color("null"),
+            lw=0,
+            label="random directions (mean ± SD)",
+        )
+        ax.plot(ranks1, r2, lw=0.9, color=paper_color("instruct"), label="answer-PCA direction")
+        rb = res["r_b"]
+        ax.scatter(
+            [rb["equivalent_variance_rank"] + 1],
+            [rb["heldout_r2"]],
+            marker="*",
+            s=110,
+            zorder=6,
+            color=paper_color("persona_vector"),
+            edgecolors="black",
+            linewidths=0.4,
+            label="persona direction $r_B$",
+        )
+        ax.axhline(0.0, lw=0.6, color=paper_color("reference"))
+        ax.set_xscale("log")
+        ax.set_xlabel("variance rank (log)")
+        ax.set_title(t)
+    axes[0].set_ylabel("per-direction $R^2$")
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="outside lower center", ncols=3, fontsize=7)
+    savefig_paper(fig, "c3_persona_direction_spectrum", dir="figures/paper/")
+    plt.close(fig)
+    logger.info("Wrote figures/paper/c3_persona_direction_spectrum.{png,pdf,meta.json}")
+
+
 # ── main ───────────────────────────────────────────────────────────────────────
 
 
@@ -1022,6 +1087,13 @@ def main() -> int:
         action="store_true",
         help="rebuild both figures from an existing --out-json (skip all compute)",
     )
+    parser.add_argument(
+        "--style",
+        default="default",
+        choices=["default", "iclr"],
+        help="figures-only style: 'iclr' renders the paper per-direction spectrum "
+        "into figures/paper/ (committed results JSON only)",
+    )
     args = parser.parse_args()
 
     torch.set_num_threads(int(args.n_threads))
@@ -1036,7 +1108,10 @@ def main() -> int:
     results = _load_or_init(args.out_json)
 
     if args.figures_only:
-        _build_figures(results, traits, args.fig_dir)
+        if args.style == "iclr":
+            make_perdirection_figure_iclr(results["per_direction"], traits)
+        else:
+            _build_figures(results, traits, args.fig_dir)
         return 0
 
     results["read_out_layers"] = {t: READ_OUT_LAYER[t] for t in traits}

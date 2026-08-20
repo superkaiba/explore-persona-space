@@ -372,7 +372,95 @@ def fig_dose() -> None:
     plt.close(fig)
 
 
+def fig_hero_iclr(decision: dict, out_dir: Path) -> None:
+    """ICLR paper variant of the hero: per-stage gaps + the RLVR contrast.
+
+    Same data as fig_hero; on-canvas value labels and annotations move to the
+    LaTeX caption. Stage colors: grays for SFT/DPO context stages, blue for
+    RLVR (the panel's featured arm, per the PAPER_COLORS featured-arm slot).
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_panels, paper_color
+
+    per = decision["per_eval_set"]
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.5))
+    short = ["GSM8K\ntrain", "LMSYS\nchat", "LMSYS\nnaturalistic", "GSM8K\ntest"]
+    stage_colors = {"sft": "#BBBBBB", "dpo": "#666666", "rlvr": paper_color("instruct")}
+
+    ax = axes[0]
+    width = 0.24
+    xs = np.arange(len(EVAL_SETS))
+    for si, (slug, lab) in enumerate(STAGES):
+        pts, los, his = [], [], []
+        for key, _ in EVAL_SETS:
+            e = per[key]["gap_per_stage"][slug]
+            pts.append(e["point"])
+            los.append(e["point"] - e["ci_lo"])
+            his.append(e["ci_hi"] - e["point"])
+        ax.bar(
+            xs + (si - 1) * width,
+            pts,
+            width * 0.92,
+            yerr=[los, his],
+            capsize=1.5,
+            error_kw={"lw": 0.8},
+            color=stage_colors[slug],
+            label=lab,
+        )
+    ax.axhline(0.0, color="0.5", lw=0.6)
+    ax.set_xticks(xs, short, fontsize=7)
+    ax.set_ylabel("within $-$ base-composition $R^2$")
+    ax.set_title("A. gap per post-training stage")
+    ax.legend(frameon=False, fontsize=7, loc="lower left")
+
+    ax = axes[1]
+    xs2 = np.arange(len(EVAL_SETS))
+    for oi, (scale_key, lab, filled) in enumerate(
+        [
+            ("contrast_C", "recalibrated (primary)", True),
+            ("contrast_C_raw", "raw (companion)", False),
+        ]
+    ):
+        pts, los, his = [], [], []
+        for key, _ in EVAL_SETS:
+            e = per[key][scale_key]
+            pts.append(e["point"])
+            los.append(e["point"] - e["ci_lo"])
+            his.append(e["ci_hi"] - e["point"])
+        off = (oi - 0.5) * 0.22
+        ax.errorbar(
+            xs2 + off,
+            pts,
+            yerr=[los, his],
+            fmt="o" if filled else "s",
+            color="#333333" if filled else "#888888",
+            mfc="#333333" if filled else "none",
+            mew=0.9,
+            capsize=1.5,
+            lw=0.9,
+            markersize=3.5,
+            linestyle="none",
+            label=lab,
+        )
+    ax.axhline(0.0, color="0.5", lw=0.6)
+    band = decision["verdict_lattice"]["elicit_band"]
+    ax.axhspan(-band, band, color="0.88", alpha=0.6, zorder=0)
+    ax.set_xticks(xs2, short, fontsize=7)
+    ax.set_ylabel("gap(RLVR) $-$ gap(DPO)")
+    ax.set_title("B. RLVR-specific contrast")
+    ax.legend(frameon=False, fontsize=7, loc="upper right")
+    fig.tight_layout()
+    savefig_paper(fig, "c4_rlvr_contrast", dir=out_dir)
+    plt.close(fig)
+
+
 def main() -> None:
+    if sys.argv[1:] == ["iclr"]:
+        set_paper_style("iclr")
+        out_dir = Path("figures/paper")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        fig_hero_iclr(_load(EVAL / "decision" / "headline_contrast.json"), out_dir)
+        print("wrote iclr figure to", out_dir)
+        return
     set_paper_style("blog")
     decision = _load(EVAL / "decision" / "headline_contrast.json")
     verdict = _load(EVAL / "diagnosis" / "recal" / "recal_verdict.json")
