@@ -3429,10 +3429,14 @@ def _validate_frozen_share_prefill(cfg: RunConfig, phase: str, rec: dict, freeze
     rule for this run, and the gate artifact it was armed on still carries
     the recorded ``gate_sha256`` DECISION digest (verdict+mode canonical
     subset — ``_share_prefill_gate_digest``; a benign fresh-``ts`` rewrite
-    keeps the digest, round-5 A). Any failure resolves to SERIAL
-    (unarmed-on-uncertainty, the B9 family determination) — the guard is
-    deterministic, so every same-regime participant still resolves the
-    SAME value; an unarmed record adopts as serial with no checks."""
+    keeps the digest, round-5 A). A FOREIGN-regime failure resolves to
+    SERIAL (unarmed-on-uncertainty, the B9 family determination) — the
+    guard is deterministic, so every same-regime participant still resolves
+    the SAME value; an unarmed record adopts as serial with no checks.
+    Round-5 I: a SAME-REGIME digest mismatch under an armed freeze RAISES
+    instead — early participants already ran armed, so a serial adopt here
+    would split one frozen family across arming values (see the inline
+    comment at the raise)."""
     if not bool(rec.get("armed")):
         return False
     problems: list[str] = []
@@ -3451,6 +3455,7 @@ def _validate_frozen_share_prefill(cfg: RunConfig, phase: str, rec: dict, freeze
         problems.append(f"mode={rec.get('mode')!r} (non-production evidence on a production run)")
     gate_sha = rec.get("gate_sha256")
     gate_path = cfg.gates_dir / SHARE_PREFILL_GATE_NAME
+    digest_problem: str | None = None
     if gate_sha is None:
         problems.append("armed freeze carries no gate_sha256 (arming evidence unverifiable)")
     else:
@@ -3459,13 +3464,37 @@ def _validate_frozen_share_prefill(cfg: RunConfig, phase: str, rec: dict, freeze
             try:
                 current = _share_prefill_gate_digest(json.loads(gate_path.read_text()))
             except (json.JSONDecodeError, UnicodeDecodeError):
-                current = None  # unparseable evidence -> mismatch -> SERIAL
+                current = None  # unparseable evidence -> mismatch
         if current != gate_sha:
-            problems.append(
+            digest_problem = (
                 "gate artifact absent/unparseable or its DECISION digest (verdict+mode) != "
                 "the freeze's recorded gate_sha256 (the evidence that armed this family "
                 "changed its arming decision)"
             )
+    if digest_problem is not None and not problems:
+        # Round-5 I (concern share-prefill-material-remeasure-family-split):
+        # a MATERIAL change to the arming evidence (a --force re-measure that
+        # flipped the verdict/mode, or vanished/unparseable evidence) under a
+        # SAME-REGIME armed freeze is a FAMILY SPLIT, not an adopt-serial
+        # case: participants that resolved before the change ran ARMED under
+        # this freeze, so resolving SERIAL here would mix arming values
+        # inside one frozen family — the exact mix regime_fingerprint's
+        # determinism contract forbids. FAIL LOUD: the operator either
+        # restores the original gate artifact (digest re-matches; the family
+        # resumes armed) or moves to a fresh out_root (the documented
+        # re-arm path). A FOREIGN-regime freeze (regime/model/mode problems
+        # above) keeps the warn+SERIAL disposition — those adopters never
+        # shared the armed participants' fingerprint domain.
+        raise RuntimeError(
+            f"[share-prefill:{phase}] MATERIAL CHANGE under a live armed family freeze "
+            f"({freeze.name}): {digest_problem} — early same-regime participants already "
+            "generated ARMED under this freeze, so adopting serial would split the family "
+            "across arming values (regime_fingerprint determinism contract). Restore the "
+            "original gate artifact, or re-run the family in a fresh --out-root; a "
+            "deliberate re-arm requires a fresh out_root by design"
+        )
+    if digest_problem is not None:
+        problems.append(digest_problem)
     if problems:
         logger.warning(
             "[share-prefill:%s] frozen record %s FAILS adopt-time validation (%s) — "

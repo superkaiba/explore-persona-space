@@ -22,6 +22,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
@@ -174,9 +176,15 @@ def test_resolve_share_prefill_adopt_survives_benign_gate_rewrite(tmp_path):
     assert peer.share_prefill_armed is True
 
 
-def test_resolve_share_prefill_adopt_disarms_on_decision_change(tmp_path):
-    # The right direction for the digest leg: a VERDICT or MODE change in the
-    # gate artifact (the arming DECISION changed) still disarms adopters.
+def test_resolve_share_prefill_adopt_raises_on_material_decision_change(tmp_path):
+    # CORRECTED (round-5 I, concern share-prefill-material-remeasure-family-
+    # split; the fourth occurrence of the wrong-direction class): the old
+    # form asserted a same-regime VERDICT/MODE change DISARMS adopters —
+    # blessing exactly the family split blocker I names (early participants
+    # ran ARMED under the freeze; a serial late adopter mixes arming values
+    # inside one frozen family, breaking regime_fingerprint's determinism
+    # contract). A material change under a SAME-REGIME armed freeze now
+    # FAILS LOUD with the fresh-out_root remedy.
     cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
     _write_gate(cfg, "PASS", mode="production")
     cfg = R._resolve_share_prefill(cfg, "anchors")
@@ -185,32 +193,55 @@ def test_resolve_share_prefill_adopt_disarms_on_decision_change(tmp_path):
         json.dumps({"verdict": "FAIL", "mode": "production"})
     )
     peer = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
-    peer = R._resolve_share_prefill(peer, "anchors")
-    assert peer.share_prefill_armed is False
-    # mode flip (production -> tiny) under an armed production freeze: disarm.
+    with pytest.raises(RuntimeError, match="MATERIAL CHANGE"):
+        R._resolve_share_prefill(peer, "anchors")
+    # mode flip (production -> tiny) under an armed production freeze: same
+    # family-split refusal.
     (cfg.gates_dir / R.SHARE_PREFILL_GATE_NAME).write_text(
         json.dumps({"verdict": "PASS", "mode": "tiny"})
     )
     peer2 = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
-    peer2 = R._resolve_share_prefill(peer2, "anchors")
-    assert peer2.share_prefill_armed is False
+    with pytest.raises(RuntimeError, match="MATERIAL CHANGE"):
+        R._resolve_share_prefill(peer2, "anchors")
 
 
-def test_resolve_share_prefill_adopt_disarms_on_absent_gate_artifact(tmp_path):
-    # The vanished-evidence half of the old test, retained: an armed freeze
-    # whose gate artifact is GONE (or unparseable) resolves SERIAL.
+def test_resolve_share_prefill_adopt_raises_on_absent_gate_artifact(tmp_path):
+    # CORRECTED (round-5 I): vanished/unparseable arming evidence under a
+    # same-regime ARMED freeze is the same family-split state — early
+    # participants ran armed on evidence that no longer exists. FAIL LOUD,
+    # never a silent serial split.
     cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
     gate_path = _write_gate(cfg, "PASS", mode="production")
     cfg = R._resolve_share_prefill(cfg, "anchors")
     assert cfg.share_prefill_armed is True
     gate_path.unlink()
     peer = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
-    peer = R._resolve_share_prefill(peer, "anchors")
-    assert peer.share_prefill_armed is False
+    with pytest.raises(RuntimeError, match="MATERIAL CHANGE"):
+        R._resolve_share_prefill(peer, "anchors")
     gate_path.write_text("{not json")
     peer2 = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
-    peer2 = R._resolve_share_prefill(peer2, "anchors")
-    assert peer2.share_prefill_armed is False
+    with pytest.raises(RuntimeError, match="MATERIAL CHANGE"):
+        R._resolve_share_prefill(peer2, "anchors")
+
+
+def test_resolve_share_prefill_foreign_regime_freeze_still_serial_never_raises(tmp_path):
+    # Round-5 I scope guard: the raise is SAME-REGIME-only. A foreign-regime
+    # armed freeze (the tiny->production out_root-sharing case) keeps the R3
+    # warn+SERIAL disposition — those adopters never shared the armed
+    # participants' fingerprint domain, so there is no family to split.
+    tiny = _mk_cfg(tmp_path, tiny=True, share_prefill_mode="auto")
+    _write_gate(tiny, "PASS", mode="tiny")
+    tiny = R._resolve_share_prefill(tiny, "anchors")
+    assert tiny.share_prefill_armed is True
+    # The production battery later overwrites the artifact (B6 upgrade path):
+    # the tiny freeze's digest no longer matches, but a PRODUCTION adopter is
+    # foreign to the tiny freeze -> serial, no raise.
+    (tiny.gates_dir / R.SHARE_PREFILL_GATE_NAME).write_text(
+        json.dumps({"verdict": "PASS", "mode": "production"})
+    )
+    prod = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    prod = R._resolve_share_prefill(prod, "anchors")
+    assert prod.share_prefill_armed is False
 
 
 def test_resolve_share_prefill_lost_race_validates_winner(tmp_path, monkeypatch):
