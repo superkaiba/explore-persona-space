@@ -4,15 +4,15 @@
   "path": "eval_results/issue_2388/gen/code_harness_control.json",
   "harness_ok": true,
   "flaky_mismatch_fraction": 0.0,
-  "bcb_control_ts": "2026-08-20T19:20:13Z",
+  "bcb_control_ts": "2026-08-20T20:17:55Z",
   "apps_harness_ok": null,
   "apps_control_ts": null
  },
  "g3_bcb": {
-  "available": false,
+  "available": true,
   "provenance": "eval_results/issue_2388/gen/code/bigcodebench_full.json",
-  "full_pool": null,
-  "admissible": null
+  "full_pool": true,
+  "admissible": true
  },
  "g1_apps": {
   "available": false,
@@ -31,8 +31,8 @@
   "admissible": null
  },
  "bcb_gen_allowed": true,
- "bcb_fit_allowed": null,
- "apps_required": null,
+ "bcb_fit_allowed": true,
+ "apps_required": false,
  "apps_pilot_gen_allowed": false,
  "apps_full_gen_allowed": false,
  "apps_activated": false,
@@ -42,13 +42,12 @@
   "est_train_without_bcb": 3160,
   "code_train_floor_d": 3584
  },
- "ts": "2026-08-20T19:31:41Z",
- "git_commit": "087919d7be8bae3b5822b2791c53e63c4032eb8b",
+ "ts": "2026-08-20T20:29:47Z",
+ "git_commit": "a27acd68daa8845558aaa0898609b657d32db05e",
  "git_dirty": true,
  "phase": "gen-gate",
  "git_dirty_paths": [
   "eval_results/issue_2388/fits/feasibility_report_pregen.json",
-  "eval_results/issue_2388/gen/code/code_gate.json",
   "eval_results/issue_2388/gen/code/dedup_report.json"
  ],
  "git_argv0_state": "tracked",
