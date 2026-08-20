@@ -144,8 +144,6 @@ The hero plots pooled out-of-fold AUROC per predictor (0.5 = chance, 1 = perfect
 
 > **Figure.** *The internal context probe (gold) beats the text judge (blue) in both regimes; the gap is larger in the over-refusal panel.* Pooled out-of-fold AUROC per predictor; error bars are paired group-bootstrap 95% intervals; dashed line is chance (0.5); all scores oriented as P(refuse).
 
-The context probe reaches 0.995 vs the few-shot judge's 0.896 (harmful) and 0.951 vs 0.743 (over-refusal); both paired gaps (0.099, 0.208) sit wholly above zero, balanced accuracy tracks them, and an advisory permutation null lies far below every observed AUROC (Methodology, with the zero-shot judge variant). This is not a general probe-vs-judge claim: the probe reads internal activations the judge cannot, trains on hundreds of in-domain labels against 32 demonstrations, and the flip-pair design structurally caps a text-only judge; the 61 re-issued over-refusal judge items do not drive the gap (Methodology).
-
 Per-unit companions: the per-predictor receiver-operating-characteristic curves and the per-prompt engage-rate histograms behind the binary labels.
 
 ![Receiver-operating-characteristic curves per predictor, pooled out-of-fold rows, one panel per regime.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b4be3cf9e46fd96dcbda515245b30ca756d6826e/figures/issue_2356/roc_curves.png)
@@ -155,6 +153,8 @@ Per-unit companions: the per-predictor receiver-operating-characteristic curves 
 ![Per-prompt engage-rate histograms, one panel per arm.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b4be3cf9e46fd96dcbda515245b30ca756d6826e/figures/issue_2356/rate_histograms.png)
 
 > **Figure.** *Per-unit companion behind the labels: per-prompt engage rates are strongly bimodal — mass at 0 (harmful) and at 1 (over-refusal); the shaded middle band is dropped from labeling.* Engage rate over valid judged draws per prompt; label thresholds at 0.7 and 0.3.
+
+The context probe reaches 0.995 vs the few-shot judge's 0.896 (harmful) and 0.951 vs 0.743 (over-refusal); both paired gaps (0.099, 0.208) sit wholly above zero, balanced accuracy tracks them, and an advisory permutation null lies far below every observed AUROC (Methodology, with the zero-shot judge variant). This is not a general probe-vs-judge claim: the probe reads internal activations the judge cannot, trains on hundreds of in-domain labels against 32 demonstrations, and the flip-pair design structurally caps a text-only judge; the 61 re-issued over-refusal judge items do not drive the gap (Methodology).
 
 ### The context read is indistinguishable from the greedy-answer probe and survives a fitted text-surface control (0.951 vs 0.696 over-refusal)
 
@@ -172,17 +172,17 @@ Per-unit exemption: each contrast is one pooled AUROC difference resampled at th
 
 ### A label-blind context→answer map discriminates answers (held-out R² 0.66) but is a reparametrization of the context probe
 
-This is the map-discrimination battery: whitened-cosine retrieval acc@1 of the map's predicted answer vector against the arm's answer pool, per map condition and fold, with the identity+bias baseline through the same battery (hatched) and the group-bootstrap 5% gate marker; chance 1/n_pool, log axis.
+This is the map-discrimination battery, with its per-row companion scatter below: whitened-cosine retrieval acc@1 of the map's predicted answer vector against the arm's answer pool, per map condition and fold, with the identity+bias baseline through the same battery (hatched) and the group-bootstrap 5% gate marker; chance 1/n_pool, log axis.
 
 ![Retrieval acc@1 per map condition and fold; identity baseline hatched; log axis.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b4be3cf9e46fd96dcbda515245b30ca756d6826e/figures/issue_2356/battery_acc1_greedy.png)
 
 > **Figure.** *The map retrieves the true answer far above chance and above the identity baseline (hatched) in every cell.* Whitened-cosine acc@1 (blue) and companion spaces per map condition × fold; log axis; chance = 1/n_pool (dashed).
 
-The map is real: held-out R² 0.66 vs an identity-baseline R² of −0.96, and retrieval clears its gate every cell (0.13→0.29 harmful, 0.56→0.61 over-refusal). Yet the mapped-answer probe matches the context probe and the matched-rank PCA control (both contrast intervals span zero — a non-detection, not proven absence); with the selected rank ranging 32→full across folds, a linear probe on the rank-restricted map is a reparametrization of the context read, adding answer identity but no detected decision signal. The per-row companion scatter shows mapped- and context-probe scores tightly coupled in both label classes — the per-unit view behind the zero-spanning contrasts.
-
 ![Per-row mapped-probe versus context-probe scores, colored by label.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b4be3cf9e46fd96dcbda515245b30ca756d6826e/figures/issue_2356/score_scatter_map_vs_ctx.png)
 
 > **Figure.** *Mapped-answer and context-probe scores track each other row by row in both arms, the two label classes separated along the shared diagonal.* Out-of-fold scores, mapped (generic condition) vs context probe; each point one balanced eval row.
+
+The map is real: held-out R² 0.66 vs an identity-baseline R² of −0.96, and retrieval clears its gate every cell (0.13→0.29 harmful, 0.56→0.61 over-refusal). Yet the mapped-answer probe matches the context probe and the matched-rank PCA control (both contrast intervals span zero — a non-detection, not proven absence); with the selected rank ranging 32→full across folds, a linear probe on the rank-restricted map is a reparametrization of the context read, adding answer identity but no detected decision signal. The per-row companion scatter shows mapped- and context-probe scores tightly coupled in both label classes — the per-unit view behind the zero-spanning contrasts.
 
 ### A refuse/comply direction transfers across the two regimes at AUROC 0.91–0.99
 
