@@ -217,7 +217,7 @@ spans, clearing prompt-side ids against handed-span ids ∪ `tasks/REGISTRY.json
 `task_workflow.registry_path()` — unreadable registry ⇒ handed-span leg only,
 fail-strict; THEN tokenize atoms splitting hyphenated ranges / slash pairs;
 multiset-subtract `plan_body`+`lens_items`+`prior_critique_summaries`; set-clear the
-scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`; fail loud collect-all — one BLOCKER
+scaffold allowlist `{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 500}`; fail loud collect-all — one BLOCKER
 line per residual, single exit — + re-compose on any residual; same recipe +
 rationale as `.claude/agents/codex-critic.md` Step 4, the reference implementation).
 **Handed-span clarification (binding):** the brief-handed PATH strings (`plan_path`

@@ -455,7 +455,7 @@ Verdict values: `PASS`, `needs_targeted_fix`,
 
 ## Round budget
 
-Five rounds maximum per `/issue` invocation. Every round is ensembled
+Ten rounds maximum per `/issue` invocation. Every round is ensembled
 with `codex-clean-result-critic` (all-rounds policy as of 2026-06-12;
 previously round-1-only). If you
 PASS, the `/issue` skill moves the task to `awaiting_promotion` and

@@ -122,17 +122,25 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
-def _pattern_hits(text: str) -> set[str]:
+def _pattern_hits(text: str, patterns: tuple[re.Pattern[str], ...] = _ALL_PATTERNS) -> set[str]:
     """Return the set of pattern strings that match ``text``."""
-    return {p.pattern for p in _ALL_PATTERNS if p.search(text)}
+    return {p.pattern for p in patterns if p.search(text)}
 
 
-def _is_exempt(unit_text: str) -> bool:
+def _is_exempt(
+    unit_text: str, exemptions: tuple[re.Pattern[str], ...] = _EXEMPT_LINE_PATTERNS
+) -> bool:
     """A matched unit is exempt iff its OWN text matches an exact exemption."""
-    return any(p.search(unit_text) for p in _EXEMPT_LINE_PATTERNS)
+    return any(p.search(unit_text) for p in exemptions)
 
 
-def _stale_cap5_hits(text: str, *, apply_exemption: bool = True) -> list[str]:
+def _stale_cap5_hits(
+    text: str,
+    *,
+    apply_exemption: bool = True,
+    patterns: tuple[re.Pattern[str], ...] = _ALL_PATTERNS,
+    exemptions: tuple[re.Pattern[str], ...] = _EXEMPT_LINE_PATTERNS,
+) -> list[str]:
     """Return in-scope units that still carry a cap-5 prose/numeric surface.
 
     Two modes over the same text:
@@ -144,26 +152,30 @@ def _stale_cap5_hits(text: str, *, apply_exemption: bool = True) -> list[str]:
       so single-line hits are never double-reported.
 
     A matched unit is dropped iff ``apply_exemption`` and the unit's own text
-    matches an ``_EXEMPT_LINE_PATTERNS`` entry (exact line-local exemption;
-    there is deliberately NO context window). Returns offending units with
-    1-based line numbers so a failure message is actionable.
+    matches an ``exemptions`` entry (exact line-local exemption; there is
+    deliberately NO context window). Returns offending units with 1-based
+    line numbers so a failure message is actionable.
+
+    ``patterns`` / ``exemptions`` default to the digit-keyed cap-5 apparatus;
+    the spelled-out-numeral scan (#2391 r2, B1) reuses the same line + pair
+    machinery with its own pattern/exemption sets.
     """
     lines = text.splitlines()
     normed = [_norm(line) for line in lines]
-    single_hits = [_pattern_hits(n) for n in normed]
+    single_hits = [_pattern_hits(n, patterns) for n in normed]
     hits: list[str] = []
     for idx, line in enumerate(lines):
         if not single_hits[idx]:
             continue
-        if apply_exemption and _is_exempt(normed[idx]):
+        if apply_exemption and _is_exempt(normed[idx], exemptions):
             continue
         hits.append(f"{idx + 1}: {line.strip()}")
     for idx in range(len(lines) - 1):
         joined = normed[idx] + " " + normed[idx + 1]
-        novel = _pattern_hits(joined) - single_hits[idx] - single_hits[idx + 1]
+        novel = _pattern_hits(joined, patterns) - single_hits[idx] - single_hits[idx + 1]
         if not novel:
             continue
-        if apply_exemption and _is_exempt(joined):
+        if apply_exemption and _is_exempt(joined, exemptions):
             continue
         hits.append(f"{idx + 1}-{idx + 2} (pair): {joined[:160]}")
     return hits
@@ -219,6 +231,95 @@ def test_exemption_scope_is_exactly_the_three_history_clauses():
     assert not markers_raw, "unexpected exemption-disabled hits in markers.md:\n" + "\n".join(
         markers_raw
     )
+
+
+# --------------------------------------------------------------------------- #
+# (B1, #2391 r2) SPELLED-OUT cap numerals. Every pattern above is DIGIT-keyed,
+# so a spelled-out numeral is invisible to the whole apparatus — the round-2
+# blocker: `clean-result-critic.md` read "Five rounds maximum" in the same
+# paragraph as a correct "round 10" and no scan, sweep, or test saw it. Hunt
+# the spelled cap forms over the FULL workflow doc surface (workflow.yaml,
+# CLAUDE.md, every rules file, every agent spec, every skill doc — the §4
+# in-scope file-set superset; `.claude/agent-memory/**` is deliberately out of
+# scope: memory notes narrate past rounds under the then-cap).
+# --------------------------------------------------------------------------- #
+_SPELLED_CAP_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bfive rounds\b", re.IGNORECASE),
+    re.compile(r"\bround five\b", re.IGNORECASE),
+    re.compile(r"\bfifth round\b", re.IGNORECASE),
+    re.compile(r"\bfive revision\b", re.IGNORECASE),
+    re.compile(r"\bfive total\b", re.IGNORECASE),
+)
+# Exact line-local exemptions (the §7e protocol — never a broad context
+# token), each naming what it protects: incident narrations of runs that
+# genuinely blocked/PASSed under the then-cap (history preservation, §4).
+_SPELLED_EXEMPT_PATTERNS: tuple[re.Pattern[str], ...] = (
+    # code-correctness-critic.md — the #906 incident narration.
+    re.compile(r"#906: five rounds PASSed"),
+    # codex-code-reviewer.md — the #823 incident narration.
+    re.compile(r"#823: five rounds PASSed"),
+)
+
+
+def _workflow_doc_files() -> list[Path]:
+    """The workflow doc surface the spelled-cap scan covers (see block comment)."""
+    files = [WORKFLOW_PATH, REPO_ROOT / "CLAUDE.md"]
+    files += sorted((REPO_ROOT / ".claude" / "rules").glob("*.md"))
+    files += sorted((REPO_ROOT / ".claude" / "agents").glob("*.md"))
+    files += sorted((REPO_ROOT / ".claude" / "skills").rglob("*.md"))
+    return files
+
+
+def test_no_spelled_out_cap_in_workflow_docs():
+    """No LIVE spelled-out cap numeral survives anywhere on the workflow doc
+    surface; the only exempt units are the two incident narrations (exact
+    line-local exemptions above). Same line + pair machinery as the digit
+    scan, so a line-wrapped spelled form is caught too."""
+    offenders: list[str] = []
+    for path in _workflow_doc_files():
+        hits = _stale_cap5_hits(
+            path.read_text(encoding="utf-8"),
+            patterns=_SPELLED_CAP_PATTERNS,
+            exemptions=_SPELLED_EXEMPT_PATTERNS,
+        )
+        offenders += [f"{path.relative_to(REPO_ROOT)}:{h}" for h in hits]
+    assert not offenders, "spelled-out stale cap numeral in workflow docs:\n" + "\n".join(offenders)
+
+
+def test_spelled_cap_scan_negative_controls():
+    """BOTH directions of the spelled-cap scan (#2391 r2): it must SEE the
+    verbatim round-2 offender line, must EXEMPT the two incident narrations
+    (verbatim, pre-existing forms), and must NOT exempt a perturbed mutant
+    (issue id removed from the exemption-keyed fragment)."""
+    offender = "Five rounds maximum per `/issue` invocation. Every round is ensembled\n"
+    assert _stale_cap5_hits(
+        offender, patterns=_SPELLED_CAP_PATTERNS, exemptions=_SPELLED_EXEMPT_PATTERNS
+    ), "must-HIT spelled control produced no hit (the B1 offender line)"
+    exempt_controls = (
+        (
+            "code-correctness-critic.md #906 narration",
+            "  nonexistent-field → Critical, `substantive` (#906: five rounds PASSed\n",
+        ),
+        (
+            "codex-code-reviewer.md #823 narration",
+            "  carve-outs (#823: five rounds PASSed a ~20h accumulate-and-write-at-end\n",
+        ),
+    )
+    for name, fixture in exempt_controls:
+        assert not _stale_cap5_hits(
+            fixture, patterns=_SPELLED_CAP_PATTERNS, exemptions=_SPELLED_EXEMPT_PATTERNS
+        ), f"must-EXEMPT spelled control produced a hit: {name}"
+        # The exemption (not pattern-miss) must be what silences it:
+        assert _stale_cap5_hits(
+            fixture,
+            apply_exemption=False,
+            patterns=_SPELLED_CAP_PATTERNS,
+            exemptions=_SPELLED_EXEMPT_PATTERNS,
+        ), f"must-EXEMPT spelled control matched no pattern at all (dead control): {name}"
+    mutant = "  nonexistent-field → Critical, `substantive` (five rounds PASSed\n"
+    assert _stale_cap5_hits(
+        mutant, patterns=_SPELLED_CAP_PATTERNS, exemptions=_SPELLED_EXEMPT_PATTERNS
+    ), "spelled mutant control was wrongly exempted"
 
 
 # --------------------------------------------------------------------------- #

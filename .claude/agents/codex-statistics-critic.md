@@ -226,7 +226,7 @@ numeric atom in the prompt
 (splitting hyphenated ranges / slash-joined pairs into atomic numbers BEFORE the
 diff: `+0.74-0.80` → `{0.74, 0.80}`), multiset-subtracts the atoms in
 `plan_body`+`lens_items`+`prior_critique_summaries`, and set-membership-clears the
-static scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`. On any residual (unresolved
+static scaffold allowlist `{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 500}`. On any residual (unresolved
 task ref or numeric atom), fail loud collect-all (one `BLOCKER: composer-authored
 number <n> not traceable ...` line per residual, single exit) and re-compose from
 the handed inputs alone — never hand-edit the offending number in.
