@@ -390,6 +390,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # + absolute per-cell trainability floor, four pinned surfaces incl. the
     # two machinery-keyed N/A escapes; incident #2221).
     "tests/test_workflow_lint_two_tier_yield_floor.py",
+    # NEW (#2422) — workflow_lint --check-worktree-task-state-briefs +
+    # no-flags bundling (worktree-safe task-state brief paths, six pinned
+    # surfaces; incidents #2329/#823 — a worktree's tasks/ tree is frozen at
+    # its base commit) + the worktree-freeze reproduction (STALE + ABSENT).
+    "tests/test_workflow_lint_worktree_task_paths.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §

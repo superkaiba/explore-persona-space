@@ -112,6 +112,10 @@ and 9a-bis).** The Agent tool loads agent specs (and Skill playbooks)
 from the SESSION's cwd, and a worktree cut before a later
 workflow-surface fix never inherits it — so subagents silently run stale
 specs for the worktree's lifetime (#557).
+Scope note (#2422): the sync covers the WORKFLOW surface only — task
+state (`plans/`, `artifacts/`) is deliberately NOT synced; briefs hand
+absolute canonical main-checkout paths (§ "Both reviewers see the same
+brief").
 Before dispatching, sync the worktree's workflow surface from FETCHED
 `origin/main` (local `main` routinely lags origin on the shared root
 under fleet load — #1724 synced regressed spec bytes; #1747 migrated the
@@ -644,15 +648,28 @@ Both reviewers see the same brief:
 - `issue_number` — the task number (`<N>`)
 - `target_marker_kind` — exactly one of `experiment-implementation` (for
   `experiment`) or `results` (for `infra` / `batch` / `analysis` /
-  `survey`). The reviewers read the highest-version row with this kind
-  from `events.jsonl` as the implementer's report.
+  `survey`). The implementer's report — the highest-version row with
+  this kind — is fetched at COMPOSE time from canonical main state via
+  `uv run python "$REPO_ROOT"/scripts/task.py view <N> --json` (or
+  `latest-marker <N>`); the brief hands over the resolved report (or
+  the canonical ABSOLUTE `$TASK_DIR/events.jsonl` path) — never a
+  worktree-relative `events.jsonl` (frozen at base, #2422).
 - `revision_round` — 1-indexed integer. `1` on first review; loops up to
   `10`. The cap is **per reviewer** — reconcile invocations are free.
 - `previous_critique_summaries` — one-line summaries of every prior
   `epm:code-review` AND `epm:code-review-codex` event on this task
   (empty on round 1). Lets each reviewer notice patterns.
-- The diff vs `main`, the approved plan (via the `plans/plan.md`
-  symlink), the existing codebase.
+- The diff vs `main`; the existing codebase; the approved plan AND (when
+  the task has one) the manifest — BOTH as ABSOLUTE canonical
+  main-checkout paths resolved at compose time:
+  `TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`,
+  plan `$TASK_DIR/plans/plan.md`, manifest
+  `$TASK_DIR/artifacts/planned_manifest.json`. The brief STATES
+  `plan_version=v<K>` (extensionless compose-time `readlink`) and the
+  read bar: never read `tasks/` from inside the worktree — frozen at
+  base, a relative read serves a STALE plan/manifest with no error
+  (#2422; full contract: `04-step-2.md` § "Worktree-safe task-state
+  paths").
 - `diverged_on_main` — OPTIONAL (present only when the Step 5a
   deliverable-divergence probe found a non-empty set): the verbatim path
   list from `/tmp/issue-<N>-divergence-r<round>.txt`, plus the round's
@@ -664,6 +681,12 @@ Both reviewers see the same brief:
 
 The Claude reviewer additionally receives:
 - `worktree` path, `base` ref (typically fetched `origin/main` — #1289).
+- the compose-time-verified plan/manifest reference above — the
+  Claude-side counterpart of the Codex twin's Step 2-pre-b inlining: at
+  read time re-run the `readlink`, FAIL LOUD on a `plan_version=`
+  mismatch (a later revision landed — the round grades a superseded
+  plan); legacy brief without `plan_version=` ⇒ the canonical absolute
+  path still binds; 404 (status moved) ⇒ re-run `task.py find <N>`.
 
 The Codex twin additionally receives:
 - `worktree`, `base`, `plan_marker_path` (no `implementation_marker_path`

@@ -118,7 +118,10 @@ section wins on invocation form.
    to `per-arm-resolution:` rows ONLY>` | `PASS_AUTHORIZED_STUB
    arms_stubbed=<comma-list>` (*self-tag this INSTEAD of `PASS_PARTIAL` when
    every FALLBACK-rowed arm is named verbatim (backticked, column 1) in the
-   CURRENT plan's `### Authorized smoke stubs` block — read `plans/plan.md`;
+   CURRENT plan's `### Authorized smoke stubs` block — read the plan at the
+   canonical absolute path
+   `$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)/plans/plan.md`,
+   never the worktree-relative `plans/plan.md` (frozen at base, #2422);
    when the block is absent or covers only some FALLBACK arms, post
    `PASS_PARTIAL` (Step 6d.0's `task.py check-authorized-stub` refuses a
    mis-tagged grant, so tagging without coverage only buys a bounce)*) |
