@@ -1,0 +1,117 @@
+{
+  "commit": "cd6a5ea9+dirty",
+  "render_id": "131db6a8e244459f",
+  "git_commit": "cd6a5ea9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2379/rates_caps.json"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2379_analysis.py",
+  "created": "2026-08-20T23:40:12Z",
+  "figsize": [
+    5.0,
+    6.4
+  ],
+  "points": [
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -0.472652,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -1.102952,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -0.592363,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -1.023339,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -1.103987,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -0.859059,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -0.14156,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -0.615265,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -0.115089,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)": -0.290638,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Paired delta-rho (95% CI)",
+        "xlabel": "delta rho (answer-side Train-Ref map-I minus context-side Train Ref)",
+        "xticklabels": [
+          "\u22121.75",
+          "\u22121.50",
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25"
+        ],
+        "yticklabels": [
+          "em_bad_legal_advice",
+          "em_bad_medical_advice",
+          "em_bad_security_advice",
+          "em_turner_extreme_sports",
+          "em_turner_risky_financial",
+          "POOLED em",
+          "caps_french",
+          "caps_german",
+          "caps_spanish",
+          "POOLED caps"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
