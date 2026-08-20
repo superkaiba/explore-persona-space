@@ -5,7 +5,6 @@ title: Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal repre
 kind: experiment
 tags:
 - trigger-dense
-- keep-running
 created_at: '2026-08-17T22:23:49Z'
 has_clean_result: false
 origin_prompt: 'run the full experiment i talked about earlier on the overrefusal
