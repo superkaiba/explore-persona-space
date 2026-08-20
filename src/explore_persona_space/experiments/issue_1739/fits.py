@@ -37,6 +37,28 @@ from explore_persona_space.experiments.issue_1739.constants import (
 
 logger = logging.getLogger(__name__)
 
+# Compact selector telemetry (the ``scripts/issue825_fit_cells.SELECTOR_LOG``
+# pattern; #2388 Step 0-p): {selector: {lambda_str: count}} counting every
+# per-(slice, target) GCV lambda selection made by
+# :func:`ridge_gcv_predict_per_target`. ON by default (a dict); set to None to
+# disable. Aggregate counts only — output arrays are untouched, so existing
+# callers stay byte-identical.
+SELECTOR_LOG: dict | None = {}
+
+
+def _log_selector_counts(selector: str, lam_sel) -> None:
+    """Count the selected lambdas of one layer-chunk into ``SELECTOR_LOG``."""
+    if SELECTOR_LOG is None:
+        return
+    import torch
+
+    vals, counts = torch.unique(lam_sel, return_counts=True)
+    dest = SELECTOR_LOG.setdefault(selector, {})
+    for v, n in zip(vals.tolist(), counts.tolist(), strict=True):
+        key = f"{float(v):g}"
+        dest[key] = dest.get(key, 0) + int(n)
+
+
 # Nonlinear context->answer map kinds (#1739 nonlinear-map round). Both reuse
 # the #779 N1M fitters verbatim (``scripts/issue779_ffc_n1m_fits.py``:
 # ``fit_mlp`` / ``fit_krr_nystrom`` + ``apply_map``) — see
@@ -618,6 +640,8 @@ def ridge_gcv_predict_per_target(
     lambdas: np.ndarray | tuple[float, ...] = RIDGE_LAMBDAS,
     device: str = "cpu",
     layer_chunk: int = 4,
+    dof_cap: float | None = None,
+    selector_telemetry: list[dict] | None = None,
 ) -> list[np.ndarray]:
     """Batched ridge with PER-TARGET GCV lambda over ONE shared factorization.
 
@@ -635,6 +659,21 @@ def ridge_gcv_predict_per_target(
     ``tests/test_issue1739_fits.py::test_ridge_gcv_per_target_matches_auto``.
     This is the cross-arm/cross-regime dedup lever of the #1739 fits round:
     the old per-(arm, layer, fold) slice pool re-ran one eigh PER TARGET.
+
+    ``dof_cap`` (#2388 Step 0-p; #1887/#2222 semantics): when not None, every
+    lambda whose effective dof ``sum_i e_i/(e_i + lam)`` exceeds
+    ``dof_cap * ntr`` is EXCLUDED from the per-(slice, target) GCV argmin
+    (mirrors ``scripts/issue2222_analysis.dof_capped_ridge_multi_y``'s cap
+    loop and ``scripts/issue825_fit_cells.GCV_DOF_CAP``); raises when a slice
+    has NO admissible lambda. The default None keeps every existing caller
+    byte-identical (the parent's sole call site — ``arms.py`` — passes no
+    cap; pinned by ``tests/test_issue2388_dofcap.py``).
+
+    ``selector_telemetry`` (optional out-param): a list the caller passes;
+    one dict per layer-chunk is appended with the selector mode
+    (``gcv`` | ``gcv-dof-capped``), cap value, ``n_train``, and the selected
+    lambda + effective dof per (slice, target) — the per-fit persistence the
+    #2388 drivers consume (the ``issue825_fit_cells.SELECTOR_LOG`` pattern).
     """
     import torch
 
@@ -675,6 +714,7 @@ def ridge_gcv_predict_per_target(
             sq_a = a**2
         c = s.shape[0]
         gcv = torch.empty((c, len(lam_grid), n_t), dtype=torch.float64, device=dev)
+        dofs = torch.empty((c, len(lam_grid)), dtype=torch.float64, device=dev)
         for li, lam in enumerate(lam_grid):
             lam_f = float(lam)
             if primal:
@@ -687,12 +727,38 @@ def ridge_gcv_predict_per_target(
                 filt = s / (s + lam_f)  # (c, ntr)
                 rss = tot - torch.einsum("cnt,cn->ct", sq_a, 2.0 * filt - filt**2)
                 dof = filt.sum(dim=1)
+            dofs[:, li] = dof
             denom = (ntr - dof) ** 2  # (c,)
             gcv[:, li, :] = torch.where(
                 (denom > 1e-12)[:, None], rss / denom[:, None], torch.full_like(rss, float("inf"))
             )
+        if dof_cap is not None:
+            # #2222 cap semantics: admissible iff dof(lambda) <= dof_cap * n_train
+            # (dof is target-independent per slice, so the mask is (c, n_lam)).
+            adm = dofs <= (float(dof_cap) * ntr)
+            gcv = torch.where(adm[:, :, None], gcv, torch.full_like(gcv, float("inf")))
+            ok = torch.isfinite(gcv).any(dim=1)  # (c, T)
+            if not bool(ok.all()):
+                bad = (~ok.all(dim=1)).nonzero().flatten().tolist()
+                raise ValueError(
+                    f"no lambda admissible under dof_cap={dof_cap} (ntr={ntr}) for "
+                    f"slice(s) {[lo + int(b) for b in bad]} — extend the lambda grid "
+                    "upward (#1887/#2222 dof-cap semantics)"
+                )
         best = gcv.argmin(dim=1)  # (c, T)
         lam_sel = torch.as_tensor(lam_grid, device=dev)[best]  # (c, T)
+        _log_selector_counts("gcv-dof-capped" if dof_cap is not None else "gcv", lam_sel)
+        if selector_telemetry is not None:
+            selector_telemetry.append(
+                {
+                    "slice_offset": int(lo),
+                    "mode": "gcv-dof-capped" if dof_cap is not None else "gcv",
+                    "dof_cap": None if dof_cap is None else float(dof_cap),
+                    "n_train": int(ntr),
+                    "lambda_selected": lam_sel.cpu().numpy(),
+                    "dof_selected": dofs.gather(1, best).cpu().numpy(),
+                }
+            )
         f_sel = 1.0 / (s[:, :, None] + lam_sel[:, None, :])  # (c, d|ntr, T)
         if primal:
             w = v @ (a * f_sel)  # (c, d, T) standardized-space weights

@@ -493,7 +493,7 @@ def _ridge_devices(device: str) -> list[str]:
 
 
 def _run_ridge_job(
-    job: RidgeJob, *, lambdas: tuple[float, ...], device: str
+    job: RidgeJob, *, lambdas: tuple[float, ...], device: str, dof_cap: float | None = None
 ) -> tuple[tuple, dict[str, np.ndarray]]:
     """Materialize + solve one RidgeJob on ``device`` (thread-pool worker)."""
     from explore_persona_space.experiments.issue_1739.fits import ridge_gcv_predict_per_target
@@ -512,7 +512,9 @@ def _run_ridge_job(
             cols.append(y_full[:, job.tr_rows])
     y = np.stack(cols, axis=2)  # (S, ntr, T)
     ev_mats = [_take_rows(esrc, rows) for _name, esrc, rows in job.evals]
-    preds = ridge_gcv_predict_per_target(x_tr, y, ev_mats, lambdas=lambdas, device=device)
+    preds = ridge_gcv_predict_per_target(
+        x_tr, y, ev_mats, lambdas=lambdas, device=device, dof_cap=dof_cap
+    )
     return job.key, {name: p for (name, _e, _r), p in zip(job.evals, preds, strict=True)}
 
 
@@ -521,6 +523,7 @@ def _solve_ridge_groups(
     *,
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
     device: str = "cpu",
+    dof_cap: float | None = None,
 ) -> dict[tuple, dict[str, np.ndarray]]:
     """Solve the cell's (source x fold) ridge jobs, sharded across GPUs.
 
@@ -534,7 +537,7 @@ def _solve_ridge_groups(
     out: dict[tuple, dict[str, np.ndarray]] = {}
     if len(devices) == 1 or len(jobs) <= 1:
         for job in jobs:
-            key, preds = _run_ridge_job(job, lambdas=lambdas, device=devices[0])
+            key, preds = _run_ridge_job(job, lambdas=lambdas, device=devices[0], dof_cap=dof_cap)
             out[key] = preds
         return out
     from concurrent.futures import ThreadPoolExecutor
@@ -542,7 +545,13 @@ def _solve_ridge_groups(
     logger.info("[arms] ridge jobs sharded across %s (%d jobs)", devices, len(jobs))
     with ThreadPoolExecutor(max_workers=len(devices)) as pool:
         futs = [
-            pool.submit(_run_ridge_job, job, lambdas=lambdas, device=devices[i % len(devices)])
+            pool.submit(
+                _run_ridge_job,
+                job,
+                lambdas=lambdas,
+                device=devices[i % len(devices)],
+                dof_cap=dof_cap,
+            )
             for i, job in enumerate(jobs)
         ]
         for fut in futs:
@@ -619,6 +628,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
     mlp_kwargs: dict | None = None,
     ridge_folds: tuple[int, ...] | None = None,
     diagnostics: list[dict] | None = None,
+    dof_cap: float | None = None,
 ) -> list[tuple[dict[str, np.ndarray], dict[str, str]]]:
     """Pooled-OOF scores for every requested arm, for R regime slices AT ONCE.
 
@@ -789,7 +799,11 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
                     for f in solve_folds
                 ]
                 if mps_jobs:
-                    solved.update(_solve_ridge_groups(mps_jobs, lambdas=lambdas, device=device))
+                    solved.update(
+                        _solve_ridge_groups(
+                            mps_jobs, lambdas=lambdas, device=device, dof_cap=dof_cap
+                        )
+                    )
                 n_mps = len(mps_jobs)
                 mps_jobs.clear()  # drop the RidgeJob -> mp_shuf references
             # Fix-engaged guard: prove mp_shuf is UNREFERENCED before batch 2.
@@ -983,7 +997,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             )
 
     if jobs:  # batch 2 — merged into the same dict the batch-1 mps solve filled
-        solved.update(_solve_ridge_groups(jobs, lambdas=lambdas, device=device))
+        solved.update(_solve_ridge_groups(jobs, lambdas=lambdas, device=device, dof_cap=dof_cap))
 
     def _scatter(source: str, ename: str, tkey: object, n_rows_ly: int) -> np.ndarray:
         arr = np.full((n_rows_ly, n_l), np.nan)
@@ -1221,6 +1235,7 @@ def run_cell(
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
     mlp_kwargs: dict | None = None,
     ridge_folds: tuple[int, ...] | None = None,
+    dof_cap: float | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, str]]:
     """Single-regime wrapper over :func:`run_cell_multi` (same contract)."""
     return run_cell_multi(
@@ -1231,6 +1246,7 @@ def run_cell(
         lambdas=lambdas,
         mlp_kwargs=mlp_kwargs,
         ridge_folds=ridge_folds,
+        dof_cap=dof_cap,
     )[0]
 
 
@@ -1264,6 +1280,7 @@ def run_transfer_cell(
     arms: list[str] | None = None,
     device: str = "cpu",
     ridge_folds: tuple[int, ...] | None = None,
+    dof_cap: float | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, str]]:
     """Frozen-predictor transfer scores for the eval-split ladder (plan §4).
 
@@ -1308,7 +1325,9 @@ def run_transfer_cell(
         seed=cell.seed,
         fold_scheme="transfer-train-vs-eval",
     )
-    scores, skipped = run_cell(comb, cell_t, arms=want, device=device, ridge_folds=ridge_folds)
+    scores, skipped = run_cell(
+        comb, cell_t, arms=want, device=device, ridge_folds=ridge_folds, dof_cap=dof_cap
+    )
     return {slug: sc[:, n_tr:] for slug, sc in scores.items()}, skipped
 
 
@@ -1792,6 +1811,8 @@ def run_grid_multi(
     n_perm: int = N_PERM,
     context_ids: list[str] | np.ndarray | None = None,
     unit_timings: list[dict] | None = None,
+    dof_cap: float | None = None,
+    row_extra: dict | None = None,
 ) -> list[list[dict]]:
     """Run every (L, draw, seed) cell for R regime slices AT ONCE; checkpoint per unit.
 
@@ -1827,6 +1848,11 @@ def run_grid_multi(
         "n_perm": int(n_perm),
         "mlp_kwargs": {k: mlp_kwargs[k] for k in sorted(mlp_kwargs)} if mlp_kwargs else {},
     }
+    if dof_cap is not None:
+        # Output-affecting regime key (#2388): a capped run must never resume a
+        # legacy uncapped run's rows. Added ONLY when set, so every existing
+        # (uncapped) unit key stays byte-identical.
+        regime_extra["dof_cap"] = float(dof_cap)
     if base.mapfit is not None:
         verify_arm9_l0_degeneracy(base, device=device)  # plan §4 #31 gate (once per grid)
     units = [(lb, dr, sd) for lb in budgets for dr in draws for sd in seeds]
@@ -1864,6 +1890,7 @@ def run_grid_multi(
             device=device,
             mlp_kwargs=mlp_kwargs,
             diagnostics=cell_diags,
+            dof_cap=dof_cap,
         )
         dv_cell = base.dv[cell.row_idx]
         margins_cell = base.margins[cell.row_idx] if base.margins is not None else None
@@ -1885,6 +1912,11 @@ def run_grid_multi(
             )
             rec["unit_key"] = keys[r]
             rec["skipped_arms"] = skipped
+            if row_extra:
+                # #2388 per-row selector telemetry / H3 labels (plan G4 element
+                # b): caller-supplied constants merged into every FRESH record;
+                # absent (None) for existing callers — rows byte-identical.
+                rec.update(row_extra)
             # #1739 r10: rank-deficiency audit flag — downstream analysis can
             # see which cells' arm-10 fell back to the pinv solution.
             rec["degenerate_ols"] = bool(cell_diags[j])
@@ -1932,6 +1964,8 @@ def run_grid(
     n_boot: int = N_BOOT,
     n_perm: int = N_PERM,
     context_ids: list[str] | np.ndarray | None = None,
+    dof_cap: float | None = None,
+    row_extra: dict | None = None,
 ) -> list[dict]:
     """Single-regime wrapper over :func:`run_grid_multi` (same contract/keys)."""
     return run_grid_multi(
@@ -1948,6 +1982,8 @@ def run_grid(
         n_boot=n_boot,
         n_perm=n_perm,
         context_ids=context_ids,
+        dof_cap=dof_cap,
+        row_extra=row_extra,
     )[0]
 
 

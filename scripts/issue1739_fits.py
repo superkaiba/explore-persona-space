@@ -225,6 +225,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
     ap.add_argument("--tensors-root", type=Path, default=DEFAULT_TENSORS_ROOT)
     ap.add_argument("--device", default="cpu")
+    ap.add_argument(
+        "--dof-cap",
+        type=float,
+        default=None,
+        help=(
+            "GCV effective-dof cap for the ridge lambda selector (#2388 Step 0-p; "
+            "#1887/#2222 semantics: exclude lambdas with dof > cap * n_train). "
+            "Default None keeps the legacy uncapped selector byte-identical — the "
+            "H3 capped recompute passes 0.9 explicitly (plan #2388 section 4)."
+        ),
+    )
+    ap.add_argument(
+        "--h3-label",
+        default=None,
+        help=(
+            "optional per-row label merged into every fresh record (e.g. "
+            "'h3_parent_exact' for the #2388 H3 correctness-side rows)"
+        ),
+    )
     ap.add_argument("--mlp-epochs", type=int, default=None, help="override arm-5 MLP epochs")
     ap.add_argument("--n-boot", type=int, default=None)
     ap.add_argument("--n-perm", type=int, default=None)
@@ -340,6 +359,27 @@ def compose_run_specs(
     return specs
 
 
+def _selector_row_extra(args: argparse.Namespace) -> dict | None:
+    """Per-row selector telemetry + optional H3 label (#2388, plan G4 element b).
+
+    Returns None when neither ``--dof-cap`` nor ``--h3-label`` is passed, so the
+    default CLI behaviour (row schema included) stays byte-identical to the
+    parent's. The H3 legacy-companion legs pass ``--h3-label h3_parent_exact``
+    WITHOUT a cap and still get per-row ``selector.mode == 'gcv'`` telemetry.
+    """
+    if args.dof_cap is None and not args.h3_label:
+        return None
+    extra: dict = {
+        "selector": {
+            "mode": "gcv-dof-capped" if args.dof_cap is not None else "gcv",
+            "dof_cap": args.dof_cap,
+        }
+    }
+    if args.h3_label:
+        extra["h3_label"] = args.h3_label
+    return extra
+
+
 # ---------------------------------------------------------------------------
 # synthetic smoke mode
 # ---------------------------------------------------------------------------
@@ -409,6 +449,8 @@ def _run_synthetic(args: argparse.Namespace) -> int:
         device=args.device,
         mlp_kwargs={"max_epochs": args.mlp_epochs or 5, "hidden": 16},
         context_ids=[f"synctx{i:04d}" for i in range(n)],
+        dof_cap=args.dof_cap,
+        row_extra=_selector_row_extra(args),
         **kwargs,
     )
     arms.write_summary(
@@ -922,13 +964,41 @@ def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w, *, rungs=None, knn: bool 
     """
     import math
 
+    import numpy as np
+
     from explore_persona_space.experiments.issue_1739 import fits
     from explore_persona_space.experiments.issue_1739.constants import KNN_KS
 
-    def _block(pred_b, true_b) -> list[dict]:
+    # Identity+learned-bias baseline on the EVAL distribution (CLAUDE.md
+    # "Identity+learned-bias baseline AND kNN-retrieval metric"). Without it the
+    # eval-rung R^2 is uninterpretable: a strongly negative value cannot be told
+    # apart from "answer vectors are simply unpredictable off-distribution and
+    # every predictor fails there, the map least of all".
+    #
+    # b = mean(y_train - x_train) = mean(y_train) - mean(x_train), so the bias is
+    # exactly `y_mu - x_mu` -- already carried on the MapFit, no train arrays
+    # needed. Both are FULL-U-pool means (fit_linear_map refits the frozen map on
+    # the whole rung and takes x_mu/y_mu there), which is the correctly MATCHED
+    # baseline here: the frozen full-pool map is the thing being scored, so its
+    # baseline must be fit on the same rows. (map_diagnostics' HOLDOUT read pairs
+    # a train-fold map with a train-fold bias -- the same matching rule, different
+    # fold.) None when the map carries no means, or on a dim mismatch -- the rule
+    # says state inapplicability, never silently skip.
+    _x_mu, _y_mu = getattr(mapfit, "x_mu", None), getattr(mapfit, "y_mu", None)
+    ib_bias = None
+    if _x_mu is not None and _y_mu is not None:
+        _b = np.asarray(_y_mu, dtype=np.float64) - np.asarray(_x_mu, dtype=np.float64)
+        if _b.shape[-1] == np.asarray(z_ev_w).shape[-1]:
+            ib_bias = _b  # (Ly, 1, d) -- broadcasts over the row axis
+
+    def _block(pred_b, true_b, x_b) -> list[dict]:
         rows = []
         for li in range(pred_b.shape[0]):
             row = {"layer_idx": li, "r2_eval_rung": float(fits.r2_pooled(pred_b[li], true_b[li]))}
+            if ib_bias is not None:
+                # Per-layer so the (Ly, n, d) fp64 copy is never materialized.
+                ib_li = np.asarray(x_b[li], dtype=np.float64) + ib_bias[li]
+                row["r2_identity_bias"] = float(fits.r2_pooled(ib_li, true_b[li]))
             if knn:
                 from explore_persona_space.analysis.mapping_baselines import knn_retrieval
 
@@ -943,7 +1013,7 @@ def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w, *, rungs=None, knn: bool 
         return rows
 
     pred = fits.apply_map(z_ev_w, mapfit)
-    per_layer = _block(pred, za_ev_w)
+    per_layer = _block(pred, za_ev_w, z_ev_w)
     finite = [r["r2_eval_rung"] for r in per_layer if math.isfinite(r["r2_eval_rung"])]
     out = {
         "per_layer": per_layer,
@@ -951,11 +1021,17 @@ def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w, *, rungs=None, knn: bool 
         "n_eval_rows": int(z_ev_w.shape[1]),
         "n_layers": int(pred.shape[0]),
         "estimator": "fits.r2_pooled (same as r2_map)",
+        # Stated, never silently skipped (CLAUDE.md identity+bias rule).
+        "identity_bias": (
+            "pred = x_eval + (y_mu - x_mu); bias fit on the SAME full-U rows as the frozen map"
+            if ib_bias is not None
+            else "inapplicable: map carries no x_mu/y_mu, or input/output dims differ"
+        ),
     }
     if knn:
         out["knn_ks"] = list(KNN_KS)
     if rungs is not None:
-        import numpy as _np
+        _np = np
 
         labels = _np.asarray([str(r) for r in rungs])
         if labels.size != pred.shape[1]:
@@ -966,12 +1042,28 @@ def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w, *, rungs=None, knn: bool 
             # kNN needs a candidate pool bigger than the largest k; below that
             # the retrieval read is degenerate — record the rung's R^2 only.
             rows = (
-                _block(pred[:, sel], za_ev_w[:, sel])
+                _block(pred[:, sel], za_ev_w[:, sel], z_ev_w[:, sel])
                 if sel.size > max(KNN_KS) or not knn
+                # Small pool: kNN is degenerate, but R^2 AND the identity+bias
+                # baseline stay meaningful -- the baseline is what makes this
+                # rung's R^2 interpretable, so it is never dropped with kNN.
                 else [
                     {
                         "layer_idx": li,
                         "r2_eval_rung": float(fits.r2_pooled(pred[li, sel], za_ev_w[li, sel])),
+                        **(
+                            {
+                                "r2_identity_bias": float(
+                                    fits.r2_pooled(
+                                        _np.asarray(z_ev_w[li, sel], dtype=_np.float64)
+                                        + ib_bias[li],
+                                        za_ev_w[li, sel],
+                                    )
+                                )
+                            }
+                            if ib_bias is not None
+                            else {}
+                        ),
                     }
                     for li in range(pred.shape[0])
                 ]
@@ -1607,6 +1699,8 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             mlp_kwargs=mlp_kwargs,
             context_ids=tbl.ctx_order,
             unit_timings=(timings.setdefault("units", []) if timings is not None else None),
+            dof_cap=args.dof_cap,
+            row_extra=_selector_row_extra(args),
             **kwargs,
         )
         if timings is not None:
@@ -1661,11 +1755,25 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
     extra = None
     if tbl_ev is not None:
         extra = {"transfer_rows": transfer_rows, "transfer_skips": transfer_skips}
+    selector_meta = {}
+    if _selector_row_extra(args) is not None:
+        # #2388 G4 element b: summary-level selector telemetry — mode, cap, and
+        # the fits.SELECTOR_LOG lambda-selection counts accumulated this run.
+        # Conditional so the default (uncapped, unlabelled) summary bytes stay
+        # identical to the parent's.
+        selector_meta = {
+            "selector": {
+                "mode": "gcv-dof-capped" if args.dof_cap is not None else "gcv",
+                "dof_cap": args.dof_cap,
+                "lambda_counts": fits.SELECTOR_LOG,
+            }
+        }
     arms.write_summary(
         all_records,
         args.out_root / "arm_results" / "all_arms_spearman.json",
         meta={
             "mode": "real",
+            **selector_meta,
             "behavior": args.behavior,
             "config": args.config,
             "regimes": list(regimes_eff),
@@ -1857,6 +1965,7 @@ def _run_transfer_for_group(
                     arms=rb_indep,
                     device=args.device,
                     ridge_folds=(0,),
+                    dof_cap=args.dof_cap,
                 )
             ck = (spec.regime, rs_key, int(seed))
             if rb_dep and ck not in rbdep_cache:
@@ -1869,6 +1978,7 @@ def _run_transfer_for_group(
                     arms=rb_dep,
                     device=args.device,
                     ridge_folds=(0,),
+                    dof_cap=args.dof_cap,
                 )
             s4, sk4 = rbindep_cache.get(rs_key, ({}, {}))
             sd, skd = rbdep_cache.get(ck, ({}, {}))
