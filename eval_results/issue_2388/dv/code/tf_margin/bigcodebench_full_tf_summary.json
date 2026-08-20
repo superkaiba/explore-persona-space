@@ -1,0 +1,13 @@
+{
+  "benchmark": "bigcodebench_full",
+  "n_units": 1140,
+  "n_rows": 1140,
+  "recipe": "max over canonical compositions of PER-TOKEN mean ln P(fenced reference) \u2014 ROUGH (length-normalized; references are not the model's own distribution)",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "git_commit": "0464a6588153123431d68a78dd4d7ded5e7c35b8",
+  "git_dirty": false,
+  "phase": "tf-margin-bigcodebench_full",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2388_capture.py"
+}

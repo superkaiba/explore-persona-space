@@ -1,0 +1,974 @@
+{"item_id": "mbpp-601", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-602", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-603", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-604", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-605", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-606", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-607", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-608", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-609", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-610", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-611", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-612", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-613", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-614", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-615", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-616", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-617", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-618", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-619", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-620", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-621", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-622", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-623", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-624", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-625", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-626", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-627", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-628", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-629", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-630", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-631", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-632", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-633", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-634", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-635", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-636", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-637", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-638", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-639", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-640", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-641", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-642", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-643", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-644", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-645", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-646", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-647", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-648", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-649", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-650", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-651", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-652", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-653", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-654", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-655", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-656", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-657", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-658", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-659", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-660", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-661", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-662", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-663", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-664", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-665", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-666", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-667", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-668", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-669", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-670", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-671", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-672", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-673", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-674", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-675", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-676", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-677", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-678", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-679", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-680", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-681", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-682", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-683", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-684", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-685", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-686", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-687", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-688", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-689", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-690", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-691", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-692", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-693", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-694", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-695", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-696", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-697", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-698", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-699", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-700", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-701", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-702", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-703", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-704", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-705", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-706", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-707", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-708", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-709", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-710", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-711", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-712", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-713", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-714", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-715", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-716", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-717", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-718", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-719", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-720", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-721", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-722", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-723", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-724", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-725", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-726", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-727", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-728", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-729", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-730", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-731", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-732", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-733", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-734", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-735", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-736", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-737", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-738", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-739", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-740", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-741", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-742", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-743", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-744", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-745", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-746", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-747", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-748", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-749", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-750", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-751", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-752", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-753", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-754", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-755", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-756", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-757", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-758", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-759", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-760", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-761", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-762", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-763", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-764", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-765", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-766", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-767", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-768", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-769", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-770", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-771", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-772", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-773", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-774", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-775", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-776", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-777", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-778", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-779", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-780", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-781", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-782", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-783", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-784", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-785", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-786", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-787", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-788", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-789", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-790", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-791", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-792", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-793", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-794", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-795", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-796", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-797", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-798", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-799", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-800", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-801", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-802", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-803", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-804", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-805", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-806", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-807", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-808", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-809", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-810", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-811", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-812", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-813", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-814", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-815", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-816", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-817", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-818", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-819", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-820", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-821", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-822", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-823", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-824", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-825", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-826", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-827", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-828", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-829", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-830", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-831", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-832", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-833", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-834", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-835", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-836", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-837", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-838", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-839", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-840", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-841", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-842", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-843", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-844", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-845", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-846", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-847", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-848", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-849", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-850", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-851", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-852", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-853", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-854", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-855", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-856", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-857", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-858", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-859", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-860", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-861", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-862", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-863", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-864", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-865", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-866", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-867", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-868", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-869", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-870", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-871", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-872", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-873", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-874", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-875", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-876", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-877", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-878", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-879", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-880", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-881", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-882", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-883", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-884", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-885", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-886", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-887", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-888", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-889", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-890", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-891", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-892", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-893", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-894", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-895", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-896", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-897", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-898", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-899", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-900", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-901", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-902", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-903", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-904", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-905", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-906", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-907", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-908", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-909", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-910", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-911", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-912", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-913", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-914", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-915", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-916", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-917", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-918", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-919", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-920", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-921", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-922", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-923", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-924", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-925", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-926", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-927", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-928", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-929", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-930", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-931", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-932", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-933", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-934", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-935", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-936", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-937", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-938", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-939", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-940", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-941", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-942", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-943", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-944", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-945", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-946", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-947", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-948", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-949", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-950", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-951", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-952", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-953", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-954", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-955", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-956", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-957", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-958", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-959", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-960", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-961", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-962", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-963", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-964", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-965", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-966", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-967", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-968", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-969", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-970", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-971", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-972", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-973", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-974", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-11", "benchmark": "mbpp_full", "lp": {"code": -141.4582257270813}, "lp_per_token": {"code": -1.386845350265503}, "tf_reference_ln_logp": -1.386845350265503, "tf_reference_rough": true}
+{"item_id": "mbpp-12", "benchmark": "mbpp_full", "lp": {"code": -54.56858158111572}, "lp_per_token": {"code": -2.4803900718688965}, "tf_reference_ln_logp": -2.4803900718688965, "tf_reference_rough": true}
+{"item_id": "mbpp-13", "benchmark": "mbpp_full", "lp": {"code": -110.47575950622559}, "lp_per_token": {"code": -2.7618939876556396}, "tf_reference_ln_logp": -2.7618939876556396, "tf_reference_rough": true}
+{"item_id": "mbpp-14", "benchmark": "mbpp_full", "lp": {"code": -119.34558868408203}, "lp_per_token": {"code": -4.26234245300293}, "tf_reference_ln_logp": -4.26234245300293, "tf_reference_rough": true}
+{"item_id": "mbpp-15", "benchmark": "mbpp_full", "lp": {"code": -105.91396617889404}, "lp_per_token": {"code": -3.782641649246216}, "tf_reference_ln_logp": -3.782641649246216, "tf_reference_rough": true}
+{"item_id": "mbpp-16", "benchmark": "mbpp_full", "lp": {"code": -76.64447665214539}, "lp_per_token": {"code": -1.4193421602249146}, "tf_reference_ln_logp": -1.4193421602249146, "tf_reference_rough": true}
+{"item_id": "mbpp-17", "benchmark": "mbpp_full", "lp": {"code": -78.46803188323975}, "lp_per_token": {"code": -3.9234015941619873}, "tf_reference_ln_logp": -3.9234015941619873, "tf_reference_rough": true}
+{"item_id": "mbpp-18", "benchmark": "mbpp_full", "lp": {"code": -251.25225007534027}, "lp_per_token": {"code": -1.2376958131790161}, "tf_reference_ln_logp": -1.2376958131790161, "tf_reference_rough": true}
+{"item_id": "mbpp-19", "benchmark": "mbpp_full", "lp": {"code": -111.18967962265015}, "lp_per_token": {"code": -3.586763858795166}, "tf_reference_ln_logp": -3.586763858795166, "tf_reference_rough": true}
+{"item_id": "mbpp-20", "benchmark": "mbpp_full", "lp": {"code": -150.95746040344238}, "lp_per_token": {"code": -1.6408419609069824}, "tf_reference_ln_logp": -1.6408419609069824, "tf_reference_rough": true}
+{"item_id": "mbpp-21", "benchmark": "mbpp_full", "lp": {"code": -154.3126516342163}, "lp_per_token": {"code": -3.9567346572875977}, "tf_reference_ln_logp": -3.9567346572875977, "tf_reference_rough": true}
+{"item_id": "mbpp-22", "benchmark": "mbpp_full", "lp": {"code": -97.56142473220825}, "lp_per_token": {"code": -1.599367618560791}, "tf_reference_ln_logp": -1.599367618560791, "tf_reference_rough": true}
+{"item_id": "mbpp-23", "benchmark": "mbpp_full", "lp": {"code": -145.43547105789185}, "lp_per_token": {"code": -2.345733404159546}, "tf_reference_ln_logp": -2.345733404159546, "tf_reference_rough": true}
+{"item_id": "mbpp-24", "benchmark": "mbpp_full", "lp": {"code": -66.7044705748558}, "lp_per_token": {"code": -0.8036683201789856}, "tf_reference_ln_logp": -0.8036683201789856, "tf_reference_rough": true}
+{"item_id": "mbpp-25", "benchmark": "mbpp_full", "lp": {"code": -109.75568985939026}, "lp_per_token": {"code": -1.77025306224823}, "tf_reference_ln_logp": -1.77025306224823, "tf_reference_rough": true}
+{"item_id": "mbpp-26", "benchmark": "mbpp_full", "lp": {"code": -116.92572784423828}, "lp_per_token": {"code": -2.435952663421631}, "tf_reference_ln_logp": -2.435952663421631, "tf_reference_rough": true}
+{"item_id": "mbpp-27", "benchmark": "mbpp_full", "lp": {"code": -123.7323546409607}, "lp_per_token": {"code": -2.9460084438323975}, "tf_reference_ln_logp": -2.9460084438323975, "tf_reference_rough": true}
+{"item_id": "mbpp-28", "benchmark": "mbpp_full", "lp": {"code": -106.12556755542755}, "lp_per_token": {"code": -1.63270103931427}, "tf_reference_ln_logp": -1.63270103931427, "tf_reference_rough": true}
+{"item_id": "mbpp-29", "benchmark": "mbpp_full", "lp": {"code": -85.65267491340637}, "lp_per_token": {"code": -1.0445448160171509}, "tf_reference_ln_logp": -1.0445448160171509, "tf_reference_rough": true}
+{"item_id": "mbpp-30", "benchmark": "mbpp_full", "lp": {"code": -141.35422682762146}, "lp_per_token": {"code": -1.385825753211975}, "tf_reference_ln_logp": -1.385825753211975, "tf_reference_rough": true}
+{"item_id": "mbpp-31", "benchmark": "mbpp_full", "lp": {"code": -154.96457695960999}, "lp_per_token": {"code": -1.0400307178497314}, "tf_reference_ln_logp": -1.0400307178497314, "tf_reference_rough": true}
+{"item_id": "mbpp-32", "benchmark": "mbpp_full", "lp": {"code": -126.83338761329651}, "lp_per_token": {"code": -1.1853587627410889}, "tf_reference_ln_logp": -1.1853587627410889, "tf_reference_rough": true}
+{"item_id": "mbpp-33", "benchmark": "mbpp_full", "lp": {"code": -162.28897976875305}, "lp_per_token": {"code": -2.107649087905884}, "tf_reference_ln_logp": -2.107649087905884, "tf_reference_rough": true}
+{"item_id": "mbpp-34", "benchmark": "mbpp_full", "lp": {"code": -185.74379646778107}, "lp_per_token": {"code": -1.5101121664047241}, "tf_reference_ln_logp": -1.5101121664047241, "tf_reference_rough": true}
+{"item_id": "mbpp-35", "benchmark": "mbpp_full", "lp": {"code": -79.52313423156738}, "lp_per_token": {"code": -3.976156711578369}, "tf_reference_ln_logp": -3.976156711578369, "tf_reference_rough": true}
+{"item_id": "mbpp-36", "benchmark": "mbpp_full", "lp": {"code": -139.87873077392578}, "lp_per_token": {"code": -2.3313121795654297}, "tf_reference_ln_logp": -2.3313121795654297, "tf_reference_rough": true}
+{"item_id": "mbpp-37", "benchmark": "mbpp_full", "lp": {"code": -44.79995858669281}, "lp_per_token": {"code": -0.7593213319778442}, "tf_reference_ln_logp": -0.7593213319778442, "tf_reference_rough": true}
+{"item_id": "mbpp-38", "benchmark": "mbpp_full", "lp": {"code": -143.03550720214844}, "lp_per_token": {"code": -2.2349298000335693}, "tf_reference_ln_logp": -2.2349298000335693, "tf_reference_rough": true}
+{"item_id": "mbpp-39", "benchmark": "mbpp_full", "lp": {"code": -128.1984240412712}, "lp_per_token": {"code": -0.6642405390739441}, "tf_reference_ln_logp": -0.6642405390739441, "tf_reference_rough": true}
+{"item_id": "mbpp-40", "benchmark": "mbpp_full", "lp": {"code": -84.4154269695282}, "lp_per_token": {"code": -2.5580432415008545}, "tf_reference_ln_logp": -2.5580432415008545, "tf_reference_rough": true}
+{"item_id": "mbpp-41", "benchmark": "mbpp_full", "lp": {"code": -71.78367137908936}, "lp_per_token": {"code": -2.3156023025512695}, "tf_reference_ln_logp": -2.3156023025512695, "tf_reference_rough": true}
+{"item_id": "mbpp-42", "benchmark": "mbpp_full", "lp": {"code": -53.01180124282837}, "lp_per_token": {"code": -1.7670600414276123}, "tf_reference_ln_logp": -1.7670600414276123, "tf_reference_rough": true}
+{"item_id": "mbpp-43", "benchmark": "mbpp_full", "lp": {"code": -61.991384506225586}, "lp_per_token": {"code": -1.1921420097351074}, "tf_reference_ln_logp": -1.1921420097351074, "tf_reference_rough": true}
+{"item_id": "mbpp-44", "benchmark": "mbpp_full", "lp": {"code": -67.97235488891602}, "lp_per_token": {"code": -1.416090726852417}, "tf_reference_ln_logp": -1.416090726852417, "tf_reference_rough": true}
+{"item_id": "mbpp-45", "benchmark": "mbpp_full", "lp": {"code": -126.31148386001587}, "lp_per_token": {"code": -1.3729509115219116}, "tf_reference_ln_logp": -1.3729509115219116, "tf_reference_rough": true}
+{"item_id": "mbpp-46", "benchmark": "mbpp_full", "lp": {"code": -94.00240850448608}, "lp_per_token": {"code": -3.0323357582092285}, "tf_reference_ln_logp": -3.0323357582092285, "tf_reference_rough": true}
+{"item_id": "mbpp-47", "benchmark": "mbpp_full", "lp": {"code": -135.38925218582153}, "lp_per_token": {"code": -1.4403111934661865}, "tf_reference_ln_logp": -1.4403111934661865, "tf_reference_rough": true}
+{"item_id": "mbpp-48", "benchmark": "mbpp_full", "lp": {"code": -90.24811029434204}, "lp_per_token": {"code": -1.2892587184906006}, "tf_reference_ln_logp": -1.2892587184906006, "tf_reference_rough": true}
+{"item_id": "mbpp-49", "benchmark": "mbpp_full", "lp": {"code": -116.93200874328613}, "lp_per_token": {"code": -4.176143169403076}, "tf_reference_ln_logp": -4.176143169403076, "tf_reference_rough": true}
+{"item_id": "mbpp-50", "benchmark": "mbpp_full", "lp": {"code": -112.21498250961304}, "lp_per_token": {"code": -2.2442996501922607}, "tf_reference_ln_logp": -2.2442996501922607, "tf_reference_rough": true}
+{"item_id": "mbpp-51", "benchmark": "mbpp_full", "lp": {"code": -109.71563816070557}, "lp_per_token": {"code": -3.5392141342163086}, "tf_reference_ln_logp": -3.5392141342163086, "tf_reference_rough": true}
+{"item_id": "mbpp-52", "benchmark": "mbpp_full", "lp": {"code": -93.971923828125}, "lp_per_token": {"code": -4.474853515625}, "tf_reference_ln_logp": -4.474853515625, "tf_reference_rough": true}
+{"item_id": "mbpp-53", "benchmark": "mbpp_full", "lp": {"code": -109.37287330627441}, "lp_per_token": {"code": -2.7343218326568604}, "tf_reference_ln_logp": -2.7343218326568604, "tf_reference_rough": true}
+{"item_id": "mbpp-54", "benchmark": "mbpp_full", "lp": {"code": -126.27615475654602}, "lp_per_token": {"code": -1.0701369047164917}, "tf_reference_ln_logp": -1.0701369047164917, "tf_reference_rough": true}
+{"item_id": "mbpp-55", "benchmark": "mbpp_full", "lp": {"code": -87.21103405952454}, "lp_per_token": {"code": -2.64275860786438}, "tf_reference_ln_logp": -2.64275860786438, "tf_reference_rough": true}
+{"item_id": "mbpp-56", "benchmark": "mbpp_full", "lp": {"code": -115.06649708747864}, "lp_per_token": {"code": -1.475211501121521}, "tf_reference_ln_logp": -1.475211501121521, "tf_reference_rough": true}
+{"item_id": "mbpp-57", "benchmark": "mbpp_full", "lp": {"code": -99.30425262451172}, "lp_per_token": {"code": -1.7421798706054688}, "tf_reference_ln_logp": -1.7421798706054688, "tf_reference_rough": true}
+{"item_id": "mbpp-58", "benchmark": "mbpp_full", "lp": {"code": -86.25712394714355}, "lp_per_token": {"code": -3.450284957885742}, "tf_reference_ln_logp": -3.450284957885742, "tf_reference_rough": true}
+{"item_id": "mbpp-59", "benchmark": "mbpp_full", "lp": {"code": -69.36320686340332}, "lp_per_token": {"code": -2.8901336193084717}, "tf_reference_ln_logp": -2.8901336193084717, "tf_reference_rough": true}
+{"item_id": "mbpp-60", "benchmark": "mbpp_full", "lp": {"code": -131.07769441604614}, "lp_per_token": {"code": -1.0321078300476074}, "tf_reference_ln_logp": -1.0321078300476074, "tf_reference_rough": true}
+{"item_id": "mbpp-61", "benchmark": "mbpp_full", "lp": {"code": -104.0777997970581}, "lp_per_token": {"code": -1.107210636138916}, "tf_reference_ln_logp": -1.107210636138916, "tf_reference_rough": true}
+{"item_id": "mbpp-62", "benchmark": "mbpp_full", "lp": {"code": -66.52399253845215}, "lp_per_token": {"code": -4.751713752746582}, "tf_reference_ln_logp": -4.751713752746582, "tf_reference_rough": true}
+{"item_id": "mbpp-63", "benchmark": "mbpp_full", "lp": {"code": -109.1350679397583}, "lp_per_token": {"code": -2.798335075378418}, "tf_reference_ln_logp": -2.798335075378418, "tf_reference_rough": true}
+{"item_id": "mbpp-64", "benchmark": "mbpp_full", "lp": {"code": -141.51881790161133}, "lp_per_token": {"code": -2.3199806213378906}, "tf_reference_ln_logp": -2.3199806213378906, "tf_reference_rough": true}
+{"item_id": "mbpp-65", "benchmark": "mbpp_full", "lp": {"code": -90.8720076084137}, "lp_per_token": {"code": -1.6828149557113647}, "tf_reference_ln_logp": -1.6828149557113647, "tf_reference_rough": true}
+{"item_id": "mbpp-66", "benchmark": "mbpp_full", "lp": {"code": -131.0020718574524}, "lp_per_token": {"code": -3.0465598106384277}, "tf_reference_ln_logp": -3.0465598106384277, "tf_reference_rough": true}
+{"item_id": "mbpp-67", "benchmark": "mbpp_full", "lp": {"code": -49.26894411444664}, "lp_per_token": {"code": -0.4140247404575348}, "tf_reference_ln_logp": -0.4140247404575348, "tf_reference_rough": true}
+{"item_id": "mbpp-68", "benchmark": "mbpp_full", "lp": {"code": -59.03534698486328}, "lp_per_token": {"code": -0.9224272966384888}, "tf_reference_ln_logp": -0.9224272966384888, "tf_reference_rough": true}
+{"item_id": "mbpp-69", "benchmark": "mbpp_full", "lp": {"code": -67.34761476516724}, "lp_per_token": {"code": -0.5612301230430603}, "tf_reference_ln_logp": -0.5612301230430603, "tf_reference_rough": true}
+{"item_id": "mbpp-70", "benchmark": "mbpp_full", "lp": {"code": -185.59420013427734}, "lp_per_token": {"code": -2.109025001525879}, "tf_reference_ln_logp": -2.109025001525879, "tf_reference_rough": true}
+{"item_id": "mbpp-71", "benchmark": "mbpp_full", "lp": {"code": -104.76359510421753}, "lp_per_token": {"code": -0.8517365455627441}, "tf_reference_ln_logp": -0.8517365455627441, "tf_reference_rough": true}
+{"item_id": "mbpp-72", "benchmark": "mbpp_full", "lp": {"code": -83.32778453826904}, "lp_per_token": {"code": -2.687993049621582}, "tf_reference_ln_logp": -2.687993049621582, "tf_reference_rough": true}
+{"item_id": "mbpp-73", "benchmark": "mbpp_full", "lp": {"code": -89.29596948623657}, "lp_per_token": {"code": -3.307258129119873}, "tf_reference_ln_logp": -3.307258129119873, "tf_reference_rough": true}
+{"item_id": "mbpp-74", "benchmark": "mbpp_full", "lp": {"code": -196.17819559574127}, "lp_per_token": {"code": -1.133978009223938}, "tf_reference_ln_logp": -1.133978009223938, "tf_reference_rough": true}
+{"item_id": "mbpp-75", "benchmark": "mbpp_full", "lp": {"code": -85.18144226074219}, "lp_per_token": {"code": -2.0281295776367188}, "tf_reference_ln_logp": -2.0281295776367188, "tf_reference_rough": true}
+{"item_id": "mbpp-76", "benchmark": "mbpp_full", "lp": {"code": -95.95811128616333}, "lp_per_token": {"code": -1.2967312335968018}, "tf_reference_ln_logp": -1.2967312335968018, "tf_reference_rough": true}
+{"item_id": "mbpp-77", "benchmark": "mbpp_full", "lp": {"code": -69.0128116607666}, "lp_per_token": {"code": -2.8755338191986084}, "tf_reference_ln_logp": -2.8755338191986084, "tf_reference_rough": true}
+{"item_id": "mbpp-78", "benchmark": "mbpp_full", "lp": {"code": -131.9580078125}, "lp_per_token": {"code": -1.64947509765625}, "tf_reference_ln_logp": -1.64947509765625, "tf_reference_rough": true}
+{"item_id": "mbpp-79", "benchmark": "mbpp_full", "lp": {"code": -159.21094465255737}, "lp_per_token": {"code": -3.4611074924468994}, "tf_reference_ln_logp": -3.4611074924468994, "tf_reference_rough": true}
+{"item_id": "mbpp-80", "benchmark": "mbpp_full", "lp": {"code": -60.16425025463104}, "lp_per_token": {"code": -1.823159098625183}, "tf_reference_ln_logp": -1.823159098625183, "tf_reference_rough": true}
+{"item_id": "mbpp-81", "benchmark": "mbpp_full", "lp": {"code": -113.83359229564667}, "lp_per_token": {"code": -1.9293829202651978}, "tf_reference_ln_logp": -1.9293829202651978, "tf_reference_rough": true}
+{"item_id": "mbpp-82", "benchmark": "mbpp_full", "lp": {"code": -106.65334963798523}, "lp_per_token": {"code": -3.677701711654663}, "tf_reference_ln_logp": -3.677701711654663, "tf_reference_rough": true}
+{"item_id": "mbpp-83", "benchmark": "mbpp_full", "lp": {"code": -158.85611009597778}, "lp_per_token": {"code": -1.7266968488693237}, "tf_reference_ln_logp": -1.7266968488693237, "tf_reference_rough": true}
+{"item_id": "mbpp-84", "benchmark": "mbpp_full", "lp": {"code": -79.75466537475586}, "lp_per_token": {"code": -1.7337970733642578}, "tf_reference_ln_logp": -1.7337970733642578, "tf_reference_rough": true}
+{"item_id": "mbpp-85", "benchmark": "mbpp_full", "lp": {"code": -101.95880889892578}, "lp_per_token": {"code": -3.641386032104492}, "tf_reference_ln_logp": -3.641386032104492, "tf_reference_rough": true}
+{"item_id": "mbpp-86", "benchmark": "mbpp_full", "lp": {"code": -42.15329456329346}, "lp_per_token": {"code": -1.5054748058319092}, "tf_reference_ln_logp": -1.5054748058319092, "tf_reference_rough": true}
+{"item_id": "mbpp-87", "benchmark": "mbpp_full", "lp": {"code": -109.36092281341553}, "lp_per_token": {"code": -2.377411365509033}, "tf_reference_ln_logp": -2.377411365509033, "tf_reference_rough": true}
+{"item_id": "mbpp-88", "benchmark": "mbpp_full", "lp": {"code": -97.83989095687866}, "lp_per_token": {"code": -3.62369966506958}, "tf_reference_ln_logp": -3.62369966506958, "tf_reference_rough": true}
+{"item_id": "mbpp-89", "benchmark": "mbpp_full", "lp": {"code": -78.1789870262146}, "lp_per_token": {"code": -4.598763942718506}, "tf_reference_ln_logp": -4.598763942718506, "tf_reference_rough": true}
+{"item_id": "mbpp-90", "benchmark": "mbpp_full", "lp": {"code": -77.10942792892456}, "lp_per_token": {"code": -1.8807177543640137}, "tf_reference_ln_logp": -1.8807177543640137, "tf_reference_rough": true}
+{"item_id": "mbpp-91", "benchmark": "mbpp_full", "lp": {"code": -84.0539014339447}, "lp_per_token": {"code": -2.4015400409698486}, "tf_reference_ln_logp": -2.4015400409698486, "tf_reference_rough": true}
+{"item_id": "mbpp-92", "benchmark": "mbpp_full", "lp": {"code": -98.01404333114624}, "lp_per_token": {"code": -1.6898972988128662}, "tf_reference_ln_logp": -1.6898972988128662, "tf_reference_rough": true}
+{"item_id": "mbpp-93", "benchmark": "mbpp_full", "lp": {"code": -113.13842535018921}, "lp_per_token": {"code": -2.262768507003784}, "tf_reference_ln_logp": -2.262768507003784, "tf_reference_rough": true}
+{"item_id": "mbpp-94", "benchmark": "mbpp_full", "lp": {"code": -132.46850967407227}, "lp_per_token": {"code": -3.486013412475586}, "tf_reference_ln_logp": -3.486013412475586, "tf_reference_rough": true}
+{"item_id": "mbpp-95", "benchmark": "mbpp_full", "lp": {"code": -92.01971411705017}, "lp_per_token": {"code": -3.408137559890747}, "tf_reference_ln_logp": -3.408137559890747, "tf_reference_rough": true}
+{"item_id": "mbpp-96", "benchmark": "mbpp_full", "lp": {"code": -105.00060367584229}, "lp_per_token": {"code": -2.560990333557129}, "tf_reference_ln_logp": -2.560990333557129, "tf_reference_rough": true}
+{"item_id": "mbpp-97", "benchmark": "mbpp_full", "lp": {"code": -160.26492047309875}, "lp_per_token": {"code": -1.954450249671936}, "tf_reference_ln_logp": -1.954450249671936, "tf_reference_rough": true}
+{"item_id": "mbpp-98", "benchmark": "mbpp_full", "lp": {"code": -103.5045051574707}, "lp_per_token": {"code": -2.9572715759277344}, "tf_reference_ln_logp": -2.9572715759277344, "tf_reference_rough": true}
+{"item_id": "mbpp-99", "benchmark": "mbpp_full", "lp": {"code": -58.858020305633545}, "lp_per_token": {"code": -2.559044361114502}, "tf_reference_ln_logp": -2.559044361114502, "tf_reference_rough": true}
+{"item_id": "mbpp-100", "benchmark": "mbpp_full", "lp": {"code": -73.1971321105957}, "lp_per_token": {"code": -1.4352378845214844}, "tf_reference_ln_logp": -1.4352378845214844, "tf_reference_rough": true}
+{"item_id": "mbpp-101", "benchmark": "mbpp_full", "lp": {"code": -75.88077545166016}, "lp_per_token": {"code": -1.0840110778808594}, "tf_reference_ln_logp": -1.0840110778808594, "tf_reference_rough": true}
+{"item_id": "mbpp-102", "benchmark": "mbpp_full", "lp": {"code": -62.50070905685425}, "lp_per_token": {"code": -2.0161519050598145}, "tf_reference_ln_logp": -2.0161519050598145, "tf_reference_rough": true}
+{"item_id": "mbpp-103", "benchmark": "mbpp_full", "lp": {"code": -98.63838195800781}, "lp_per_token": {"code": -1.2329797744750977}, "tf_reference_ln_logp": -1.2329797744750977, "tf_reference_rough": true}
+{"item_id": "mbpp-104", "benchmark": "mbpp_full", "lp": {"code": -109.99609708786011}, "lp_per_token": {"code": -2.972867488861084}, "tf_reference_ln_logp": -2.972867488861084, "tf_reference_rough": true}
+{"item_id": "mbpp-105", "benchmark": "mbpp_full", "lp": {"code": -45.76409339904785}, "lp_per_token": {"code": -3.0509395599365234}, "tf_reference_ln_logp": -3.0509395599365234, "tf_reference_rough": true}
+{"item_id": "mbpp-106", "benchmark": "mbpp_full", "lp": {"code": -95.38471627235413}, "lp_per_token": {"code": -2.8904459476470947}, "tf_reference_ln_logp": -2.8904459476470947, "tf_reference_rough": true}
+{"item_id": "mbpp-107", "benchmark": "mbpp_full", "lp": {"code": -161.84211134910583}, "lp_per_token": {"code": -1.326574683189392}, "tf_reference_ln_logp": -1.326574683189392, "tf_reference_rough": true}
+{"item_id": "mbpp-108", "benchmark": "mbpp_full", "lp": {"code": -113.82687544822693}, "lp_per_token": {"code": -1.9292690753936768}, "tf_reference_ln_logp": -1.9292690753936768, "tf_reference_rough": true}
+{"item_id": "mbpp-109", "benchmark": "mbpp_full", "lp": {"code": -108.36571025848389}, "lp_per_token": {"code": -2.1248178482055664}, "tf_reference_ln_logp": -2.1248178482055664, "tf_reference_rough": true}
+{"item_id": "mbpp-110", "benchmark": "mbpp_full", "lp": {"code": -131.7389678955078}, "lp_per_token": {"code": -1.6467370986938477}, "tf_reference_ln_logp": -1.6467370986938477, "tf_reference_rough": true}
+{"item_id": "mbpp-111", "benchmark": "mbpp_full", "lp": {"code": -59.16291832923889}, "lp_per_token": {"code": -1.9720972776412964}, "tf_reference_ln_logp": -1.9720972776412964, "tf_reference_rough": true}
+{"item_id": "mbpp-112", "benchmark": "mbpp_full", "lp": {"code": -113.84048700332642}, "lp_per_token": {"code": -4.949586391448975}, "tf_reference_ln_logp": -4.949586391448975, "tf_reference_rough": true}
+{"item_id": "mbpp-113", "benchmark": "mbpp_full", "lp": {"code": -193.46153104305267}, "lp_per_token": {"code": -1.7428966760635376}, "tf_reference_ln_logp": -1.7428966760635376, "tf_reference_rough": true}
+{"item_id": "mbpp-114", "benchmark": "mbpp_full", "lp": {"code": -114.58702230453491}, "lp_per_token": {"code": -2.6648144721984863}, "tf_reference_ln_logp": -2.6648144721984863, "tf_reference_rough": true}
+{"item_id": "mbpp-115", "benchmark": "mbpp_full", "lp": {"code": -107.8906135559082}, "lp_per_token": {"code": -3.853236198425293}, "tf_reference_ln_logp": -3.853236198425293, "tf_reference_rough": true}
+{"item_id": "mbpp-116", "benchmark": "mbpp_full", "lp": {"code": -50.80859637260437}, "lp_per_token": {"code": -1.9541767835617065}, "tf_reference_ln_logp": -1.9541767835617065, "tf_reference_rough": true}
+{"item_id": "mbpp-117", "benchmark": "mbpp_full", "lp": {"code": -137.60840320587158}, "lp_per_token": {"code": -1.911227822303772}, "tf_reference_ln_logp": -1.911227822303772, "tf_reference_rough": true}
+{"item_id": "mbpp-118", "benchmark": "mbpp_full", "lp": {"code": -79.95423889160156}, "lp_per_token": {"code": -3.3314266204833984}, "tf_reference_ln_logp": -3.3314266204833984, "tf_reference_rough": true}
+{"item_id": "mbpp-119", "benchmark": "mbpp_full", "lp": {"code": -81.18164110183716}, "lp_per_token": {"code": -2.1363589763641357}, "tf_reference_ln_logp": -2.1363589763641357, "tf_reference_rough": true}
+{"item_id": "mbpp-120", "benchmark": "mbpp_full", "lp": {"code": -101.9062271118164}, "lp_per_token": {"code": -2.830728530883789}, "tf_reference_ln_logp": -2.830728530883789, "tf_reference_rough": true}
+{"item_id": "mbpp-121", "benchmark": "mbpp_full", "lp": {"code": -93.145312666893}, "lp_per_token": {"code": -0.980476975440979}, "tf_reference_ln_logp": -0.980476975440979, "tf_reference_rough": true}
+{"item_id": "mbpp-122", "benchmark": "mbpp_full", "lp": {"code": -170.35246789455414}, "lp_per_token": {"code": -1.3205617666244507}, "tf_reference_ln_logp": -1.3205617666244507, "tf_reference_rough": true}
+{"item_id": "mbpp-123", "benchmark": "mbpp_full", "lp": {"code": -151.06974184513092}, "lp_per_token": {"code": -0.9155741930007935}, "tf_reference_ln_logp": -0.9155741930007935, "tf_reference_rough": true}
+{"item_id": "mbpp-124", "benchmark": "mbpp_full", "lp": {"code": -123.40055894851685}, "lp_per_token": {"code": -3.739410877227783}, "tf_reference_ln_logp": -3.739410877227783, "tf_reference_rough": true}
+{"item_id": "mbpp-125", "benchmark": "mbpp_full", "lp": {"code": -110.68935680389404}, "lp_per_token": {"code": -1.2578336000442505}, "tf_reference_ln_logp": -1.2578336000442505, "tf_reference_rough": true}
+{"item_id": "mbpp-126", "benchmark": "mbpp_full", "lp": {"code": -86.82475328445435}, "lp_per_token": {"code": -1.57863187789917}, "tf_reference_ln_logp": -1.57863187789917, "tf_reference_rough": true}
+{"item_id": "mbpp-127", "benchmark": "mbpp_full", "lp": {"code": -41.656986236572266}, "lp_per_token": {"code": -0.6217460632324219}, "tf_reference_ln_logp": -0.6217460632324219, "tf_reference_rough": true}
+{"item_id": "mbpp-128", "benchmark": "mbpp_full", "lp": {"code": -99.49451065063477}, "lp_per_token": {"code": -2.0728023052215576}, "tf_reference_ln_logp": -2.0728023052215576, "tf_reference_rough": true}
+{"item_id": "mbpp-129", "benchmark": "mbpp_full", "lp": {"code": -197.5912380218506}, "lp_per_token": {"code": -1.2747821807861328}, "tf_reference_ln_logp": -1.2747821807861328, "tf_reference_rough": true}
+{"item_id": "mbpp-130", "benchmark": "mbpp_full", "lp": {"code": -86.4594441652298}, "lp_per_token": {"code": -1.571989893913269}, "tf_reference_ln_logp": -1.571989893913269, "tf_reference_rough": true}
+{"item_id": "mbpp-131", "benchmark": "mbpp_full", "lp": {"code": -101.23497676849365}, "lp_per_token": {"code": -1.1003801822662354}, "tf_reference_ln_logp": -1.1003801822662354, "tf_reference_rough": true}
+{"item_id": "mbpp-132", "benchmark": "mbpp_full", "lp": {"code": -102.00706720352173}, "lp_per_token": {"code": -4.080282688140869}, "tf_reference_ln_logp": -4.080282688140869, "tf_reference_rough": true}
+{"item_id": "mbpp-133", "benchmark": "mbpp_full", "lp": {"code": -129.47113609313965}, "lp_per_token": {"code": -3.319772720336914}, "tf_reference_ln_logp": -3.319772720336914, "tf_reference_rough": true}
+{"item_id": "mbpp-134", "benchmark": "mbpp_full", "lp": {"code": -162.5751235485077}, "lp_per_token": {"code": -1.9826234579086304}, "tf_reference_ln_logp": -1.9826234579086304, "tf_reference_rough": true}
+{"item_id": "mbpp-135", "benchmark": "mbpp_full", "lp": {"code": -80.76995944976807}, "lp_per_token": {"code": -3.846188545227051}, "tf_reference_ln_logp": -3.846188545227051, "tf_reference_rough": true}
+{"item_id": "mbpp-136", "benchmark": "mbpp_full", "lp": {"code": -146.56405782699585}, "lp_per_token": {"code": -0.8233935832977295}, "tf_reference_ln_logp": -0.8233935832977295, "tf_reference_rough": true}
+{"item_id": "mbpp-137", "benchmark": "mbpp_full", "lp": {"code": -181.7559094429016}, "lp_per_token": {"code": -2.931546926498413}, "tf_reference_ln_logp": -2.931546926498413, "tf_reference_rough": true}
+{"item_id": "mbpp-138", "benchmark": "mbpp_full", "lp": {"code": -96.99310302734375}, "lp_per_token": {"code": -2.4248275756835938}, "tf_reference_ln_logp": -2.4248275756835938, "tf_reference_rough": true}
+{"item_id": "mbpp-139", "benchmark": "mbpp_full", "lp": {"code": -88.63221383094788}, "lp_per_token": {"code": -3.0562832355499268}, "tf_reference_ln_logp": -3.0562832355499268, "tf_reference_rough": true}
+{"item_id": "mbpp-140", "benchmark": "mbpp_full", "lp": {"code": -129.98439025878906}, "lp_per_token": {"code": -2.3211498260498047}, "tf_reference_ln_logp": -2.3211498260498047, "tf_reference_rough": true}
+{"item_id": "mbpp-141", "benchmark": "mbpp_full", "lp": {"code": -74.62515324354172}, "lp_per_token": {"code": -0.8779429793357849}, "tf_reference_ln_logp": -0.8779429793357849, "tf_reference_rough": true}
+{"item_id": "mbpp-142", "benchmark": "mbpp_full", "lp": {"code": -92.83375692367554}, "lp_per_token": {"code": -2.1589245796203613}, "tf_reference_ln_logp": -2.1589245796203613, "tf_reference_rough": true}
+{"item_id": "mbpp-143", "benchmark": "mbpp_full", "lp": {"code": -99.13073325157166}, "lp_per_token": {"code": -3.197765588760376}, "tf_reference_ln_logp": -3.197765588760376, "tf_reference_rough": true}
+{"item_id": "mbpp-144", "benchmark": "mbpp_full", "lp": {"code": -122.70673727989197}, "lp_per_token": {"code": -2.15274977684021}, "tf_reference_ln_logp": -2.15274977684021, "tf_reference_rough": true}
+{"item_id": "mbpp-145", "benchmark": "mbpp_full", "lp": {"code": -77.84399092197418}, "lp_per_token": {"code": -1.0379198789596558}, "tf_reference_ln_logp": -1.0379198789596558, "tf_reference_rough": true}
+{"item_id": "mbpp-146", "benchmark": "mbpp_full", "lp": {"code": -111.60000944137573}, "lp_per_token": {"code": -4.133333683013916}, "tf_reference_ln_logp": -4.133333683013916, "tf_reference_rough": true}
+{"item_id": "mbpp-147", "benchmark": "mbpp_full", "lp": {"code": -81.43766748905182}, "lp_per_token": {"code": -0.7610996961593628}, "tf_reference_ln_logp": -0.7610996961593628, "tf_reference_rough": true}
+{"item_id": "mbpp-148", "benchmark": "mbpp_full", "lp": {"code": -194.99417781829834}, "lp_per_token": {"code": -1.6249514818191528}, "tf_reference_ln_logp": -1.6249514818191528, "tf_reference_rough": true}
+{"item_id": "mbpp-149", "benchmark": "mbpp_full", "lp": {"code": -110.5582046508789}, "lp_per_token": {"code": -0.9871268272399902}, "tf_reference_ln_logp": -0.9871268272399902, "tf_reference_rough": true}
+{"item_id": "mbpp-150", "benchmark": "mbpp_full", "lp": {"code": -87.68043208122253}, "lp_per_token": {"code": -1.4861090183258057}, "tf_reference_ln_logp": -1.4861090183258057, "tf_reference_rough": true}
+{"item_id": "mbpp-151", "benchmark": "mbpp_full", "lp": {"code": -98.77482604980469}, "lp_per_token": {"code": -2.0578088760375977}, "tf_reference_ln_logp": -2.0578088760375977, "tf_reference_rough": true}
+{"item_id": "mbpp-152", "benchmark": "mbpp_full", "lp": {"code": -68.01723834872246}, "lp_per_token": {"code": -0.4277813732624054}, "tf_reference_ln_logp": -0.4277813732624054, "tf_reference_rough": true}
+{"item_id": "mbpp-153", "benchmark": "mbpp_full", "lp": {"code": -100.00183618068695}, "lp_per_token": {"code": -1.9608203172683716}, "tf_reference_ln_logp": -1.9608203172683716, "tf_reference_rough": true}
+{"item_id": "mbpp-154", "benchmark": "mbpp_full", "lp": {"code": -72.237557888031}, "lp_per_token": {"code": -2.6754651069641113}, "tf_reference_ln_logp": -2.6754651069641113, "tf_reference_rough": true}
+{"item_id": "mbpp-155", "benchmark": "mbpp_full", "lp": {"code": -136.62789511680603}, "lp_per_token": {"code": -1.6661938428878784}, "tf_reference_ln_logp": -1.6661938428878784, "tf_reference_rough": true}
+{"item_id": "mbpp-156", "benchmark": "mbpp_full", "lp": {"code": -27.536137104034424}, "lp_per_token": {"code": -0.7648926973342896}, "tf_reference_ln_logp": -0.7648926973342896, "tf_reference_rough": true}
+{"item_id": "mbpp-157", "benchmark": "mbpp_full", "lp": {"code": -64.16205763816833}, "lp_per_token": {"code": -1.8332016468048096}, "tf_reference_ln_logp": -1.8332016468048096, "tf_reference_rough": true}
+{"item_id": "mbpp-158", "benchmark": "mbpp_full", "lp": {"code": -109.06304633617401}, "lp_per_token": {"code": -1.3464573621749878}, "tf_reference_ln_logp": -1.3464573621749878, "tf_reference_rough": true}
+{"item_id": "mbpp-159", "benchmark": "mbpp_full", "lp": {"code": -168.19416391849518}, "lp_per_token": {"code": -0.8164765238761902}, "tf_reference_ln_logp": -0.8164765238761902, "tf_reference_rough": true}
+{"item_id": "mbpp-160", "benchmark": "mbpp_full", "lp": {"code": -193.49533081054688}, "lp_per_token": {"code": -2.1499481201171875}, "tf_reference_ln_logp": -2.1499481201171875, "tf_reference_rough": true}
+{"item_id": "mbpp-161", "benchmark": "mbpp_full", "lp": {"code": -32.2252277135849}, "lp_per_token": {"code": -0.9478008151054382}, "tf_reference_ln_logp": -0.9478008151054382, "tf_reference_rough": true}
+{"item_id": "mbpp-162", "benchmark": "mbpp_full", "lp": {"code": -46.27179503440857}, "lp_per_token": {"code": -1.3220512866973877}, "tf_reference_ln_logp": -1.3220512866973877, "tf_reference_rough": true}
+{"item_id": "mbpp-163", "benchmark": "mbpp_full", "lp": {"code": -81.817502617836}, "lp_per_token": {"code": -1.9955488443374634}, "tf_reference_ln_logp": -1.9955488443374634, "tf_reference_rough": true}
+{"item_id": "mbpp-164", "benchmark": "mbpp_full", "lp": {"code": -139.96697199344635}, "lp_per_token": {"code": -1.4429584741592407}, "tf_reference_ln_logp": -1.4429584741592407, "tf_reference_rough": true}
+{"item_id": "mbpp-165", "benchmark": "mbpp_full", "lp": {"code": -95.77377486228943}, "lp_per_token": {"code": -1.311969518661499}, "tf_reference_ln_logp": -1.311969518661499, "tf_reference_rough": true}
+{"item_id": "mbpp-166", "benchmark": "mbpp_full", "lp": {"code": -119.35297167301178}, "lp_per_token": {"code": -1.6810277700424194}, "tf_reference_ln_logp": -1.6810277700424194, "tf_reference_rough": true}
+{"item_id": "mbpp-167", "benchmark": "mbpp_full", "lp": {"code": -97.22062468528748}, "lp_per_token": {"code": -1.3888660669326782}, "tf_reference_ln_logp": -1.3888660669326782, "tf_reference_rough": true}
+{"item_id": "mbpp-168", "benchmark": "mbpp_full", "lp": {"code": -116.64582777023315}, "lp_per_token": {"code": -3.069627046585083}, "tf_reference_ln_logp": -3.069627046585083, "tf_reference_rough": true}
+{"item_id": "mbpp-169", "benchmark": "mbpp_full", "lp": {"code": -121.17923069000244}, "lp_per_token": {"code": -1.7820475101470947}, "tf_reference_ln_logp": -1.7820475101470947, "tf_reference_rough": true}
+{"item_id": "mbpp-170", "benchmark": "mbpp_full", "lp": {"code": -147.98648357391357}, "lp_per_token": {"code": -2.4664413928985596}, "tf_reference_ln_logp": -2.4664413928985596, "tf_reference_rough": true}
+{"item_id": "mbpp-171", "benchmark": "mbpp_full", "lp": {"code": -99.9949836730957}, "lp_per_token": {"code": -4.166457653045654}, "tf_reference_ln_logp": -4.166457653045654, "tf_reference_rough": true}
+{"item_id": "mbpp-172", "benchmark": "mbpp_full", "lp": {"code": -104.82062435150146}, "lp_per_token": {"code": -1.69065523147583}, "tf_reference_ln_logp": -1.69065523147583, "tf_reference_rough": true}
+{"item_id": "mbpp-173", "benchmark": "mbpp_full", "lp": {"code": -101.17286682128906}, "lp_per_token": {"code": -3.161652088165283}, "tf_reference_ln_logp": -3.161652088165283, "tf_reference_rough": true}
+{"item_id": "mbpp-174", "benchmark": "mbpp_full", "lp": {"code": -56.97071313858032}, "lp_per_token": {"code": -1.627734661102295}, "tf_reference_ln_logp": -1.627734661102295, "tf_reference_rough": true}
+{"item_id": "mbpp-175", "benchmark": "mbpp_full", "lp": {"code": -95.95034229755402}, "lp_per_token": {"code": -1.1028774976730347}, "tf_reference_ln_logp": -1.1028774976730347, "tf_reference_rough": true}
+{"item_id": "mbpp-176", "benchmark": "mbpp_full", "lp": {"code": -86.64881229400635}, "lp_per_token": {"code": -4.126133918762207}, "tf_reference_ln_logp": -4.126133918762207, "tf_reference_rough": true}
+{"item_id": "mbpp-177", "benchmark": "mbpp_full", "lp": {"code": -130.918776512146}, "lp_per_token": {"code": -3.4452309608459473}, "tf_reference_ln_logp": -3.4452309608459473, "tf_reference_rough": true}
+{"item_id": "mbpp-178", "benchmark": "mbpp_full", "lp": {"code": -118.20413827896118}, "lp_per_token": {"code": -2.569655179977417}, "tf_reference_ln_logp": -2.569655179977417, "tf_reference_rough": true}
+{"item_id": "mbpp-179", "benchmark": "mbpp_full", "lp": {"code": -172.40374422073364}, "lp_per_token": {"code": -1.286595106124878}, "tf_reference_ln_logp": -1.286595106124878, "tf_reference_rough": true}
+{"item_id": "mbpp-180", "benchmark": "mbpp_full", "lp": {"code": -110.41618931293488}, "lp_per_token": {"code": -1.6002346277236938}, "tf_reference_ln_logp": -1.6002346277236938, "tf_reference_rough": true}
+{"item_id": "mbpp-181", "benchmark": "mbpp_full", "lp": {"code": -119.96553415060043}, "lp_per_token": {"code": -0.8051378130912781}, "tf_reference_ln_logp": -0.8051378130912781, "tf_reference_rough": true}
+{"item_id": "mbpp-182", "benchmark": "mbpp_full", "lp": {"code": -129.37484693527222}, "lp_per_token": {"code": -1.5401767492294312}, "tf_reference_ln_logp": -1.5401767492294312, "tf_reference_rough": true}
+{"item_id": "mbpp-183", "benchmark": "mbpp_full", "lp": {"code": -88.71347904205322}, "lp_per_token": {"code": -1.2673354148864746}, "tf_reference_ln_logp": -1.2673354148864746, "tf_reference_rough": true}
+{"item_id": "mbpp-184", "benchmark": "mbpp_full", "lp": {"code": -124.49630737304688}, "lp_per_token": {"code": -4.446296691894531}, "tf_reference_ln_logp": -4.446296691894531, "tf_reference_rough": true}
+{"item_id": "mbpp-185", "benchmark": "mbpp_full", "lp": {"code": -118.68266296386719}, "lp_per_token": {"code": -2.119333267211914}, "tf_reference_ln_logp": -2.119333267211914, "tf_reference_rough": true}
+{"item_id": "mbpp-186", "benchmark": "mbpp_full", "lp": {"code": -119.461501121521}, "lp_per_token": {"code": -2.596989154815674}, "tf_reference_ln_logp": -2.596989154815674, "tf_reference_rough": true}
+{"item_id": "mbpp-187", "benchmark": "mbpp_full", "lp": {"code": -56.43832755088806}, "lp_per_token": {"code": -0.5225771069526672}, "tf_reference_ln_logp": -0.5225771069526672, "tf_reference_rough": true}
+{"item_id": "mbpp-188", "benchmark": "mbpp_full", "lp": {"code": -141.95849561691284}, "lp_per_token": {"code": -2.150886297225952}, "tf_reference_ln_logp": -2.150886297225952, "tf_reference_rough": true}
+{"item_id": "mbpp-189", "benchmark": "mbpp_full", "lp": {"code": -111.18545311689377}, "lp_per_token": {"code": -0.7998953461647034}, "tf_reference_ln_logp": -0.7998953461647034, "tf_reference_rough": true}
+{"item_id": "mbpp-190", "benchmark": "mbpp_full", "lp": {"code": -102.15625405311584}, "lp_per_token": {"code": -2.27013897895813}, "tf_reference_ln_logp": -2.27013897895813, "tf_reference_rough": true}
+{"item_id": "mbpp-191", "benchmark": "mbpp_full", "lp": {"code": -140.00836372375488}, "lp_per_token": {"code": -2.5456066131591797}, "tf_reference_ln_logp": -2.5456066131591797, "tf_reference_rough": true}
+{"item_id": "mbpp-192", "benchmark": "mbpp_full", "lp": {"code": -115.435861825943}, "lp_per_token": {"code": -1.8618687391281128}, "tf_reference_ln_logp": -1.8618687391281128, "tf_reference_rough": true}
+{"item_id": "mbpp-193", "benchmark": "mbpp_full", "lp": {"code": -75.40737915039062}, "lp_per_token": {"code": -2.9002838134765625}, "tf_reference_ln_logp": -2.9002838134765625, "tf_reference_rough": true}
+{"item_id": "mbpp-194", "benchmark": "mbpp_full", "lp": {"code": -83.74476492404938}, "lp_per_token": {"code": -0.9004813432693481}, "tf_reference_ln_logp": -0.9004813432693481, "tf_reference_rough": true}
+{"item_id": "mbpp-195", "benchmark": "mbpp_full", "lp": {"code": -98.01048159599304}, "lp_per_token": {"code": -0.96088707447052}, "tf_reference_ln_logp": -0.96088707447052, "tf_reference_rough": true}
+{"item_id": "mbpp-196", "benchmark": "mbpp_full", "lp": {"code": -98.49642992019653}, "lp_per_token": {"code": -2.8141837120056152}, "tf_reference_ln_logp": -2.8141837120056152, "tf_reference_rough": true}
+{"item_id": "mbpp-197", "benchmark": "mbpp_full", "lp": {"code": -97.31028318405151}, "lp_per_token": {"code": -1.8713515996932983}, "tf_reference_ln_logp": -1.8713515996932983, "tf_reference_rough": true}
+{"item_id": "mbpp-198", "benchmark": "mbpp_full", "lp": {"code": -126.01679039001465}, "lp_per_token": {"code": -2.032528877258301}, "tf_reference_ln_logp": -2.032528877258301, "tf_reference_rough": true}
+{"item_id": "mbpp-199", "benchmark": "mbpp_full", "lp": {"code": -98.03978061676025}, "lp_per_token": {"code": -1.4854512214660645}, "tf_reference_ln_logp": -1.4854512214660645, "tf_reference_rough": true}
+{"item_id": "mbpp-200", "benchmark": "mbpp_full", "lp": {"code": -83.02916812896729}, "lp_per_token": {"code": -1.8870265483856201}, "tf_reference_ln_logp": -1.8870265483856201, "tf_reference_rough": true}
+{"item_id": "mbpp-201", "benchmark": "mbpp_full", "lp": {"code": -37.005860805511475}, "lp_per_token": {"code": -1.8502930402755737}, "tf_reference_ln_logp": -1.8502930402755737, "tf_reference_rough": true}
+{"item_id": "mbpp-202", "benchmark": "mbpp_full", "lp": {"code": -122.4468584060669}, "lp_per_token": {"code": -2.148190498352051}, "tf_reference_ln_logp": -2.148190498352051, "tf_reference_rough": true}
+{"item_id": "mbpp-203", "benchmark": "mbpp_full", "lp": {"code": -104.83740186691284}, "lp_per_token": {"code": -1.6909258365631104}, "tf_reference_ln_logp": -1.6909258365631104, "tf_reference_rough": true}
+{"item_id": "mbpp-204", "benchmark": "mbpp_full", "lp": {"code": -110.87250256538391}, "lp_per_token": {"code": -2.2627041339874268}, "tf_reference_ln_logp": -2.2627041339874268, "tf_reference_rough": true}
+{"item_id": "mbpp-205", "benchmark": "mbpp_full", "lp": {"code": -100.69492816925049}, "lp_per_token": {"code": -2.876997947692871}, "tf_reference_ln_logp": -2.876997947692871, "tf_reference_rough": true}
+{"item_id": "mbpp-206", "benchmark": "mbpp_full", "lp": {"code": -91.58764481544495}, "lp_per_token": {"code": -2.2338449954986572}, "tf_reference_ln_logp": -2.2338449954986572, "tf_reference_rough": true}
+{"item_id": "mbpp-207", "benchmark": "mbpp_full", "lp": {"code": -76.27364993095398}, "lp_per_token": {"code": -0.5448117852210999}, "tf_reference_ln_logp": -0.5448117852210999, "tf_reference_rough": true}
+{"item_id": "mbpp-208", "benchmark": "mbpp_full", "lp": {"code": -119.28992342948914}, "lp_per_token": {"code": -2.3390181064605713}, "tf_reference_ln_logp": -2.3390181064605713, "tf_reference_rough": true}
+{"item_id": "mbpp-209", "benchmark": "mbpp_full", "lp": {"code": -87.9995527267456}, "lp_per_token": {"code": -2.444432020187378}, "tf_reference_ln_logp": -2.444432020187378, "tf_reference_rough": true}
+{"item_id": "mbpp-210", "benchmark": "mbpp_full", "lp": {"code": -76.11726701259613}, "lp_per_token": {"code": -1.6914948225021362}, "tf_reference_ln_logp": -1.6914948225021362, "tf_reference_rough": true}
+{"item_id": "mbpp-211", "benchmark": "mbpp_full", "lp": {"code": -90.54767608642578}, "lp_per_token": {"code": -2.2636919021606445}, "tf_reference_ln_logp": -2.2636919021606445, "tf_reference_rough": true}
+{"item_id": "mbpp-212", "benchmark": "mbpp_full", "lp": {"code": -118.82175207138062}, "lp_per_token": {"code": -2.329838275909424}, "tf_reference_ln_logp": -2.329838275909424, "tf_reference_rough": true}
+{"item_id": "mbpp-213", "benchmark": "mbpp_full", "lp": {"code": -93.26366186141968}, "lp_per_token": {"code": -1.8652732372283936}, "tf_reference_ln_logp": -1.8652732372283936, "tf_reference_rough": true}
+{"item_id": "mbpp-214", "benchmark": "mbpp_full", "lp": {"code": -72.16430854797363}, "lp_per_token": {"code": -2.577296733856201}, "tf_reference_ln_logp": -2.577296733856201, "tf_reference_rough": true}
+{"item_id": "mbpp-215", "benchmark": "mbpp_full", "lp": {"code": -135.3082709312439}, "lp_per_token": {"code": -1.9898275136947632}, "tf_reference_ln_logp": -1.9898275136947632, "tf_reference_rough": true}
+{"item_id": "mbpp-216", "benchmark": "mbpp_full", "lp": {"code": -128.7288818359375}, "lp_per_token": {"code": -2.0113887786865234}, "tf_reference_ln_logp": -2.0113887786865234, "tf_reference_rough": true}
+{"item_id": "mbpp-217", "benchmark": "mbpp_full", "lp": {"code": -87.03026175498962}, "lp_per_token": {"code": -1.7406052350997925}, "tf_reference_ln_logp": -1.7406052350997925, "tf_reference_rough": true}
+{"item_id": "mbpp-218", "benchmark": "mbpp_full", "lp": {"code": -156.6294493675232}, "lp_per_token": {"code": -3.196519374847412}, "tf_reference_ln_logp": -3.196519374847412, "tf_reference_rough": true}
+{"item_id": "mbpp-219", "benchmark": "mbpp_full", "lp": {"code": -138.8725701570511}, "lp_per_token": {"code": -1.8035398721694946}, "tf_reference_ln_logp": -1.8035398721694946, "tf_reference_rough": true}
+{"item_id": "mbpp-220", "benchmark": "mbpp_full", "lp": {"code": -104.1792426109314}, "lp_per_token": {"code": -3.5923876762390137}, "tf_reference_ln_logp": -3.5923876762390137, "tf_reference_rough": true}
+{"item_id": "mbpp-221", "benchmark": "mbpp_full", "lp": {"code": -121.59759283065796}, "lp_per_token": {"code": -3.474216938018799}, "tf_reference_ln_logp": -3.474216938018799, "tf_reference_rough": true}
+{"item_id": "mbpp-222", "benchmark": "mbpp_full", "lp": {"code": -98.37841987609863}, "lp_per_token": {"code": -2.007722854614258}, "tf_reference_ln_logp": -2.007722854614258, "tf_reference_rough": true}
+{"item_id": "mbpp-223", "benchmark": "mbpp_full", "lp": {"code": -132.59899294376373}, "lp_per_token": {"code": -0.7664681673049927}, "tf_reference_ln_logp": -0.7664681673049927, "tf_reference_rough": true}
+{"item_id": "mbpp-224", "benchmark": "mbpp_full", "lp": {"code": -45.00700807571411}, "lp_per_token": {"code": -1.0715954303741455}, "tf_reference_ln_logp": -1.0715954303741455, "tf_reference_rough": true}
+{"item_id": "mbpp-225", "benchmark": "mbpp_full", "lp": {"code": -69.01179134845734}, "lp_per_token": {"code": -0.7341679930686951}, "tf_reference_ln_logp": -0.7341679930686951, "tf_reference_rough": true}
+{"item_id": "mbpp-226", "benchmark": "mbpp_full", "lp": {"code": -61.53783559799194}, "lp_per_token": {"code": -1.3675074577331543}, "tf_reference_ln_logp": -1.3675074577331543, "tf_reference_rough": true}
+{"item_id": "mbpp-227", "benchmark": "mbpp_full", "lp": {"code": -89.17548370361328}, "lp_per_token": {"code": -1.3933669328689575}, "tf_reference_ln_logp": -1.3933669328689575, "tf_reference_rough": true}
+{"item_id": "mbpp-228", "benchmark": "mbpp_full", "lp": {"code": -111.45245409011841}, "lp_per_token": {"code": -1.5061142444610596}, "tf_reference_ln_logp": -1.5061142444610596, "tf_reference_rough": true}
+{"item_id": "mbpp-229", "benchmark": "mbpp_full", "lp": {"code": -77.90892159938812}, "lp_per_token": {"code": -1.0973087549209595}, "tf_reference_ln_logp": -1.0973087549209595, "tf_reference_rough": true}
+{"item_id": "mbpp-230", "benchmark": "mbpp_full", "lp": {"code": -92.0997679233551}, "lp_per_token": {"code": -3.683990716934204}, "tf_reference_ln_logp": -3.683990716934204, "tf_reference_rough": true}
+{"item_id": "mbpp-231", "benchmark": "mbpp_full", "lp": {"code": -147.12276792526245}, "lp_per_token": {"code": -0.6717934608459473}, "tf_reference_ln_logp": -0.6717934608459473, "tf_reference_rough": true}
+{"item_id": "mbpp-232", "benchmark": "mbpp_full", "lp": {"code": -104.2488956451416}, "lp_per_token": {"code": -3.594789505004883}, "tf_reference_ln_logp": -3.594789505004883, "tf_reference_rough": true}
+{"item_id": "mbpp-233", "benchmark": "mbpp_full", "lp": {"code": -106.59227323532104}, "lp_per_token": {"code": -2.8808722496032715}, "tf_reference_ln_logp": -2.8808722496032715, "tf_reference_rough": true}
+{"item_id": "mbpp-234", "benchmark": "mbpp_full", "lp": {"code": -77.66676044464111}, "lp_per_token": {"code": -3.5303072929382324}, "tf_reference_ln_logp": -3.5303072929382324, "tf_reference_rough": true}
+{"item_id": "mbpp-235", "benchmark": "mbpp_full", "lp": {"code": -132.56710767745972}, "lp_per_token": {"code": -1.791447401046753}, "tf_reference_ln_logp": -1.791447401046753, "tf_reference_rough": true}
+{"item_id": "mbpp-236", "benchmark": "mbpp_full", "lp": {"code": -135.76882827281952}, "lp_per_token": {"code": -1.3181439638137817}, "tf_reference_ln_logp": -1.3181439638137817, "tf_reference_rough": true}
+{"item_id": "mbpp-237", "benchmark": "mbpp_full", "lp": {"code": -149.38242101669312}, "lp_per_token": {"code": -3.5567243099212646}, "tf_reference_ln_logp": -3.5567243099212646, "tf_reference_rough": true}
+{"item_id": "mbpp-238", "benchmark": "mbpp_full", "lp": {"code": -93.98011493682861}, "lp_per_token": {"code": -2.6105587482452393}, "tf_reference_ln_logp": -2.6105587482452393, "tf_reference_rough": true}
+{"item_id": "mbpp-239", "benchmark": "mbpp_full", "lp": {"code": -144.17639303207397}, "lp_per_token": {"code": -1.0759432315826416}, "tf_reference_ln_logp": -1.0759432315826416, "tf_reference_rough": true}
+{"item_id": "mbpp-240", "benchmark": "mbpp_full", "lp": {"code": -140.17802238464355}, "lp_per_token": {"code": -4.672600746154785}, "tf_reference_ln_logp": -4.672600746154785, "tf_reference_rough": true}
+{"item_id": "mbpp-241", "benchmark": "mbpp_full", "lp": {"code": -100.86418032646179}, "lp_per_token": {"code": -2.2414262294769287}, "tf_reference_ln_logp": -2.2414262294769287, "tf_reference_rough": true}
+{"item_id": "mbpp-242", "benchmark": "mbpp_full", "lp": {"code": -121.87496638298035}, "lp_per_token": {"code": -3.693180799484253}, "tf_reference_ln_logp": -3.693180799484253, "tf_reference_rough": true}
+{"item_id": "mbpp-243", "benchmark": "mbpp_full", "lp": {"code": -146.87038469314575}, "lp_per_token": {"code": -2.3688771724700928}, "tf_reference_ln_logp": -2.3688771724700928, "tf_reference_rough": true}
+{"item_id": "mbpp-244", "benchmark": "mbpp_full", "lp": {"code": -115.53189420700073}, "lp_per_token": {"code": -3.0403130054473877}, "tf_reference_ln_logp": -3.0403130054473877, "tf_reference_rough": true}
+{"item_id": "mbpp-245", "benchmark": "mbpp_full", "lp": {"code": -167.34076166152954}, "lp_per_token": {"code": -0.785637378692627}, "tf_reference_ln_logp": -0.785637378692627, "tf_reference_rough": true}
+{"item_id": "mbpp-246", "benchmark": "mbpp_full", "lp": {"code": -99.44011402130127}, "lp_per_token": {"code": -1.2748732566833496}, "tf_reference_ln_logp": -1.2748732566833496, "tf_reference_rough": true}
+{"item_id": "mbpp-247", "benchmark": "mbpp_full", "lp": {"code": -64.91532629728317}, "lp_per_token": {"code": -0.37307658791542053}, "tf_reference_ln_logp": -0.37307658791542053, "tf_reference_rough": true}
+{"item_id": "mbpp-248", "benchmark": "mbpp_full", "lp": {"code": -68.303595662117}, "lp_per_token": {"code": -1.6659413576126099}, "tf_reference_ln_logp": -1.6659413576126099, "tf_reference_rough": true}
+{"item_id": "mbpp-249", "benchmark": "mbpp_full", "lp": {"code": -110.66749453544617}, "lp_per_token": {"code": -3.161928415298462}, "tf_reference_ln_logp": -3.161928415298462, "tf_reference_rough": true}
+{"item_id": "mbpp-250", "benchmark": "mbpp_full", "lp": {"code": -81.63339447975159}, "lp_per_token": {"code": -1.7746390104293823}, "tf_reference_ln_logp": -1.7746390104293823, "tf_reference_rough": true}
+{"item_id": "mbpp-251", "benchmark": "mbpp_full", "lp": {"code": -106.36030912399292}, "lp_per_token": {"code": -3.5453436374664307}, "tf_reference_ln_logp": -3.5453436374664307, "tf_reference_rough": true}
+{"item_id": "mbpp-252", "benchmark": "mbpp_full", "lp": {"code": -132.35973739624023}, "lp_per_token": {"code": -4.564128875732422}, "tf_reference_ln_logp": -4.564128875732422, "tf_reference_rough": true}
+{"item_id": "mbpp-253", "benchmark": "mbpp_full", "lp": {"code": -70.89746046066284}, "lp_per_token": {"code": -1.6880347728729248}, "tf_reference_ln_logp": -1.6880347728729248, "tf_reference_rough": true}
+{"item_id": "mbpp-254", "benchmark": "mbpp_full", "lp": {"code": -87.46399068832397}, "lp_per_token": {"code": -3.2394070625305176}, "tf_reference_ln_logp": -3.2394070625305176, "tf_reference_rough": true}
+{"item_id": "mbpp-255", "benchmark": "mbpp_full", "lp": {"code": -82.56466627120972}, "lp_per_token": {"code": -2.7521555423736572}, "tf_reference_ln_logp": -2.7521555423736572, "tf_reference_rough": true}
+{"item_id": "mbpp-256", "benchmark": "mbpp_full", "lp": {"code": -85.31370162963867}, "lp_per_token": {"code": -1.2187671661376953}, "tf_reference_ln_logp": -1.2187671661376953, "tf_reference_rough": true}
+{"item_id": "mbpp-257", "benchmark": "mbpp_full", "lp": {"code": -68.62985587120056}, "lp_per_token": {"code": -2.541846513748169}, "tf_reference_ln_logp": -2.541846513748169, "tf_reference_rough": true}
+{"item_id": "mbpp-258", "benchmark": "mbpp_full", "lp": {"code": -105.58245992660522}, "lp_per_token": {"code": -2.8535799980163574}, "tf_reference_ln_logp": -2.8535799980163574, "tf_reference_rough": true}
+{"item_id": "mbpp-259", "benchmark": "mbpp_full", "lp": {"code": -121.69654190540314}, "lp_per_token": {"code": -1.872254490852356}, "tf_reference_ln_logp": -1.872254490852356, "tf_reference_rough": true}
+{"item_id": "mbpp-260", "benchmark": "mbpp_full", "lp": {"code": -91.42455744743347}, "lp_per_token": {"code": -1.865807294845581}, "tf_reference_ln_logp": -1.865807294845581, "tf_reference_rough": true}
+{"item_id": "mbpp-261", "benchmark": "mbpp_full", "lp": {"code": -92.11015701293945}, "lp_per_token": {"code": -1.842203140258789}, "tf_reference_ln_logp": -1.842203140258789, "tf_reference_rough": true}
+{"item_id": "mbpp-262", "benchmark": "mbpp_full", "lp": {"code": -66.42120552062988}, "lp_per_token": {"code": -2.767550230026245}, "tf_reference_ln_logp": -2.767550230026245, "tf_reference_rough": true}
+{"item_id": "mbpp-263", "benchmark": "mbpp_full", "lp": {"code": -75.9901237487793}, "lp_per_token": {"code": -2.922697067260742}, "tf_reference_ln_logp": -2.922697067260742, "tf_reference_rough": true}
+{"item_id": "mbpp-264", "benchmark": "mbpp_full", "lp": {"code": -133.73260688781738}, "lp_per_token": {"code": -2.122739791870117}, "tf_reference_ln_logp": -2.122739791870117, "tf_reference_rough": true}
+{"item_id": "mbpp-265", "benchmark": "mbpp_full", "lp": {"code": -51.55484676361084}, "lp_per_token": {"code": -2.0621938705444336}, "tf_reference_ln_logp": -2.0621938705444336, "tf_reference_rough": true}
+{"item_id": "mbpp-266", "benchmark": "mbpp_full", "lp": {"code": -82.95565700531006}, "lp_per_token": {"code": -2.9627020359039307}, "tf_reference_ln_logp": -2.9627020359039307, "tf_reference_rough": true}
+{"item_id": "mbpp-267", "benchmark": "mbpp_full", "lp": {"code": -76.28974914550781}, "lp_per_token": {"code": -3.0515899658203125}, "tf_reference_ln_logp": -3.0515899658203125, "tf_reference_rough": true}
+{"item_id": "mbpp-268", "benchmark": "mbpp_full", "lp": {"code": -84.93874645233154}, "lp_per_token": {"code": -3.033526659011841}, "tf_reference_ln_logp": -3.033526659011841, "tf_reference_rough": true}
+{"item_id": "mbpp-269", "benchmark": "mbpp_full", "lp": {"code": -97.52979755401611}, "lp_per_token": {"code": -5.4183220863342285}, "tf_reference_ln_logp": -5.4183220863342285, "tf_reference_rough": true}
+{"item_id": "mbpp-270", "benchmark": "mbpp_full", "lp": {"code": -97.85662841796875}, "lp_per_token": {"code": -1.5290098190307617}, "tf_reference_ln_logp": -1.5290098190307617, "tf_reference_rough": true}
+{"item_id": "mbpp-271", "benchmark": "mbpp_full", "lp": {"code": -111.96571063995361}, "lp_per_token": {"code": -1.930443286895752}, "tf_reference_ln_logp": -1.930443286895752, "tf_reference_rough": true}
+{"item_id": "mbpp-272", "benchmark": "mbpp_full", "lp": {"code": -121.8698787689209}, "lp_per_token": {"code": -4.062329292297363}, "tf_reference_ln_logp": -4.062329292297363, "tf_reference_rough": true}
+{"item_id": "mbpp-273", "benchmark": "mbpp_full", "lp": {"code": -111.1875228881836}, "lp_per_token": {"code": -2.316406726837158}, "tf_reference_ln_logp": -2.316406726837158, "tf_reference_rough": true}
+{"item_id": "mbpp-274", "benchmark": "mbpp_full", "lp": {"code": -97.96799969673157}, "lp_per_token": {"code": -3.1602580547332764}, "tf_reference_ln_logp": -3.1602580547332764, "tf_reference_rough": true}
+{"item_id": "mbpp-275", "benchmark": "mbpp_full", "lp": {"code": -155.9505021572113}, "lp_per_token": {"code": -1.5289264917373657}, "tf_reference_ln_logp": -1.5289264917373657, "tf_reference_rough": true}
+{"item_id": "mbpp-276", "benchmark": "mbpp_full", "lp": {"code": -116.41995429992676}, "lp_per_token": {"code": -4.15785551071167}, "tf_reference_ln_logp": -4.15785551071167, "tf_reference_rough": true}
+{"item_id": "mbpp-277", "benchmark": "mbpp_full", "lp": {"code": -103.79499936103821}, "lp_per_token": {"code": -3.1453030109405518}, "tf_reference_ln_logp": -3.1453030109405518, "tf_reference_rough": true}
+{"item_id": "mbpp-278", "benchmark": "mbpp_full", "lp": {"code": -100.7069456577301}, "lp_per_token": {"code": -2.5822293758392334}, "tf_reference_ln_logp": -2.5822293758392334, "tf_reference_rough": true}
+{"item_id": "mbpp-279", "benchmark": "mbpp_full", "lp": {"code": -71.9339370727539}, "lp_per_token": {"code": -2.8773574829101562}, "tf_reference_ln_logp": -2.8773574829101562, "tf_reference_rough": true}
+{"item_id": "mbpp-280", "benchmark": "mbpp_full", "lp": {"code": -55.543585896492004}, "lp_per_token": {"code": -0.8415694832801819}, "tf_reference_ln_logp": -0.8415694832801819, "tf_reference_rough": true}
+{"item_id": "mbpp-281", "benchmark": "mbpp_full", "lp": {"code": -53.557595014572144}, "lp_per_token": {"code": -1.7852531671524048}, "tf_reference_ln_logp": -1.7852531671524048, "tf_reference_rough": true}
+{"item_id": "mbpp-282", "benchmark": "mbpp_full", "lp": {"code": -66.42195415496826}, "lp_per_token": {"code": -1.7951879501342773}, "tf_reference_ln_logp": -1.7951879501342773, "tf_reference_rough": true}
+{"item_id": "mbpp-283", "benchmark": "mbpp_full", "lp": {"code": -121.50547981262207}, "lp_per_token": {"code": -1.5188184976577759}, "tf_reference_ln_logp": -1.5188184976577759, "tf_reference_rough": true}
+{"item_id": "mbpp-284", "benchmark": "mbpp_full", "lp": {"code": -157.9499568939209}, "lp_per_token": {"code": -5.6410698890686035}, "tf_reference_ln_logp": -5.6410698890686035, "tf_reference_rough": true}
+{"item_id": "mbpp-285", "benchmark": "mbpp_full", "lp": {"code": -82.97302293777466}, "lp_per_token": {"code": -1.5956350564956665}, "tf_reference_ln_logp": -1.5956350564956665, "tf_reference_rough": true}
+{"item_id": "mbpp-286", "benchmark": "mbpp_full", "lp": {"code": -116.99168086051941}, "lp_per_token": {"code": -1.0173189640045166}, "tf_reference_ln_logp": -1.0173189640045166, "tf_reference_rough": true}
+{"item_id": "mbpp-287", "benchmark": "mbpp_full", "lp": {"code": -57.99332094192505}, "lp_per_token": {"code": -1.999769687652588}, "tf_reference_ln_logp": -1.999769687652588, "tf_reference_rough": true}
+{"item_id": "mbpp-288", "benchmark": "mbpp_full", "lp": {"code": -116.85650968551636}, "lp_per_token": {"code": -2.0147674083709717}, "tf_reference_ln_logp": -2.0147674083709717, "tf_reference_rough": true}
+{"item_id": "mbpp-289", "benchmark": "mbpp_full", "lp": {"code": -205.64878463745117}, "lp_per_token": {"code": -1.7137398719787598}, "tf_reference_ln_logp": -1.7137398719787598, "tf_reference_rough": true}
+{"item_id": "mbpp-290", "benchmark": "mbpp_full", "lp": {"code": -168.06177878379822}, "lp_per_token": {"code": -3.4298322200775146}, "tf_reference_ln_logp": -3.4298322200775146, "tf_reference_rough": true}
+{"item_id": "mbpp-291", "benchmark": "mbpp_full", "lp": {"code": -128.18906450271606}, "lp_per_token": {"code": -1.2093307971954346}, "tf_reference_ln_logp": -1.2093307971954346, "tf_reference_rough": true}
+{"item_id": "mbpp-292", "benchmark": "mbpp_full", "lp": {"code": -128.45456409454346}, "lp_per_token": {"code": -5.838843822479248}, "tf_reference_ln_logp": -5.838843822479248, "tf_reference_rough": true}
+{"item_id": "mbpp-293", "benchmark": "mbpp_full", "lp": {"code": -104.52831864356995}, "lp_per_token": {"code": -3.3718812465667725}, "tf_reference_ln_logp": -3.3718812465667725, "tf_reference_rough": true}
+{"item_id": "mbpp-294", "benchmark": "mbpp_full", "lp": {"code": -112.63796496391296}, "lp_per_token": {"code": -3.41327166557312}, "tf_reference_ln_logp": -3.41327166557312, "tf_reference_rough": true}
+{"item_id": "mbpp-295", "benchmark": "mbpp_full", "lp": {"code": -62.63764023780823}, "lp_per_token": {"code": -1.3327157497406006}, "tf_reference_ln_logp": -1.3327157497406006, "tf_reference_rough": true}
+{"item_id": "mbpp-296", "benchmark": "mbpp_full", "lp": {"code": -69.38141191005707}, "lp_per_token": {"code": -1.1012922525405884}, "tf_reference_ln_logp": -1.1012922525405884, "tf_reference_rough": true}
+{"item_id": "mbpp-297", "benchmark": "mbpp_full", "lp": {"code": -155.5810660123825}, "lp_per_token": {"code": -1.6376954317092896}, "tf_reference_ln_logp": -1.6376954317092896, "tf_reference_rough": true}
+{"item_id": "mbpp-298", "benchmark": "mbpp_full", "lp": {"code": -54.96315908432007}, "lp_per_token": {"code": -1.4093117713928223}, "tf_reference_ln_logp": -1.4093117713928223, "tf_reference_rough": true}
+{"item_id": "mbpp-299", "benchmark": "mbpp_full", "lp": {"code": -69.18539905548096}, "lp_per_token": {"code": -1.3304884433746338}, "tf_reference_ln_logp": -1.3304884433746338, "tf_reference_rough": true}
+{"item_id": "mbpp-300", "benchmark": "mbpp_full", "lp": {"code": -91.9776463508606}, "lp_per_token": {"code": -1.3936007022857666}, "tf_reference_ln_logp": -1.3936007022857666, "tf_reference_rough": true}
+{"item_id": "mbpp-301", "benchmark": "mbpp_full", "lp": {"code": -15.381260991096497}, "lp_per_token": {"code": -0.37515270709991455}, "tf_reference_ln_logp": -0.37515270709991455, "tf_reference_rough": true}
+{"item_id": "mbpp-302", "benchmark": "mbpp_full", "lp": {"code": -87.99582481384277}, "lp_per_token": {"code": -1.0999478101730347}, "tf_reference_ln_logp": -1.0999478101730347, "tf_reference_rough": true}
+{"item_id": "mbpp-303", "benchmark": "mbpp_full", "lp": {"code": -137.4506893157959}, "lp_per_token": {"code": -2.1817569732666016}, "tf_reference_ln_logp": -2.1817569732666016, "tf_reference_rough": true}
+{"item_id": "mbpp-304", "benchmark": "mbpp_full", "lp": {"code": -148.73130667209625}, "lp_per_token": {"code": -1.533312439918518}, "tf_reference_ln_logp": -1.533312439918518, "tf_reference_rough": true}
+{"item_id": "mbpp-305", "benchmark": "mbpp_full", "lp": {"code": -118.19883584976196}, "lp_per_token": {"code": -2.626640796661377}, "tf_reference_ln_logp": -2.626640796661377, "tf_reference_rough": true}
+{"item_id": "mbpp-306", "benchmark": "mbpp_full", "lp": {"code": -165.77454578876495}, "lp_per_token": {"code": -0.841495156288147}, "tf_reference_ln_logp": -0.841495156288147, "tf_reference_rough": true}
+{"item_id": "mbpp-307", "benchmark": "mbpp_full", "lp": {"code": -111.27090454101562}, "lp_per_token": {"code": -2.318143844604492}, "tf_reference_ln_logp": -2.318143844604492, "tf_reference_rough": true}
+{"item_id": "mbpp-308", "benchmark": "mbpp_full", "lp": {"code": -64.02211117744446}, "lp_per_token": {"code": -1.5243359804153442}, "tf_reference_ln_logp": -1.5243359804153442, "tf_reference_rough": true}
+{"item_id": "mbpp-309", "benchmark": "mbpp_full", "lp": {"code": -54.60457706451416}, "lp_per_token": {"code": -1.8829164505004883}, "tf_reference_ln_logp": -1.8829164505004883, "tf_reference_rough": true}
+{"item_id": "mbpp-310", "benchmark": "mbpp_full", "lp": {"code": -108.85379791259766}, "lp_per_token": {"code": -3.4016811847686768}, "tf_reference_ln_logp": -3.4016811847686768, "tf_reference_rough": true}
+{"item_id": "mbpp-311", "benchmark": "mbpp_full", "lp": {"code": -154.90125274658203}, "lp_per_token": {"code": -1.7602415084838867}, "tf_reference_ln_logp": -1.7602415084838867, "tf_reference_rough": true}
+{"item_id": "mbpp-312", "benchmark": "mbpp_full", "lp": {"code": -94.68212413787842}, "lp_per_token": {"code": -2.4916348457336426}, "tf_reference_ln_logp": -2.4916348457336426, "tf_reference_rough": true}
+{"item_id": "mbpp-313", "benchmark": "mbpp_full", "lp": {"code": -123.15445017814636}, "lp_per_token": {"code": -3.972724199295044}, "tf_reference_ln_logp": -3.972724199295044, "tf_reference_rough": true}
+{"item_id": "mbpp-314", "benchmark": "mbpp_full", "lp": {"code": -104.85441970825195}, "lp_per_token": {"code": -1.0922335386276245}, "tf_reference_ln_logp": -1.0922335386276245, "tf_reference_rough": true}
+{"item_id": "mbpp-315", "benchmark": "mbpp_full", "lp": {"code": -138.8237990140915}, "lp_per_token": {"code": -0.7345174551010132}, "tf_reference_ln_logp": -0.7345174551010132, "tf_reference_rough": true}
+{"item_id": "mbpp-316", "benchmark": "mbpp_full", "lp": {"code": -92.28916311264038}, "lp_per_token": {"code": -0.8873957991600037}, "tf_reference_ln_logp": -0.8873957991600037, "tf_reference_rough": true}
+{"item_id": "mbpp-317", "benchmark": "mbpp_full", "lp": {"code": -122.1687240600586}, "lp_per_token": {"code": -1.9088863134384155}, "tf_reference_ln_logp": -1.9088863134384155, "tf_reference_rough": true}
+{"item_id": "mbpp-318", "benchmark": "mbpp_full", "lp": {"code": -163.07154321670532}, "lp_per_token": {"code": -2.090660810470581}, "tf_reference_ln_logp": -2.090660810470581, "tf_reference_rough": true}
+{"item_id": "mbpp-319", "benchmark": "mbpp_full", "lp": {"code": -85.42141199111938}, "lp_per_token": {"code": -2.8473803997039795}, "tf_reference_ln_logp": -2.8473803997039795, "tf_reference_rough": true}
+{"item_id": "mbpp-320", "benchmark": "mbpp_full", "lp": {"code": -63.03187161684036}, "lp_per_token": {"code": -0.8404249548912048}, "tf_reference_ln_logp": -0.8404249548912048, "tf_reference_rough": true}
+{"item_id": "mbpp-321", "benchmark": "mbpp_full", "lp": {"code": -100.6258442401886}, "lp_per_token": {"code": -1.5246340036392212}, "tf_reference_ln_logp": -1.5246340036392212, "tf_reference_rough": true}
+{"item_id": "mbpp-322", "benchmark": "mbpp_full", "lp": {"code": -83.88899421691895}, "lp_per_token": {"code": -1.9065680503845215}, "tf_reference_ln_logp": -1.9065680503845215, "tf_reference_rough": true}
+{"item_id": "mbpp-323", "benchmark": "mbpp_full", "lp": {"code": -156.46069169044495}, "lp_per_token": {"code": -0.680263876914978}, "tf_reference_ln_logp": -0.680263876914978, "tf_reference_rough": true}
+{"item_id": "mbpp-324", "benchmark": "mbpp_full", "lp": {"code": -118.4214825630188}, "lp_per_token": {"code": -1.7414923906326294}, "tf_reference_ln_logp": -1.7414923906326294, "tf_reference_rough": true}
+{"item_id": "mbpp-325", "benchmark": "mbpp_full", "lp": {"code": -131.20810508728027}, "lp_per_token": {"code": -1.6401013135910034}, "tf_reference_ln_logp": -1.6401013135910034, "tf_reference_rough": true}
+{"item_id": "mbpp-326", "benchmark": "mbpp_full", "lp": {"code": -131.30677199363708}, "lp_per_token": {"code": -2.0842344760894775}, "tf_reference_ln_logp": -2.0842344760894775, "tf_reference_rough": true}
+{"item_id": "mbpp-327", "benchmark": "mbpp_full", "lp": {"code": -117.08678126335144}, "lp_per_token": {"code": -3.002225160598755}, "tf_reference_ln_logp": -3.002225160598755, "tf_reference_rough": true}
+{"item_id": "mbpp-328", "benchmark": "mbpp_full", "lp": {"code": -120.48967838287354}, "lp_per_token": {"code": -4.016322612762451}, "tf_reference_ln_logp": -4.016322612762451, "tf_reference_rough": true}
+{"item_id": "mbpp-329", "benchmark": "mbpp_full", "lp": {"code": -135.5388479232788}, "lp_per_token": {"code": -3.152066230773926}, "tf_reference_ln_logp": -3.152066230773926, "tf_reference_rough": true}
+{"item_id": "mbpp-330", "benchmark": "mbpp_full", "lp": {"code": -83.11723780632019}, "lp_per_token": {"code": -2.681201219558716}, "tf_reference_ln_logp": -2.681201219558716, "tf_reference_rough": true}
+{"item_id": "mbpp-331", "benchmark": "mbpp_full", "lp": {"code": -86.34546339511871}, "lp_per_token": {"code": -1.3705629110336304}, "tf_reference_ln_logp": -1.3705629110336304, "tf_reference_rough": true}
+{"item_id": "mbpp-332", "benchmark": "mbpp_full", "lp": {"code": -31.587608814239502}, "lp_per_token": {"code": -0.5640644431114197}, "tf_reference_ln_logp": -0.5640644431114197, "tf_reference_rough": true}
+{"item_id": "mbpp-333", "benchmark": "mbpp_full", "lp": {"code": -50.110549330711365}, "lp_per_token": {"code": -1.7279499769210815}, "tf_reference_ln_logp": -1.7279499769210815, "tf_reference_rough": true}
+{"item_id": "mbpp-334", "benchmark": "mbpp_full", "lp": {"code": -76.32433652877808}, "lp_per_token": {"code": -1.4677757024765015}, "tf_reference_ln_logp": -1.4677757024765015, "tf_reference_rough": true}
+{"item_id": "mbpp-335", "benchmark": "mbpp_full", "lp": {"code": -79.71634984016418}, "lp_per_token": {"code": -2.04400897026062}, "tf_reference_ln_logp": -2.04400897026062, "tf_reference_rough": true}
+{"item_id": "mbpp-336", "benchmark": "mbpp_full", "lp": {"code": -92.8324203491211}, "lp_per_token": {"code": -2.901013135910034}, "tf_reference_ln_logp": -2.901013135910034, "tf_reference_rough": true}
+{"item_id": "mbpp-337", "benchmark": "mbpp_full", "lp": {"code": -79.46871721744537}, "lp_per_token": {"code": -1.6218105554580688}, "tf_reference_ln_logp": -1.6218105554580688, "tf_reference_rough": true}
+{"item_id": "mbpp-338", "benchmark": "mbpp_full", "lp": {"code": -145.25759768486023}, "lp_per_token": {"code": -1.4381940364837646}, "tf_reference_ln_logp": -1.4381940364837646, "tf_reference_rough": true}
+{"item_id": "mbpp-339", "benchmark": "mbpp_full", "lp": {"code": -118.23270320892334}, "lp_per_token": {"code": -3.9410901069641113}, "tf_reference_ln_logp": -3.9410901069641113, "tf_reference_rough": true}
+{"item_id": "mbpp-340", "benchmark": "mbpp_full", "lp": {"code": -57.18032240867615}, "lp_per_token": {"code": -1.9060107469558716}, "tf_reference_ln_logp": -1.9060107469558716, "tf_reference_rough": true}
+{"item_id": "mbpp-341", "benchmark": "mbpp_full", "lp": {"code": -81.37320327758789}, "lp_per_token": {"code": -3.698781967163086}, "tf_reference_ln_logp": -3.698781967163086, "tf_reference_rough": true}
+{"item_id": "mbpp-342", "benchmark": "mbpp_full", "lp": {"code": -183.81724107265472}, "lp_per_token": {"code": -0.7627271413803101}, "tf_reference_ln_logp": -0.7627271413803101, "tf_reference_rough": true}
+{"item_id": "mbpp-343", "benchmark": "mbpp_full", "lp": {"code": -99.26549577713013}, "lp_per_token": {"code": -1.838249921798706}, "tf_reference_ln_logp": -1.838249921798706, "tf_reference_rough": true}
+{"item_id": "mbpp-344", "benchmark": "mbpp_full", "lp": {"code": -87.78701424598694}, "lp_per_token": {"code": -2.5082004070281982}, "tf_reference_ln_logp": -2.5082004070281982, "tf_reference_rough": true}
+{"item_id": "mbpp-345", "benchmark": "mbpp_full", "lp": {"code": -67.04496240615845}, "lp_per_token": {"code": -1.764341115951538}, "tf_reference_ln_logp": -1.764341115951538, "tf_reference_rough": true}
+{"item_id": "mbpp-346", "benchmark": "mbpp_full", "lp": {"code": -80.03848254680634}, "lp_per_token": {"code": -1.2313612699508667}, "tf_reference_ln_logp": -1.2313612699508667, "tf_reference_rough": true}
+{"item_id": "mbpp-347", "benchmark": "mbpp_full", "lp": {"code": -77.78719425201416}, "lp_per_token": {"code": -1.2964532375335693}, "tf_reference_ln_logp": -1.2964532375335693, "tf_reference_rough": true}
+{"item_id": "mbpp-348", "benchmark": "mbpp_full", "lp": {"code": -179.48377418518066}, "lp_per_token": {"code": -1.6025336980819702}, "tf_reference_ln_logp": -1.6025336980819702, "tf_reference_rough": true}
+{"item_id": "mbpp-349", "benchmark": "mbpp_full", "lp": {"code": -104.46789419651031}, "lp_per_token": {"code": -1.7125884294509888}, "tf_reference_ln_logp": -1.7125884294509888, "tf_reference_rough": true}
+{"item_id": "mbpp-350", "benchmark": "mbpp_full", "lp": {"code": -123.28100621700287}, "lp_per_token": {"code": -1.2976948022842407}, "tf_reference_ln_logp": -1.2976948022842407, "tf_reference_rough": true}
+{"item_id": "mbpp-351", "benchmark": "mbpp_full", "lp": {"code": -134.11117553710938}, "lp_per_token": {"code": -1.2191925048828125}, "tf_reference_ln_logp": -1.2191925048828125, "tf_reference_rough": true}
+{"item_id": "mbpp-352", "benchmark": "mbpp_full", "lp": {"code": -84.63927948474884}, "lp_per_token": {"code": -1.7273322343826294}, "tf_reference_ln_logp": -1.7273322343826294, "tf_reference_rough": true}
+{"item_id": "mbpp-353", "benchmark": "mbpp_full", "lp": {"code": -117.9756007194519}, "lp_per_token": {"code": -3.805664539337158}, "tf_reference_ln_logp": -3.805664539337158, "tf_reference_rough": true}
+{"item_id": "mbpp-354", "benchmark": "mbpp_full", "lp": {"code": -59.240686893463135}, "lp_per_token": {"code": -2.0427823066711426}, "tf_reference_ln_logp": -2.0427823066711426, "tf_reference_rough": true}
+{"item_id": "mbpp-355", "benchmark": "mbpp_full", "lp": {"code": -165.2706663608551}, "lp_per_token": {"code": -1.6203006505966187}, "tf_reference_ln_logp": -1.6203006505966187, "tf_reference_rough": true}
+{"item_id": "mbpp-356", "benchmark": "mbpp_full", "lp": {"code": -102.88554430007935}, "lp_per_token": {"code": -4.115421772003174}, "tf_reference_ln_logp": -4.115421772003174, "tf_reference_rough": true}
+{"item_id": "mbpp-357", "benchmark": "mbpp_full", "lp": {"code": -111.92876815795898}, "lp_per_token": {"code": -3.3917808532714844}, "tf_reference_ln_logp": -3.3917808532714844, "tf_reference_rough": true}
+{"item_id": "mbpp-358", "benchmark": "mbpp_full", "lp": {"code": -55.03440809249878}, "lp_per_token": {"code": -1.4482738971710205}, "tf_reference_ln_logp": -1.4482738971710205, "tf_reference_rough": true}
+{"item_id": "mbpp-359", "benchmark": "mbpp_full", "lp": {"code": -108.45818996429443}, "lp_per_token": {"code": -2.5823378562927246}, "tf_reference_ln_logp": -2.5823378562927246, "tf_reference_rough": true}
+{"item_id": "mbpp-360", "benchmark": "mbpp_full", "lp": {"code": -73.11421394348145}, "lp_per_token": {"code": -2.437140464782715}, "tf_reference_ln_logp": -2.437140464782715, "tf_reference_rough": true}
+{"item_id": "mbpp-361", "benchmark": "mbpp_full", "lp": {"code": -109.42699098587036}, "lp_per_token": {"code": -3.7733445167541504}, "tf_reference_ln_logp": -3.7733445167541504, "tf_reference_rough": true}
+{"item_id": "mbpp-362", "benchmark": "mbpp_full", "lp": {"code": -125.94250953197479}, "lp_per_token": {"code": -1.9990874528884888}, "tf_reference_ln_logp": -1.9990874528884888, "tf_reference_rough": true}
+{"item_id": "mbpp-363", "benchmark": "mbpp_full", "lp": {"code": -110.39192867279053}, "lp_per_token": {"code": -2.905050754547119}, "tf_reference_ln_logp": -2.905050754547119, "tf_reference_rough": true}
+{"item_id": "mbpp-364", "benchmark": "mbpp_full", "lp": {"code": -186.00816988945007}, "lp_per_token": {"code": -1.524657130241394}, "tf_reference_ln_logp": -1.524657130241394, "tf_reference_rough": true}
+{"item_id": "mbpp-365", "benchmark": "mbpp_full", "lp": {"code": -17.645431756973267}, "lp_per_token": {"code": -0.44113579392433167}, "tf_reference_ln_logp": -0.44113579392433167, "tf_reference_rough": true}
+{"item_id": "mbpp-366", "benchmark": "mbpp_full", "lp": {"code": -63.62076711654663}, "lp_per_token": {"code": -2.0522828102111816}, "tf_reference_ln_logp": -2.0522828102111816, "tf_reference_rough": true}
+{"item_id": "mbpp-367", "benchmark": "mbpp_full", "lp": {"code": -125.36254596710205}, "lp_per_token": {"code": -0.8470442295074463}, "tf_reference_ln_logp": -0.8470442295074463, "tf_reference_rough": true}
+{"item_id": "mbpp-368", "benchmark": "mbpp_full", "lp": {"code": -101.18416810035706}, "lp_per_token": {"code": -3.264005422592163}, "tf_reference_ln_logp": -3.264005422592163, "tf_reference_rough": true}
+{"item_id": "mbpp-369", "benchmark": "mbpp_full", "lp": {"code": -90.48136234283447}, "lp_per_token": {"code": -2.9187536239624023}, "tf_reference_ln_logp": -2.9187536239624023, "tf_reference_rough": true}
+{"item_id": "mbpp-370", "benchmark": "mbpp_full", "lp": {"code": -112.36687159538269}, "lp_per_token": {"code": -3.4050567150115967}, "tf_reference_ln_logp": -3.4050567150115967, "tf_reference_rough": true}
+{"item_id": "mbpp-371", "benchmark": "mbpp_full", "lp": {"code": -67.64943051338196}, "lp_per_token": {"code": -0.8053503632545471}, "tf_reference_ln_logp": -0.8053503632545471, "tf_reference_rough": true}
+{"item_id": "mbpp-372", "benchmark": "mbpp_full", "lp": {"code": -117.08328342437744}, "lp_per_token": {"code": -2.491133689880371}, "tf_reference_ln_logp": -2.491133689880371, "tf_reference_rough": true}
+{"item_id": "mbpp-373", "benchmark": "mbpp_full", "lp": {"code": -106.31298017501831}, "lp_per_token": {"code": -4.622303485870361}, "tf_reference_ln_logp": -4.622303485870361, "tf_reference_rough": true}
+{"item_id": "mbpp-374", "benchmark": "mbpp_full", "lp": {"code": -46.62760770320892}, "lp_per_token": {"code": -0.4277762174606323}, "tf_reference_ln_logp": -0.4277762174606323, "tf_reference_rough": true}
+{"item_id": "mbpp-375", "benchmark": "mbpp_full", "lp": {"code": -103.17589139938354}, "lp_per_token": {"code": -2.3994393348693848}, "tf_reference_ln_logp": -2.3994393348693848, "tf_reference_rough": true}
+{"item_id": "mbpp-376", "benchmark": "mbpp_full", "lp": {"code": -123.71644020080566}, "lp_per_token": {"code": -2.379162311553955}, "tf_reference_ln_logp": -2.379162311553955, "tf_reference_rough": true}
+{"item_id": "mbpp-377", "benchmark": "mbpp_full", "lp": {"code": -155.25426626205444}, "lp_per_token": {"code": -2.6314282417297363}, "tf_reference_ln_logp": -2.6314282417297363, "tf_reference_rough": true}
+{"item_id": "mbpp-378", "benchmark": "mbpp_full", "lp": {"code": -89.02964162826538}, "lp_per_token": {"code": -2.8719239234924316}, "tf_reference_ln_logp": -2.8719239234924316, "tf_reference_rough": true}
+{"item_id": "mbpp-379", "benchmark": "mbpp_full", "lp": {"code": -108.1539523601532}, "lp_per_token": {"code": -3.0901129245758057}, "tf_reference_ln_logp": -3.0901129245758057, "tf_reference_rough": true}
+{"item_id": "mbpp-380", "benchmark": "mbpp_full", "lp": {"code": -151.06524658203125}, "lp_per_token": {"code": -2.3603944778442383}, "tf_reference_ln_logp": -2.3603944778442383, "tf_reference_rough": true}
+{"item_id": "mbpp-381", "benchmark": "mbpp_full", "lp": {"code": -97.46054363250732}, "lp_per_token": {"code": -2.564751148223877}, "tf_reference_ln_logp": -2.564751148223877, "tf_reference_rough": true}
+{"item_id": "mbpp-382", "benchmark": "mbpp_full", "lp": {"code": -75.89640808105469}, "lp_per_token": {"code": -0.5128135681152344}, "tf_reference_ln_logp": -0.5128135681152344, "tf_reference_rough": true}
+{"item_id": "mbpp-383", "benchmark": "mbpp_full", "lp": {"code": -147.75805914402008}, "lp_per_token": {"code": -1.8241735696792603}, "tf_reference_ln_logp": -1.8241735696792603, "tf_reference_rough": true}
+{"item_id": "mbpp-384", "benchmark": "mbpp_full", "lp": {"code": -123.64592921733856}, "lp_per_token": {"code": -1.526492953300476}, "tf_reference_ln_logp": -1.526492953300476, "tf_reference_rough": true}
+{"item_id": "mbpp-385", "benchmark": "mbpp_full", "lp": {"code": -78.44590270519257}, "lp_per_token": {"code": -1.1048718690872192}, "tf_reference_ln_logp": -1.1048718690872192, "tf_reference_rough": true}
+{"item_id": "mbpp-386", "benchmark": "mbpp_full", "lp": {"code": -160.23724555969238}, "lp_per_token": {"code": -1.4306896924972534}, "tf_reference_ln_logp": -1.4306896924972534, "tf_reference_rough": true}
+{"item_id": "mbpp-387", "benchmark": "mbpp_full", "lp": {"code": -132.36911535263062}, "lp_per_token": {"code": -1.1510357856750488}, "tf_reference_ln_logp": -1.1510357856750488, "tf_reference_rough": true}
+{"item_id": "mbpp-388", "benchmark": "mbpp_full", "lp": {"code": -82.8777494430542}, "lp_per_token": {"code": -1.255723476409912}, "tf_reference_ln_logp": -1.255723476409912, "tf_reference_rough": true}
+{"item_id": "mbpp-389", "benchmark": "mbpp_full", "lp": {"code": -93.12409400939941}, "lp_per_token": {"code": -1.6629302501678467}, "tf_reference_ln_logp": -1.6629302501678467, "tf_reference_rough": true}
+{"item_id": "mbpp-390", "benchmark": "mbpp_full", "lp": {"code": -120.44801616668701}, "lp_per_token": {"code": -4.461037635803223}, "tf_reference_ln_logp": -4.461037635803223, "tf_reference_rough": true}
+{"item_id": "mbpp-391", "benchmark": "mbpp_full", "lp": {"code": -73.68778002262115}, "lp_per_token": {"code": -1.444858431816101}, "tf_reference_ln_logp": -1.444858431816101, "tf_reference_rough": true}
+{"item_id": "mbpp-392", "benchmark": "mbpp_full", "lp": {"code": -184.84337306022644}, "lp_per_token": {"code": -1.9664188623428345}, "tf_reference_ln_logp": -1.9664188623428345, "tf_reference_rough": true}
+{"item_id": "mbpp-393", "benchmark": "mbpp_full", "lp": {"code": -125.22493743896484}, "lp_per_token": {"code": -2.4553909301757812}, "tf_reference_ln_logp": -2.4553909301757812, "tf_reference_rough": true}
+{"item_id": "mbpp-394", "benchmark": "mbpp_full", "lp": {"code": -105.97931802272797}, "lp_per_token": {"code": -1.9268966913223267}, "tf_reference_ln_logp": -1.9268966913223267, "tf_reference_rough": true}
+{"item_id": "mbpp-395", "benchmark": "mbpp_full", "lp": {"code": -80.6916983127594}, "lp_per_token": {"code": -0.9606154561042786}, "tf_reference_ln_logp": -0.9606154561042786, "tf_reference_rough": true}
+{"item_id": "mbpp-396", "benchmark": "mbpp_full", "lp": {"code": -114.76560759544373}, "lp_per_token": {"code": -2.165388822555542}, "tf_reference_ln_logp": -2.165388822555542, "tf_reference_rough": true}
+{"item_id": "mbpp-397", "benchmark": "mbpp_full", "lp": {"code": -83.87302243709564}, "lp_per_token": {"code": -1.03546941280365}, "tf_reference_ln_logp": -1.03546941280365, "tf_reference_rough": true}
+{"item_id": "mbpp-398", "benchmark": "mbpp_full", "lp": {"code": -63.7662148475647}, "lp_per_token": {"code": -2.1255404949188232}, "tf_reference_ln_logp": -2.1255404949188232, "tf_reference_rough": true}
+{"item_id": "mbpp-399", "benchmark": "mbpp_full", "lp": {"code": -99.19136762619019}, "lp_per_token": {"code": -1.9838273525238037}, "tf_reference_ln_logp": -1.9838273525238037, "tf_reference_rough": true}
+{"item_id": "mbpp-400", "benchmark": "mbpp_full", "lp": {"code": -90.95990586280823}, "lp_per_token": {"code": -2.934190511703491}, "tf_reference_ln_logp": -2.934190511703491, "tf_reference_rough": true}
+{"item_id": "mbpp-401", "benchmark": "mbpp_full", "lp": {"code": -126.71865844726562}, "lp_per_token": {"code": -1.9799790382385254}, "tf_reference_ln_logp": -1.9799790382385254, "tf_reference_rough": true}
+{"item_id": "mbpp-402", "benchmark": "mbpp_full", "lp": {"code": -89.57618951797485}, "lp_per_token": {"code": -0.9631848335266113}, "tf_reference_ln_logp": -0.9631848335266113, "tf_reference_rough": true}
+{"item_id": "mbpp-403", "benchmark": "mbpp_full", "lp": {"code": -102.83934020996094}, "lp_per_token": {"code": -0.8034323453903198}, "tf_reference_ln_logp": -0.8034323453903198, "tf_reference_rough": true}
+{"item_id": "mbpp-404", "benchmark": "mbpp_full", "lp": {"code": -54.19555389881134}, "lp_per_token": {"code": -1.8688122034072876}, "tf_reference_ln_logp": -1.8688122034072876, "tf_reference_rough": true}
+{"item_id": "mbpp-405", "benchmark": "mbpp_full", "lp": {"code": -112.54403972625732}, "lp_per_token": {"code": -3.12622332572937}, "tf_reference_ln_logp": -3.12622332572937, "tf_reference_rough": true}
+{"item_id": "mbpp-406", "benchmark": "mbpp_full", "lp": {"code": -134.36333847045898}, "lp_per_token": {"code": -1.3851890563964844}, "tf_reference_ln_logp": -1.3851890563964844, "tf_reference_rough": true}
+{"item_id": "mbpp-407", "benchmark": "mbpp_full", "lp": {"code": -59.794464349746704}, "lp_per_token": {"code": -0.6101475954055786}, "tf_reference_ln_logp": -0.6101475954055786, "tf_reference_rough": true}
+{"item_id": "mbpp-408", "benchmark": "mbpp_full", "lp": {"code": -59.24247160553932}, "lp_per_token": {"code": -0.40856876969337463}, "tf_reference_ln_logp": -0.40856876969337463, "tf_reference_rough": true}
+{"item_id": "mbpp-409", "benchmark": "mbpp_full", "lp": {"code": -100.48370361328125}, "lp_per_token": {"code": -2.7912139892578125}, "tf_reference_ln_logp": -2.7912139892578125, "tf_reference_rough": true}
+{"item_id": "mbpp-410", "benchmark": "mbpp_full", "lp": {"code": -79.78514862060547}, "lp_per_token": {"code": -2.493285894393921}, "tf_reference_ln_logp": -2.493285894393921, "tf_reference_rough": true}
+{"item_id": "mbpp-411", "benchmark": "mbpp_full", "lp": {"code": -58.37463140487671}, "lp_per_token": {"code": -1.9458210468292236}, "tf_reference_ln_logp": -1.9458210468292236, "tf_reference_rough": true}
+{"item_id": "mbpp-412", "benchmark": "mbpp_full", "lp": {"code": -46.5434410572052}, "lp_per_token": {"code": -1.3689247369766235}, "tf_reference_ln_logp": -1.3689247369766235, "tf_reference_rough": true}
+{"item_id": "mbpp-413", "benchmark": "mbpp_full", "lp": {"code": -50.1781439781189}, "lp_per_token": {"code": -1.6726047992706299}, "tf_reference_ln_logp": -1.6726047992706299, "tf_reference_rough": true}
+{"item_id": "mbpp-414", "benchmark": "mbpp_full", "lp": {"code": -141.13391292095184}, "lp_per_token": {"code": -1.585774302482605}, "tf_reference_ln_logp": -1.585774302482605, "tf_reference_rough": true}
+{"item_id": "mbpp-415", "benchmark": "mbpp_full", "lp": {"code": -148.31382822990417}, "lp_per_token": {"code": -1.386110544204712}, "tf_reference_ln_logp": -1.386110544204712, "tf_reference_rough": true}
+{"item_id": "mbpp-416", "benchmark": "mbpp_full", "lp": {"code": -129.48311519622803}, "lp_per_token": {"code": -1.4074251651763916}, "tf_reference_ln_logp": -1.4074251651763916, "tf_reference_rough": true}
+{"item_id": "mbpp-417", "benchmark": "mbpp_full", "lp": {"code": -135.5744104385376}, "lp_per_token": {"code": -2.0541577339172363}, "tf_reference_ln_logp": -2.0541577339172363, "tf_reference_rough": true}
+{"item_id": "mbpp-418", "benchmark": "mbpp_full", "lp": {"code": -99.85426902770996}, "lp_per_token": {"code": -3.4432506561279297}, "tf_reference_ln_logp": -3.4432506561279297, "tf_reference_rough": true}
+{"item_id": "mbpp-419", "benchmark": "mbpp_full", "lp": {"code": -182.46842193603516}, "lp_per_token": {"code": -5.068567276000977}, "tf_reference_ln_logp": -5.068567276000977, "tf_reference_rough": true}
+{"item_id": "mbpp-420", "benchmark": "mbpp_full", "lp": {"code": -77.17977333068848}, "lp_per_token": {"code": -1.6079119443893433}, "tf_reference_ln_logp": -1.6079119443893433, "tf_reference_rough": true}
+{"item_id": "mbpp-421", "benchmark": "mbpp_full", "lp": {"code": -149.87356543540955}, "lp_per_token": {"code": -2.7249739170074463}, "tf_reference_ln_logp": -2.7249739170074463, "tf_reference_rough": true}
+{"item_id": "mbpp-422", "benchmark": "mbpp_full", "lp": {"code": -104.52661228179932}, "lp_per_token": {"code": -1.9356780052185059}, "tf_reference_ln_logp": -1.9356780052185059, "tf_reference_rough": true}
+{"item_id": "mbpp-423", "benchmark": "mbpp_full", "lp": {"code": -111.08145198225975}, "lp_per_token": {"code": -0.464775949716568}, "tf_reference_ln_logp": -0.464775949716568, "tf_reference_rough": true}
+{"item_id": "mbpp-424", "benchmark": "mbpp_full", "lp": {"code": -116.95080757141113}, "lp_per_token": {"code": -3.341451644897461}, "tf_reference_ln_logp": -3.341451644897461, "tf_reference_rough": true}
+{"item_id": "mbpp-425", "benchmark": "mbpp_full", "lp": {"code": -100.54634809494019}, "lp_per_token": {"code": -2.0109269618988037}, "tf_reference_ln_logp": -2.0109269618988037, "tf_reference_rough": true}
+{"item_id": "mbpp-426", "benchmark": "mbpp_full", "lp": {"code": -70.74877953529358}, "lp_per_token": {"code": -2.2822186946868896}, "tf_reference_ln_logp": -2.2822186946868896, "tf_reference_rough": true}
+{"item_id": "mbpp-427", "benchmark": "mbpp_full", "lp": {"code": -67.01004981994629}, "lp_per_token": {"code": -1.2886548042297363}, "tf_reference_ln_logp": -1.2886548042297363, "tf_reference_rough": true}
+{"item_id": "mbpp-428", "benchmark": "mbpp_full", "lp": {"code": -70.55663919448853}, "lp_per_token": {"code": -0.6656286716461182}, "tf_reference_ln_logp": -0.6656286716461182, "tf_reference_rough": true}
+{"item_id": "mbpp-429", "benchmark": "mbpp_full", "lp": {"code": -89.47842121124268}, "lp_per_token": {"code": -1.7895684242248535}, "tf_reference_ln_logp": -1.7895684242248535, "tf_reference_rough": true}
+{"item_id": "mbpp-430", "benchmark": "mbpp_full", "lp": {"code": -125.52051448822021}, "lp_per_token": {"code": -2.7287068367004395}, "tf_reference_ln_logp": -2.7287068367004395, "tf_reference_rough": true}
+{"item_id": "mbpp-431", "benchmark": "mbpp_full", "lp": {"code": -98.48490262031555}, "lp_per_token": {"code": -2.095423460006714}, "tf_reference_ln_logp": -2.095423460006714, "tf_reference_rough": true}
+{"item_id": "mbpp-432", "benchmark": "mbpp_full", "lp": {"code": -99.08642578125}, "lp_per_token": {"code": -2.914306640625}, "tf_reference_ln_logp": -2.914306640625, "tf_reference_rough": true}
+{"item_id": "mbpp-433", "benchmark": "mbpp_full", "lp": {"code": -94.8710435628891}, "lp_per_token": {"code": -1.664404273033142}, "tf_reference_ln_logp": -1.664404273033142, "tf_reference_rough": true}
+{"item_id": "mbpp-434", "benchmark": "mbpp_full", "lp": {"code": -102.39946842193604}, "lp_per_token": {"code": -2.0479893684387207}, "tf_reference_ln_logp": -2.0479893684387207, "tf_reference_rough": true}
+{"item_id": "mbpp-435", "benchmark": "mbpp_full", "lp": {"code": -78.06457042694092}, "lp_per_token": {"code": -3.717360496520996}, "tf_reference_ln_logp": -3.717360496520996, "tf_reference_rough": true}
+{"item_id": "mbpp-436", "benchmark": "mbpp_full", "lp": {"code": -128.27519178390503}, "lp_per_token": {"code": -4.137909412384033}, "tf_reference_ln_logp": -4.137909412384033, "tf_reference_rough": true}
+{"item_id": "mbpp-437", "benchmark": "mbpp_full", "lp": {"code": -111.58537423610687}, "lp_per_token": {"code": -1.957638144493103}, "tf_reference_ln_logp": -1.957638144493103, "tf_reference_rough": true}
+{"item_id": "mbpp-438", "benchmark": "mbpp_full", "lp": {"code": -129.73619937896729}, "lp_per_token": {"code": -1.47427499294281}, "tf_reference_ln_logp": -1.47427499294281, "tf_reference_rough": true}
+{"item_id": "mbpp-439", "benchmark": "mbpp_full", "lp": {"code": -70.17065572738647}, "lp_per_token": {"code": -2.698871374130249}, "tf_reference_ln_logp": -2.698871374130249, "tf_reference_rough": true}
+{"item_id": "mbpp-440", "benchmark": "mbpp_full", "lp": {"code": -100.84814929962158}, "lp_per_token": {"code": -2.401146411895752}, "tf_reference_ln_logp": -2.401146411895752, "tf_reference_rough": true}
+{"item_id": "mbpp-441", "benchmark": "mbpp_full", "lp": {"code": -98.57963562011719}, "lp_per_token": {"code": -4.107484817504883}, "tf_reference_ln_logp": -4.107484817504883, "tf_reference_rough": true}
+{"item_id": "mbpp-442", "benchmark": "mbpp_full", "lp": {"code": -171.44512844085693}, "lp_per_token": {"code": -2.7652440071105957}, "tf_reference_ln_logp": -2.7652440071105957, "tf_reference_rough": true}
+{"item_id": "mbpp-443", "benchmark": "mbpp_full", "lp": {"code": -124.84984683990479}, "lp_per_token": {"code": -2.837496519088745}, "tf_reference_ln_logp": -2.837496519088745, "tf_reference_rough": true}
+{"item_id": "mbpp-444", "benchmark": "mbpp_full", "lp": {"code": -139.8850474357605}, "lp_per_token": {"code": -2.854796886444092}, "tf_reference_ln_logp": -2.854796886444092, "tf_reference_rough": true}
+{"item_id": "mbpp-445", "benchmark": "mbpp_full", "lp": {"code": -116.64984130859375}, "lp_per_token": {"code": -1.8226537704467773}, "tf_reference_ln_logp": -1.8226537704467773, "tf_reference_rough": true}
+{"item_id": "mbpp-446", "benchmark": "mbpp_full", "lp": {"code": -98.36788177490234}, "lp_per_token": {"code": -1.9673576354980469}, "tf_reference_ln_logp": -1.9673576354980469, "tf_reference_rough": true}
+{"item_id": "mbpp-447", "benchmark": "mbpp_full", "lp": {"code": -63.90325164794922}, "lp_per_token": {"code": -2.282258987426758}, "tf_reference_ln_logp": -2.282258987426758, "tf_reference_rough": true}
+{"item_id": "mbpp-448", "benchmark": "mbpp_full", "lp": {"code": -135.23145580291748}, "lp_per_token": {"code": -1.1657884120941162}, "tf_reference_ln_logp": -1.1657884120941162, "tf_reference_rough": true}
+{"item_id": "mbpp-449", "benchmark": "mbpp_full", "lp": {"code": -143.6919003725052}, "lp_per_token": {"code": -1.9158920049667358}, "tf_reference_ln_logp": -1.9158920049667358, "tf_reference_rough": true}
+{"item_id": "mbpp-450", "benchmark": "mbpp_full", "lp": {"code": -97.39534759521484}, "lp_per_token": {"code": -3.043604612350464}, "tf_reference_ln_logp": -3.043604612350464, "tf_reference_rough": true}
+{"item_id": "mbpp-451", "benchmark": "mbpp_full", "lp": {"code": -119.14707946777344}, "lp_per_token": {"code": -4.255252838134766}, "tf_reference_ln_logp": -4.255252838134766, "tf_reference_rough": true}
+{"item_id": "mbpp-452", "benchmark": "mbpp_full", "lp": {"code": -163.3999364376068}, "lp_per_token": {"code": -3.7999985218048096}, "tf_reference_ln_logp": -3.7999985218048096, "tf_reference_rough": true}
+{"item_id": "mbpp-453", "benchmark": "mbpp_full", "lp": {"code": -93.56972134113312}, "lp_per_token": {"code": -0.5169597864151001}, "tf_reference_ln_logp": -0.5169597864151001, "tf_reference_rough": true}
+{"item_id": "mbpp-454", "benchmark": "mbpp_full", "lp": {"code": -81.91838157176971}, "lp_per_token": {"code": -1.6062427759170532}, "tf_reference_ln_logp": -1.6062427759170532, "tf_reference_rough": true}
+{"item_id": "mbpp-455", "benchmark": "mbpp_full", "lp": {"code": -112.13179290294647}, "lp_per_token": {"code": -1.579321026802063}, "tf_reference_ln_logp": -1.579321026802063, "tf_reference_rough": true}
+{"item_id": "mbpp-456", "benchmark": "mbpp_full", "lp": {"code": -68.85109090805054}, "lp_per_token": {"code": -2.374175548553467}, "tf_reference_ln_logp": -2.374175548553467, "tf_reference_rough": true}
+{"item_id": "mbpp-457", "benchmark": "mbpp_full", "lp": {"code": -104.27977418899536}, "lp_per_token": {"code": -3.5958542823791504}, "tf_reference_ln_logp": -3.5958542823791504, "tf_reference_rough": true}
+{"item_id": "mbpp-458", "benchmark": "mbpp_full", "lp": {"code": -90.23248720169067}, "lp_per_token": {"code": -4.749078273773193}, "tf_reference_ln_logp": -4.749078273773193, "tf_reference_rough": true}
+{"item_id": "mbpp-459", "benchmark": "mbpp_full", "lp": {"code": -144.72510719299316}, "lp_per_token": {"code": -3.2892069816589355}, "tf_reference_ln_logp": -3.2892069816589355, "tf_reference_rough": true}
+{"item_id": "mbpp-460", "benchmark": "mbpp_full", "lp": {"code": -45.108999729156494}, "lp_per_token": {"code": -2.0504090785980225}, "tf_reference_ln_logp": -2.0504090785980225, "tf_reference_rough": true}
+{"item_id": "mbpp-461", "benchmark": "mbpp_full", "lp": {"code": -126.99039268493652}, "lp_per_token": {"code": -2.4421229362487793}, "tf_reference_ln_logp": -2.4421229362487793, "tf_reference_rough": true}
+{"item_id": "mbpp-462", "benchmark": "mbpp_full", "lp": {"code": -81.76612138748169}, "lp_per_token": {"code": -1.4097607135772705}, "tf_reference_ln_logp": -1.4097607135772705, "tf_reference_rough": true}
+{"item_id": "mbpp-463", "benchmark": "mbpp_full", "lp": {"code": -104.8232409954071}, "lp_per_token": {"code": -0.4898282289505005}, "tf_reference_ln_logp": -0.4898282289505005, "tf_reference_rough": true}
+{"item_id": "mbpp-464", "benchmark": "mbpp_full", "lp": {"code": -78.10519552230835}, "lp_per_token": {"code": -2.6932826042175293}, "tf_reference_ln_logp": -2.6932826042175293, "tf_reference_rough": true}
+{"item_id": "mbpp-465", "benchmark": "mbpp_full", "lp": {"code": -113.99451184272766}, "lp_per_token": {"code": -2.922936201095581}, "tf_reference_ln_logp": -2.922936201095581, "tf_reference_rough": true}
+{"item_id": "mbpp-466", "benchmark": "mbpp_full", "lp": {"code": -85.24143505096436}, "lp_per_token": {"code": -0.526181697845459}, "tf_reference_ln_logp": -0.526181697845459, "tf_reference_rough": true}
+{"item_id": "mbpp-467", "benchmark": "mbpp_full", "lp": {"code": -227.73806953430176}, "lp_per_token": {"code": -2.4754137992858887}, "tf_reference_ln_logp": -2.4754137992858887, "tf_reference_rough": true}
+{"item_id": "mbpp-468", "benchmark": "mbpp_full", "lp": {"code": -145.9369776248932}, "lp_per_token": {"code": -1.376763939857483}, "tf_reference_ln_logp": -1.376763939857483, "tf_reference_rough": true}
+{"item_id": "mbpp-469", "benchmark": "mbpp_full", "lp": {"code": -112.2214081287384}, "lp_per_token": {"code": -0.6842768788337708}, "tf_reference_ln_logp": -0.6842768788337708, "tf_reference_rough": true}
+{"item_id": "mbpp-470", "benchmark": "mbpp_full", "lp": {"code": -89.87205362319946}, "lp_per_token": {"code": -2.139810800552368}, "tf_reference_ln_logp": -2.139810800552368, "tf_reference_rough": true}
+{"item_id": "mbpp-471", "benchmark": "mbpp_full", "lp": {"code": -72.39775323867798}, "lp_per_token": {"code": -1.392264485359192}, "tf_reference_ln_logp": -1.392264485359192, "tf_reference_rough": true}
+{"item_id": "mbpp-472", "benchmark": "mbpp_full", "lp": {"code": -71.62811470031738}, "lp_per_token": {"code": -2.5581469535827637}, "tf_reference_ln_logp": -2.5581469535827637, "tf_reference_rough": true}
+{"item_id": "mbpp-473", "benchmark": "mbpp_full", "lp": {"code": -89.99484181404114}, "lp_per_token": {"code": -1.7998968362808228}, "tf_reference_ln_logp": -1.7998968362808228, "tf_reference_rough": true}
+{"item_id": "mbpp-474", "benchmark": "mbpp_full", "lp": {"code": -118.69576072692871}, "lp_per_token": {"code": -4.239134311676025}, "tf_reference_ln_logp": -4.239134311676025, "tf_reference_rough": true}
+{"item_id": "mbpp-475", "benchmark": "mbpp_full", "lp": {"code": -112.55819702148438}, "lp_per_token": {"code": -3.5174436569213867}, "tf_reference_ln_logp": -3.5174436569213867, "tf_reference_rough": true}
+{"item_id": "mbpp-476", "benchmark": "mbpp_full", "lp": {"code": -106.02681732177734}, "lp_per_token": {"code": -4.819400787353516}, "tf_reference_ln_logp": -4.819400787353516, "tf_reference_rough": true}
+{"item_id": "mbpp-477", "benchmark": "mbpp_full", "lp": {"code": -70.15425682067871}, "lp_per_token": {"code": -4.676950454711914}, "tf_reference_ln_logp": -4.676950454711914, "tf_reference_rough": true}
+{"item_id": "mbpp-478", "benchmark": "mbpp_full", "lp": {"code": -130.21287274360657}, "lp_per_token": {"code": -3.338791608810425}, "tf_reference_ln_logp": -3.338791608810425, "tf_reference_rough": true}
+{"item_id": "mbpp-479", "benchmark": "mbpp_full", "lp": {"code": -95.24670243263245}, "lp_per_token": {"code": -2.574235200881958}, "tf_reference_ln_logp": -2.574235200881958, "tf_reference_rough": true}
+{"item_id": "mbpp-480", "benchmark": "mbpp_full", "lp": {"code": -86.20605421066284}, "lp_per_token": {"code": -0.93702232837677}, "tf_reference_ln_logp": -0.93702232837677, "tf_reference_rough": true}
+{"item_id": "mbpp-481", "benchmark": "mbpp_full", "lp": {"code": -74.18813347816467}, "lp_per_token": {"code": -0.8335745334625244}, "tf_reference_ln_logp": -0.8335745334625244, "tf_reference_rough": true}
+{"item_id": "mbpp-482", "benchmark": "mbpp_full", "lp": {"code": -131.87024593353271}, "lp_per_token": {"code": -2.6374049186706543}, "tf_reference_ln_logp": -2.6374049186706543, "tf_reference_rough": true}
+{"item_id": "mbpp-483", "benchmark": "mbpp_full", "lp": {"code": -114.80032348632812}, "lp_per_token": {"code": -1.793755054473877}, "tf_reference_ln_logp": -1.793755054473877, "tf_reference_rough": true}
+{"item_id": "mbpp-484", "benchmark": "mbpp_full", "lp": {"code": -89.00024747848511}, "lp_per_token": {"code": -2.1707377433776855}, "tf_reference_ln_logp": -2.1707377433776855, "tf_reference_rough": true}
+{"item_id": "mbpp-485", "benchmark": "mbpp_full", "lp": {"code": -124.43508005142212}, "lp_per_token": {"code": -0.7925801277160645}, "tf_reference_ln_logp": -0.7925801277160645, "tf_reference_rough": true}
+{"item_id": "mbpp-486", "benchmark": "mbpp_full", "lp": {"code": -184.78012466430664}, "lp_per_token": {"code": -1.7767319679260254}, "tf_reference_ln_logp": -1.7767319679260254, "tf_reference_rough": true}
+{"item_id": "mbpp-487", "benchmark": "mbpp_full", "lp": {"code": -96.4394302368164}, "lp_per_token": {"code": -1.0259513854980469}, "tf_reference_ln_logp": -1.0259513854980469, "tf_reference_rough": true}
+{"item_id": "mbpp-488", "benchmark": "mbpp_full", "lp": {"code": -91.19044017791748}, "lp_per_token": {"code": -2.072510004043579}, "tf_reference_ln_logp": -2.072510004043579, "tf_reference_rough": true}
+{"item_id": "mbpp-489", "benchmark": "mbpp_full", "lp": {"code": -134.52658653259277}, "lp_per_token": {"code": -1.6815823316574097}, "tf_reference_ln_logp": -1.6815823316574097, "tf_reference_rough": true}
+{"item_id": "mbpp-490", "benchmark": "mbpp_full", "lp": {"code": -122.01538038253784}, "lp_per_token": {"code": -2.140620708465576}, "tf_reference_ln_logp": -2.140620708465576, "tf_reference_rough": true}
+{"item_id": "mbpp-491", "benchmark": "mbpp_full", "lp": {"code": -120.95153760910034}, "lp_per_token": {"code": -3.268960475921631}, "tf_reference_ln_logp": -3.268960475921631, "tf_reference_rough": true}
+{"item_id": "mbpp-492", "benchmark": "mbpp_full", "lp": {"code": -82.04947024583817}, "lp_per_token": {"code": -0.8636786341667175}, "tf_reference_ln_logp": -0.8636786341667175, "tf_reference_rough": true}
+{"item_id": "mbpp-493", "benchmark": "mbpp_full", "lp": {"code": -232.8080819249153}, "lp_per_token": {"code": -0.5327416062355042}, "tf_reference_ln_logp": -0.5327416062355042, "tf_reference_rough": true}
+{"item_id": "mbpp-494", "benchmark": "mbpp_full", "lp": {"code": -109.9543526172638}, "lp_per_token": {"code": -2.8193423748016357}, "tf_reference_ln_logp": -2.8193423748016357, "tf_reference_rough": true}
+{"item_id": "mbpp-495", "benchmark": "mbpp_full", "lp": {"code": -152.9880678653717}, "lp_per_token": {"code": -3.5578620433807373}, "tf_reference_ln_logp": -3.5578620433807373, "tf_reference_rough": true}
+{"item_id": "mbpp-496", "benchmark": "mbpp_full", "lp": {"code": -83.86164665222168}, "lp_per_token": {"code": -2.3294901847839355}, "tf_reference_ln_logp": -2.3294901847839355, "tf_reference_rough": true}
+{"item_id": "mbpp-497", "benchmark": "mbpp_full", "lp": {"code": -84.14048910140991}, "lp_per_token": {"code": -1.869788646697998}, "tf_reference_ln_logp": -1.869788646697998, "tf_reference_rough": true}
+{"item_id": "mbpp-498", "benchmark": "mbpp_full", "lp": {"code": -71.32431936264038}, "lp_per_token": {"code": -0.9638421535491943}, "tf_reference_ln_logp": -0.9638421535491943, "tf_reference_rough": true}
+{"item_id": "mbpp-499", "benchmark": "mbpp_full", "lp": {"code": -59.95025873184204}, "lp_per_token": {"code": -3.1552767753601074}, "tf_reference_ln_logp": -3.1552767753601074, "tf_reference_rough": true}
+{"item_id": "mbpp-500", "benchmark": "mbpp_full", "lp": {"code": -142.1540880203247}, "lp_per_token": {"code": -4.061545372009277}, "tf_reference_ln_logp": -4.061545372009277, "tf_reference_rough": true}
+{"item_id": "mbpp-501", "benchmark": "mbpp_full", "lp": {"code": -159.45140480995178}, "lp_per_token": {"code": -1.2265492677688599}, "tf_reference_ln_logp": -1.2265492677688599, "tf_reference_rough": true}
+{"item_id": "mbpp-502", "benchmark": "mbpp_full", "lp": {"code": -136.3555908203125}, "lp_per_token": {"code": -6.817779541015625}, "tf_reference_ln_logp": -6.817779541015625, "tf_reference_rough": true}
+{"item_id": "mbpp-503", "benchmark": "mbpp_full", "lp": {"code": -61.85140514373779}, "lp_per_token": {"code": -1.7180945873260498}, "tf_reference_ln_logp": -1.7180945873260498, "tf_reference_rough": true}
+{"item_id": "mbpp-504", "benchmark": "mbpp_full", "lp": {"code": -120.61927795410156}, "lp_per_token": {"code": -2.8050994873046875}, "tf_reference_ln_logp": -2.8050994873046875, "tf_reference_rough": true}
+{"item_id": "mbpp-505", "benchmark": "mbpp_full", "lp": {"code": -97.37961149215698}, "lp_per_token": {"code": -1.57063889503479}, "tf_reference_ln_logp": -1.57063889503479, "tf_reference_rough": true}
+{"item_id": "mbpp-506", "benchmark": "mbpp_full", "lp": {"code": -162.21104907989502}, "lp_per_token": {"code": -1.1034765243530273}, "tf_reference_ln_logp": -1.1034765243530273, "tf_reference_rough": true}
+{"item_id": "mbpp-507", "benchmark": "mbpp_full", "lp": {"code": -115.47306156158447}, "lp_per_token": {"code": -2.685420036315918}, "tf_reference_ln_logp": -2.685420036315918, "tf_reference_rough": true}
+{"item_id": "mbpp-508", "benchmark": "mbpp_full", "lp": {"code": -65.21060919761658}, "lp_per_token": {"code": -0.9589795470237732}, "tf_reference_ln_logp": -0.9589795470237732, "tf_reference_rough": true}
+{"item_id": "mbpp-509", "benchmark": "mbpp_full", "lp": {"code": -199.8628807067871}, "lp_per_token": {"code": -2.498286008834839}, "tf_reference_ln_logp": -2.498286008834839, "tf_reference_rough": true}
+{"item_id": "mbpp-510", "benchmark": "mbpp_full", "lp": {"code": -100.74225747585297}, "lp_per_token": {"code": -0.7144840955734253}, "tf_reference_ln_logp": -0.7144840955734253, "tf_reference_rough": true}
+{"item_id": "mbpp-511", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-512", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-513", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-514", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-515", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-516", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-517", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-518", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-519", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-520", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-521", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-522", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-523", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-524", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-525", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-526", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-527", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-528", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-529", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-530", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-531", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-532", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-533", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-534", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-535", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-536", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-537", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-538", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-539", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-540", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-541", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-542", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-543", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-544", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-545", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-546", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-547", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-548", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-549", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-550", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-551", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-552", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-553", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-554", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-555", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-556", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-557", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-558", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-559", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-560", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-561", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-562", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-563", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-564", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-565", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-566", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-567", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-568", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-569", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-570", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-571", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-572", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-573", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-574", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-575", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-576", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-577", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-578", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-579", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-580", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-581", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-582", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-583", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-584", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-585", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-586", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-587", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-588", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-589", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-590", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-591", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-592", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-593", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-594", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-595", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-596", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-597", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-598", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-599", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-600", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-1", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-2", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-3", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-4", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-5", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-6", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-7", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-8", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-9", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
+{"item_id": "mbpp-10", "benchmark": "mbpp_full", "lp": {}, "lp_per_token": {}, "tf_reference_ln_logp": null, "tf_reference_rough": true}
