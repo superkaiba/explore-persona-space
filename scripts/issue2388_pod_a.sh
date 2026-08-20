@@ -207,6 +207,12 @@ for i in "${!pids[@]}"; do
 done
 [ "$fail" -eq 0 ] || exit 1
 
+echo "[phase=p1_gate_refresh]"
+# phase_gate is idempotent and STAGED ("re-run after each stage lands"): the
+# pre-gen run leaves bcb_fit_allowed=None because G3 needs this run's own
+# full-pool verify output (code/bigcodebench_full.json). Re-run it now so
+# dv_build --surface code can resolve fit inclusion (R7 crash, 2026-08-20).
+uv run python scripts/issue2388_gen.py --phase gate --bcb-python "$BCB_PY" --control-report "$CONTROL_REPORT"
 echo "[phase=p1_upload]"
 uv run python scripts/issue2388_gen.py --phase upload --bcb-python "$BCB_PY"
 echo "[phase=p1_dv]"
