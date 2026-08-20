@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2410,
+  "highest_id": 2411,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10909,6 +10909,13 @@
       "path": "tasks/proposed/2410",
       "status": "proposed",
       "title": "Lint: truthy upload URL accepted as canonical completion (3 instances in one round) + hoist _require_canonical_upload into hub"
+    },
+    "2411": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2411",
+      "status": "proposed",
+      "title": "Amendment verification checks the EDITS, not the SITE SET \u2014 add an old-value residual grep"
     },
     "244": {
       "has_clean_result": false,
