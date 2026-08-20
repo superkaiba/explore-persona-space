@@ -1591,3 +1591,24 @@ the scan's file enumeration, exemption exactness + the dead-control proof,
 the lookbehind/word-adjacency claim behind a compose test, kwarg-default
 behavior preservation) — with fabricated-falsifiability (claimed-red that
 stays green) named as substantive FAIL.
+
+**CONCERNS→polish round; brief can ORDER the whole-branch body back in (#2212
+r2, 2026-08-20):** the round-scope BAN on the whole-branch three-dot BODY is
+the DEFAULT, not a law — when the brief mandates re-verifying reconciler
+binding conditions + the plan §10 fence "on the FULL round diff, not
+inherited from round 1's PASS", compose BOTH reads: three-dot full-round
+body (size it first; 55 KB here) for the conditions re-check, `git show
+<round-sha>` as the deep-dive focus. Milder sibling of #2329 rclose: prior
+round Claude-PASS + Codex-CONCERNS (no reconciler — CONCERNS advances), one
+persisted NIT (the twin's own) + one un-persisted Claude Minor closed;
+closure ledger = the real concern id + a pseudo-id, author-neutrality line,
+addressed-id NEVER re-emitted as a `CONCERN:: ` row unless NOT-ADDRESSED.
+A brief-supplied "state plainly a clean PASS is expected if the fixes are
+sound" composes as BOTH-directions calibration (expected ≠ thumb on scale;
+wording-preference blockers unwanted on a wording-correction round, real
+defects at full severity). Over-correction duty on wording fixes: the new
+text can be wrong the OTHER way (eliding the argv-structural top-level
+guarantee / overstating exclude-list protection) — hand Codex both failure
+directions plus survival checks for the honest-scope figures. Re-measure
+brief-supplied base-drift figures at compose (136→295 commits between
+rounds; use fresh).
