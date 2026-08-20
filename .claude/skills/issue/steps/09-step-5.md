@@ -437,7 +437,11 @@ issue's src at fork-era content (scripts on main import other issues'
 `experiments.issue_<M>` packages): committing the pin-back keeps the widened
 sync from advancing the consumed dir mid-experiment.
 
-The refresh touches ONLY the workflow surface (never experiment code).
+The refresh touches the workflow surface PLUS sibling-issue experiment
+code: the #2412-widened globs above also sync issue-namespaced
+`src/explore_persona_space/experiments/issue*/` dirs (probe-guarded +
+pair-atomic, per the helper contract above); SHARED experiment src is
+never synced — the probe only ever REVERTS on its skew.
 Issue branches must not carry their own workflow-surface edits as a
 rule (those go through their own filed workflow-fix `/issue --auto`
 sessions + worktrees), with one

@@ -403,6 +403,85 @@ def test_slug_dir_identical_kept(scratch):
     assert kept.read_text() == f"{test_rel}\n"
 
 
+def test_mf3_parent_package_alias_child_skew_fails(scratch):
+    """#2412 r2 (parent-package-strict-bypass): ``from ...experiments import
+    behavior_testbed_545 as pkg`` resolves the SHARED ``experiments/__init__.py``,
+    so the module-level strict arm never fires; the CHILD satisfied via
+    submodule existence must itself route through the strict owning-unit
+    identity arm -> a skewed slug child directory FAILs (reverts).
+
+    Discriminating property (verified fail-pre-fix): round-1 code accepted the
+    child on ``submodule_exists()`` existence ALONE — never diffed — so this
+    exact topology was silently KEPT; the resolved parent ``__init__.py`` and
+    the child's own ``__init__.py`` are both byte-identical, so neither the
+    module-level strict arm nor the symbol arm can catch it.
+    """
+    test_rel = "tests/test_issue545_alias.py"
+    pkg = f"{_EXP}/behavior_testbed_545"
+    repo = _make_repo(
+        scratch / "wt",
+        origin_files={
+            f"{_EXP}/__init__.py": "",
+            f"{pkg}/__init__.py": "",
+            f"{pkg}/corpora.py": "def load():\n    return 'main'\n",
+            test_rel: (
+                "def test_alias_use():\n"
+                "    from explore_persona_space.experiments"
+                " import behavior_testbed_545 as pkg\n"
+                "    assert pkg is not None\n"
+            ),
+        },
+        branch_overrides={
+            f"{pkg}/corpora.py": "def load():\n    return 'fork'\n",
+            test_rel: None,
+        },
+        synced=[test_rel],
+    )
+    # The bypass topology: the resolved parent __init__.py AND the child's own
+    # __init__.py are byte-identical; only a sibling submodule inside the
+    # child dir skews.
+    assert _git_rc(repo, "diff", "--quiet", "origin/main", "--", f"{_EXP}/__init__.py") == 0
+    assert _git_rc(repo, "diff", "--quiet", "origin/main", "--", f"{pkg}/__init__.py") == 0
+    assert _git_rc(repo, "diff", "--quiet", "origin/main", "--", pkg) == 1
+    kept = scratch / "kept.txt"
+    cp = _run_helper(repo, [test_rel], kept_out=kept)
+    assert cp.returncode == 0, cp.stderr
+    assert f"issue-namespaced unit {pkg} differs from origin/main" in cp.stdout
+    assert "— reverting its issue-545 synced pair (#2208)." in cp.stdout
+    _assert_reverted_main_new(repo, test_rel)
+    assert kept.read_text() == ""
+
+
+def test_parent_package_alias_child_identical_kept(scratch):
+    """Control for the parent-package strict routing: the same alias-form
+    import with the child dir content-identical to origin/main -> KEPT (the
+    child routing must not over-revert healthy syncs)."""
+    test_rel = "tests/test_issue545_alias.py"
+    pkg = f"{_EXP}/behavior_testbed_545"
+    repo = _make_repo(
+        scratch / "wt",
+        origin_files={
+            f"{_EXP}/__init__.py": "",
+            f"{pkg}/__init__.py": "",
+            f"{pkg}/corpora.py": "def load():\n    return 'main'\n",
+            test_rel: (
+                "def test_alias_use():\n"
+                "    from explore_persona_space.experiments"
+                " import behavior_testbed_545 as pkg\n"
+                "    assert pkg is not None\n"
+            ),
+        },
+        branch_overrides={test_rel: None},
+        synced=[test_rel],
+    )
+    kept = scratch / "kept.txt"
+    cp = _run_helper(repo, [test_rel], kept_out=kept)
+    assert cp.returncode == 0, cp.stderr
+    assert "reverting" not in cp.stdout
+    _assert_kept_synced(repo, test_rel)
+    assert kept.read_text() == f"{test_rel}\n"
+
+
 def test_type_checking_guarded_import_kept(scratch):
     """N2 alpha: a TYPE_CHECKING-guarded import never executes -> KEPT even
     when the module is missing from the worktree (present at origin/main)."""
@@ -498,6 +577,137 @@ def test_import_error_guard_does_not_exempt_skewed_slug_package(scratch):
     assert cp.returncode == 0, cp.stderr
     assert f"issue-namespaced unit {pkg} differs from origin/main" in cp.stdout
     _assert_reverted_main_new(repo, test_rel)
+
+
+@pytest.mark.parametrize("defkw", ["def", "async def"])
+def test_import_error_guard_not_inherited_by_deferred_function_body(scratch, defkw):
+    """#2412 r2 (deferred-importerror-guard-leak): a module-level try/except
+    ImportError around a ``def`` guards only function CREATION — the body's
+    import runs later, at call time, with the handler out of scope — so the
+    MISSING-arm exemption must NOT leak into the deferred body (FAIL +
+    pair-atomic revert).
+
+    Discriminating property (verified fail-pre-fix): round-1 recursion carried
+    ``ie`` unchanged into FunctionDef/AsyncFunctionDef bodies, so this exact
+    topology consumed the beta exemption and was silently KEPT.
+    """
+    test_rel = "tests/test_issue77_deferred.py"
+    mod_rel = "src/explore_persona_space/optional_mod.py"
+    repo = _make_repo(
+        scratch / "wt",
+        origin_files={
+            mod_rel: "def maybe():\n    return 1\n",
+            test_rel: (
+                "try:\n"
+                f"    {defkw} use_optional():\n"
+                "        from explore_persona_space.optional_mod import maybe\n"
+                "        return maybe()\n"
+                "except ImportError:\n"
+                "    use_optional = None\n"
+                "\n" + _TRIVIAL_TEST
+            ),
+        },
+        branch_overrides={mod_rel: None, test_rel: None},
+        synced=[test_rel],
+    )
+    kept = scratch / "kept.txt"
+    cp = _run_helper(repo, [test_rel], kept_out=kept)
+    assert cp.returncode == 0, cp.stderr
+    assert (
+        "module explore_persona_space.optional_mod present at origin/main"
+        " but MISSING from worktree src"
+    ) in cp.stdout
+    assert "— reverting its issue-77 synced pair (#2208)." in cp.stdout
+    _assert_reverted_main_new(repo, test_rel)
+    assert kept.read_text() == ""
+
+
+def test_type_checking_guard_inherited_by_function_body(scratch):
+    """The deliberate ASYMMETRY of the #2412 r2 ie reset: ``tc``
+    (TYPE_CHECKING) inheritance INTO a def stays — a TYPE_CHECKING-guarded def
+    never exists at runtime, so its body imports never execute -> KEPT even
+    when the imported module is missing from the worktree."""
+    test_rel = "tests/test_issue77_tcdef.py"
+    mod_rel = "src/explore_persona_space/ghost_mod.py"
+    repo = _make_repo(
+        scratch / "wt",
+        origin_files={
+            mod_rel: "class GhostThing:\n    pass\n",
+            test_rel: (
+                "from typing import TYPE_CHECKING\n"
+                "\n"
+                "if TYPE_CHECKING:\n"
+                "    def helper():\n"
+                "        from explore_persona_space.ghost_mod import GhostThing\n"
+                "        return GhostThing\n"
+                "\n" + _TRIVIAL_TEST
+            ),
+        },
+        branch_overrides={mod_rel: None, test_rel: None},
+        synced=[test_rel],
+    )
+    kept = scratch / "kept.txt"
+    cp = _run_helper(repo, [test_rel], kept_out=kept)
+    assert cp.returncode == 0, cp.stderr
+    assert "reverting" not in cp.stdout
+    _assert_kept_synced(repo, test_rel)
+    assert kept.read_text() == f"{test_rel}\n"
+
+
+def test_origin_ref_error_fails_closed(scratch):
+    """#2412 r2 (origin-has-git-error-fail-open): a broken/missing origin/main
+    ref is UNDECIDABLE, never "absent at origin" -> FAIL + pair-atomic revert.
+
+    Discriminating property (verified fail-pre-fix): round-1 ``origin_has``
+    read ANY nonzero git rc as absent-at-origin, so under a broken ref a
+    project-src missing-module import read as third-party (N7 skip) and the
+    pair was silently KEPT.
+    """
+    test_rel = "tests/test_issue77_brokenref.py"
+    mod_rel = "src/explore_persona_space/gone_mod.py"
+    repo = _make_repo(
+        scratch / "wt",
+        origin_files={
+            mod_rel: "def gone():\n    return 1\n",
+            test_rel: (
+                "def test_uses_gone():\n"
+                "    from explore_persona_space.gone_mod import gone\n"
+                "    assert gone()\n"
+            ),
+        },
+        branch_overrides={mod_rel: None, test_rel: None},
+        synced=[test_rel],
+    )
+    _git(repo, "update-ref", "-d", "refs/remotes/origin/main")
+    kept = scratch / "kept.txt"
+    cp = _run_helper(repo, [test_rel], kept_out=kept)
+    assert cp.returncode == 0, cp.stderr
+    assert "origin/main probe failed for module explore_persona_space.gone_mod" in cp.stdout
+    assert "— reverting its issue-77 synced pair (#2208)." in cp.stdout
+    _assert_reverted_main_new(repo, test_rel)
+    assert kept.read_text() == ""
+
+
+def test_origin_has_three_way_discrimination(scratch):
+    """Unit pin for the #2412 r2 origin_has redesign: present -> True;
+    absent-on-a-healthy-ref -> False; broken ref -> OriginProbeError
+    (undecidable, never absent). Empirical basis (git 2.34): ``cat-file -e``
+    exits 128 for BOTH an absent path and a broken ref, so the probe uses
+    ``ls-tree`` (rc 0 + empty stdout = absent; rc != 0 = git error)."""
+    mod = _load_helper_module()
+    repo = _make_repo(
+        scratch / "wt",
+        origin_files={"src/present_mod.py": "X = 1\n"},
+        branch_overrides={},
+        synced=[],
+    )
+    ctx = mod._ScanContext(repo)
+    assert ctx.origin_has("src/present_mod.py") is True
+    assert ctx.origin_has("src/absent_mod.py") is False
+    _git(repo, "update-ref", "-d", "refs/remotes/origin/main")
+    ctx2 = mod._ScanContext(repo)
+    with pytest.raises(mod.OriginProbeError):
+        ctx2.origin_has("src/present_mod.py")
 
 
 def test_both_absent_module_skipped_as_third_party(scratch):

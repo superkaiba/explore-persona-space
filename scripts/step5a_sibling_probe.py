@@ -20,13 +20,20 @@ Verdict arms, in order (the static scan runs FIRST — cheap, no subprocess):
    of the OWNING issue-namespaced component — the whole DIRECTORY when the
    owning component is a directory, so a skewed submodule can never hide
    behind a byte-identical ``__init__.py`` (MF3); shared src needs
-   module+symbol existence only (content diffs alone never fail shared src).
-   ``TYPE_CHECKING``-guarded imports are skipped entirely (they never execute
-   at runtime); imports inside a ``try`` whose handlers catch
-   ImportError/ModuleNotFoundError are exempt from the MISSING-module/symbol
-   arms ONLY — never from the strict identity arm, because a
-   present-but-skewed module imports fine and the guard cannot protect the
-   #2204 class (N2).
+   module+symbol existence only (content diffs alone never fail shared src),
+   EXCEPT that a name satisfied as a SUBMODULE routes its resolved CHILD
+   through the same strict identity arm — a shared parent ``__init__.py``
+   (``from ...experiments import behavior_testbed_545 as pkg``) must not
+   launder a present-but-skewed issue-namespaced child package (#2412 r2).
+   A git error probing origin/main is UNDECIDABLE and FAILs the file — it
+   never reads as absent-at-origin (#2412 r2). ``TYPE_CHECKING``-guarded
+   imports are skipped entirely (they never execute at runtime); imports
+   inside a ``try`` whose handlers catch ImportError/ModuleNotFoundError are
+   exempt from the MISSING-module/symbol arms ONLY — never from the strict
+   identity arm, because a present-but-skewed module imports fine and the
+   guard cannot protect the #2204 class (N2) — and the exemption does NOT
+   leak into ``def``/``async def`` bodies, where the import runs at call
+   time with the handler out of scope (#2412 r2).
 2. Real collection probe (retained from #2208 — values verbatim: 180 s/file
    fence, 900 s best-effort warm-up, timeout = failure) through a
    process-GROUP kill fence (MF1): ``start_new_session=True`` + ``os.killpg``
@@ -202,12 +209,18 @@ def _walk_imports(
 
     Descends into every statement body (function-body imports count — the
     #2204 escape). ``tc`` is inherited by anything under a TYPE_CHECKING
-    ``if`` body; ``ie`` by anything under a ``try`` body whose handlers catch
-    ImportError/ModuleNotFoundError (by name, incl. tuples).
+    ``if`` body — INCLUDING ``def`` bodies (a TYPE_CHECKING-guarded def never
+    exists at runtime); ``ie`` by anything under a ``try`` body whose handlers
+    catch ImportError/ModuleNotFoundError (by name, incl. tuples) — but ``ie``
+    RESETS at ``def``/``async def`` boundaries: an enclosing try guards only
+    function CREATION, while the body's imports run later, at call time, with
+    the handler out of scope (#2412 r2 deferred-importerror-guard-leak).
     """
     for node in nodes:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             out.append((node, tc, ie))
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            _walk_imports(node.body, tc, False, out)
         elif isinstance(node, ast.If):
             _walk_imports(node.body, tc or _is_type_checking_test(node.test), ie, out)
             _walk_imports(node.orelse, tc, ie, out)
@@ -278,6 +291,14 @@ def _collect_target_names(target: ast.expr, names: set[str]) -> None:
         _collect_target_names(target.value, names)
 
 
+class OriginProbeError(RuntimeError):
+    """A git error while probing origin/main's tree — undecidable (#2412 r2).
+
+    Raised (never swallowed into an absent-at-origin reading) so the caller
+    FAILs the file under scan: fail-safe direction, revert — never keep.
+    """
+
+
 class _ScanContext:
     """Per-run caches for the static scan's git + AST reads."""
 
@@ -287,7 +308,26 @@ class _ScanContext:
         self._bindings_cache: dict[str, tuple[set[str], bool]] = {}
 
     def origin_has(self, relpath: str) -> bool:
-        return _git(self.wt, "cat-file", "-e", f"origin/main:{relpath}").returncode == 0
+        """True iff origin/main's tree contains ``relpath`` (#2412 r2).
+
+        Empirically (git 2.34) ``cat-file -e origin/main:<path>`` exits 128
+        for BOTH an absent path and a broken/missing ref, so its rc alone
+        cannot separate genuine absence from a git fault — the round-1 code
+        read every nonzero rc as absent and FAILED OPEN (a broken ref made
+        every project-src missing-module import look third-party, N7-skipped
+        and silently KEPT). ``ls-tree`` discriminates three ways: with a
+        resolvable ref it exits 0 whether or not the path exists (stdout
+        empty on absence); a nonzero rc is a genuine git error (bad ref,
+        corrupt repo) and raises :class:`OriginProbeError` — undecidable,
+        so the caller reverts (mirrors ``unit_identical``'s fail-safe).
+        """
+        cp = _git(self.wt, "ls-tree", "--name-only", "origin/main", "--", relpath)
+        if cp.returncode != 0:
+            raise OriginProbeError(
+                f"git ls-tree failed probing origin/main:{relpath}"
+                f" (rc={cp.returncode}): {cp.stderr.strip()}"
+            )
+        return bool(cp.stdout.strip())
 
     def unit_identical(self, unit: str) -> bool:
         if unit not in self._unit_cache:
@@ -303,9 +343,21 @@ class _ScanContext:
             self._bindings_cache[relpath] = _top_level_bindings(tree)
         return self._bindings_cache[relpath]
 
-    def submodule_exists(self, package_init_relpath: str, name: str) -> bool:
-        pkg_dir = (self.wt / package_init_relpath).parent
-        return (pkg_dir / f"{name}.py").is_file() or (pkg_dir / name / "__init__.py").is_file()
+    def resolve_submodule(self, package_init_relpath: str, name: str) -> str | None:
+        """Worktree-relative path of ``<pkg>.<name>``, or None when absent.
+
+        Returns the child package's ``__init__.py`` or the child module file;
+        the package directory wins over a same-named module file, mirroring
+        the import system's precedence. Supersedes the round-1
+        ``submodule_exists`` (existence-only), whose bare-bool answer let a
+        present-but-skewed issue-namespaced child escape the strict identity
+        arm (#2412 r2 parent-package-strict-bypass).
+        """
+        pkg_rel = package_init_relpath.rsplit("/", 1)[0]
+        for cand in (f"{pkg_rel}/{name}/__init__.py", f"{pkg_rel}/{name}.py"):
+            if (self.wt / cand).is_file():
+                return cand
+        return None
 
 
 def _check_module(ctx: _ScanContext, module: str, names: list[str], ie_guarded: bool) -> str | None:
@@ -314,7 +366,13 @@ def _check_module(ctx: _ScanContext, module: str, names: list[str], ie_guarded: 
     candidates = (f"{base}/__init__.py", f"{base}.py")
     wt_path = next((c for c in candidates if (ctx.wt / c).is_file()), None)
     if wt_path is None:
-        if not any(ctx.origin_has(c) for c in candidates):
+        try:
+            origin_present = any(ctx.origin_has(c) for c in candidates)
+        except OriginProbeError as exc:
+            # A git error is undecidable — never read as absent-at-origin
+            # (fail-safe: revert; mirrors unit_identical's error handling).
+            return f"origin/main probe failed for module {module}: {exc}"
+        if not origin_present:
             # Neither the worktree nor origin/main has it: not a project-src
             # import (third-party/stdlib) — SKIP (N7). A project-src module
             # absent from BOTH trees would be a pre-existing origin/main red,
@@ -351,8 +409,26 @@ def _check_module(ctx: _ScanContext, module: str, names: list[str], ie_guarded: 
     for name in names:
         if name in bindings or star:
             continue
-        if wt_path.endswith("/__init__.py") and ctx.submodule_exists(wt_path, name):
-            continue  # submodule import — the dominant real shape
+        if wt_path.endswith("/__init__.py"):
+            child = ctx.resolve_submodule(wt_path, name)
+            if child is not None:
+                # Submodule import — the dominant real shape. The CHILD may be
+                # issue-namespaced even when the PARENT package is shared
+                # (`from ...experiments import behavior_testbed_545 as pkg`
+                # resolves the shared experiments/__init__.py), so route the
+                # resolved child through the SAME strict owning-unit identity
+                # arm before accepting it — existence alone silently KEPT a
+                # present-but-skewed child package (#2412 r2
+                # parent-package-strict-bypass; NOT ie-exempt, same N2
+                # rationale as the module-level strict arm above).
+                child_unit = owning_strict_unit(child)
+                if child_unit is not None and not ctx.unit_identical(child_unit):
+                    return (
+                        f"issue-namespaced unit {child_unit} differs from origin/main"
+                        f" (strict identity at owning-component grain;"
+                        f" submodule {module}.{name})"
+                    )
+                continue
         if ie_guarded:
             continue
         return f"symbol {name} unsatisfiable in module {module} ({wt_path})"

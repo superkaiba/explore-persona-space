@@ -869,6 +869,30 @@ def test_sibling_issue_file_arm_step5a_only():
 _SIBLING_PROBE_HELPER = Path(__file__).resolve().parents[1] / "scripts" / "step5a_sibling_probe.py"
 
 
+def _executable_only(source: str) -> str:
+    """Source with comments + docstrings stripped (ast round-trip).
+
+    A string pin on the returned text can only be satisfied by EXECUTABLE
+    code — prose in a module/function docstring (or a comment) cannot shadow
+    a removed call (#2412 r2 NIT process-fence-pin-docstring-shadow). NOTE:
+    ``ast.unparse`` renders string literals with SINGLE quotes — pins that
+    match verbatim double-quoted source text must keep asserting on the raw
+    source instead.
+    """
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            body = node.body
+            if (
+                body
+                and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)
+            ):
+                node.body = body[1:] or [ast.Pass()]
+    return ast.unparse(tree)
+
+
 def test_sibling_sync_import_probe_pins():
     """#2208, hardened #2412: the sibling arm probes import-satisfiability of
     every synced sibling TEST file BEFORE the sync commit, via
@@ -896,13 +920,20 @@ def test_sibling_sync_import_probe_pins():
     helper = _SIBLING_PROBE_HELPER.read_text()
 
     # --- arm-side: invocation + ROOT resolution ---------------------------
+    # The pinned literal INCLUDES the `(cd "$ROOT" && ...)` subshell linkage:
+    # pinning the invocation and the ROOT line as independent substrings lets
+    # a refactor drop the cd and run the fork-era WORKTREE helper copy while
+    # both pins still pass — scratch fixtures cannot distinguish, since a
+    # standalone clone's git-common-dir resolves to itself, ROOT == WT there
+    # (#2412 r2 pin-cd-root-linkage-unpinned).
     invocation = (
-        "uv run python scripts/step5a_sibling_probe.py "
-        '--worktree "$WT" --kept-out "$KEPT_OUT" -- "${SIBLING_SYNCED[@]}"'
+        '(cd "$ROOT" && uv run python scripts/step5a_sibling_probe.py '
+        '--worktree "$WT" --kept-out "$KEPT_OUT" -- "${SIBLING_SYNCED[@]}")'
     )
     assert invocation in arm, (
         "the sibling arm must invoke the factored probe helper on the synced "
-        "set (kept-list plumbed back via --kept-out; #2412)"
+        'set FROM THE MAIN CHECKOUT — inside the `(cd "$ROOT" && ...)` '
+        "subshell (kept-list plumbed back via --kept-out; #2412)"
     )
     root = 'ROOT="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")"'
     assert root in arm, (
@@ -982,25 +1013,33 @@ def test_sibling_sync_import_probe_pins():
     )
 
     # --- helper-side: the MF1 process-GROUP kill fence ---------------------
+    # The fence pins assert on EXECUTABLE code only (docstrings + comments
+    # stripped): the helper's module docstring quotes the same literals as
+    # prose, so a whole-file substring pin would survive a refactor that
+    # removes the killpg calls while keeping the documentation (#2412 r2 NIT
+    # process-fence-pin-docstring-shadow).
+    helper_code = _executable_only(helper)
     assert 'parser.add_argument("--kill-after", type=float, default=15)' in helper, (
         "the SIGKILL escalation delay must default to 15 s (migrating the "
         "retired arm's `timeout --kill-after=15s`; #2412 MF1)"
     )
-    assert "start_new_session=True" in helper, (
+    assert "start_new_session=True" in helper_code, (
         "probe subprocesses must run with start_new_session=True so the "
         "child's pgid == its pid and the whole process GROUP is signalable "
-        "(#2412 MF1)"
+        "(#2412 MF1; executable code, not prose)"
     )
-    assert "os.killpg" in helper, (
+    assert "os.killpg" in helper_code, (
         "fence expiry must signal the process GROUP (os.killpg) — a naive "
         "single-process kill terminates only the immediate child (uv); the "
         "pytest GRANDCHILDREN inherit the stdout pipe and the post-kill "
         "communicate() blocks on it, so the helper HANGS instead of "
-        "reverting (the MF1 wedge, the #2409 timeout class)"
+        "reverting (the MF1 wedge, the #2409 timeout class; executable "
+        "code, not prose)"
     )
-    assert "signal.SIGKILL" in helper, (
+    assert "signal.SIGKILL" in helper_code, (
         "the fence must escalate to SIGKILL-to-group — SIGKILL closes every "
-        "inherited pipe end so the final communicate() returns (#2412 MF1)"
+        "inherited pipe end so the final communicate() returns (#2412 MF1; "
+        "executable code, not prose)"
     )
 
     # --- helper-side: verbatim #2208 revert branches + skip-line anchors ---
