@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2421,
+  "highest_id": 2422,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10986,6 +10986,13 @@
       "path": "tasks/proposed/2421",
       "status": "proposed",
       "title": "Step 10d lint-gate fences not contention-aware \u2014 120s scratch-checkout + 900s lint fences crash healthy gates under #1962 fail-open concurrency"
+    },
+    "2422": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2422",
+      "status": "proposed",
+      "title": "Briefs pointing a worktree-based reviewer at task state must pin the absolute main-checkout path (worktree plans/plan.md resolves to a stale version)"
     },
     "244": {
       "has_clean_result": false,
