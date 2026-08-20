@@ -1634,3 +1634,31 @@ bookkeeping. Sentinel convention is SERIES-local: this review series' r1
 head was v1 (round-based) even though the same task's earlier crash-fix
 series used sentinel==impl-version — read the r1 marker's own head, never
 assume the task-wide convention.
+
+**FAIL+FAIL union fix round with ledger-persisted ids + sibling's FULL
+mid-compose disposition set (#823 P-Gen r4 = sentinel v7, 2026-08-20):**
+three composable deltas on the #2332-r2 union shape. (a) When both prior
+verdicts' findings are ALREADY persisted as real ledger ids, key the
+closure ledger on THOSE ids (no pseudo-IDs) and still inline both verdicts
+as the Evidence+Fix acceptance contracts — tags stripped, the Codex
+verdict's `CONCERN:: ` rows blockquoted (`> `), asserts: own-head==1 /
+close==1 / prior tags==0 / `^CONCERN:: `==1 / `^> CONCERN:: `==6. (b) The
+#2326 ts-pin (rows `ts <= round-landing ts`) excluded not just one raised
+row but the SIBLING TWIN'S ENTIRE completed round output (7 `addressed`
+rows + 1 new `raised` row) landing mid-compose — snapshot framing "pinned
+to the round-4 landing" stays truthful; REPORT to the orchestrator that
+the Codex verdict may mint a DIFFERENT kebab-id for the same residual the
+sibling already raised (dedup is the orchestrator's merge job, never the
+composer's). (c) An orchestrator-found NEW residual handed in the brief
+("put this FIRST") composes as its own `# HIGHEST-VALUE CHECK (adjudicate
+FIRST)` section: the orchestrator's reading + apparent consequence quoted
+with line anchors, THREE explicit questions (reading correct? production
+path closed incl. the smoke-artifact-verified-as-production path?
+severity for the held wave?), evidence-required-either-way framing
+("its own reading has been wrong twice this round — take nothing on
+trust"), and a mandatory Step 3.7 class sweep naming the class lineage
+(round 3 trusted the record set; round 4 trusts the domain size) —
+severity never pre-resolved. Landing-note round record (no impl marker)
+composes per the #823 P-Gen v13 variant unchanged; a fix round whose tests
+span FOUR files patches every "both files"/"two files" rubric span and
+asserts zero residual occurrences.
