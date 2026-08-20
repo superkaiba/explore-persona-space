@@ -124,8 +124,10 @@ def test_loaded_and_declared_empty_overlap_raises(anchors_dir: Path) -> None:
     # Shard 1 LOADS (ctx_a, 0); shard 2 declares the same key empty ->
     # duplicate/stale-shard overlap, its own error leg.
     _write_jsonl(anchors_dir, ROWS)
-    _write_pt(anchors_dir, ROWS, empty_rows=[], name="va_anchors_gate_w0.pt")
-    _write_pt(anchors_dir, [("ctx_a", 0)], empty_rows=[0], name="va_anchors_gate_w1.pt")
+    _write_pt(anchors_dir, ROWS, empty_rows=[], name="va_anchors_gate_fact_user_name_w0.pt")
+    _write_pt(
+        anchors_dir, [("ctx_a", 0)], empty_rows=[0], name="va_anchors_gate_fact_user_name_w1.pt"
+    )
     with pytest.raises(AssertionError, match=r"declared\s+empty"):
         P.probe_analysis(anchors_dir)
 
