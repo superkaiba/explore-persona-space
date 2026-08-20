@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from explore_persona_space.analysis.paper_plots import (
+    figsize_iclr_panels,
+    paper_color,
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -33,6 +35,7 @@ from explore_persona_space.analysis.paper_plots import (
 ROOT = Path(__file__).resolve().parents[1]
 MB = ROOT / "eval_results" / "issue_1901" / "metric_battery"
 OUT = ROOT / "figures" / "issue_1901"
+PAPER_OUT = ROOT / "figures" / "paper"
 
 POOLS = ["test", "passb_5000", "distr_20000", "distr_100000"]
 POOL_N = {"test": 1000, "passb_5000": 5000, "distr_20000": 20000, "distr_100000": 100000}
@@ -585,9 +588,113 @@ def fig_regime_flip(l19: dict, p18: dict) -> None:
     plt.close(fig)
 
 
+def fig_paper_c1_scaling(l19: dict) -> None:
+    """ICLR paper figure (c1_linear R1): train-size sweep + pool-size nonlinear gap.
+
+    Panel A: euclidean acc@1 (pool 1,000) vs number of training contexts for the
+    ridge map and the identity+bias baseline (95% bootstrap CI whiskers), with the
+    963k-only neural maps as end points. Panel B: paired nonlinear-minus-ridge
+    acc@1 gap vs candidate pool size (95% bootstrap CI on shared draws).
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.15))
+    c_ridge = "#0072B2"  # 1901 estimator convention: blue = linear map (ridge)
+    c_ib = paper_color("identity_bias")
+    c_mlp = paper_color("neural_map")
+
+    xs = [50, 3600, 963444]
+    series = {
+        "ridge": (
+            ["ridge_n50_fixedlam", "ridge_3600", "ridge"],
+            c_ridge,
+            "o",
+            "linear map (ridge)",
+        ),
+        "ib": (
+            ["identity_bias_n50", "identity_bias_3600", "identity_bias"],
+            c_ib,
+            "s",
+            "identity + bias",
+        ),
+    }
+    for keys, col, mk, lbl in series.values():
+        pts = [_acc1(l19["arms"][k], "test") for k in keys]
+        ys = [p[0] for p in pts]
+        lo = [p[0] - p[1] for p in pts]
+        hi = [p[2] - p[0] for p in pts]
+        ax1.errorbar(
+            xs, ys, yerr=[lo, hi], marker=mk, color=col, lw=1.4, ms=4, capsize=2, label=lbl
+        )
+    for key, mk, lbl, xoff in (
+        ("mlp_w8192", "^", "neural map (w=8192)", 0.55),
+        ("mlp_w32768", "D", "neural map (w=32768)", 1.0),
+    ):
+        y, ylo, yhi = _acc1(l19["arms"][key], "test")
+        ax1.errorbar(
+            [963444 * xoff],
+            [y],
+            yerr=[[y - ylo], [yhi - y]],
+            marker=mk,
+            color=c_mlp,
+            ls="",
+            ms=4.5,
+            capsize=2,
+            label=lbl,
+        )
+    ax1.axhline(0.001, color="black", lw=0.7, ls=":")
+    ax1.set_xscale("log")
+    ax1.set_ylim(0, 1.0)
+    ax1.set_xlabel("training contexts")
+    ax1.set_ylabel("retrieval acc@1 (pool 1{,}000)".replace("{,}", ","))
+    ax1.legend(loc="upper left", handlelength=1.4, borderaxespad=0.2)
+
+    pool_xs = [POOL_N[p] for p in POOLS]
+    for key, ls, lbl in (
+        ("mlp_w8192_minus_ridge", "--", "neural (w=8192) $-$ ridge"),
+        ("mlp_w32768_minus_ridge", "-", "neural (w=32768) $-$ ridge"),
+    ):
+        c = l19["paired_contrasts"][key]
+        ys = [c[f"acc1_euclid_{p}"]["mean"] for p in POOLS]
+        lo = [ys[i] - c[f"acc1_euclid_{p}"]["lo"] for i, p in enumerate(POOLS)]
+        hi = [c[f"acc1_euclid_{p}"]["hi"] - ys[i] for i, p in enumerate(POOLS)]
+        ax2.errorbar(
+            pool_xs,
+            ys,
+            yerr=[lo, hi],
+            marker="o",
+            color=c_mlp,
+            ls=ls,
+            lw=1.4,
+            ms=3.5,
+            capsize=2,
+            label=lbl,
+        )
+    ax2.axhline(0.0, color="black", lw=0.7, ls=":")
+    ax2.set_xscale("log")
+    ax2.set_xlabel("candidate pool size")
+    ax2.set_ylabel("acc@1 gap over ridge")
+    ax2.legend(loc="upper left", handlelength=1.6, borderaxespad=0.2)
+
+    PAPER_OUT.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_scaling_train_pool", dir=PAPER_OUT)
+    plt.close(fig)
+
+
 def main() -> None:
-    set_paper_style("blog")
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
+    args = ap.parse_args()
+
     l19, p18, boot19 = _load()
+    if args.style == "iclr":
+        # Paper pathway (#2094 precedent): ICLR-styled figures under new stems in
+        # figures/paper/ — never overwrites the blog-styled issue stems.
+        set_paper_style("iclr")
+        fig_paper_c1_scaling(l19)
+        print("done:", sorted(p.name for p in PAPER_OUT.glob("c1_scaling_*")))
+        return
+    set_paper_style("blog")
     OUT.mkdir(parents=True, exist_ok=True)
     fig_hero_scatter(l19, p18)
     fig_ladder_grid(l19, p18)

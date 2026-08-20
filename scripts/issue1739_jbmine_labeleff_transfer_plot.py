@@ -172,7 +172,98 @@ def plot_transfer() -> None:
     print(f"[done] wrote {OUT_TR}")
 
 
+def plot_label_efficiency_iclr() -> None:
+    """--style iclr: Overleaf-paper variant, pre-specified layer only.
+
+    PR-AUC (average precision) vs labelled in-domain contexts at layer 19.
+    Colour scheme follows the paper's map-arm convention: featured blue =
+    through-the-map reads (open-marker dashed = the plain context-vector
+    probe, the context-side comparison), oracle purple = the answer-space
+    oracle reference. Error bars: SD over 5 draws per budget.
+    """
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_full,
+        paper_color,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    r = json.loads((DEST / "label_efficiency_results.json").read_text())
+    budgets = r["budgets"]
+    base = r["eval"]["base_rate"]
+    lay = r["layers"][PRESPEC_LAYER]
+    set_paper_style("iclr")
+    blue = paper_color("instruct")
+    purple = paper_color("oracle_answer")
+    black = paper_color("reference")
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.60))
+    series = [
+        ("A", "probe on the context vector", dict(ls="--", marker="o", mfc="white", mec=blue)),
+        ("D_indomain", "probe through the in-domain map", dict(ls="-", marker="s", mfc=blue)),
+        (
+            "D_merged",
+            "probe through the merged map",
+            dict(ls="-", marker="^", mfc=blue, alpha=0.55),
+        ),
+    ]
+    for arm, label, kw in series:
+        means = [lay["curves"][str(n)][arm]["pr_auc_mean"] for n in budgets]
+        sds = [lay["curves"][str(n)][arm]["pr_auc_sd"] for n in budgets]
+        ax.errorbar(
+            budgets,
+            means,
+            yerr=sds,
+            color=blue,
+            label=label,
+            lw=1.0,
+            ms=3.5,
+            capsize=1.6,
+            markeredgewidth=0.8,
+            **kw,
+        )
+    ref = lay["full_label_ref"]
+    ax.axhline(
+        ref["A"],
+        ls="-.",
+        color=blue,
+        lw=0.7,
+        label=f"context probe, all {ref['n_train']:,} labels",
+    )
+    ax.axhline(ref["E_oracle"], ls="--", color=purple, lw=0.8, label="real-answer oracle probe")
+    ax.axhline(base, ls=":", color=black, lw=0.7, label="chance")
+    ax.set_xscale("log")
+    ax.set_xticks(budgets)
+    ax.set_xticklabels([str(n) for n in budgets])
+    ax.minorticks_off()
+    ax.set_xlabel("labelled in-domain contexts")
+    ax.set_ylabel("PR-AUC (average precision)")
+    ax.set_ylim(0, 1.05)
+    ax.legend(frameon=False, loc="center right", fontsize=6.5)
+    fig.tight_layout()
+    out_dir = Path("/home/thomasjiralerspong/explore-persona-space/figures/paper")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c5_jailbreak_mining", dir=out_dir)
+    plt.close(fig)
+    print(f"wrote {out_dir / 'c5_jailbreak_mining'}.png/.pdf (iclr)")
+
+
 def main() -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--style",
+        choices=("blog", "iclr"),
+        default="blog",
+        help=(
+            "iclr: render ONLY the paper label-efficiency variant into figures/paper/ "
+            "and exit; the scratch-report figures are untouched"
+        ),
+    )
+    args = ap.parse_args()
+    if args.style == "iclr":
+        plot_label_efficiency_iclr()
+        return 0
     plot_label_efficiency()
     plot_transfer()
     return 0

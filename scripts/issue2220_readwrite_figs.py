@@ -40,6 +40,8 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+if not (ROOT / "eval_results").exists():
+    ROOT = Path("/home/thomasjiralerspong/explore-persona-space")
 EV = ROOT / "eval_results" / "issue_2220"
 # savefig_paper prepends dir="figures/" itself — a "figures/..." stem would
 # double-nest (the #613 trap), so the stem carries only the issue subdir.
@@ -292,7 +294,113 @@ def fig_margin(margin: dict) -> None:
     plt.close(fig)
 
 
+def fig_hero1_iclr(decisive: dict) -> None:
+    """--style iclr: Overleaf-paper variant of the decisive steering bars.
+
+    Same cells as ``fig_hero1`` at final ICLR size into figures/paper/. Hatch
+    is banned under the iclr style, so injection SITE is encoded by fill
+    (solid = answer tokens, open = context token) and per-bar value labels are
+    stripped (the LaTeX caption carries the key numbers). Colours bind by
+    direction FAMILY through PAPER_COLORS: featured blue = map-read
+    directions (light shade = the prefix arm), persona-vector sky blue =
+    mean-difference directions (light shade = the raw unfiltered variant),
+    null gray = the shuffled-label and random controls (light shade = random).
+    """
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_panels,
+        paper_color,
+        set_paper_style as _sps,
+    )
+
+    _sps("iclr")
+    fam_color = {
+        "mapread_ctx": paper_color("instruct"),
+        "mapread_prefix": "#7FB3D8",
+        "rb": paper_color("persona_vector"),
+        "rawmeandiff": "#A7D4F0",
+        "shuffled": paper_color("null"),
+        "random": "#C4C4C4",
+    }
+    dir_label = {
+        "mapread_ctx": "map read\n(context)",
+        "mapread_prefix": "map read\n(prefix)",
+        "rb": "persona\nvector",
+        "rawmeandiff": "raw mean-\ndifference",
+        "shuffled": "shuffled-\nlabel map",
+        "random": "random",
+    }
+    dr = decisive["delta_rate"]
+    nb = decisive["null_band"]
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.2), sharey=True)
+    for ax, beh in zip(axes, ["evil", "sycophancy"], strict=True):
+        cells = dr[beh]
+        edge = nb[beh]["upper_edge_boot97p5"]
+        if edge > 0:
+            ax.axhspan(0, edge, color="0.85", alpha=0.6, zorder=0)
+        ax.axhline(edge, color="0.45", linestyle=":", linewidth=0.8, zorder=1)
+        width = 0.38
+        for di, d in enumerate(DIRS):
+            for pi, pos in enumerate(POS):
+                match = [k for k in cells if f"__direction{d}__" in k and f"__position{pos}__" in k]
+                assert len(match) == 1, (beh, d, pos, match)
+                v = cells[match[0]]
+                y = v["delta_rate"]
+                lo, hi = v["ci95"]
+                x = di + (pi - 0.5) * width
+                kw = (
+                    dict(color=fam_color[d], edgecolor="white", linewidth=0.3)
+                    if pos == "answer"
+                    else dict(color="white", edgecolor=fam_color[d], linewidth=0.9)
+                )
+                ax.bar(
+                    x,
+                    y,
+                    width * 0.92,
+                    yerr=[[max(0.0, y - lo)], [max(0.0, hi - y)]],
+                    capsize=1.5,
+                    error_kw=dict(linewidth=0.6, ecolor="0.25"),
+                    zorder=3,
+                    **kw,
+                )
+        ax.set_xticks(range(len(DIRS)))
+        ax.set_xticklabels([dir_label[d] for d in DIRS], fontsize=6)
+        ax.set_title(f"{beh.capitalize()} (layer {BEH_LAYER[beh]})")
+        ax.set_ylim(-0.06, 1.05)
+    axes[0].set_ylabel("$\\Delta$ judged behavior rate")
+    from matplotlib.patches import Patch
+
+    handles = [
+        Patch(facecolor="0.35", edgecolor="white", label="injected at answer tokens"),
+        Patch(facecolor="white", edgecolor="0.35", linewidth=0.9, label="injected at context token"),
+        Patch(facecolor="0.85", alpha=0.6, label="selection-symmetric null band (97.5%)"),
+    ]
+    axes[0].legend(handles=handles, loc="upper left", fontsize=6, frameon=False)
+    fig.tight_layout()
+    out_dir = Path("/home/thomasjiralerspong/explore-persona-space/figures/paper")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c5_steering_boundary", dir=out_dir)
+    plt.close(fig)
+    print(f"wrote {out_dir / 'c5_steering_boundary'}.png/.pdf (iclr)")
+
+
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--style",
+        choices=("blog", "iclr"),
+        default="blog",
+        help=(
+            "iclr: render ONLY the paper decisive-bars variant into figures/paper/ "
+            "and exit; the committed blog-register figures are untouched"
+        ),
+    )
+    args = ap.parse_args()
+    if args.style == "iclr":
+        fig_hero1_iclr(_load(EV / "decisive" / "delta_rate_percell.json"))
+        return
+
     set_paper_style()  # blog register
     decisive = _load(EV / "decisive" / "delta_rate_percell.json")
     localize = _load(EV / "localize" / "dose_response.json")
