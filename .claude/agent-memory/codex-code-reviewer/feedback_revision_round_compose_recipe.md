@@ -1688,3 +1688,25 @@ yourself instruction naming each registry symbol — the prior round FAILed on
 29-vs-32 with three reviewers computing three ways; residual mismatch =
 substantive per the ruling (non-conforming redo of an explicit item), not
 strippable marker-shape.
+
+**Unimplementable-prescription closure round (#2412 r2, 2026-08-20):** when
+the round-1 reviewers AND reconciler all prescribed a fix the orchestrator
+later PROVED unimplementable by VM reproduction (`git cat-file -e` exits 128
+for missing-path-at-valid-ref AND bad-ref alike — no rc==1 split exists, git
+2.34.1), compose the #2147-cr4 ESTABLISHED FACTS shape but aimed at the
+PRESCRIPTION rather than the finding's mechanism: state the reproduction as
+established (the twin cannot re-run write-bearing git probes), BAN re-raising
+the literal prescription, frame the implementer's replacement (ls-tree
+three-way discrimination) as serving the prescription's INTENT (git error ⇒
+undecidable ⇒ revert), and hand the twin a scoped correctness checklist for
+the REPLACEMENT (empty-stdout-absent leg, tree-vs-blob path shapes, per-file
+vs helper-wide fail grain adjudicated by consequence). The closure-ledger
+status line for that item judges intent delivery, never the dead literal.
+Also from this compose: (a) a brief's output-contract code block can carry a
+STALE sentinel digit (`v1` on a round-2 brief) — treat the block as SHAPE,
+set the sentinel by the task's convention (r1 posted v1 ⇒ r2 posts v2 =
+review round = impl `epm:results` version), and flag the divergence in the
+return; (b) fixture-discrimination claims ("ran it pre-fix, saw the silent
+KEEP") translate to the static trace: `git show <round-parent>:<helper>` +
+trace the fixture scenario through PRE-fix control flow, refuted claim =
+fabricated coverage.
