@@ -401,6 +401,10 @@ def _fixture_side(root: Path, scores_dir: Path, gates_dir: Path, mod) -> None:
             "context_id": LB.context_id(V, "d1"),
         }
     )
+    # Assumption-9 reconciliation input: stored token count == FakeTok's word
+    # count exactly (the q25 side re-tokenizes EVERY row against this field).
+    for r in grid_rows:
+        r["n_completion_tokens"] = len(r["text"].split())
     _write_jsonl(grid_dir / "shard_000.jsonl", grid_rows)
 
     anchor_rows, coh_anch, hol_anch = [], [], []
@@ -715,6 +719,128 @@ def test_empty_steered_selection_raises_before_any_unit(decay_cfg):
         assert kept and len(kept) < len(rows)  # nonselected shard rows retained
         _write_jsonl(p, kept)
     with pytest.raises(RuntimeError, match="EMPTY steered selection"):
+        DEC._build_sides(cfg)
+
+
+def _rewrite_shard(path: Path, fn):
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    rows = fn(rows)
+    _write_jsonl(path, rows)
+    return rows
+
+
+def test_anchor_only_side_refused_when_all_steered_under_floor(decay_cfg):
+    # Review r3 item 1 (Door A): a NONEMPTY steered selection whose every row
+    # fails _segment's 48-token floor emits ZERO steered units while anchors
+    # survive — the reconciler-ruled anchor-only outcome, reached through the
+    # emit-time filter the r2 selection guard does not see. Must refuse
+    # (report-only retention counters are not a gate).
+    cfg = decay_cfg
+    p = cfg.q25_in_root / PLJ.LADDER_RAW / "grid" / "shard_000.jsonl"
+
+    def shorten(rows):
+        for r in rows:
+            if r["cell"].startswith("install_") and r["arm"] == "steered":
+                r["text"] = SHORT_TEXT
+                r["n_completion_tokens"] = len(SHORT_TEXT.split())
+        return rows
+
+    _rewrite_shard(p, shorten)
+    with pytest.raises(RuntimeError, match="ANCHOR-ONLY"):
+        DEC._build_sides(cfg)
+
+
+def test_absent_pair_slot_registers_missing(decay_cfg):
+    # Review r3 item 2 (Door B, the Codex probe verbatim): delete every
+    # selected pair/slot but one COMPLETE pair — the draw-level coverage
+    # equality is blind (expected shrinks with the staged rows); the
+    # gate+manifest-derived lattice check must register the absent pair/slot
+    # as MISSING and fail loud before any unit is built.
+    cfg = decay_cfg
+    p = cfg.q25_in_root / PLJ.LADDER_RAW / "grid" / "shard_000.jsonl"
+
+    def drop_d2(rows):
+        kept = [
+            r
+            for r in rows
+            if not (
+                r["cell"].startswith("install_")
+                and r["arm"] == "steered"
+                and r["pair_id"] == f"install_{V}::d2"
+            )
+        ]
+        assert kept and len(kept) < len(rows)
+        return kept
+
+    _rewrite_shard(p, drop_d2)
+    with pytest.raises(RuntimeError, match="lattice mismatch"):
+        DEC._build_sides(cfg)
+
+
+def test_tokgate_dropped_pair_absence_is_legitimate(decay_cfg):
+    # The lattice subtracts G0 tokgate-dropped pairs (a dropped pair generates
+    # ZERO rows in every arm per LA.registered_row_keys) — its absence from
+    # the staged rows is legitimate, never a lattice-mismatch refusal. The
+    # report rides the q35 side; the q25 side has none by design (#2162 never
+    # re-tokenized the ladder bank).
+    cfg = decay_cfg
+    tokrep = {
+        "pairs": [
+            {"pair_id": f"install_{V}::d1", "intact": True},
+            {"pair_id": f"install_{V}::d2", "intact": False},
+        ],
+        "directions": {f"install_{V}": {"testable": True}},
+        "bank_sha": "x" * 16,
+    }
+    (cfg.q35_gates_dir / "token_identity_report_ladder.json").write_text(
+        json.dumps(tokrep), encoding="utf-8"
+    )
+    p = cfg.q35_in_root / LJ.LADDER_RAW / "grid" / "shard_000.jsonl"
+    _rewrite_shard(p, lambda rows: [r for r in rows if r["pair_id"] != f"install_{V}::d2"])
+    sides = DEC._build_sides(cfg)  # must not raise
+    steered_carriers = {
+        u.source["carrier"] for u in sides["q35"].units if u.source["arm"] == "steered"
+    }
+    assert steered_carriers == {"d1"}
+
+
+def test_q25_token_count_reconciliation_deviation_fails(decay_cfg):
+    # Plan v8 assumption 9 (R-2): re-tokenize EVERY q25 grid row and reconcile
+    # against stored n_completion_tokens within ±2 on the FULL corpus.
+    cfg = decay_cfg
+    p = cfg.q25_in_root / PLJ.LADDER_RAW / "grid" / "shard_000.jsonl"
+
+    def deviate(rows):
+        rows[0]["n_completion_tokens"] = len(rows[0]["text"].split()) + 3  # past ±2
+        return rows
+
+    _rewrite_shard(p, deviate)
+    with pytest.raises(RuntimeError, match="assumption 9"):
+        DEC._build_sides(cfg)
+
+
+def test_q25_token_count_reconciliation_within_tolerance_passes(decay_cfg):
+    cfg = decay_cfg
+    p = cfg.q25_in_root / PLJ.LADDER_RAW / "grid" / "shard_000.jsonl"
+
+    def nudge(rows):
+        rows[0]["n_completion_tokens"] = len(rows[0]["text"].split()) + 2  # at the bound
+        return rows
+
+    _rewrite_shard(p, nudge)
+    DEC._build_sides(cfg)  # must not raise
+
+
+def test_q25_token_count_missing_field_fails(decay_cfg):
+    cfg = decay_cfg
+    p = cfg.q25_in_root / PLJ.LADDER_RAW / "grid" / "shard_000.jsonl"
+
+    def strip_field(rows):
+        del rows[0]["n_completion_tokens"]
+        return rows
+
+    _rewrite_shard(p, strip_field)
+    with pytest.raises(RuntimeError, match="assumption 9"):
         DEC._build_sides(cfg)
 
 

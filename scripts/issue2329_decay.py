@@ -83,6 +83,7 @@ logger = logging.getLogger("issue2329.decay")
 MODEL_KEYS = ("q25", "q35")
 DECAY_K = 4  # contiguous token quartiles
 MIN_COMPLETION_TOKENS = 48  # the ONLY dispatch filter (plan §4.1 item 4)
+RETOK_TOL = 2  # assumption-9 BPE-boundary bound on |retok - stored n_completion_tokens|
 COHERENCE_THRESHOLD = 60.0  # reduce-time conditional estimand only
 DENOM_BAR = 0.125  # |ceiling - floor| floor on the 0-1 normalized scale
 DECAY_BOOT_SEED = 21627
@@ -286,6 +287,83 @@ def _new_arm_counter() -> dict:
     }
 
 
+def _reconcile_token_counts(tok, grid_rows: list[dict], key: str) -> None:
+    """Plan v8 assumption 9 (review R-2): the q25 grid shards are the REUSED
+    #2162 artifact — re-tokenize EVERY staged completion and reconcile against
+    the stored ``n_completion_tokens`` within the BPE-boundary tolerance
+    (±RETOK_TOL) on the FULL consumed corpus, BEFORE any judge spend. A
+    deviation (or a missing field) means the stored text may not be the raw
+    completion that tokenization counted — investigate before judging.
+    Measured at implementation time on the real 1,320-row corpus at parent
+    revision 49d7f001: retok − stored == 0 for every row."""
+    deviations: list[tuple] = []
+    for r in grid_rows:
+        stored = r.get("n_completion_tokens")
+        n = len(tok.encode(r["text"], add_special_tokens=False))
+        if stored is None or abs(n - int(stored)) > RETOK_TOL:
+            deviations.append((r["pair_id"], r["slot"], r["arm"], r["draw"], stored, n))
+    if deviations:
+        raise RuntimeError(
+            f"[{key}] token-count reconciliation FAILED (plan assumption 9): "
+            f"{len(deviations)} of {len(grid_rows)} staged grid rows deviate from "
+            f"stored n_completion_tokens by more than ±{RETOK_TOL} on re-tokenization "
+            f"(or lack the field) — examples (pair_id, slot, arm, draw, stored, retok): "
+            f"{deviations[:5]}. Refusing before any judge unit is built."
+        )
+
+
+def _selected_pair_slot_lattice(
+    key: str,
+    gates_dir: Path,
+    pair_carrier: dict[str, str],
+    surviving: dict[str, list[str]],
+    pe_directions: set[str],
+) -> set[tuple[str, str]]:
+    """The FULL selected ``(pair_id, slot)`` lattice, derived from the bank
+    manifest + anchor-separation gate (+ the G0 token-identity report where one
+    exists) INDEPENDENT of the staged grid rows (review r3 item 2 / Codex
+    probe): a row-derived selection cannot see an ENTIRELY absent pair/slot,
+    so the estimand's denominator must come from the generation-side registry.
+
+    ``pair_id`` is ``<cell>::<carrier>`` for both banks (ladder_bank
+    ``build_bank_manifest``; verified against the staged parent bank at
+    revision 49d7f001 — the pair_id prefix equals the pairs' ``direction``
+    field for all 72 pairs). A G0 tokgate-dropped pair / untestable direction
+    generates ZERO rows in every arm (LA.registered_row_keys), so it is
+    subtracted; the q25 side legitimately has NO ladder token-identity report
+    (the #2162 parent never re-tokenized, plan §2 line 61) — absent report ⇒
+    no subtraction, while a MALFORMED report still fails loud inside
+    ``LA._read_token_identity``.
+    """
+    tok_dropped: set[str] = set()
+    untestable: set[str] = set()
+    if (gates_dir / "token_identity_report_ladder.json").exists():
+        tokrep = LA._read_token_identity(gates_dir)
+        tok_dropped = {r["pair_id"] for r in tokrep["pairs"] if not r["intact"]}
+        untestable = {d for d, rec in tokrep["directions"].items() if not rec["testable"]}
+    else:
+        logger.info(
+            "[lattice %s] no ladder token-identity report under %s (the parent-side "
+            "shape) — no tokgate subtraction",
+            key,
+            gates_dir,
+        )
+    lattice: set[tuple[str, str]] = set()
+    for pid, carrier in pair_carrier.items():
+        cell = pid.split("::", 1)[0]
+        if not cell.startswith("install_"):
+            continue
+        v = cell[len("install_") :]
+        if v not in surviving or carrier not in surviving[v]:
+            continue
+        if pid in tok_dropped or cell in untestable:
+            continue
+        lattice.add((pid, "ce"))
+        if cell in pe_directions:
+            lattice.add((pid, "pe"))
+    return lattice
+
+
 def _raw_coherence_keys(scores_dir: Path, rid_wave: str, key_fields: tuple[str, ...]) -> set[tuple]:
     """Exact PRESENT-key set of one committed coherence wave.
 
@@ -364,6 +442,12 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
     import issue2329_judge as J62F  # fork loaders: identical schema both sides
 
     grid_rows = J62F.load_grid_rows(p["grid_dir"])
+    if key == "q25":
+        # Assumption 9 (R-2): the q25 shards are the REUSED parent artifact —
+        # reconcile stored token counts on the FULL consumed corpus before any
+        # judge spend. The q35 rows are fresh from this fork's own pinned-
+        # revision pipeline, whose G0 tokgate already gates token identity.
+        _reconcile_token_counts(tok, grid_rows, key)
     anchor_rows = J62F.load_anchor_rows(p["anchors_dir"])
     coh_grid = LA.load_grid_scores(p["scores_dir"], "coherence")
     coh_anch = LA.load_anchor_scores(p["scores_dir"], "coherence")
@@ -481,12 +565,32 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
         (r["pair_id"], r["slot"], "steered", int(r["draw"])) for r, _, _, _ in sel_grid
     }
     sel_pair_slots = {(r["pair_id"], r["slot"]) for r, _, _, _ in sel_grid}
+    # Review r3 item 2 (Codex probe): expected_grid shrinks WITH the staged
+    # rows, so the draw-level equality below is structurally blind to an
+    # ENTIRELY absent pair/slot — an absent cell silently changes the
+    # registered estimand's denominator. Assert the realized pair/slot set
+    # against the gate+manifest-derived lattice FIRST, then scope the present
+    # set to the FULL lattice rather than the realized selection (this widens
+    # what the draw-level assert sees; it narrows nothing).
+    full_lattice = _selected_pair_slot_lattice(
+        key, p["gates_dir"], pair_carrier, surviving, side.pe_directions
+    )
+    missing_ps = sorted(full_lattice - sel_pair_slots)
+    extra_ps = sorted(sel_pair_slots - full_lattice)
+    if missing_ps or extra_ps:
+        raise RuntimeError(
+            f"[{key}] selected pair/slot lattice mismatch: {len(missing_ps)} "
+            f"gate+manifest-derived pair/slot cell(s) with ZERO staged steered rows "
+            f"(examples: {missing_ps[:5]}); {len(extra_ps)} staged steered pair/slot "
+            f"cell(s) outside the derived lattice (examples: {extra_ps[:5]}). "
+            "Refusing before any judge unit is built (review r3 item 2)."
+        )
     present_grid = {
         k
         for k in _raw_coherence_keys(
             p["scores_dir"], "coherence.grid", ("pair_id", "slot", "arm", "draw")
         )
-        if k[2] == "steered" and (k[0], k[1]) in sel_pair_slots
+        if k[2] == "steered" and (k[0], k[1]) in full_lattice
     }
     _assert_coherence_coverage(f"{key} grid", expected_grid, present_grid)
     expected_anch = {(cid, int(r["draw"])) for _, _, _, _, cid, rows in sel_anch for r in rows}
@@ -531,6 +635,30 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
                 r.get("cap_hit"),
             )
 
+    # Review r3 item 1 (Door A): the r2 empty-selection guard closes the
+    # SELECTION door; this closes the EMIT door — a NONEMPTY selection whose
+    # every steered row fails _segment's 48-token floor emits zero steered
+    # units while anchors survive, building the same ANCHOR-ONLY judge units
+    # the reconciler ruled binding (it measured 192), via a different filter.
+    st = retention["steered"]
+    n_anchor_units = retention["ceiling"]["n_items"] + retention["floor"]["n_items"]
+    if st["n_items"] == 0 and n_anchor_units > 0:
+        dropped = sorted(st["tokens_dropped"])
+        dist = (
+            f"min={dropped[0]} median={dropped[len(dropped) // 2]} max={dropped[-1]}"
+            if dropped
+            else "none observed"
+        )
+        raise RuntimeError(
+            f"[{key}] ANCHOR-ONLY side: 0 of {st['n_completions_seen']} selected steered "
+            f"completions passed the {MIN_COMPLETION_TOKENS}-token segment floor "
+            f"(n_len_eligible={st['n_len_eligible']}, n_len_dropped={st['n_len_dropped']}; "
+            f"observed steered completion token counts, all below the floor: {dist}), "
+            f"while {n_anchor_units} anchor judge units survive "
+            f"(ceiling={retention['ceiling']['n_items']}, floor={retention['floor']['n_items']}). "
+            "Anchor-only units cannot define the registered steered-vs-ceiling contrast — "
+            "refusing before phase_wave/phase_reduce (review r3 item 1)."
+        )
     for arm, c in retention.items():
         c["mean_tokens_retained"] = (
             float(np.mean(c["tokens_retained"])) if c["tokens_retained"] else None
