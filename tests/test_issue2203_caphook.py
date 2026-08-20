@@ -162,6 +162,108 @@ def test_full_replace_broadcasts_h_def():
 
 
 # --------------------------------------------------------------------------- #
+# 1b. steer op (issue #2223-fu aggressive-strength arms)
+# --------------------------------------------------------------------------- #
+def test_steer_op_is_registered():
+    assert "steer" in caphook.OPS
+
+
+def test_steer_op_shifts_unit_projection_by_alpha():
+    """steer: <h_new,v̂> == <h,v̂> + alpha for EVERY row, unconditional; complement fixed."""
+    torch.manual_seed(11)
+    H = 8
+    v = torch.randn(H) * 2.5  # deliberately NON-unit — exercises v̂ normalization
+    v_hat = v / v.norm()
+    h = torch.randn(6, H)
+    proj_before = h @ v_hat
+    alpha = 1.7
+    h_new, praw, pu_before, pu_after = caphook.apply_cap_op(
+        h, "steer", v, v_hat, 0.0, torch.zeros(H), 0.0, alpha
+    )
+    # unconditional additive shift: EVERY row's unit projection moves by exactly alpha
+    assert torch.allclose(pu_after, proj_before + alpha, atol=1e-5)
+    assert torch.allclose(pu_before, proj_before, atol=1e-5)
+    assert torch.allclose(praw, h @ v, atol=1e-4)  # raw-v telemetry unchanged
+    # orthogonal complement preserved — only the axis component moved
+    orth = h - proj_before[:, None] * v_hat[None, :]
+    orth_new = h_new - (h_new @ v_hat)[:, None] * v_hat[None, :]
+    assert torch.allclose(orth, orth_new, atol=1e-5)
+    # negative alpha shifts the other way (sign faithful)
+    _, _, _, pu_dn = caphook.apply_cap_op(h, "steer", v, v_hat, 0.0, torch.zeros(H), 0.0, -alpha)
+    assert torch.allclose(pu_dn, proj_before - alpha, atol=1e-5)
+
+
+def test_alpha_is_inert_for_cap_axisreplace_fullreplace():
+    """Regression: a nonzero alpha does NOT change cap / axis_replace / full_replace outputs."""
+    torch.manual_seed(12)
+    H = 6
+    v = torch.randn(H)
+    v_hat = v / v.norm()
+    h = torch.randn(4, H)
+    h_def = torch.randn(H)
+    proj_def = float(h_def @ v_hat)
+    tau = float((h @ v_hat).median())  # some rows below τ, some above
+    for op in ("cap", "axis_replace", "full_replace"):
+        no_alpha, *_ = caphook.apply_cap_op(h, op, v, v_hat, tau, h_def, proj_def)
+        with_alpha, *_ = caphook.apply_cap_op(h, op, v, v_hat, tau, h_def, proj_def, 99.0)
+        assert torch.equal(no_alpha, with_alpha), op
+
+
+def test_steer_hook_threads_alpha_through_joint_axis_hooks():
+    """joint_axis_hooks(alpha_by_layer=...) wires the steer shift onto the REAL forward hook."""
+    model = _tiny_model()
+    H = model.config.hidden_size
+    layers = [0, 1]
+    alpha_by_layer = {0: 2.0, 1: -1.5}
+    stack = caphook.joint_axis_hooks(
+        model,
+        layers,
+        {li: torch.randn(H) for li in layers},
+        {li: 0.0 for li in layers},  # tau: telemetry-only for steer
+        {li: torch.randn(H) for li in layers},
+        op="steer",
+        position_set="context-end",
+        alpha_by_layer=alpha_by_layer,
+    )
+    for h, li in zip(stack.hooks, layers, strict=True):
+        assert h.op == "steer"
+        assert h.alpha == alpha_by_layer[li]
+    ids = torch.randint(1, model.config.vocab_size, (2, 4))
+    stack.arm_batch([4, 4])
+    stack.arm(4)
+    with stack:
+        model.generate(
+            ids,
+            attention_mask=torch.ones_like(ids),
+            do_sample=False,
+            max_new_tokens=2,
+            min_new_tokens=2,
+        )
+    realized = stack.realized_edits
+    assert realized is not None and len(realized) == len(layers)  # single-position prefill edit
+    for rec in realized:
+        before = rec["proj_unit_before"]  # (B,) at the context-end position
+        after = rec["proj_unit_after"]
+        assert torch.allclose(after, before + alpha_by_layer[rec["layer"]], atol=1e-4)
+
+
+def test_joint_axis_hooks_alpha_defaults_zero():
+    """alpha_by_layer=None => every steer hook's alpha is 0.0 (a no-op steer)."""
+    model = _tiny_model()
+    H = model.config.hidden_size
+    stack = caphook.joint_axis_hooks(
+        model,
+        [0, 1],
+        {0: torch.randn(H), 1: torch.randn(H)},
+        {0: 0.0, 1: 0.0},
+        {0: torch.randn(H), 1: torch.randn(H)},
+        op="steer",
+        position_set="context-end",
+    )
+    assert all(h.alpha == 0.0 for h in stack.hooks)
+
+
+# --------------------------------------------------------------------------- #
 # 2. Decode-step firing (real hook + real model.generate)
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize(

@@ -24,6 +24,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    figsize_iclr_full,
+    paper_color,
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -255,12 +257,158 @@ def fig_prefix_transfer(eval_dir: Path, out_dir: Path) -> None:
     plt.close(fig)
 
 
+def fig_reparam_recovery_iclr(eval_dir: Path, out_dir: Path) -> None:
+    """ICLR paper figure: direct transfer vs general-linear recovery, chat<->plain.
+
+    Two bars per (model x direction) group — naive direct transfer (reduced
+    alpha) and the general-linear reparameterization recovery (full alpha) —
+    against the target regime's own held-out ceiling (black tick) and the
+    matched-capacity null (gray dotted tick). Context arm, layer 19. Value
+    labels live in the LaTeX caption, not on the canvas.
+    """
+    groups = []
+    for model in ("instruct", "base"):
+        opc = _load(eval_dir, f"operator_comparison_{model}_context.json")
+        dr = opc["delta_reparam_l19"]
+        nulls = opc["reparam_r1r2"]["19"]["matched_capacity_nulls"]
+        tr = _load(eval_dir, f"cross_regime_transfer_{model}_context.json")["delta_table_l19"]
+        # b2i = plain-text (r2) operator moved into chat (r1); i2b = the reverse
+        for dkey, tkey, glabel in (
+            ("b2i", "r2->r1", "plain→chat"),
+            ("i2b", "r1->r2", "chat→plain"),
+        ):
+            groups.append(
+                {
+                    "label": f"{model}\n{glabel}",
+                    "model": model,
+                    "transfer": tr[tkey]["transfer_l19"],
+                    "recovered": dr["recovered_r2"][dkey],
+                    "within": dr["within_r2"][dkey],
+                    "null": nulls[dkey]["null_recovery_r2"],
+                }
+            )
+    x = np.arange(len(groups))
+    w = 0.34
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.55))
+    for g, xi in zip(groups, x, strict=True):
+        c = paper_color(g["model"])
+        ax.bar(xi - w / 2, g["transfer"], width=w * 0.92, color=c, alpha=0.45)
+        ax.bar(xi + w / 2, g["recovered"], width=w * 0.92, color=c)
+        ax.plot(
+            [xi - 0.44, xi + 0.44],
+            [g["within"]] * 2,
+            color=paper_color("reference"),
+            lw=1.1,
+            zorder=4,
+        )
+        ax.plot([xi - 0.44, xi + 0.44], [g["null"]] * 2, color=paper_color("null"), lw=1.0, ls=":")
+    ax.axhline(0, color="0.6", lw=0.6)
+    ax.set_xticks(x, [g["label"] for g in groups])
+    ax.set_ylabel("held-out $R^2$ (layer 19)")
+    ax.set_ylim(-0.08, 0.72)
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    ax.legend(
+        handles=[
+            Patch(facecolor="0.35", alpha=0.45, label="direct transfer"),
+            Patch(facecolor="0.35", label="after linear change of coordinates"),
+            Line2D([], [], color=paper_color("reference"), lw=1.1, label="target's own ceiling"),
+            Line2D(
+                [], [], color=paper_color("null"), lw=1.0, ls=":", label="matched-capacity null"
+            ),
+        ],
+        loc="lower left",
+        bbox_to_anchor=(0.0, 1.01, 1.0, 0.2),
+        mode="expand",
+        ncols=2,
+        borderaxespad=0.0,
+    )
+    savefig_paper(fig, "c4_reparam_recovery", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_story_vs_chat_iclr(eval_dir: Path, out_dir: Path) -> None:
+    """ICLR paper figure: story framing weakens the map ~2x on identical rows.
+
+    Matched-row instruct cells from the #1887 estimator-correction table
+    (train-fold reduced-basis reads — the corrected estimator; the committed
+    pure-GCV story cells are superseded). Two provenance modes per framing:
+    the original answer embedded verbatim vs the model's own in-story answer.
+    Diamond markers: the inner-group-CV companion estimator for the same cell.
+    """
+    table = _load(eval_dir, "lambda_audit_1887/corrections_table.json")
+    rows = {r["cell_id"]: r for r in table["rows"]}
+    cells = {
+        ("chat", "tf"): "conversation_paired_stories_assistant__R_instruct_r1_matched_context",
+        ("chat", "op"): "onpolicy_assistant_story__R_instruct_r1_matched_context",
+        ("plain", "tf"): "conversation_paired_stories_assistant__R_instruct_r2_matched_context",
+        ("plain", "op"): "onpolicy_assistant_story__R_instruct_r2_matched_context",
+        ("story", "tf"): "conversation_paired_stories_assistant__R_instruct_r4_context",
+        ("story", "op"): "onpolicy_assistant_story__R_instruct_r4_op_companion_context",
+    }
+    framings = [("chat", "chat template"), ("plain", "plain text"), ("story", "narrative story")]
+    x = np.arange(len(framings))
+    w = 0.34
+    c = paper_color("instruct")
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.55))
+    for j, (prov, alpha) in enumerate((("tf", 1.0), ("op", 0.45))):
+        xi = x + (j - 0.5) * w
+        vals = [rows[cells[(f, prov)]]["corrected_reduced_basis_r2"] for f, _ in framings]
+        comp = [rows[cells[(f, prov)]]["corrected_inner_cv_r2"] for f, _ in framings]
+        ax.bar(xi, vals, width=w * 0.92, color=c, alpha=alpha)
+        ax.plot(
+            xi,
+            comp,
+            "D",
+            ms=3.2,
+            color=paper_color("reference"),
+            mfc="none",
+            mew=0.9,
+            zorder=4,
+        )
+    ax.axhline(0, color="0.6", lw=0.6)
+    ax.set_xticks(x, [lab for _, lab in framings])
+    ax.set_ylabel("held-out $R^2$ (layer 19, matched rows)")
+    ax.set_ylim(0, 0.72)
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    ax.legend(
+        handles=[
+            Patch(facecolor=c, label="original answer embedded verbatim"),
+            Patch(facecolor=c, alpha=0.45, label="model's own answer"),
+            Line2D(
+                [],
+                [],
+                marker="D",
+                ls="none",
+                ms=3.2,
+                color=paper_color("reference"),
+                mfc="none",
+                mew=0.9,
+                label="companion estimator (inner-group CV)",
+            ),
+        ],
+        loc="upper right",
+    )
+    savefig_paper(fig, "c4_story_vs_chat", dir=out_dir)
+    plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--eval-dir", type=Path, required=True)
     ap.add_argument("--out-dir", type=Path, required=True)
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    if args.style == "iclr":
+        set_paper_style("iclr")
+        fig_reparam_recovery_iclr(args.eval_dir, args.out_dir)
+        fig_story_vs_chat_iclr(args.eval_dir, args.out_dir)
+        print("DONE (iclr)", args.out_dir)
+        return
     set_paper_style("blog")
     fig_transfer_heatmaps(args.eval_dir, args.out_dir)
     fig_reparam_recovery(args.eval_dir, args.out_dir)

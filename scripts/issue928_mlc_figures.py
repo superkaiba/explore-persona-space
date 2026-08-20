@@ -297,6 +297,84 @@ def build_percontext(eval_dir: Path, decomp_path: Path, layer: int) -> dict:
     }
 
 
+def fig_paper_c1_cot(grid: dict, boot: dict) -> None:
+    """ICLR paper figure (c1_linear chain-of-thought result): matched-length control.
+
+    Panel A: per-question held-out skill on the shared answer-remainder target at the
+    frozen read-out layer for the four conditioning arms (95% bootstrap CI), with the
+    identity ceiling as a black dashed reference line. Panel B: the matched-length
+    contrast (context+truncated-CoT minus context+answer-prefix) across both regimes
+    and all three layer conventions — negative everywhere: the CoT position is not
+    privileged over the answer's own opening at matched token budget.
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_panels, set_paper_style
+
+    set_paper_style("iclr")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.3))
+    regime = "indiv"
+    frozen = grid["frozen_layers"][regime]["primary_frozen_ctx_baseline_best_layer"]
+    arms = ["mlc_ctx", "mlc_ctx_apfx", "mlc_ctx_cotK", "mlc_ctx_cotfull"]
+    arm_color = {
+        "mlc_ctx": "#0072B2",  # blue — the direct context arm
+        "mlc_ctx_apfx": "#CC79A7",  # purple — real-answer-opening (oracle-content) control
+        "mlc_ctx_cotK": (0.835, 0.369, 0.0, 0.55),  # vermilion, light — truncated CoT
+        "mlc_ctx_cotfull": "#D55E00",  # vermilion — full CoT
+    }
+    absf = boot["by_regime"][regime]["absolute_at_frozen"]
+    vals = [absf[a]["observed"] for a in arms]
+    errs = [
+        [absf[a]["observed"] - absf[a]["ci95"][0] for a in arms],
+        [absf[a]["ci95"][1] - absf[a]["observed"] for a in arms],
+    ]
+    x = np.arange(len(arms))
+    ax1.bar(x, vals, yerr=errs, color=[arm_color[a] for a in arms], capsize=2, width=0.62)
+    # identity ceiling as a black dashed reference line (identified in the caption)
+    ax1.axhline(absf["mlc_ident"]["observed"], color="black", lw=1.0, ls="--")
+    ax1.set_xticks(x)
+    # "answer prefix" / "truncated CoT" / "full CoT" bars are context + X; the
+    # caption states it (crowded two-row tick labels otherwise collide at 5.5in).
+    ax1.set_xticklabels(["context\nonly", "answer\nprefix", "truncated\nCoT", "full\nCoT"])
+    ax1.set_ylabel("held-out skill (remainder target)")
+    ax1.set_ylim(0, 1.04)
+
+    rows = []
+    for regime_key in ["indiv", "avg_q"]:
+        stats = boot["by_regime"][regime_key]["statistics"]["read1_primary_ctx_cotK_minus_ctx_apfx"]
+        for conv in [
+            "primary_frozen_ctx_baseline_best",
+            "secondary_own_best_frozen_full_data",
+            "secondary_best_vs_best_inherited",
+        ]:
+            s = stats[conv]
+            rows.append(
+                (
+                    f"{REGIME_LABELS[regime_key]} $\\cdot$ {CONV_LABELS[conv]}",
+                    s["observed"],
+                    s["ci95"][0],
+                    s["ci95"][1],
+                )
+            )
+    ys = np.arange(len(rows))[::-1]
+    for y, (_, obs, lo, hi) in zip(ys, rows, strict=False):
+        ax2.errorbar(
+            [obs],
+            [y],
+            xerr=[[max(0.0, obs - lo)], [max(0.0, hi - obs)]],
+            fmt="o",
+            color="black",
+            capsize=2,
+            markersize=3.5,
+        )
+    ax2.axvline(0.0, color="black", linestyle=":", linewidth=0.8)
+    ax2.set_yticks(ys)
+    ax2.set_yticklabels([r[0] for r in rows])
+    ax2.set_xlabel("$\\Delta$ skill (CoT $-$ prefix)")
+    paper_out = Path(__file__).resolve().parents[1] / "figures" / "paper"
+    paper_out.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_cot_matched_length", dir=paper_out)
+    plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -307,11 +385,23 @@ def main() -> None:
     ap.add_argument(
         "--decomp",
         type=Path,
-        required=True,
-        help="local path to decomp_indiv_mlc.pt (staged from HF)",
+        default=None,
+        help="local path to decomp_indiv_mlc.pt (staged from HF); required for --style blog",
     )
     ap.add_argument("--out-dir", type=Path, default=Path("figures/issue_928"))
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
     args = ap.parse_args()
+
+    if args.style == "iclr":
+        # Paper pathway (#2094 precedent): one ICLR-styled figure under figures/paper/,
+        # from the committed grid/bootstrap JSONs only (no decomp tensor needed).
+        grid = json.loads((args.eval_dir / "mlc_skill_grid.json").read_text())
+        boot = json.loads((args.eval_dir / "mlc_bootstrap_deltaskill.json").read_text())
+        fig_paper_c1_cot(grid, boot)
+        print("paper c1_cot_matched_length regenerated.")
+        return
+    if args.decomp is None:
+        ap.error("--decomp is required for --style blog")
 
     set_paper_style("blog")
     grid = json.loads((args.eval_dir / "mlc_skill_grid.json").read_text())
