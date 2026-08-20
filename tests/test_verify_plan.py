@@ -13825,7 +13825,11 @@ def test_c68_risk_table_baseline_window_takes_first_pct():
     # read 9.7 (first % in the window), NOT 88; margin 10 ≥ 9.7 -> WARN.
     r = _run(_c68_plan(C68_LATTICE_LINE, baseline_line=C68_RISK_BASELINE_LINE))[1][C68]
     assert r.status == "WARN", r.detail
-    assert "9.7%" in r.detail and "88" not in r.detail.split("baseline rate is")[1][:12]
+    # partition (not split()[1]) so a WARN-template rewording fails with a
+    # legible assert instead of an IndexError (r1 reconciler standing note).
+    _, sep, after_baseline = r.detail.partition("baseline rate is")
+    assert sep, r.detail
+    assert "9.7%" in r.detail and "88" not in after_baseline[:12]
 
 
 def test_c68_warns_at_equality_a1():
@@ -14048,3 +14052,87 @@ def test_c68_registered_in_checks_and_docstring_catalog():
     assert "67, 68" in doc  # conditional-checks membership, reflow-tolerant
     assert "N/A — no absolute-margin decision gate" in doc
     assert "harvested percentage baseline is unrelated to this absolute-margin gate" in doc
+
+
+def test_c68_a2_equality_comparator_crossing_not_harvested():
+    # #2228 r2 BLOCKER repro, the "="-form (reconciler
+    # `a2-equality-comparator-leak`): round-1's A2 middle class permitted
+    # "=", so the lazy middle skipped past the satisfiable "= 2pp"
+    # equality and bound the unrelated later ">= 10pp" — a false WARN
+    # against the real ~9.7% baseline below (reproduced end-to-end,
+    # epm:progress v8; this fixture WARNed pre-tighten). Post-tighten "="
+    # is barred from the middle -> nothing harvested -> SKIP. The genuine
+    # "="-bearing-middle margin this bars is a disclosed accepted FN
+    # (module-comment excluded list).
+    line = "- *H1-confirm:* baseline − cap = 2pp, while accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_comma_clause_boundary_crossing_not_harvested():
+    # #2228 r2 BLOCKER repro, the ","-form: crosses ONLY the comma (no
+    # "="), so an "="-only tighten would have left this class armed —
+    # pinned separately per the reconciler's binding paragraph. Pre-
+    # tighten the middle consumed "cap of 2pp, while accuracy " and bound
+    # the unrelated ">= 10pp" vs the ~9.7% baseline (verified WARN);
+    # post-tighten "," is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap of 2pp, while accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_zero_margin_guard_skips():
+    # Reconciler CONCERN `zero-margin-coverage-absent` (#2228 r2): the
+    # `v <= 0` harvest guard drops a literal 0pp margin in BOTH arms —
+    # "baseline - 0pp" registers no reduction at all, so nothing is
+    # harvested -> SKIP. Without the guard these read PASS ("sits below
+    # the largest in-plan baseline"), narrating a vacuous bound as a
+    # validated gate; this pin makes deleting the guard test-visible
+    # (r1's marker claimed this coverage existed; it did not).
+    for line in (
+        "- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 0pp (one-sided).",
+        "- *H1-confirm:* the cap arm reduces harm (baseline − cap ≥ 0pp, one-sided).",
+    ):
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (line, r.status, r.detail)
+
+
+def test_c68_any_enclosing_matching_h2_over_nonmatching_h3_warns():
+    # Reconciler CONCERN `any-enclosing-pin-missing` (#2228 r2): every
+    # other positive routes through a DIRECTLY-matching heading
+    # (`### 3. Hypothesis`), so no test distinguished the any-enclosing-
+    # ancestor walk from a nearest-heading-only variant. Here the NEAREST
+    # heading (`### Response ladder`) matches neither section regex; the
+    # margin qualifies ONLY via the enclosing `## 7. Decision Gates` H2 —
+    # a nearest-only walk would SKIP, the any-enclosing walk (the c13/c28
+    # membership idiom, plan §11 item 4) must WARN.
+    plan = (
+        "# Plan\n\n## 2. Prior Work\n\nParent baseline harm ~9.7%.\n\n"
+        "## 7. Decision Gates\n\n### Response ladder\n\n"
+        "- *H1-confirm:* harm-rate ≤ baseline − 10pp (one-sided).\n"
+    )
+    r = verify_plan.check_margin_baseline_ceiling(plan, "experiment")
+    assert r.status == "WARN", r.detail
+    assert "10 pp" in r.detail and "9.7%" in r.detail
+
+
+def test_c68_denial_escape_scoping_sentence_pinned():
+    # Reconciler CONCERN `denial-scope-pin-missing` (#2228 r2): the WARN
+    # detail's instruction set is truthful only because each escape is
+    # scoped to its own case (r1 MF2). Pin the denial escape INSIDE its
+    # registers-NO-margin scoping sentence and the cross-quantity escape
+    # AFTER the DIFFERENT-quantities clause, so a rewording that
+    # recommends the denial escape for the cross-quantity case cannot
+    # pass silently. Whitespace-normalized (the c51 reflow idiom).
+    r = _run(_c68_plan(C68_MARGIN_BULLET))[1][C68]
+    assert r.status == "WARN", r.detail
+    d = " ".join(r.detail.split())
+    assert (
+        "A plan that registers NO absolute-pp margin at all (the harvested line "
+        "quotes an incident/sibling) instead declares 'N/A — no absolute-margin "
+        "decision gate'" in d
+    ), d
+    cq_clause = d.index("if they concern DIFFERENT quantities")
+    cq_escape = d.index("harvested percentage baseline is unrelated to this absolute-margin gate")
+    denial_scope = d.index("A plan that registers NO absolute-pp margin at all")
+    assert cq_clause < cq_escape < denial_scope, d
