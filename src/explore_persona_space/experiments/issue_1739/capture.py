@@ -135,14 +135,18 @@ def capture_batch(
     boundary: str = BOUNDARY_INSTRUCT,
     max_model_len: int = MAX_MODEL_LEN,
     max_formatted_tokens: int = MAX_FORMATTED_TOKENS,
+    kinds: tuple[str, ...] = SUMMARY_KINDS,
 ) -> tuple[list[dict[str, np.ndarray]], list[dict[str, int]]]:
     """Teacher-forced capture with padded batch forwards (fp16 summaries).
 
     Returns ``(summaries, positions)``: per row a dict of
-    ``kind -> (n_layers, hidden_dim) float16`` for kinds ``prefix_end`` /
-    ``context_end`` (single positions) and ``t1`` (answer-span mean — the
-    #1092 t1 = response-avg answer summary), plus the per-row position dicts.
-    Mirror of ``issue1092_gpu_phase._capture_batch_loaded_model`` (chunked for
+    ``kind -> (n_layers, hidden_dim) float16`` for the requested ``kinds``,
+    plus the per-row position dicts. Supported kinds: ``prefix_end`` /
+    ``context_end`` (single positions), ``t1`` (answer-span mean — the
+    #1092 t1 = response-avg answer summary), and ``t_last`` (last answer
+    token — the #2388 CoT-surface pooling companion; deliberately absent
+    from the default so existing callers stay byte-identical). Mirror of
+    ``issue1092_gpu_phase._capture_batch_loaded_model`` (chunked for
     VRAM via ``batch_size``; never truncates — over-budget rows fail loud).
     """
     import torch  # lazy: GPU dep
@@ -233,11 +237,21 @@ def capture_batch(
                     axis=0,
                 )
 
-            row_summary = {
-                "prefix_end": extract_pos(pos["prefix_end"]),
-                "context_end": extract_pos(pos["context_end"]),
-                "t1": extract_span(pos["answer_start"], pos["answer_end"]),
-            }
+            def extract_kind(kind: str, *, pos_row: dict[str, int] = pos) -> np.ndarray:
+                if kind == "prefix_end":
+                    return extract_pos(pos_row["prefix_end"])
+                if kind == "context_end":
+                    return extract_pos(pos_row["context_end"])
+                if kind == "t1":
+                    return extract_span(pos_row["answer_start"], pos_row["answer_end"])
+                if kind == "t_last":
+                    # Last answer token: answer_end is exclusive (already clamped
+                    # to n_total by capture_row_ids_and_positions); the min() is a
+                    # defensive re-clamp mirroring extract_span's.
+                    return extract_pos(min(pos_row["answer_end"] - 1, pos_row["n_total"] - 1))
+                raise ValueError(f"unknown capture summary kind {kind!r}")
+
+            row_summary = {kind: extract_kind(kind) for kind in kinds}
             for kind, arr in row_summary.items():
                 assert arr.shape == (n_layers, hidden_dim), (kind, arr.shape)
             summaries.append(row_summary)
@@ -515,6 +529,7 @@ def capture_rollout_files(
     fingerprint: str = "",
     max_model_len: int = MAX_MODEL_LEN,
     max_formatted_tokens: int = MAX_FORMATTED_TOKENS,
+    kinds: tuple[str, ...] = SUMMARY_KINDS,
 ) -> dict:
     """Capture summaries for generation rollout JSONs into store shards.
 
@@ -538,7 +553,6 @@ def capture_rollout_files(
     for that shape. Capture end runs ``assert_store_complete`` (realized ==
     expected, exactly), the check whose absence let the loss pass as success.
     """
-    store_dir = Path(store_dir)
     rows, n_over_budget = load_capture_rows(
         rollout_paths,
         tokenizer,
@@ -550,6 +564,55 @@ def capture_rollout_files(
             f"capture has 0 in-budget rows from {len(rollout_paths)} rollout files "
             f"({n_over_budget} over budget)"
         )
+    return capture_rows_to_store(
+        rows,
+        store_dir=store_dir,
+        model=model,
+        tokenizer=tokenizer,
+        n_layers=n_layers,
+        hidden_dim=hidden_dim,
+        device=device,
+        batch_size=batch_size,
+        shard_rows=shard_rows,
+        fingerprint=fingerprint,
+        max_model_len=max_model_len,
+        max_formatted_tokens=max_formatted_tokens,
+        kinds=kinds,
+        n_over_budget=n_over_budget,
+        n_rollout_files=len(rollout_paths),
+    )
+
+
+def capture_rows_to_store(
+    rows: list[tuple[dict, dict]],
+    *,
+    store_dir: Path | str,
+    model,
+    tokenizer,
+    n_layers: int = N_LAYERS,
+    hidden_dim: int = HIDDEN_DIM,
+    device: str = "cuda",
+    batch_size: int = DEFAULT_CAPTURE_BATCH_SIZE,
+    shard_rows: int = DEFAULT_SHARD_ROWS,
+    fingerprint: str = "",
+    max_model_len: int = MAX_MODEL_LEN,
+    max_formatted_tokens: int = MAX_FORMATTED_TOKENS,
+    kinds: tuple[str, ...] = SUMMARY_KINDS,
+    n_over_budget: int = 0,
+    n_rollout_files: int = 0,
+) -> dict:
+    """Rows-based core of ``capture_rollout_files`` (the #2388 adapter seam).
+
+    ``rows`` is the ``load_capture_rows`` shape — ``(payload, meta_row)`` pairs
+    with payload keys ``prefix_text``/``prompt_text``/``completion`` — built by
+    ANY producer (rollout files, or an in-memory adapter over a benchmark
+    rollouts JSONL, which avoids materializing one tiny JSON file per row).
+    Identical resume / shard / completeness semantics; ``n_over_budget`` and
+    ``n_rollout_files`` are pass-through manifest bookkeeping.
+    """
+    store_dir = Path(store_dir)
+    if not rows:
+        raise RuntimeError("capture_rows_to_store: empty row list")
 
     t0 = time.time()
     offset = 0  # row cursor — advanced by REALIZED resumed-shard row counts
@@ -609,9 +672,10 @@ def capture_rollout_files(
             log_label=f"capture-shard{shard_idx:02d}",
             max_model_len=max_model_len,
             max_formatted_tokens=max_formatted_tokens,
+            kinds=kinds,
         )
         meta_rows = [dict(meta, **pos) for (_, meta), pos in zip(shard, positions, strict=True)]
-        write_store_shard(store_dir, shard_idx, summaries, meta_rows)
+        write_store_shard(store_dir, shard_idx, summaries, meta_rows, kinds=kinds)
         meta_path = _shard_meta_path(store_dir, shard_idx)
         tmp = meta_path.with_name(meta_path.name + ".tmp")
         tmp.write_text(json.dumps({"fingerprint": fingerprint, "n_rows": len(shard)}))
@@ -628,12 +692,13 @@ def capture_rollout_files(
     # the expected row set exactly (no missing, no foreign, no duplicates).
     completeness = assert_store_complete(store_dir, [meta for _, meta in rows])
     manifest = {
-        "n_rollout_files": len(rollout_paths),
+        "n_rollout_files": n_rollout_files,
         "n_rows": len(rows),
         "n_over_budget": n_over_budget,
         "n_shards": len(completeness["per_shard_rows"]),
         "n_shards_resumed": n_resumed,
         "n_rows_captured": n_captured,
+        "kinds": list(kinds),
         "fingerprint": fingerprint,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         **completeness,
@@ -659,6 +724,7 @@ def repair_missing_rows(
     fingerprint: str = "",
     max_model_len: int = MAX_MODEL_LEN,
     max_formatted_tokens: int = MAX_FORMATTED_TOKENS,
+    kinds: tuple[str, ...] = SUMMARY_KINDS,
 ) -> dict:
     """Capture ONLY the expected rows missing from an existing store (append-only).
 
@@ -731,9 +797,10 @@ def repair_missing_rows(
             log_label=f"repair-shard{shard_idx:02d}",
             max_model_len=max_model_len,
             max_formatted_tokens=max_formatted_tokens,
+            kinds=kinds,
         )
         meta_rows = [dict(meta, **pos) for (_, meta), pos in zip(shard, positions, strict=True)]
-        write_store_shard(store_dir, shard_idx, summaries, meta_rows)
+        write_store_shard(store_dir, shard_idx, summaries, meta_rows, kinds=kinds)
         meta_path = _shard_meta_path(store_dir, shard_idx)
         tmp = meta_path.with_name(meta_path.name + ".tmp")
         tmp.write_text(

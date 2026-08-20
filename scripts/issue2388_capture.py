@@ -1,0 +1,484 @@
+#!/usr/bin/env python
+"""#2388 P2: teacher-forced capture + TF secondary-DV margins for the new surfaces.
+
+Per-benchmark phases over the P1 generation outputs (``scripts/issue2388_gen.py``
+rollouts JSONLs), reusing the #1739 capture core
+(``experiments/issue_1739/capture.py``) — same store layout, BPE-seam
+discipline, resume, and completeness reconciliation:
+
+  capture    build (payload, meta) rows from items x K rollouts and capture
+             kinds ``context_end`` / ``t1`` / ``t_last`` into
+             ``<store-root>/<benchmark>/`` (plan section 4 pooling fork: the
+             per-rollout store deliberately OMITS ``prefix_end`` — storing it
+             per rollout would push the store past the ~130 GB MooseFS quota,
+             plan section 9; ``t_last`` is the NEW last-answer-token pooling
+             companion).
+  tf-margin  teacher-forced secondary DV per item (plan section 6):
+             math -> ln P(gold boxed answer); MCQ -> ln P(gold option) minus
+             logsumexp over distractor options; code -> ln P(canonical
+             reference solution), FLAGGED ROUGH (lcb_v5 has no reference
+             except the LeetCode dedup overlap).
+  upload     tar each benchmark store dir + upload to the HF data repo, plus
+             the tf_margin JSONs; exact-set post-upload verify.
+
+Runs POD-SIDE (GPU: bf16 HF forwards). ``--import-check`` is the CPU
+pre-flight (argcheck + deferred-import execution). CONTENT HYGIENE: logs
+carry ids/counts only, never row text.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import sys
+import time
+from pathlib import Path
+
+
+def _ensure_repo_root_on_syspath() -> Path:
+    """#823: script mode puts scripts/ on sys.path[0], not the repo root."""
+    root = Path(__file__).resolve().parents[1]
+    assert (root / "pyproject.toml").exists(), root
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    return root
+
+
+REPO_ROOT = _ensure_repo_root_on_syspath()
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+import issue2388_gen as G  # noqa: E402
+
+from explore_persona_space.experiments.issue_1739.capture import (  # noqa: E402
+    capture_row_ids_and_positions,
+    capture_rows_to_store,
+    load_capture_model,
+    teacher_forced_ln_logp,
+)
+from explore_persona_space.experiments.issue_1739.constants import MODEL_NAME  # noqa: E402
+from explore_persona_space.experiments.issue_1739.generation import (  # noqa: E402
+    INSTRUCT_REVISION,
+    MAX_MODEL_LEN,
+    get_tokenizer,
+)
+
+# Store kinds (plan section 4): v_C at context_end + BOTH answer poolings.
+CAPTURE_KINDS = ("context_end", "t1", "t_last")
+HF_STORE_PREFIX = "issue2388_correctness/capture_store"
+HF_DV_PREFIX = "issue2388_correctness/dv"
+DEFAULT_STORE_ROOT = "/workspace/store_2388"
+# Per-benchmark store floor: rows x kinds x 28 x 3584 x 2B + sidecars. The
+# largest benchmark (math_full, 62.5k rows) needs ~38 GB; assert generously.
+STORE_HEADROOM_GB = {"math_full": 45.0, "mmlu_pro_full": 40.0}
+STORE_HEADROOM_DEFAULT_GB = 15.0
+TF_CHUNK = 200  # per-unit persistence grain (code-style checkpoint rule, T2)
+
+
+# ---------------------------------------------------------------------------
+# capture rows
+# ---------------------------------------------------------------------------
+
+
+def build_capture_rows(
+    items: list[dict],
+    rolls: dict[str, list[str]],
+    tokenizer,
+    *,
+    benchmark: str,
+    max_model_len: int = MAX_MODEL_LEN,
+) -> tuple[list[tuple[dict, dict]], int, list[dict]]:
+    """(payload, meta) rows for items x K rollouts, chat-templated as gen was.
+
+    The prompt segment is rebuilt through the SAME ``apply_chat_template`` call
+    ``issue2388_gen.phase_gen`` fed to vLLM, so the teacher-forced prompt ids
+    are bit-identical to what generation consumed (BPE-seam discipline).
+    Over-budget rows are DROPPED with a digest record (id + token count only).
+    """
+    missing = [it["item_id"] for it in items if it["item_id"] not in rolls]
+    if missing:
+        raise RuntimeError(
+            f"{benchmark}: {len(missing)} items lack rollouts (e.g. {missing[:3]}) — "
+            "run issue2388_gen --phase gen first"
+        )
+    rows: list[tuple[dict, dict]] = []
+    over_budget: list[dict] = []
+    surface = G.surface_of(benchmark)
+    for it in items:
+        prompt = tokenizer.apply_chat_template(
+            [{"role": "user", "content": it["prompt"]}],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+        completions = rolls[it["item_id"]]
+        if len(completions) != G.K_ROLLOUTS:
+            raise RuntimeError(
+                f"{benchmark}/{it['item_id']}: {len(completions)} rollouts != {G.K_ROLLOUTS}"
+            )
+        for k, comp in enumerate(completions):
+            payload = {"prefix_text": "", "prompt_text": prompt, "completion": comp}
+            meta = {
+                "context_id": it["item_id"],
+                "benchmark": benchmark,
+                "surface": surface,
+                "rollout_k": k,
+                "is_eval_only": False,
+                "source_file": f"{benchmark}.jsonl",
+            }
+            try:
+                _, pos = capture_row_ids_and_positions(
+                    tokenizer, "", prompt, comp, max_model_len=max_model_len
+                )
+            except ValueError:
+                over_budget.append({"item_id": it["item_id"], "rollout_k": k})
+                continue
+            rows.append((payload, dict(meta, n_row_tokens=pos["n_total"])))
+    if not rows:
+        raise RuntimeError(f"{benchmark}: 0 in-budget capture rows")
+    return rows, len(over_budget), over_budget
+
+
+def _fingerprint(benchmark: str) -> str:
+    """Machine-stable resume fingerprint: generating parameters, never floats."""
+    return (
+        f"i2388|{benchmark}|k={G.K_ROLLOUTS}|kinds={','.join(CAPTURE_KINDS)}"
+        f"|rev={INSTRUCT_REVISION[:12]}"
+    )
+
+
+def phase_capture(args) -> None:
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+    benchmark = args.benchmark
+    out_root = Path(args.out_root)
+    store_dir = Path(args.store_root) / benchmark
+    need_gb = STORE_HEADROOM_GB.get(benchmark, STORE_HEADROOM_DEFAULT_GB)
+    assert_out_root_headroom(Path(args.store_root), need_gb, phase=f"capture-{benchmark}")
+
+    items = G.LOADERS[benchmark]()
+    if benchmark == "lcb_v5":
+        items = G._apply_dedup(items, out_root)
+    tokenizer = get_tokenizer()
+    rolls = G._load_done_rollouts(G._rollouts_path(out_root, benchmark))
+    if args.smoke:
+        items = items[: G.SMOKE_N]
+    rows, n_over, over_digest = build_capture_rows(
+        rolls=rolls, items=items, tokenizer=tokenizer, benchmark=benchmark
+    )
+    print(
+        f"[capture] {benchmark}: {len(rows)} rows ({len(items)} items x {G.K_ROLLOUTS}), "
+        f"{n_over} over budget",
+        flush=True,
+    )
+    if n_over:
+        digest_path = store_dir / "_over_budget_rows.json"
+        digest_path.parent.mkdir(parents=True, exist_ok=True)
+        digest_path.write_text(json.dumps(over_digest, indent=1))
+
+    model = load_capture_model(device=args.device)
+    manifest = capture_rows_to_store(
+        rows,
+        store_dir=store_dir,
+        model=model,
+        tokenizer=tokenizer,
+        device=args.device,
+        batch_size=args.batch_size,
+        fingerprint=_fingerprint(benchmark),
+        kinds=CAPTURE_KINDS,
+        n_over_budget=n_over,
+        n_rollout_files=1,
+    )
+    print(
+        f"[capture] {benchmark} complete: {manifest['realized_total_rows']} realized rows "
+        f"in {manifest['n_shards']} shards -> {store_dir}",
+        flush=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# tf-margin (secondary DV; plan section 6)
+# ---------------------------------------------------------------------------
+
+
+def _tf_out_dir(out_root: Path, benchmark: str) -> Path:
+    return out_root / G.surface_of(benchmark) / "tf_margin"
+
+
+def _chat_prompt(tokenizer, user_text: str) -> str:
+    return tokenizer.apply_chat_template(
+        [{"role": "user", "content": user_text}], tokenize=False, add_generation_prompt=True
+    )
+
+
+def _code_canonicals(benchmark: str) -> dict[str, list[tuple[str, str]]]:
+    """Canonical reference solutions per item (the code-control canon builders)."""
+    import issue2388_code_control as CC
+
+    key = {
+        "humaneval": "humaneval",
+        "mbpp_full": "mbpp",
+        "bigcodebench_full": "bigcodebench",
+        "lcb_v5": "lcb_v5",
+        "leetcode": "leetcode",
+    }[benchmark]
+    return CC.BENCHES[key]["canon"]()
+
+
+def _tf_units(benchmark: str, items: list[dict], tokenizer) -> list[dict]:
+    """One scoring unit per item: {'item_id', 'pairs': [(label, prompt, completion)]}.
+
+    math: single gold completion. MCQ: one completion per option letter (the
+    margin is computed at aggregation). code: one completion per canonical
+    composition (ROUGH — the reference is not the model's own distribution).
+    """
+    units: list[dict] = []
+    if benchmark == "math_full":
+        for it in items:
+            prompt = _chat_prompt(tokenizer, it["prompt"])
+            comp = f"The final answer is \\boxed{{{it['gold']}}}."
+            units.append({"item_id": it["item_id"], "pairs": [("gold", prompt, comp)]})
+    elif benchmark == "mmlu_pro_full":
+        for it in items:
+            prompt = _chat_prompt(tokenizer, it["prompt"])
+            letters = [chr(ord("A") + i) for i in range(int(it["n_options"]))]
+            pairs = [(letter, prompt, f"Answer: {letter}") for letter in letters]
+            units.append({"item_id": it["item_id"], "gold": it["gold"], "pairs": pairs})
+    else:  # code benchmarks
+        canon = _code_canonicals(benchmark)
+        for it in items:
+            cands = canon.get(it["item_id"])
+            if not cands:
+                units.append({"item_id": it["item_id"], "pairs": []})  # no reference (lcb)
+                continue
+            prompt = _chat_prompt(tokenizer, it["prompt"])
+            pairs = [
+                (label, prompt, f"```python\n{sol}\n```")
+                for label, sol in cands
+                if sol and sol.strip()
+            ]
+            units.append({"item_id": it["item_id"], "pairs": pairs})
+    return units
+
+
+def phase_tf_margin(args) -> None:
+    benchmark = args.benchmark
+    out_root = Path(args.out_root)
+    items = G.LOADERS[benchmark]()
+    if benchmark == "lcb_v5":
+        items = G._apply_dedup(items, out_root)
+    if args.smoke:
+        items = items[: G.SMOKE_N]
+    tokenizer = get_tokenizer()
+    units = _tf_units(benchmark, items, tokenizer)
+
+    tf_dir = _tf_out_dir(out_root, benchmark)
+    tf_dir.mkdir(parents=True, exist_ok=True)
+    rows_path = tf_dir / f"{benchmark}_tf.jsonl"
+    done: set[str] = set()
+    if rows_path.exists():
+        with rows_path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip():
+                    done.add(json.loads(line)["item_id"])
+    pending = [u for u in units if u["item_id"] not in done]
+    print(f"[tf-margin] {benchmark}: {len(pending)}/{len(units)} units pending", flush=True)
+
+    model = load_capture_model(device=args.device) if pending else None
+    t0 = time.time()
+    for start in range(0, len(pending), TF_CHUNK):
+        chunk = pending[start : start + TF_CHUNK]
+        flat = [(u["item_id"], label, p, c) for u in chunk for (label, p, c) in u["pairs"]]
+        lps = teacher_forced_ln_logp(
+            [(p, c) for (_, _, p, c) in flat],
+            model=model,
+            tokenizer=tokenizer,
+            device=args.device,
+            batch_size=args.batch_size,
+        )
+        by_item: dict[str, dict[str, float]] = {}
+        for (item_id, label, _, _), lp in zip(flat, lps, strict=True):
+            by_item.setdefault(item_id, {})[label] = lp
+        with rows_path.open("a", encoding="utf-8") as fh:
+            for u in chunk:
+                lp_map = by_item.get(u["item_id"], {})
+                row: dict = {"item_id": u["item_id"], "benchmark": benchmark, "lp": lp_map}
+                if benchmark == "mmlu_pro_full" and lp_map:
+                    gold = u["gold"]
+                    others = [v for k, v in lp_map.items() if k != gold]
+                    if gold not in lp_map or not others:
+                        raise RuntimeError(f"tf-margin: malformed option set for {u['item_id']}")
+                    lse = max(others) + math.log(sum(math.exp(v - max(others)) for v in others))
+                    row["tf_margin"] = lp_map[gold] - lse
+                elif benchmark == "math_full":
+                    row["tf_gold_ln_logp"] = lp_map["gold"]
+                else:
+                    row["tf_reference_ln_logp"] = max(lp_map.values()) if lp_map else None
+                    row["tf_reference_rough"] = True
+                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+        print(
+            f"[tf-margin] unit {min(start + TF_CHUNK, len(pending))}/{len(pending)} "
+            f"{benchmark} elapsed={time.time() - t0:.0f}s",
+            flush=True,
+        )
+
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    n_rows = sum(1 for line in rows_path.open(encoding="utf-8") if line.strip())
+    if n_rows < len(units):
+        raise RuntimeError(f"tf-margin {benchmark}: {n_rows} rows < {len(units)} units")
+    summary = {
+        "benchmark": benchmark,
+        "n_units": len(units),
+        "n_rows": n_rows,
+        "recipe": {
+            "math_full": "ln P(boxed gold sentence | chat prompt), length-normalized",
+            "mmlu_pro_full": "ln P('Answer: <gold>') - logsumexp over distractor options",
+            "code": "max over canonical compositions of ln P(fenced reference) — ROUGH",
+        }[benchmark if benchmark in ("math_full", "mmlu_pro_full") else "code"],
+        "model": MODEL_NAME,
+        "revision": INSTRUCT_REVISION,
+    }
+    summary.update(as_metadata_dict(git_provenance(), phase=f"tf-margin-{benchmark}"))
+    (tf_dir / f"{benchmark}_tf_summary.json").write_text(json.dumps(summary, indent=2))
+    print(f"[tf-margin] {benchmark} complete: {n_rows} rows -> {rows_path}", flush=True)
+
+
+# ---------------------------------------------------------------------------
+# upload
+# ---------------------------------------------------------------------------
+
+
+def phase_upload(args) -> None:
+    """Tar + upload each benchmark's store; folder-upload the tf_margin dirs."""
+    import tarfile
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    out_root = Path(args.out_root)
+    store_root = Path(args.store_root)
+    benchmarks = [args.benchmark] if args.benchmark else sorted(G.SURFACES[args.surface])
+    expected: list[str] = []
+    for benchmark in benchmarks:
+        surface = G.surface_of(benchmark)
+        store_dir = store_root / benchmark
+        if not (store_dir / "_capture_manifest.json").exists():
+            raise RuntimeError(f"{store_dir} has no _capture_manifest.json — capture incomplete")
+        tar_path = store_root / f"{benchmark}.tar"
+        if not tar_path.exists():
+            tmp = tar_path.with_name(tar_path.name + ".tmp")
+            with tarfile.open(tmp, "w") as tf:
+                tf.add(store_dir, arcname=benchmark)
+            tmp.replace(tar_path)
+        dest = f"{HF_STORE_PREFIX}/{surface}/{benchmark}.tar"
+        out = hub._upload(
+            tar_path,
+            hub.DEFAULT_DATASET_REPO,
+            repo_type="dataset",
+            path_in_repo=dest,
+            upload_as_file=True,
+        )
+        if not out:
+            raise RuntimeError(f"store tar upload returned empty path for {benchmark}")
+        expected.append(dest)
+        tf_dir = _tf_out_dir(out_root, benchmark)
+        if tf_dir.exists() and any(tf_dir.iterdir()):
+            out = hub._upload(
+                tf_dir,
+                hub.DEFAULT_DATASET_REPO,
+                repo_type="dataset",
+                path_in_repo=f"{HF_DV_PREFIX}/{surface}/tf_margin",
+            )
+            if not out:
+                raise RuntimeError(f"tf_margin upload returned empty path for {benchmark}")
+            expected.extend(
+                f"{HF_DV_PREFIX}/{surface}/tf_margin/{p.name}" for p in tf_dir.iterdir()
+            )
+        print(f"[upload] {benchmark}: store tar + tf_margin uploaded", flush=True)
+
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(),
+        hub.DEFAULT_DATASET_REPO,
+        expected,
+        path_in_repo="issue2388_correctness",
+        repo_type="dataset",
+    )
+    if missing:
+        raise RuntimeError(f"post-upload verify: {len(missing)} paths missing: {missing[:5]}")
+    print(f"[upload] verified {len(expected)} paths on the Hub", flush=True)
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+PHASES = {"capture": phase_capture, "tf-margin": phase_tf_margin, "upload": phase_upload}
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.replace("%", "%%"))
+    ap.add_argument("--phase", choices=sorted(PHASES), help="phase to run")
+    ap.add_argument("--benchmark", choices=sorted(G.LOADERS), default=None)
+    ap.add_argument("--surface", choices=sorted(G.SURFACES), default=None)
+    ap.add_argument("--out-root", default=str(G.OUT_ROOT), help="gen out-root (P1 outputs)")
+    ap.add_argument("--store-root", default=DEFAULT_STORE_ROOT)
+    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--batch-size", type=int, default=8)
+    ap.add_argument("--smoke", action="store_true", help="cap items to SMOKE_N + smoke roots")
+    ap.add_argument("--import-check", action="store_true")
+    ap.add_argument("--list-phases", action="store_true")
+    args = ap.parse_args(argv)
+
+    if args.list_phases:
+        print(" ".join(sorted(PHASES)))
+        return 0
+    if args.import_check:
+        from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+        assert_args_attributes_defined(__file__)
+        # Execute the deferred imports (except the GPU-fenced model load).
+        import tarfile  # noqa: F401
+
+        import issue2388_code_control  # noqa: F401
+        from huggingface_hub import HfApi  # noqa: F401
+
+        from explore_persona_space.orchestrate import hub
+        from explore_persona_space.orchestrate.preflight import (  # noqa: F401
+            assert_out_root_headroom,
+        )
+        from explore_persona_space.orchestrate.provenance import (  # noqa: F401
+            as_metadata_dict,
+            git_provenance,
+        )
+
+        assert callable(hub._upload) and hub.DEFAULT_DATASET_REPO
+        print("[import-check] ok (GPU-fenced: load_capture_model — model load not executed)")
+        return 0
+
+    if not args.phase:
+        raise SystemExit("--phase is required (or --import-check / --list-phases)")
+    if args.phase in ("capture", "tf-margin") and not args.benchmark:
+        raise SystemExit(f"--phase {args.phase} requires --benchmark")
+    if args.phase == "upload" and not (args.benchmark or args.surface):
+        raise SystemExit("--phase upload requires --benchmark or --surface")
+    if args.smoke:
+        # Smoke roots: never overwrite production paths (same convention as gen).
+        if args.out_root == str(G.OUT_ROOT):
+            args.out_root = str(Path("eval_results/issue_2388/gen_smoke"))
+        if args.store_root == DEFAULT_STORE_ROOT:
+            args.store_root = DEFAULT_STORE_ROOT + "_smoke"
+    PHASES[args.phase](args)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    return 0
+
+
+if __name__ == "__main__":
+    # Explicit exit after flush: heavy C-extension teardown (torch/datasets)
+    # can rewrite the rc at finalization (#1689 phased-dispatcher rule).
+    sys.exit(main())
