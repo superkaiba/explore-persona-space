@@ -497,6 +497,36 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   first + pair-split + isfinite canon + collect-all + registry leg from
   repo root).
 
+- **Janitor/classifier-probe infra plan, standard statistics lens with a brief
+  CIRCULARITY press point (#2246 round one, worktree-reap probe + re-derivation
+  invariant): when the plan's acceptance check compares a probe against a
+  janitor run that IMPLEMENTS the same probe, make the circularity question
+  the mandated FIRST-and-deepest lettered question with a three-part shape**
+  ((i) circular? (ii) if so, voided vs meaningful-as-WIRING-check — decision
+  layer / both call paths / laziness / stronger-keep precedence — with
+  classification correctness carried by named OTHER instruments (fixture
+  arms, live measured cases); (iii) name the residual error class NO
+  instrument catches + adjudicate). Population-drift snapshot note extension:
+  membership delta = expected drift, NOT a finding; CLASSIFICATION
+  disagreement on a worktree present in both reads = precise finding (numbers
+  pre-confirmed twice — state that, plus a manufacture/withhold symmetry line
+  in the tail). Detector translation reused from #2228 (false-MERGED /
+  false-UNMERGED / error-channel directions, each with its stated fail
+  direction). Legitimate SHARPENER inside a brief question (memory rule:
+  sharpen 1:1, never a parallel list): the task-grain-vs-branch-grain cell —
+  marker evidence is task-grained while suffixed sibling worktrees share one
+  events file, so a later epm:merged note can false-MERGE a sibling; framed
+  as a question lead, never an asserted finding. Read-discipline additions
+  that fit this class: ban `git fetch` BY NAME with the reason (a fetch moves
+  origin/main and changes the population under review) and ban even the
+  report-only whole-janitor run (minutes of runtime; probe worktrees
+  individually); spot-check rows for possibly-reaped worktrees get an
+  explicit "mark UNVERIFIED rather than guessing" escape. Numcheck PASS first
+  try at ~121 KB (spans = briefnote + questions + lensitems + plan + empty
+  prior; scaffold digit-free — "v3"/"Step 10d"/"9c" are atom-free under
+  both-sides guards; ISO-timestamp examples and :line refs confined to the
+  questions SPAN where they balance).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
