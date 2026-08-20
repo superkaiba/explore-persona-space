@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2427,
+  "highest_id": 2428,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11028,6 +11028,13 @@
       "path": "tasks/proposed/2427",
       "status": "proposed",
       "title": "Gates must not read private transformers attributes \u2014 per-issue version pins turn config._commit_hash into a false-alarm crash (#2329)"
+    },
+    "2428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2428",
+      "status": "proposed",
+      "title": "Step 10d Guard 4 (lost-update refusal) is vacuous on the prescribed call path \u2014 --main-sha passes the main TIP, helper reads it as the merge-base"
     },
     "244": {
       "has_clean_result": false,
