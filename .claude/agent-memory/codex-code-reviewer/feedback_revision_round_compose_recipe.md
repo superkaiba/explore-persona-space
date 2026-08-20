@@ -1528,3 +1528,32 @@ one(s) with lenient absorbed-or-deferred-with-note adjudication; (f) static
 proxies for unrunnable claims attested as compose-time facts to re-verify
 (def-test count vs claimed collect-only, zero-hit stale-cap-literal sweep);
 (g) note the reconcile note's file:line refs use R1-BLOB numbering.
+
+**Union-NOTE-as-contract + instrument-non-vacuity fix round (#2391 r2,
+2026-08-19):** when the orchestrator posted a standalone union WORK ORDER
+note (B1/B2 with root-cause + per-item round-2 scope) after a FAIL+FAIL
+agreement, inline THAT note as the sole acceptance contract instead of both
+prior verdicts (#2332 form) — it pre-extracts every Evidence/Fix line, has no
+marker tags, so the tag arithmetic collapses to own-head==1/close==1 with no
+stripping. Deltas worth reusing: (a) a brief-ordered mutation probe ("flip
+the allowlist, confirm red, restore by inverse edit") translates to the
+#2146 SCRATCH-TREE form keyed on the test's OWN path resolution — when
+`REPO_ROOT = Path(__file__).resolve().parents[1]`, a /tmp scratch tree
+(`tests/` + the read files beside it) isolates the mutation completely;
+check IMPORTS first to decide scratch-runnability (stdlib+pytest-only file →
+runs anywhere; a file importing the project package must NOT be
+scratch-copied — probe its pure helpers via `uv run python -c` from the
+worktree on in-memory mutated strings instead). Never mutate the shared
+worktree (the parallel Claude reviewer reads the same tree). (b) A brief
+environment note ("uv rc=2 read-only cache → UV_CACHE_DIR=...; never bare
+`python -m pytest` — imports MAIN's package, reads the old cap") is a
+BINDING prompt section, not advice — round 1's twin burned its run on
+exactly that stale-main false failure. (c) A same-defect concern pair
+(Claude id + Codex id for one bug) gets ONE closure adjudication covering
+both ids, stated in the ledger literal AND the closure-ledger schema. (d)
+When the task history is "every blocker was a verification-instrument
+defect", the priorities lead with instrument NON-VACUITY (reachability of
+the scan's file enumeration, exemption exactness + the dead-control proof,
+the lookbehind/word-adjacency claim behind a compose test, kwarg-default
+behavior preservation) — with fabricated-falsifiability (claimed-red that
+stays green) named as substantive FAIL.
