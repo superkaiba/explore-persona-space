@@ -9536,8 +9536,8 @@
     "2234": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2234",
-      "status": "proposed",
+      "path": "tasks/archived/2234",
+      "status": "archived",
       "title": "parse_judge_json step 4: add labeled trailing score-line recovery (Score: N) \u2014 measured #2222 pilot shape missing from the landed #2109 recovery"
     },
     "2235": {
