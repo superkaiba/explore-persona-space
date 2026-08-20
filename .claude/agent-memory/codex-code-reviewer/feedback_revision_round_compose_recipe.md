@@ -1608,3 +1608,22 @@ the scan's file enumeration, exemption exactness + the dead-control proof,
 the lookbehind/word-adjacency claim behind a compose test, kwarg-default
 behavior preservation) — with fabricated-falsifiability (claimed-red that
 stays green) named as substantive FAIL.
+
+**Composite verified-open ids with NO current-round ledger action (#2388 r3,
+2026-08-20):** when a prior round's COMPOSITE blocker (e.g.
+`registered-controls-incomplete` = shuffled-MLP + bl_agree) stays
+`verified-open` while the round fixes one component under its OWN id and
+REBUTS the other under a disclosure id, the ledger shows verified-open with
+no addressed row — do not read that as NOT-ADDRESSED and do not resolve it
+yourself. Give the composite id a COMPONENT-WISE adjudication duty in the
+closure schema (component resolved-or-honestly-rebutted ⇒ the remaining-open
+state is ledger BOOKKEEPING, said in the status line — the orchestrator owns
+the ledger action; component neither fixed nor rebutted ⇒ substantive), and
+FLAG the no-action ids in the return. Pair rebuttals with
+ACCEPTED-REBUTTAL / REBUTTAL-INSUFFICIENT vocabulary added to the schema.
+Also seen same round: the impl marker's `<!-- /epm:experiment-implementation -->`
+closing comment sat BEFORE its `### Response to code-review v<n-1>` section —
+state it as a compose-time fact in the Step 0.5 rubric note (placement = at
+most Style, never marker-shape), and remember ledger `evidence` fields can
+legitimately carry the round's commit SHA (count SHA asserts per-part:
+template vs ledger vs impl body).
