@@ -27,6 +27,7 @@
 - [Absolute floor on re-anchored baseline](feedback_absolute_floor_on_reanchored_baseline.md) — multiply floor through min pre (#570)
 - [Stale-serve gate calibration](feedback_stale_serve_identity_threshold.md) — threshold BETWEEN bug ~19-27% and clean ~0 (#585)
 - [Unsatisfiable-gate re-spec](feedback_unsatisfiable_gate_respec_review.md) — two-arm fix + grain re-spec, keep cap (#1336)
+- [Amendment old-value residual grep](feedback_amendment_old_value_residual_grep.md) — N-anchor byte-exact ≠ site-set complete; grep old value plan-wide (#823 v11)
 - [Row-quarantine containment](feedback_row_quarantine_containment_review.md) — exact-at-threshold; common-mode residual; zero-edge (#1336)
 - [Twin-gate band below leak onset](feedback_twin_gate_band_below_leak_onset.md) — band below onset = uninformative; recheck flat panels (#591)
 - [Seed-ceiling within-vs-cross-seed](feedback_seed_ceiling_within_vs_cross_seed.md) — 0.96-0.98 = within-seed, not cross-seed (#602)
@@ -106,6 +107,8 @@
 
 ## Infra-plan reviews
 - [Infra-plan checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Rsync include-set review](feedback_rsync_include_set_review.md) — consumer enum, measurement replay, index-derived allowlist, gitlink-blind invariants (#2212)
+- [Kill-criterion grep hits override branch](feedback_kill_criterion_grep_matches_override_branch.md) — replay grep-shaped falsifiers; env-gated legacy branches self-trigger them (#2212)
 - [Literal-sweep prose-anchor pins](feedback_literal_sweep_prose_anchor_pins.md) — cap-raise sweeps: `.index()` prose anchors escape token greps; replay expected residuals (#2391)
 - [Lexicon live-fire inflection gap](feedback_lexicon_livefire_inflection_gap.md) — replay the exact in-repo regex on the incident artifact; "confirmed"≠"confirms" (#2198)
 - [Preferred-channel fixture discrimination](feedback_preferred_channel_fixture_discrimination.md) — legacy path may already resolve the demo fixture; demand legacy-fails fixture or channel-naming counter (#2194)

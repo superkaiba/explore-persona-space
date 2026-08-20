@@ -96,7 +96,7 @@ Subagents have ONE turn. The harness re-invokes the ORCHESTRATOR on each bg `Bas
 
 Five review steps (`critic`, `code-reviewer`, `interpretation-critic`, `clean-result-critic`,
 `follow-up-critic`) run Claude + a Codex twin (gpt-5.5) in parallel, all rounds up to the
-per-reviewer cap (5). PASS+PASS → advance. FAIL+FAIL → bounce (union the blockers if disjoint).
+per-reviewer cap (10). PASS+PASS → advance. FAIL+FAIL → bounce (union the blockers if disjoint).
 PASS vs FAIL → spawn `reconciler` (binding). `follow-up-critic` is a SINGLE-PASS redundancy
 screen; nothing is ever dropped. NOT doubled: `upload-verifier`, `consistency-checker`.
 
