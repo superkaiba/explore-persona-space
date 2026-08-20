@@ -37,7 +37,7 @@ backend: runpod
 - A fitted text-only classifier on the same prompts trails the internal probe in both regimes (context-minus-text-surface above zero; 0.951 vs 0.696 in over-refusal) — the edge is not merely "fitting beats prompting".
 - The label-blind context→answer map discriminates answers (held-out R² 0.66 vs an identity-baseline R² of −0.96; retrieval far above chance), yet at near-full rank the mapped-answer probe equals the context probe and its matched-rank compression control — a reparametrization adding nothing.
 - A context probe trained on one regime predicts the other at AUROC 0.91–0.99 both directions — one largely shared refuse/comply geometry, not two regime-specific signals.
-- Scope: one model (Qwen2.5-7B-Instruct), held-out-group but in-distribution prompts, and the over-refusal judge baseline needed synchronous re-issue of 61 of 286 API-self-censored items.
+- Scope: one model (Qwen2.5-7B-Instruct), held-out-group but in-distribution prompts, and the over-refusal judge baseline needed synchronous re-issue of 61 of 286 API-self-censored items. Four further open review concerns affect reporting only, not any reported number: `armb-duplicate-prompt-sha-disposition` (at most 1 of 2510 over-refusal groups), `residual-exclusion-drop-class-misreported` (an intermediate tally; the reconciliation stands), `predictor-transport-zero-valid-not-reissued` and `predictor-pilot-api-waiver-unbounded` (unexercised: zero dropped, refused, or truncated rows this run).
 
 *Conciseness acknowledgment: this two-arm, four-result writeup runs over the Takeaways bullet-length cap, the per-result prose band, and the total-prose budget; the extra words carry the second regime's numbers and the map-quality baselines the measurement rules require.*
 
@@ -134,6 +134,8 @@ This trains the context probe on one regime's full balanced set and evaluates it
 > **Figure.** *A context probe trained on one regime predicts the other at 0.91–0.99, both directions.* Cross-regime transfer AUROC (ridge and diff-in-means), evaluated on the held-out regime; error bars are group-bootstrap intervals; dashed = chance.
 
 Training on harmful flip-pairs and testing on over-refusal gives AUROC 0.913 (ridge) / 0.948 (diff-in-means); the reverse gives 0.982 / 0.986. A leave-one-benchmark-out check within over-refusal holds too (pooled 0.936). The refuse/comply direction learned in one regime substantially predicts the other — largely one shared geometry.
+
+Scope and robustness caveats (non-result-affecting): nine further open review concerns are code-robustness items that remain open for follow-up work, none touching a reported number — cache and fit pinning (`pca-cache-bare-existence-resume`, `extras-refit-lambda-unpinned`), scrub-vs-upload-gate divergence (`secret-scrub-gate-context-divergence`), regression-pin gaps (`round4-invariant-pytest-gaps`, `round6-hotfix-regression-pins`), a swallowed cleanup-reap log line (`cleanup-vllm-reap-failure-swallowed`), pre-existing arm-A source handling (`arma-source-consumer-post-init`), a legacy re-judge skip this run never exercised (`rejudge-legacy-save-raw-silent-skip`), and transfer-bound capture throughput (`capture-detach-full-seq-transfer-unvectorized`).
 
 ---
 
