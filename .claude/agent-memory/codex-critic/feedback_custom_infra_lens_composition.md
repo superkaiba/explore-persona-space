@@ -397,6 +397,29 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   inputs + press + lensitems + plan + empty prior; unsigned both-sides-guard
   atoms + pair-split + isfinite canon + collect-all).
 
+- **verify_plan check-ADDITION with a brief-supplied seven-question infra
+  translation (#2228 round one, methodology): the 19p mechanical-verifier
+  reframe + WARN-only blend composes as lettered questions (the brief's
+  seven + a design-decision-grounding question standing in for the
+  hyperparameter-grounding item), each with a mandated verdict word
+  (SOUND/HOLDS/FAILS/PARTIAL/UNVERIFIED; UNVERIFIED would-be blocker files
+  as Concern).** The brief's concurrent-fact-checker clause splits cleanly
+  as: "the fact-checker verifies the cited lines/counts are TRUE; you
+  verify a real source EXISTS and the inference from source to decision
+  HOLDS" — design stays reviewable while mechanical re-verification is
+  gagged. Earned probes that slotted into the questions: truthful-in-band
+  escape for the cross-quantity corner (the escape phrase asserts
+  "no gate" on a plan that HAS one); whole-doc H1 section-scoping defeat
+  (the #947 probe) against the any-enclosing-heading idiom; survivor-corpus
+  vs fresh-drafts calibration-population gap on the zero-corpus-FP kill
+  criterion; dead-tripwire check on the no-regression kill criterion.
+  Numcheck PASS at ~145 KB (spans = inputs + questions + lensitems + plan +
+  empty prior). Self-test gotcha: the sha-overflow guard KEEPS a bare
+  sha-like token as a LITERAL atom (canceling in the multiset) — assert
+  `atoms("003e392548") == Counter({...: 1})`, never `not atoms(...)`
+  (emptiness holds only for letter-ADJACENT forms like `003e...fcbb`,
+  where the both-sides guards suppress the match).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
