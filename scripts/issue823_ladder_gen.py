@@ -29,7 +29,7 @@ Usage:
   uv run python scripts/issue823_ladder_gen.py           # full 5,000-context production run
 
 Exit codes: 0 = complete; 3 = transport-class rows remain (after this run's
-bounded FRESH re-drive rounds, or inside a persona's cap-hit regen) --
+bounded FRESH re-drive rounds, or inside the pooled cap-hit regen) --
 halt-and-report: digest written, no sentinel, no upload. The dispatcher
 re-serves persisted transport rows on a resumed checkpoint WITHOUT
 re-dispatching, so: a re-run resumes completed rows from the batch
@@ -81,6 +81,11 @@ REGEN_MAX_TOKENS = 2048  # pre-registered re-gen cap for over-cap rows
 GEN_TEMPERATURE = 1.0
 CAP_HIT_REGEN_FRACTION = 0.02  # per-persona stop-and-regen trigger
 MAX_TRANSPORT_REDRIVES = 2  # bounded caller-side re-drive of transport-class rows
+# FIX C: cumulative ceiling on fresh PAID re-drive rounds across ALL process
+# runs. No new persisted counter — the numbered redriveN checkpoint dirs on
+# disk ARE the durable cumulative counter (_next_redrive_round numbers past
+# them). Enforced by _require_redrive_headroom before each fresh dispatch.
+MAX_CUMULATIVE_REDRIVE_ROUNDS = 6
 
 K_ARMS: tuple[int, ...] = (1, 2, 4, 8, 16)
 N_PERSONAS = 16
@@ -450,6 +455,107 @@ def _next_redrive_round(root: pathlib.Path) -> int:
     return max(existing, default=0) + 1
 
 
+def _stale_redrive_dirs(root: pathlib.Path) -> list[pathlib.Path]:
+    """Numeric ``redriveN`` checkpoint dirs from PRIOR runs, ascending by round.
+
+    Ascending (chronological) order is load-bearing: a row present in
+    ``redrive3`` was still transport-class after ``redrive2``'s merge in the
+    run that created it, so replaying ``results.update`` in dir order
+    reproduces each prior run's own merge sequence. Quarantined dirs
+    (``redriveN.stale``), non-numeric names, and plain files are excluded —
+    the same match rule as :func:`_next_redrive_round`.
+    """
+    numbered = [
+        (int(m.group(1)), d)
+        for d in root.glob("redrive*")
+        if d.is_dir() and (m := re.fullmatch(r"redrive(\d+)", d.name)) is not None
+    ]
+    return [d for _, d in sorted(numbered)]
+
+
+def _merge_stale_redrives(
+    root: pathlib.Path,
+    items_by_id: dict[str, DispatchItem],
+    results: dict[str, DispatchResult],
+    batch_meta: dict[str, dict],
+    poll_interval: float,
+) -> None:
+    """Resume prior runs' redrive checkpoints and merge their outcomes (FIX B).
+
+    Main-checkpoint results files are immutable once collected, so a re-run
+    after an exit-3 halt recomputes the ORIGINAL main-dispatch residue: rows
+    that already succeeded — and were billed — in a prior run's ``redriveN``
+    checkpoints would be re-submitted (re-bought) on every re-run, and a run
+    killed mid-retry leaves an orphaned batch completing server-side that a
+    blind re-submit double-bills on success. Resuming each stale dir through
+    the existing ``_dispatch`` re-serves collected sub-batches WITHOUT
+    re-dispatching (network-free) and polls/harvests any crash-orphaned
+    batch; the merged outcomes shrink the pending set to the
+    genuinely-remaining rows. Raises on a checkpoint whose item ids are not
+    in this run's registered item set (foreign assignment/context set).
+    """
+    for rd_dir in _stale_redrive_dirs(root):
+        state_path = rd_dir / "state.json"
+        if not state_path.is_file():
+            # Dir created but the dispatcher died before writing state.json:
+            # nothing was submitted there, so there is nothing to resume.
+            logger.warning(
+                "Stale %s has no dispatcher state.json — the prior run died before "
+                "submitting anything there; skipping resume for this dir.",
+                rd_dir,
+            )
+            continue
+        stale_ids = sorted(set(json.loads(state_path.read_text())["cid_to_item"].values()))
+        unknown = [iid for iid in stale_ids if iid not in items_by_id]
+        if unknown:
+            raise RuntimeError(
+                f"Stale redrive checkpoint {rd_dir} references {len(unknown)} item id(s) "
+                f"not in this run's registered item set (first: {unknown[:5]}) — the "
+                "checkpoint belongs to a different assignment/context set. Refusing to "
+                "merge; quarantine it (mv redriveN redriveN.stale) only after verifying "
+                "on the Anthropic batch console that no batch there is still in flight."
+            )
+        sub = [items_by_id[iid] for iid in stale_ids]
+        logger.info("Resuming stale redrive checkpoint %s (%d rows)", rd_dir.name, len(sub))
+        rd_results = asyncio.run(_dispatch(sub, rd_dir, GEN_MAX_TOKENS, poll_interval))
+        results.update(rd_results)
+        batch_meta.update(load_batch_meta(rd_dir))
+
+
+def _require_redrive_headroom(next_round: int, n_pending: int) -> None:
+    """Cumulative re-drive ceiling across ALL process runs (FIX C).
+
+    The numbered ``redriveN`` checkpoint dirs on disk ARE the durable
+    cumulative counter (each fresh paid round creates exactly one, and
+    :func:`_next_redrive_round` numbers past them), so no new persisted
+    counter is needed. When the NEXT fresh round would exceed
+    ``MAX_CUMULATIVE_REDRIVE_ROUNDS``, halt-and-report with exit 3 instead
+    of dispatching another paid round — an accidental re-run loop is
+    bounded while a deliberate continuation stays possible via the named
+    override.
+    """
+    if next_round <= MAX_CUMULATIVE_REDRIVE_ROUNDS:
+        return
+    logger.error(
+        "HALT-AND-REPORT: cumulative re-drive ceiling reached — the next fresh re-drive "
+        "round would be redrive%d, past MAX_CUMULATIVE_REDRIVE_ROUNDS=%d (the numbered "
+        "redriveN checkpoint dirs on disk are the durable cumulative counter), with %d "
+        "transport-class rows still pending. Refusing to dispatch another paid round. "
+        "Deliberate continuation: raise MAX_CUMULATIVE_REDRIVE_ROUNDS in "
+        "scripts/issue823_ladder_gen.py and re-run (already-paid successes keep resuming "
+        "from the stale redrive checkpoints). Quarantining checkpoints "
+        "(mv redriveN redriveN.stale) also lowers the counter, but DISCARDS those "
+        "checkpoints' already-paid successes from the merge — reserve it for checkpoints "
+        "verified dead/corrupt on the Anthropic batch console. Repeated exhaustion at "
+        "this ceiling indicates a persistent transport / rate-limit problem, not a "
+        "transient blip.",
+        next_round,
+        MAX_CUMULATIVE_REDRIVE_ROUNDS,
+        n_pending,
+    )
+    sys.exit(3)
+
+
 def personas_over_cap_threshold(
     stop_by_item: dict[str, str | None], pairs: set[tuple[int, int]]
 ) -> dict[int, list[int]]:
@@ -467,6 +573,44 @@ def personas_over_cap_threshold(
         for p, rows in by_p.items()
         if len(rows) / n_rows[p] > CAP_HIT_REGEN_FRACTION
     }
+
+
+def _dispatch_pooled_regen(
+    root: pathlib.Path,
+    items_by_id: dict[str, DispatchItem],
+    regen_personas: dict[int, list[int]],
+    poll_interval: float,
+) -> tuple[dict[str, DispatchResult], list[str], pathlib.Path]:
+    """ONE pooled Batch dispatch for every triggered persona's over-cap rows (FIX D).
+
+    The >2 percent trigger stays PER PERSONA (``personas_over_cap_threshold``
+    is unchanged); only the TRANSPORT is pooled. The pre-fix path dispatched
+    one batch per persona SERIALLY, each waiting out its own Batch API
+    round-trip (up to the 24 h service window) before the next persona
+    started — 16 personas meant 16 sequential round-trips (#823 pilot log).
+    Per-persona ACCOUNTING is not pooled: the caller keys per-record
+    ``regen`` flags and ``max_tokens`` by item id, and item ids encode the
+    persona. Returns ``(results, pooled_ids, checkpoint_dir)``.
+    """
+    for p, ctx_rows in sorted(regen_personas.items()):
+        logger.warning(
+            "Cap-hit trigger: persona %d has %d over-cap rows — re-generating at %d tokens",
+            p,
+            len(ctx_rows),
+            REGEN_MAX_TOKENS,
+        )
+    pooled_ids = sorted(
+        make_item_id(p, i) for p, ctx_rows in regen_personas.items() for i in ctx_rows
+    )
+    rg_dir = root / "regen_pooled"
+    logger.info(
+        "Pooled cap-hit regen: ONE batch dispatch for %d rows across %d triggered persona(s)",
+        len(pooled_ids),
+        len(regen_personas),
+    )
+    sub = [items_by_id[iid] for iid in pooled_ids]
+    rg = asyncio.run(_dispatch(sub, rg_dir, REGEN_MAX_TOKENS, poll_interval))
+    return rg, pooled_ids, rg_dir
 
 
 # ── Record building + persistence ────────────────────────────────────────────
@@ -585,6 +729,20 @@ def build_digest(
         "cap_hit_fraction_by_arm_persona": cap_frac_by_arm_persona,
         "cap_hit_regen_trigger_fraction": CAP_HIT_REGEN_FRACTION,
         "regen_personas_triggered": {p: len(rows) for p, rows in regen_personas.items()},
+        # Realized TRIGGER-TIME over-cap rate per triggered persona (count +
+        # denominator + fraction, readable without recomputation). The
+        # post-regen `cap_hit` fields above UNDERSTATE the first-pass rate
+        # for triggered personas, because regenerated rows usually clear the
+        # 2x cap; non-triggered personas' first-pass rate IS
+        # cap_hit_fraction_by_persona (they were never regenerated).
+        "regen_over_cap_at_trigger_by_persona": {
+            p: {
+                "n_over_cap": len(rows),
+                "n_rows": validity_by_persona[p]["n_rows"],
+                "fraction": len(rows) / validity_by_persona[p]["n_rows"],
+            }
+            for p, rows in sorted(regen_personas.items())
+        },
         "redrive_rounds_used": redrive_rounds,
         "n_error_rows": len(error_ids),
         "error_row_ids_first20": error_ids[:20],
@@ -696,12 +854,19 @@ def main(argv: list[str] | None = None) -> None:
     batch_meta = load_batch_meta(root / "batches")
     max_tokens_by_item = {it.item_id: GEN_MAX_TOKENS for it in items}
     items_by_id = {it.item_id: it for it in items}
+    # FIX B: merge prior runs' redrive checkpoint outcomes BEFORE computing
+    # the pending set — already-paid successes are never re-submitted, and a
+    # crash-orphaned batch still completing server-side is harvested instead
+    # of double-billed by a blind re-submit of the same rows.
+    _merge_stale_redrives(root, items_by_id, results, batch_meta, poll_interval)
     redrive_rounds = 0
     first_round = _next_redrive_round(root)
     for rnd in range(first_round, first_round + MAX_TRANSPORT_REDRIVES):
         pending = transport_class_ids(results)
         if not pending:
             break
+        # FIX C: cumulative ceiling on fresh paid rounds across ALL runs.
+        _require_redrive_headroom(rnd, len(pending))
         redrive_rounds += 1
         logger.warning(
             "Re-driving %d transport-class rows (round %d of this run, dir redrive%d)",
@@ -748,41 +913,42 @@ def main(argv: list[str] | None = None) -> None:
         logger.error(
             "HALT-AND-REPORT: %d transport-class rows remain after %d fresh re-drive "
             "round(s) this run (checkpoint dirs through redrive%d); digest at %s. "
-            "Re-running this command resumes completed rows from the batch checkpoints "
-            "and RE-SUBMITS the remaining rows in fresh redrive dirs numbered past the "
-            "stale ones (stale redrive checkpoints are never reused for new "
-            "submissions). Repeated exit-3 halts indicate a persistent transport / "
-            "rate-limit problem — check org limits and the Anthropic batch console "
-            "before re-running.",
+            "Re-running this command resumes the main checkpoint AND every stale "
+            "redrive checkpoint first (already-paid successes are merged back and a "
+            "crash-orphaned batch still completing server-side is harvested — nothing "
+            "is re-bought), then RE-SUBMITS only the genuinely-remaining rows in fresh "
+            "redrive dirs numbered past the stale ones (stale redrive checkpoints are "
+            "never reused for new submissions). Fresh rounds are capped cumulatively "
+            "across re-runs at MAX_CUMULATIVE_REDRIVE_ROUNDS=%d. Repeated exit-3 halts "
+            "indicate a persistent transport / rate-limit problem — check org limits "
+            "and the Anthropic batch console before re-running.",
             len(remaining),
             redrive_rounds,
             first_round + MAX_TRANSPORT_REDRIVES - 1,
             eval_dir / "gen_digest.json",
+            MAX_CUMULATIVE_REDRIVE_ROUNDS,
         )
         sys.exit(3)
 
-    # 4. Pre-registered cap-hit re-gen trigger (per persona, > 2 percent).
+    # 4. Pre-registered cap-hit re-gen trigger (per persona, > 2 percent);
+    # dispatch POOLED into ONE batch (FIX D) — the pre-fix per-persona loop
+    # serialized one full Batch API round-trip per triggered persona.
     stop_by_item = {iid: res.stop_reason for iid, res in results.items()}
     regen_personas = personas_over_cap_threshold(stop_by_item, pairs)
     regen_items: set[str] = set()
-    for p, ctx_rows in sorted(regen_personas.items()):
-        ids = [make_item_id(p, i) for i in ctx_rows]
-        logger.warning(
-            "Cap-hit trigger: persona %d has %d over-cap rows — re-generating at %d tokens",
-            p,
-            len(ids),
-            REGEN_MAX_TOKENS,
+    if regen_personas:
+        rg, pooled_ids, rg_dir = _dispatch_pooled_regen(
+            root, items_by_id, regen_personas, poll_interval
         )
-        sub = [items_by_id[iid] for iid in ids]
-        rg_dir = root / f"regen_p{p:02d}"
-        rg = asyncio.run(_dispatch(sub, rg_dir, REGEN_MAX_TOKENS, poll_interval))
         rg_remaining = transport_class_ids(rg)
         if rg_remaining:
             report = {
                 "metadata": metadata,
                 "incomplete": True,
                 "reason": "transport_class_rows_remaining_in_regen",
-                "regen_persona": p,
+                "regen_personas_triggered": {
+                    p: len(rows) for p, rows in sorted(regen_personas.items())
+                },
                 "n_remaining": len(rg_remaining),
                 "remaining_ids_first20": rg_remaining[:20],
                 "regen_checkpoint_dir": str(rg_dir),
@@ -790,24 +956,23 @@ def main(argv: list[str] | None = None) -> None:
             }
             write_json(eval_dir / "gen_digest.json", report)
             logger.error(
-                "HALT-AND-REPORT: cap-hit regen for persona %d has %d transport-class "
-                "rows; digest at %s. A plain re-run REPLAYS this regen checkpoint and "
-                "re-serves the same transport rows without re-dispatching (deterministic "
-                "re-halt). Real remedies: quarantine the stale checkpoint (mv %s %s) so "
-                "the re-run re-submits persona %d's regen rows fresh, and/or investigate "
-                "the transport cause (org rate limits, Anthropic batch console) before "
-                "re-running.",
-                p,
+                "HALT-AND-REPORT: pooled cap-hit regen has %d transport-class rows "
+                "(triggered personas: %s); digest at %s. A plain re-run REPLAYS this "
+                "regen checkpoint and re-serves the same transport rows without "
+                "re-dispatching (deterministic re-halt). Real remedies: quarantine the "
+                "single pooled checkpoint (mv %s %s) so the re-run re-submits the "
+                "pooled regen rows fresh, and/or investigate the transport cause (org "
+                "rate limits, Anthropic batch console) before re-running.",
                 len(rg_remaining),
+                sorted(regen_personas),
                 eval_dir / "gen_digest.json",
                 rg_dir,
                 rg_dir.with_name(rg_dir.name + ".stale"),
-                p,
             )
             sys.exit(3)
         results.update(rg)
         batch_meta.update(load_batch_meta(rg_dir))
-        for iid in ids:
+        for iid in pooled_ids:
             max_tokens_by_item[iid] = REGEN_MAX_TOKENS
             regen_items.add(iid)
 

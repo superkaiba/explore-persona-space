@@ -99,6 +99,7 @@ from scripts.issue823_ladder_gen import (
     REGEN_MAX_TOKENS,
     REGISTERED_TOTAL_PAIRS,
     _git_commit,
+    _require_canonical_upload,
     _sha256_file,
     _utc_now,
     build_assignment,
@@ -1027,6 +1028,14 @@ def main(argv: list[str] | None = None) -> None:
             f"P-Store upload of {len(expected_files)} files to {DATA_REPO}/{path_in_repo} "
             "failed or verified incomplete — refusing to report P-Cap complete"
         )
+    # FIX A: a truthy url is NOT enough — _upload_folder_filtered's default-on
+    # file-count fallback re-uploads to the OVERFLOW repo, verifies THERE, and
+    # returns a truthy overflow url, so a bare truthiness check would log
+    # "P-Store complete" + write the done-sentinel while the plan-declared
+    # canonical analysis_tensors/ paths do not exist. Exact equality is sound:
+    # the helper returns the CONSTRUCTED f"{repo_id}/{path_in_repo}" string,
+    # not a server URL. Reuses the sanctioned gate from the gen script.
+    _require_canonical_upload(url, f"{DATA_REPO}/{path_in_repo}")
     logger.info("P-Store complete: %d files uploaded to %s", len(expected_files), url)
 
     sentinel_dir = (
