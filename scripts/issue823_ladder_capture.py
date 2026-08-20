@@ -85,7 +85,7 @@ from explore_persona_space.experiments.issue_823.run_823 import (
     log_phase,
     write_sentinel,
 )
-from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+from explore_persona_space.orchestrate.hub import _upload_folder_filtered, retry_transient
 from scripts.issue823_ladder_gen import (
     CAP_HIT_REGEN_FRACTION,
     DATA_REPO,
@@ -159,12 +159,15 @@ def fetch_gen_inputs(
     logger.info("Fetching P-Gen inputs from %s/%s @ %s", DATA_REPO, gen_prefix, resolved)
     for name in CONSUMED_GEN_FILES:
         paths[name] = pathlib.Path(
-            hf_hub_download(
-                DATA_REPO,
-                f"{gen_prefix}/{GEN_LADDER_SUBPATH}/{name}",
-                repo_type="dataset",
-                revision=resolved,
-                local_dir=dl_dir,
+            retry_transient(
+                lambda name=name: hf_hub_download(
+                    DATA_REPO,
+                    f"{gen_prefix}/{GEN_LADDER_SUBPATH}/{name}",
+                    repo_type="dataset",
+                    revision=resolved,
+                    local_dir=dl_dir,
+                ),
+                what=f"hf_hub_download({gen_prefix}/{GEN_LADDER_SUBPATH}/{name})",
             )
         )
     return paths, resolved
@@ -205,12 +208,15 @@ def verify_gen_sentinel(paths: dict[str, pathlib.Path]) -> dict:
 
 def fetch_span_lengths(dl_dir: pathlib.Path) -> pathlib.Path:
     return pathlib.Path(
-        hf_hub_download(
-            DATA_REPO,
-            SPAN_LENGTHS_PATH_IN_REPO,
-            repo_type="dataset",
-            revision=PARENT_REV,
-            local_dir=dl_dir,
+        retry_transient(
+            lambda: hf_hub_download(
+                DATA_REPO,
+                SPAN_LENGTHS_PATH_IN_REPO,
+                repo_type="dataset",
+                revision=PARENT_REV,
+                local_dir=dl_dir,
+            ),
+            what=f"hf_hub_download({SPAN_LENGTHS_PATH_IN_REPO})",
         )
     )
 
