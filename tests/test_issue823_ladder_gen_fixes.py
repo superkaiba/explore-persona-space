@@ -1,4 +1,4 @@
-"""Regression pins for scripts/issue823_ladder_gen.py (#823 P-Gen fix round).
+"""Regression pins for scripts/issue823_ladder_gen.py (#823 P-Gen fix rounds).
 
 Pins the registered nested-assignment invariants (four corruptions that must
 each raise, incl. the two caught ONLY by a single assert layer — the layering
@@ -8,18 +8,32 @@ per-sub-batch ``harvested_at`` join, the FIX 4 fresh-redrive-dir numbering,
 the FIX 1 canonical-repo upload gate, and the frozen-question loader's
 monotone-unique context order.
 
+Plan-v13 amendment pins (§4.3 steps 2/3b/4 + P0): the 4096/8192 cap ladder +
+``gen_wave`` labels; the generation-config fingerprint's BOTH-direction
+fixtures — a mutated/pilot-cap checkpoint HALTS before any dispatch (rc 4,
+report JSON naming both fingerprints + differing fields) AND a same-config
+different-process-time resume is byte-STABLE (the metadata-free hash basis);
+per-row caps derived from checkpoint-PERSISTED request metadata, never live
+constants; the v11 refusal>empty label precedence; and the P0
+prompt-integrity gate (asserts (a)-(d)) with its dispatch-serializer
+INDEPENDENCE pinned mechanically.
+
 Offline by design: the banked HF download is monkeypatched to tmp_path
 fixtures (signature-conformant def fake, no network); no eval_results/
-fixture reads (no sparse_cones entry needed).
+fixture reads (no sparse_cones entry needed); no live API calls anywhere
+(dispatch seams are monkeypatched recorders).
 """
 
 from __future__ import annotations
 
+import asyncio
 import datetime as _dt
+import hashlib
 import json
 import os
 import pathlib
 import re
+import time
 
 import pytest
 
@@ -99,6 +113,17 @@ def _mk_meta(
     }
 
 
+def _mk_item(p: int, i: int) -> DispatchItem:
+    """A dispatch item shaped exactly as build_items composes it."""
+    return DispatchItem(
+        item_id=lg.make_item_id(p, i),
+        payload={
+            "messages": [{"role": "user", "content": f"q{i}"}],
+            "system": lg.persona_system(p),
+        },
+    )
+
+
 class TestBuildRecordsProvenance:
     def _build(self, meta: dict):
         n = 1
@@ -112,7 +137,9 @@ class TestBuildRecordsProvenance:
             assignment=assignment,
             results={iid: _mk_result(iid)},
             batch_meta={iid: meta},
+            items_by_id={iid: _mk_item(0, 0)},
             max_tokens_by_item={iid: lg.GEN_MAX_TOKENS},
+            gen_wave_by_item={iid: lg.GEN_WAVE_FIRST},
             regen_items=set(),
         )
 
@@ -121,6 +148,17 @@ class TestBuildRecordsProvenance:
         assert rec["harvested_at"] == "2026-08-19T00:00:00Z"
         assert rec["batch_org"] == "org-a"
         assert rec["batch_submitted_at"] == "2026-08-18T23:00:00Z"
+
+    def test_record_carries_gen_wave_and_prompt_evidence(self):
+        # Plan v13 step 2: every record carries its persisted cap, an explicit
+        # gen_wave label, and the EXACT dispatched system prompt + sha256 (the
+        # per-pair evidence the P0 gate byte-compares).
+        rec = self._build(_mk_meta())[0][0]
+        assert rec["max_tokens"] == lg.GEN_MAX_TOKENS
+        assert rec["gen_wave"] == lg.GEN_WAVE_FIRST
+        expected = lg.persona_system(0)
+        assert rec["system_prompt"] == expected
+        assert rec["system_prompt_sha256"] == hashlib.sha256(expected.encode("utf-8")).hexdigest()
 
     def test_null_batch_org_raises(self):
         # FIX 3: batch_org joined the fail-loud null-assert block.
@@ -164,7 +202,9 @@ class TestBuildRecordsProvenance:
             assignment=assignment,
             results={iid: _mk_result(iid) for iid in metas},
             batch_meta=metas,
+            items_by_id={lg.make_item_id(p, i): _mk_item(p, i) for i, p in pairs},
             max_tokens_by_item={iid: lg.GEN_MAX_TOKENS for iid in metas},
+            gen_wave_by_item={iid: lg.GEN_WAVE_FIRST for iid in metas},
             regen_items=set(),
         )
         harvested = {
@@ -306,8 +346,10 @@ class TestMergeStaleRedrives:
         batch_meta = {"r0": {"batch_id": "b_main"}}
         items_by_id = {k: DispatchItem(item_id=k, payload={}) for k in results}
         # Stale redrive1 from a prior run holds r1 (billed + succeeded there).
+        # The gen_config fixture mirrors production: _dispatch's fingerprint
+        # gate persists it BEFORE the dispatcher ever writes state.json.
         rd = tmp_path / "redrive1"
-        rd.mkdir()
+        lg.check_or_persist_gen_config(rd, lg.GEN_MAX_TOKENS)
         (rd / "state.json").write_text(json.dumps({"cid_to_item": {"cid1": "r1"}}))
         calls = []
 
@@ -321,12 +363,16 @@ class TestMergeStaleRedrives:
 
         monkeypatch.setattr(lg, "_dispatch", fake_dispatch)
         monkeypatch.setattr(lg, "load_batch_meta", fake_load_batch_meta)
-        lg._merge_stale_redrives(tmp_path, items_by_id, results, batch_meta, poll_interval=1.0)
+        mt: dict[str, int] = {}
+        lg._merge_stale_redrives(tmp_path, items_by_id, results, batch_meta, mt, poll_interval=1.0)
         assert calls == [(["r1"], rd)]
         # r1's already-paid success is merged back: only r2 remains pending.
         assert lg.transport_class_ids(results) == ["r2"]
         assert batch_meta["r1"]["batch_id"] == "b_stale1"
         assert batch_meta["r0"]["batch_id"] == "b_main"
+        # Step 3b(iii): the re-served row's cap came from the stale
+        # checkpoint's PERSISTED gen_config.json, not a live constant.
+        assert mt == {"r1": lg.GEN_MAX_TOKENS}
 
     def test_stateless_dir_skipped_without_dispatch(self, tmp_path, monkeypatch):
         # Dir created but the dispatcher never wrote state.json: nothing was
@@ -338,7 +384,7 @@ class TestMergeStaleRedrives:
 
         monkeypatch.setattr(lg, "_dispatch", boom)
         results: dict = {}
-        lg._merge_stale_redrives(tmp_path, {}, results, {}, poll_interval=1.0)
+        lg._merge_stale_redrives(tmp_path, {}, results, {}, {}, poll_interval=1.0)
         assert results == {}
 
     def test_foreign_checkpoint_ids_raise(self, tmp_path):
@@ -346,7 +392,7 @@ class TestMergeStaleRedrives:
         rd.mkdir()
         (rd / "state.json").write_text(json.dumps({"cid_to_item": {"c0": "not_registered"}}))
         with pytest.raises(RuntimeError, match="registered item set"):
-            lg._merge_stale_redrives(tmp_path, {}, {}, {}, poll_interval=1.0)
+            lg._merge_stale_redrives(tmp_path, {}, {}, {}, {}, poll_interval=1.0)
 
 
 # ── FIX D (follow-up round): pooled cap-hit regen dispatch ───────────────────
@@ -495,3 +541,385 @@ class TestFrozenQuestionLoader:
         self._patch(monkeypatch, b2, cv)
         with pytest.raises(AssertionError, match="monotone-unique"):
             lg.load_frozen_questions(tmp_path / "dl")
+
+
+# ── Plan v13 §4.3 step 4: registered cap ladder + gen_wave labels ────────────
+
+
+class TestGenerationConfigFingerprint:
+    def test_registered_caps_and_wave_labels(self):
+        # Plan v13 §4.3 step 4: base 4096, ONE regen round at 8192; the regen
+        # wave label is the registered literal "regen-8192".
+        assert lg.GEN_MAX_TOKENS == 4096
+        assert lg.REGEN_MAX_TOKENS == 8192
+        assert lg.GEN_WAVE_FIRST == "first"
+        assert lg.GEN_WAVE_REGEN == "regen-8192"
+
+    def test_fingerprint_fields_complete(self):
+        # Plan v13 §4.3 step 3b(i): sha256 over exactly (model, temperature,
+        # base cap, regen cap, roster/template hash, context pin, mask-gate
+        # schema id).
+        fp = lg.generation_config_fingerprint()
+        assert set(fp["fields"]) == {
+            "model",
+            "temperature",
+            "gen_max_tokens",
+            "regen_max_tokens",
+            "roster_template_hash",
+            "context_pin",
+            "mask_gate_schema_id",
+        }
+        assert fp["fields"]["model"] == lg.SONNET_MODEL
+        assert fp["fields"]["gen_max_tokens"] == 4096
+        assert fp["fields"]["regen_max_tokens"] == 8192
+        assert fp["fields"]["context_pin"] == lg.PARENT_REV
+        assert fp["fields"]["mask_gate_schema_id"] == lg.MASK_GATE_SCHEMA_ID
+        assert re.fullmatch(r"[0-9a-f]{64}", fp["sha256"])
+
+    def test_resume_stability_across_process_time(self, monkeypatch):
+        # HASH-BASIS PIN direction (b) (plan v13 §4.3 step 3b(i)): two
+        # fingerprint computations over an IDENTICAL config at different
+        # wall-clock times must be byte-identical — a metadata-bearing hash
+        # (e.g. over the whole roster.json with its generated_at) violates
+        # exactly this and would reject a healthy resume.
+        fp1 = lg.generation_config_fingerprint()
+        time.sleep(0.05)
+        monkeypatch.setattr(lg, "_utc_now", lambda: "2099-01-01T00:00:00Z")
+        fp2 = lg.generation_config_fingerprint()
+        assert json.dumps(fp1, sort_keys=True) == json.dumps(fp2, sort_keys=True)
+
+    def test_roster_template_hash_is_metadata_free(self):
+        # The hash basis is EXACTLY {template, personas(idx, name, card)} —
+        # never the generated roster.json as a whole (whose metadata block
+        # embeds generated_at).
+        basis = {
+            "template": lg.PERSONA_TEMPLATE,
+            "personas": [
+                {"idx": p, "name": name, "card": card} for p, (name, card) in enumerate(lg.PERSONAS)
+            ],
+        }
+        blob = json.dumps(basis, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        assert "generated_at" not in blob
+        assert lg.roster_template_hash() == hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+# ── Plan v13 §4.3 step 3b(ii): resume rejects mismatched state pre-dispatch ──
+
+
+class TestResumeFingerprintGate:
+    @staticmethod
+    def _rewrite_cfg(ckpt: pathlib.Path, mutate) -> None:
+        cfg = json.loads((ckpt / lg.GEN_CONFIG_FILENAME).read_text())
+        mutate(cfg)
+        blob = json.dumps(
+            cfg["fingerprint"]["fields"], ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+        cfg["fingerprint"]["sha256"] = hashlib.sha256(blob.encode("utf-8")).hexdigest()
+        (ckpt / lg.GEN_CONFIG_FILENAME).write_text(json.dumps(cfg))
+
+    def test_fresh_dir_persists_then_same_config_resume_passes(self, tmp_path, monkeypatch):
+        ckpt = tmp_path / "batches"
+        assert lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS) == lg.GEN_MAX_TOKENS
+        cfg = json.loads((ckpt / lg.GEN_CONFIG_FILENAME).read_text())
+        assert cfg["max_tokens"] == lg.GEN_MAX_TOKENS
+        assert cfg["fingerprint"] == lg.generation_config_fingerprint()
+        # Same-config resume: no halt, and the dispatcher IS reached.
+        called = []
+
+        async def fake_dispatch_calls(items, **kwargs):
+            called.append(len(items))
+            return {}
+
+        monkeypatch.setattr(lg, "dispatch_calls", fake_dispatch_calls)
+        asyncio.run(lg._dispatch([], ckpt, lg.GEN_MAX_TOKENS, 0.1))
+        assert called == [0]
+
+    def test_mutated_config_halts_before_dispatch(self, tmp_path, monkeypatch):
+        # Fixture direction (a): a checkpoint persisted under a DIFFERENT
+        # config (here: another model) must halt with rc 4 BEFORE any
+        # dispatch — the recorder proves dispatch_calls was never reached,
+        # so no persisted row could have been re-served.
+        ckpt = tmp_path / "batches"
+        lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS)
+
+        def mutate(cfg):
+            cfg["fingerprint"]["fields"]["model"] = "claude-other-model-20990101"
+
+        self._rewrite_cfg(ckpt, mutate)
+        called = []
+
+        async def fake_dispatch_calls(items, **kwargs):
+            called.append(len(items))
+            return {}
+
+        monkeypatch.setattr(lg, "dispatch_calls", fake_dispatch_calls)
+        with pytest.raises(SystemExit) as excinfo:
+            asyncio.run(lg._dispatch([], ckpt, lg.GEN_MAX_TOKENS, 0.1))
+        assert excinfo.value.code == lg.EXIT_CONFIG_MISMATCH == 4
+        assert called == []  # designed halt BEFORE any dispatch / row re-serve
+        report = json.loads((tmp_path / "fingerprint_mismatch_batches.json").read_text())
+        assert report["reason"] == "generation_config_fingerprint_mismatch"
+        assert "model" in report["differing_fields"]
+        assert report["persisted_fingerprint"]["fields"]["model"] == "claude-other-model-20990101"
+        assert report["live_fingerprint"] == lg.generation_config_fingerprint()
+
+    def test_pilot_cap_checkpoint_rejected_before_dispatch(self, tmp_path):
+        # Plan §4.3 step 3b mechanization: a fixture checkpoint written with
+        # the pilot's 1024/2048 caps MUST make the resume path fail before
+        # dispatch (the exact stale-state shape a cap re-tune leaves behind).
+        ckpt = tmp_path / "batches"
+        lg.check_or_persist_gen_config(ckpt, 1024)
+
+        def mutate(cfg):
+            cfg["fingerprint"]["fields"]["gen_max_tokens"] = 1024
+            cfg["fingerprint"]["fields"]["regen_max_tokens"] = 2048
+            cfg["max_tokens"] = 1024
+
+        self._rewrite_cfg(ckpt, mutate)
+        with pytest.raises(SystemExit) as excinfo:
+            lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS)
+        assert excinfo.value.code == 4
+        report = json.loads((tmp_path / "fingerprint_mismatch_batches.json").read_text())
+        diffs = report["differing_fields"]
+        assert {"gen_max_tokens", "regen_max_tokens", "max_tokens"} <= set(diffs)
+        assert diffs["gen_max_tokens"] == {"persisted": 1024, "live": 4096}
+        assert diffs["regen_max_tokens"] == {"persisted": 2048, "live": 8192}
+
+    def test_unfingerprinted_checkpoint_with_state_halts(self, tmp_path):
+        # A dispatcher state.json with NO gen_config.json is a
+        # pre-fingerprint checkpoint: unverifiable, refuse to re-serve.
+        ckpt = tmp_path / "batches"
+        ckpt.mkdir(parents=True)
+        (ckpt / "state.json").write_text(json.dumps({"cid_to_item": {}, "sub_batches": []}))
+        with pytest.raises(SystemExit) as excinfo:
+            lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS)
+        assert excinfo.value.code == 4
+        report = json.loads((tmp_path / "fingerprint_mismatch_batches.json").read_text())
+        assert report["reason"] == "unfingerprinted_checkpoint"
+        assert report["persisted_fingerprint"] is None
+        assert report["live_fingerprint"] == lg.generation_config_fingerprint()
+
+    def test_corrupt_sha_only_halts(self, tmp_path):
+        # Fields identical but a corrupted sha still halts (fail-closed).
+        ckpt = tmp_path / "batches"
+        lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS)
+        cfg = json.loads((ckpt / lg.GEN_CONFIG_FILENAME).read_text())
+        cfg["fingerprint"]["sha256"] = "0" * 64
+        (ckpt / lg.GEN_CONFIG_FILENAME).write_text(json.dumps(cfg))
+        with pytest.raises(SystemExit) as excinfo:
+            lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS)
+        assert excinfo.value.code == 4
+
+
+# ── Plan v13 §4.3 step 3b(iii): per-row caps from PERSISTED metadata ─────────
+
+
+class TestPerRowCapFromPersistedMetadata:
+    def test_cap_read_from_checkpoint_not_live_constant(self, tmp_path, monkeypatch):
+        ckpt = tmp_path / "batches"
+        lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS)
+        # Simulate a later cap re-tune: the live constant moves, the
+        # checkpoint's persisted request metadata does not.
+        monkeypatch.setattr(lg, "GEN_MAX_TOKENS", 9999)
+        assert lg.checkpoint_max_tokens(ckpt) == 4096
+        # And the fingerprint gate refuses to RESUME that checkpoint under
+        # the re-tuned config (belt + suspender are both live).
+        with pytest.raises(SystemExit) as excinfo:
+            lg.check_or_persist_gen_config(ckpt, lg.GEN_MAX_TOKENS)
+        assert excinfo.value.code == 4
+
+    def test_missing_gen_config_fails_loud(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            lg.checkpoint_max_tokens(tmp_path / "nonexistent")
+
+
+# ── Plan v13 §4.3 step 4 (v11): refusal>empty label precedence ───────────────
+
+
+class TestClassifyValidityPrecedence:
+    def test_refusal_stop_beats_empty_error_category(self):
+        # The API-level refusal shape: succeeded-but-empty content arriving
+        # as an error/empty_response DispatchResult with stop_reason refusal.
+        res = DispatchResult(
+            item_id="x", result=None, error=True, category="empty_response", stop_reason="refusal"
+        )
+        assert lg.classify_validity(res) == "refusal"
+
+    def test_refusal_stop_beats_empty_content_nonerror(self):
+        res = DispatchResult(
+            item_id="x", result="", error=False, category="ok", stop_reason="refusal"
+        )
+        assert lg.classify_validity(res) == "refusal"
+
+    def test_empty_without_refusal_stays_empty(self):
+        res = DispatchResult(
+            item_id="x", result="", error=False, category="ok", stop_reason="end_turn"
+        )
+        assert lg.classify_validity(res) == "empty"
+        res2 = DispatchResult(
+            item_id="x", result=None, error=True, category="empty_response", stop_reason=None
+        )
+        assert lg.classify_validity(res2) == "empty"
+
+    def test_transport_and_ok_classes_unchanged(self):
+        res = DispatchResult(
+            item_id="x", result=None, error=True, category=lg.RESULT_TRANSPORT, stop_reason=None
+        )
+        assert lg.classify_validity(res) == f"error:{lg.RESULT_TRANSPORT}"
+        assert lg.classify_validity(_mk_result("x")) == "ok"
+
+
+# ── Plan v13 §4.3 P0: prompt-integrity gate (asserts (a)-(d)) ────────────────
+
+
+def _mk_p0_artifacts(n: int = 4):
+    """Healthy P0 fixture: roster/assignment/records exactly as main persists them."""
+    assignment = lg.build_assignment(n)
+    pairs = lg.verify_assignment(assignment, n)
+    assignment_obj = {
+        "n_contexts": n,
+        "arms": {str(k): assignment[k] for k in lg.K_ARMS},
+    }
+    roster_obj = {
+        "template": lg.PERSONA_TEMPLATE,
+        "personas": [
+            {"idx": p, "name": name, "card": card} for p, (name, card) in enumerate(lg.PERSONAS)
+        ],
+    }
+    by_persona: dict[int, list[dict]] = {p: [] for p in range(lg.N_PERSONAS)}
+    for i, p in sorted(pairs):
+        sp = lg.persona_system(p)
+        by_persona[p].append(
+            {
+                "context_id": i,
+                "persona_idx": p,
+                "system_prompt": sp,
+                "system_prompt_sha256": hashlib.sha256(sp.encode("utf-8")).hexdigest(),
+                "max_tokens": lg.GEN_MAX_TOKENS,
+                "gen_wave": lg.GEN_WAVE_FIRST,
+            }
+        )
+    return roster_obj, assignment_obj, by_persona
+
+
+class TestP0PromptIntegrityGate:
+    def test_reconstruction_agrees_with_dispatch_serializer_when_healthy(self):
+        # Transcription fidelity: the independent §4.1 transcription and the
+        # dispatch serializer produce byte-identical prompts for all 16
+        # personas (also catches any tool-transit Unicode mangling).
+        for p in range(lg.N_PERSONAS):
+            assert lg.p0_reconstruct_system(p) == lg.persona_system(p)
+
+    def test_reconstruction_independent_of_dispatch_serializer(self, monkeypatch):
+        # Mechanical independence proof: corrupt the dispatch-side template
+        # and make persona_system raise — the P0 reconstruction is unmoved.
+        expected = lg.p0_reconstruct_system(3)
+
+        def boom(p):
+            raise AssertionError("P0 reconstruction must not call persona_system")
+
+        monkeypatch.setattr(lg, "persona_system", boom)
+        monkeypatch.setattr(lg, "PERSONA_TEMPLATE", "CORRUPTED {name} {card}")
+        monkeypatch.setattr(lg, "PERSONAS", [("X", "Y")] * lg.N_PERSONAS)
+        assert lg.p0_reconstruct_system(3) == expected
+
+    def test_reconstruction_source_references_no_dispatch_constants(self):
+        # co_names carries every global + attribute/method name the compiled
+        # body actually references (docstring/comment prose is invisible), so
+        # this pins that the reconstruction never touches the dispatch-side
+        # constants/serializer nor any str.format call.
+        names = lg.p0_reconstruct_system.__code__.co_names
+        for banned in ("PERSONA_TEMPLATE", "PERSONAS", "persona_system", "format"):
+            assert banned not in names, f"P0 reconstruction references dispatch-side {banned!r}"
+
+    def test_gate_passes_on_healthy_artifacts(self, tmp_path):
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        lg.p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, tmp_path)
+        assert not (tmp_path / "p0_integrity_report.json").exists()
+
+    def _expect_halt(self, tmp_path, roster_obj, assignment_obj, by_persona, assert_key):
+        with pytest.raises(SystemExit) as excinfo:
+            lg.p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, tmp_path)
+        assert excinfo.value.code == lg.EXIT_P0_INTEGRITY == 5
+        report = json.loads((tmp_path / "p0_integrity_report.json").read_text())
+        assert report["reason"] == "p0_prompt_integrity_failure"
+        assert assert_key in report["failures_by_assert"]
+        return report
+
+    def test_mutated_payload_halts(self, tmp_path):
+        # Plan §4.3 P0 mechanization: mutating ONE persona's serialized
+        # payload in a fixture generation record MUST make P0 halt, with the
+        # report naming the pair and BOTH serializations.
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        victim = by_persona[1][0]
+        victim["system_prompt"] = victim["system_prompt"] + " INJECTED"
+        report = self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, "c")
+        f = next(x for x in report["failures_first50"] if x["assert"] == "c")
+        assert f["persona_idx"] == 1
+        assert f["context_id"] == victim["context_id"]
+        assert f["persisted_system_prompt"].endswith("INJECTED")
+        assert f["reconstructed_system_prompt"] == lg.p0_reconstruct_system(1)
+
+    def test_mutated_sha_alone_halts(self, tmp_path):
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        by_persona[0][0]["system_prompt_sha256"] = "0" * 64
+        self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, "c")
+
+    def test_mutated_roster_halts(self, tmp_path):
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        roster_obj["personas"][5]["card"] = "a different card"
+        self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, "a")
+
+    def test_mutated_template_halts(self, tmp_path):
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        roster_obj["template"] = roster_obj["template"].replace("Stay fully", "Stay mostly")
+        self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, "a")
+
+    def test_wrong_assignment_halts(self, tmp_path):
+        # Assert (b): the gate recomputes persona(i, k) = i mod k with its
+        # OWN arithmetic — a flipped entry in one arm must halt.
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        assignment_obj["arms"]["2"][3] = 0  # registered value is 3 % 2 == 1
+        self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, "b")
+
+    def test_cap_wave_inconsistency_halts(self, tmp_path):
+        # Plan §4.3 step 3b(iv) / P0 assert (d): a persisted cap that
+        # disagrees with its wave label MUST fail the gate.
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        by_persona[0][0]["max_tokens"] = lg.REGEN_MAX_TOKENS  # wave stays "first"
+        self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, "d")
+
+    def test_pilot_cap_record_halts(self, tmp_path):
+        # Assert (d): persisted requested-max_tokens outside {4096, 8192}
+        # (e.g. the pilot's 1024) is a designed halt.
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        by_persona[0][0]["max_tokens"] = 1024
+        self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, "d")
+
+    def test_regen_cap_with_regen_wave_passes(self, tmp_path):
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        by_persona[0][0]["max_tokens"] = lg.REGEN_MAX_TOKENS
+        by_persona[0][0]["gen_wave"] = lg.GEN_WAVE_REGEN
+        lg.p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, tmp_path)
+        assert not (tmp_path / "p0_integrity_report.json").exists()
+
+    def test_run_p0_verify_roundtrip(self, tmp_path):
+        # The --p0-verify entrypoint reads the persisted artifact shapes main
+        # writes (persona files with a records key + roster + assignment).
+        roster_obj, assignment_obj, by_persona = _mk_p0_artifacts()
+        stage = tmp_path / "stage"
+        stage.mkdir()
+        for p in range(lg.N_PERSONAS):
+            (stage / f"persona{p:02d}_seed42.json").write_text(
+                json.dumps({"metadata": {}, "records": by_persona[p]})
+            )
+        (stage / "roster.json").write_text(json.dumps(roster_obj))
+        (stage / "assignment.json").write_text(json.dumps(assignment_obj))
+        lg.run_p0_verify(stage, tmp_path / "reports")  # healthy: no raise
+        by_persona[2][0]["gen_wave"] = "regen-8192"  # cap stays 4096: inconsistent
+        (stage / "persona02_seed42.json").write_text(
+            json.dumps({"metadata": {}, "records": by_persona[2]})
+        )
+        with pytest.raises(SystemExit) as excinfo:
+            lg.run_p0_verify(stage, tmp_path / "reports")
+        assert excinfo.value.code == 5
