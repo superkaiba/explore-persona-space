@@ -65,6 +65,9 @@ EST_LABEL = {
 LADDER_963K = list(EST_LABEL)
 
 
+SOM_722 = ROOT / "eval_results" / "issue_722" / "base-skill-over-mean-cC-to-v0"
+
+
 def _load() -> tuple[dict, dict, dict]:
     ctx = json.loads((MB / "context_arm.json").read_text())
     pfx = json.loads((MB / "prefix_arm.json").read_text())
@@ -680,6 +683,110 @@ def fig_paper_c1_scaling(l19: dict) -> None:
     plt.close(fig)
 
 
+def fig_paper_c1_layer_profile(ctx_per_layer: dict) -> None:
+    """ICLR paper figure (c1_linear layer-profile): R^2 + acc@1 against layer.
+
+    Panel A (held-out R^2 per layer): the committed 28-layer base-model ridge
+    sweep (eval_results/issue_722/.../skill_over_mean.json; n=50 contexts,
+    single seeded sweep, no error bars) plus the #1901 instruct battery's
+    ridge and wide-neural points at the three captured layers (14/19/26;
+    963,444 training rows, banked 95% bootstrap CIs). Panel B (euclidean
+    acc@1, pool 1,000): the three captured instruct layers, ridge / wide
+    neural / identity+bias — per-layer acc@1 exists only where the 963k
+    capture stored activations, disclosed in the caption. The width-512
+    base-model MLP curve (negative at every layer) is carried in prose, not
+    plotted. One figure-level legend; no on-canvas annotations. Supersedes
+    the #722-only render in scripts/issue722_figures.py (same stem).
+    """
+    som = json.loads((SOM_722 / "skill_over_mean.json").read_text())
+    rows = sorted(som["per_layer"], key=lambda p: p["layer"])
+    b_layers = [p["layer"] for p in rows]
+    b_ridge = [p["skill_vs_mean_ridge"] for p in rows]
+
+    cap_layers = [14, 19, 26]
+
+    def _r2(arm_key: str, lay: int) -> tuple[float, float, float]:
+        r = ctx_per_layer[str(lay)]["arms"][arm_key]["r2"]
+        return r["point"], r["lo"], r["hi"]
+
+    def _a1(arm_key: str, lay: int) -> tuple[float, float, float]:
+        return _acc1(ctx_per_layer[str(lay)]["arms"][arm_key], "test")
+
+    fig, (ax_r2, ax_acc) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.45))
+    ax_r2.plot(
+        b_layers,
+        b_ridge,
+        marker="o",
+        ms=2.5,
+        lw=1.2,
+        color=paper_color("base"),
+        label="linear map, base model (28-layer sweep)",
+    )
+    arms_instruct = (
+        ("ridge", "o", "-", "linear map, instruct (963k rows)", paper_color("instruct")),
+        ("mlp_w32768", "D", "--", "neural map (w=32768), instruct", paper_color("neural_map")),
+    )
+    for ax, getter in ((ax_r2, _r2), (ax_acc, _a1)):
+        for arm_key, mk, ls, lbl, col in arms_instruct:
+            pts = [getter(arm_key, la) for la in cap_layers]
+            ys = [p[0] for p in pts]
+            lo = [p[0] - p[1] for p in pts]
+            hi = [p[2] - p[0] for p in pts]
+            ax.errorbar(
+                cap_layers,
+                ys,
+                yerr=[lo, hi],
+                marker=mk,
+                ls=ls,
+                color=col,
+                lw=1.2,
+                ms=4,
+                capsize=2,
+                label=lbl if ax is ax_r2 else None,
+            )
+        ax.set_xlim(-0.8, 27.8)
+        ax.set_xticks([0, 7, 14, 19, 26])
+        ax.set_xlabel("layer (of 28)")
+    pts = [_a1("identity_bias", la) for la in cap_layers]
+    ys = [p[0] for p in pts]
+    lo = [p[0] - p[1] for p in pts]
+    hi = [p[2] - p[0] for p in pts]
+    ax_acc.errorbar(
+        cap_layers,
+        ys,
+        yerr=[lo, hi],
+        marker="s",
+        ls="--",
+        color=paper_color("identity_bias"),
+        lw=1.2,
+        ms=4,
+        capsize=2,
+        label="identity + bias, instruct",
+    )
+    ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
+    ax_r2.set_ylabel("held-out $R^2$")
+    ax_r2.set_ylim(-0.15, 1.0)
+    ax_acc.axhline(0.001, color="black", lw=0.7, ls=":")
+    ax_acc.set_ylabel("retrieval acc@1 (pool 1,000)")
+    ax_acc.set_ylim(0.0, 1.0)
+
+    h1, l1 = ax_r2.get_legend_handles_labels()
+    h2, l2 = ax_acc.get_legend_handles_labels()
+    fig.legend(
+        h1 + h2,
+        l1 + l2,
+        loc="upper center",
+        ncol=2,
+        frameon=False,
+        handlelength=1.6,
+        columnspacing=1.2,
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.84))
+    PAPER_OUT.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_layer_profile", dir=PAPER_OUT)
+    plt.close(fig)
+
+
 def main() -> None:
     import argparse
 
@@ -693,7 +800,13 @@ def main() -> None:
         # figures/paper/ — never overwrites the blog-styled issue stems.
         set_paper_style("iclr")
         fig_paper_c1_scaling(l19)
-        print("done:", sorted(p.name for p in PAPER_OUT.glob("c1_scaling_*")))
+        ctx_all = json.loads((MB / "context_arm.json").read_text())["per_layer"]
+        fig_paper_c1_layer_profile(ctx_all)
+        print(
+            "done:",
+            sorted(p.name for p in PAPER_OUT.glob("c1_scaling_*")),
+            sorted(p.name for p in PAPER_OUT.glob("c1_layer_profile*")),
+        )
         return
     set_paper_style("blog")
     OUT.mkdir(parents=True, exist_ok=True)
