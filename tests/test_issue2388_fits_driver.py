@@ -475,9 +475,11 @@ def smoke_env(drv, tmp_path_factory):
     ctx_ids = [f"mathfull-algebra-train-{i:05d}" for i in range(60)]
     _write_store(base / "store_2388" / "math_full", ctx_ids, k_roll, d, layers, rng)
     u_ids = [f"u{i:04d}" for i in range(80)]
-    _write_store(
-        base / "u_store" / "cell_inst_own", u_ids, 1, d, layers, rng, kinds=("context_end", "t1")
-    )
+    # FLAT layout — matches stage_u_store's flattened dest (the realized
+    # production staging) and the ported CLI's own consumption; the nested
+    # cell_inst_own fixture encoded the driver's wrong assumption (Pod B
+    # P4(i) launch failure, 2026-08-20).
+    _write_store(base / "u_store", u_ids, 1, d, layers, rng, kinds=("context_end", "t1"))
     # labeling.json (dv_build shape); group-level 70/10/20 across 20 groups
     rows = []
     splits = ["train"] * 42 + ["dev"] * 6 + ["test"] * 12

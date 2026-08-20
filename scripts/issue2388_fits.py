@@ -70,7 +70,6 @@ from explore_persona_space.experiments.issue_1739.arms import (  # noqa: E402
 from explore_persona_space.experiments.issue_1739.constants import (  # noqa: E402
     HIDDEN_DIM,
     N_LAYERS,
-    U_STORE_CELL,
 )
 
 
@@ -555,9 +554,12 @@ def _load_u_pool(
     on a short pool rather than silently under-filling."""
     from explore_persona_space.experiments.issue_1739.store_io import fit_pool_mask, load_summaries
 
-    arrs, meta = load_summaries(
-        u_store_dir, ("context_end", "t1"), layers, cell=U_STORE_CELL, hidden_dim=hidden_dim
-    )
+    # FLAT root: stage_u_store FLATTENS the cell's (kind x layer) shards into
+    # its dest (store_io docstring: the u-store-staging-layout-unwired fix),
+    # and the ported issue1739_fits.py consumes the same flat layout — a
+    # cell=U_STORE_CELL nesting here resolved <dir>/cell_inst_own/, which the
+    # staged layout never contains (Pod B P4(i) launch failure, 2026-08-20).
+    arrs, meta = load_summaries(u_store_dir, ("context_end", "t1"), layers, hidden_dim=hidden_dim)
     mask = fit_pool_mask(meta)
     fit_rows = np.flatnonzero(mask)
     n_avail = int(fit_rows.size)
