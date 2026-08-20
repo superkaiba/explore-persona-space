@@ -57,10 +57,13 @@ def test_offline_tiny_battery_passes():
     assert "criterion" in report
 
 
-def _write_gate(cfg: R.RunConfig, verdict: str) -> Path:
+def _write_gate(cfg: R.RunConfig, verdict: str, mode: str | None = None) -> Path:
     cfg.gates_dir.mkdir(parents=True, exist_ok=True)
     path = cfg.gates_dir / R.SHARE_PREFILL_GATE_NAME
-    path.write_text(json.dumps({"verdict": verdict}))
+    rec: dict = {"verdict": verdict}
+    if mode is not None:
+        rec["mode"] = mode
+    path.write_text(json.dumps(rec))
     return path
 
 
@@ -94,3 +97,45 @@ def test_resolve_share_prefill_auto_pass_arms(tmp_path):
 def test_gate_name_matches_run_constant():
     # the gate script writes the exact artifact name the resolver reads
     assert G.GATE_NAME == R.SHARE_PREFILL_GATE_NAME == "share_prefill_equivalence.json"
+
+
+# ---------------------------------------------------- B6: mode-aware arming
+
+
+def test_resolve_share_prefill_production_run_refuses_tiny_pass(tmp_path):
+    # B6 (r1 review): a NON-tiny run must NOT arm on a tiny-mode PASS — the
+    # dispatcher's --smoke branch writes the tiny battery into the SAME path,
+    # so a smoke->production sequence would otherwise arm 27B generation on a
+    # CPU fp32 verdict before the production-device battery lands (pin 2).
+    cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    _write_gate(cfg, "PASS", mode="tiny")
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is False
+
+
+def test_resolve_share_prefill_production_run_arms_on_production_pass(tmp_path):
+    cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    _write_gate(cfg, "PASS", mode="production")
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is True
+
+
+def test_resolve_share_prefill_tiny_run_accepts_tiny_pass(tmp_path):
+    # a tiny run is device-matched with the tiny battery — arming is fine
+    cfg = _mk_cfg(tmp_path, tiny=True, share_prefill_mode="auto")
+    _write_gate(cfg, "PASS", mode="tiny")
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is True
+
+
+# --------------------------------------- B2: default CLI composition binds
+
+
+def test_gate_default_upload_composes_through_run_parser(tmp_path):
+    # B2 (r1 review): the gate CLI's DEFAULT --upload must bind through
+    # run.py's own parser — the prior `full` default died in argparse on
+    # every real (non --offline-tiny) invocation.
+    args = G.parse_args(["--out-root", str(tmp_path / "out")])
+    assert args.upload == "hf"
+    cfg = G._compose_run_cfg(args)
+    assert cfg.upload_mode == "hf"

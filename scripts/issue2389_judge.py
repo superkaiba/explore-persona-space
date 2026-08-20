@@ -1893,7 +1893,8 @@ def _persist_parity_report(cfg: JudgeConfig, report: dict) -> None:
             path_in_repo=_PARITY_REPORT_REMOTE,
             repo_id=DATASET_REPO,
             repo_type="dataset",
-        )
+        ),
+        what="vllm-parity report upload (pod claim-leg poll target)",
     )
     logger.info(
         "[vllm-parity] verdict=%s -> %s + %s + %s/%s",
@@ -2182,7 +2183,8 @@ def _stage_inputs(args: argparse.Namespace) -> None:
 
         if retry_transient(
             # HUB_VERIFY_RETRY_EXEMPT: call is wrapped in hub.retry_transient (this expr)
-            lambda: HfApi().file_exists(DATASET_REPO, _ENGINE_STATUS_REL, repo_type="dataset")
+            lambda: HfApi().file_exists(DATASET_REPO, _ENGINE_STATUS_REL, repo_type="dataset"),
+            what="vllm engine-status file_exists poll",
         ):
             hub.stage_hub_file(
                 DATASET_REPO,

@@ -293,6 +293,26 @@ def test_compose_run_cfg_matches_run_py_parser(tmp_path):
     assert cfg == ref
 
 
+def test_compose_run_cfg_default_upload_binds(tmp_path):
+    # B2 (r1 review): the DEFAULT --upload must bind through run.py's own
+    # parser — the prior `full` default died in argparse on every normal
+    # dispatcher invocation of the parity/claim/production legs.
+    args = V.parse_args(["--leg", "parity", "--out-root", str(tmp_path / "out")])
+    assert args.upload == "hf"
+    cfg = V._compose_run_cfg(args)
+    assert cfg.upload_mode == "hf"
+
+
+def test_vllm_chunk_env_validated():
+    # codex r1 minor: EPM_2389_VLLM_CHUNK must stay inside the registered
+    # <=500 prompts/call band (plan §4.7 item 4).
+    assert V._validated_vllm_chunk("500") == 500
+    assert V._validated_vllm_chunk("1") == 1
+    for bad in ("0", "501", "-3"):
+        with pytest.raises(ValueError, match="outside the registered band"):
+            V._validated_vllm_chunk(bad)
+
+
 def test_parity_cells_are_bank_cells():
     assert set(V.PARITY_CELLS) <= set(R.BANK.all_cells())
 

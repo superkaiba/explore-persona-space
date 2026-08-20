@@ -311,3 +311,31 @@ def test_repro_records_model_revision(tmp_path):
     rep = R._repro(_mk_cfg(tmp_path))
     assert rep["model_revision"] == B89.MODEL_REVISION
     assert rep["model_id"] == B89.MODEL_ID
+
+
+# ---------------------------------------------- B1: gate-0c canary hf leg
+
+
+def test_gate0c_hf_canary_verify_call_signature(tmp_path, monkeypatch):
+    """B1 (r1 review): the gate-0c verify wraps `hub.retry_transient`, whose
+    `what=` kwarg is REQUIRED — the pre-fix call died with TypeError AFTER the
+    canary uploaded but BEFORE the verification assert, so every production
+    `--phase bank --upload hf` crashed at gate 0c (invisible to batteries:
+    `--upload none|local-mirror` early-returns). Fakes sit ONLY at the
+    network boundary (upload helper + HfApi.file_exists)."""
+
+    def _fake_upload_dir_hf(local_dir, remote_prefix, allow_patterns):
+        return [f"{remote_prefix}/{p}" for p in allow_patterns]
+
+    monkeypatch.setattr(R, "upload_dir_hf", _fake_upload_dir_hf)
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub.HfApi,
+        "file_exists",
+        lambda self, repo_id, filename, *, repo_type=None, revision=None, token=None: True,
+    )
+    cfg = _mk_cfg(tmp_path, upload_mode="hf")
+    cfg.gates_dir.mkdir(parents=True, exist_ok=True)
+    R._gate0c_hf_write_canary(cfg)  # pre-fix: TypeError (missing 'what')
+    assert (cfg.gates_dir / "hf_write_canary.json").exists()

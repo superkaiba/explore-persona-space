@@ -88,7 +88,18 @@ logger = logging.getLogger("issue2389_vllm")
 # fact_user_name 0.00%, persona_prompted 7.50%, filler_swap 24.72%.
 PARITY_CELLS: tuple[str, ...] = ("fact_user_name", "persona_prompted", "filler_swap")
 
-VLLM_CHUNK = int(os.environ.get("EPM_2389_VLLM_CHUNK", "500"))
+
+def _validated_vllm_chunk(raw: str) -> int:
+    """``EPM_2389_VLLM_CHUNK`` clamped-by-refusal to the registered 1..500
+    band (plan §4.7 item 4: chunked dispatch <= 500 prompts/call — a larger
+    override silently violates the memory/stability bound; codex r1 minor)."""
+    v = int(raw)
+    if not 1 <= v <= 500:
+        raise ValueError(f"EPM_2389_VLLM_CHUNK={v} outside the registered band [1, 500]")
+    return v
+
+
+VLLM_CHUNK = _validated_vllm_chunk(os.environ.get("EPM_2389_VLLM_CHUNK", "500"))
 ENFORCE_EAGER = os.environ.get("EPM_2389_VLLM_ENFORCE_EAGER", "1") == "1"
 PREFIX_CACHING = os.environ.get("EPM_2389_VLLM_PREFIX_CACHING", "0") == "1"
 GPU_MEM_UTIL = float(os.environ.get("EPM_2389_VLLM_GPU_MEM_UTIL", "0.90"))
@@ -500,7 +511,10 @@ def _read_parity_report(cfg: R.RunConfig) -> dict | None:
 
     if not retry_transient(
         # HUB_VERIFY_RETRY_EXEMPT: call is wrapped in hub.retry_transient (this expr)
-        lambda: HfApi().file_exists(R.HF_DATA_WRITE_REPO, PARITY_REPORT_REMOTE, repo_type="dataset")
+        lambda: HfApi().file_exists(
+            R.HF_DATA_WRITE_REPO, PARITY_REPORT_REMOTE, repo_type="dataset"
+        ),
+        what="parity-report file_exists poll",
     ):
         return None
     path = retry_transient(
@@ -508,7 +522,8 @@ def _read_parity_report(cfg: R.RunConfig) -> dict | None:
             repo_id=R.HF_DATA_WRITE_REPO,
             filename=PARITY_REPORT_REMOTE,
             repo_type="dataset",
-        )
+        ),
+        what="parity-report download",
     )
     return json.loads(Path(path).read_text())
 
@@ -677,7 +692,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--num-workers", type=int, default=1)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--gen-batch", type=int, default=None, help="HF sub-leg chunk size")
-    ap.add_argument("--upload", choices=("full", "none", "local-mirror"), default="full")
+    # B2 (r1 review): the SAME enum as the callee `issue2389_run.parse_args`
+    # (`hf|local-mirror|none`) — the prior `full` default could not bind
+    # through `_compose_run_cfg` and every real invocation died in argparse.
+    ap.add_argument("--upload", choices=("hf", "local-mirror", "none"), default="hf")
     ap.add_argument("--claim-timeout-s", type=float, default=7200.0)
     ap.add_argument("--routing-wait-s", type=float, default=1800.0)
     ap.add_argument(

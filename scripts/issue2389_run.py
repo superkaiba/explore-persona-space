@@ -2181,7 +2181,10 @@ def _gate0c_hf_write_canary(cfg: RunConfig) -> None:
 
     dest = f"{HF_PREFIX}/analysis_tensors/gates/hf_write_canary.json"
     # HUB_VERIFY_RETRY_EXEMPT: call is wrapped in hub.retry_transient on this line
-    ok = retry_transient(lambda: HfApi().file_exists(HF_DATA_WRITE_REPO, dest, repo_type="dataset"))
+    ok = retry_transient(
+        lambda: HfApi().file_exists(HF_DATA_WRITE_REPO, dest, repo_type="dataset"),
+        what="gate-0c HF write-canary file_exists verify",
+    )
     assert ok, (
         f"gate 0c: canary {dest} did not resolve on {HF_DATA_WRITE_REPO} — the HF write "
         "path is closed; fix EPM_2389_DATA_WRITE_REPO / overflow routing BEFORE generation"
@@ -3010,12 +3013,31 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
         )
         cfg.share_prefill_armed = False
         return cfg
-    verdict = json.loads(path.read_text()).get("verdict")
-    cfg.share_prefill_armed = verdict == "PASS"
+    rec = json.loads(path.read_text())
+    verdict = rec.get("verdict")
+    mode = rec.get("mode")
+    armed = verdict == "PASS"
+    # B6 (r1 review / pin 2): a NON-tiny run arms ONLY on a PRODUCTION-mode
+    # battery artifact. The dispatcher's --smoke branch runs the gate-4b
+    # battery --tiny into the SAME gates/ path + HF prefix, so a default
+    # smoke->production sequence would otherwise arm 27B generation on a
+    # CPU-tiny fp32 PASS before the production-device (M-N2) battery lands —
+    # exactly the arming-order gap pin 2 exists to prevent. Tiny runs accept
+    # a tiny/offline-tiny PASS (device-matched).
+    if armed and not cfg.tiny and mode != "production":
+        logger.info(
+            "[share-prefill:%s] gate PASS but mode=%r (non-production artifact on a "
+            "production run) — staying serial until the production-device battery lands",
+            phase,
+            mode,
+        )
+        armed = False
+    cfg.share_prefill_armed = armed
     logger.info(
-        "[share-prefill:%s] gate verdict=%s -> share_prefill=%s (%s)",
+        "[share-prefill:%s] gate verdict=%s mode=%s -> share_prefill=%s (%s)",
         phase,
         verdict,
+        mode,
         cfg.share_prefill_armed,
         path,
     )

@@ -21,7 +21,7 @@ parent analysis (plan §4/§6; everything else verbatim):
   — the probe iterates the run driver's slot set; the pe-exclusion machinery
   is kept INERT (the pod still writes an empty ``pe_exclusions.json``).
   Constructional family CEILINGS are DERIVED from the bank at ce
-  (16/7/14+... — computed, never hardcoded; "ce ceilings enumerated at P0")
+  (16/8/14 — computed, never hardcoded; "ce ceilings enumerated at P0")
   and the parent #2329's realized m (28/12/27, read from its committed
   ``stats.json``) is reported beside them.
 - **Probe device seam (M-N1 — the scheduled fork work):** ``--device``
@@ -37,7 +37,8 @@ parent analysis (plan §4/§6; everything else verbatim):
   bootstrap 95% CI with the plan §3 S1 verdict branch (confirmed <=> CI lo >
   0; falsified <=> lo <= 0 AND hi < rho_ref=+0.3, strict-reversal when hi <
   0; eligibility collapse n <= 2 -> no-verdict regardless). DESCRIPTIVE
-  companion: the all-16 read (>= 1 surviving pair both runs), labelled,
+  companion: the all-shared-ce-cells read (>= 1 surviving pair both runs;
+  intersection <= 16, realized count reported — never hardcoded), labelled,
   never verdict-bearing. Never naively compared to #2329's [0.583, 0.864]
   at 31 units.
 
@@ -1114,6 +1115,16 @@ def step_probe(args: argparse.Namespace) -> None:
     # per-value-pair slices move to the compute device inside _vp_data.
     dev = torch.device(args.device)
     logger.info("[probe] compute device: %s", dev)
+    if dev.type == "cpu" and torch.cuda.is_available():
+        # r1 efficiency concern: the E4 probe lane is a 1x H100 pod and the
+        # --device default is cpu — a forgotten `--device cuda` silently
+        # grinds CPU while the H100 idles (#1768 class). Warn, never flip:
+        # the CPU default is the documented M-N1 seam contract.
+        logger.warning(
+            "[probe] CUDA is available but --device is cpu — the probe/permutation "
+            "battery will run on CPU while the GPU idles; pass --device cuda unless "
+            "this is a deliberate CPU run"
+        )
 
     results: list[dict] = []
     perm_store: dict[str, np.ndarray] = {}
@@ -1531,7 +1542,8 @@ def step_transfer(args: argparse.Namespace) -> None:
             "plan §3 S1/S2 — transfer correlation: Spearman rho(F_beh_2389, F_beh_2162) "
             "over shared ce P1 cells at cell grain, pair-clustered bootstrap 95% CI; "
             "PRIMARY = >= 12-surviving-pair-eligible units in BOTH runs (verdict branch "
-            "vs rho_ref = +0.3); DESCRIPTIVE = the all-16 companion (labelled, never "
+            "vs rho_ref = +0.3); DESCRIPTIVE = the all-shared-cells companion "
+            "(realized unit count in n_units — labelled, never "
             "verdict-bearing); ONE registered test outside the three families "
             "(alpha = 0.05)"
         ),

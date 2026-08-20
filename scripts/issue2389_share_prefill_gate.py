@@ -520,15 +520,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--draws", type=int, default=3)
     ap.add_argument("--batch-size", type=int, default=4)
     ap.add_argument("--f-draws", type=int, default=10, help="leg (f) draw count (production K)")
-    ap.add_argument("--f-max-new-tokens", type=int, default=256)
+    # 2048 = the production default cap (leg (f) is a PRODUCTION-shape wall
+    # comparison; 256 inflated the prefill fraction ~8-16x and overstated
+    # share_prefill's benefit — r1 efficiency concern).
+    ap.add_argument("--f-max-new-tokens", type=int, default=2048)
     ap.add_argument("--skip-wall", action="store_true", help="skip leg (f) (smoke)")
-    ap.add_argument("--upload", choices=("full", "none", "local-mirror"), default="full")
+    # B2 (r1 review): the SAME enum as the callee `issue2389_run.parse_args` —
+    # the prior `full` default could not bind through `R.parse_args` and every
+    # real (non --offline-tiny) invocation died in argparse.
+    ap.add_argument("--upload", choices=("hf", "local-mirror", "none"), default="hf")
     ap.add_argument(
         "--import-check",
         action="store_true",
         help="resolve deferred imports + args-attribute completeness, then exit 0",
     )
     return ap.parse_args(argv)
+
+
+def _compose_run_cfg(args: argparse.Namespace) -> "R.RunConfig":
+    """Build the shared RunConfig through run.py's OWN parser (the reused-
+    module contract) — extracted so the default-argument composition is
+    testable end-to-end (B2: a `--upload` default that cannot bind through
+    `R.parse_args` must fail a unit test, not the real gate invocation)."""
+    rargv = ["--phase", "anchors", "--out-root", str(args.out_root), "--upload", args.upload]
+    if args.tiny:
+        rargv.append("--tiny")
+    return R.build_config(R.parse_args(rargv))
 
 
 def _import_check() -> int:
@@ -559,10 +576,7 @@ def main(argv: list[str] | None = None) -> int:
         exact = True
         mode = "offline-tiny"
     else:
-        rargv = ["--phase", "anchors", "--out-root", str(args.out_root), "--upload", args.upload]
-        if args.tiny:
-            rargv.append("--tiny")
-        cfg = R.build_config(R.parse_args(rargv))
+        cfg = _compose_run_cfg(args)
         model, tok = R.load_model_and_tokenizer(cfg)
         batches = _select_cell_batches(tok, R.BANK.build_contexts(), args.batch_size)
         render_fn, ids_fn = R.BANK29.render_context_2389, R.BANK29.context_token_ids_2389

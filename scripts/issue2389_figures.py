@@ -433,9 +433,15 @@ def fig_layer_profile(probe: dict, perm_npz: Path, out_dir: Path, inputs: list[P
     # second owns the shared extent + tick labels, silently mis-labelling every
     # row of the other panel (report-verifier round-1 blocker on this figure).
     half = 0.5 / max(n_layers - 1, 1)
-    fig, axes = plt.subplots(1, 2, figsize=(16, 9))
+    # B10 (r1 review): panels are built ONLY for realized slots — the #2389
+    # probe output is ce-only (pe dropped by user ruling), and the parent's
+    # fixed two-panel loop passed an empty array to imshow for the absent pe
+    # slot, crashing P8 on valid input.
+    slots = [s for s in ("ce", "pe") if any(r["slot"] == s for r in results)]
+    assert slots, "layer_profile: no realized slots in probe results"
+    fig, axes = plt.subplots(1, len(slots), figsize=(8 * len(slots), 9), squeeze=False)
     panel_specs: list[tuple[object, int, list[str]]] = []
-    for ax, slot in zip(axes, ("ce", "pe"), strict=True):
+    for ax, slot in zip(axes.ravel(), slots, strict=True):
         rows = [r for r in results if r["slot"] == slot]
         rows.sort(key=lambda r: r["cell"])
         mat = np.array([r["auc_per_layer"] for r in rows])
@@ -466,7 +472,7 @@ def fig_layer_profile(probe: dict, perm_npz: Path, out_dir: Path, inputs: list[P
                 f"but the axis carries {len(realized)} tick labels "
                 "(y-axis clobbered — shared-y regression?)"
             )
-    fig.colorbar(im, ax=axes, shrink=0.7, label="LOCO AUC")
+    fig.colorbar(im, ax=list(axes.ravel()), shrink=0.7, label="LOCO AUC")
     _save(fig, out_dir, "layer_profile", inputs)
 
 

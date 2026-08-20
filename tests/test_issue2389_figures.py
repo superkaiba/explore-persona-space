@@ -256,3 +256,27 @@ def test_fig_cap_regime_renders(tmp_path):
     assert meta["breaching_cells"] == ["alpha"]
     assert meta["trigger_pct"] == 2.0
     assert meta["per_cell"]["alpha"]["breach"] is True
+
+
+def test_fig_layer_profile_renders_ce_only(tmp_path):
+    # B10 (r1 review): valid #2389 probe output is ce-only (pe dropped by user
+    # ruling) — the inherited heatmap built a fixed two-panel figure and passed
+    # an empty array to imshow for the absent pe slot, crashing P8. Panels must
+    # be built for REALIZED slots only.
+    n_layers = 8
+    probe = {
+        "results": [
+            {
+                "slot": "ce",
+                "cell": cell,
+                "auc_per_layer": [0.5 + 0.01 * i + off for i in range(n_layers)],
+                "auc_per_layer_per_vp": [[0.5] * n_layers],
+            }
+            for off, cell in ((0.0, "alpha"), (0.05, "beta"))
+        ]
+    }
+    F.fig_layer_profile(probe, tmp_path / "absent_perm.npz", tmp_path, [Path("probe.json")])
+    _assert_rendered(tmp_path, "layer_profile")
+    _assert_rendered(tmp_path, "probe_layer_curves_ce")
+    # no pe panel artifacts for an unrealized slot
+    assert not (tmp_path / "probe_layer_curves_pe.png").exists()
