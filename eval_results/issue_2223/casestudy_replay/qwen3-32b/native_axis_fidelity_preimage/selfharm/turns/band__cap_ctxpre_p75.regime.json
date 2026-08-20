@@ -1,0 +1,32 @@
+{
+  "arm": "cap_ctxpre_p75",
+  "enable_thinking": false,
+  "ext_answer_axis.pt": "05785aa9929862d9",
+  "ext_default_states.pt": "f596e7c12c95d07c",
+  "ext_native_axes.pt": "efa71706b584e6ef",
+  "ext_tau_map.json": "a9d5d15adfbb73c4",
+  "ext_v_ctx_faithful.pt": "ae61d3fd04f79708",
+  "ext_v_ctx_preimage.pt": "98a626989a4bc3ac",
+  "frozen_sha": "cf4055f7d27c3ff7",
+  "layer_list": [
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "layers_cfg": "band",
+  "max_new_tokens": 2048,
+  "model": "Qwen/Qwen3-32B",
+  "n_turns": 31,
+  "round_label": "casestudy_replay",
+  "scenario": "selfharm",
+  "seed_base": 42,
+  "smoke": false,
+  "system_prompt_sha": "66b9ea09bd5b7099",
+  "temperature": 0.7,
+  "top_p": 0.9
+}

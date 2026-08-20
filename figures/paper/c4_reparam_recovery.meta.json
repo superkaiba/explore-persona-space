@@ -1,0 +1,121 @@
+{
+  "commit": "7d48c801+dirty",
+  "render_id": "4cbc9c5a47a04864",
+  "git_commit": "7d48c8010904ca4b11b96260b8105e843774a690",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1345_analyzer_figs.py",
+  "created": "2026-08-20T08:11:32Z",
+  "figsize": [
+    5.5,
+    3.0250000000000004
+  ],
+  "points": [
+    {
+      "x": -0.17,
+      "held-out $R^2$ (layer 19)": 0.5525318857988817,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.17,
+      "held-out $R^2$ (layer 19)": 0.6541269690704852,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.83,
+      "held-out $R^2$ (layer 19)": 0.5206447986970166,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.17,
+      "held-out $R^2$ (layer 19)": 0.6197446538053759,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.83,
+      "held-out $R^2$ (layer 19)": 0.08240030221613093,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.17,
+      "held-out $R^2$ (layer 19)": 0.5497512183298072,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.83,
+      "held-out $R^2$ (layer 19)": 0.1774829451886022,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.17,
+      "held-out $R^2$ (layer 19)": 0.5785706595526485,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out $R^2$ (layer 19)",
+        "legend_labels": [
+          "direct transfer",
+          "after linear change of coordinates",
+          "target's own ceiling",
+          "matched-capacity null"
+        ],
+        "xticklabels": [
+          "instruct\nplain\u2192chat",
+          "instruct\nchat\u2192plain",
+          "base\nplain\u2192chat",
+          "base\nchat\u2192plain"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -6,8 +6,28 @@ Open decisions for Thomas are marked ⟵ DECIDE.
 
 ---
 
+## Contribution (LIST FORM per Thomas 2026-08-19: "Our main contributions are:";
+## PROVISIONAL v3 — inserted at end of the Doc's Introduction, awaiting Thomas edit)
+
+Our main contributions are:
+1. The object: the context→answer map — a (mostly) linear map W from the
+   residual-stream state at the last context token to the mean activation of the
+   model's forthcoming answer.
+2. An in-depth characterization: mostly linear (nonlinear gains only at ~10^6
+   training contexts), middle layers, present in the base model and trained only by
+   character-relevant post-training stages, holds across turns and consistent-origin
+   off-policy text, causally load-bearing (context-end patches carry persona/behavior
+   into the answer, uniquely among slots).
+3. Evidence for the persona selection model: persona-indexed and universal across
+   chat, plain-text, and story-character framings up to a linear reparameterization.
+4. Applications: trains on unjudged text — probing the predicted answer vector beats
+   probing the context when labels are scarce; map-side similarity predicts
+   fine-tuning-induced behavior change and re-elicitation-type phenomena.
+
+(Earlier one-sentence provisional v2 kept below for reference.)
+
 ## One-sentence contribution (object-centric confirmed; wording PROVISIONAL — Claude
-## draft 2026-08-19, Thomas to rewrite; superseding draft below the original)
+## draft 2026-08-19, Thomas to rewrite; SUPERSEDED by the list form above)
 
 PROVISIONAL v2 (aligned with final title): We introduce and characterize the
 context→answer map — a (mostly) linear map from a language model's last-context-token
@@ -406,6 +426,18 @@ Dan Mossing — in main.tex \author (suppressed until \iclrfinalcopy; blind-safe
     (2026-08-19) found no tool exposing comments to an external agent; Google Docs
     won on official read/reply/resolve API + comment UX (runners-up: self-hosted
     Outline, Notion-no-resolve, GitHub PR).
+
+20. WORKING SURFACE, REVERSED (Thomas, 2026-08-19 afternoon): back to OVERLEAF.
+    The Google Doc round served as one review pass (25 comments, all addressed);
+    every edit was ported into the tex (commit e7c7690: Results edits, appendix
+    subsections app:model-scale/turns/jacobian/pv-decode/hubs, contribution list
+    in the intro, Figure 1 rev-2 wired at figures/fig1_schematic.pdf). The Doc
+    (`1P_dAYteysU2SdDbmSfaFjBQ7ORY9aD0VPCSq7lLTLjM`) is FROZEN — banner + renamed;
+    comments there are no longer monitored. Decision 19's comment-loop tooling
+    (~/paper-tools/gdoc_paper.py) stays available if a Docs review round is ever
+    wanted again. Review channel on Overleaf: %% THOMAS: inline comments (or a
+    GitHub PR round on request) — Overleaf's own comment bubbles never reach the
+    git bridge.
 
 ## Mechanical pending
 - ICLR 2027 style files NOT YET PUBLISHED (checked 2026-08-19: github.com/ICLR/Master-Template

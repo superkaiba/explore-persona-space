@@ -639,7 +639,7 @@ Both reviewers see the same brief:
   `survey`). The reviewers read the highest-version row with this kind
   from `events.jsonl` as the implementer's report.
 - `revision_round` — 1-indexed integer. `1` on first review; loops up to
-  `3`. The cap is **per reviewer** — reconcile invocations are free.
+  `10`. The cap is **per reviewer** — reconcile invocations are free.
 - `previous_critique_summaries` — one-line summaries of every prior
   `epm:code-review` AND `epm:code-review-codex` event on this task
   (empty on round 1). Lets each reviewer notice patterns.
@@ -1126,7 +1126,7 @@ mechanically verifiable (#825 skipped the reconciler on exactly that
 rationale) — because a true residual does not determine severity (the
 reconciler may legitimately side PASS on a true-but-not-verdict-changing
 finding), and the shortcut trades a FREE adjudication (reconcile rounds
-don't count) for a revision round that DOES count against the cap-5 and
+don't count) for a revision round that DOES count against the cap-10 and
 itself costs ≥3 spawns (analyzer + both critics) vs the reconciler's
 one, while leaving a possibly over-strict reviewer unadjudicated. The
 documented adopt-more-severe last-resort fail-safe (a spawned reconciler
@@ -1250,7 +1250,7 @@ closes the gate-hopping failure mode —
 a reviewer that FAILs round after round on the *presentation* of evidence the
 marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
 formatting, never reviewing the code) can no longer bounce the implementer or
-consume a cap-5 round (the strategy pivot is retired; the strip still prevents
+consume a cap-10 round (the strategy pivot is retired; the strip still prevents
 the round counter from incrementing). The round counter does NOT increment
 for a strip. The clean-result-critique loop (Step 9a-bis) carries the same
 strip for *presentation-only* verifier FAILs (MDX prose, caption shape,
@@ -1304,8 +1304,8 @@ per concern_id:
      the implementer agent with a brief targeting the concern_id); do
      NOT state the Decision and then end the turn.
 - **severity=BLOCKER** → either address (option 1 above) OR apply the
-  cap-hit rule per `pivot_criteria.code_review_ensemble_cap_5_surface`
-  (at cap-5: strip → all-stripped PASS+continue OR surface a substantive
+  cap-hit rule per `pivot_criteria.code_review_ensemble_cap_10_surface`
+  (at cap-10: strip → all-stripped PASS+continue OR surface a substantive
   residual). BLOCKERs CANNOT route to the deferral gate. If it cannot be
   addressed and the residual is substantive, post `epm:failure v1
   failure_class: code` referencing the concern_id and set status:blocked
@@ -1371,7 +1371,7 @@ directions.
   - `infra` / `batch` / `analysis` / `survey` -> skip pod phase, move
     status directly to `reviewing` (the inline test-verdict gate at
     Step 9c runs from there).
-- **`final_verdict == FAIL` + revision_round<5** -> stay at status
+- **`final_verdict == FAIL` + revision_round<10** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
   present) as part of the brief (trigger-dense round: BY REFERENCE —
@@ -1385,10 +1385,10 @@ directions.
   implementer's class-hardening carve-out (experiment-implementer.md
   revision-round rule) fires on the whole class.** Implementer posts
   v<n+1>; loop back to 5a with `revision_round = n+1`.
-- **`final_verdict == FAIL` + revision_round>=5** -> **CAP-HIT:
+- **`final_verdict == FAIL` + revision_round>=10** -> **CAP-HIT:
   strip-then-continue-or-surface** (replaces the retired cap-3 strategy
   pivot; see CLAUDE.md "STATE-TO-`blocked` criteria" and workflow.yaml
-  § pivot_criteria.code_review_ensemble_cap_5_surface). At round 5 (the
+  § pivot_criteria.code_review_ensemble_cap_10_surface). At round 10 (the
   cap) with a non-PASS ensemble verdict, the orchestrator:
   1. **Applies the FULL Step 5c-bis strip once more** — the
      mechanical-contract-only set {`marker-shape`, `smoke-run-missing`,
@@ -1397,7 +1397,7 @@ directions.
   2. **If ALL residual blockers are stripped** (false-positive /
      mechanical / git-provenance) → treat as PASS and CONTINUE (proceed
      per the `final_verdict == PASS` branch above). Log one chat line +
-     post an `epm:progress` note recording the cap-5-strip-continue
+     post an `epm:progress` note recording the cap-10-strip-continue
      outcome (which blockers were stripped and by what verification).
   3. **If ANY substantive residual remains** (a real finding the strip
      cannot verify away — silent-failure, upload-path/artifact-loss,
@@ -1409,18 +1409,18 @@ directions.
        (the two-path escalation is grandfathered for a genuine stuck-real
        blocker; frame the residual + ask how to proceed). Post the §5
        marker (`uv run python scripts/post_step_completed.py --issue <N>
-       --step 5b --exit-kind parked --notes "code-review cap-5
+       --step 5b --exit-kind parked --notes "code-review cap-10
        substantive residual; awaiting user"`), then EXIT awaiting
        the user.
      - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): post
        `epm:failure v1` with `failure_class: code` referencing the
        residual blocker(s), set `status: blocked`, fire
        `PushNotification({"message": f"#{N} BLOCKED: ensemble review real
-       residual at cap-5 — open it"[:200], "status": "proactive"})`, run
+       residual at cap-10 — open it"[:200], "status": "proactive"})`, run
        CRON-TEARDOWN (§ CRON-TEARDOWN procedure — both legs incl.
        stray one-shot `/issue <N>` wakeups), post the §5 marker (`uv run python
        scripts/post_step_completed.py --issue <N> --step 5b --exit-kind
-       failure-exit --notes "code-review cap-5 substantive residual;
+       failure-exit --notes "code-review cap-10 substantive residual;
        status:blocked"`), and EXIT. This is the standing halt path for a
        genuinely-stuck real blocker after the auto-continue space is
        exhausted (halt_criteria id=6 `concern_unresolved` family) — no
@@ -1437,7 +1437,7 @@ directions.
 `epm:failure v<m>` with `failure_class: codex-output-malformed` or
 `failure_class: infra` (codex plugin missing), proceed with
 single-reviewer (Claude-only) decision-making for that round. Do NOT
-block on the Codex twin's absence; cap-5 still applies to the Claude
+block on the Codex twin's absence; cap-10 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
 this round; using Claude reviewer only.` This fallback fires ONLY on the
 posted `epm:failure` marker, or after the Step 5b durable-verdict-first

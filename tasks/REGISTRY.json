@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2391,
+  "highest_id": 2422,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5746,9 +5746,9 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1739",
-      "status": "followups_running",
-      "title": "Mapped-answer readouts match real-answer persona projections off-synthetic and edge direct context probes in most held-out settings, pending a shuffled-map control (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1739",
+      "status": "awaiting_promotion",
+      "title": "Mapped-answer probes lead context probes on 10 of 13 held-out rungs, but only one flagship clears the control intervals (MODERATE confidence)"
     },
     "174": {
       "has_clean_result": false,
@@ -8867,8 +8867,8 @@
     "2147": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2147",
-      "status": "running",
+      "path": "tasks/completed/2147",
+      "status": "completed",
       "title": "workflow-fix: reclaim tier for ~/.eps-slurm-src terminal-issue staging (112 GB unreaped)"
     },
     "2148": {
@@ -9240,15 +9240,15 @@
     "2197": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2197",
-      "status": "reviewing",
-      "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
+      "path": "tasks/completed/2197",
+      "status": "completed",
+      "title": "task.py set-body: Goal-H2 drop guard is now workflow-aware \u2014 v2 report bodies auto-exempt (merged PR #2023)"
     },
     "2198": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2198",
-      "status": "reviewing",
+      "path": "tasks/completed/2198",
+      "status": "completed",
       "title": "verify_report.py: scan the detailed companion writeup, not just the report body"
     },
     "2199": {
@@ -9298,15 +9298,15 @@
     "2204": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2204",
-      "status": "proposed",
+      "path": "tasks/completed/2204",
+      "status": "completed",
       "title": "verify_plan: WARN when a plan registers a test-retest kappa demotion gate while pinning judge temperature 0"
     },
     "2205": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2205",
-      "status": "proposed",
+      "path": "tasks/completed/2205",
+      "status": "completed",
       "title": "verify_plan c46: also enforce the launch runtime requirement (exactly one of --workload-cmd / --hydra) when dry-parsing plan-embedded dispatch commands"
     },
     "2206": {
@@ -9361,8 +9361,8 @@
     "2212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2212",
-      "status": "proposed",
+      "path": "tasks/running/2212",
+      "status": "running",
       "title": "SLURM rsync lanes omit tracked data/ inputs \u2014 lane sibling of #2211"
     },
     "2213": {
@@ -9397,8 +9397,8 @@
     "2217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2217",
-      "status": "proposed",
+      "path": "tasks/running/2217",
+      "status": "running",
       "title": "Test-order contamination: later-sorting module registers wildchat conv prefix into CONTEXTS (fails test_conv_context_is_wildchat_family in multi-file runs)"
     },
     "2218": {
@@ -9450,8 +9450,8 @@
       "goal": "Reproduce Lu et al. (arXiv 2601.10387) persona-drift results \u2014 per-turn mean response-token activation projections onto the Assistant Axis over synthetic multi-turn conversations (4 domains x 100 conversations, auditor-simulated user, <=15 turns; Fig. 4 + appendix) and the first-turn projection vs second-turn harmful-response-rate correlation (Fig. 5, r=0.39-0.52) \u2014 on Qwen-3-32B with the paper's published vectors (faithful anchor) and Qwen-2.5-7B-Instruct with the in-house #2203 axis, reporting the paper-faithful response-token read alongside prefix-vector and context-vector projection arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2223",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2223",
+      "status": "awaiting_promotion",
       "title": "Every-token capping cuts the reproduced Assistant-Axis persona drift on Qwen3-32B by roughly a third but does not eliminate it (MODERATE confidence)"
     },
     "2224": {
@@ -10267,8 +10267,8 @@
       "goal": "Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention, thinking disabled): which minimal-pair information types are decodable at the context vector, which are causally usable via single-position patching (F_act/F_beh vs nulls), whether fitted context-to-answer maps predict the realized patched shift per type x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias and shuffled nulls).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2329",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2329",
+      "status": "followups_running",
       "title": "Experiment: Do the #2162 minimal-pair context-vector findings transfer to Qwen3.5-9B with thinking disabled?"
     },
     "233": {
@@ -10304,9 +10304,9 @@
       "goal": "Test the snowball explanation of context-vector patch causality on Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled): compare the all-layer context-end patch against patching only the first 1/2/3 generated answer-token positions (ce excluded) and against prefilling the first 1/2/3 tokens, under two donor schemes (mediation form: content produced under the ce patch with the patch then removed; B's-answer-start form: the target context's own reference answer opening), measured by F_beh/F_act vs scheme-matched shuffled-donor nulls on the pre-registered most-successful cells (#2162's 5 stored-and-used + #2094's pirate matched-query pairs).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2333",
-      "status": "followups_running",
-      "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's whole-answer behavioral effect (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/2333",
+      "status": "awaiting_promotion",
+      "title": "Prefilling the first three answer tokens reproduces most of the context-end patch's effect on format cells, but the patch's own opening carries reliably less than the full effect on Qwen3.5 language cells (MODERATE confidence)"
     },
     "2334": {
       "has_clean_result": false,
@@ -10643,8 +10643,8 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2378",
-      "status": "running",
+      "path": "tasks/blocked/2378",
+      "status": "blocked",
       "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
     },
     "2379": {
@@ -10723,16 +10723,16 @@
       "goal": "On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (gold- or execution-verified, K=5 rollouts) is predictable from the frozen context vector before generation, and whether routing the context vector through the learned context-to-answer map improves that prediction at matched data budgets, across four correctness surfaces (short-answer QA, math, multiple-choice, code) and a distribution-shift ladder.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2388",
-      "status": "proposed",
+      "path": "tasks/running/2388",
+      "status": "running",
       "title": "Is answer correctness predictable from the context vector, and does the context-to-answer map help?"
     },
     "2389": {
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2389",
-      "status": "proposed",
+      "path": "tasks/running/2389",
+      "status": "running",
       "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
     },
     "239": {
@@ -10752,9 +10752,65 @@
     "2391": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2391",
-      "status": "proposed",
+      "path": "tasks/completed/2391",
+      "status": "completed",
       "title": "workflow-fix: raise the per-reviewer review-round cap from 5 to 10 across all three review loops"
+    },
+    "2392": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2392",
+      "status": "archived",
+      "title": "vLLM backend for the unhooked anchor phase of the patching rig, behind a measured HF-parity gate"
+    },
+    "2393": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2393",
+      "status": "archived",
+      "title": "Opt-in shared-prefill multi-draw mode for generate_batch (one prefill, N sampled continuations)"
+    },
+    "2394": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/completed/2394",
+      "status": "completed",
+      "title": "Pilot: cheap context readout to mine always-comply jailbreak contexts; does the context\u2192answer map help?"
+    },
+    "2395": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2395",
+      "status": "proposed",
+      "title": "codex-composer-common: require lens-unique slugs for auxiliary temp files, not just the prompt file"
+    },
+    "2396": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2396",
+      "status": "proposed",
+      "title": "verify_plan c20: a decimal-threshold verdict lattice can never become FAIL-capable (integer thresholds SKIP, decimals WARN unclearably)"
+    },
+    "2397": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2397",
+      "status": "proposed",
+      "title": "verify_plan: assert plan-narrated parent statistics (sign + CI) against the cited artifact field"
+    },
+    "2398": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2398",
+      "status": "proposed",
+      "title": "verify_plan: flag plan registrations that contradict the inherited implementation's semantics (advisory-flag-that-branches; registered multiplicity family that shrinks)"
+    },
+    "2399": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2399",
+      "status": "proposed",
+      "title": "verify_plan: assert the conditional-branch GPU-hour upper bound fits the declared budget and self-fence (plus compound wall-cell parse)"
     },
     "24": {
       "has_clean_result": false,
@@ -10770,12 +10826,173 @@
       "status": "archived",
       "title": "Two ways to discretize an EM-eliciting soft prefix on Qwen-2.5-7B-Instruct both fail: L2-projection collapses to a helpful-assistant baseline, and greedy-coordinate-gradient search produces output too garbled to score (LOW confidence)"
     },
+    "2400": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2400",
+      "status": "proposed",
+      "title": "api_throughput_guidelines: disambiguate the two sync/batch crossover figures (200k balanced vs 20k dispatcher constant) + state precedence vs CLAUDE.md"
+    },
+    "2401": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2401",
+      "status": "proposed",
+      "title": "artifact-reuse: a reused ACTIVATION artifact must carry the model-weights revision that produced it (shape asserts and data-repo pins verify different guarantees)"
+    },
+    "2402": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2402",
+      "status": "proposed",
+      "title": "workflow-fix: guard_skill_doc_headroom.sh must validate a demanded cap raise clears its own warn threshold"
+    },
+    "2403": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2403",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan should check a reuse claim's named field is the field the reused consumer actually reads"
+    },
+    "2404": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2404",
+      "status": "proposed",
+      "title": "verify_plan c67: scope the temperature-negation to the clause, not the whole line"
+    },
+    "2405": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2405",
+      "status": "proposed",
+      "title": "verify_plan: assert a registered kill criterion is satisfiable against its own cited artifacts"
+    },
+    "2406": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2406",
+      "status": "proposed",
+      "title": "Lens 6 banned-vocab family: add bit-identity / bit-tolerance noun forms to audit + lens-reference + SPEC (5th coinage-drift instance)"
+    },
+    "2407": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2407",
+      "status": "proposed",
+      "title": "Step 6b canonical launch snippet is provision-only \u2014 add the required workload leg + time-budget guidance"
+    },
+    "2408": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2408",
+      "status": "proposed",
+      "title": "verify_plan c46: cover the remaining launch post-parse refusals (execute-workload, no-runpod-fallback+runpod pin, env-pin)"
+    },
+    "2409": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2409",
+      "status": "proposed",
+      "title": "Step 10d pre-push lint gate: 900s per-leg fence is sized off the IDLE range the same section forbids (rc 124 reads as a payload crash)"
+    },
     "241": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/241",
       "status": "archived",
       "title": "Prefix-completion dissociation with base-model answers (control for finetuning artifacts)"
+    },
+    "2410": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2410",
+      "status": "proposed",
+      "title": "Lint: truthy upload URL accepted as canonical completion (3 instances in one round) + hoist _require_canonical_upload into hub"
+    },
+    "2411": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2411",
+      "status": "proposed",
+      "title": "Amendment verification checks the EDITS, not the SITE SET \u2014 add an old-value residual grep"
+    },
+    "2412": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2412",
+      "status": "running",
+      "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
+    },
+    "2413": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2413",
+      "status": "proposed",
+      "title": "Step 10d mapped-invariant leg attributes base-identical sibling-synced files to the payload (the #2302 subtraction never reached it)"
+    },
+    "2414": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2414",
+      "status": "proposed",
+      "title": "Trunk red: scripts/issue1739_r2v2_run.py ungated .upload_file( fails test_no_new_ungated_upload_call_sites on origin/main"
+    },
+    "2415": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2415",
+      "status": "proposed",
+      "title": "Bracketed pgrep ownership probe self-matches when the same command references the unbracketed literal (blinds death detection)"
+    },
+    "2416": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2416",
+      "status": "proposed",
+      "title": "Step 5a sibling-sync runtime-signature-skew residual + Step 10d TG classify-new-nodes missing #2302 base-identity exclusion (false-blocking gate verdict on #2205)"
+    },
+    "2417": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2417",
+      "status": "proposed",
+      "title": "Infra: version-brittle [Pp]ickle assertion reds the gate on py3.12 worktrees + worktree/main interpreter divergence"
+    },
+    "2418": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2418",
+      "status": "archived",
+      "title": "Infra: worktree plans/plan.md symlink resolves to a STALE plan \u2014 briefs following the plan-handoff convention can review against a superseded plan"
+    },
+    "2419": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2419",
+      "status": "proposed",
+      "title": "Infra: add two mechanizable plan-claim checks \u2014 inheritance-claim grep + manifest-figure producer check"
+    },
+    "2420": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2420",
+      "status": "proposed",
+      "title": "Step 5a FAMILY_workflow misses workflow.yaml pin test tests/test_ensemble_review_cap.py \u2014 half-sync vintage skew failed 4 gate nodes on #2205"
+    },
+    "2421": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2421",
+      "status": "proposed",
+      "title": "Step 10d lint-gate fences not contention-aware \u2014 120s scratch-checkout + 900s lint fences crash healthy gates under #1962 fail-open concurrency"
+    },
+    "2422": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2422",
+      "status": "planning",
+      "title": "Briefs pointing a worktree-based reviewer at task state must pin the absolute main-checkout path (worktree plans/plan.md resolves to a stale version)"
     },
     "244": {
       "has_clean_result": false,
@@ -15208,8 +15425,8 @@
       "goal": "Determine whether #779's per-example context\u2192answer-profile map h: c_last(x) \u2192 v(x) (held-out reconstruction R\u00b2 0.60\u20130.63, per-context cosine 0.93\u20130.96 over ~5000 LMSYS contexts) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical 5-fold ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled answers teacher-forced through the frozen base model.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/823",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/823",
+      "status": "followups_running",
       "title": "The context\u2192answer-profile activation map reads answer-content match, not self-generation: plain-style external answers retain 91\u201398% of refit R\u00b2 while shuffled answers collapse it to \u22480 (MODERATE confidence)"
     },
     "824": {

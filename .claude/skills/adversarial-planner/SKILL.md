@@ -463,7 +463,13 @@ Run the structural verifier against the plan version just persisted:
   smoke fixtures in scope, so both checks SKIP even when a claim-shaped
   line is present — the declaration wins; check 11's canonical
   `N/A — no dry-run smoke` standalone form is recognized the same way;
-  #2178 round 2).
+  #2178 round 2), and
+  `N/A — no test-retest gate` (check 67 — the retest/κ vocabulary is
+  incidental or quotes an incident, not this plan's own registered
+  test-retest κ demotion gate; a plan genuinely registering the gate
+  instead runs the retest at the parent instrument's sampling temperature,
+  or re-grounds the κ threshold for a deterministic surface; #2204,
+  incident #2202 v1).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -844,7 +850,7 @@ the skip itself is the confirmed no-show.
 - Present the merged critique to the planner for revision.
 
 The reconciler may NOT add findings beyond what either reviewer raised. Round
-counter does NOT increment for reconciler invocations (per-reviewer cap = 5 rounds).
+counter does NOT increment for reconciler invocations (per-reviewer cap = 10 rounds).
 
 ### Phase 3: Revise (Back to Planner Agent or Main Thread)
 
@@ -877,13 +883,13 @@ conclusion-changing bar in `critic.md`, round-1 Must-Fix items are concrete
 and specific — the planner integrates them and ships. Rounds 2 and 3 of the
 critic loop fire only in the narrow cases below, because each extra round
 both costs compute AND tends to accrete additions that wouldn't have made
-the conclusion-changing bar on their own. The cap is still 5 total
+the conclusion-changing bar on their own. The cap is still 10 total
 revision rounds in case re-critique IS warranted.
 
-Note (#784): the `critic` site's cap-5 loop terminates at the USER
+Note (#784): the `critic` site's cap-10 loop terminates at the USER
 PLAN-APPROVAL gate — the user is the final critic. It never ships past
 or pivots on its own, so the surface-real-residual terminal that the
-other three iterating sites gained at cap-5 (code-reviewer / interp /
+other three iterating sites gained in #784 (code-reviewer / interp /
 clean-result) is ALREADY the critic site's behavior: at the cap, the
 revised plan + the round-N critique are handed to the user at the
 approval gate, consistent with #784's surface-not-ship intent. No new
@@ -1170,7 +1176,7 @@ in as a post-park plan v2.
 - **Never skip the Verifier.** Wrong assumptions propagate through the entire pipeline. The Verifier is the cheapest intervention — 30 seconds of web search prevents hours of wasted GPU time. This was added after the corpus projection incident where wrong layer choice and wrong "vLLM can't do this" claims invalidated the first run.
 - **Never skip the Critics.** The 3-lens parallel critique catches more than any single critic. Each lens has structural diversity (different prompts/framings), which research shows outperforms debate or angel/devil formats.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
-- **Max 5 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
+- **Max 10 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.
 - **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink. The persist REFUSES an amendment-shaped version — a thin delta (< 40% of its predecessor) carrying an amendment-marker phrase ("AMENDMENT of vJ" / "PORTS FROM vJ" / "unchanged from vJ") with no own `Estimated GPU-hours (total):` declaration — because three consumers assume every `plans/v{K}.md` is self-contained: subagent briefs handed `plans/plan.md`, `verify_plan.py --issue`, and the Step-2c GPU-hours read (#2255). Remedy: compose a FULL plan (base + delta merged into one self-contained document) and re-persist; the deliberate escape is `--allow-amendment`, which obligates RESTATING the `Estimated GPU-hours (total):` line inside the amendment and handing base+delta together in every brief (`verify_plan --issue` composes them automatically). The persist auto-aligns a self-declared `# Plan v<K>` first-heading version to the assigned version at write time (#1745), so a freshly-persisted plan cannot WARN on c40 for a stale header. Never re-persist a plan solely to retitle its header — that burns a plan version for zero content change (the #1715 churn loop); prefer version-neutral headers (`# Plan — task #<N>: …`) for new drafts. A scripted edit gates its persist on verified edit success — `&&`-chain edit
 → verify → persist, abort loudly on failure (§ Edit-success gate).

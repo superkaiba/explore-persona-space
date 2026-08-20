@@ -333,6 +333,28 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   PASS first try at ~94 KB (spans = roundscope + inputs + record +
   directives + lensitems + v-current + v-superseded + body + parent body).**
 
+- **Self-referential path-discipline compose (#2422 round one, standard
+  methodology lens): when the plan under review FIXES the worktree-stale
+  `tasks/`-path defect, the header READ DISCIPLINE block states the same
+  discipline self-referentially** — absolute main-checkout task paths only +
+  an explicit worktree-`tasks/` read bar — and the composer verifies the
+  `plan.md` symlink target + byte count at compose time, pinning
+  `plan_version=` in the inputs span. Brief-supplied numbered questions (five)
+  each got a mandated verdict word (HOLDS/FAILS/PARTIAL/UNVERIFIED;
+  UNVERIFIED would-be blocker files as Concern) inside a `### Answers to the
+  review questions` section nested in the STANDARD epm marker block. Also:
+  VERIFY-AND-CORRECT the brief's structural claims against the live plan
+  before inlining — the brief said "12 edits over 7 files"; the live §4.3
+  count is 12 edits = 9 prose edits over 7 surface files + lint check + new
+  test file + selector/manifest registration, and the inputs span states the
+  corrected form. Numcheck PASS first try at ~152 KB (spans = inputs +
+  questions + lensitems + plan + body + empty prior; unsigned atoms with
+  both-sides guards, hyphen/slash pair-split, isfinite canon). Gotcha: the
+  registry task-ref leg imports `task_workflow`, which needs the PROJECT env —
+  running the numcheck with cwd=/tmp made `uv run python` resolve a bare env
+  (no yaml) and the leg WARN-degraded to spans-only; run the numcheck from the
+  repo root for the full two-leg check.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the

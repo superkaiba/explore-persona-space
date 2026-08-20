@@ -1,0 +1,188 @@
+{
+  "issue": 2329,
+  "conditions": [
+    "Steered (donor-value patch)",
+    "Shuffled-donor null (same type, value-constrained)",
+    "Cross-type-donor null",
+    "Unpatched floor anchor",
+    "Generate-under-donor ceiling anchor",
+    "Context-end slot",
+    "Prefix-end slot",
+    "Route-conflict cells",
+    "Recency cells (depth 3/5)",
+    "Load cells (load 3/5)",
+    "Query-content control",
+    "Filler-swap disruption control",
+    "Stage-2 layer-by-dose confirmation (F_act-selected)",
+    "Parent-model comparison (Qwen2.5-7B, #2162)",
+    "Ladder steered arm on Qwen3.5-9B (persona-value patch, thinking disabled)",
+    "Ladder same-value-donor null (Qwen3.5)",
+    "Ladder cross-type-donor null (Qwen3.5, construct-screened)",
+    "Ladder floor anchor (plain context, unpatched)",
+    "Ladder ceiling anchor (persona-prompted, unpatched)",
+    "Install direction (plain to persona)",
+    "Erase direction (persona to plain)",
+    "Persona-specificity rungs (plain, pirate, butler, warm, trait, Lu therapy, Lu philosophy)",
+    "Within-answer quartile segments (Q1-Q4)",
+    "Patched-vs-prompted decay contrast (install, context-end primary; coherence-screened, paired per carrier on common support)",
+    "Prefix-end exploratory decay stratum (conditional on a realized install-pe transfer)",
+    "Qwen2.5-7B parent ladder completions (re-judged per segment)"
+  ],
+  "metrics": [
+    "fraction-of-swap behavioral score (F_beh)",
+    "activation fraction-of-swap (F_act)",
+    "teacher-forced positive-vs-negative margin",
+    "linear read-probe AUC",
+    "coherence rate",
+    "conflict balance shift",
+    "held-out map R-squared (context-to-answer)",
+    "2AFC discrimination accuracy",
+    "predicted-vs-realized shift correlation",
+    "transfer correlation (per-type F vs parent)",
+    "cap-hit fraction",
+    "per-rung fraction-of-swap on the specificity ladder",
+    "rung-rank trend (within-carrier Spearman)",
+    "anchor separation (ceiling minus floor)",
+    "per-segment persona expression score (0-100)",
+    "per-segment anchor-normalized F",
+    "within-answer decay drop (Q1 minus Q4)",
+    "patched-vs-prompted decay difference",
+    "absolute Q1 starting-level gap (steered minus ceiling)",
+    "all-generated vs coherence-conditional decay estimands (per-arm retention counts; cross-estimand disagreement => UNRESOLVED)"
+  ],
+  "figures": [
+    {
+      "id": "hero_f_by_type",
+      "title": "Per-type fraction-of-swap at each slot",
+      "source": "eval_results/issue_2329/f_metrics/{f_cells,null_shuffled_cells,null_crosstype_cells,anchors}.jsonl",
+      "transform": "per type-cell x slot: mean F_beh over post-exclusion pairs (pair = mean over K=5 coherent draws) for steered / shuffled-donor-null / cross-type-donor-null arms; pair-clustered bootstrap (B=10000, seed 21620) 95% CIs; anchor-separation exclusion |ceiling-floor| >= 0.5 applied; per-pair points behind bars; post-exclusion n printed per type",
+      "plotted_quantity": "F_beh (fraction of a full context swap, ~0-1), three bars per type, one panel per slot"
+    },
+    {
+      "id": "read_write_2x2",
+      "title": "Read x write 2x2 (probe AUC vs causal F_beh)",
+      "source": "eval_results/issue_2329/f_metrics/{probe.json,f_cells.jsonl,null_shuffled_cells.jsonl,null_crosstype_cells.jsonl}",
+      "transform": "per type x slot: x = max-over-32-layers carrier-fold probe AUC (selection-symmetric permutation band, B=1000, per-draw re-maxed); y = steered mean F_beh; quadrant labels from the registered verdict lattice; cells with post-exclusion n < 12 labeled untestable-causal",
+      "plotted_quantity": "probe AUC (0.5-1) vs F_beh, one point per type x slot with lattice quadrant labels"
+    },
+    {
+      "id": "probe_layer_curves",
+      "title": "Per-layer probe AUC curves with permutation bands",
+      "source": "eval_results/issue_2329/f_metrics/probe.json + hf: issue2329_q35rerun/analysis_tensors/probe_perm_matrix/*",
+      "transform": "per type x slot: held-out (leave-one-carrier-out, 12 groups) AUC per layer (32 layers), x-axis = layer/31 fraction-of-stack, full-attention layers {3,7,11,15,19,23,27,31} marked; max-selected permutation band upper bound annotated",
+      "plotted_quantity": "probe AUC vs fraction-of-stack depth, per type x slot"
+    },
+    {
+      "id": "stage2_layer_profile",
+      "title": "Stage-2 layer-by-dose injectability profile",
+      "source": "eval_results/issue_2329/f_metrics/stage2_cells.jsonl",
+      "transform": "per F_act-selected survivor (type-cell x slot): F_beh of the dose {1,4} x single-layer {9,15,16,19,23,25,30} pair-difference add edits, steered minus shuffled-donor null; x-axis fraction-of-stack; full-attention layers marked; labeled post-selection",
+      "plotted_quantity": "stage-2 F_beh per layer x dose over survivors (post-selection, exploratory)"
+    },
+    {
+      "id": "route_contrasts",
+      "title": "Route contrasts and conflict balance",
+      "source": "eval_results/issue_2329/f_metrics/f_cells.jsonl",
+      "transform": "matched-content route variants (instructed vs demonstrated vs implied vs role-header) F_beh side by side; conflict cells plot the floor/ceiling-normalized (judge_demo - judge_instr)/100 balance shift; pair-clustered CIs; per-pair companions",
+      "plotted_quantity": "F_beh per route variant + conflict balance shift (-1..1)"
+    },
+    {
+      "id": "recency_load_curves",
+      "title": "Recency and load curves",
+      "source": "eval_results/issue_2329/f_metrics/f_cells.jsonl",
+      "transform": "per crossed type: mean F_beh vs introduction depth {1,3,5} and vs load {1,3,5}; slope with pair-clustered bootstrap CI; per-pair points",
+      "plotted_quantity": "F_beh vs depth / load with slope CIs"
+    },
+    {
+      "id": "mapshift_r2",
+      "title": "Per-layer context-to-answer map skill with baselines",
+      "source": "eval_results/issue_2329/mapshift/fresh_fit_diagnostics.json",
+      "transform": "per layer (32): LOCO-carrier held-out R-squared of the dof-capped GCV ridge v_C -> v_A, alongside the identity+learned-bias baseline (identity_bias_predict) and kNN retrieval P(true target in top-k) euclidean+cosine with chance k/n_pool stated; x-axis fraction-of-stack, full-attention layers marked; n_train vs d=4096 printed",
+      "plotted_quantity": "held-out R-squared (and retrieval fraction) vs fraction-of-stack depth"
+    },
+    {
+      "id": "mapshift_shift_prediction",
+      "title": "Predicted vs realized patched shift",
+      "source": "eval_results/issue_2329/mapshift/shift_summary.json + shift_cells.jsonl",
+      "transform": "per type x layer: correlation between the map-predicted answer-state shift (fitted map applied to the donor-minus-recipient context state) and the realized patched V_a shift; parent #2162-mapshift conventions; per-cell points behind the summary",
+      "plotted_quantity": "predicted-vs-realized shift correlation per type x layer"
+    },
+    {
+      "id": "dv3_2afc",
+      "title": "2AFC minimal-pair answer discrimination",
+      "source": "eval_results/issue_2329/mapshift/dv3_ext.json",
+      "transform": "#2215 paired 2AFC per type x layer: fraction of pairs where the map-predicted answer state sits closer (sim_blocks convention) to the true pair member than the alternative, vs the identity+bias baseline and the carrier-blocked deranged null; chance 0.5 line",
+      "plotted_quantity": "2AFC accuracy (0-1) vs baselines and null"
+    },
+    {
+      "id": "transfer_scatter",
+      "title": "Transfer read: per-type F on Qwen3.5-9B vs Qwen2.5-7B",
+      "source": "eval_results/issue_2329/f_metrics/f_cells.jsonl + eval_results/issue_2162/f_metrics/f_cells.jsonl",
+      "transform": "per P1-family type-cell x slot surviving exclusion in BOTH runs: x = parent steered mean F_beh (#2162 committed tables), y = this run's steered mean F_beh; identity line; Spearman rho with pair-clustered bootstrap CI (the registered prediction-8 test); n of shared cells printed",
+      "plotted_quantity": "F_beh (this run) vs F_beh (parent), one point per type x slot"
+    },
+    {
+      "id": "diagnostics_dump",
+      "title": "Diagnostics dump",
+      "source": "eval_results/issue_2329/f_metrics/*.jsonl + eval_results/issue_2329/judge/*.json",
+      "transform": "panels: pre-exclusion anchor separations per type; F_act vs F_beh agreement scatter (cell-level Spearman); margin-vs-F_beh validation scatter (rule-19 gate); coherence and cap-hit rates per cell; token-identity drop counts per cell (divergence-9 report); length-delta covariate + length-matched recount; cross-type-null-by-donor-type and shuffled-null-by-donor-value breakouts",
+      "plotted_quantity": "per-cell diagnostic rates and agreement statistics"
+    },
+    {
+      "id": "qualitative_dashboards",
+      "title": "Bank dashboard + Result-0 qualitative gallery",
+      "source": "hf: issue2329_q35rerun/raw_completions/*/shard_*.jsonl + /f_metrics_actonly/*.jsonl (v1); eval_results/issue_2329/f_metrics/f_cells.jsonl (F_beh back-fill)",
+      "transform": "v2 minimal spec: context rendered once with the varied span marked inline A -> B, query visible, three plainly-labeled answers per pair, per-pair F scores (F_act at generation-complete; F_beh back-filled when judge waves land), ONE provenance footer per page, no reader-facing ids",
+      "plotted_quantity": "qualitative HTML galleries (raw rollout text + per-pair F scores)"
+    },
+    {
+      "id": "q35_ladder_decay_hero_ladder",
+      "title": "Persona-specificity ladder on Qwen3.5-9B",
+      "source": "eval_results/issue_2329/q35_ladder_decay/f_metrics/stats.json + cells.jsonl",
+      "transform": "per gate-surviving (direction x slot): mean anchor-normalized F over pairs (pair = mean over K=5 coherent draws) for steered / same-value-null / cross-type-null arms; carrier-clustered bootstrap (B=10000, seed 21626) 95% CIs; rungs ordered by specificity rank on the x-axis; untestable rungs labeled 'N/A - not tested', never a zero bar",
+      "plotted_quantity": "anchor-normalized F (fraction of a full context swap, ~0-1), three bars per rung, one panel per direction-class x slot"
+    },
+    {
+      "id": "q35_ladder_decay_transfer",
+      "title": "Ladder transfer read: Qwen3.5-9B vs Qwen2.5-7B",
+      "source": "eval_results/issue_2329/q35_ladder_decay/f_metrics/cells.jsonl + eval_results/issue_2162/persona_specificity_ladder/stats.json",
+      "transform": "per (direction x slot) cell surviving gates in BOTH runs: x = parent steered mean F (#2162 ladder committed stats), y = this run's steered mean F; identity line; lattice verdict (transfers / no-clean-transfer / untestable) marked per point on both axes; every verdict flip vs the parent carries the steered-minus-null gap CIs beside the categorical label (power-artifact framing, N2.7)",
+      "plotted_quantity": "steered F (Qwen3.5) vs steered F (Qwen2.5), one point per direction x slot"
+    },
+    {
+      "id": "q35_ladder_decay_anchor_separation",
+      "title": "Anchor separation per rung and carrier (Qwen3.5)",
+      "source": "eval_results/issue_2329/q35_ladder_decay/judge/gates/ladder_separation_gate.json",
+      "transform": "per (rung x carrier): ceiling minus floor separation on the target-descriptor score and on the netted dual-rubric delta; the 0.25 / 0.5 gate bars drawn; surviving vs dropped cells marked (>=4/6 carriers rule)",
+      "plotted_quantity": "anchor separation (0-1 normalized judge scale) per rung x carrier with gate verdicts"
+    },
+    {
+      "id": "q35_ladder_decay_decay_raw",
+      "title": "Within-answer decay, raw per-segment scores",
+      "source": "eval_results/issue_2329/q35_ladder_decay/decay/segment_scores_{steered,ceiling,floor}_{q25,q35}.jsonl",
+      "transform": "per model x arm (steered / ceiling / floor) x segment (Q1-Q4): mean raw 0-100 target-descriptor judge score over install-direction CONTEXT-END completions; primary set = parent-demonstrated install surface {r1_pirate, r2_butler, r3_warm} intersected with the model's gate-surviving rungs (other surviving ce rungs drawn as separate exploratory strata, never pooled; prefix-end excluded); rows coherence-screened (>60 inherited per-draw screen) and min-length-gated (48 tokens); carrier-clustered bootstrap (B=10000, seed 21627, one shared carrier-resample index per draw across arms and segments) 95% CIs; coherence + min-length drop fractions printed per arm x model",
+      "plotted_quantity": "raw persona expression score (0-100) vs answer quartile, three curves per model panel"
+    },
+    {
+      "id": "q35_ladder_decay_decay_norm",
+      "title": "Within-answer decay, anchor-normalized F per segment",
+      "source": "eval_results/issue_2329/q35_ladder_decay/decay/decay_stats.json",
+      "transform": "per model x segment: F(seg) = (steered(seg) - floor(seg)) / (ceiling(seg) - floor(seg)) from per-segment anchor means, on the same S2 row scope as the raw figure (install x context-end primary, coherence-screened, min-length-gated); segments whose per-segment ceiling-floor separation fails the registered bar are suppressed to raw-only and marked; carrier-clustered bootstrap CIs (B=10000, seed 21627, shared carrier index per draw)",
+      "plotted_quantity": "anchor-normalized F vs answer quartile, one curve per model"
+    },
+    {
+      "id": "q35_ladder_decay_contrast",
+      "title": "Patched-vs-prompted decay contrast",
+      "source": "eval_results/issue_2329/q35_ladder_decay/decay/decay_stats.json",
+      "transform": "per model and per ESTIMAND (all-generated = all length-eligible rows; coherence-conditional = rows passing the inherited >60 per-draw screen; headline = coherence-conditional; per-arm retention counts shown — R2-S2): per-carrier PAIRED differences on COMMON SUPPORT (carriers holding >=1 length-surviving completion in BOTH arms under the estimand's own row set; excluded carriers named): D_raw(arm, carrier) = mean raw score(Q1) - mean raw score(Q4); Delta-D = mean over common-support carriers of [D_raw(steered-ce, c) - D_raw(ceiling, c)]; carrier-clustered bootstrap (B=10000, seed 21627, ONE shared carrier-resample index per draw applied jointly to both arms and both endpoint segments) 95% CIs; absolute Q1 starting-level gap printed beside the contrast; verdicts per the registered Leg B lattice (R2-S1/R2-S2): patch-decays-faster requires BOTH estimands' Delta-D CIs entirely above 0; patch-more-persistent requires BOTH estimands' Delta-D CIs entirely below 0 AND the paired Delta-D_F CIs entirely below 0 in both estimands, where Delta-D_F_c = F_c(Q1) - F_c(Q4) per common-support carrier under per-carrier anchor normalization (the ceiling arm's normalized drop is identically zero, so this IS the paired F-scale contrast), available only when both endpoint segments pass the registered 0.125 denominator-suppression bar; a raw-only Delta-D < 0 exclusion is labeled 'inconclusive — raw-scale contrast confounded by starting-level compression (see the Q1 gap)'; cross-estimand label disagreement labeled UNRESOLVED; zero-spanning CIs labeled inconclusive; >=3-per-arm common-support sensitivity re-read reported",
+      "plotted_quantity": "decay drop D (Q1 minus Q4, raw 0-100 and F scales) per arm and the steered-minus-ceiling difference, per model"
+    },
+    {
+      "id": "q35_ladder_decay_diagnostics",
+      "title": "Ladder + decay diagnostics dump",
+      "source": "eval_results/issue_2329/q35_ladder_decay/{gates,judge,f_metrics,decay}/*.json*",
+      "transform": "panels: token-identity drops per direction (G0 report); coherence rates per cell; cap-hit fraction per cell at 4096 (G5 trigger line drawn); judge drop-class tallies (content / transport / api-refusal) + frac_items_complete per arm vs the 0.95 floor; coherence-screen + min-length drop fractions per arm x model with retained-vs-dropped length/score patterns (N2.5); absolute Q1 starting-level gaps per model (N2.2); rung-intersection sensitivity contrast (N2.3); fragment-vs-whole-response score correlation (instrument sanity); conjunct diagnostic; TF-margin vs F validation scatter (rule-19)",
+      "plotted_quantity": "per-cell diagnostic rates, drop tallies, and instrument-sanity correlations"
+    }
+  ]
+}
