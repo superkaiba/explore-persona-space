@@ -31,12 +31,15 @@
 #   all           stage1 -> stage2 (tiny/smoke e2e; production uses the two
 #                 stage launches so the L3 handoff stays explicit)
 #
-# Staged verdict files consumed by `grid` (defaults under $OUT_ROOT/gates/):
+# Staged verdict files consumed by `grid` AND `margin` (defaults under
+# $OUT_ROOT/gates/):
 #   token_identity_report_ladder.json  G0 (VM tokgate, committed + staged)
 #   ladder_separation_gate.json        G3 (judge-built off-pod, L3)
 #   ladder_donor_screen.json           donor screen + pe-viability (L3)
-# Under --smoke the driver uses the frozen PRIMARY donors unscreened (declared
-# blind spot), so the gate files are neither required nor threaded.
+# The gate files are required + threaded in BOTH modes — --smoke included
+# (review round 1 must-fix 8: no gate downgrades; the driver slices the
+# gate-threaded production enumeration down to the 12-cell smoke subset via
+# smoke_slice_blocks, so the smoke exercises the real gate inputs).
 #
 # Worker count is DERIVED from the realized GPU count (`nvidia-smi -L`) at
 # launch — never hardcoded (pod-2329-l is 1x H100, so the fan-out realizes
@@ -82,10 +85,10 @@ TRANSFORMERS_PIN="${EPM_2329L_TRANSFORMERS_PIN:-5.15.0}"
 PIDFILE="$LOG_DIR/issue-2329-ladder-workers.pid"
 mkdir -p "$LOG_DIR" "$OUT_ROOT"
 
-# Worker count = realized GPU count (derived, never hardcoded).
-# SLURM_GPU_WIDTH_EXEMPT: runpod-pinned pod dispatcher (plan §9 pins backend:
-# runpod, pod-2329-l; never runs on a shared SLURM node, so dedicated-pod
-# nvidia-smi enumeration IS the allocation width).
+# Worker count = realized GPU count (derived, never hardcoded). Plan §9 pins
+# backend: runpod (pod-2329-l, dedicated pod — never a shared SLURM node), so
+# dedicated-pod nvidia-smi enumeration IS the allocation width.
+# SLURM_GPU_WIDTH_EXEMPT: runpod-pinned dedicated-pod dispatcher (plan §9)
 NUM_WORKERS="$(nvidia-smi -L 2>/dev/null | grep -c '^GPU ' || true)"
 NUM_WORKERS="${NUM_WORKERS:-0}"
 if [ "$NUM_WORKERS" -lt 1 ]; then
@@ -94,13 +97,6 @@ fi
 echo "[dispatch] phase=$PHASE num_workers=$NUM_WORKERS out_root=$OUT_ROOT"
 
 COMMON=(--out-root "$OUT_ROOT" --log-dir "$LOG_DIR" "$@")
-
-smoke_requested() {
-  case " ${COMMON[*]} " in
-    *" --smoke "*) return 0 ;;
-    *) return 1 ;;
-  esac
-}
 
 run_gate0b() {
   # Plan gate 0b: qwen3_5 needs transformers==5.15.0 (repo pin 4.57.6 lacks
@@ -209,7 +205,9 @@ require_grid_gates() {
   # fails FAST, before any worker fan-out. Skip ONLY with a recorded
   # justification: EPM_2329L_SKIP_GRID_GATES=1
   # EPM_2329L_SKIP_GRID_GATES_REASON="<why, >=10 chars>".
-  if [ -n "${EPM_2329L_SKIP_GRID_GATES:-}" ]; then
+  # Explicit "1" compare (g5-2): any other truthy-looking value (e.g. "0",
+  # "false") must NOT skip the gates.
+  if [ "${EPM_2329L_SKIP_GRID_GATES:-}" = "1" ]; then
     local reason="${EPM_2329L_SKIP_GRID_GATES_REASON:-}"
     if [ "${#reason}" -lt 10 ]; then
       echo "[dispatch] EPM_2329L_SKIP_GRID_GATES set without a recorded justification" \
@@ -245,14 +243,10 @@ require_grid_gates() {
 }
 
 run_grid() {
-  # --smoke: the driver runs the R1 x d1 slice on the frozen PRIMARY donors
-  # unscreened (declared blind spot) — gate files neither required nor
-  # threaded. Production: hard-require + thread all three.
-  if smoke_requested; then
-    echo "[dispatch] grid --smoke: gate files not required (frozen-donor slice)"
-    run_fanout_phase grid
-    return 0
-  fi
+  # Gates are hard-required + threaded in BOTH modes (must-fix 8: --smoke no
+  # longer bypasses the three production grid-gate inputs; the driver's
+  # smoke_slice_blocks slices the gate-threaded enumeration to the smoke
+  # subset).
   require_grid_gates
   run_fanout_phase grid \
     --token-identity "$TOKEN_IDENTITY" \
@@ -261,6 +255,10 @@ run_grid() {
 }
 
 run_margin() {
+  # phase_margin re-enumerates blocks via the driver's _grid_inputs, which
+  # hard-requires the same three gate files as grid — require + thread them
+  # here too (a margin launch without them would rc-crash inside the driver).
+  require_grid_gates
   # pools_ladder.json is a zero-API L3 re-reduction staged before the L4
   # launch; a missing file on an explicitly requested margin is a DESIGNED
   # HALT (distinct rc, never a silent skip).
@@ -270,7 +268,10 @@ run_margin() {
       "stage it, then re-run: margin, upload)." >&2
     exit 29
   fi
-  run_fanout_phase margin --pools "$POOLS_PATH"
+  run_fanout_phase margin --pools "$POOLS_PATH" \
+    --token-identity "$TOKEN_IDENTITY" \
+    --gate-verdict "$GATE_VERDICT" \
+    --donor-screen "$DONOR_SCREEN"
 }
 
 run_upload() {
@@ -288,6 +289,10 @@ run_stage1() {
 }
 
 run_stage2() {
+  # Re-assert the venv pin (g5-1): stage2 is a SEPARATE dispatch invocation —
+  # a pod resume / uv re-sync between stage1 and stage2 can silently revert
+  # transformers to the uv.lock pin (4.57.6), and gate0b is idempotent + fast.
+  run_gate0b
   run_grid
   run_margin
   run_upload

@@ -230,9 +230,13 @@ def _pe_transfer_directions(stats_json: Path) -> set[str]:
     (plan §3 line 87: the conditional pe stratum trigger; parent precedent 0)."""
     if not stats_json.exists():
         raise FileNotFoundError(
-            f"{stats_json} missing — L6 (f_metrics/stats.json) must complete before L7; "
-            "for the q25 side the committed parent stats may need "
-            "`git sparse-checkout add eval_results/issue_2162` in this worktree"
+            f"{stats_json} missing — q35 side: run L6 first "
+            "(issue2329_ladder_analysis.py --step stats writes "
+            "eval_results/issue_2329/q35_ladder_decay/f_metrics/stats.json); "
+            "q25 side: the parent stats are COMMITTED at "
+            "eval_results/issue_2162/persona_specificity_ladder/stats.json "
+            "(no f_metrics/ subdir; sparse worktrees materialize it via "
+            "`git sparse-checkout add eval_results/issue_2162`)"
         )
     lattice = json.loads(stats_json.read_text(encoding="utf-8"))["lattice"]
     return {
@@ -280,6 +284,46 @@ def _new_arm_counter() -> dict:
         "tokens_dropped": [],
         "cap_hit_completions": 0,
     }
+
+
+def _raw_coherence_keys(scores_dir: Path, rid_wave: str, key_fields: tuple[str, ...]) -> set[tuple]:
+    """Exact PRESENT-key set of one committed coherence wave.
+
+    Row PRESENCE, not score presence — a None-scored row is a judged-and-
+    dropped draw (rule 9) and still counts as covered. Duplicate keys raise:
+    a duplicated judge row would silently overwrite in the value join
+    (review r1 must-fix 4).
+    """
+    keys: set[tuple] = set()
+    dups: set[tuple] = set()
+    for r in LA._wave_rows(scores_dir, rid_wave):
+        k = tuple(int(r[f]) if f == "draw" else r[f] for f in key_fields)
+        if k in keys:
+            dups.add(k)
+        keys.add(k)
+    if dups:
+        raise RuntimeError(
+            f"[{rid_wave}] {len(dups)} duplicate coherence row key(s) under "
+            f"{scores_dir} — examples: {sorted(dups)[:5]}"
+        )
+    return keys
+
+
+def _assert_coherence_coverage(label: str, expected: set[tuple], present: set[tuple]) -> None:
+    """Plan assumption 13 (1:1 coherence join), asserted BEFORE any judge
+    units are constructed: the committed coherence wave covers EXACTLY the
+    selected completion rows. Missing rows would silently shrink the 'coh'
+    estimand; extra in-scope rows indicate a wave/selection mismatch."""
+    if expected == present:
+        return
+    missing = sorted(expected - present)
+    extra = sorted(present - expected)
+    raise RuntimeError(
+        f"[{label}] coherence coverage mismatch (plan assumption 13): "
+        f"{len(missing)} selected completion row(s) missing a coherence row "
+        f"(examples: {missing[:5]}); {len(extra)} in-scope coherence row(s) "
+        f"with no selected completion (examples: {extra[:5]})"
+    )
 
 
 def build_side(cfg: DecayConfig, key: str) -> SideData:
@@ -360,7 +404,11 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
             side.units.append(J94.JudgeUnit(item_id, rid, question, segs[k], src))
             c["n_items"] += 1
 
+    # ── selection pre-pass (cell scope only; the 48-token floor applies at
+    #    emit time) + coherence-coverage validation BEFORE any judge unit is
+    #    constructed (plan assumption 13; review r1 must-fix 4) ──
     # steered: grid install-ce rows (+ conditional install-pe stratum)
+    sel_grid: list[tuple[dict, str, str, str]] = []
     for r in grid_rows:
         cell = r["cell"]
         if not cell.startswith("install_") or r["arm"] != "steered":
@@ -376,11 +424,55 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
         carrier = pair_carrier[r["pair_id"]]
         if carrier not in surviving[v]:
             continue
+        sel_grid.append((r, v, slot, carrier))
+
+    # ceiling + floor: anchors, segmented ONCE per completion, judged per rung
+    by_cid: dict[str, list[dict]] = defaultdict(list)
+    for r in anchor_rows:
+        by_cid[r["context_id"]].append(r)
+    sel_anch: list[tuple[str, str, str, str, str, list[dict]]] = []
+    for v in side.scope_values:
+        direction = f"install_{v}"
+        for carrier in surviving[v]:
+            for arm, ctx_value in (("ceiling", v), ("floor", "plain")):
+                cid = LB.context_id(ctx_value, carrier)
+                rows = by_cid.get(cid, [])
+                if not rows:
+                    raise RuntimeError(f"[{key}] no anchor rows for {cid} ({arm} arm)")
+                sel_anch.append((arm, direction, v, carrier, cid, rows))
+
+    # Expected keys = EVERY selected completion row PRE-length-gate (the
+    # coherence wave judged whole responses, so the 48-token segment floor
+    # does not shrink its coverage obligation). Present sets are scoped to
+    # the selection (the committed wave legitimately also covers erase /
+    # null cells the decay leg never selects).
+    expected_grid = {
+        (r["pair_id"], r["slot"], "steered", int(r["draw"])) for r, _, _, _ in sel_grid
+    }
+    sel_pair_slots = {(r["pair_id"], r["slot"]) for r, _, _, _ in sel_grid}
+    present_grid = {
+        k
+        for k in _raw_coherence_keys(
+            p["scores_dir"], "coherence.grid", ("pair_id", "slot", "arm", "draw")
+        )
+        if k[2] == "steered" and (k[0], k[1]) in sel_pair_slots
+    }
+    _assert_coherence_coverage(f"{key} grid", expected_grid, present_grid)
+    expected_anch = {(cid, int(r["draw"])) for _, _, _, _, cid, rows in sel_anch for r in rows}
+    sel_cids = {cid for _, _, _, _, cid, _ in sel_anch}
+    present_anch = {
+        k
+        for k in _raw_coherence_keys(p["scores_dir"], "coherence.anchors", ("context_id", "draw"))
+        if k[0] in sel_cids
+    }
+    _assert_coherence_coverage(f"{key} anchors", expected_anch, present_anch)
+
+    for r, v, slot, carrier in sel_grid:
         comp_key = {"pair_id": r["pair_id"], "context_id": r["context_id"], "draw": int(r["draw"])}
         coh = coh_grid.get((r["pair_id"], slot, "steered", int(r["draw"])))
         emit(
             "steered",
-            cell,
+            r["cell"],
             v,
             slot,
             carrier,
@@ -391,33 +483,22 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
             r.get("cap_hit"),
         )
 
-    # ceiling + floor: anchors, segmented ONCE per completion, judged per rung
-    by_cid: dict[str, list[dict]] = defaultdict(list)
-    for r in anchor_rows:
-        by_cid[r["context_id"]].append(r)
-    for v in side.scope_values:
-        direction = f"install_{v}"
-        for carrier in surviving[v]:
-            for arm, ctx_value in (("ceiling", v), ("floor", "plain")):
-                cid = LB.context_id(ctx_value, carrier)
-                rows = by_cid.get(cid, [])
-                if not rows:
-                    raise RuntimeError(f"[{key}] no anchor rows for {cid} ({arm} arm)")
-                for r in rows:
-                    comp_key = {"context_id": cid, "draw": int(r["draw"])}
-                    coh = coh_anch.get((cid, int(r["draw"])))
-                    emit(
-                        arm,
-                        direction,
-                        v,
-                        "na",
-                        carrier,
-                        comp_key,
-                        questions[cid],
-                        r["text"],
-                        coh,
-                        r.get("cap_hit"),
-                    )
+    for arm, direction, v, carrier, cid, rows in sel_anch:
+        for r in rows:
+            comp_key = {"context_id": cid, "draw": int(r["draw"])}
+            coh = coh_anch.get((cid, int(r["draw"])))
+            emit(
+                arm,
+                direction,
+                v,
+                "na",
+                carrier,
+                comp_key,
+                questions[cid],
+                r["text"],
+                coh,
+                r.get("cap_hit"),
+            )
 
     for arm, c in retention.items():
         c["mean_tokens_retained"] = (
@@ -444,6 +525,18 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
 def _build_sides(cfg: DecayConfig) -> dict[str, SideData]:
     sides = {key: build_side(cfg, key) for key in MODEL_KEYS}
     assert sides["q25"].carriers == sides["q35"].carriers, "carrier sets differ across sides"
+    # Cross-side rubric-descriptor identity (review r1 C2): phase_wave merges
+    # both sides' descriptors q25-then-q35 into ONE registry, so a staged-bank
+    # divergence would silently judge q25 fragments under q35's rubric text.
+    shared = set(sides["q25"].descriptors) & set(sides["q35"].descriptors)
+    mismatched = sorted(
+        v for v in shared if sides["q25"].descriptors[v] != sides["q35"].descriptors[v]
+    )
+    assert not mismatched, (
+        "cross-side rubric-descriptor mismatch — the two staged bank manifests "
+        f"diverge on value_id(s) {mismatched}; matched-instrument requirement "
+        "(plan §4.3) forbids judging the two models under different rubric text"
+    )
     return sides
 
 
@@ -650,6 +743,30 @@ def _comp_id(src: dict) -> tuple:
     return (src["model"], src["arm"], src["rung"], src["context_id"], src["draw"])
 
 
+def verdict_label(fam_stats_model: dict[str, dict], e: str) -> tuple[str, str | None]:
+    """One estimand's Leg B verdict-lattice label (plan §3 line 83), from a
+    model's family-stats dict. Module-level so the DISJOINT 4-way lattice —
+    incl. the negative-branch dD_F companion and the bar-failed confound
+    branch — is table-testable (review r1 g6-2). Returns (label, reason)."""
+    dd = fam_stats_model[f"{e}|primary|dD"]
+    ddf = fam_stats_model[f"{e}|primary|dD_F"]
+    if dd["point"] is None or dd["ci_lo"] is None:
+        return "inconclusive", "no supported carriers"
+    if dd["ci_lo"] > 0:
+        return "patch-decays-faster", None
+    if dd["ci_hi"] < 0:
+        if ddf["point"] is None:
+            return (
+                "inconclusive",
+                "dD CI below zero but dD_F UNAVAILABLE — normalization endpoint failed "
+                "the 0.125 |ceiling-floor| bar (confounded), not a zero-spanning CI",
+            )
+        if ddf["ci_hi"] is not None and ddf["ci_hi"] < 0:
+            return "patch-more-persistent", None
+        return "inconclusive", "dD CI below zero but dD_F CI spans zero"
+    return "inconclusive", "dD CI spans zero"
+
+
 def phase_reduce(cfg: DecayConfig) -> int:
     """Persist per-arm row files + decay_stats.json: dual estimands, per-carrier
     D_raw/dD/dD_F, ONE shared-index bootstrap per model, the Leg B verdict
@@ -705,14 +822,24 @@ def phase_reduce(cfg: DecayConfig) -> int:
         vals = cell_scores.get((e, key, d, slot, c, arm, seg))
         return float(np.mean(vals)) if vals else None
 
-    def support_ok(e, key, d, slot, c, m):
-        """Common support: >= m kept completions per arm in EVERY segment
-        (steered at the given slot; ceiling/floor slot-free)."""
-        for arm, s in (("steered", slot), ("ceiling", "na"), ("floor", "na")):
+    def _arm_support_ok(e, key, d, c, m, arms):
+        for arm, s in arms:
             for seg in range(1, DECAY_K + 1):
                 if len(cell_comps.get((e, key, d, s, c, arm, seg), ())) < m:
                     return False
         return True
+
+    def support_ok(e, key, d, slot, c, m):
+        """RAW common support (the manifest registration): >= m kept
+        completions in BOTH raw arms — steered at the given slot, ceiling
+        (slot-free) — in EVERY segment. The floor arm is a NORMALIZATION
+        input only: its support gates F / dD_F availability, never the raw
+        dD (review r1 must-fix 7)."""
+        return _arm_support_ok(e, key, d, c, m, (("steered", slot), ("ceiling", "na")))
+
+    def floor_support_ok(e, key, d, c, m):
+        """Normalization support: >= m kept floor completions in EVERY segment."""
+        return _arm_support_ok(e, key, d, c, m, (("floor", "na"),))
 
     # per-direction per-carrier stats
     per_direction: dict[str, dict] = {}
@@ -728,25 +855,57 @@ def phase_reduce(cfg: DecayConfig) -> int:
                     per_c = {}
                     for c in side.surviving_carriers[v]:
                         if not support_ok(e, key, d, slot, c, COMMON_SUPPORT_MIN):
-                            per_c[c] = {"supported": False}
+                            per_c[c] = {"supported": False, "supported_norm": False}
                             continue
+                        floor_ok = floor_support_ok(e, key, d, c, COMMON_SUPPORT_MIN)
                         m_st = {k: mean01(e, key, d, slot, c, "steered", k) for k in range(1, 5)}
                         m_ce = {k: mean01(e, key, d, "na", c, "ceiling", k) for k in range(1, 5)}
-                        m_fl = {k: mean01(e, key, d, "na", c, "floor", k) for k in range(1, 5)}
-                        dens = {k: m_ce[k] - m_fl[k] for k in range(1, 5)}
-                        f = {
-                            k: ((m_st[k] - m_fl[k]) / dens[k])
-                            if abs(dens[k]) >= DENOM_BAR
-                            else None
-                            for k in range(1, 5)
-                        }
                         d_raw_st = m_st[1] - m_st[4]
                         d_raw_ce = m_ce[1] - m_ce[4]
                         dd = d_raw_st - d_raw_ce
-                        dd_f = (f[1] - f[4]) if (f[1] is not None and f[4] is not None) else None
                         q1gap = m_st[1] - m_ce[1]
+                        if floor_ok:
+                            m_fl = {k: mean01(e, key, d, "na", c, "floor", k) for k in range(1, 5)}
+                            dens = {k: m_ce[k] - m_fl[k] for k in range(1, 5)}
+                            f = {
+                                k: ((m_st[k] - m_fl[k]) / dens[k])
+                                if abs(dens[k]) >= DENOM_BAR
+                                else None
+                                for k in range(1, 5)
+                            }
+                            dd_f = (
+                                (f[1] - f[4]) if (f[1] is not None and f[4] is not None) else None
+                            )
+                            reason = (
+                                None
+                                if dd_f is not None
+                                else "endpoint |ceiling-floor| below the 0.125 bar"
+                            )
+                            denom_report.append(
+                                {
+                                    "model": key,
+                                    "direction": d,
+                                    "slot": slot,
+                                    "estimand": e,
+                                    "carrier": c,
+                                    "min_abs_denominator": min(abs(x) for x in dens.values()),
+                                    "endpoints_pass_bar": f[1] is not None and f[4] is not None,
+                                }
+                            )
+                        else:
+                            # Raw dD retained: the floor arm gates ONLY the
+                            # normalized companion (review r1 must-fix 7).
+                            m_fl = None
+                            dens = None
+                            f = {k: None for k in range(1, 5)}
+                            dd_f = None
+                            reason = (
+                                "no floor common support — raw delta_d retained, "
+                                "normalized companion unavailable"
+                            )
                         per_c[c] = {
                             "supported": True,
+                            "supported_norm": bool(floor_ok),
                             "mean_steered": m_st,
                             "mean_ceiling": m_ce,
                             "mean_floor": m_fl,
@@ -756,24 +915,9 @@ def phase_reduce(cfg: DecayConfig) -> int:
                             "d_raw_ceiling": d_raw_ce,
                             "delta_d": dd,
                             "delta_d_f": dd_f,
-                            "delta_d_f_unavailable_reason": (
-                                None
-                                if dd_f is not None
-                                else "endpoint |ceiling-floor| below the 0.125 bar"
-                            ),
+                            "delta_d_f_unavailable_reason": reason,
                             "q1_gap": q1gap,
                         }
-                        denom_report.append(
-                            {
-                                "model": key,
-                                "direction": d,
-                                "slot": slot,
-                                "estimand": e,
-                                "carrier": c,
-                                "min_abs_denominator": min(abs(x) for x in dens.values()),
-                                "endpoints_pass_bar": f[1] is not None and f[4] is not None,
-                            }
-                        )
                     per_direction[rec_key] = {
                         "stratum": side.stratum[v],
                         "per_carrier": per_c,
@@ -847,6 +991,8 @@ def phase_reduce(cfg: DecayConfig) -> int:
                         for c, r in rec["per_carrier"].items():
                             if not r["supported"]:
                                 continue
+                            if arm == "floor" and not r.get("supported_norm"):
+                                continue  # floor curve only where floor support holds
                             m = mean01(e, key, d, slot_a, c, arm, seg)
                             if m is not None:
                                 per_c[c].append(m)
@@ -881,30 +1027,11 @@ def phase_reduce(cfg: DecayConfig) -> int:
             }
 
     # ── Leg B verdict lattice (plan line 83) ──
-    def _label(key, e):
-        dd = fam_stats[key][f"{e}|primary|dD"]
-        ddf = fam_stats[key][f"{e}|primary|dD_F"]
-        if dd["point"] is None or dd["ci_lo"] is None:
-            return "inconclusive", "no supported carriers"
-        if dd["ci_lo"] > 0:
-            return "patch-decays-faster", None
-        if dd["ci_hi"] < 0:
-            if ddf["point"] is None:
-                return (
-                    "inconclusive",
-                    "dD CI below zero but dD_F UNAVAILABLE — normalization endpoint failed "
-                    "the 0.125 |ceiling-floor| bar (confounded), not a zero-spanning CI",
-                )
-            if ddf["ci_hi"] is not None and ddf["ci_hi"] < 0:
-                return "patch-more-persistent", None
-            return "inconclusive", "dD CI below zero but dD_F CI spans zero"
-        return "inconclusive", "dD CI spans zero"
-
     lattice = {}
     for key in MODEL_KEYS:
         labels = {}
         for e in ESTIMANDS:
-            lab, reason = _label(key, e)
+            lab, reason = verdict_label(fam_stats[key], e)
             labels[e] = {"label": lab, "reason": reason}
         verdict = (
             labels["all"]["label"]
@@ -984,8 +1111,10 @@ def phase_reduce(cfg: DecayConfig) -> int:
             "n_boot": cfg.n_boot,
             "primary_install_rungs": list(PRIMARY_INSTALL_RUNGS),
             "common_support_rule": (
-                f">= {COMMON_SUPPORT_MIN} kept completion(s) per arm per carrier in EVERY "
-                f"segment; sensitivity re-read at >= {SENSITIVITY_MIN}"
+                f"raw support: >= {COMMON_SUPPORT_MIN} kept completion(s) per carrier in "
+                "EVERY segment in BOTH raw arms (steered, ceiling); floor support gates "
+                "only the normalized F / delta_d_f companion; sensitivity re-read at "
+                f">= {SENSITIVITY_MIN}"
             ),
             "shared_index_note": (
                 "one bootstrap_family_means_batched call per model spans BOTH estimands' "
@@ -1194,7 +1323,7 @@ def phase_figures(cfg: DecayConfig) -> int:
     for ax in axes:
         ax.set_xticks(range(len(labels)))
         ax.set_xticklabels(labels, fontsize=6)
-    savefig_paper(fig, "q35_ladder_decay_decay_diagnostics", dir=cfg.figures_dir)
+    savefig_paper(fig, "q35_ladder_decay_diagnostics", dir=cfg.figures_dir)
     plt.close(fig)
     logger.info("[figures] 4 figures written to %s", cfg.figures_dir)
     return RC_OK
@@ -1233,7 +1362,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--q25-stats-json",
         type=Path,
-        default=Path("eval_results/issue_2162/persona_specificity_ladder/f_metrics/stats.json"),
+        # Parent #2162 committed its ladder stats at the round root — there is
+        # NO f_metrics/ subdir on the q25 side (that layout is this fork's L6
+        # output shape only; review r1 must-fix 2 / B1).
+        default=Path("eval_results/issue_2162/persona_specificity_ladder/stats.json"),
     )
     ap.add_argument(
         "--q35-scores-dir",
@@ -1287,11 +1419,19 @@ def _import_check() -> None:
         stage_hub_file,
         stage_hub_prefix,
     )
+    import issue2329_judge as J62F  # noqa: F401  (deferred inside build_side)
     from issue2329_ladder import MODEL_REVISION_PIN
+    from issue2329_ladder import Q35_PARENT_HF_REVISION as LAD_PARENT_REV
 
     assert len(MODEL_REVISION_PIN) == 40, MODEL_REVISION_PIN
     assert BANK29.MODEL_ID == "Qwen/Qwen3.5-9B", BANK29.MODEL_ID
     assert BANK29.TEMPLATE_KWARGS == {"enable_thinking": False}
+    # Equality, not just length: the judge fork and the ladder driver must
+    # stage the SAME parent revision (review r1 g2).
+    assert LJ.Q35_PARENT_HF_REVISION == LAD_PARENT_REV, (
+        LJ.Q35_PARENT_HF_REVISION,
+        LAD_PARENT_REV,
+    )
     assert len(LJ.Q35_PARENT_HF_REVISION) == 40
     for v in LB.PERSONA_VALUE_IDS:
         prompt = fragment_eval_prompt(LB.VALUES_BY_ID[v].descriptor)

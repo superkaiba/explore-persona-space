@@ -841,24 +841,49 @@ def phase_conjuncts(cfg: LadderJudgeConfig) -> int:
 
 
 def phase_upload(cfg: LadderJudgeConfig) -> int:
-    """One folder commit of the judge work root -> the ladder judge prefix."""
+    """One folder commit of the judge work root -> the ladder judge-raw
+    prefix, then a scoped exact-set verify.
+
+    Judge raws (scores/, gates/, pools, pilot artifacts) are RAW-COMPLETIONS
+    class artifacts — plan §4/§10 registers them under
+    ``issue2329_q35rerun/raw_completions/ladder/judge_raw/``, never under
+    analysis_tensors (review r1 must-fix 3).
+    """
+    dest = f"{LADDER_RAW}/judge_raw"
     if cfg.dry_run:
         logger.info(
             "[upload] dry-run: would upload %s -> %s (no Hub calls made)",
             cfg.work_root,
-            f"{LADDER_TENSORS}/judge",
+            dest,
         )
         return RC_OK
+    from huggingface_hub import HfApi
+
     from explore_persona_space.orchestrate import hub
 
     url = hub._upload(
         cfg.work_root,
         repo_id=DATASET_REPO,
         repo_type="dataset",
-        path_in_repo=f"{LADDER_TENSORS}/judge",
+        path_in_repo=dest,
         raise_on_error=True,
     )
-    logger.info("[upload] uploaded %s -> %s", cfg.work_root, url)
+    expected = sorted(
+        f"{dest}/{p.relative_to(cfg.work_root).as_posix()}"
+        for p in cfg.work_root.rglob("*")
+        if p.is_file()
+    )
+    assert expected, f"[upload] no files under {cfg.work_root} — nothing to upload/verify"
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(), DATASET_REPO, expected, path_in_repo=dest, repo_type="dataset"
+    )
+    assert not missing, (
+        f"[upload] {len(missing)} of {len(expected)} file(s) missing after upload — "
+        f"examples: {missing[:5]}"
+    )
+    logger.info(
+        "[upload] uploaded + verified %d files: %s -> %s", len(expected), cfg.work_root, url
+    )
     return RC_OK
 
 

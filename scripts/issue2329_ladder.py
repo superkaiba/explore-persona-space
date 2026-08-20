@@ -1474,64 +1474,97 @@ def _load_ladder_bank_states(cfg: LadderConfig) -> dict:
     return torch.load(path, map_location="cpu", weights_only=False)
 
 
+def smoke_slice_blocks(
+    pairs: list[LB.LadderPair], production_blocks: list[RUN.Block]
+) -> list[RUN.Block]:
+    """Intersect the gate-threaded PRODUCTION block enumeration with the
+    12-cell smoke subset (SMOKE_DIRECTIONS x SLOTS x ARMS_LADDER, the
+    SMOKE_CARRIER pair only).
+
+    The smoke exercises the SAME gate inputs and enumeration as production
+    (plan §4.4 "no gate downgrades"; review r1 must-fix 8) and narrows only
+    the cell slice. Cells the gates legitimately exclude (an enumeration-
+    dropped pair, a pe x null_xtype exclusion) are logged as dropped; an
+    EMPTY slice raises — the smoke direction/carrier itself was gate- or
+    tokgate-dropped, so the smoke cannot certify anything.
+    """
+    want = {(b.cell, b.slot, b.arm): set(b.pair_ids) for b in smoke_ladder_blocks(pairs)}
+    out: list[RUN.Block] = []
+    matched: set[tuple[str, str, str]] = set()
+    for b in production_blocks:
+        sel = want.get((b.cell, b.slot, b.arm))
+        if sel is None:
+            continue
+        keep = tuple(pid for pid in b.pair_ids if pid in sel)
+        if keep:
+            out.append(RUN.Block(b.cell, b.slot, b.arm, keep))
+            matched.add((b.cell, b.slot, b.arm))
+    dropped_cells = sorted("|".join(k) for k in set(want) - matched)
+    if dropped_cells:
+        logger.info(
+            "[smoke-slice] %d/%d smoke cells excluded by the gates/enumeration: %s",
+            len(dropped_cells),
+            len(want),
+            dropped_cells,
+        )
+    assert out, (
+        "smoke slice EMPTY after gate threading — every smoke cell "
+        f"({sorted('|'.join(k) for k in want)}) was dropped by the staged gates; "
+        "pick a gate-surviving smoke direction/carrier or fix the staged gate artifacts"
+    )
+    return out
+
+
 def _grid_inputs(
     cfg: LadderConfig,
 ) -> tuple[
     dict, dict, list[LB.LadderPair], dict[str, dict[str, str]], list[str], list[RUN.Block], str
 ]:
-    """Shared grid/margin setup: manifest, banks, pairs, donor maps, blocks."""
+    """Shared grid/margin setup: manifest, banks, pairs, donor maps, blocks.
+
+    The three staged gate artifacts (G0 token-identity, G3 anchor-separation
+    verdict, donor screen) are required UNCONDITIONALLY — smoke included
+    (plan §4.4 "no gate downgrades"; review r1 must-fix 8): a smoke run
+    threads the REAL gate files and narrows only the CELL SLICE via
+    ``smoke_slice_blocks``.
+    """
     manifest, bank_sha = _load_ladder_manifest(cfg)
     regime_fp = RUN.regime_fingerprint(cfg, bank_sha)
     pairs = pairs_from_manifest(manifest)
-    if cfg.smoke:
-        survivors = None
-        screen = None
-        tokgate_dropped: set[str] = set()
-        untestable_dirs: set[str] = set()
-    else:
-        assert cfg.gate_verdict_path is not None and cfg.gate_verdict_path.exists(), (
-            f"--gate-verdict required for a non-smoke grid (got {cfg.gate_verdict_path}) — "
-            "the anchor-separation gate runs BEFORE any grid spend (plan §4.5)"
-        )
-        assert cfg.donor_screen_path is not None and cfg.donor_screen_path.exists(), (
-            f"--donor-screen required for a non-smoke grid (got {cfg.donor_screen_path}) — "
-            "cross-type donors are construct-screened before the grid (plan §4.2)"
-        )
-        assert cfg.token_identity_path is not None and cfg.token_identity_path.exists(), (
-            f"--token-identity required for a non-smoke grid (got {cfg.token_identity_path}) "
-            "— the G0 tokgate report gates which pairs/directions run (plan §4.5)"
-        )
-        survivors = read_gate_verdict(cfg.gate_verdict_path)
-        screen = read_donor_screen(cfg.donor_screen_path)
-        tokrep = json.loads(cfg.token_identity_path.read_text())
-        assert tokrep.get("bank_sha") == bank_sha, (
-            f"token-identity report bank_sha {tokrep.get('bank_sha')} != current bank_sha "
-            f"{bank_sha} — stale G0 report; re-run phase tokgate against this bank"
-        )
-        tokgate_dropped = {r["pair_id"] for r in tokrep["pairs"] if not r["intact"]}
-        untestable_dirs = {d for d, rec in tokrep["directions"].items() if not rec["testable"]}
+    assert cfg.gate_verdict_path is not None and cfg.gate_verdict_path.exists(), (
+        f"--gate-verdict required for the grid, smoke included (got {cfg.gate_verdict_path}) "
+        "— the anchor-separation gate runs BEFORE any grid spend (plan §4.5)"
+    )
+    assert cfg.donor_screen_path is not None and cfg.donor_screen_path.exists(), (
+        f"--donor-screen required for the grid, smoke included (got {cfg.donor_screen_path}) "
+        "— cross-type donors are construct-screened before the grid (plan §4.2)"
+    )
+    assert cfg.token_identity_path is not None and cfg.token_identity_path.exists(), (
+        f"--token-identity required for the grid, smoke included (got "
+        f"{cfg.token_identity_path}) — the G0 tokgate report gates which pairs/directions "
+        "run (plan §4.5)"
+    )
+    survivors = read_gate_verdict(cfg.gate_verdict_path)
+    screen = read_donor_screen(cfg.donor_screen_path)
+    tokrep = json.loads(cfg.token_identity_path.read_text())
+    assert tokrep.get("bank_sha") == bank_sha, (
+        f"token-identity report bank_sha {tokrep.get('bank_sha')} != current bank_sha "
+        f"{bank_sha} — stale G0 report; re-run phase tokgate against this bank"
+    )
+    tokgate_dropped = {r["pair_id"] for r in tokrep["pairs"] if not r["intact"]}
+    untestable_dirs = {d for d, rec in tokrep["directions"].items() if not rec["testable"]}
     donor_maps, dropped, pe_excluded = donor_maps_ladder(manifest, pairs, survivors, screen)
     pe_excluded_ids = {r["pair_id"] for r in pe_excluded}
+    blocks = enumerate_ladder_blocks(
+        pairs,
+        survivors,
+        set(dropped),
+        pe_excluded_xtype=pe_excluded_ids,
+        untestable_directions=untestable_dirs,
+        tokgate_dropped_pairs=tokgate_dropped,
+    )
     if cfg.smoke:
-        raw_blocks = smoke_ladder_blocks(pairs)
-        blocks = []
-        for b in raw_blocks:
-            keep = tuple(
-                pid
-                for pid in b.pair_ids
-                if not (b.arm == "null_xtype" and b.slot == "pe" and pid in pe_excluded_ids)
-            )
-            if keep:
-                blocks.append(RUN.Block(b.cell, b.slot, b.arm, keep))
-    else:
-        blocks = enumerate_ladder_blocks(
-            pairs,
-            survivors,
-            set(dropped),
-            pe_excluded_xtype=pe_excluded_ids,
-            untestable_directions=untestable_dirs,
-            tokgate_dropped_pairs=tokgate_dropped,
-        )
+        blocks = smoke_slice_blocks(pairs, blocks)
     meta = {
         "survivors": survivors,
         "pe_excluded_xtype": pe_excluded,

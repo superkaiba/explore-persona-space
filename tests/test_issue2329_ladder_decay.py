@@ -22,6 +22,8 @@ from __future__ import annotations
 import ast
 import inspect
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -366,6 +368,17 @@ def _fixture_side(root: Path, scores_dir: Path, gates_dir: Path, mod) -> None:
             "context_id": LB.context_id("plain", "d1"),
         }
     )
+    # must-fix 4: the coherence-coverage gate is PRE-length-gate — the
+    # under-floor completion still owes a committed coherence row.
+    coh_grid.append(
+        {
+            "pair_id": f"install_{V}::d1",
+            "slot": "ce",
+            "arm": "steered",
+            "draw": N_DRAWS,
+            "score": 90,
+        }
+    )
     grid_rows.append(
         {
             "cell": f"install_{V}",
@@ -431,7 +444,11 @@ def _frag_score(src: dict) -> int:
             return 60 + d  # the coh-fail completion: flat profile
         return SEG_BASE[src["segment"]] + d
     if src["arm"] == "ceiling":
-        return (80 if src["carrier"] == "d1" else 12) + d
+        # d1: SLOPED ceiling (g6-1) so the raw ceiling drop is nonzero and
+        # dD genuinely subtracts it; d2 stays flat (denominator-bar branch).
+        if src["carrier"] == "d1":
+            return {1: 80, 2: 75, 3: 70, 4: 65}[src["segment"]] + d
+        return 12 + d
     return 10 + d  # floor
 
 
@@ -496,22 +513,27 @@ def test_reduce_and_figures_tiny_real_e2e(decay_cfg):
     ]
     assert len(steered_rows) == 12 * DEC.DECAY_K
 
-    # dual estimands numerically split: coh drops the flat completion
+    # dual estimands numerically split: coh drops the flat completion.
+    # dD subtracts the SLOPED d1 ceiling drop (g6-1): steered d1 coh drop
+    # 0.60 - ceiling 0.15 = 0.45; d2 0.60 - 0 = 0.60 -> mean 0.525.
+    # all: d1 (0.50 - 0.15) = 0.35 (flat draw-5 row pulls Q1 down); d2 0.60.
     for key in DEC.MODEL_KEYS:
         coh_dd = stats["families"][key]["coh|primary|dD"]
         all_dd = stats["families"][key]["all|primary|dD"]
-        assert coh_dd["point"] == pytest.approx(0.60, abs=1e-9)
-        assert all_dd["point"] == pytest.approx(0.55, abs=1e-9)
+        assert coh_dd["point"] == pytest.approx(0.525, abs=1e-9)
+        assert all_dd["point"] == pytest.approx(0.475, abs=1e-9)
         assert coh_dd["ci_lo"] > 0 and all_dd["ci_lo"] > 0
         assert coh_dd["n_carriers"] == 2
-        # ceiling raw drop identically 0 by construction (draw offsets cancel)
+        # ceiling raw drop: d1 sloped (0.825 - 0.675 = 0.15), d2 flat (0)
         assert stats["families"][key]["coh|primary|Draw_ceiling"]["point"] == pytest.approx(
-            0.0, abs=1e-9
+            0.075, abs=1e-9
         )
-        # denominator bar: d2's |ceiling-floor| = 0.02 < 0.125 -> dD_F only on d1
+        # denominator bar: d2's |ceiling-floor| = 0.02 < 0.125 -> dD_F only on
+        # d1, whose per-segment denominators are now 0.70/0.65/0.60/0.55:
+        # dD_F = F[1] - F[4] = 79.5/70 - 19.5/55.
         ddf = stats["families"][key]["coh|primary|dD_F"]
         assert ddf["n_carriers"] == 1
-        assert ddf["point"] == pytest.approx(0.857, abs=0.01)
+        assert ddf["point"] == pytest.approx(79.5 / 70 - 19.5 / 55, abs=1e-9)
         rec = stats["per_direction"][f"{key}|install_{V}|ce|coh"]["per_carrier"]
         assert rec["d2"]["delta_d_f"] is None
         assert "0.125" in rec["d2"]["delta_d_f_unavailable_reason"]
@@ -520,7 +542,8 @@ def test_reduce_and_figures_tiny_real_e2e(decay_cfg):
         assert stats["lattice"][key]["verdict"] == "patch-decays-faster"
         for e in DEC.ESTIMANDS:
             assert stats["lattice"][key]["per_estimand"][e]["label"] == "patch-decays-faster"
-        # N2.2 Q1 gap: steered seg1 above ceiling seg1 on d1, below on d2
+        # N2.2 Q1 gap: steered seg1 above ceiling seg1 on both carriers
+        # (d1: 92 > 82.5; d2: 92.5 > 14.5) — only the carrier count is pinned
         assert stats["n2_2_q1_gap"][key]["coh"]["n_carriers"] == 2
         # sanity join: frag means rise with draw exactly as hol scores do
         assert stats["fragment_vs_whole_sanity"][key]["steered"]["n"] == 12
@@ -535,7 +558,7 @@ def test_reduce_and_figures_tiny_real_e2e(decay_cfg):
         "q35_ladder_decay_decay_raw",
         "q35_ladder_decay_decay_norm",
         "q35_ladder_decay_contrast",
-        "q35_ladder_decay_decay_diagnostics",
+        "q35_ladder_decay_diagnostics",  # manifest stem (review r1 must-fix 6d)
     ):
         assert (cfg.figures_dir / f"{stem}.png").exists(), stem
 
@@ -619,3 +642,397 @@ def test_pe_second_row_ok_ladder_semantics():
     # unknown arm fails loud
     with pytest.raises(AssertionError):
         ok(p, "shuffled", frozenset(), maps)
+
+
+# ── review round 1 must-fix pins (items 2/3/4/5/7/8 + g2/g6) ──────────
+
+
+def test_q25_stats_json_default_points_at_committed_parent_stats():
+    # must-fix 2: the parent #2162 ladder stats live at the round ROOT — the
+    # f_metrics/ subdir is this fork's own L6 output layout, absent on q25.
+    for mod in (DEC, LA):
+        src = inspect.getsource(mod.parse_args)
+        assert "eval_results/issue_2162/persona_specificity_ladder/stats.json" in src, mod
+        assert "issue_2162/persona_specificity_ladder/f_metrics" not in src, mod
+
+
+def test_judge_upload_routes_to_raw_completions_class():
+    # must-fix 3: judge raws are RAW-COMPLETIONS class, never analysis_tensors,
+    # and the upload runs a scoped exact-set verify.
+    src = inspect.getsource(LJ.phase_upload)
+    assert 'dest = f"{LADDER_RAW}/judge_raw"' in src
+    assert "LADDER_TENSORS" not in src
+    assert "verify_repo_paths_uploaded" in src
+    assert LJ.LADDER_RAW.endswith("/raw_completions/ladder")
+
+
+def test_q35_parent_hf_revision_pins_equal():
+    # g2: the judge fork keeps a LOCAL copy of the parent revision pin — the
+    # two constants must never drift.
+    assert LJ.Q35_PARENT_HF_REVISION == LAD.Q35_PARENT_HF_REVISION
+    assert len(LJ.Q35_PARENT_HF_REVISION) == 40
+
+
+# ── must-fix 4: coherence coverage gate (fail-able) ───────────────────
+
+
+def test_coherence_coverage_missing_row_fails(decay_cfg):
+    cfg = decay_cfg
+    p = cfg.q35_scores_dir / "coherence.grid.scores.jsonl"
+    rows = [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+    kept = [
+        r
+        for r in rows
+        if not (r["arm"] == "steered" and r["draw"] == 0 and r["pair_id"] == f"install_{V}::d1")
+    ]
+    assert len(kept) == len(rows) - 1
+    _write_jsonl(p, kept)
+    with pytest.raises(RuntimeError, match="coherence coverage mismatch"):
+        DEC._build_sides(cfg)
+
+
+def test_coherence_coverage_duplicate_row_fails(decay_cfg):
+    cfg = decay_cfg
+    p = cfg.q35_scores_dir / "coherence.grid.scores.jsonl"
+    rows = [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+    rows.append(dict(rows[0]))
+    _write_jsonl(p, rows)
+    with pytest.raises(RuntimeError, match="duplicate coherence row"):
+        DEC._build_sides(cfg)
+
+
+# ── must-fix 5: structurally undefined trend -> None, never a finite p ─
+
+
+def _trend_gate(surviving: set[str]) -> dict:
+    return {
+        "rungs": {
+            u: {"survived": u in surviving, "surviving_carriers": ["d1", "d2"]}
+            for u in LB.PERSONA_VALUE_IDS
+        }
+    }
+
+
+def _trend_rows(rungs, f_by_rung):
+    return [
+        {"kind": "install", "slot": "ce", "rung": v, "carrier": c, "f_target": f_by_rung[v]}
+        for v in rungs
+        for c in ("d1", "d2")
+    ]
+
+
+def test_trend_test_constant_means_reports_untestable():
+    rungs = list(LB.PERSONA_VALUE_IDS[:3])
+    rows = _trend_rows(rungs, dict.fromkeys(rungs, 0.5))
+    rec = LA.trend_test(
+        rows, _trend_gate(set(rungs)), "install", "ce", np.random.default_rng(0), 200
+    )
+    assert rec["rho_observed"] is None
+    assert rec["p_one_sided"] is None and rec["p_two_sided"] is None
+    assert "Spearman undefined" in rec["trend_undefined_reason"]
+    assert rec["n_permutations_effective"] == 0
+
+
+def test_trend_test_nondegenerate_control_returns_finite_p():
+    rungs = list(LB.PERSONA_VALUE_IDS[:3])
+    f_by = {v: 0.9 - 0.25 * i for i, v in enumerate(rungs)}
+    rec = LA.trend_test(
+        _trend_rows(rungs, f_by),
+        _trend_gate(set(rungs)),
+        "install",
+        "ce",
+        np.random.default_rng(0),
+        200,
+    )
+    assert rec["rho_observed"] is not None and np.isfinite(rec["rho_observed"])
+    assert 0 < rec["p_one_sided"] <= 1 and 0 < rec["p_two_sided"] <= 1
+    assert "trend_undefined_reason" not in rec
+
+
+def test_trend_test_tokgate_untestable_rung_excluded():
+    # g3-2 / divergence 7: a G0-untestable direction's rung leaves the rung set
+    # (it generates ZERO steered rows; counting it would data-starve the test).
+    rungs = list(LB.PERSONA_VALUE_IDS[:3])
+    f_by = {v: 0.9 - 0.25 * i for i, v in enumerate(rungs)}
+    tokrep = {
+        "directions": {f"install_{v}": {"testable": v != rungs[0]} for v in LB.PERSONA_VALUE_IDS}
+    }
+    rec = LA.trend_test(
+        _trend_rows(rungs, f_by),
+        _trend_gate(set(rungs)),
+        "install",
+        "ce",
+        np.random.default_rng(0),
+        200,
+        tokrep=tokrep,
+    )
+    assert rec["surviving_rungs"] == rungs[1:]
+    assert rec["n_surviving_rungs"] == 2
+    assert rec["descriptive_only"] is True  # 2 < MIN_TREND_RUNGS
+
+
+# ── must-fix 1: LOCO folds (descriptive, per-fold seeded) ─────────────
+
+
+def test_loco_trend_folds_shape_and_holdout():
+    rungs = list(LB.PERSONA_VALUE_IDS[:3])
+    rows = []
+    for fam in LA.FAMILIES:
+        kind, slot = fam.split("-")
+        for i, v in enumerate(rungs):
+            for c in ("d1", "d2"):
+                rows.append(
+                    {
+                        "kind": kind,
+                        "slot": slot,
+                        "rung": v,
+                        "carrier": c,
+                        "f_target": 0.9 - 0.25 * i + (0.02 if c == "d2" else 0.0),
+                    }
+                )
+    out = LA.loco_trend_folds(rows, _trend_gate(set(rungs)), None, 100)
+    assert out["n_folds"] == 2
+    assert out["held_out_carriers"] == ["d1", "d2"]
+    for held_out, fold in out["folds"].items():
+        assert sorted(fold) == sorted(LA.FAMILIES)
+        for fam_rec in fold.values():
+            # exactly one carrier remains per fold
+            assert fam_rec["n_carriers"] == 1
+            assert held_out in ("d1", "d2")
+
+
+def test_stats_json_carries_loco_folds_wiring():
+    src = inspect.getsource(LA.step_stats)
+    assert '"loco_folds": loco_trend_folds(' in src
+
+
+# ── must-fix 7: floor support gates ONLY the normalized companion ─────
+
+
+def _synth_wave_rows(sides):
+    return [
+        {
+            "item_id": u.item_id,
+            "wave": f"{u.rubric_id}.decay",
+            "rubric_id": u.rubric_id,
+            "score": _frag_score(u.source),
+            "n_kept_draws": 1,
+            "transport_lost_residual": 0,
+            **u.source,
+        }
+        for key in DEC.MODEL_KEYS
+        for u in sides[key].units
+    ]
+
+
+def test_reduce_no_floor_support_retains_raw_delta(decay_cfg):
+    cfg = decay_cfg
+    sides = DEC._build_sides(cfg)
+    rows = _synth_wave_rows(sides)
+    # blank every floor score on carrier d2 -> zero kept floor completions
+    # there -> floor common support fails while steered+ceiling stay supported
+    for r in rows:
+        if r["arm"] == "floor" and r["carrier"] == "d2":
+            r["score"] = None
+    _write_jsonl(cfg.j94().scores_dir / f"dfrag-{V}.decay.scores.jsonl", rows)
+    assert DEC.phase_reduce(cfg) == DEC.RC_OK
+    stats = json.loads((cfg.out_dir / "decay_stats.json").read_text(encoding="utf-8"))
+    for key in DEC.MODEL_KEYS:
+        rec = stats["per_direction"][f"{key}|install_{V}|ce|coh"]["per_carrier"]["d2"]
+        assert rec["supported"] is True and rec["supported_norm"] is False
+        assert rec["delta_d"] is not None
+        assert rec["delta_d_f"] is None and rec["mean_floor"] is None
+        assert "no floor common support" in rec["delta_d_f_unavailable_reason"]
+        # raw dD keeps BOTH carriers; the normalized companion keeps only d1
+        assert stats["families"][key]["coh|primary|dD"]["n_carriers"] == 2
+        assert stats["families"][key]["coh|primary|dD_F"]["n_carriers"] == 1
+
+
+# ── g6-2: the 4-way verdict lattice, table-tested ─────────────────────
+
+
+def _fam(dd_point, dd_lo, dd_hi, ddf_point=None, ddf_lo=None, ddf_hi=None):
+    return {
+        "coh|primary|dD": {"point": dd_point, "ci_lo": dd_lo, "ci_hi": dd_hi},
+        "coh|primary|dD_F": {"point": ddf_point, "ci_lo": ddf_lo, "ci_hi": ddf_hi},
+    }
+
+
+def test_verdict_label_covers_every_lattice_branch():
+    vl = DEC.verdict_label
+    assert vl(_fam(None, None, None), "coh") == ("inconclusive", "no supported carriers")
+    assert vl(_fam(0.5, 0.1, 0.9), "coh") == ("patch-decays-faster", None)
+    label, reason = vl(_fam(-0.5, -0.9, -0.1), "coh")
+    assert label == "inconclusive" and "confounded" in reason
+    assert vl(_fam(-0.5, -0.9, -0.1, ddf_point=-0.4, ddf_lo=-0.8, ddf_hi=-0.05), "coh") == (
+        "patch-more-persistent",
+        None,
+    )
+    label, reason = vl(_fam(-0.5, -0.9, -0.1, ddf_point=-0.2, ddf_lo=-0.6, ddf_hi=0.1), "coh")
+    assert label == "inconclusive" and "dD_F CI spans zero" in reason
+    label, reason = vl(_fam(0.1, -0.2, 0.4), "coh")
+    assert label == "inconclusive" and reason == "dD CI spans zero"
+
+
+# ── must-fix 6a: the transfer figure renders (both-testable + flip) ────
+
+
+def test_fig_transfer_renders(tmp_path):
+    import matplotlib
+
+    matplotlib.use("Agg")
+    key = "install_x|ce"
+    parent_est = {
+        f"{key}|steered": {"mean_f_target": 0.8, "ci_lo": 0.7, "ci_hi": 0.9},
+        f"{key}|null_sameval": {"mean_f_target": 0.1, "ci_lo": 0.0, "ci_hi": 0.2},
+        f"{key}|null_xtype": {"mean_f_target": 0.12, "ci_lo": 0.02, "ci_hi": 0.22},
+    }
+    fork_est = {
+        f"{key}|steered": {"mean_f_target": 0.4, "ci_lo": 0.3, "ci_hi": 0.5},
+        f"{key}|null_sameval": {"mean_f_target": 0.15, "ci_lo": 0.05, "ci_hi": 0.25},
+        f"{key}|null_xtype": {"mean_f_target": 0.2, "ci_lo": 0.1, "ci_hi": 0.3},
+    }
+    parent = {"lattice": {key: {"verdict": "specific"}}, "estimation": parent_est}
+    fork = {"lattice": {key: {"verdict": "nonspecific"}}, "estimation": fork_est}
+    LA.fig_transfer(fork, parent, SimpleNamespace(figures_dir=tmp_path))
+    assert (tmp_path / "q35_ladder_decay_transfer.png").exists()
+
+
+# ── must-fix 8: smoke slices the gate-threaded PRODUCTION enumeration ──
+
+
+def _smoke_pairs():
+    mk = LB.LadderPair
+    return [
+        mk(
+            pair_id="install_r1_pirate::d1",
+            cell="install_r1_pirate",
+            kind="install",
+            persona="pirate",
+            carrier="d1",
+            value_a="neutral",
+            value_b="pirate",
+            a="ctxA",
+            b="ctxB",
+        ),
+        mk(
+            pair_id="erase_r1_pirate::d1",
+            cell="erase_r1_pirate",
+            kind="erase",
+            persona="pirate",
+            carrier="d1",
+            value_a="pirate",
+            value_b="neutral",
+            a="ctxC",
+            b="ctxD",
+        ),
+        mk(
+            pair_id="install_r1_pirate::d2",
+            cell="install_r1_pirate",
+            kind="install",
+            persona="pirate",
+            carrier="d2",
+            value_a="neutral",
+            value_b="pirate",
+            a="ctxE",
+            b="ctxF",
+        ),
+    ]
+
+
+def test_smoke_slice_blocks_intersects_production_enumeration():
+    pairs = _smoke_pairs()
+    production = [
+        RUN.Block(b.cell, b.slot, b.arm, (*b.pair_ids, "install_r1_pirate::d2"))
+        for b in LAD.smoke_ladder_blocks(pairs)
+    ]
+    production.append(RUN.Block("install_r2_formal", "ce", "steered", ("x",)))
+    sliced = LAD.smoke_slice_blocks(pairs, production)
+    assert len(sliced) == 12
+    assert all(b.cell != "install_r2_formal" for b in sliced)
+    for b in sliced:
+        expect = "erase_r1_pirate::d1" if b.cell.startswith("erase") else "install_r1_pirate::d1"
+        assert b.pair_ids == (expect,), b.key
+
+
+def test_smoke_slice_blocks_gate_dropped_cells_are_logged_not_fatal():
+    pairs = _smoke_pairs()
+    # gates dropped every erase block: the slice narrows to the 6 install cells
+    production = [b for b in LAD.smoke_ladder_blocks(pairs) if b.cell == "install_r1_pirate"]
+    sliced = LAD.smoke_slice_blocks(pairs, production)
+    assert len(sliced) == 6
+    assert all(b.cell == "install_r1_pirate" for b in sliced)
+
+
+def test_smoke_slice_blocks_empty_slice_raises():
+    pairs = _smoke_pairs()
+    production = [RUN.Block("install_r2_formal", "ce", "steered", ("x",))]
+    with pytest.raises(AssertionError, match="smoke slice EMPTY"):
+        LAD.smoke_slice_blocks(pairs, production)
+
+
+def test_grid_inputs_gate_asserts_are_unconditional():
+    src = inspect.getsource(LAD._grid_inputs)
+    assert "if not cfg.smoke" not in src
+    smoke_pos = src.index("if cfg.smoke")
+    for tok in (
+        "--gate-verdict required",
+        "--donor-screen required",
+        "--token-identity required",
+    ):
+        assert src.index(tok) < smoke_pos, tok
+
+
+def _run_dispatch(tmp_path, *args, extra_env=None):
+    env = {
+        **os.environ,
+        "REPO_ROOT": str(REPO_ROOT),
+        "EPM_2329L_OUT_ROOT": str(tmp_path / "out"),
+        "EPM_2329L_LOG_DIR": str(tmp_path / "logs"),
+        **(extra_env or {}),
+    }
+    proc = subprocess.run(
+        ["bash", str(REPO_ROOT / "scripts" / "issue2329_ladder_dispatch.sh"), *args],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    return proc.returncode, proc.stdout + proc.stderr
+
+
+def test_dispatcher_smoke_grid_hard_requires_gate_inputs(tmp_path):
+    # must-fix 8 (dispatcher side): --smoke no longer bypasses the grid gates —
+    # a missing G0 report is the designed rc=30 HALT even in smoke mode.
+    rc, out = _run_dispatch(tmp_path, "grid", "--smoke")
+    assert rc == 30, out
+    assert "token-identity" in out
+
+
+def test_dispatcher_margin_hard_requires_gate_inputs(tmp_path):
+    # margin re-enumerates via _grid_inputs -> the same three gate files bind
+    rc, out = _run_dispatch(tmp_path, "margin", "--smoke")
+    assert rc == 30, out
+    assert "token-identity" in out
+
+
+def test_dispatcher_skip_env_is_exact_one_compare(tmp_path):
+    # g5-2: any non-"1" value must NOT skip the gates
+    rc, out = _run_dispatch(
+        tmp_path, "grid", "--smoke", extra_env={"EPM_2329L_SKIP_GRID_GATES": "false"}
+    )
+    assert rc == 30, out
+    # "1" without a recorded justification refuses loudly (rc=26)
+    rc, out = _run_dispatch(
+        tmp_path, "grid", "--smoke", extra_env={"EPM_2329L_SKIP_GRID_GATES": "1"}
+    )
+    assert rc == 26, out
+    assert "justification" in out
+
+
+def test_dispatcher_stage2_reasserts_venv_pin():
+    # g5-1: stage2 is a separate dispatch invocation -> gate0b re-runs first
+    src = (REPO_ROOT / "scripts" / "issue2329_ladder_dispatch.sh").read_text(encoding="utf-8")
+    stage2 = src.split("run_stage2() {", 1)[1].split("}", 1)[0]
+    assert "run_gate0b" in stage2
+    assert stage2.index("run_gate0b") < stage2.index("run_grid")

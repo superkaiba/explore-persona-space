@@ -681,14 +681,26 @@ def trend_test(
     slot: str,
     rng: np.random.Generator,
     n_perm: int,
+    tokrep: dict | None = None,
 ) -> dict:
     """One within-carrier rung-label permutation trend test (plan §6).
 
     Statistic: Spearman rho between rung specificity rank and per-rung steered
     F_target (mean over surviving carriers). Null: rung labels permuted WITHIN
     carrier over that carrier's gate-surviving rungs, re-aggregated per draw.
+
+    When ``tokrep`` (the G0 token-identity report) is given, the rung set is
+    additionally filtered to rungs whose ``{kind}_{v}`` direction is
+    tokgate-testable — a G0-untestable direction generates ZERO steered rows,
+    so counting it toward MIN_TREND_RUNGS would run NHST on a data-starved
+    Spearman (fork divergence 7 threading; review r1 g3-2).
     """
-    rungs = [v for v in LB.PERSONA_VALUE_IDS if gate["rungs"][v].get("survived")]
+    rungs = [
+        v
+        for v in LB.PERSONA_VALUE_IDS
+        if gate["rungs"][v].get("survived")
+        and (tokrep is None or bool(tokrep["directions"][f"{kind}_{v}"]["testable"]))
+    ]
     r_index = {v: i for i, v in enumerate(rungs)}
     ranks = np.array([LB.VALUES_BY_ID[v].rung_rank for v in rungs], dtype=np.float64)
 
@@ -740,6 +752,26 @@ def trend_test(
     rho_perm = _spearman_rows(ranks[keep], perm_means[:, keep])
     rho_perm = rho_perm[~np.isnan(rho_perm)]
     n_eff = len(rho_perm)
+    if not np.isfinite(rho_obs) or n_eff == 0:
+        # Structurally undefined trend: a constant per-rung vector zeroes the
+        # rank variance (Spearman rho = NaN), or every permutation draw is
+        # non-finite. Report the family untestable (None p-values feed Holm
+        # as p=1.0 placeholders) — never a finite add-one p for a NaN
+        # observed rho (review r1 must-fix 5).
+        result.update(
+            {
+                "rho_observed": None,
+                "p_one_sided": None,
+                "p_two_sided": None,
+                "n_permutations_effective": n_eff,
+                "trend_undefined_reason": (
+                    "constant per-rung steered means (zero rank variance) — Spearman undefined"
+                    if not np.isfinite(rho_obs)
+                    else "no finite permutation draws"
+                ),
+            }
+        )
+        return result
     p_pos = (1 + int((rho_perm >= rho_obs).sum())) / (n_eff + 1)
     p_two = (1 + int((np.abs(rho_perm) >= abs(rho_obs)).sum())) / (n_eff + 1)
     result.update(
@@ -751,6 +783,38 @@ def trend_test(
         }
     )
     return result
+
+
+def loco_trend_folds(steered: list[dict], gate: dict, tokrep: dict, n_perm: int) -> dict:
+    """Leave-one-carrier-out robustness re-runs of the 4 trend tests (plan §4.1(3)/§6).
+
+    Descriptive only — no Holm entry, no NHST verdict: for each held-out
+    carrier the four registered family trend tests re-run on the remaining
+    carriers' steered rows (fresh rng seeded TREND_SEED + 1 + fold index so
+    folds are reproducible and independent of the registered battery's
+    stream). Discharges the plan's OOD-folds registration; the parent
+    analysis had NO LOCO code, so this is fork-new (review r1 must-fix 1).
+    """
+    carriers = sorted({r["carrier"] for r in steered})
+    folds: dict[str, dict] = {}
+    for i, held_out in enumerate(carriers):
+        sub = [r for r in steered if r["carrier"] != held_out]
+        rng = np.random.default_rng(TREND_SEED + 1 + i)
+        fold: dict[str, dict] = {}
+        for fam in FAMILIES:
+            kind, slot = fam.split("-")
+            fold[fam] = trend_test(sub, gate, kind, slot, rng, n_perm, tokrep=tokrep)
+        folds[held_out] = fold
+    return {
+        "description": (
+            "leave-one-carrier-out robustness re-runs of the 4 trend permutation "
+            "tests (descriptive; per-fold rng seed = TREND_SEED + 1 + fold_index; "
+            "excluded from Holm)"
+        ),
+        "n_folds": len(carriers),
+        "held_out_carriers": carriers,
+        "folds": folds,
+    }
 
 
 def _ci_from_boot(boot_col: np.ndarray) -> tuple[float | None, float | None]:
@@ -786,7 +850,7 @@ def step_stats(args: argparse.Namespace) -> None:
     trend: dict[str, dict] = {}
     for fam in FAMILIES:
         kind, slot = fam.split("-")
-        trend[fam] = trend_test(steered, gate, kind, slot, rng, args.n_perm)
+        trend[fam] = trend_test(steered, gate, kind, slot, rng, args.n_perm, tokrep=tokrep)
     testable = {
         f: t["p_one_sided"]
         for f, t in trend.items()
@@ -969,6 +1033,7 @@ def step_stats(args: argparse.Namespace) -> None:
         "n_perm": args.n_perm,
         "trend_tests": trend,
         "trend_meta": trend_meta,
+        "loco_folds": loco_trend_folds(steered, gate, tokrep, args.n_perm),
         "estimation": estimation,
         "lattice": lattice,
         "h4_asymmetry": h4,
@@ -1031,7 +1096,7 @@ def _save(fig, stem: str, figures_dir: Path) -> None:
     plt.close(fig)
 
 
-def fig_ladder_hero(stats: dict, gate: dict, args: argparse.Namespace) -> None:
+def fig_ladder_hero(stats: dict, gate: dict, tokrep: dict, args: argparse.Namespace) -> None:
     import matplotlib.pyplot as plt
 
     tok_counts = _sys_token_counts(args.skip_token_counts)
@@ -1074,14 +1139,18 @@ def fig_ladder_hero(stats: dict, gate: dict, args: argparse.Namespace) -> None:
                 tok = tok_counts.get(v)
                 extra = f"\nn={n}" + (f", {tok} tok" if tok is not None else "")
                 surv = "" if gate["rungs"][v].get("survived") else "\n(gate-failed)"
-                labels.append(f"{LB.VALUES_BY_ID[v].rung} {v.split('_', 1)[-1]}{extra}{surv}")
+                # Manifest ladder-hero transform: tokgate-untestable rungs are
+                # labeled "N/A - not tested" (never a zero bar; review r1 g3-6).
+                tok_ok = bool(tokrep["directions"][f"{kind}_{v}"]["testable"])
+                na = "" if tok_ok else "\nN/A - not tested"
+                labels.append(f"{LB.VALUES_BY_ID[v].rung} {v.split('_', 1)[-1]}{extra}{surv}{na}")
             ax.set_xticklabels(labels, fontsize=7)
             if col == 0:
                 ax.set_ylabel("F_target (fraction of full context swap)")
     axes[0][0].legend(loc="upper right", fontsize=8)
     fig.suptitle("Specificity ladder: steered vs both nulls per rung")
     fig.tight_layout()
-    _save(fig, "ladder_hero", args.figures_dir)
+    _save(fig, "q35_ladder_decay_hero_ladder", args.figures_dir)
 
 
 def fig_ladder_percarrier(cells: dict[str, list[dict]], gate: dict, args) -> None:
@@ -1194,7 +1263,7 @@ def fig_anchor_separation(anchors: list[dict], gate: dict, args) -> None:
         ax.set_title(f"{label} (bar = {bar})")
     fig.suptitle("Anchor separations and gate verdicts per rung (filled = carrier passed)")
     fig.tight_layout()
-    _save(fig, "anchor_separation", args.figures_dir)
+    _save(fig, "q35_ladder_decay_anchor_separation", args.figures_dir)
 
 
 def fig_rubric_bridge(cells: dict[str, list[dict]], args) -> None:
@@ -1334,6 +1403,68 @@ def fig_conjunct_diag(conjuncts: list[dict], steered: list[dict], args) -> None:
     _save(fig, "conjunct_diag", args.figures_dir)
 
 
+def _steered_null_gap(est: dict, key: str) -> tuple[float, float] | None:
+    """Conservative steered-minus-null gap interval for one (direction|slot) cell.
+
+    Returns (steered ci_lo - max null ci_hi, steered ci_hi - min null ci_lo) —
+    the disjointness margin the lattice's ci_ok predicate reads, bracketed from
+    the per-arm bootstrap CIs; None when any needed CI bound is missing.
+    """
+    st = est.get(f"{key}|steered")
+    nulls = [est.get(f"{key}|null_sameval"), est.get(f"{key}|null_xtype")]
+    if st is None or st["ci_lo"] is None or st["ci_hi"] is None:
+        return None
+    his = [n["ci_hi"] for n in nulls if n is not None and n["ci_hi"] is not None]
+    los = [n["ci_lo"] for n in nulls if n is not None and n["ci_lo"] is not None]
+    if not his or not los:
+        return None
+    return float(st["ci_lo"] - max(his)), float(st["ci_hi"] - min(los))
+
+
+def fig_transfer(stats: dict, parent_stats: dict, args: argparse.Namespace) -> None:
+    """Manifest figure ``q35_ladder_decay_transfer`` (review r1 must-fix 6a).
+
+    Per (direction x slot) cell surviving gates in BOTH runs: x = parent
+    steered mean F (#2162 committed ladder stats), y = this run's steered
+    mean F; identity line; the lattice verdict marked per point on both axes
+    (``<parent verdict> -> <fork verdict>``); every verdict flip additionally
+    carries both sides' steered-minus-null gap intervals beside the
+    categorical label (power-artifact framing, N2.7).
+    """
+    import matplotlib.pyplot as plt
+
+    p_lat, p_est = parent_stats["lattice"], parent_stats["estimation"]
+    f_lat, f_est = stats["lattice"], stats["estimation"]
+    fig, ax = plt.subplots(figsize=(8, 7.5))
+    n_pts = n_flips = 0
+    for key in sorted(f_lat):
+        pv, fv = p_lat.get(key), f_lat[key]
+        if pv is None or pv["verdict"] == "untestable" or fv["verdict"] == "untestable":
+            continue  # manifest: cells surviving gates in BOTH runs only
+        xs = p_est.get(f"{key}|steered")
+        ys = f_est.get(f"{key}|steered")
+        if xs is None or ys is None or xs["mean_f_target"] is None or ys["mean_f_target"] is None:
+            continue
+        x, y = float(xs["mean_f_target"]), float(ys["mean_f_target"])
+        flip = pv["verdict"] != fv["verdict"]
+        ax.scatter([x], [y], s=34, color="#d62728" if flip else "#1f77b4", alpha=0.85)
+        label = f"{key}\n{pv['verdict']} → {fv['verdict']}"
+        if flip:
+            n_flips += 1
+            for side, est_side in (("q25", p_est), ("q35", f_est)):
+                gap = _steered_null_gap(est_side, key)
+                if gap is not None:
+                    label += f"\n{side} gap [{gap[0]:+.2f}, {gap[1]:+.2f}]"
+        ax.annotate(label, (x, y), fontsize=5, xytext=(3, 2), textcoords="offset points")
+        n_pts += 1
+    ax.axline((0.0, 0.0), slope=1.0, color="grey", lw=0.8, ls=":")
+    ax.set_xlabel("parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target")
+    ax.set_ylabel("this run (Qwen3.5-9B) steered mean F_target")
+    ax.set_title(f"Ladder transfer across models — {n_pts} cells testable in both, {n_flips} flips")
+    fig.tight_layout()
+    _save(fig, "q35_ladder_decay_transfer", args.figures_dir)
+
+
 def step_figures(args: argparse.Namespace) -> None:
     import matplotlib
 
@@ -1342,7 +1473,9 @@ def step_figures(args: argparse.Namespace) -> None:
 
     set_paper_style()
     gate = _read_gate(args.gates_dir)
+    tokrep = _read_token_identity(args.gates_dir)
     stats = json.loads((args.out_dir / "stats.json").read_text(encoding="utf-8"))
+    parent_stats = json.loads(args.q25_stats_json.read_text(encoding="utf-8"))
     cells = {
         "steered": list(A62._iter_jsonl(args.out_dir / "f_cells.jsonl")),
         "null_sameval": list(A62._iter_jsonl(args.out_dir / "null_samevalue_cells.jsonl")),
@@ -1351,14 +1484,15 @@ def step_figures(args: argparse.Namespace) -> None:
     anchors = list(A62._iter_jsonl(args.out_dir / "anchors.jsonl"))
     conjuncts = list(A62._iter_jsonl(args.out_dir / "conjuncts.jsonl"))
     args.figures_dir.mkdir(parents=True, exist_ok=True)
-    fig_ladder_hero(stats, gate, args)
+    fig_ladder_hero(stats, gate, tokrep, args)
     fig_ladder_percarrier(cells, gate, args)
     fig_asymmetry(stats, gate, args)
     fig_anchor_separation(anchors, gate, args)
     fig_rubric_bridge(cells, args)
     fig_dv_agreement(cells, stats, args)
     fig_conjunct_diag(conjuncts, cells["steered"], args)
-    logger.info("[figures] wrote 7 figures to %s", args.figures_dir)
+    fig_transfer(stats, parent_stats, args)
+    logger.info("[figures] wrote 8 figures to %s", args.figures_dir)
 
 
 # ── staging / CLI ─────────────────────────────────────────────────────
@@ -1427,6 +1561,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--figures-dir",
         type=Path,
         default=Path("figures/issue_2329/q35_ladder_decay"),
+    )
+    ap.add_argument(
+        "--q25-stats-json",
+        type=Path,
+        default=Path("eval_results/issue_2162/persona_specificity_ladder/stats.json"),
+        help="parent #2162 ladder stats.json (committed in git; the q25 side of "
+        "the q35_ladder_decay_transfer figure). Sparse worktrees: "
+        "`git sparse-checkout add eval_results/issue_2162` materializes it.",
     )
     ap.add_argument("--stage-from-hf", action="store_true")
     ap.add_argument("--hf-revision", type=str, default=None)
