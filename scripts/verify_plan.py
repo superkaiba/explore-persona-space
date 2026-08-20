@@ -13087,15 +13087,21 @@ def check_exactness_grain(plan: str, kind: str) -> CheckResult:
 #     association is out of regex reach;
 #   - * parenthesized "≤ (baseline - 10pp)" — A1's comparator must abut
 #     "baseline"; "(" is not consumed;
-#   - * A2 middles containing "=" or "," ("baseline - harm, treated ≥
-#     10pp") — barred by the #2228 r2 tighten: the round-1 middle class
-#     crossed an equality comparator and a comma clause boundary and
-#     fabricated a cross-clause harvest ("baseline - cap = 2pp, while
-#     accuracy >= 10pp" bound the unrelated ">= 10pp" — a false WARN on
-#     a healthy plan whose registered gate was a satisfiable 2pp
-#     reduction); a GENUINE margin whose <arm> text carries "=" or ","
-#     is the accepted FN the tighten buys (pinned as the two r2 repro
-#     SKIP fixtures);
+#   - * A2 middles containing any barred character ("baseline - harm,
+#     treated ≥ 10pp") — "=" and "," barred by the #2228 r2 tighten (the
+#     round-1 middle class crossed an equality comparator and a comma
+#     clause boundary and fabricated a cross-clause harvest:
+#     "baseline - cap = 2pp, while accuracy >= 10pp" bound the unrelated
+#     ">= 10pp" — a false WARN on a healthy plan whose registered gate
+#     was a satisfiable 2pp reduction); "?", "!", and the Markdown
+#     table-cell pipe "|" barred by the #2228 r3 tighten (the same
+#     species, each verified as a live end-to-end false WARN:
+#     "baseline - cap? ...", "baseline - cap! ...", and
+#     "baseline - cap of 2pp | accuracy >= 10pp" crossed a sentence or
+#     table-cell boundary to bind the unrelated ">= 10pp"); a GENUINE
+#     margin whose <arm> text carries any barred character is the
+#     accepted FN the tightens buy (pinned as the r2 + r3 repro SKIP
+#     fixtures);
 #   - * range margins ("≥ 10-15pp"); also fraction baselines
 #     ("baseline ~0.097" — no %, never harvested) and baselines stated
 #     only in a cited artifact (clarifier Assumption 2: in-plan only; the
@@ -13151,21 +13157,23 @@ def check_exactness_grain(plan: str, kind: str) -> CheckResult:
 #     quantity. Preferred remedy: state the gate's true baseline in %
 #     form so the harvest sees it.
 #
-# CORPUS CALIBRATION (REALIZED, re-measured 2026-08-20 POST-r2-TIGHTEN
-# at corpus HEAD d1696b147f with THIS function, over every persisted
-# tasks/*/*/plans/v*.md — 4,443 versions; the c50/c67 house pattern;
+# CORPUS CALIBRATION (REALIZED, re-measured 2026-08-20 POST-r3-TIGHTEN
+# at corpus HEAD db34939cd6 with THIS function, over every persisted
+# tasks/*/*/plans/v*.md — 4,447 versions; the c50/c67 house pattern;
 # #2228 r1 C2 records raw-token and function-classified counts
 # SEPARATELY). RAW-TOKEN counts (module-regex approximation over raw
 # file text, fences/sections ignored): A1-form files 5; A2-form files 5
 # — the #2203 family {v10,v11,v12} plus #2228's own plans/{v1,v2}.md
-# (kind: infra; grows with #2228's own plan versions); the r2 tighten
-# left both counts unchanged — no corpus A2 middle carries "=" or ","
-# (r1's separate "comparator-pp-bearing 18" grep is dropped here as a
-# non-reproducible wider-net approximation; the A1/A2 module-regex
-# counts are the reproducible raw-token record).
+# (kind: infra; grows with #2228's own plan versions); the r2 and r3
+# tightens left both counts unchanged — no corpus A2 middle carries any
+# barred character (the r2 and r3 classes return the identical file set
+# on one corpus snapshot; r1's separate "comparator-pp-bearing 18" grep
+# stays dropped as a non-reproducible wider-net approximation — the
+# A1/A2 module-regex counts are the reproducible raw-token record).
 # REALIZED-FUNCTION counts (the binding measurement, forced
-# kind="experiment" as the armed-kind upper bound; unchanged by the r2
-# tighten): margin-bearing (non-SKIP) 3; WARNs 3 — EXACTLY the
+# kind="experiment" as the armed-kind upper bound; the r2 function and
+# the r3 function produce the identical verdict set on one corpus
+# snapshot): margin-bearing (non-SKIP) 3; WARNs 3 — EXACTLY the
 # founding-incident family, each
 # (kind: experiment, disposition ARMED, a true positive): 2203/plans/
 # v10.md, v11.md, v12.md, all firing on the L44 A2 bullet + the L57 A1
@@ -13181,23 +13189,32 @@ _C68_A1_RE = re.compile(
     r"(?i)(?:≤|<=|<)\s*baseline\s*[−–—-]\s*"  # noqa: RUF001 — real plan glyphs
     r"(?P<n>\d+(?:\.\d+)?)\s*(?:pp\b|percentage[-\s]?points?)"
 )
-#: A2 — "baseline - <arm> ≥ N pp". Middle bounded at 40 chars. REALIZED
-#: barred set (#2228 r2 tighten): newline; the comparator glyphs < > ≤ ≥
-#: plus bare "=" (round 1 permitted "=", so the lazy middle skipped past
-#: a satisfiable "= 2pp" equality and bound an unrelated later ">= 10pp"
-#: — a fabricated cross-clause harvest, false WARN on a healthy plan;
-#: genuine ">=" comparators survive the "=" bar by construction: the
-#: middle can never consume their leading ">", which was always barred);
-#: and the clause boundaries ";", ")" and "," (round 1 permitted ",", so
-#: "baseline - cap of 2pp, while accuracy >= 10pp" crossed the comma the
-#: same way — an "="-only fix would NOT have killed this form). RESIDUAL
-#: (permitted, disclosed — NOT barred): ".", ":", "(", quotes, and dash
-#: glyphs can still be crossed within the 40-char budget; WARN-only
-#: posture + the two escapes are the mitigation there. The genuine
-#: "="/","-bearing-middle margin this bars is an accepted FN (excluded
-#: list above, pinned by the two r2 repro SKIP fixtures).
+#: A2 — "baseline - <arm> ≥ N pp". Middle bounded at 40 chars. BARRED
+#: set (EXHAUSTIVE — `_C68_A2_MIDDLE_BARRED` below is the single source
+#: of truth, and the r3 comment<->class sync test asserts it equals the
+#: negated character class char-for-char, so a comment/class divergence
+#: is test-breaking rather than review-detected; #2228 r3): newline; the
+#: comparator glyphs < > ≤ ≥ plus bare "=" (#2228 r2: round 1 permitted
+#: "=", so the lazy middle skipped past a satisfiable "= 2pp" equality
+#: and bound an unrelated later ">= 10pp" — a fabricated cross-clause
+#: harvest, false WARN on a healthy plan; genuine ">=" comparators
+#: survive by construction: the middle can never consume their leading
+#: ">", barred since round 1); the clause boundaries ";" ")" "," (r2 —
+#: an "="-only fix would NOT have killed the comma form) and "?" "!"
+#: "|" (#2228 r3: the same live-FP species crossing a sentence boundary
+#: or a Markdown table-cell pipe — the likeliest plan shape, since
+#: decision lattices are routinely tables). RESIDUAL, stated as the
+#: COMPLEMENT (never an implicitly-exhaustive enumeration — #2228 r3):
+#: EVERY character outside the barred set above remains permitted within
+#: the 40-char budget — e.g. ".", ":", "(", quotes, and dash glyphs (the
+#: "." form can cross a sentence boundary the same way); WARN-only
+#: posture + the two escapes are the mitigation for whatever crossings
+#: the permitted complement allows. A genuine margin whose <arm> text
+#: carries a barred character is an accepted FN (excluded list above,
+#: pinned by the r2 + r3 repro SKIP fixtures).
+_C68_A2_MIDDLE_BARRED = frozenset("\n<>≤≥;)=,?!|")
 _C68_A2_RE = re.compile(
-    r"(?i)\bbaseline\s*[−–—-]\s*[^\n<>≤≥;)=,]{1,40}?(?:≥|>=|>)\s*"  # noqa: RUF001
+    r"(?i)\bbaseline\s*[−–—-]\s*[^\n<>≤≥;)=,?!|]{1,40}?(?:≥|>=|>)\s*"  # noqa: RUF001
     r"(?P<n>\d+(?:\.\d+)?)\s*(?:pp\b|percentage[-\s]?points?)"
 )
 #: Baseline anchor + the FIRST %-number in a bounded window after it (the

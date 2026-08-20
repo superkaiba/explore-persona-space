@@ -14081,6 +14081,74 @@ def test_c68_a2_comma_clause_boundary_crossing_not_harvested():
     assert r.status == "SKIP", r.detail
 
 
+def test_c68_a2_pipe_table_cell_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro (`a2-boundary-disclosure-incomplete-live-fp`),
+    # the pipe form — the materially likely one: plan decision lattices
+    # are routinely Markdown tables, so a table-cell pipe is a MORE
+    # probable plan shape than the comma upheld in r2. Pre-tighten the
+    # middle consumed "cap of 2pp | accuracy " and bound the unrelated
+    # ">= 10pp" vs the ~9.7% baseline (verified WARN at 713a30754d);
+    # post-tighten "|" is barred -> nothing harvested -> SKIP.
+    line = "- *H1-confirm:* baseline − cap of 2pp | accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_question_mark_sentence_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro, the "?"-form: the middle crossed a sentence
+    # boundary to bind the unrelated ">= 10pp" vs the ~9.7% baseline
+    # (verified WARN at 713a30754d); post-tighten "?" is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap? accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_exclamation_sentence_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro, the "!"-form (same species as the "?" pin;
+    # verified WARN at 713a30754d); post-tighten "!" is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap! accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior():
+    # #2228 r3 binding item 5 — the structural end to the enumeration
+    # game. (1) STRUCTURAL: the declared barred set
+    # (`verify_plan._C68_A2_MIDDLE_BARRED`, the constant the disclosure
+    # comment defers to as its single source of truth) equals the regex
+    # class's negated character set, character by character — a future
+    # comment/class divergence is test-breaking instead of
+    # review-detected. (2) BEHAVIORAL: every barred char kills a middle
+    # crossing it (end-to-end SKIP on the healthy 2pp-gate geometry), and
+    # every residual example the complement-form disclosure names (".",
+    # ":", "(", quotes, dash glyphs) is permitted (end-to-end WARN on the
+    # same geometry: 10pp vs the ~9.7% baseline).
+    m = re.search(r"\[\^((?:\\.|[^\]\\])+)\]", verify_plan._C68_A2_RE.pattern)
+    assert m, verify_plan._C68_A2_RE.pattern
+    body = m.group(1)
+    chars: set[str] = set()
+    i = 0
+    while i < len(body):
+        if body[i] == "\\":
+            chars.add({"n": "\n", "t": "\t", "r": "\r"}[body[i + 1]])
+            i += 2
+        else:
+            chars.add(body[i])
+            i += 1
+    assert chars == set(verify_plan._C68_A2_MIDDLE_BARRED), (
+        sorted(chars),
+        sorted(verify_plan._C68_A2_MIDDLE_BARRED),
+    )
+    for ch in sorted(verify_plan._C68_A2_MIDDLE_BARRED):
+        line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (repr(ch), r.status, r.detail)
+    for ch in sorted({".", ":", "(", '"', "'", "-", "−", "–", "—"}):
+        line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "WARN", (repr(ch), r.status, r.detail)
+
+
 def test_c68_zero_margin_guard_skips():
     # Reconciler CONCERN `zero-margin-coverage-absent` (#2228 r2): the
     # `v <= 0` harvest guard drops a literal 0pp margin in BOTH arms —
