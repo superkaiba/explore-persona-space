@@ -1082,9 +1082,12 @@ tests BEFORE anything lands:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$LINT_GATE_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$LINT_GATE_SCRIPT' < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
+  #     bash '$LINT_GATE_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
@@ -1230,6 +1233,18 @@ tests BEFORE anything lands:
     # bytes >0x7f only.
     git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD \
       > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
+    # #2246 item 3: this branch runs only when the TRIGGER classified the
+    # payload code-bearing (non-empty own-diff past the artifact carve-out),
+    # and the --no-renames overlay path set is a superset of the own-diff
+    # path set — an EMPTY listing from a ZERO-exit producer here means the
+    # listing was computed against the wrong/absent tree (or a mid-window
+    # ref mutation, e.g. the fetch above landing the payload on origin/main
+    # between the trigger diff and this listing). Fail CLOSED via the
+    # existing crash arm; never certify.
+    if [ ! -s /tmp/issue-<N>-overlay-files.txt ]; then
+      echo "[step10d] overlay listing EMPTY on a code-bearing payload — vacuous gated leg; failing CLOSED (#2246)"
+      GT_RC=1
+    fi
     # #1456: save the pre-overlay (archived origin/main) lint copy before the
     # loop overwrites it — the "theirs" side of the 3-way merge below. The
     # rm -f first clears any STALE saved copy from a prior run: a cp failure
@@ -3689,9 +3704,12 @@ Decision tree:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$SURGICAL_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$SURGICAL_SCRIPT' < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
+  #     bash '$SURGICAL_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
