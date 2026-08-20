@@ -20,11 +20,14 @@ issue-823 JSONs named above.
 
 from __future__ import annotations
 
+import inspect
 import json
+import pathlib
 
 import numpy as np
 import pytest
 import torch
+from sklearn.model_selection import KFold
 
 from scripts import issue779_fitter_fair_comparison as FFC
 from scripts import issue823_ladder_fits as LF
@@ -393,3 +396,294 @@ def test_designed_abort_rcs_distinct_and_routed(tmp_path):
     with pytest.raises(SystemExit) as exc:
         LF.designed_abort(tmp_path, "mask_integrity", LF.RC_MASK_ABORT, {"x": 1}, smoke=False)
     assert exc.value.code == LF.RC_MASK_ABORT
+
+
+# ═══ Bounded fix round (binding reconciliation) — tests written BEFORE the fixes ═══
+# Items keyed to the reconciliation fix list: F1 membership shas + early split
+# integrity, F2 consumed-input fingerprint binding, F3 producer completion
+# predicate + row counts, F4 per-persona per-context resume, F5 shared-eigh
+# sensitivity, F6 canonical-upload gate, F7 smoke/production aliasing, F8
+# retrieval on every fitted layer, F10 contingency contract, F13 smoke honesty.
+
+
+# ── F1a: pre-drop MEMBERSHIP pins (counts alone pass a membership swap) ──────
+
+
+def test_predrop_membership_sha_constants_match_realized_split():
+    tr, va, te = LF.checked_fixed_split(5000)
+    got = {"train": LF._ids_sha(tr), "val": LF._ids_sha(va), "test": LF._ids_sha(te)}
+    assert got == LF.BANKED_SPLIT_PREDROP_SHA256
+
+
+def test_predrop_check_catches_count_preserving_membership_swap():
+    pre, parent = _parent_set_matching_banked()
+    tr, va, te = (np.array(x, copy=True) for x in pre)
+    # swap one TRAIN member with one VAL member — both in the parent set, so every
+    # count (pre-drop AND parent-masked) is preserved; only MEMBERSHIP drifts.
+    swap_tr = next(int(i) for i in tr if int(i) in parent)
+    swap_va = next(int(i) for i in va if int(i) in parent)
+    tr[np.where(tr == swap_tr)[0][0]] = swap_va
+    va[np.where(va == swap_va)[0][0]] = swap_tr
+    with pytest.raises(RuntimeError, match=r"[Mm]embership"):
+        LF.predrop_banked_split_check((tr, va, te), np.array(sorted(parent)))
+
+
+# ── F1b: split integrity runs BEFORE the gates and the P1 fits ───────────────
+
+
+def test_split_integrity_precedes_gates_and_p1_in_main():
+    src = inspect.getsource(LF.main)
+    i_split = src.index("pfit_split_integrity")
+    assert i_split < src.index("pfit_g2")
+    assert i_split < src.index("pfit_g1")
+    assert i_split < src.index("pfit_p1")
+
+
+# ── F2: consumed-input identity bound into the P1 fingerprint ────────────────
+
+
+def test_p1_fingerprint_binds_store_identity_and_post_gate_solver():
+    src = inspect.getsource(LF.main)
+    i_gate = src.index('g2_record["contingency_engaged"]')
+    i_recompute = src.index(
+        'solver_mode = "canonical-contingency" if contingency else "gram-fast-path"', i_gate
+    )
+    i_fp = src.index("fp_p1 = checkpoint_fingerprint", i_recompute)
+    assert i_gate < i_recompute < i_fp  # EFFECTIVE post-gate mode, never the arg-time one
+    assert "store_identity" in src[i_fp : i_fp + 400]
+
+
+# ── F3: producer completion predicate + per-persona row counts ───────────────
+
+
+def _fake_local_store(tmp_path, n_contexts, sidecars=True, sidecar_n_contexts=None, digest=True):
+    tensors = tmp_path / "analysis_tensors"
+    tensors.mkdir(parents=True, exist_ok=True)
+    for p in range(LF.N_PERSONAS):
+        if LF.expected_store_rows(p, n_contexts) == 0:
+            continue
+        (tensors / f"v_pairs_p{p:02d}.pt").write_bytes(b"x")
+        if sidecars:
+            (tensors / f"v_pairs_p{p:02d}.done.json").write_text(
+                json.dumps(
+                    {
+                        "fingerprint": {
+                            "n_contexts": sidecar_n_contexts or n_contexts,
+                            "n_layers": 28,
+                            "hidden": 3584,
+                        },
+                        "n_rows": 1,
+                    }
+                )
+            )
+    if digest:
+        (tensors / "capture_digest.json").write_text("{}")
+    return tmp_path
+
+
+def test_stage_pair_store_local_requires_sidecars(tmp_path):
+    root = _fake_local_store(tmp_path, 5000, sidecars=False)
+    with pytest.raises(RuntimeError, match="sidecar"):
+        LF.stage_pair_store(root, "prefix", None, 5000)
+
+
+def test_stage_pair_store_local_refuses_stale_regime_sidecar(tmp_path):
+    root = _fake_local_store(tmp_path, 5000, sidecar_n_contexts=10)
+    with pytest.raises(RuntimeError, match="stale"):
+        LF.stage_pair_store(root, "prefix", None, 5000)
+
+
+def test_stage_pair_store_local_requires_capture_digest(tmp_path):
+    root = _fake_local_store(tmp_path, 5000, digest=False)
+    with pytest.raises(RuntimeError, match="capture_digest"):
+        LF.stage_pair_store(root, "prefix", None, 5000)
+
+
+def test_stage_pair_store_local_happy_path_returns_identity_and_digest(tmp_path):
+    root = _fake_local_store(tmp_path, 5000)
+    paths, identity, digest = LF.stage_pair_store(root, "prefix", None, 5000)
+    assert set(paths) == set(range(LF.N_PERSONAS))
+    assert identity["source"] == "local-sidecars"
+    assert len(identity["sidecar_fingerprint_sha256"]) == 64
+    assert digest.name == "capture_digest.json" and digest.exists()
+
+
+def test_expected_store_rows_matches_registered_pair_arithmetic():
+    from scripts.issue823_ladder_gen import registered_pair_total
+
+    assert LF.expected_store_rows(0, 5000) == 5000
+    assert LF.expected_store_rows(1, 5000) == 2500
+    assert LF.expected_store_rows(2, 5000) == 1250
+    assert LF.expected_store_rows(4, 5000) == 625
+    assert LF.expected_store_rows(8, 5000) == 312
+    assert LF.expected_store_rows(15, 5000) == 312
+    total = sum(LF.expected_store_rows(p, 5000) for p in range(LF.N_PERSONAS))
+    assert total == registered_pair_total(5000) == 14996
+    assert LF.expected_store_rows(15, 10) == 0  # smoke slice: personas >= 10 have no rows
+
+
+def test_load_inputs_asserts_per_persona_row_count_source_pin():
+    src = inspect.getsource(LF.load_inputs)
+    assert "expected_store_rows" in src  # row-count assert wired at the load seam
+
+
+# ── F4: per-persona per-context arrays survive resume ────────────────────────
+
+
+def test_restore_pp_arrays_roundtrip_and_set_check(tmp_path):
+    fp = LF.checkpoint_fingerprint(np.arange(4), {"chunk": "p2", "n_contexts": 4})
+    pp = {}
+    for layer in LF.P2_LAYERS:
+        for suff in ("a_sres", "a_stot", "c_sres", "c_stot"):
+            pp[f"pp_k2_p0_L{layer}_{suff}"] = np.arange(3, dtype=float)
+    LF.save_chunk(
+        tmp_path,
+        "p2_pp_k2",
+        {
+            "cells": np.array(json.dumps({"p0": {"L14": {}}})),
+            "gmix": np.array(json.dumps([])),
+            **pp,
+        },
+        fp,
+    )
+    z = np.load(tmp_path / "p2_pp_k2.npz", allow_pickle=True)
+    p2_pc: dict = {}
+    n = LF.restore_pp_arrays(z, p2_pc)
+    assert n == len(pp) and set(p2_pc) == set(pp)
+    per_persona = {"k2": {"p0": {f"L{layer}": {} for layer in LF.P2_LAYERS}}}
+    LF.assert_p2_percontext_complete(per_persona, p2_pc)  # complete -> no raise
+    del p2_pc["pp_k2_p0_L14_a_sres"]
+    with pytest.raises(RuntimeError, match="missing"):
+        LF.assert_p2_percontext_complete(per_persona, p2_pc)
+    # skipped small cells impose no per-context keys
+    LF.assert_p2_percontext_complete({"k2": {"p1": {"status": "skipped_small_cell (smoke)"}}}, {})
+
+
+def test_p2_resume_and_set_check_wired_in_main():
+    src = inspect.getsource(LF.main)
+    i_p2 = src.index("pfit_p2")
+    assert "restore_pp_arrays" in src[i_p2:]
+    assert "assert_p2_percontext_complete" in src[i_p2:]
+
+
+# ── F5: capped sensitivity shares ONE factorization per (layer, fold) ────────
+
+
+def test_dof_cap_sensitivity_one_factorization_per_layer_fold(tmp_path, monkeypatch):
+    inputs = _tiny_inputs(n_ctx=20)
+    mask, gathers, _ = LF.build_mask_and_gathers(inputs)
+    folds = list(KFold(n_splits=5, shuffle=True, random_state=0).split(np.zeros(len(mask))))
+    calls = {"n": 0}
+    real = LF.factorize_robust
+
+    def counting(x, dev_):
+        calls["n"] += 1
+        return real(x, dev_)
+
+    monkeypatch.setattr(LF, "factorize_robust", counting)
+    fp = LF.checkpoint_fingerprint(mask, {"chunk": "p1_sens", "n_contexts": 20})
+    layers = (1, 2)
+    cells = LF.dof_cap_sensitivity(
+        inputs, gathers, mask, folds, torch.device("cpu"), tmp_path, fp, layers=layers
+    )
+    # ONE eigh per (layer, fold), shared across all 7 arms — 105 -> 15 at production shape
+    assert calls["n"] == len(layers) * 5
+    cell = cells["k1:L1"]
+    assert cell["cap"] == LF.DOF_CAP and len(cell["folds"]) == 5
+    assert set(cell["folds"][0]) >= {"fold", "lambda", "lambda_edge", "dof", "n_train"}
+    assert set(cells) == {f"{arm}:L{layer}" for arm in LF.ARM_NAMES for layer in layers}
+    # per-layer checkpoints resume without recomputing any factorization
+    calls["n"] = 0
+    cells2 = LF.dof_cap_sensitivity(
+        inputs, gathers, mask, folds, torch.device("cpu"), tmp_path, fp, layers=layers
+    )
+    assert calls["n"] == 0 and set(cells2) == set(cells)
+
+
+# ── F6: canonical-upload gate (the SHARED gen gate, not a second copy) ───────
+
+
+def test_canonical_upload_gate_is_the_shared_gen_gate():
+    from scripts.issue823_ladder_gen import _require_canonical_upload as gate
+
+    assert LF._require_canonical_upload is gate
+    src = inspect.getsource(LF.main)
+    assert "_require_canonical_upload(url" in src
+
+
+# ── F7: smoke and production outputs must never alias ────────────────────────
+
+
+def test_smoke_root_aliasing_predicate_and_sentinel_names():
+    assert LF.smoke_root_aliases_production(LF.PROD_POD_OUT_ROOT) is True
+    assert LF.smoke_root_aliases_production(LF.PROD_POD_OUT_ROOT / "fits_smoke") is True
+    assert LF.smoke_root_aliases_production(pathlib.Path("/tmp/issue-823-smoke/lf")) is False
+    assert LF.sentinel_filename(False) == "issue-823-ladder-fits-done.json"
+    assert LF.sentinel_filename(True) == "issue-823-ladder-fits-smoke-done.json"
+
+
+def test_main_refuses_smoke_out_root_under_production():
+    with pytest.raises(SystemExit) as exc:
+        LF.main(["--smoke", "--out-root", str(LF.PROD_POD_OUT_ROOT / "fits_smoke")])
+    assert exc.value.code == 2  # argparse error BEFORE any staging / mkdir
+
+
+# ── F8: retrieval baseline covers every fitted P1 layer ──────────────────────
+
+
+def test_p1_baselines_cover_every_fitted_layer():
+    src = inspect.getsource(LF.main)
+    assert "if layer in READ_OUT_LAYERS or layer in P2_LAYERS:" not in src
+    assert "layer_base[key] = cell_baselines" in src
+
+
+# ── F10: contingency contract ────────────────────────────────────────────────
+
+
+def test_g1_dispatches_effective_solver_under_contingency():
+    src = inspect.getsource(LF.main)
+    g1_block = src[src.index("pfit_g1") : src.index("pfit_p1")]
+    assert "if contingency:" in g1_block
+    assert "ridge_fit_predict(x_tr, y_tr, x_te)" in g1_block  # the EFFECTIVE headline solver
+
+
+def test_p2_withheld_result_shape_and_wiring():
+    rec = LF.p2_withheld_result({"m": 1}, {"s": 2})
+    assert rec["status"].startswith("WITHHELD")
+    assert rec["metadata"] == {"m": 1} and rec["split"] == {"s": 2}
+    assert "unverified" in rec["reason"]
+    assert rec["full_arms"] == {} and rec["n_ladder"] == {} and rec["per_persona"] == {}
+    src = inspect.getsource(LF.main)
+    assert "p2_withheld_result" in src[src.index("pfit_p2") :]
+
+
+def test_completion_sentinel_annotates_gates_and_p2_status():
+    src = inspect.getsource(LF.main)
+    tail = src[src.index("write_sentinel") :]
+    assert '"p2_status"' in tail and '"gates"' in tail
+    assert "sentinel_filename(args.smoke)" in src
+
+
+# ── F13: smoke honesty — degenerate val selection fail-loud / labeled ────────
+
+
+def test_val_select_lambda_degenerate_raises_in_production_and_labels_in_smoke():
+    rng = np.random.default_rng(5)
+    x = rng.normal(size=(8, 3))
+    y = rng.normal(size=(8, 2))
+    xv = rng.normal(size=(1, 3))
+    yv = rng.normal(size=(1, 2))  # ONE val row -> ss_tot degenerate -> every score NaN
+    fact = FFC._factorize(x, torch.device("cpu"))
+    vty, ymu = FFC._vty_ymu(fact, y)
+    kval = FFC._cross_kernel(fact, xv)
+    grid = np.logspace(-2, 8, 5)
+    with pytest.raises(RuntimeError, match="degenerate"):
+        LF.val_select_lambda(fact, vty, ymu, kval, yv, grid)
+    lam, r2 = LF.val_select_lambda(fact, vty, ymu, kval, yv, grid, degenerate_ok=True)
+    assert lam == grid[0] and not np.isfinite(r2)
+
+
+def test_module_docstring_enumerates_predrop_skip_and_val_degeneracy():
+    blind = LF.__doc__[LF.__doc__.index("Smoke blind-spot enumeration") :]
+    assert "pre-drop banked-split" in blind  # the smoke SKIP of the check is ENUMERATED
+    assert "val-selection" in blind and "degenerate" in blind

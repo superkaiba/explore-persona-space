@@ -70,6 +70,15 @@ Smoke blind-spot enumeration (plan-sanctioned downgrades, disclosed):
   - G1 reproduce gate is SKIPPED at smoke n (reproducing banked full-n R2 is
     impossible at n=10) — the smoke PASS does not certify bundle/mask/solver
     numerical reproduction; G1 runs at production n.
+  - the pre-drop banked-split check (predrop_banked_split_check: membership
+    shas + counts) is SKIPPED at smoke n — it quantifies over the FULL 4998-id
+    parent mask, unreachable at n=10; at production n it runs immediately after
+    mask materialization, BEFORE the gates and the P1 fits.
+  - P2 val-selection is DEGENERATE at smoke n (n_val ~ 1 => every pooled-R2
+    score non-finite): smoke cells keep grid[0] and are LABELED
+    `val_selection_degenerate`; production fails loud instead
+    (val_select_lambda degenerate_ok). >=2 validation contexts would need a
+    larger upstream capture smoke slice (only context 4 of 0-9 lands in val).
   - P1 GCV fits at smoke n (n_train ~ 8 << d) are estimator-degenerate — the
     smoke asserts shapes/finiteness/pipeline only; gate verdicts (G2 tolerance,
     drop-rule abort, wall abort, d-boundary) are INFORMATIONAL at smoke scale
@@ -153,6 +162,7 @@ from scripts.issue823_ladder_gen import (  # noqa: E402
     N_PERSONAS,
     PARENT_PREFIX,
     PARENT_REV,
+    _require_canonical_upload,
     write_json,
 )
 
@@ -183,6 +193,18 @@ SPLIT_NOMINAL = (3600, 400, 1000)  # fixed_split(n_ctx=5000, ...) nominal sizes
 # single_split_protocol.json `split_realized`) — PRE-DROP-level constants.
 BANKED_SPLIT_PARENT = {"n_train": 3600, "n_val": 400, "n_test": 1000}
 BANKED_SPLIT_ARMS_MASKED = {"n_valid": 4998, "n_train": 3599, "n_val": 399, "n_test": 1000}
+# MEMBERSHIP pins for the pre-drop permutation slices (counts alone pass a
+# count-preserving membership swap): sha256 of each sorted int64 id array from
+# fixed_split(5000, 3600, 400, 1000, seed=42) — bit-exact integer inputs, safe
+# to hash (machine-stable; NOT a recomputed-float hash).
+BANKED_SPLIT_PREDROP_SHA256 = {
+    # SHA_PIN_DOMAIN: INDEX — sha256 of each sorted-int64 id array (_ids_sha)
+    "train": "f1f133f4f7565c4accb009143a405abfd97302c1717c52d1fd6cbdc75e6b4928",
+    # SHA_PIN_DOMAIN: INDEX
+    "val": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    # SHA_PIN_DOMAIN: INDEX
+    "test": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+}
 NEW_DROPS_ABORT_PER_ARM = 50  # plan section-7 kill 1 (parent rule, 1% of corpus)
 P2_RUNGS_BELOW_TOP = (3584, 2400, 1800, 900, 450, 225)
 PER_PERSONA_KS = (2, 4, 8, 16)
@@ -205,6 +227,11 @@ MIN_CELL_FLOORS = {"train": 2, "val": 1, "test": 1}
 RC_MASK_ABORT = 5
 RC_FITS_WALL_ABORT = 6
 RC_SOLVER_PARITY_ABORT = 7
+
+# Production pod out-root (run_823 phase convention). A smoke out-root at or
+# under this path would alias the production run's artifacts/sentinel — refused
+# at argparse time (smoke_root_aliases_production).
+PROD_POD_OUT_ROOT = pathlib.Path("/workspace/eps/out/issue823_ladder")
 
 # G1 embedded reference constants — fold-MEAN R2 recomputed from the banked
 # `eval_results/issue_823/ridge_r2_by_arm.json` per-fold arrays at
@@ -299,6 +326,14 @@ def predrop_banked_split_check(
     if got_parent != BANKED_SPLIT_PARENT:
         raise RuntimeError(
             f"pre-drop split counts {got_parent} != banked parent record {BANKED_SPLIT_PARENT}"
+        )
+    got_sha = {"train": _ids_sha(tr), "val": _ids_sha(va), "test": _ids_sha(te)}
+    if got_sha != BANKED_SPLIT_PREDROP_SHA256:
+        bad = sorted(k for k in got_sha if got_sha[k] != BANKED_SPLIT_PREDROP_SHA256[k])
+        raise RuntimeError(
+            f"pre-drop split MEMBERSHIP drifted on subset(s) {bad}: sorted-id sha256 "
+            f"{got_sha} != banked BANKED_SPLIT_PREDROP_SHA256 — counts match but the "
+            "permutation's subset membership differs from the banked run's"
         )
     got_masked = {
         "n_valid": len(parent_set),
@@ -579,18 +614,37 @@ def val_select_lambda(
     kval_v: torch.Tensor,
     y_val: np.ndarray,
     grid: np.ndarray,
+    *,
+    degenerate_ok: bool = False,
 ) -> tuple[float, float]:
     """Val-selected lambda over an arbitrary grid off a shared factorization.
 
     The wide-grid variant of FFC.gram_fit_apply's val branch (that helper pins
     the module-level 13-point LAMBDAS; P2 registers logspace(-2, 8, 21)).
+
+    When EVERY grid point scores non-finite pooled R2 (degenerate val pool —
+    ss_tot ~ 0, e.g. a single val row at smoke n), selection is meaningless:
+    production (degenerate_ok=False) raises; smoke (degenerate_ok=True) logs
+    and returns (grid[0], nan) so the caller can LABEL the cell degenerate.
     """
     best_lam, best_r2 = float(grid[0]), -np.inf
+    any_finite = False
     for lam in grid:
         pred = FFC._apply(fact, float(lam), vty, ymu, kval_v)
         r2 = PR._pooled_r2(pred, y_val)
-        if np.isfinite(r2) and r2 > best_r2:
-            best_r2, best_lam = float(r2), float(lam)
+        if np.isfinite(r2):
+            any_finite = True
+            if r2 > best_r2:
+                best_r2, best_lam = float(r2), float(lam)
+    if not any_finite:
+        if not degenerate_ok:
+            raise RuntimeError(
+                "val_select_lambda: every grid point scored non-finite pooled R2 — the "
+                "validation pool is degenerate (ss_tot ~ 0, e.g. a single val row); "
+                "refusing to silently keep grid[0] in production"
+            )
+        logger.warning("[p2] val selection DEGENERATE (all scores non-finite) — smoke label")
+        return float(grid[0]), float("nan")
     return best_lam, best_r2
 
 
@@ -625,6 +679,76 @@ def gcv_solve_dof_capped(fact: dict, y_tr: np.ndarray, cap_frac: float = DOF_CAP
     if best_lam is None:
         raise RuntimeError(f"dof cap {cap_frac} excludes every grid lambda (n_train={ntr})")
     return best_lam, vty, ymu, best_dof
+
+
+def dof_cap_sensitivity(
+    inputs,
+    gathers: dict,
+    mask_ids: np.ndarray,
+    folds: list,
+    dev: torch.device,
+    ckpt_dir: pathlib.Path,
+    fingerprint: dict,
+    layers: tuple[int, ...] = READ_OUT_LAYERS,
+    arms: tuple[str, ...] = ARM_NAMES,
+) -> dict[str, dict]:
+    """Capped-sensitivity re-selection: ONE shared factorization per (layer, fold).
+
+    The arm loop solves every capped target against the SHARED eigh — 15
+    factorizations at production shape (3 layers x 5 folds), never 105 (the
+    arm-encloses-fold shape). Per-layer checkpoints resume without recomputing
+    any factorization; per-cell progress lines; per-fold selected lambda /
+    lambda_edge / dof / n_train persisted under sensitivity keys.
+    """
+    cells: dict[str, dict] = {}
+    unit, total = 0, len(layers) * len(folds)
+    for layer in layers:
+        name = f"p1_sens_L{layer:02d}"
+        if chunk_done(ckpt_dir, name, fingerprint):
+            z = np.load(ckpt_dir / f"{name}.npz", allow_pickle=True)
+            cells.update(json.loads(str(z["cells"])))
+            unit += len(folds)
+            logger.info("[p1-sens] resume: layer %d loaded from checkpoint", layer)
+            continue
+        x_full = inputs.input_col(layer, mask_ids)
+        y_full = {arm: arm_target(inputs, gathers, arm, layer, mask_ids, mask_ids) for arm in arms}
+        comps: dict[str, list] = {arm: [] for arm in arms}
+        details: dict[str, list] = {arm: [] for arm in arms}
+        for f_idx, (tr, te) in enumerate(folds):
+            t_cell = time.monotonic()
+            fact = factorize_robust(x_full[tr], dev)  # ONE eigh shared by all capped targets
+            kev = FFC._cross_kernel(fact, x_full[te])
+            for arm in arms:
+                lam, vty, ymu, dof = gcv_solve_dof_capped(fact, y_full[arm][tr])
+                pred = FFC._apply(fact, lam, vty, ymu, kev)
+                sres, stot = per_context_ss(pred, y_full[arm][te])
+                comps[arm].append((float(sres.sum()), float(stot.sum())))
+                details[arm].append(
+                    {
+                        "fold": f_idx,
+                        "lambda": lam,
+                        "lambda_edge": SSP.lambda_edge(lam, FFC.LAMBDAS),
+                        "dof": dof,
+                        "n_train": int(len(tr)),
+                    }
+                )
+            unit += 1
+            print(
+                f"[p1-sens] unit {unit}/{total} L={layer} fold={f_idx} "
+                f"elapsed={time.monotonic() - t_cell:.1f}s",
+                flush=True,
+            )
+        layer_cells = {
+            f"{arm}:L{layer}": {
+                "pooled_r2_dof_capped": pooled_r2_from_components(comps[arm]),
+                "cap": DOF_CAP,
+                "folds": details[arm],
+            }
+            for arm in arms
+        }
+        cells.update(layer_cells)
+        save_chunk(ckpt_dir, name, {"cells": np.array(json.dumps(layer_cells))}, fingerprint)
+    return cells
 
 
 def svd_gcv_lambda(x_tr: np.ndarray, y_tr: np.ndarray, lambdas: np.ndarray) -> float:
@@ -692,23 +816,85 @@ def stage_parent_inputs(root: pathlib.Path) -> dict[str, pathlib.Path]:
     return out
 
 
+def expected_store_rows(p: int, n_contexts: int) -> int:
+    """Registered pair arithmetic: persona p serves context i iff i % k == p for some arm k > p.
+
+    Per-persona expected store row counts at n=5000: p0=5000, p1=2500, p2/p3=1250,
+    p4-7=625, p8-15=312 (total 14996 == gen.registered_pair_total(5000)).
+    """
+    return sum(1 for i in range(n_contexts) if any(i % k == p for k in LADDER_KS if p < k))
+
+
 def stage_pair_store(
-    root: pathlib.Path, store_prefix: str, revision: str | None
-) -> dict[int, pathlib.Path]:
-    """Pair store: local-first (same pod as P-Cap), else HF fetch at ONE pinned sha."""
+    root: pathlib.Path, store_prefix: str, revision: str | None, n_contexts: int
+) -> tuple[dict[int, pathlib.Path], dict, pathlib.Path]:
+    """Pair store: local-first WITH producer completion evidence, else HF at ONE pinned sha.
+
+    The local branch accepts the store ONLY on the producer's own completion
+    predicate: per ACTIVE persona (expected_store_rows > 0 at n_contexts) the
+    `.done.json` sidecar must exist AND its fingerprint must match this run's
+    regime (n_contexts / n_layers / hidden) — a tensor file alone can be a
+    stale or partial capture generation. capture_digest.json (the manipulation
+    accounting's coverage record) is REQUIRED on both branches; the remote
+    branch stages it alongside the tensors. Returns (paths, store_identity,
+    capture_digest_path); store_identity is bound into the checkpoint
+    fingerprints so a resume against a different store generation is refused.
+    """
     tensors_dir = root / "analysis_tensors"
+    active = [p for p in range(N_PERSONAS) if expected_store_rows(p, n_contexts) > 0]
     paths: dict[int, pathlib.Path] = {}
-    local_ok = all(group_paths(tensors_dir, p)[0].exists() for p in range(N_PERSONAS))
+    local_ok = all(group_paths(tensors_dir, p)[0].exists() for p in active)
     if local_ok:
-        logger.info("pair store staged locally at %s", tensors_dir)
-        return {p: group_paths(tensors_dir, p)[0] for p in range(N_PERSONAS)}
+        sidecars: dict[int, dict] = {}
+        for p in active:
+            t_path, done_path = group_paths(tensors_dir, p)
+            if not done_path.exists():
+                raise RuntimeError(
+                    f"local pair store at {tensors_dir} has {t_path.name} but no producer "
+                    f"sidecar {done_path.name} — the capture group is not verifiably "
+                    "complete (stale/partial capture generation)"
+                )
+            side = json.loads(done_path.read_text())
+            fp = side.get("fingerprint", {})
+            got = {k: fp.get(k) for k in ("n_contexts", "n_layers", "hidden")}
+            want = {"n_contexts": n_contexts, "n_layers": EXPECTED_LAYERS, "hidden": HIDDEN}
+            if got != want:
+                raise RuntimeError(
+                    f"local pair store sidecar for persona {p} is stale: fingerprint "
+                    f"regime {got} != this run's {want}"
+                )
+            sidecars[p] = side
+            paths[p] = t_path
+        digest_path = tensors_dir / "capture_digest.json"
+        if not digest_path.exists():
+            raise RuntimeError(
+                f"local pair store at {tensors_dir} lacks capture_digest.json — the "
+                "manipulation accounting cannot verify capture coverage without it"
+            )
+        identity = {
+            "source": "local-sidecars",
+            "sidecar_fingerprint_sha256": hashlib.sha256(
+                json.dumps(
+                    {str(p): sidecars[p].get("fingerprint", {}) for p in active},
+                    sort_keys=True,
+                ).encode()
+            ).hexdigest(),
+        }
+        logger.info(
+            "pair store staged locally at %s (%d sidecars verified)", tensors_dir, len(active)
+        )
+        return paths, identity, digest_path
     resolved = resolve_dataset_revision(revision)
     logger.info("fetching pair store from %s/%s @ %s", DATA_REPO, store_prefix, resolved)
-    for p in range(N_PERSONAS):
+    for p in active:
         paths[p] = _hf_fetch(
             f"{store_prefix}/analysis_tensors/v_pairs_p{p:02d}.pt", resolved, root / "store_dl"
         )
-    return paths
+    digest_path = _hf_fetch(
+        f"{store_prefix}/analysis_tensors/capture_digest.json", resolved, root / "store_dl"
+    )
+    identity = {"source": "hf", "revision": resolved, "prefix": store_prefix}
+    return paths, identity, digest_path
 
 
 @dataclasses.dataclass
@@ -725,6 +911,8 @@ class LadderInputs:
     n_contexts: int
     n_layers: int = EXPECTED_LAYERS
     hidden: int = HIDDEN
+    store_identity: dict | None = None  # producer completion evidence (stage_pair_store)
+    capture_digest: dict | None = None  # capture coverage record (manipulation accounting)
 
     def input_col(self, layer: int, ids: np.ndarray) -> np.ndarray:
         col = self.layers_map.index(layer)
@@ -756,12 +944,21 @@ def load_inputs(
     parent_valid = np.array(sorted(mask_d["common_valid_idx"]), dtype=int)
     parent_valid = parent_valid[parent_valid < n_contexts]
 
-    store_paths = stage_pair_store(root, store_prefix, store_revision)
+    store_paths, store_identity, digest_path = stage_pair_store(
+        root, store_prefix, store_revision, n_contexts
+    )
+    capture_digest = json.loads(digest_path.read_text())
     store_v, store_ctx, store_span = {}, {}, {}
     for p, path in sorted(store_paths.items()):
         payload = torch.load(str(path), map_location="cpu", weights_only=True)
         v = payload["v"]
         assert v.ndim == 3 and v.shape[1:] == (EXPECTED_LAYERS, HIDDEN), (p, v.shape)
+        want_rows = expected_store_rows(p, n_contexts)
+        assert v.shape[0] == want_rows, (
+            f"persona {p}: store has {v.shape[0]} rows != expected_store_rows(p, "
+            f"{n_contexts}) = {want_rows} (registered pair arithmetic) — stale/partial "
+            "capture generation"
+        )
         store_v[p] = v.numpy()
         store_ctx[p] = payload["context_ids"].numpy()
         store_span[p] = payload["span_lengths"].numpy()
@@ -774,6 +971,8 @@ def load_inputs(
         store_ctx=store_ctx,
         store_span=store_span,
         n_contexts=n_contexts,
+        store_identity=store_identity,
+        capture_digest=capture_digest,
     )
 
 
@@ -900,6 +1099,96 @@ def save_chunk(ckpt_dir: pathlib.Path, name: str, arrays: dict, fingerprint: dic
     np.savez(tmp, **arrays)
     tmp.replace(ckpt_dir / f"{name}.npz")
     write_json(ckpt_dir / f"{name}.json", {"fingerprint": fingerprint, "ts": time.time()})
+
+
+def restore_pp_arrays(z, p2_pc: dict) -> int:
+    """Restore per-context `pp_*` arrays from a per-k checkpoint npz into p2_pc.
+
+    Returns the number of arrays restored. The pp_ keys are the four-layer
+    per-context (ss_res, ss_tot) inputs the final percontext_ladder_p2.npz
+    archive persists (registered artifact inputs) — without restoring them a
+    RESUMED per-persona block would silently drop its arrays from the archive.
+    """
+    n = 0
+    for key in z.files:
+        if key.startswith("pp_"):
+            p2_pc[key] = np.asarray(z[key])
+            n += 1
+    return n
+
+
+def assert_p2_percontext_complete(
+    per_persona: dict, p2_pc: dict, layers: tuple[int, ...] = P2_LAYERS
+) -> None:
+    """Set-check: every non-skipped per-persona cell has its four pp_ arrays.
+
+    Runs BEFORE the percontext_ladder_p2.npz write, so a resume/restore bug can
+    never ship a silently-partial archive. `layers` mirrors the fit loop's
+    per-cell layer keys (cells carry `L<layer>` sub-dicts).
+    """
+    missing: list[str] = []
+    for k_name, k_cells in per_persona.items():
+        for p_name, cell in k_cells.items():
+            if not isinstance(cell, dict) or str(cell.get("status", "")).startswith("skipped"):
+                continue
+            for layer in layers:
+                if f"L{layer}" not in cell:
+                    continue
+                for suffix in ("a_sres", "a_stot", "c_sres", "c_stot"):
+                    key = f"pp_{k_name}_{p_name}_L{layer}_{suffix}"
+                    if key not in p2_pc:
+                        missing.append(key)
+    if missing:
+        raise RuntimeError(
+            f"percontext_ladder_p2 archive would be missing {len(missing)} per-context "
+            f"arrays (first: {missing[:6]}) — a resumed per-persona block lost its "
+            "registered pp_ inputs (restore_pp_arrays not applied?)"
+        )
+
+
+def p2_withheld_result(metadata: dict, split_block: dict) -> dict:
+    """P2 record under the solver-parity contingency: fast-path fits WITHHELD.
+
+    P2's single-split fits run on the shared gram fast-path primitives
+    (_factorize/_gcv_solve/_apply); when the G2 gate rejected that path, those
+    fits are unverified — withheld rather than reported (the priced canonical
+    contingency covers P1 only; plan sections 4.3/8).
+    """
+    return {
+        "status": "WITHHELD — solver-parity contingency engaged",
+        "reason": (
+            "P2 single-split fits use the gram fast-path primitives that FAILED the G2 "
+            "parity gate; their fits are unverified under contingency and are withheld "
+            "rather than reported (the canonical-solver contingency prices P1 only)"
+        ),
+        "metadata": metadata,
+        "split": split_block,
+        "full_arms": {},
+        "n_ladder": {},
+        "per_persona": {},
+        "g_mix": {},
+    }
+
+
+# ── Smoke/production isolation + sentinel naming ─────────────────────────────
+
+
+def smoke_root_aliases_production(root: pathlib.Path | str) -> bool:
+    """True iff a smoke out-root resolves AT or UNDER the production pod out-root.
+
+    A smoke run scheduled before the production run on the same pod must never
+    write artifacts/checkpoints/sentinels into the production tree.
+    """
+    return pathlib.Path(root).resolve().is_relative_to(PROD_POD_OUT_ROOT)
+
+
+def sentinel_filename(smoke: bool) -> str:
+    """DISTINCT completion-sentinel filenames per mode.
+
+    Both modes writing the same sentinel path on the pod would let a smoke run
+    scheduled BEFORE production satisfy the production poller.
+    """
+    return "issue-823-ladder-fits-smoke-done.json" if smoke else "issue-823-ladder-fits-done.json"
 
 
 # ── Abort helper (designed halts, never bare rc=1) ───────────────────────────
@@ -1040,6 +1329,12 @@ def m2_paired_separation(inputs: LadderInputs, mask_ids: np.ndarray) -> dict:
     per_persona: dict[str, dict] = {}
     pass_counts = {}
     for p in range(1, N_PERSONAS):
+        if p not in inputs.store_ctx:
+            # No store rows at this n_contexts (expected_store_rows == 0 — smoke slice);
+            # counts as a non-passing persona, never a KeyError.
+            per_persona[f"p{p:02d}"] = {"absent": True}
+            pass_counts[p] = 0
+            continue
         ctxs = [
             int(c)
             for j, c in enumerate(inputs.store_ctx[p])
@@ -1175,6 +1470,12 @@ def main(argv: list[str] | None = None) -> None:
         n_contexts = args.n_contexts if args.n_contexts is not None else SMOKE_N_CONTEXTS
         assert 0 < n_contexts <= N_CTX
         root = args.out_root or pathlib.Path("/tmp/issue-823-smoke/ladder_fits")
+        if smoke_root_aliases_production(root):
+            parser.error(
+                f"--smoke out-root {root} resolves at/under the production out-root "
+                f"{PROD_POD_OUT_ROOT} — a smoke run must never write artifacts, "
+                "checkpoints, or sentinels into the production tree"
+            )
         out_prefix = HF_PREFIX + "_smoke"
         boot_n = args.boot_draws or SMOKE_BOOT_N
     else:
@@ -1211,10 +1512,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     verify_gen_sentinel(gen_paths)
     by_persona = load_pair_rows(gen_paths, n_contexts)
-    capture_digest = None
-    cd_path = root / "analysis_tensors" / "capture_digest.json"
-    if cd_path.exists():
-        capture_digest = json.loads(cd_path.read_text())
+    # capture_digest is REQUIRED by stage_pair_store on both branches (local +
+    # remote), so the manipulation accounting always sees it — never None here.
+    capture_digest = inputs.capture_digest
 
     metadata = {
         "script": "scripts/issue823_ladder_fits.py",
@@ -1248,6 +1548,34 @@ def main(argv: list[str] | None = None) -> None:
             {"drop_record": drop_record, "worst_arm": worst_arm},
             args.smoke,
         )
+
+    # ── split integrity (R1/R2/R3) — immediately after mask materialization,
+    # BEFORE G2/G1/P1, so a membership or count drift halts the round before
+    # any gate runs or any expensive artifact is written ──
+    log_phase("pfit_split_integrity")
+    pre_split = checked_fixed_split(N_CTX)
+    if n_contexts == N_CTX:
+        predrop = predrop_banked_split_check(pre_split, inputs.parent_valid_ids)
+    else:
+        # Smoke blind-spot (enumerated in the module docstring): the banked-split
+        # assert quantifies over the FULL 4998-id parent mask, unreachable at smoke n.
+        predrop = {"skipped_smoke": True}
+    subsets, split_drops = realized_split_with_drops(
+        pre_split,
+        inputs.parent_valid_ids,
+        mask_ids,
+    )
+    realized_train = len(subsets["train"])
+    d_disp = d_boundary_disposition(realized_train)
+    rung_table = p2_rung_table(realized_train)
+    logger.info(
+        "split integrity: realized %d/%d/%d; drops %s; d-rung %s",
+        realized_train,
+        len(subsets["val"]),
+        len(subsets["test"]),
+        {k: v for k, v in split_drops.items() if k != "total_drops"},
+        d_disp["d_rung_status"],
+    )
 
     # ── manipulation checks (before the lattice: R6 conditioning inputs) ──
     log_phase("pfit_manipulation_checks")
@@ -1336,6 +1664,12 @@ def main(argv: list[str] | None = None) -> None:
                 contingency = True
                 logger.error("G2 FAIL after CPU fallback — canonical contingency engaged")
     g2_record["contingency_engaged"] = contingency
+    # EFFECTIVE post-gate solver mode: a G2 FAIL flips gram-fast-path ->
+    # contingency ABOVE, so the arg-time value is stale here. Recomputed before
+    # any checkpoint fingerprint / metadata consumer — a resume across the flip
+    # must be refused (mixed-solver headline), never silently mixed.
+    solver_mode = "canonical-contingency" if contingency else "gram-fast-path"
+    metadata["solver_mode"] = solver_mode
     fit_layers = list(P2_LAYERS) if contingency else list(range(inputs.n_layers))
     planned_wall_h = args.planned_wall_hours + (CONTINGENCY_EXTRA_WALL_H if contingency else 0.0)
 
@@ -1352,18 +1686,30 @@ def main(argv: list[str] | None = None) -> None:
         )
         g1_cells = {}
         precheck = None
+        g1_record["solver"] = solver_mode
         for layer in READ_OUT_LAYERS:
             comps: dict[str, list[tuple[float, float]]] = {"own": [], "plain": []}
             for tr, te in g1_folds:
                 x_tr = inputs.input_col(layer, parent_ids[tr])
                 x_te = inputs.input_col(layer, parent_ids[te])
-                fact = factorize_robust(x_tr, dev)
-                kev = FFC._cross_kernel(fact, x_te)
+                if contingency:
+                    fact, kev = None, None
+                else:
+                    fact = factorize_robust(x_tr, dev)
+                    kev = FFC._cross_kernel(fact, x_te)
                 for arm in ("own", "plain"):
                     y_tr = arm_target(inputs, gathers, arm, layer, parent_ids[tr], mask_ids)
                     y_te = arm_target(inputs, gathers, arm, layer, parent_ids[te], mask_ids)
-                    lam, vty, ymu = FFC._gcv_solve(fact, y_tr)
-                    pred = FFC._apply(fact, lam, vty, ymu, kev)
+                    if contingency:
+                        # Contingency parity verification (plan kill 4): the banked
+                        # constants came from the canonical solver, so reproducing
+                        # them through ridge_fit_predict — the EFFECTIVE headline
+                        # solver under contingency — verifies the contingency path
+                        # end-to-end; a G1 FAIL below takes the rc=7 designed abort.
+                        pred = ridge_fit_predict(x_tr, y_tr, x_te)
+                    else:
+                        lam, vty, ymu = FFC._gcv_solve(fact, y_tr)
+                        pred = FFC._apply(fact, lam, vty, ymu, kev)
                     comps[arm].append(
                         (
                             float(((y_te - pred) ** 2).sum()),
@@ -1400,7 +1746,13 @@ def main(argv: list[str] | None = None) -> None:
     log_phase("pfit_p1")
     n_mask = len(mask_ids)
     fp_p1 = checkpoint_fingerprint(
-        mask_ids, {"chunk": "p1", "solver": solver_mode, "n_contexts": n_contexts}
+        mask_ids,
+        {
+            "chunk": "p1",
+            "solver": solver_mode,  # EFFECTIVE post-gate mode (recomputed above)
+            "n_contexts": n_contexts,
+            "store_identity": inputs.store_identity,  # consumed pair-store generation
+        },
     )
     n_arms = len(ARM_NAMES)
     p1_sres = np.full((n_arms, inputs.n_layers, n_mask), np.nan)
@@ -1468,9 +1820,11 @@ def main(argv: list[str] | None = None) -> None:
                         "n_train": int(len(tr)),
                     }
                 )
-                if layer in READ_OUT_LAYERS or layer in P2_LAYERS:
-                    key = f"{arm}:L{layer}:fold{f_idx}"
-                    layer_base[key] = cell_baselines(x_tr, y_tr, x_te, y_te, pred)
+                # House-rule pair on EVERY fitted cell: predictions are not
+                # persisted, so a layer gate here would make the retrieval read
+                # unrecoverable for ungated layers without refits.
+                key = f"{arm}:L{layer}:fold{f_idx}"
+                layer_base[key] = cell_baselines(x_tr, y_tr, x_te, y_te, pred)
             unit += 1
             elapsed = time.monotonic() - t_cell
             print(
@@ -1605,25 +1959,19 @@ def main(argv: list[str] | None = None) -> None:
     sensitivity = None
     if cap_bindable and not contingency:
         log_phase("pfit_sensitivity_dof_cap")
-        sens_cells = {}
-        for layer in READ_OUT_LAYERS:
-            x_full = inputs.input_col(layer, mask_ids)
-            y_full = {
-                arm: arm_target(inputs, gathers, arm, layer, mask_ids, mask_ids)
-                for arm in ARM_NAMES
-            }
-            for arm in ARM_NAMES:
-                comps = []
-                for tr, te in folds:
-                    fact = factorize_robust(x_full[tr], dev)
-                    lam, vty, ymu, dof = gcv_solve_dof_capped(fact, y_full[arm][tr])
-                    pred = FFC._apply(fact, lam, vty, ymu, FFC._cross_kernel(fact, x_full[te]))
-                    sres, stot = per_context_ss(pred, y_full[arm][te])
-                    comps.append((float(sres.sum()), float(stot.sum())))
-                sens_cells[f"{arm}:L{layer}"] = {
-                    "pooled_r2_dof_capped": pooled_r2_from_components(comps),
-                    "cap": DOF_CAP,
-                }
+        fp_sens = checkpoint_fingerprint(
+            mask_ids,
+            {
+                "chunk": "p1_sens",
+                "solver": solver_mode,
+                "n_contexts": n_contexts,
+                "dof_cap": DOF_CAP,
+                "store_identity": inputs.store_identity,
+            },
+        )
+        # ONE shared factorization per (layer, fold) — 15 eighs, never 105
+        # (arm loop solves all capped targets against the shared eigh).
+        sens_cells = dof_cap_sensitivity(inputs, gathers, mask_ids, folds, dev, ckpt_dir, fp_sens)
         sensitivity = {
             "note": "SENSITIVITY ONLY — the registered primary is gcv-pure-parent-parity; "
             "variants are never mixed within a contrast",
@@ -1668,278 +2016,305 @@ def main(argv: list[str] | None = None) -> None:
         conditioning["distinct"],
     )
 
-    # ── P2: single-split protocol (R1/R2/R3) ──
+    # ── P2: single-split protocol (split integrity ran up top, pre-gates) ──
     log_phase("pfit_p2")
-    pre_split = checked_fixed_split(N_CTX)
-    if n_contexts == N_CTX:
-        predrop = predrop_banked_split_check(pre_split, inputs.parent_valid_ids)
-    else:
-        # Smoke blind-spot (enumerated in the module docstring): the banked-split
-        # assert quantifies over the FULL 4998-id parent mask, unreachable at smoke n.
-        predrop = {"skipped_smoke": True}
-    subsets, split_drops = realized_split_with_drops(
-        pre_split,
-        inputs.parent_valid_ids,
-        mask_ids,
-    )
-    realized_train = len(subsets["train"])
-    d_disp = d_boundary_disposition(realized_train)
-    rung_table = p2_rung_table(realized_train)
-    logger.info(
-        "P2 split realized %d/%d/%d; drops %s; d-rung %s",
-        realized_train,
-        len(subsets["val"]),
-        len(subsets["test"]),
-        {k: v for k, v in split_drops.items() if k != "total_drops"},
-        d_disp["d_rung_status"],
-    )
-
     fp_p2 = checkpoint_fingerprint(
-        mask_ids, {"chunk": "p2", "split_seed": SPLIT_SEED, "n_contexts": n_contexts}
+        mask_ids,
+        {
+            "chunk": "p2",
+            "split_seed": SPLIT_SEED,
+            "n_contexts": n_contexts,
+            "solver": solver_mode,
+            "store_identity": inputs.store_identity,
+        },
     )
-    tr_ids, va_ids, te_ids = subsets["train"], subsets["val"], subsets["test"]
-    wide = SSP.LAMBDAS_WIDE
-
+    split_block = {
+        "call": "fixed_split(n_ctx=5000, n_train=3600, n_val=400, n_test=1000, seed=42)",
+        "predrop_banked_check": predrop,
+        "drops": split_drops,
+        "realized": {s: int(len(subsets[s])) for s in subsets},
+        "d_boundary": d_disp,
+    }
     p2_full: dict[str, dict] = {}
-    p2_pc: dict[str, np.ndarray] = {"test_ids": te_ids}
-    for layer in P2_LAYERS:
-        x_tr = inputs.input_col(layer, tr_ids)
-        x_va = inputs.input_col(layer, va_ids)
-        x_te = inputs.input_col(layer, te_ids)
-        fact = factorize_robust(x_tr, dev)
-        kva = FFC._cross_kernel(fact, x_va)
-        kte = FFC._cross_kernel(fact, x_te)
-        for arm in ARM_NAMES:
-            y_tr = arm_target(inputs, gathers, arm, layer, tr_ids, mask_ids)
-            y_va = arm_target(inputs, gathers, arm, layer, va_ids, mask_ids)
-            y_te = arm_target(inputs, gathers, arm, layer, te_ids, mask_ids)
-            vty, ymu = FFC._vty_ymu(fact, y_tr)
-            lam, val_r2 = val_select_lambda(fact, vty, ymu, kva, y_va, wide)
-            pred = FFC._apply(fact, lam, vty, ymu, kte)
-            sres, stot = per_context_ss(pred, y_te)
-            p2_pc[f"full_{arm}_L{layer}_sres"] = sres
-            p2_pc[f"full_{arm}_L{layer}_stot"] = stot
-            p2_full[f"{arm}:L{layer}"] = {
-                "test_r2": 1.0 - float(sres.sum()) / (float(stot.sum()) + 1e-12),
-                "val_r2": val_r2,
-                "lambda": lam,
-                "lambda_edge": SSP.lambda_edge(lam, wide),
-                "n_train": int(realized_train),
-                "estimator_degenerate": estimator_degenerate(realized_train),
-                "baselines": cell_baselines(x_tr, y_tr, x_te, y_te, pred),
-            }
-        print(f"[p2-full] layer {layer} done", flush=True)
-
-    # n-ladder: nested seeded subsets of the realized train rows
-    ladder_perm = np.random.default_rng(SPLIT_SEED).permutation(realized_train)
+    p2_pc: dict[str, np.ndarray] = {}
     n_ladder: dict[str, dict] = {}
-    for rung in rung_table:
-        if rung["status"] == "UNREALIZABLE":
-            n_ladder[f"n{rung['n_train']}"] = {"status": "UNREALIZABLE", **rung}
-            continue
-        n_tr = rung["n_train"]
-        name = f"p2_rung{n_tr}"
-        if chunk_done(ckpt_dir, name, fp_p2):
-            z = np.load(ckpt_dir / f"{name}.npz", allow_pickle=True)
-            n_ladder[f"n{n_tr}"] = json.loads(str(z["cells"]))
-            logger.info("[p2] resume: rung %d loaded", n_tr)
-            continue
-        rows = tr_ids[np.sort(ladder_perm[:n_tr])]
-        rung_cells: dict[str, dict] = {"status": rung["status"], "n_train": n_tr}
+    per_persona: dict[str, dict] = {}
+    gmix: dict[str, dict] = {}
+    if contingency:
+        # Item-10 contract: P2's single-split fits run on the gram fast-path
+        # primitives the G2 gate rejected — WITHHELD (no unverified fast-path
+        # fits reported; no percontext_ladder_p2.npz written). The priced
+        # canonical contingency covers P1 only.
+        p2_result = p2_withheld_result(metadata, split_block)
+        logger.warning("P2 WITHHELD — solver-parity contingency engaged (fast path unverified)")
+    else:
+        tr_ids, va_ids, te_ids = subsets["train"], subsets["val"], subsets["test"]
+        wide = SSP.LAMBDAS_WIDE
+        p2_pc["test_ids"] = te_ids
         for layer in P2_LAYERS:
-            x_tr = inputs.input_col(layer, rows)
+            x_tr = inputs.input_col(layer, tr_ids)
             x_va = inputs.input_col(layer, va_ids)
             x_te = inputs.input_col(layer, te_ids)
             fact = factorize_robust(x_tr, dev)
             kva = FFC._cross_kernel(fact, x_va)
             kte = FFC._cross_kernel(fact, x_te)
             for arm in ARM_NAMES:
-                y_tr = arm_target(inputs, gathers, arm, layer, rows, mask_ids)
+                y_tr = arm_target(inputs, gathers, arm, layer, tr_ids, mask_ids)
                 y_va = arm_target(inputs, gathers, arm, layer, va_ids, mask_ids)
                 y_te = arm_target(inputs, gathers, arm, layer, te_ids, mask_ids)
                 vty, ymu = FFC._vty_ymu(fact, y_tr)
-                lam, val_r2 = val_select_lambda(fact, vty, ymu, kva, y_va, wide)
+                lam, val_r2 = val_select_lambda(
+                    fact, vty, ymu, kva, y_va, wide, degenerate_ok=args.smoke
+                )
                 pred = FFC._apply(fact, lam, vty, ymu, kte)
-                rung_cells[f"{arm}:L{layer}"] = {
-                    "test_r2": PR._pooled_r2(pred, y_te),
+                sres, stot = per_context_ss(pred, y_te)
+                p2_pc[f"full_{arm}_L{layer}_sres"] = sres
+                p2_pc[f"full_{arm}_L{layer}_stot"] = stot
+                p2_full[f"{arm}:L{layer}"] = {
+                    "test_r2": 1.0 - float(sres.sum()) / (float(stot.sum()) + 1e-12),
                     "val_r2": val_r2,
+                    "val_selection_degenerate": bool(not np.isfinite(val_r2)),
                     "lambda": lam,
                     "lambda_edge": SSP.lambda_edge(lam, wide),
-                    "estimator_degenerate": estimator_degenerate(n_tr),
+                    "n_train": int(realized_train),
+                    "estimator_degenerate": estimator_degenerate(realized_train),
                     "baselines": cell_baselines(x_tr, y_tr, x_te, y_te, pred),
                 }
-        n_ladder[f"n{n_tr}"] = rung_cells
-        save_chunk(ckpt_dir, name, {"cells": np.array(json.dumps(rung_cells))}, fp_p2)
-        print(f"[p2-ladder] rung n_train={n_tr} done", flush=True)
+            print(f"[p2-full] layer {layer} done", flush=True)
 
-    # per-persona control (a/b/c/d) + G_mix
-    per_persona: dict[str, dict] = {}
-    gmix_inputs: dict[int, list] = {k: [] for k in PER_PERSONA_KS}
-    for k in PER_PERSONA_KS:
-        name = f"p2_pp_k{k}"
-        if chunk_done(ckpt_dir, name, fp_p2):
-            z = np.load(ckpt_dir / f"{name}.npz", allow_pickle=True)
-            per_persona[f"k{k}"] = json.loads(str(z["cells"]))
-            gmix_inputs[k] = json.loads(str(z["gmix"]))
-            logger.info("[p2] resume: per-persona k=%d loaded", k)
-            continue
-        k_cells: dict[str, dict] = {}
-        k_gmix: list = []
-        for p in range(k):
-            rows = {
-                s: np.array([i for i in subsets[s] if int(i) % k == p], dtype=int)
-                for s in ("train", "val", "test")
-            }
-            floors_ok = all(len(rows[s]) >= MIN_CELL_FLOORS[s] for s in MIN_CELL_FLOORS)
-            if not floors_ok:
-                if not args.smoke:
-                    raise RuntimeError(
-                        f"per-persona cell k={k} p={p} under floor "
-                        f"{ {s: len(rows[s]) for s in rows} } — data bug at production n"
-                    )
-                k_cells[f"p{p}"] = {"status": "skipped_small_cell (smoke)"}
+        # n-ladder: nested seeded subsets of the realized train rows
+        ladder_perm = np.random.default_rng(SPLIT_SEED).permutation(realized_train)
+        n_ladder: dict[str, dict] = {}
+        for rung in rung_table:
+            if rung["status"] == "UNREALIZABLE":
+                n_ladder[f"n{rung['n_train']}"] = {"status": "UNREALIZABLE", **rung}
                 continue
-            mixed_rng = np.random.default_rng(1000 * k + p)
-            mix_tr = np.sort(mixed_rng.choice(tr_ids, size=len(rows["train"]), replace=False))
-            mix_va = np.sort(mixed_rng.choice(va_ids, size=len(rows["val"]), replace=False))
-            cell: dict[str, dict] = {}
+            n_tr = rung["n_train"]
+            name = f"p2_rung{n_tr}"
+            if chunk_done(ckpt_dir, name, fp_p2):
+                z = np.load(ckpt_dir / f"{name}.npz", allow_pickle=True)
+                n_ladder[f"n{n_tr}"] = json.loads(str(z["cells"]))
+                logger.info("[p2] resume: rung %d loaded", n_tr)
+                continue
+            rows = tr_ids[np.sort(ladder_perm[:n_tr])]
+            rung_cells: dict[str, dict] = {"status": rung["status"], "n_train": n_tr}
             for layer in P2_LAYERS:
-                x_tr = inputs.input_col(layer, rows["train"])
-                x_va = inputs.input_col(layer, rows["val"])
-                x_te = inputs.input_col(layer, rows["test"])
-                arm = f"k{k}"
+                x_tr = inputs.input_col(layer, rows)
+                x_va = inputs.input_col(layer, va_ids)
+                x_te = inputs.input_col(layer, te_ids)
                 fact = factorize_robust(x_tr, dev)
                 kva = FFC._cross_kernel(fact, x_va)
                 kte = FFC._cross_kernel(fact, x_te)
-                out_layer: dict[str, dict] = {}
-                y_te_full_mean = None
-                for sub_name, target_arm in (("a_within", arm), ("b_same_ctx_k1", "k1")):
-                    y_tr = arm_target(inputs, gathers, target_arm, layer, rows["train"], mask_ids)
-                    y_va = arm_target(inputs, gathers, target_arm, layer, rows["val"], mask_ids)
-                    y_te = arm_target(inputs, gathers, target_arm, layer, rows["test"], mask_ids)
+                for arm in ARM_NAMES:
+                    y_tr = arm_target(inputs, gathers, arm, layer, rows, mask_ids)
+                    y_va = arm_target(inputs, gathers, arm, layer, va_ids, mask_ids)
+                    y_te = arm_target(inputs, gathers, arm, layer, te_ids, mask_ids)
                     vty, ymu = FFC._vty_ymu(fact, y_tr)
-                    lam, val_r2 = val_select_lambda(fact, vty, ymu, kva, y_va, wide)
+                    lam, val_r2 = val_select_lambda(
+                        fact, vty, ymu, kva, y_va, wide, degenerate_ok=args.smoke
+                    )
                     pred = FFC._apply(fact, lam, vty, ymu, kte)
-                    sres, stot = per_context_ss(pred, y_te)
-                    out_layer[sub_name] = {
-                        "test_r2": 1.0 - float(sres.sum()) / (float(stot.sum()) + 1e-12),
+                    rung_cells[f"{arm}:L{layer}"] = {
+                        "test_r2": PR._pooled_r2(pred, y_te),
+                        "val_r2": val_r2,
+                        "val_selection_degenerate": bool(not np.isfinite(val_r2)),
                         "lambda": lam,
                         "lambda_edge": SSP.lambda_edge(lam, wide),
-                        "estimator_degenerate": True,
+                        "estimator_degenerate": estimator_degenerate(n_tr),
                         "baselines": cell_baselines(x_tr, y_tr, x_te, y_te, pred),
                     }
-                    if sub_name == "a_within":
-                        pc_key = f"pp_k{k}_p{p}_L{layer}"
-                        p2_pc[f"{pc_key}_a_sres"] = sres
-                        p2_pc[f"{pc_key}_a_stot"] = stot
-                # (c) matched-n mixed comparator (own factorization; mixed rows)
-                xm_tr = inputs.input_col(layer, mix_tr)
-                xm_va = inputs.input_col(layer, mix_va)
-                fact_m = factorize_robust(xm_tr, dev)
-                km_va = FFC._cross_kernel(fact_m, xm_va)
-                km_te = FFC._cross_kernel(fact_m, x_te)
-                ym_tr = arm_target(inputs, gathers, arm, layer, mix_tr, mask_ids)
-                ym_va = arm_target(inputs, gathers, arm, layer, mix_va, mask_ids)
-                y_te = arm_target(inputs, gathers, arm, layer, rows["test"], mask_ids)
-                vty, ymu = FFC._vty_ymu(fact_m, ym_tr)
-                lam_c, val_r2_c = val_select_lambda(fact_m, vty, ymu, km_va, ym_va, wide)
-                pred_c = FFC._apply(fact_m, lam_c, vty, ymu, km_te)
-                sres_c, stot_c = per_context_ss(pred_c, y_te)
-                out_layer["c_matched_n_mixed"] = {
-                    "test_r2": 1.0 - float(sres_c.sum()) / (float(stot_c.sum()) + 1e-12),
-                    "lambda": lam_c,
-                    "lambda_edge": SSP.lambda_edge(lam_c, wide),
-                    "estimator_degenerate": True,
-                    "baselines": cell_baselines(xm_tr, ym_tr, x_te, y_te, pred_c),
+            n_ladder[f"n{n_tr}"] = rung_cells
+            save_chunk(ckpt_dir, name, {"cells": np.array(json.dumps(rung_cells))}, fp_p2)
+            print(f"[p2-ladder] rung n_train={n_tr} done", flush=True)
+
+        # per-persona control (a/b/c/d) + G_mix
+        per_persona: dict[str, dict] = {}
+        gmix_inputs: dict[int, list] = {k: [] for k in PER_PERSONA_KS}
+        for k in PER_PERSONA_KS:
+            name = f"p2_pp_k{k}"
+            if chunk_done(ckpt_dir, name, fp_p2):
+                z = np.load(ckpt_dir / f"{name}.npz", allow_pickle=True)
+                per_persona[f"k{k}"] = json.loads(str(z["cells"]))
+                gmix_inputs[k] = json.loads(str(z["gmix"]))
+                n_restored = restore_pp_arrays(z, p2_pc)
+                logger.info(
+                    "[p2] resume: per-persona k=%d loaded (%d pp_ arrays restored)",
+                    k,
+                    n_restored,
+                )
+                continue
+            k_cells: dict[str, dict] = {}
+            k_gmix: list = []
+            for p in range(k):
+                rows = {
+                    s: np.array([i for i in subsets[s] if int(i) % k == p], dtype=int)
+                    for s in ("train", "val", "test")
                 }
-                p2_pc[f"pp_k{k}_p{p}_L{layer}_c_sres"] = sres_c
-                p2_pc[f"pp_k{k}_p{p}_L{layer}_c_stot"] = stot_c
-                # (d) full-mixed triangulation: re-reduce the FULL arm-k P2 fit's
-                # persisted per-context test components on the persona-p test rows
-                # (ss_tot vs the FULL test-pool mean — fixed-denominator convention).
-                te_pos = np.array([j for j, i in enumerate(te_ids) if int(i) % k == p], dtype=int)
-                d_sres = p2_pc[f"full_{arm}_L{layer}_sres"][te_pos]
-                d_stot = p2_pc[f"full_{arm}_L{layer}_stot"][te_pos]
-                out_layer["d_full_mixed_triangulation"] = {
-                    "test_r2_fullpool_denominator": 1.0
-                    - float(d_sres.sum()) / (float(d_stot.sum()) + 1e-12),
-                    "note": "pure re-reduction of the persisted full-arm per-context "
-                    "components; ss_tot vs the full test-pool mean",
-                }
-                cell[f"L{layer}"] = out_layer
-                if layer == P2_LAYERS[0]:
-                    k_gmix.append(
-                        {
-                            "p": p,
-                            "sres_a": p2_pc[f"pp_k{k}_p{p}_L{layer}_a_sres"].tolist(),
-                            "stot_a": p2_pc[f"pp_k{k}_p{p}_L{layer}_a_stot"].tolist(),
-                            "sres_c": sres_c.tolist(),
-                            "stot_c": stot_c.tolist(),
+                floors_ok = all(len(rows[s]) >= MIN_CELL_FLOORS[s] for s in MIN_CELL_FLOORS)
+                if not floors_ok:
+                    if not args.smoke:
+                        raise RuntimeError(
+                            f"per-persona cell k={k} p={p} under floor "
+                            f"{ {s: len(rows[s]) for s in rows} } — data bug at production n"
+                        )
+                    k_cells[f"p{p}"] = {"status": "skipped_small_cell (smoke)"}
+                    continue
+                mixed_rng = np.random.default_rng(1000 * k + p)
+                mix_tr = np.sort(mixed_rng.choice(tr_ids, size=len(rows["train"]), replace=False))
+                mix_va = np.sort(mixed_rng.choice(va_ids, size=len(rows["val"]), replace=False))
+                cell: dict[str, dict] = {}
+                for layer in P2_LAYERS:
+                    x_tr = inputs.input_col(layer, rows["train"])
+                    x_va = inputs.input_col(layer, rows["val"])
+                    x_te = inputs.input_col(layer, rows["test"])
+                    arm = f"k{k}"
+                    fact = factorize_robust(x_tr, dev)
+                    kva = FFC._cross_kernel(fact, x_va)
+                    kte = FFC._cross_kernel(fact, x_te)
+                    out_layer: dict[str, dict] = {}
+                    y_te_full_mean = None
+                    for sub_name, target_arm in (("a_within", arm), ("b_same_ctx_k1", "k1")):
+                        y_tr = arm_target(
+                            inputs, gathers, target_arm, layer, rows["train"], mask_ids
+                        )
+                        y_va = arm_target(inputs, gathers, target_arm, layer, rows["val"], mask_ids)
+                        y_te = arm_target(
+                            inputs, gathers, target_arm, layer, rows["test"], mask_ids
+                        )
+                        vty, ymu = FFC._vty_ymu(fact, y_tr)
+                        lam, val_r2 = val_select_lambda(
+                            fact, vty, ymu, kva, y_va, wide, degenerate_ok=args.smoke
+                        )
+                        pred = FFC._apply(fact, lam, vty, ymu, kte)
+                        sres, stot = per_context_ss(pred, y_te)
+                        out_layer[sub_name] = {
+                            "test_r2": 1.0 - float(sres.sum()) / (float(stot.sum()) + 1e-12),
+                            "val_selection_degenerate": bool(not np.isfinite(val_r2)),
+                            "lambda": lam,
+                            "lambda_edge": SSP.lambda_edge(lam, wide),
+                            "estimator_degenerate": True,
+                            "baselines": cell_baselines(x_tr, y_tr, x_te, y_te, pred),
                         }
+                        if sub_name == "a_within":
+                            pc_key = f"pp_k{k}_p{p}_L{layer}"
+                            p2_pc[f"{pc_key}_a_sres"] = sres
+                            p2_pc[f"{pc_key}_a_stot"] = stot
+                    # (c) matched-n mixed comparator (own factorization; mixed rows)
+                    xm_tr = inputs.input_col(layer, mix_tr)
+                    xm_va = inputs.input_col(layer, mix_va)
+                    fact_m = factorize_robust(xm_tr, dev)
+                    km_va = FFC._cross_kernel(fact_m, xm_va)
+                    km_te = FFC._cross_kernel(fact_m, x_te)
+                    ym_tr = arm_target(inputs, gathers, arm, layer, mix_tr, mask_ids)
+                    ym_va = arm_target(inputs, gathers, arm, layer, mix_va, mask_ids)
+                    y_te = arm_target(inputs, gathers, arm, layer, rows["test"], mask_ids)
+                    vty, ymu = FFC._vty_ymu(fact_m, ym_tr)
+                    lam_c, val_r2_c = val_select_lambda(
+                        fact_m, vty, ymu, km_va, ym_va, wide, degenerate_ok=args.smoke
                     )
-            k_cells[f"p{p}"] = cell
-            print(f"[p2-pp] k={k} p={p} done", flush=True)
-        per_persona[f"k{k}"] = k_cells
-        gmix_inputs[k] = k_gmix
-        save_chunk(
-            ckpt_dir,
-            name,
-            {"cells": np.array(json.dumps(k_cells)), "gmix": np.array(json.dumps(k_gmix))},
-            fp_p2,
-        )
+                    pred_c = FFC._apply(fact_m, lam_c, vty, ymu, km_te)
+                    sres_c, stot_c = per_context_ss(pred_c, y_te)
+                    out_layer["c_matched_n_mixed"] = {
+                        "test_r2": 1.0 - float(sres_c.sum()) / (float(stot_c.sum()) + 1e-12),
+                        "val_selection_degenerate": bool(not np.isfinite(val_r2_c)),
+                        "lambda": lam_c,
+                        "lambda_edge": SSP.lambda_edge(lam_c, wide),
+                        "estimator_degenerate": True,
+                        "baselines": cell_baselines(xm_tr, ym_tr, x_te, y_te, pred_c),
+                    }
+                    p2_pc[f"pp_k{k}_p{p}_L{layer}_c_sres"] = sres_c
+                    p2_pc[f"pp_k{k}_p{p}_L{layer}_c_stot"] = stot_c
+                    # (d) full-mixed triangulation: re-reduce the FULL arm-k P2 fit's
+                    # persisted per-context test components on the persona-p test rows
+                    # (ss_tot vs the FULL test-pool mean — fixed-denominator convention).
+                    te_pos = np.array(
+                        [j for j, i in enumerate(te_ids) if int(i) % k == p], dtype=int
+                    )
+                    d_sres = p2_pc[f"full_{arm}_L{layer}_sres"][te_pos]
+                    d_stot = p2_pc[f"full_{arm}_L{layer}_stot"][te_pos]
+                    out_layer["d_full_mixed_triangulation"] = {
+                        "test_r2_fullpool_denominator": 1.0
+                        - float(d_sres.sum()) / (float(d_stot.sum()) + 1e-12),
+                        "note": "pure re-reduction of the persisted full-arm per-context "
+                        "components; ss_tot vs the full test-pool mean",
+                    }
+                    cell[f"L{layer}"] = out_layer
+                    if layer == P2_LAYERS[0]:
+                        k_gmix.append(
+                            {
+                                "p": p,
+                                "sres_a": p2_pc[f"pp_k{k}_p{p}_L{layer}_a_sres"].tolist(),
+                                "stot_a": p2_pc[f"pp_k{k}_p{p}_L{layer}_a_stot"].tolist(),
+                                "sres_c": sres_c.tolist(),
+                                "stot_c": stot_c.tolist(),
+                            }
+                        )
+                k_cells[f"p{p}"] = cell
+                print(f"[p2-pp] k={k} p={p} done", flush=True)
+            per_persona[f"k{k}"] = k_cells
+            gmix_inputs[k] = k_gmix
+            save_chunk(
+                ckpt_dir,
+                name,
+                {
+                    "cells": np.array(json.dumps(k_cells)),
+                    "gmix": np.array(json.dumps(k_gmix)),
+                    # Registered per-context artifact inputs (four-layer a/c ss
+                    # arrays) ride the per-k checkpoint so a RESUMED block can
+                    # restore them into the final archive (restore_pp_arrays).
+                    **{key: val for key, val in p2_pc.items() if key.startswith(f"pp_k{k}_")},
+                },
+                fp_p2,
+            )
 
-    # G_mix (reported decomposition with a CI; k=8 PRIMARY; never a recovery fraction)
-    gmix: dict[str, dict] = {}
-    rng = np.random.default_rng(BOOT_SEED + 1)
-    for k in PER_PERSONA_KS:
-        cells = gmix_inputs[k]
-        if not cells:
-            gmix[f"k{k}"] = {"status": "no cells (smoke floors)"}
-            continue
-        gaps = []
-        draws_per_p = []
-        for c in cells:
-            sa, ta = np.array(c["sres_a"]), np.array(c["stot_a"])
-            sc, tc = np.array(c["sres_c"]), np.array(c["stot_c"])
-            r2a = 1.0 - sa.sum() / (ta.sum() + 1e-12)
-            r2c = 1.0 - sc.sum() / (tc.sum() + 1e-12)
-            gaps.append(r2a - r2c)
-            n_p = len(sa)
-            idx = rng.integers(0, n_p, size=(boot_n, n_p))
-            da = 1.0 - sa[idx].sum(1) / (ta[idx].sum(1) + 1e-12)
-            dc = 1.0 - sc[idx].sum(1) / (tc[idx].sum(1) + 1e-12)
-            draws_per_p.append(da - dc)
-        g_draws = np.mean(draws_per_p, axis=0)
-        gmix[f"k{k}"] = {
-            "g_mix": float(np.mean(gaps)),
-            "ci_low": float(np.quantile(g_draws, 0.025)),
-            "ci_high": float(np.quantile(g_draws, 0.975)),
-            "per_persona_gaps": [float(g) for g in gaps],
-            "primary": bool(k == GMIX_PRIMARY_K),
-            "layer": int(P2_LAYERS[0]),
-            "note": "standalone P2 read; never divided by / narrated as a fraction of "
-            "the P1 delta_mean",
+        # G_mix (reported decomposition with a CI; k=8 PRIMARY; never a recovery fraction)
+        gmix: dict[str, dict] = {}
+        rng = np.random.default_rng(BOOT_SEED + 1)
+        for k in PER_PERSONA_KS:
+            cells = gmix_inputs[k]
+            if not cells:
+                gmix[f"k{k}"] = {"status": "no cells (smoke floors)"}
+                continue
+            gaps = []
+            draws_per_p = []
+            for c in cells:
+                sa, ta = np.array(c["sres_a"]), np.array(c["stot_a"])
+                sc, tc = np.array(c["sres_c"]), np.array(c["stot_c"])
+                r2a = 1.0 - sa.sum() / (ta.sum() + 1e-12)
+                r2c = 1.0 - sc.sum() / (tc.sum() + 1e-12)
+                gaps.append(r2a - r2c)
+                n_p = len(sa)
+                idx = rng.integers(0, n_p, size=(boot_n, n_p))
+                da = 1.0 - sa[idx].sum(1) / (ta[idx].sum(1) + 1e-12)
+                dc = 1.0 - sc[idx].sum(1) / (tc[idx].sum(1) + 1e-12)
+                draws_per_p.append(da - dc)
+            g_draws = np.mean(draws_per_p, axis=0)
+            gmix[f"k{k}"] = {
+                "g_mix": float(np.mean(gaps)),
+                "ci_low": float(np.quantile(g_draws, 0.025)),
+                "ci_high": float(np.quantile(g_draws, 0.975)),
+                "per_persona_gaps": [float(g) for g in gaps],
+                "primary": bool(k == GMIX_PRIMARY_K),
+                "layer": int(P2_LAYERS[0]),
+                "note": "standalone P2 read; never divided by / narrated as a fraction of "
+                "the P1 delta_mean",
+            }
+
+        assert_p2_percontext_complete(per_persona, p2_pc)
+        np.savez(eval_dir / "percontext_ladder_p2.npz", **p2_pc)
+        p2_result = {
+            "status": "complete",
+            "metadata": metadata,
+            "split": split_block,
+            "lambda_grid": "logspace(-2, 8, 21) val-selected",
+            "full_arms": p2_full,
+            "n_ladder": n_ladder,
+            "per_persona": per_persona,
+            "g_mix": gmix,
+            "gmix_primary_k": GMIX_PRIMARY_K,
+            "estimator_degeneracy_rule": "n_train < 3585 => degenerate for absolute reads; "
+            "per-persona cells are matched-regime contrasts",
         }
-
-    np.savez(eval_dir / "percontext_ladder_p2.npz", **p2_pc)
-    p2_result = {
-        "metadata": metadata,
-        "split": {
-            "call": "fixed_split(n_ctx=5000, n_train=3600, n_val=400, n_test=1000, seed=42)",
-            "predrop_banked_check": predrop,
-            "drops": split_drops,
-            "realized": {s: int(len(subsets[s])) for s in subsets},
-            "d_boundary": d_disp,
-        },
-        "lambda_grid": "logspace(-2, 8, 21) val-selected",
-        "full_arms": p2_full,
-        "n_ladder": n_ladder,
-        "per_persona": per_persona,
-        "g_mix": gmix,
-        "gmix_primary_k": GMIX_PRIMARY_K,
-        "estimator_degeneracy_rule": "n_train < 3585 => degenerate for absolute reads; "
-        "per-persona cells are matched-regime contrasts",
-    }
     write_json(eval_dir / "ladder_singlesplit_p2.json", p2_result)
 
     # ── baselines JSON (house-rule pair, every fitted cell) ──
@@ -1994,18 +2369,28 @@ def main(argv: list[str] | None = None) -> None:
             f"P-Fit upload of {len(expected)} files to {DATA_REPO}/{path_in_repo} failed or "
             "verified incomplete — refusing to report P-Fit complete"
         )
+    # Canonical-destination gate (shared gen gate, not a second copy): a
+    # truthy OVERFLOW-repo URL must never satisfy the completion condition.
+    _require_canonical_upload(url, f"{DATA_REPO}/{path_in_repo}")
 
     sentinel_dir = (
         pathlib.Path("/workspace/logs") if pathlib.Path("/workspace").exists() else root / "logs"
     )
     write_sentinel(
-        sentinel_dir / "issue-823-ladder-fits-done.json",
+        sentinel_dir / sentinel_filename(args.smoke),
         {
             "kind": "epm:progress",
             "version": 1,
             "note": "P-Fit complete (inconsistent-origin-persona-ladder)",
             "phase": "pfit",
             "complete": True,
+            "gates": {
+                "g1_pass": g1_record.get("pass"),
+                "g2_pass": g2_record.get("pass"),
+                "g3_pass": g3_record.get("pass"),
+                "contingency_engaged": contingency,
+            },
+            "p2_status": p2_result.get("status", "complete"),
             "delta_mean": delta_mean,
             "ci_low_delta_mean": boot["ci_low_delta_mean"],
             "ci_high_delta_mean": boot["ci_high_delta_mean"],
