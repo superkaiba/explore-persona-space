@@ -50,34 +50,64 @@ headroom() { # headroom <need_gb> <phase>
   uv run python -c "from explore_persona_space.orchestrate.preflight import assert_out_root_headroom; assert_out_root_headroom('/workspace', float('$1'), phase='$2')"
 }
 
-reap_gpus() { # phase-boundary GPU reap: vLLM engine workers can outlive their
-  # parent (the worker-teardown gotcha; a 74.6 GiB orphaned context on GPU 0
-  # OOMed the 2026-08-20 capture smoke). Only ever called at GLOBAL phase
-  # boundaries where NOTHING should hold a GPU; kills in-container compute
-  # apps, then waits for the driver to release memory. A host-namespace
-  # orphan (in-container /proc empty) cannot be killed here — fail loud so
-  # the orchestrator reprovisions instead of OOMing the next phase.
-  local pids used
-  pids=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader | tr -d ' ' | sort -u | grep -E '^[0-9]+$' || true)
-  for p in $pids; do
-    if [ -d "/proc/$p" ]; then
-      echo "[reap] killing lingering GPU process $p ($(tr '\0' ' ' < /proc/$p/cmdline | cut -c1-80))"
+reap_gpus() { # phase-boundary GPU reap: vLLM EngineCore workers outlive their
+  # parent on this host class (the worker-teardown gotcha; reproduced 2/2 on
+  # 2026-08-20 — 74.6 GiB held after every gen engine exit). nvidia-smi
+  # reports HOST-namespace pids inside the container, so pid matching is
+  # blind; enumerate holders by OPEN /dev/nvidia* FDS instead (namespace-
+  # correct — the fix that released GPU 0 instantly). Only ever called at
+  # GLOBAL phase boundaries where NOTHING should hold a GPU. Fail loud
+  # (exit 86) if memory stays held with no killable fd-holder.
+  local used killed
+  killed=0
+  for d in /proc/[0-9]*; do
+    local p=${d#/proc/}
+    [ "$p" = "$$" ] && continue
+    if ls -l "$d/fd" 2>/dev/null | grep -q nvidia; then
+      echo "[reap] killing GPU fd-holder $p ($(tr '\0' ' ' < "$d/cmdline" 2>/dev/null | cut -c1-80))"
       kill -9 "$p" 2>/dev/null || true
-    else
-      echo "[reap] GPU process $p has NO in-container /proc entry (host-namespace orphan)"
+      killed=1
     fi
   done
+  used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -rn | head -1)
   for i in $(seq 1 30); do
-    used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -rn | head -1)
     [ "$used" -lt 2000 ] && break
     sleep 2
+    used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -rn | head -1)
   done
   if [ "$used" -ge 2000 ]; then
-    echo "[reap] FATAL: ${used} MiB still held after reap window — GPU context unreclaimable in-container; reprovision the pod"
+    echo "[reap] FATAL: ${used} MiB still held after reap window (killed_any=$killed) — unreclaimable in-container; reprovision the pod"
     nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
     exit 86
   fi
   echo "[reap] GPUs clean (max used ${used} MiB)"
+}
+
+reap_engines_for_gpu() { # reap_engines_for_gpu <gpu-index> — per-LANE reap:
+  # each sequential gen invocation in a lane leaves its EngineCore holding
+  # the lane's GPU (reproduced 2/2), which would OOM the lane's NEXT
+  # benchmark. Kills ONLY EngineCore processes whose CUDA_VISIBLE_DEVICES
+  # matches this lane's GPU — other lanes' live engines are untouched.
+  local gpu="$1" used
+  for d in /proc/[0-9]*; do
+    local p=${d#/proc/}
+    grep -qa "EngineCore" "$d/cmdline" 2>/dev/null || continue
+    local cvd
+    cvd=$(tr '\0' '\n' < "$d/environ" 2>/dev/null | sed -n 's/^CUDA_VISIBLE_DEVICES=//p')
+    [ "$cvd" = "$gpu" ] || continue
+    echo "[lane$gpu] reaping leftover EngineCore pid $p"
+    kill -9 "$p" 2>/dev/null || true
+  done
+  used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")
+  for i in $(seq 1 30); do
+    [ "$used" -lt 2000 ] && break
+    sleep 2
+    used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$gpu")
+  done
+  if [ "$used" -ge 2000 ]; then
+    echo "[lane$gpu] FATAL: ${used} MiB still held on GPU $gpu after engine reap"
+    exit 86
+  fi
 }
 
 commit_results() { # commit_results <msg> <path>...
@@ -144,6 +174,7 @@ run_lane() { # run_lane <gpu> <bench>...
   for b in "$@"; do
     echo "[lane$gpu] gen $b start $(date -u +%H:%M:%SZ)"
     CUDA_VISIBLE_DEVICES=$gpu uv run python scripts/issue2388_gen.py --phase gen --benchmark "$b" --bcb-python "$BCB_PY"
+    reap_engines_for_gpu "$gpu"
     echo "[lane$gpu] verify $b start $(date -u +%H:%M:%SZ)"
     CUDA_VISIBLE_DEVICES=$gpu uv run python scripts/issue2388_gen.py --phase verify --benchmark "$b" --bcb-python "$BCB_PY"
     echo "[lane$gpu] $b done $(date -u +%H:%M:%SZ)"
