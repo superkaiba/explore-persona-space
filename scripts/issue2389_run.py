@@ -3284,6 +3284,25 @@ def _share_prefill_family(phase: str) -> str:
     return phase.removeprefix("capregen_").removeprefix("vllm_")
 
 
+def _share_prefill_gate_digest(rec: dict) -> str:
+    """Canonical DECISION digest of the gate-4b artifact: verdict + mode ONLY.
+
+    Round-5 A (r4 review, found by three arms): the battery stamps a fresh
+    ``ts`` into ``share_prefill_equivalence.json`` on every run, so a
+    RAW-BYTE digest spuriously DISARMS legitimately-armed families whenever
+    the battery re-runs into the same out_root — and the disarm flips
+    ``share_prefill_armed`` inside ``regime_fingerprint``, quarantining every
+    banked armed-fp done shard on the plan §9 DESIGNED same-command resume
+    (>=40 GPU-h class). The freeze therefore binds to the canonical SUBSET
+    that actually drives the arming decision — ``verdict`` + ``mode``, the
+    only artifact fields ``_resolve_share_prefill`` reads — so a benign
+    same-decision rewrite is inert while a verdict/mode change still
+    disarms. Writer and validator share THIS helper (sha-pin-domain
+    coherence: one digest domain, one recipe)."""
+    payload = json.dumps({"mode": rec.get("mode"), "verdict": rec.get("verdict")}, sort_keys=True)
+    return _sha256_bytes(payload.encode())
+
+
 def _validate_frozen_share_prefill(cfg: RunConfig, phase: str, rec: dict, freeze: Path) -> bool:
     """Adopt-time validation of a frozen family decision (R3 r2 review).
 
@@ -3295,8 +3314,10 @@ def _validate_frozen_share_prefill(cfg: RunConfig, phase: str, rec: dict, freeze
     out_root. An ARMED record is adopted armed ONLY when its recorded
     regime matches THIS run (repro tiny/smoke bits + model id@revision —
     the ``_pilot_selected_gen_batch`` idiom), its mode satisfies the B6
-    rule for this run, and the gate artifact it was armed on still hashes
-    to the recorded ``gate_sha256``. Any failure resolves to SERIAL
+    rule for this run, and the gate artifact it was armed on still carries
+    the recorded ``gate_sha256`` DECISION digest (verdict+mode canonical
+    subset — ``_share_prefill_gate_digest``; a benign fresh-``ts`` rewrite
+    keeps the digest, round-5 A). Any failure resolves to SERIAL
     (unarmed-on-uncertainty, the B9 family determination) — the guard is
     deterministic, so every same-regime participant still resolves the
     SAME value; an unarmed record adopts as serial with no checks."""
@@ -3320,11 +3341,19 @@ def _validate_frozen_share_prefill(cfg: RunConfig, phase: str, rec: dict, freeze
     gate_path = cfg.gates_dir / SHARE_PREFILL_GATE_NAME
     if gate_sha is None:
         problems.append("armed freeze carries no gate_sha256 (arming evidence unverifiable)")
-    elif not gate_path.exists() or _sha256_bytes(gate_path.read_bytes()) != gate_sha:
-        problems.append(
-            "gate artifact absent or its bytes != the freeze's recorded gate_sha256 "
-            "(the evidence that armed this family is gone or changed)"
-        )
+    else:
+        current: str | None = None
+        if gate_path.exists():
+            try:
+                current = _share_prefill_gate_digest(json.loads(gate_path.read_text()))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                current = None  # unparseable evidence -> mismatch -> SERIAL
+        if current != gate_sha:
+            problems.append(
+                "gate artifact absent/unparseable or its DECISION digest (verdict+mode) != "
+                "the freeze's recorded gate_sha256 (the evidence that armed this family "
+                "changed its arming decision)"
+            )
     if problems:
         logger.warning(
             "[share-prefill:%s] frozen record %s FAILS adopt-time validation (%s) — "
@@ -3382,13 +3411,15 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
         )
         armed = False
     else:
-        raw = path.read_bytes()
-        rec = json.loads(raw)
+        rec = json.loads(path.read_text())
         verdict = rec.get("verdict")
         mode = rec.get("mode")
-        # R3: the freeze records the DIGEST of the artifact it was armed on,
-        # so adopters can verify the arming evidence is still the evidence.
-        gate_sha = _sha256_bytes(raw)
+        # R3: the freeze records the DECISION digest (verdict+mode canonical
+        # subset — NEVER raw bytes: the battery legitimately rewrites the
+        # artifact with a fresh ``ts`` on the plan's designed same-command
+        # resume, round-5 A) so adopters can verify the arming evidence
+        # still carries the same decision.
+        gate_sha = _share_prefill_gate_digest(rec)
         armed = verdict == "PASS"
     # B6 (r1 review / pin 2): a NON-tiny run arms ONLY on a PRODUCTION-mode
     # battery artifact. The dispatcher's --smoke branch runs the gate-4b

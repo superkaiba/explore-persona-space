@@ -152,20 +152,65 @@ def test_resolve_share_prefill_production_adopt_stays_armed(tmp_path):
     assert peer.share_prefill_armed is True
 
 
-def test_resolve_share_prefill_adopt_disarms_on_stale_gate_digest(tmp_path):
-    # The freeze binds to the gate-report DIGEST it was armed on: when the
-    # gate artifact's bytes change under an armed freeze, adopters resolve
-    # SERIAL (unarmed-on-uncertainty) instead of arming on vanished evidence.
+def test_resolve_share_prefill_adopt_survives_benign_gate_rewrite(tmp_path):
+    # CORRECTED (round-5 A; the third occurrence of the B8 wrong-direction
+    # class): the old form of this test asserted that a SAME-verdict/SAME-mode
+    # rewrite (the battery's fresh-``ts`` re-run on the plan §9 designed
+    # same-command resume) DISARMS — blessing exactly the spurious disarm
+    # that flips regime_fingerprint and quarantines banked shards. The freeze
+    # binds to the DECISION digest (verdict+mode), so a benign rewrite keeps
+    # the family ARMED.
     cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
     _write_gate(cfg, "PASS", mode="production")
     cfg = R._resolve_share_prefill(cfg, "anchors")
     assert cfg.share_prefill_armed is True
     (cfg.gates_dir / R.SHARE_PREFILL_GATE_NAME).write_text(
-        json.dumps({"verdict": "PASS", "mode": "production", "rerun": 1})
+        json.dumps(
+            {"verdict": "PASS", "mode": "production", "ts": "2026-08-20T00:00:00+00:00", "rerun": 1}
+        )
+    )
+    peer = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    peer = R._resolve_share_prefill(peer, "anchors")
+    assert peer.share_prefill_armed is True
+
+
+def test_resolve_share_prefill_adopt_disarms_on_decision_change(tmp_path):
+    # The right direction for the digest leg: a VERDICT or MODE change in the
+    # gate artifact (the arming DECISION changed) still disarms adopters.
+    cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    _write_gate(cfg, "PASS", mode="production")
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is True
+    (cfg.gates_dir / R.SHARE_PREFILL_GATE_NAME).write_text(
+        json.dumps({"verdict": "FAIL", "mode": "production"})
     )
     peer = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
     peer = R._resolve_share_prefill(peer, "anchors")
     assert peer.share_prefill_armed is False
+    # mode flip (production -> tiny) under an armed production freeze: disarm.
+    (cfg.gates_dir / R.SHARE_PREFILL_GATE_NAME).write_text(
+        json.dumps({"verdict": "PASS", "mode": "tiny"})
+    )
+    peer2 = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    peer2 = R._resolve_share_prefill(peer2, "anchors")
+    assert peer2.share_prefill_armed is False
+
+
+def test_resolve_share_prefill_adopt_disarms_on_absent_gate_artifact(tmp_path):
+    # The vanished-evidence half of the old test, retained: an armed freeze
+    # whose gate artifact is GONE (or unparseable) resolves SERIAL.
+    cfg = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    gate_path = _write_gate(cfg, "PASS", mode="production")
+    cfg = R._resolve_share_prefill(cfg, "anchors")
+    assert cfg.share_prefill_armed is True
+    gate_path.unlink()
+    peer = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    peer = R._resolve_share_prefill(peer, "anchors")
+    assert peer.share_prefill_armed is False
+    gate_path.write_text("{not json")
+    peer2 = _mk_cfg(tmp_path, tiny=False, share_prefill_mode="auto")
+    peer2 = R._resolve_share_prefill(peer2, "anchors")
+    assert peer2.share_prefill_armed is False
 
 
 def test_resolve_share_prefill_lost_race_validates_winner(tmp_path, monkeypatch):
@@ -210,3 +255,68 @@ def test_gate_default_upload_composes_through_run_parser(tmp_path):
     assert args.upload == "hf"
     cfg = G._compose_run_cfg(args)
     assert cfg.upload_mode == "hf"
+
+
+# ------------------- Round-5 A: battery idempotence (skip-if-matching-report)
+
+
+_TINY_BATTERY_ARGV = ["--skip-wall", "--k-eq", "2", "--draws", "2"]
+
+
+def test_battery_main_adopts_matching_report_and_force_remeasures(tmp_path):
+    # Round-5 A fix half 2 (the _reusable_pilot_report idiom): a completed
+    # same-mode report is ADOPTED — the same-command re-run performs NO
+    # re-measure and, crucially, NO artifact rewrite (bytes incl. ``ts``
+    # unchanged, so any live family freeze keeps validating). --force
+    # deliberately re-measures and rewrites. FAILED at HEAD~: every re-run
+    # rewrote the artifact with a fresh ``ts``.
+    out_root = tmp_path / "out"
+    assert G.main(["--offline-tiny", "--out-root", str(out_root), *_TINY_BATTERY_ARGV]) == 0
+    gate_path = out_root / "gates" / G.GATE_NAME
+    first_bytes = gate_path.read_bytes()
+    assert G.main(["--offline-tiny", "--out-root", str(out_root), *_TINY_BATTERY_ARGV]) == 0
+    assert gate_path.read_bytes() == first_bytes  # adopted: no rewrite, ts intact
+    assert (
+        G.main(["--offline-tiny", "--out-root", str(out_root), "--force", *_TINY_BATTERY_ARGV]) == 0
+    )
+    second = json.loads(gate_path.read_text())
+    assert second["verdict"] == json.loads(first_bytes)["verdict"]
+    assert gate_path.read_bytes() != first_bytes  # --force re-measured (fresh ts)
+
+
+def test_battery_main_mode_mismatch_remeasures_and_overwrites(tmp_path):
+    # A DIFFERENT-mode report is NOT adoptable — the battery re-measures and
+    # overwrites (the designed B6 smoke->production upgrade path, exercised
+    # here in the production->offline-tiny direction; never a raise).
+    out_root = tmp_path / "out"
+    gates_dir = out_root / "gates"
+    gates_dir.mkdir(parents=True)
+    (gates_dir / G.GATE_NAME).write_text(json.dumps({"verdict": "PASS", "mode": "production"}))
+    assert G.main(["--offline-tiny", "--out-root", str(out_root), *_TINY_BATTERY_ARGV]) == 0
+    rec = json.loads((gates_dir / G.GATE_NAME).read_text())
+    assert rec["mode"] == "offline-tiny" and "ts" in rec
+
+
+def test_early_separate_battery_sequence_keeps_family_arming_consistent(tmp_path):
+    # Round-5 A orchestrator constraint: the B9-family standing remedy — run
+    # the gate-4b battery as an EARLIER SEPARATE dispatch, then the anchors
+    # family dispatch whose worker-1 chain re-runs the battery — must not
+    # split one family across arming values (r4 correctness failure path b).
+    # Sequence at tiny scale: battery -> t0 workers freeze ARMED -> battery
+    # re-run (worker-1 chain; adopted, no rewrite) -> worker-1 resolver
+    # adopts the freeze and stays ARMED. FAILED at HEAD~: the re-run's fresh
+    # ``ts`` broke the raw-byte digest and worker 1 resolved SERIAL while
+    # workers 0/2..N-1 ran ARMED.
+    out_root = tmp_path / "out"
+    assert G.main(["--offline-tiny", "--out-root", str(out_root), *_TINY_BATTERY_ARGV]) == 0
+    gate_path = out_root / "gates" / G.GATE_NAME
+    verdict = json.loads(gate_path.read_text())["verdict"]
+    assert verdict == "PASS"  # precondition: the tiny battery arms
+    t0 = _mk_cfg(tmp_path, tiny=True, share_prefill_mode="auto")
+    t0 = R._resolve_share_prefill(t0, "anchors")
+    assert t0.share_prefill_armed is True
+    # worker-1 chain: battery re-run into the SAME out_root (adopted).
+    assert G.main(["--offline-tiny", "--out-root", str(out_root), *_TINY_BATTERY_ARGV]) == 0
+    w1 = _mk_cfg(tmp_path, tiny=True, share_prefill_mode="auto")
+    w1 = R._resolve_share_prefill(w1, "anchors")
+    assert w1.share_prefill_armed is True  # same family, same arming — no split

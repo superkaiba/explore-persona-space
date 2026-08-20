@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
 import logging
 import sys
 import time
@@ -529,6 +530,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # the prior `full` default could not bind through `R.parse_args` and every
     # real (non --offline-tiny) invocation died in argparse.
     ap.add_argument("--upload", choices=("hf", "local-mirror", "none"), default="hf")
+    # Round-5 A (r4 review): the battery is IDEMPOTENT — a matching completed
+    # report is adopted (skip re-measure + rewrite) so the plan §9
+    # same-command resume never churns the artifact; --force re-measures.
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="re-measure even when a matching completed report exists",
+    )
     ap.add_argument(
         "--import-check",
         action="store_true",
@@ -546,6 +555,40 @@ def _compose_run_cfg(args: argparse.Namespace) -> "R.RunConfig":
     if args.tiny:
         rargv.append("--tiny")
     return R.build_config(R.parse_args(rargv))
+
+
+def _adoptable_gate_report(out_path: Path, mode: str, cfg: "R.RunConfig | None") -> dict | None:
+    """An existing gate report THIS invocation may ADOPT instead of re-measuring.
+
+    Round-5 A (r4 review) — the ``_reusable_pilot_report`` idiom applied to
+    the battery driver: the dispatcher re-runs the battery unconditionally on
+    the plan §9 same-command resume, and every re-run used to rewrite the
+    artifact with a fresh ``ts`` (different bytes at an identical verdict),
+    which the freeze's old raw-byte digest read as vanished evidence
+    (spurious family disarm -> ``regime_fingerprint`` flip -> banked-shard
+    quarantine). Adoption requires the SAME mode (offline-tiny / tiny /
+    production — a mode mismatch is the designed B6 smoke->production
+    upgrade path and re-measures + overwrites, never raises) and, for
+    non-offline modes, the same regime (model id@revision + tiny/smoke
+    bits); an unrecognized verdict re-measures. Returns the adoptable record
+    or None (= run the battery)."""
+    if not out_path.exists():
+        return None
+    rec = json.loads(out_path.read_text())
+    if rec.get("mode") != mode:
+        return None
+    if rec.get("verdict") not in ("PASS", "FAIL"):
+        return None
+    if cfg is not None:
+        repro = rec.get("repro") or {}
+        if (
+            repro.get("model_id") != cfg.model_id
+            or repro.get("model_revision") != cfg.model_revision
+        ):
+            return None
+        if bool(repro.get("tiny")) != bool(cfg.tiny) or bool(repro.get("smoke")) != bool(cfg.smoke):
+            return None
+    return rec
 
 
 def _import_check() -> int:
@@ -568,20 +611,42 @@ def main(argv: list[str] | None = None) -> int:
     if args.out_root is None:
         raise SystemExit("--out-root is required (unless --import-check)")
 
-    cfg = None
+    mode = "offline-tiny" if args.offline_tiny else ("tiny" if args.tiny else "production")
+    cfg = None if args.offline_tiny else _compose_run_cfg(args)
+    gates_dir = Path(args.out_root) / "gates"
+    out_path = gates_dir / GATE_NAME
+    if not args.force:
+        existing = _adoptable_gate_report(out_path, mode, cfg)
+        if existing is not None:
+            # Round-5 A: idempotent same-command resume — NO model load, NO
+            # re-measure, and crucially NO artifact rewrite (a fresh-``ts``
+            # rewrite would churn the bytes under any live family freeze).
+            logger.info(
+                "[battery] matching %s-mode report already at %s (verdict=%s) — skipping "
+                "re-measure (--force re-runs)",
+                mode,
+                out_path,
+                existing["verdict"],
+            )
+            if cfg is not None and args.upload != "none":
+                # Idempotent durability: re-verify the unchanged artifact is
+                # on the Hub (covers a prior crash between write and upload).
+                R._upload_dir(
+                    cfg, cfg.gates_dir, f"{R.HF_PREFIX}/analysis_tensors/gates", [GATE_NAME]
+                )
+            print(f"[phase=share_prefill_gate_done] verdict={existing['verdict']} (adopted)")
+            return 0
+
     if args.offline_tiny:
         model, tok = _offline_tiny_model_and_tok()
         batches = OFFLINE_BATCHES
         render_fn = ids_fn = None
         exact = True
-        mode = "offline-tiny"
     else:
-        cfg = _compose_run_cfg(args)
         model, tok = R.load_model_and_tokenizer(cfg)
         batches = _select_cell_batches(tok, R.BANK.build_contexts(), args.batch_size)
         render_fn, ids_fn = R.BANK29.render_context_2389, R.BANK29.context_token_ids_2389
         exact = bool(args.tiny)  # tiny = fp32 CPU; production = bf16 CUDA
-        mode = "tiny" if args.tiny else "production"
 
     report = run_battery(
         model,
@@ -599,9 +664,7 @@ def main(argv: list[str] | None = None) -> int:
     report["ts"] = datetime.now(UTC).isoformat()
     report["repro"] = R._repro(cfg) if cfg is not None else {"mode": mode}
 
-    gates_dir = Path(args.out_root) / "gates"
     gates_dir.mkdir(parents=True, exist_ok=True)
-    out_path = gates_dir / GATE_NAME
     R._write_json_atomic(out_path, report)
     logger.info("[battery] verdict=%s -> %s", report["verdict"], out_path)
     if cfg is not None and args.upload != "none":
