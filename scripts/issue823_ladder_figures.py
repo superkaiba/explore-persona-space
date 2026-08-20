@@ -264,6 +264,46 @@ def fig3_percontext_ecdf(npz, out_dir: Path) -> None:
     plt.close(fig)
 
 
+def fig5_identity_percontext_ecdf(npz, out_dir: Path) -> None:
+    """Per-unit companion for the identity+bias baseline read (round-8 revision, B4).
+
+    ECDF of per-context identity+learned-bias R^2 (out-of-fold v-hat = x + b
+    predictions; 1 - ss_res_i / ss_tot_i from the committed per-context sums
+    of squares) per arm at each read-out layer. Clip at -6 for display: the
+    layer-26 lower tail reaches ~-25 (1st percentile) while every median sits
+    above -4. Retrieval has NO per-context companion — per-context ranks were
+    not persisted (fold-level acc@k / median rank / MRR only); the body carries
+    the explicit per-unit exemption for that read.
+    """
+    arm_names = [str(a) for a in npz["arm_names"]]
+    ss_res, ss_tot = npz["p1_identity_ss_res"], npz["p1_identity_ss_tot"]
+    cmap = matplotlib.colormaps["viridis"]
+    k_colors = {a: cmap(i / max(len(K_ARMS) - 1, 1)) for i, a in enumerate(K_ARMS)}
+    _, c_own, c_plain = paper_palette(3)
+    arm_color = {**k_colors, "own": c_own, "plain": c_plain}
+    arm_disp = {
+        **{a: f"{a[1:]} mixed persona{'s' if a != 'k1' else ''}" for a in K_ARMS},
+        "own": "own answer (regenerated)",
+        "plain": "external answer (plain style)",
+    }
+    clip_lo = -6.0
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.4), sharey=True)
+    for ax, layer in zip(axes, READOUT_LAYERS):
+        for arm in K_ARMS + ["own", "plain"]:
+            ai = arm_names.index(arm)
+            r2 = 1.0 - ss_res[ai, layer, :] / ss_tot[ai, layer, :]
+            r2 = np.clip(np.sort(r2), clip_lo, 1.0)
+            ecdf = np.arange(1, r2.size + 1) / r2.size
+            ax.plot(r2, ecdf, color=arm_color[arm], lw=1.2, label=arm_disp[arm])
+        ax.set_title(LAYER_TITLE[layer])
+        ax.set_xlabel("identity+bias R$^2$ (clipped at $-6$)")
+        ax.set_xlim(clip_lo, 1.0)
+    axes[0].set_ylabel("fraction of contexts $\\leq$ x")
+    axes[0].legend(fontsize=7, loc="upper left")
+    savefig_paper(fig, "ladder_fig5_identity_percontext_ecdf", dir=out_dir)
+    plt.close(fig)
+
+
 def fig4_mixture_floor(p1: dict, out_dir: Path) -> None:
     """Observed R^2 drop vs the implied mechanical mixture penalty; fixed-denominator re-read."""
     mf = p1["mixture_floor"]
@@ -436,10 +476,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     parser.add_argument("--out-dir", type=Path, default=FIG_DIR)
+    parser.add_argument(
+        "--only-fig5",
+        action="store_true",
+        help=(
+            "Render ONLY the fig5 identity per-context ECDF companion (round-8 "
+            "revision). Skips figs 1-4 AND the summary-JSON rewrite so the "
+            "already-pinned sidecars/summary are not overwritten."
+        ),
+    )
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     set_paper_style()
+    if args.only_fig5:
+        npz = np.load(args.results_dir / "percontext_ladder.npz", allow_pickle=False)
+        fig5_identity_percontext_ecdf(npz, args.out_dir)
+        print(f"wrote {args.out_dir / 'ladder_fig5_identity_percontext_ecdf'}.png")
+        return
+
     inputs = load_inputs(args.results_dir)
     p1 = inputs["ladder_r2_p1.json"]
     summary = build_summary(inputs, args.results_dir)
