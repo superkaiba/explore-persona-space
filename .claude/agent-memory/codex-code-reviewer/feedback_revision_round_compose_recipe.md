@@ -1742,3 +1742,26 @@ return. (e) Probe-side traps hit live: `git diff --quiet <sha> HEAD --
 MATCH probe; and a brief-named output file can COLLIDE with a stale
 same-name /tmp file from an earlier same-task critic round — flag the
 collision to the orchestrator (premature-read hazard).
+
+**False-negative reconciler-skip fix round + NOT-ADDRESSED-row grammar fix
+(#823 P-Gen r6 = sentinel v9, 2026-08-20):** two deltas on the r4/r5 union
+shapes. (a) When the prior round was Claude-PASS / Codex-FAIL and the
+orchestrator FIXED without a reconciler because the split was a false
+NEGATIVE (Claude missed a source-verified defect), frame the skip as
+sanctioned-for-false-negatives-only ("no conflicting judgement to
+adjudicate"), state a same-axis split THIS round WILL spawn a reconciler,
+and inline ONLY the Codex verdict as the acceptance contract — the
+missing-the-defect PASS adds no criteria; say explicitly its PASS softens
+no closure duty. (b) The r5 template's "ALREADY-PERSISTED ids NEVER appear
+as rows" rule suppressed the twin's NOT-ADDRESSED re-finding row (the
+orchestrator had to forward the BLOCKER row by hand — a ledger
+inaccuracy): the fixed grammar is precedence-ordered — a NOT-ADDRESSED
+closure item gets BOTH a status line AND a NEW `CONCERN::` row under a
+NEW kebab-id naming the NEW mechanism; only VERIFIED-ADDRESSED/ACCEPTED
+items are row-banned; the dedup-against-ledger rule stays. State the
+suppression incident in the prompt so the twin trusts the new rule. Also:
+when the round's impl marker GAINS a `## Smoke run` block that the prior
+round's Step 0.6 adaptation declared absent, rewrite the adaptation to
+score the block's substance (offline main()-driven execution, zero spend)
+— a stale "carries NO block" framing invites a fabricated marker-shape
+finding.
