@@ -1478,8 +1478,26 @@ def phase_anchors(cfg: JudgeConfig) -> int:
     Entry gate: the anchor behavior waves are an order-10^4-call production
     spend, so the pilot (gate 6) + separation (gate 3 binding read) reports
     must be present-and-passed BEFORE launch. Gate 5 (coherence baseline) is
-    exempt — this phase PRODUCES it. ``--dry-run``: construction check over
-    every wave this phase would dispatch, zero API calls, nothing persisted."""
+    exempt — this phase PRODUCES it. Round-5 G (concern
+    ``m1iv-gate-absent-from-phase-anchors``): plan gate 0(d) scopes M1-iv BY
+    CONSUMER — "(anchors x P6 judge loader)" = ``load_anchor_rows`` = THIS
+    phase, which always consumes Hub-staged anchors it did not produce
+    (``_PHASE_STAGE_PLAN["anchors"]``), so the consumer-probe PASS gates it
+    exactly like phase_waves (round-5 D idiom): refuse BEFORE the first
+    banked-artifact loader. ``--dry-run``: construction check over every
+    wave this phase would dispatch, zero API calls, nothing persisted, no
+    probe needed."""
+    if not cfg.dry_run:
+        _require_gates(cfg, names=("pilot_gate_report.json", "anchor_separation_report.json"))
+        require_consumer_probe(
+            cfg.consumer_probe_report,
+            "judge",
+            skip=cfg.skip_consumer_probe,
+            # R4 binding: staged anchors bytes (this phase's staged mirror IS
+            # a local dir) + the frozen bank identity.
+            anchors_dir=cfg.anchors_file if cfg.anchors_file.is_dir() else None,
+            bank_json=cfg.bank_json,
+        )
     pairs = surviving_pairs(cfg.bank_json)
     anchor_rows = load_anchor_rows(cfg.anchors_file)
     if cfg.dry_run:
@@ -1491,7 +1509,6 @@ def phase_anchors(cfg: JudgeConfig) -> int:
                 **{f"{rid}.anchors": us for rid, us in beh.items()},
             },
         )
-    _require_gates(cfg, names=("pilot_gate_report.json", "anchor_separation_report.json"))
     audits = J94.run_audits("anchors", anchor_rows, cfg.audits_dir)
     registry = rubric_registry(pairs)
 

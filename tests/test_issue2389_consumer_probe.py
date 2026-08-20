@@ -475,6 +475,82 @@ def test_phase_waves_dry_run_not_gated_by_probe(
     assert P.J.phase_waves(cfg) == P.J.RC_OK
 
 
+# --------------- Round-5 G: M1-iv gate on phase_anchors (plan gate 0d scope)
+
+
+def _anchor_loader_sentinel_judge(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Round-5 G (concern m1iv-gate-absent-from-phase-anchors): plan gate
+    0(d) scopes M1-iv BY CONSUMER — load_anchor_rows = phase_anchors.
+    Sentinels sit on phase_anchors' FIRST REAL LOADERS: reaching
+    surviving_pairs / load_anchor_rows means the gate did not refuse first."""
+
+    def _boom_pairs(bank_json):
+        raise AssertionError("banked artifact loaded before the M1-iv gate (surviving_pairs)")
+
+    def _boom_rows(anchors_dirs):
+        raise AssertionError("banked artifact loaded before the M1-iv gate (load_anchor_rows)")
+
+    monkeypatch.setattr(P.J, "surviving_pairs", _boom_pairs)
+    monkeypatch.setattr(P.J, "load_anchor_rows", _boom_rows)
+
+
+def test_phase_anchors_refuses_before_loaders_without_probe(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 G: the REAL phase_anchors entrypoint refuses at the M1-iv gate
+    BEFORE the first banked-artifact loader (and a fortiori before the
+    order-10^4-call anchor behavior waves) when the probe report is absent.
+    FAILED at HEAD~: phase_anchors had NO M1-iv gate — the loader sentinel
+    fired instead."""
+    _boundary_fake_judge(monkeypatch)
+    _anchor_loader_sentinel_judge(monkeypatch)
+    _spend_sentinel_judge(monkeypatch)
+    cfg = _judge_cfg(
+        tmp_path, tmp_path / "anchors", tmp_path / "bank.json", tmp_path / "missing_report.json"
+    )
+    with pytest.raises(RuntimeError, match="consumer probe report missing"):
+        P.J.phase_anchors(cfg)
+
+
+def test_phase_anchors_refuses_stale_source_before_loaders(
+    anchors_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 G x R4: a PASS produced for run A (different shard bytes)
+    presented to phase_anchors for run B refuses BEFORE the first loader."""
+    _write_jsonl(anchors_dir, ROWS)
+    _write_pt(anchors_dir, ROWS, empty_rows=[])
+    bank = _bank_file(tmp_path)
+    report = _pass_report(anchors_dir, tmp_path, bank)
+    dir_b = tmp_path / "anchors_b"
+    dir_b.mkdir()
+    _write_jsonl(dir_b, ROWS[:1])
+    _boundary_fake_judge(monkeypatch)
+    _anchor_loader_sentinel_judge(monkeypatch)
+    _spend_sentinel_judge(monkeypatch)
+    cfg = _judge_cfg(tmp_path, dir_b, bank, report)
+    with pytest.raises(RuntimeError, match="NOT BOUND"):
+        P.J.phase_anchors(cfg)
+
+
+def test_phase_anchors_dry_run_not_gated_by_probe(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 G trap guard (the phase_waves round-5 D twin): --dry-run is a
+    zero-API construction check and needs NO probe; the loaders DO run (they
+    feed the dry-run unit construction), the gate does not."""
+    monkeypatch.setattr(P.J, "surviving_pairs", lambda bank_json: [])
+    monkeypatch.setattr(P.J, "load_anchor_rows", lambda anchors_dirs: [])
+    _spend_sentinel_judge(monkeypatch)
+    cfg = _judge_cfg(
+        tmp_path,
+        tmp_path / "anchors",
+        tmp_path / "bank.json",
+        tmp_path / "missing_report.json",
+        dry_run=True,
+    )
+    assert P.J.phase_anchors(cfg) == P.J.RC_OK
+
+
 def _analysis_args(tmp_path: Path, **over):
     import argparse
 
