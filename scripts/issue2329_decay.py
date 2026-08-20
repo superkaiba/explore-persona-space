@@ -409,22 +409,53 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
     #    constructed (plan assumption 13; review r1 must-fix 4) ──
     # steered: grid install-ce rows (+ conditional install-pe stratum)
     sel_grid: list[tuple[dict, str, str, str]] = []
+    rejects = dict.fromkeys(
+        (
+            "not_steered_install",
+            "rung_not_surviving",
+            "pe_not_transferable",
+            "bad_slot",
+            "carrier_not_surviving",
+        ),
+        0,
+    )
     for r in grid_rows:
         cell = r["cell"]
         if not cell.startswith("install_") or r["arm"] != "steered":
+            rejects["not_steered_install"] += 1
             continue
         v = cell[len("install_") :]
         if v not in surviving:
+            rejects["rung_not_surviving"] += 1
             continue
         slot = r["slot"]
         if slot == "pe" and cell not in side.pe_directions:
+            rejects["pe_not_transferable"] += 1
             continue
         if slot not in ("ce", "pe"):
+            rejects["bad_slot"] += 1
             continue
         carrier = pair_carrier[r["pair_id"]]
         if carrier not in surviving[v]:
+            rejects["carrier_not_surviving"] += 1
             continue
         sel_grid.append((r, v, slot, carrier))
+    # Review r2 blocker 1: an EMPTY steered selection makes the coverage
+    # assert below vacuous (empty expected == empty present) and _build_sides
+    # would construct ANCHOR-ONLY judge units — reachable on a re-staged /
+    # schema-misaligned grid via phase_wave's re-build against an already-
+    # passed pilot report, and via phase_reduce. Fail loud BEFORE the
+    # coverage assertion and BEFORE any unit is appended.
+    if not sel_grid:
+        raise RuntimeError(
+            f"[{key}] EMPTY steered selection: 0 of {len(grid_rows)} staged grid rows under "
+            f"{p['grid_dir']} survive the cell-scope filters (install_* cell + steered arm; "
+            f"rung in the gate-surviving set {sorted(surviving)}; slot in ('ce', 'pe') with "
+            f"pe requiring a pe-transfer direction {sorted(side.pe_directions) or '(none)'}; "
+            f"carrier in the rung's surviving carriers). Per-filter rejects: {rejects}. "
+            "Refusing to build anchor-only judge units — the coherence-coverage assert is "
+            "vacuous on an empty selection (plan assumption 13; review r2 blocker 1)."
+        )
 
     # ceiling + floor: anchors, segmented ONCE per completion, judged per rung
     by_cid: dict[str, list[dict]] = defaultdict(list)

@@ -701,6 +701,23 @@ def test_coherence_coverage_duplicate_row_fails(decay_cfg):
         DEC._build_sides(cfg)
 
 
+def test_empty_steered_selection_raises_before_any_unit(decay_cfg):
+    # Review r2 blocker 1 (reconciler probe C): with every SELECTED steered
+    # grid row deleted (nonselected shard rows retained), the coverage assert
+    # is vacuous (empty expected == empty present) and _build_sides would
+    # construct anchor-only judge units. The nonempty-selection guard must
+    # raise FIRST — before the coverage assertion, before any unit is built.
+    cfg = decay_cfg
+    for root, mod in ((cfg.q25_in_root, PLJ), (cfg.q35_in_root, LJ)):
+        p = root / mod.LADDER_RAW / "grid" / "shard_000.jsonl"
+        rows = [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+        kept = [r for r in rows if not (r["cell"].startswith("install_") and r["arm"] == "steered")]
+        assert kept and len(kept) < len(rows)  # nonselected shard rows retained
+        _write_jsonl(p, kept)
+    with pytest.raises(RuntimeError, match="EMPTY steered selection"):
+        DEC._build_sides(cfg)
+
+
 # ── must-fix 5: structurally undefined trend -> None, never a finite p ─
 
 
@@ -898,6 +915,49 @@ def test_fig_transfer_renders(tmp_path):
     assert (tmp_path / "q35_ladder_decay_transfer.png").exists()
 
 
+def test_fig_hero_and_anchor_separation_execute_manifest_stems(tmp_path):
+    # Review r2 blocker 3: EXECUTE both renamed producers on a tiny fixture
+    # and pin the exact manifest output paths — reverting either stem (e.g.
+    # back to the parent's "ladder_hero") must flip this test RED.
+    import matplotlib
+
+    matplotlib.use("Agg")
+    gate = {
+        "rungs": {
+            v: {"survived": True, "surviving_carriers": ["d1", "d2"]} for v in LB.PERSONA_VALUE_IDS
+        },
+        "bars": {"target_sep_bar": 0.25, "netted_sep_bar": 0.5},
+    }
+    tokrep = {"directions": {d: {"testable": True} for d in LB.direction_ids()}}
+    est = {
+        f"{kind}_{v}|{slot}|{arm}": {
+            "mean_f_target": 0.5,
+            "ci_lo": 0.4,
+            "ci_hi": 0.6,
+            "n_carriers": 2,
+        }
+        for kind in ("install", "erase")
+        for v in LB.PERSONA_VALUE_IDS
+        for slot in LA.SLOTS
+        for arm in LA.ARMS
+    }
+    args = SimpleNamespace(figures_dir=tmp_path, skip_token_counts=True)
+    LA.fig_ladder_hero({"estimation": est}, gate, tokrep, args)
+    anchors = [
+        {
+            "rung": v,
+            "carrier": "d1",
+            "gate_target_sep": 0.4,
+            "gate_netted_sep": 0.7,
+            "gate_passed": True,
+        }
+        for v in LB.PERSONA_VALUE_IDS
+    ]
+    LA.fig_anchor_separation(anchors, gate, args)
+    assert (tmp_path / "q35_ladder_decay_hero_ladder.png").exists()
+    assert (tmp_path / "q35_ladder_decay_anchor_separation.png").exists()
+
+
 # ── must-fix 8: smoke slices the gate-threaded PRODUCTION enumeration ──
 
 
@@ -981,6 +1041,130 @@ def test_grid_inputs_gate_asserts_are_unconditional():
         "--token-identity required",
     ):
         assert src.index(tok) < smoke_pos, tok
+
+
+# Review r2 blocker 2: BEHAVIORAL pin — _grid_inputs EXECUTED under
+# cfg.smoke=True with real minimal gate fixtures; the gate CONTENTS must
+# reach the returned blocks. A driver mutation that ignores gate contents
+# under smoke (stubbed survivors/screen/tokrep) flips these tests RED,
+# which the syntactic source pin above cannot do.
+
+
+def _grid_gate_cfg(tmp_path, *, not_intact=(), r1_survives=True):
+    """Minimal REAL gate artifacts + ladder bank consumed by _grid_inputs.
+
+    Covers the two smoke directions (persona r1_pirate) at carriers d1/d2;
+    every other direction is marked G0-untestable so the production
+    enumeration is well-defined on the 4-pair fixture bank.
+    """
+    covered = list(LAD.SMOKE_DIRECTIONS)
+    pairs_rows = []
+    for d in covered:
+        kind, v = d.split("_", 1)
+        for c in ("d1", "d2"):
+            va, vb = ("plain", v) if kind == "install" else (v, "plain")
+            pairs_rows.append(
+                {
+                    "pair_id": f"{d}::{c}",
+                    "direction": d,
+                    "kind": kind,
+                    "persona": v,
+                    "carrier": c,
+                    "value_a": va,
+                    "value_b": vb,
+                    "a": LB.context_id(va, c),
+                    "b": LB.context_id(vb, c),
+                }
+            )
+    manifest = {
+        "bank_sha": "f" * 16,
+        "pairs": pairs_rows,
+        "sameval_donor": {"order": ["d1", "d2"]},
+        "crosstype_donor_plan": {},  # unused: a donor-screen file is always given
+        "parent_no_prefix_context_ids": [],
+    }
+    bank_dir = tmp_path / "vc_bank"
+    bank_dir.mkdir(parents=True, exist_ok=True)
+    (bank_dir / "ladder_bank.json").write_text(json.dumps(manifest), encoding="utf-8")
+    rungs = {
+        "r1_pirate": {
+            "survived": r1_survives,
+            "surviving_carriers": ["d1", "d2"] if r1_survives else [],
+        },
+        # keeps read_gate_verdict's nonempty-survivor assert satisfied when the
+        # smoke rung is verdict-dropped (r2_butler's directions are untestable
+        # in this fixture, so it never reaches the enumeration).
+        "r2_butler": {"survived": True, "surviving_carriers": ["d1", "d2"]},
+    }
+    gate_path = tmp_path / "gate_verdict.json"
+    gate_path.write_text(json.dumps({"rungs": rungs}), encoding="utf-8")
+    screen = {
+        "assignments": {
+            row["pair_id"]: {"status": "primary", "donor": {"b": f"parent::{row['carrier']}"}}
+            for row in pairs_rows
+        }
+    }
+    screen_path = tmp_path / "donor_screen.json"
+    screen_path.write_text(json.dumps(screen), encoding="utf-8")
+    tokrep = {
+        "bank_sha": manifest["bank_sha"],
+        "pairs": [
+            {"pair_id": row["pair_id"], "intact": row["pair_id"] not in set(not_intact)}
+            for row in pairs_rows
+        ],
+        "directions": {d: {"testable": d in covered} for d in LB.direction_ids()},
+    }
+    tok_path = tmp_path / "token_identity.json"
+    tok_path.write_text(json.dumps(tokrep), encoding="utf-8")
+    return SimpleNamespace(
+        bank_dir=bank_dir,
+        gate_verdict_path=gate_path,
+        donor_screen_path=screen_path,
+        token_identity_path=tok_path,
+        smoke=True,
+        model_id="Qwen/Qwen3.5-9B",
+        model_revision=None,
+        tiny=True,
+        n_layers=4,
+        hidden=64,
+        max_new_tokens=64,
+        grid_draws=1,
+        seed_base=42,
+    )
+
+
+def test_grid_inputs_smoke_threads_gate_contents_healthy(tmp_path):
+    # all pairs intact + r1 survives with both carriers -> the full 12-cell
+    # smoke slice, every block narrowed to the SMOKE_CARRIER pair.
+    _, meta, _, _, dropped, blocks, _ = LAD._grid_inputs(_grid_gate_cfg(tmp_path))
+    assert len(blocks) == 12
+    assert {b.cell for b in blocks} == set(LAD.SMOKE_DIRECTIONS)
+    assert all(b.pair_ids == (f"{b.cell}::{LAD.SMOKE_CARRIER}",) for b in blocks)
+    assert dropped == [] and meta["tokgate_dropped_pairs"] == []
+
+
+def test_grid_inputs_smoke_tokgate_content_excludes_broken_pair_cells(tmp_path):
+    # G0 CONTENT reaches the smoke blocks: the install smoke pair marked
+    # not-intact -> its 6 cells vanish from the slice; erase cells remain.
+    cfg = _grid_gate_cfg(tmp_path, not_intact={"install_r1_pirate::d1"})
+    *_, blocks, _ = LAD._grid_inputs(cfg)
+    assert len(blocks) == 6
+    assert {b.cell for b in blocks} == {"erase_r1_pirate"}
+
+
+def test_grid_inputs_smoke_tokgate_all_smoke_pairs_broken_raises(tmp_path):
+    # both smoke-carrier pairs G0-broken -> the sliced enumeration is EMPTY
+    # and the driver must raise, never run a gate-free smoke.
+    cfg = _grid_gate_cfg(tmp_path, not_intact={"install_r1_pirate::d1", "erase_r1_pirate::d1"})
+    with pytest.raises(AssertionError, match="smoke slice EMPTY"):
+        LAD._grid_inputs(cfg)
+
+
+def test_grid_inputs_smoke_gate_verdict_dropped_rung_raises(tmp_path):
+    # gate-verdict CONTENT binds under smoke: the smoke rung verdict-dropped
+    # (another rung survives) -> its directions generate nothing -> EMPTY raise.
+    with pytest.raises(AssertionError, match="smoke slice EMPTY"):
+        LAD._grid_inputs(_grid_gate_cfg(tmp_path, r1_survives=False))
 
 
 def _run_dispatch(tmp_path, *args, extra_env=None):
