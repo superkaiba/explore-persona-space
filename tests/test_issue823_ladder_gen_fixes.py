@@ -930,12 +930,28 @@ class TestP0PromptIntegrityGate:
 
     def test_gate_passes_on_healthy_artifacts(self, tmp_path):
         roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
-        lg.p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, tmp_path, questions)
+        lg.p0_prompt_integrity_gate(
+            roster_obj,
+            assignment_obj,
+            by_persona,
+            tmp_path,
+            questions,
+            expected_n_contexts=len(questions),
+        )
         assert not (tmp_path / "p0_integrity_report.json").exists()
 
-    def _expect_halt(self, tmp_path, roster_obj, assignment_obj, by_persona, questions, key):
+    def _expect_halt(
+        self, tmp_path, roster_obj, assignment_obj, by_persona, questions, key, expected_n=None
+    ):
         with pytest.raises(SystemExit) as excinfo:
-            lg.p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, tmp_path, questions)
+            lg.p0_prompt_integrity_gate(
+                roster_obj,
+                assignment_obj,
+                by_persona,
+                tmp_path,
+                questions,
+                expected_n_contexts=expected_n if expected_n is not None else len(questions),
+            )
         assert excinfo.value.code == lg.EXIT_P0_INTEGRITY == 5
         report = json.loads((tmp_path / "p0_integrity_report.json").read_text())
         assert report["reason"] == "p0_prompt_integrity_failure"
@@ -992,6 +1008,83 @@ class TestP0PromptIntegrityGate:
         report = self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, questions, "b")
         fields = {x.get("field") for x in report["failures_first50"] if x["assert"] == "b"}
         assert {"n_contexts", "arm_type"} <= fields
+
+    def test_declared_domain_mismatch_is_recorded_b_failure(self, tmp_path):
+        # Round-5 BLOCKER 1 (gate leg): a COHERENT artifact set at n=4 —
+        # every internal-consistency check satisfiable — must still halt
+        # rc-5 when the CALLER pins a different domain, and the expected
+        # pair set derives from the CALLER's value (missing pairs for
+        # contexts 4..7 prove the authority drives the derivation).
+        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+        report = self._expect_halt(
+            tmp_path, roster_obj, assignment_obj, by_persona, questions, "b", expected_n=8
+        )
+        f = next(x for x in report["failures_first50"] if x.get("field") == "n_contexts_authority")
+        assert f["generated"] == 4 and f["expected"] == 8
+        assert any(x.get("kind") == "missing_pair" for x in report["failures_first50"])
+
+    def test_boolean_context_id_impersonating_pair_halts(self, tmp_path):
+        # Round-5 BLOCKER 2: isinstance(True, int) is True, True == 1, and
+        # hash(True) == hash(1) — a record carrying context_id: true ALIASES
+        # pair (1, p) in question indexing, dedup hashing, and expected-set
+        # equality, so the pre-fix isinstance schema certified this artifact
+        # as a clean PASS. type-is-int rejects it as malformed_record.
+        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+        assert by_persona[1][0]["context_id"] == 1  # the legitimate pair it aliases
+        by_persona[1][0]["context_id"] = True
+        report = self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, questions, "c")
+        f = next(x for x in report["failures_first50"] if x.get("kind") == "malformed_record")
+        assert f["persona_bucket"] == 1
+
+    def test_boolean_persona_idx_impersonating_persona_halts(self, tmp_path):
+        # Round-5 BLOCKER 2 twin: persona_idx: true aliases persona 1 in the
+        # bucket-agreement check, the roster index, and the pair tuple — the
+        # pre-fix schema passed it; type-is-int rejects it.
+        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+        by_persona[1][0]["persona_idx"] = True
+        report = self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, questions, "c")
+        assert any(
+            x.get("kind") == "malformed_record" and x.get("persona_bucket") == 1
+            for x in report["failures_first50"]
+        )
+
+    def test_boolean_n_contexts_rejected_by_strict_schema(self, tmp_path):
+        # Round-5 BLOCKER 2: a JSON-boolean n_contexts fails the type-is-int
+        # gate DIRECTLY (field n_contexts), never a downstream arm-length
+        # symptom.
+        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+        assignment_obj["n_contexts"] = True
+        report = self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, questions, "b")
+        f = next(x for x in report["failures_first50"] if x.get("field") == "n_contexts")
+        assert f["generated"] is True
+
+    def test_nonnumeric_arm_key_routes_to_report_not_crash(self, tmp_path):
+        # Round-5 BLOCKER 3: a nonnumeric arm key previously raised inside
+        # int(kv[0]) — an unhandled ValueError bypassing the designed rc-5
+        # report path.
+        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+        assignment_obj["arms"]["x"] = [0, 0, 0, 0]
+        report = self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, questions, "b")
+        f = next(x for x in report["failures_first50"] if x.get("field") == "arm_key")
+        assert f["generated"] == repr("x")
+
+    def test_non_dict_roster_root_routes_to_report_not_crash(self, tmp_path):
+        # Round-5 BLOCKER 3: a non-dict roster.json root previously died on
+        # .get (AttributeError) before the report machinery ran.
+        _roster, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+        report = self._expect_halt(
+            tmp_path, ["not", "an", "object"], assignment_obj, by_persona, questions, "c"
+        )
+        assert any(x.get("field") == "roster_root" for x in report["failures_first50"])
+
+    def test_non_dict_assignment_root_routes_to_report_not_crash(self, tmp_path):
+        # Round-5 BLOCKER 3: a non-dict assignment.json root previously died
+        # on .get (AttributeError) before the report machinery ran.
+        roster_obj, _assignment, by_persona, questions = _mk_p0_artifacts()
+        report = self._expect_halt(
+            tmp_path, roster_obj, "not an object", by_persona, questions, "b"
+        )
+        assert any(x.get("field") == "assignment_root" for x in report["failures_first50"])
 
     def test_deleted_record_halts_missing_pair(self, tmp_path):
         # Round-4 BLOCKER 2 fixture 1: the expected pair set is derived
@@ -1079,7 +1172,14 @@ class TestP0PromptIntegrityGate:
         roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
         by_persona[0][0]["max_tokens"] = lg.REGEN_MAX_TOKENS
         by_persona[0][0]["gen_wave"] = lg.GEN_WAVE_REGEN
-        lg.p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, tmp_path, questions)
+        lg.p0_prompt_integrity_gate(
+            roster_obj,
+            assignment_obj,
+            by_persona,
+            tmp_path,
+            questions,
+            expected_n_contexts=len(questions),
+        )
         assert not (tmp_path / "p0_integrity_report.json").exists()
 
     def test_p0_constants_are_literal_at_source_level(self):
@@ -1112,8 +1212,8 @@ class TestP0PromptIntegrityGate:
                     "the P0 transcription must be a literal, never an alias/expression"
                 )
 
-    def _stage_artifacts(self, tmp_path):
-        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+    def _stage_artifacts(self, tmp_path, n: int = 4):
+        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts(n)
         stage = tmp_path / "stage"
         stage.mkdir()
         for p in range(lg.N_PERSONAS):
@@ -1132,14 +1232,57 @@ class TestP0PromptIntegrityGate:
         b2, cv = _write_frozen_fixture(tmp_path, permute=False)
         TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
         stage, by_persona, _questions = self._stage_artifacts(tmp_path)
-        lg.run_p0_verify(stage, tmp_path / "reports", tmp_path / "dl")  # healthy: no raise
+        lg.run_p0_verify(stage, tmp_path / "reports", tmp_path / "dl", 4)  # healthy: no raise
         by_persona[2][0]["gen_wave"] = "regen-8192"  # cap stays 4096: inconsistent
         (stage / "persona02_seed42.json").write_text(
             json.dumps({"metadata": {}, "records": by_persona[2]})
         )
         with pytest.raises(SystemExit) as excinfo:
-            lg.run_p0_verify(stage, tmp_path / "reports", tmp_path / "dl")
+            lg.run_p0_verify(stage, tmp_path / "reports", tmp_path / "dl", 4)
         assert excinfo.value.code == 5
+
+    def test_production_verify_rejects_coherent_subset_artifact(self, tmp_path, monkeypatch):
+        # Round-5 BLOCKER 1: a COHERENT 100-context assignment — five
+        # 100-entry arms plus exactly the matching record set, questions
+        # matching the pinned bundle's first 100 — satisfied EVERY pre-fix
+        # check and logged a production PASS certifying 2% of the registered
+        # 5000-context / 14,996-pair domain (the pre-fix verifier sliced the
+        # question authority by the ARTIFACT-declared n_contexts). The
+        # verifier now pins the domain from the CALLER and halts rc-5 with
+        # an n_contexts authority-mismatch entry.
+        b2, cv = _write_frozen_fixture(tmp_path, permute=False)
+        TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
+        stage, _by_persona, _q = self._stage_artifacts(tmp_path, n=100)
+        reports = tmp_path / "reports"
+        with pytest.raises(SystemExit) as excinfo:
+            lg.run_p0_verify(stage, reports, tmp_path / "dl", lg.N_CONTEXTS_FULL)
+        assert excinfo.value.code == lg.EXIT_P0_INTEGRITY == 5
+        report = json.loads((reports / "p0_integrity_report.json").read_text())
+        f = next(x for x in report["failures_first50"] if x.get("field") == "n_contexts_authority")
+        assert f["generated"] == 100
+        assert f["expected"] == lg.N_CONTEXTS_FULL == 5000
+
+    def test_persona_file_records_container_malformed_routes_rc5(self, tmp_path, monkeypatch):
+        # Round-5 BLOCKER 3: a persona file MISSING its "records" key and one
+        # whose root is not an object both route through the designed rc-5
+        # report (malformed_bucket) — never a raw KeyError/TypeError at
+        # ["records"].
+        b2, cv = _write_frozen_fixture(tmp_path, permute=False)
+        TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
+        stage, _by_persona, _q = self._stage_artifacts(tmp_path)
+        (stage / "persona03_seed42.json").write_text(json.dumps({"metadata": {}}))
+        (stage / "persona04_seed42.json").write_text(json.dumps([1, 2, 3]))
+        reports = tmp_path / "reports"
+        with pytest.raises(SystemExit) as excinfo:
+            lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
+        assert excinfo.value.code == 5
+        report = json.loads((reports / "p0_integrity_report.json").read_text())
+        buckets = {
+            x.get("persona_bucket")
+            for x in report["failures_first50"]
+            if x.get("kind") == "malformed_bucket"
+        }
+        assert {3, 4} <= buckets
 
 
 class TestP0VerifyCheckpointRestart:
@@ -1169,7 +1312,7 @@ class TestP0VerifyCheckpointRestart:
         reports = tmp_path / "reports"
         calls: list[int] = []
         self._counting(monkeypatch, calls)
-        lg.run_p0_verify(stage, reports, tmp_path / "dl")
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
         assert sorted(calls) == list(range(lg.N_PERSONAS))  # all 16 verified for real
         out1 = capsys.readouterr().out
         assert f"[p0] persona {lg.N_PERSONAS}/{lg.N_PERSONAS}" in out1
@@ -1179,7 +1322,7 @@ class TestP0VerifyCheckpointRestart:
         assert len(ckpt["personas"]) == lg.N_PERSONAS
         assert all(e["n_failures"] == 0 for e in ckpt["personas"].values())
         calls.clear()
-        lg.run_p0_verify(stage, reports, tmp_path / "dl")
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
         assert calls == []  # byte-identical clean files: checkpoint reused, zero re-verifies
 
     def test_tampered_persona_file_reverifies_and_halts(self, tmp_path, monkeypatch):
@@ -1187,7 +1330,7 @@ class TestP0VerifyCheckpointRestart:
         TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
         stage, _by_persona, _q = TestP0PromptIntegrityGate()._stage_artifacts(tmp_path)
         reports = tmp_path / "reports"
-        lg.run_p0_verify(stage, reports, tmp_path / "dl")
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
         # Tamper persona 2 AFTER the clean checkpoint landed: the file sha256
         # changes, so the checkpoint entry must NOT be reused — re-verify
         # catches the injected prompt and the gate halts rc=5.
@@ -1195,7 +1338,7 @@ class TestP0VerifyCheckpointRestart:
         blob["records"][0]["system_prompt"] += " INJECTED"
         (stage / "persona02_seed42.json").write_text(json.dumps(blob))
         with pytest.raises(SystemExit) as excinfo:
-            lg.run_p0_verify(stage, reports, tmp_path / "dl")
+            lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
         assert excinfo.value.code == 5
 
     def test_stale_fingerprint_restarts_fresh(self, tmp_path, monkeypatch):
@@ -1205,14 +1348,14 @@ class TestP0VerifyCheckpointRestart:
         TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
         stage, _by_persona, _q = TestP0PromptIntegrityGate()._stage_artifacts(tmp_path)
         reports = tmp_path / "reports"
-        lg.run_p0_verify(stage, reports, tmp_path / "dl")
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
         ckpt_path = reports / "p0_verify_progress.json"
         ckpt = json.loads(ckpt_path.read_text())
         ckpt["fingerprint"] = "0" * 64
         ckpt_path.write_text(json.dumps(ckpt))
         calls: list[int] = []
         self._counting(monkeypatch, calls)
-        lg.run_p0_verify(stage, reports, tmp_path / "dl")
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
         assert sorted(calls) == list(range(lg.N_PERSONAS))
 
 
