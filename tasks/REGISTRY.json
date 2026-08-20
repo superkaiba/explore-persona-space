@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2413,
+  "highest_id": 2414,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10930,6 +10930,13 @@
       "path": "tasks/proposed/2413",
       "status": "proposed",
       "title": "Step 10d mapped-invariant leg attributes base-identical sibling-synced files to the payload (the #2302 subtraction never reached it)"
+    },
+    "2414": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2414",
+      "status": "proposed",
+      "title": "Trunk red: scripts/issue1739_r2v2_run.py ungated .upload_file( fails test_no_new_ungated_upload_call_sites on origin/main"
     },
     "244": {
       "has_clean_result": false,
