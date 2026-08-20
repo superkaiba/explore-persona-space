@@ -1,11 +1,14 @@
 {
-  "commit": "54b0aa0a+dirty",
-  "render_id": "8dade6ca34db42e1",
-  "git_commit": "54b0aa0a986a4e1eb689f0a0a04ff7cfe9634b40",
+  "commit": "a3602670+dirty",
+  "render_id": "eba7cd6352bd4ced",
+  "git_commit": "a3602670815983e74922b1d83d353e12e4d27841",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
     "eval_results/issue_666/headline/predictor_headline.json",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
     "scripts/issue1901_body_figures.py",
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
@@ -14,7 +17,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1901_body_figures.py",
-  "created": "2026-08-20T22:17:37Z",
+  "created": "2026-08-20T23:05:36Z",
   "figsize": [
     5.5,
     2.3
@@ -71,7 +74,7 @@
     {
       "training contexts": 5000.0,
       "held-out $R^2$": 0.6813526733515054,
-      "error": 0.0,
+      "error": 0.01262094811399389,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
@@ -79,7 +82,7 @@
     {
       "training contexts": 10000.0,
       "held-out $R^2$": 0.7048843804909557,
-      "error": 0.0,
+      "error": 0.011992379164221134,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
@@ -191,7 +194,7 @@
     {
       "training contexts": 5000.0,
       "held-out $R^2$": -0.8879686636269069,
-      "error": 0.0,
+      "error": 0.01262094811399389,
       "series": "identity + bias",
       "_kind": "errorbar",
       "_group": 1
@@ -199,7 +202,7 @@
     {
       "training contexts": 10000.0,
       "held-out $R^2$": -0.890284227292506,
-      "error": 0.0,
+      "error": 0.011992379164221134,
       "series": "identity + bias",
       "_kind": "errorbar",
       "_group": 1
@@ -224,6 +227,30 @@
       "training contexts": 25000.0,
       "held-out $R^2$": -0.8942743340010613,
       "error": 0.0,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training contexts": 50000.0,
+      "held-out $R^2$": -0.8795987011227666,
+      "error": 0.011111643924370196,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": -0.8963282847438272,
+      "error": 0.009980189718263088,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": -0.8962630398928697,
+      "error": 0.010184280427992576,
       "series": "identity + bias",
       "_kind": "errorbar",
       "_group": 1
@@ -272,6 +299,22 @@
       "training contexts": 3600.0,
       "held-out $R^2$": 0.6884018332198819,
       "error": 1.1102230246251565e-16,
+      "series": "neural map (w=8,192)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.6661844181705912,
+      "error": 0.01262094811399389,
+      "series": "neural map (w=8,192)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.6945270264582182,
+      "error": 0.011992379164221134,
       "series": "neural map (w=8,192)",
       "_kind": "errorbar",
       "_group": 2
@@ -653,6 +696,24 @@
       "_group": 6
     },
     {
+      "training contexts": 50000.0,
+      "held-out $R^2$": -0.8795987011227666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": -0.8963282847438272,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": -0.8962630398928697,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
       "training contexts": 963444.0,
       "held-out $R^2$": -0.9195990073009372,
       "_kind": "line",
@@ -721,6 +782,24 @@
     {
       "training contexts": 25000.0,
       "held-out $R^2$": -0.8942743340010613,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training contexts": 50000.0,
+      "held-out $R^2$": -0.9131100607625982,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": -0.9292629629833412,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": -0.9292114355264862,
       "_kind": "line",
       "_group": 7
     },
@@ -797,6 +876,24 @@
       "_group": 8
     },
     {
+      "training contexts": 50000.0,
+      "held-out $R^2$": -0.8528603035950807,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": -0.8692590606797441,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": -0.869142682088706,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
       "training contexts": 963444.0,
       "held-out $R^2$": -0.8894759202193251,
       "_kind": "line",
@@ -829,6 +926,18 @@
     {
       "training contexts": 3600.0,
       "held-out $R^2$": 0.6884018332198819,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.6661844181705912,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.6945270264582182,
       "_kind": "line",
       "_group": 9
     },
@@ -893,6 +1002,18 @@
       "_group": 10
     },
     {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.6531953803493912,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.6824619135043509,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
       "training contexts": 25000.0,
       "held-out $R^2$": 0.7249689668494587,
       "_kind": "line",
@@ -949,6 +1070,18 @@
     {
       "training contexts": 3600.0,
       "held-out $R^2$": 0.688401833219882,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.678437276577379,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.7064466718327932,
       "_kind": "line",
       "_group": 11
     },
@@ -1060,6 +1193,27 @@
       "_group": 12
     },
     {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.802,
+      "error": 0.031000000000000028,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.807,
+      "error": 0.03150000000000003,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.811,
+      "error": 0.03150000000000003,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
       "training contexts": 963444.0,
       "retrieval acc@1 (pool 1,000)": 0.805,
       "error": 0.02350000000000002,
@@ -1144,11 +1298,46 @@
       "_group": 13
     },
     {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.528,
+      "error": 0.031000000000000028,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.531,
+      "error": 0.03150000000000003,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.531,
+      "error": 0.03150000000000003,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
       "training contexts": 963444.0,
       "retrieval acc@1 (pool 1,000)": 0.532,
       "error": 0.02350000000000002,
       "_kind": "errorbar",
       "_group": 13
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1 (pool 1,000)": 0.72,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1 (pool 1,000)": 0.77,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 14
     },
     {
       "training contexts": 25000.0,
@@ -1231,6 +1420,24 @@
       "_group": 15
     },
     {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.802,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.807,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.811,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
       "training contexts": 963444.0,
       "retrieval acc@1 (pool 1,000)": 0.805,
       "_kind": "line",
@@ -1299,6 +1506,24 @@
     {
       "training contexts": 25000.0,
       "retrieval acc@1 (pool 1,000)": 0.771,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.776,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.781,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.785975,
       "_kind": "line",
       "_group": 16
     },
@@ -1375,6 +1600,24 @@
       "_group": 17
     },
     {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.826,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.831,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.8340249999999999,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
       "training contexts": 963444.0,
       "retrieval acc@1 (pool 1,000)": 0.83,
       "_kind": "line",
@@ -1443,6 +1686,24 @@
     {
       "training contexts": 25000.0,
       "retrieval acc@1 (pool 1,000)": 0.541,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.528,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.531,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.531,
       "_kind": "line",
       "_group": 18
     },
@@ -1519,6 +1780,24 @@
       "_group": 19
     },
     {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.496,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.499,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.499,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
       "training contexts": 963444.0,
       "retrieval acc@1 (pool 1,000)": 0.5,
       "_kind": "line",
@@ -1591,14 +1870,104 @@
       "_group": 20
     },
     {
+      "training contexts": 50000.0,
+      "retrieval acc@1 (pool 1,000)": 0.558,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1 (pool 1,000)": 0.562,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1 (pool 1,000)": 0.562,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
       "training contexts": 963444.0,
       "retrieval acc@1 (pool 1,000)": 0.562,
       "_kind": "line",
       "_group": 20
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1 (pool 1,000)": 0.72,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1 (pool 1,000)": 0.77,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 25000.0,
+      "retrieval acc@1 (pool 1,000)": 0.795,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.841,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1 (pool 1,000)": 0.72,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1 (pool 1,000)": 0.77,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 25000.0,
+      "retrieval acc@1 (pool 1,000)": 0.795,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.817,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1 (pool 1,000)": 0.72,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1 (pool 1,000)": 0.77,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training contexts": 25000.0,
+      "retrieval acc@1 (pool 1,000)": 0.795,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1 (pool 1,000)": 0.864,
+      "_kind": "line",
+      "_group": 23
     }
   ],
-  "n_series": 21,
-  "total_points": 246,
+  "n_series": 24,
+  "total_points": 304,
   "text": {
     "suptitle": null,
     "fig_texts": [],

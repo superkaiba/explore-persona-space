@@ -1,11 +1,11 @@
 {
-  "commit": "54b0aa0a+dirty",
-  "render_id": "086a6c1a4d964a72",
-  "git_commit": "54b0aa0a986a4e1eb689f0a0a04ff7cfe9634b40",
+  "commit": "a3602670+dirty",
+  "render_id": "baefaab20b1c465b",
+  "git_commit": "a3602670815983e74922b1d83d353e12e4d27841",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
     "eval_results/issue_666/headline/predictor_headline.json",
+    "figures/paper/c1_layer_profile.meta.json",
     "figures/paper/c1_scaling_train_pool.meta.json",
     "figures/paper/c1_scaling_train_pool.pdf",
     "figures/paper/c1_scaling_train_pool.png",
@@ -13,11 +13,12 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2378/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1901_body_figures.py",
-  "created": "2026-08-20T22:17:39Z",
+  "created": "2026-08-20T23:05:37Z",
   "figsize": [
     5.5,
     2.45
@@ -269,918 +270,2010 @@
     },
     {
       "layer (of 28)": 0.0,
+      "held-out $R^2$": 0.48601009229624503,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 1.0,
+      "held-out $R^2$": 0.5062249090282432,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 2.0,
+      "held-out $R^2$": 0.5420416717755965,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 3.0,
+      "held-out $R^2$": 0.551806799157649,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 4.0,
+      "held-out $R^2$": 0.5608658439214644,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 5.0,
+      "held-out $R^2$": 0.5775758683148764,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 6.0,
+      "held-out $R^2$": 0.5914571096871007,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 7.0,
+      "held-out $R^2$": 0.5860340493603942,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 8.0,
+      "held-out $R^2$": 0.6051801698341945,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 9.0,
+      "held-out $R^2$": 0.578709771778747,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 10.0,
+      "held-out $R^2$": 0.6065501251120863,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 11.0,
+      "held-out $R^2$": 0.6213143991641985,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 12.0,
+      "held-out $R^2$": 0.6411411727808717,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 13.0,
+      "held-out $R^2$": 0.6603357633358696,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.684524435751626,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 15.0,
+      "held-out $R^2$": 0.7016476357976821,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 16.0,
+      "held-out $R^2$": 0.7126165772556917,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 17.0,
+      "held-out $R^2$": 0.7138900514633826,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 18.0,
+      "held-out $R^2$": 0.7229856912473652,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.7599992543132659,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 20.0,
+      "held-out $R^2$": 0.750406345888666,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 21.0,
+      "held-out $R^2$": 0.7365986743624686,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 22.0,
+      "held-out $R^2$": 0.7204283151352115,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 23.0,
+      "held-out $R^2$": 0.7041308480555539,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 24.0,
+      "held-out $R^2$": 0.705964722811995,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 25.0,
+      "held-out $R^2$": 0.7056059652979187,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.6893896244300906,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 27.0,
+      "held-out $R^2$": 0.6959585351320248,
+      "series": "linear map (ridge), n=50,000",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (of 28)": 0.0,
       "held-out $R^2$": 0.43098655571538036,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 1.0,
       "held-out $R^2$": 0.44955563772395746,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 2.0,
       "held-out $R^2$": 0.49075168864686314,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 3.0,
       "held-out $R^2$": 0.49602868810663425,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 4.0,
       "held-out $R^2$": 0.5019116265153136,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 5.0,
       "held-out $R^2$": 0.5159449093337941,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 6.0,
       "held-out $R^2$": 0.5312049790792976,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 7.0,
       "held-out $R^2$": 0.528726439283838,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 8.0,
       "held-out $R^2$": 0.5480016416735707,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 9.0,
       "held-out $R^2$": 0.5160252507894992,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 10.0,
       "held-out $R^2$": 0.543404226479459,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 11.0,
       "held-out $R^2$": 0.5601644915668562,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 12.0,
       "held-out $R^2$": 0.5808467325349469,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 13.0,
       "held-out $R^2$": 0.5990984477159689,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": 0.6251812021094034,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 15.0,
       "held-out $R^2$": 0.6428716470081721,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 16.0,
       "held-out $R^2$": 0.6566710532140508,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 17.0,
       "held-out $R^2$": 0.6584392214841452,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 18.0,
       "held-out $R^2$": 0.6657446697408302,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": 0.7054149303865584,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 20.0,
       "held-out $R^2$": 0.6895030947155716,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 21.0,
       "held-out $R^2$": 0.6713736617978554,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 22.0,
       "held-out $R^2$": 0.6477481917929763,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 23.0,
       "held-out $R^2$": 0.6262971199213034,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 24.0,
       "held-out $R^2$": 0.6318194157418636,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 25.0,
       "held-out $R^2$": 0.6344966372306877,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": 0.6166073857359695,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
     },
     {
       "layer (of 28)": 27.0,
       "held-out $R^2$": 0.6241672862333301,
       "series": "linear map (ridge), n=3,600",
       "_kind": "line",
-      "_group": 3
+      "_group": 4
+    },
+    {
+      "layer (of 28)": 0.0,
+      "held-out $R^2$": -0.31416542100947664,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 1.0,
+      "held-out $R^2$": -0.3254476066952565,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 2.0,
+      "held-out $R^2$": -0.286734027878744,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 3.0,
+      "held-out $R^2$": -0.2667721100071283,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 4.0,
+      "held-out $R^2$": -0.3695605528506052,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 5.0,
+      "held-out $R^2$": -0.6300224626971953,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 6.0,
+      "held-out $R^2$": -0.5600415174231759,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 7.0,
+      "held-out $R^2$": -0.4128467059740246,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 8.0,
+      "held-out $R^2$": -0.4994480545767226,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 9.0,
+      "held-out $R^2$": -0.5696545929518191,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 10.0,
+      "held-out $R^2$": -0.5299453711953448,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 11.0,
+      "held-out $R^2$": -0.5846793298635842,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 12.0,
+      "held-out $R^2$": -0.48474706764733666,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 13.0,
+      "held-out $R^2$": -0.530135615276675,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": -0.6139408821868269,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 15.0,
+      "held-out $R^2$": -0.5671434951531524,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 16.0,
+      "held-out $R^2$": -0.6741654838636677,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 17.0,
+      "held-out $R^2$": -0.7435530635267389,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 18.0,
+      "held-out $R^2$": -0.8842336363499306,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": -0.8795987011227666,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 20.0,
+      "held-out $R^2$": -1.2689665186738575,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 21.0,
+      "held-out $R^2$": -1.255118599713632,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 22.0,
+      "held-out $R^2$": -1.708608802879962,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 23.0,
+      "held-out $R^2$": -1.8763707754608818,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 24.0,
+      "held-out $R^2$": -1.8320067068580173,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 25.0,
+      "held-out $R^2$": -2.0462108985916188,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": -2.543764623679317,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (of 28)": 27.0,
+      "held-out $R^2$": -2.3486566786076595,
+      "series": "identity + bias, n=50,000",
+      "_kind": "line",
+      "_group": 5
     },
     {
       "layer (of 28)": 0.0,
       "held-out $R^2$": -0.30767205890110727,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 1.0,
       "held-out $R^2$": -0.31886348013701094,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 2.0,
       "held-out $R^2$": -0.27901377768745306,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 3.0,
       "held-out $R^2$": -0.25831875587551223,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 4.0,
       "held-out $R^2$": -0.36027814226893673,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 5.0,
       "held-out $R^2$": -0.6179705851200832,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 6.0,
       "held-out $R^2$": -0.5477121819054378,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 7.0,
       "held-out $R^2$": -0.4004696509862502,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 8.0,
       "held-out $R^2$": -0.48627150526389973,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 9.0,
       "held-out $R^2$": -0.5551894283172136,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 10.0,
       "held-out $R^2$": -0.516202050679448,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 11.0,
       "held-out $R^2$": -0.5706361690273114,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 12.0,
       "held-out $R^2$": -0.47185280173499566,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 13.0,
       "held-out $R^2$": -0.5178590073456533,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": -0.6011526691241647,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 15.0,
       "held-out $R^2$": -0.5538395791656956,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 16.0,
       "held-out $R^2$": -0.65984330159336,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 17.0,
       "held-out $R^2$": -0.7286224528700092,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 18.0,
       "held-out $R^2$": -0.8688059752170163,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": -0.8646901406704668,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 20.0,
       "held-out $R^2$": -1.2528858345291223,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 21.0,
       "held-out $R^2$": -1.2408683319622007,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 22.0,
       "held-out $R^2$": -1.6879961930207026,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 23.0,
       "held-out $R^2$": -1.8555579708817285,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 24.0,
       "held-out $R^2$": -1.8140157653825564,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 25.0,
       "held-out $R^2$": -2.0289327457806228,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": -2.529187802084774,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
     },
     {
       "layer (of 28)": 27.0,
       "held-out $R^2$": -2.335534599481438,
       "series": "identity + bias, n=3,600",
       "_kind": "line",
-      "_group": 4
+      "_group": 6
+    },
+    {
+      "layer (of 28)": 0.0,
+      "held-out $R^2$": -0.01819866945579407,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 1.0,
+      "held-out $R^2$": 0.16734983300561224,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 2.0,
+      "held-out $R^2$": 0.32104777151936603,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 3.0,
+      "held-out $R^2$": 0.3761678195287539,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 4.0,
+      "held-out $R^2$": 0.4112221859618378,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 5.0,
+      "held-out $R^2$": 0.4398512747432334,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 6.0,
+      "held-out $R^2$": 0.47917005122105183,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 7.0,
+      "held-out $R^2$": 0.4814964612935392,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 8.0,
+      "held-out $R^2$": 0.5115728559534277,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 9.0,
+      "held-out $R^2$": 0.48871929308417095,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 10.0,
+      "held-out $R^2$": 0.5155856100512917,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 11.0,
+      "held-out $R^2$": 0.5370434052800639,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 12.0,
+      "held-out $R^2$": 0.5559723289525347,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 13.0,
+      "held-out $R^2$": 0.5778063924004954,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 14.0,
+      "held-out $R^2$": 0.607905178528124,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 15.0,
+      "held-out $R^2$": 0.6247913495969304,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 16.0,
+      "held-out $R^2$": 0.6386908741602517,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 17.0,
+      "held-out $R^2$": 0.6410778327673159,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 18.0,
+      "held-out $R^2$": 0.6482472262061726,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 19.0,
+      "held-out $R^2$": 0.6884012327309432,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 20.0,
+      "held-out $R^2$": 0.6761867052420161,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 21.0,
+      "held-out $R^2$": 0.659858472902741,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 22.0,
+      "held-out $R^2$": 0.6388862008281802,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 23.0,
+      "held-out $R^2$": 0.6190453307984923,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 24.0,
+      "held-out $R^2$": 0.6244025632267193,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 25.0,
+      "held-out $R^2$": 0.6306624257621899,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 26.0,
+      "held-out $R^2$": 0.6162000737168652,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (of 28)": 27.0,
+      "held-out $R^2$": 0.6306539542618874,
+      "series": "neural map (w=8,192), n=3,600",
+      "_kind": "line",
+      "_group": 7
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": 0.6708212401091411,
       "_kind": "line",
-      "_group": 5
+      "_group": 8
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": 0.754170841830715,
       "_kind": "line",
-      "_group": 5
+      "_group": 8
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": 0.6839229517657401,
       "_kind": "line",
-      "_group": 5
+      "_group": 8
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": 0.6576720487396015,
       "_kind": "line",
-      "_group": 6
+      "_group": 9
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": 0.7441307847286448,
       "_kind": "line",
-      "_group": 6
+      "_group": 9
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": 0.6688347516456364,
       "_kind": "line",
-      "_group": 6
+      "_group": 9
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": 0.6831422077322264,
       "_kind": "line",
-      "_group": 7
+      "_group": 10
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": 0.7638445771747455,
       "_kind": "line",
-      "_group": 7
+      "_group": 10
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": 0.6982224327835325,
       "_kind": "line",
-      "_group": 7
+      "_group": 10
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": 0.7579235680131382,
       "_kind": "line",
-      "_group": 8
+      "_group": 11
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": 0.813419461228615,
       "_kind": "line",
-      "_group": 8
+      "_group": 11
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": 0.7722463827277778,
       "_kind": "line",
-      "_group": 8
+      "_group": 11
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": 0.7447538971463457,
       "_kind": "line",
-      "_group": 9
+      "_group": 12
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": 0.8029343798692213,
       "_kind": "line",
-      "_group": 9
+      "_group": 12
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": 0.7584192980199566,
       "_kind": "line",
-      "_group": 9
+      "_group": 12
     },
     {
       "layer (of 28)": 14.0,
       "held-out $R^2$": 0.7697312284562966,
       "_kind": "line",
-      "_group": 10
+      "_group": 13
     },
     {
       "layer (of 28)": 19.0,
       "held-out $R^2$": 0.8229911262183807,
       "_kind": "line",
-      "_group": 10
+      "_group": 13
     },
     {
       "layer (of 28)": 26.0,
       "held-out $R^2$": 0.7841353013733497,
       "_kind": "line",
-      "_group": 10
+      "_group": 13
     },
     {
       "layer (of 28)": 14.0,
       "retrieval acc@1 (pool 1,000)": 0.66,
       "error": 0.03049999999999997,
       "_kind": "errorbar",
-      "_group": 11
+      "_group": 14
     },
     {
       "layer (of 28)": 19.0,
       "retrieval acc@1 (pool 1,000)": 0.805,
       "error": 0.026499999999999968,
       "_kind": "errorbar",
-      "_group": 11
+      "_group": 14
     },
     {
       "layer (of 28)": 26.0,
       "retrieval acc@1 (pool 1,000)": 0.684,
       "error": 0.02949999999999997,
       "_kind": "errorbar",
-      "_group": 11
+      "_group": 14
+    },
+    {
+      "layer (of 28)": 0.0,
+      "retrieval acc@1 (pool 1,000)": 0.241,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 1.0,
+      "retrieval acc@1 (pool 1,000)": 0.262,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 2.0,
+      "retrieval acc@1 (pool 1,000)": 0.326,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 3.0,
+      "retrieval acc@1 (pool 1,000)": 0.346,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 4.0,
+      "retrieval acc@1 (pool 1,000)": 0.435,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 5.0,
+      "retrieval acc@1 (pool 1,000)": 0.441,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 6.0,
+      "retrieval acc@1 (pool 1,000)": 0.458,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 7.0,
+      "retrieval acc@1 (pool 1,000)": 0.434,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 8.0,
+      "retrieval acc@1 (pool 1,000)": 0.494,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 9.0,
+      "retrieval acc@1 (pool 1,000)": 0.422,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 10.0,
+      "retrieval acc@1 (pool 1,000)": 0.49,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 11.0,
+      "retrieval acc@1 (pool 1,000)": 0.523,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 12.0,
+      "retrieval acc@1 (pool 1,000)": 0.567,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 13.0,
+      "retrieval acc@1 (pool 1,000)": 0.625,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.658,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 15.0,
+      "retrieval acc@1 (pool 1,000)": 0.686,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 16.0,
+      "retrieval acc@1 (pool 1,000)": 0.684,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 17.0,
+      "retrieval acc@1 (pool 1,000)": 0.7,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 18.0,
+      "retrieval acc@1 (pool 1,000)": 0.739,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.802,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 20.0,
+      "retrieval acc@1 (pool 1,000)": 0.794,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 21.0,
+      "retrieval acc@1 (pool 1,000)": 0.769,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 22.0,
+      "retrieval acc@1 (pool 1,000)": 0.778,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 23.0,
+      "retrieval acc@1 (pool 1,000)": 0.742,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 24.0,
+      "retrieval acc@1 (pool 1,000)": 0.708,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 25.0,
+      "retrieval acc@1 (pool 1,000)": 0.687,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.658,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (of 28)": 27.0,
+      "retrieval acc@1 (pool 1,000)": 0.62,
+      "_kind": "line",
+      "_group": 15
     },
     {
       "layer (of 28)": 0.0,
       "retrieval acc@1 (pool 1,000)": 0.141,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 1.0,
       "retrieval acc@1 (pool 1,000)": 0.184,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 2.0,
       "retrieval acc@1 (pool 1,000)": 0.181,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 3.0,
       "retrieval acc@1 (pool 1,000)": 0.201,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 4.0,
       "retrieval acc@1 (pool 1,000)": 0.25,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 5.0,
       "retrieval acc@1 (pool 1,000)": 0.245,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 6.0,
       "retrieval acc@1 (pool 1,000)": 0.274,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 7.0,
       "retrieval acc@1 (pool 1,000)": 0.251,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 8.0,
       "retrieval acc@1 (pool 1,000)": 0.303,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 9.0,
       "retrieval acc@1 (pool 1,000)": 0.274,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 10.0,
       "retrieval acc@1 (pool 1,000)": 0.331,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 11.0,
       "retrieval acc@1 (pool 1,000)": 0.353,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 12.0,
       "retrieval acc@1 (pool 1,000)": 0.379,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 13.0,
       "retrieval acc@1 (pool 1,000)": 0.396,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 14.0,
       "retrieval acc@1 (pool 1,000)": 0.426,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 15.0,
       "retrieval acc@1 (pool 1,000)": 0.46,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 16.0,
       "retrieval acc@1 (pool 1,000)": 0.454,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 17.0,
       "retrieval acc@1 (pool 1,000)": 0.453,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 18.0,
       "retrieval acc@1 (pool 1,000)": 0.519,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 19.0,
       "retrieval acc@1 (pool 1,000)": 0.72,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 20.0,
       "retrieval acc@1 (pool 1,000)": 0.689,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 21.0,
       "retrieval acc@1 (pool 1,000)": 0.596,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 22.0,
       "retrieval acc@1 (pool 1,000)": 0.646,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 23.0,
       "retrieval acc@1 (pool 1,000)": 0.586,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 24.0,
       "retrieval acc@1 (pool 1,000)": 0.467,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 25.0,
       "retrieval acc@1 (pool 1,000)": 0.414,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 26.0,
       "retrieval acc@1 (pool 1,000)": 0.393,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 27.0,
       "retrieval acc@1 (pool 1,000)": 0.381,
       "_kind": "line",
-      "_group": 12
+      "_group": 16
     },
     {
       "layer (of 28)": 0.0,
-      "retrieval acc@1 (pool 1,000)": 0.025,
+      "retrieval acc@1 (pool 1,000)": 0.024,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 1.0,
-      "retrieval acc@1 (pool 1,000)": 0.022,
+      "retrieval acc@1 (pool 1,000)": 0.023,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 2.0,
-      "retrieval acc@1 (pool 1,000)": 0.036,
+      "retrieval acc@1 (pool 1,000)": 0.038,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 3.0,
-      "retrieval acc@1 (pool 1,000)": 0.019,
+      "retrieval acc@1 (pool 1,000)": 0.025,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 4.0,
-      "retrieval acc@1 (pool 1,000)": 0.033,
+      "retrieval acc@1 (pool 1,000)": 0.035,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 5.0,
-      "retrieval acc@1 (pool 1,000)": 0.039,
+      "retrieval acc@1 (pool 1,000)": 0.041,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 6.0,
-      "retrieval acc@1 (pool 1,000)": 0.032,
+      "retrieval acc@1 (pool 1,000)": 0.031,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 7.0,
-      "retrieval acc@1 (pool 1,000)": 0.018,
+      "retrieval acc@1 (pool 1,000)": 0.023,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 8.0,
-      "retrieval acc@1 (pool 1,000)": 0.027,
+      "retrieval acc@1 (pool 1,000)": 0.029,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 9.0,
-      "retrieval acc@1 (pool 1,000)": 0.026,
+      "retrieval acc@1 (pool 1,000)": 0.022,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 10.0,
-      "retrieval acc@1 (pool 1,000)": 0.032,
+      "retrieval acc@1 (pool 1,000)": 0.027,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 11.0,
       "retrieval acc@1 (pool 1,000)": 0.04,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
     },
     {
       "layer (of 28)": 12.0,
       "retrieval acc@1 (pool 1,000)": 0.046,
       "_kind": "line",
-      "_group": 13
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 13.0,
+      "retrieval acc@1 (pool 1,000)": 0.102,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.174,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 15.0,
+      "retrieval acc@1 (pool 1,000)": 0.165,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 16.0,
+      "retrieval acc@1 (pool 1,000)": 0.208,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 17.0,
+      "retrieval acc@1 (pool 1,000)": 0.22,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 18.0,
+      "retrieval acc@1 (pool 1,000)": 0.313,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.528,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 20.0,
+      "retrieval acc@1 (pool 1,000)": 0.521,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 21.0,
+      "retrieval acc@1 (pool 1,000)": 0.535,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 22.0,
+      "retrieval acc@1 (pool 1,000)": 0.567,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 23.0,
+      "retrieval acc@1 (pool 1,000)": 0.567,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 24.0,
+      "retrieval acc@1 (pool 1,000)": 0.551,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 25.0,
+      "retrieval acc@1 (pool 1,000)": 0.527,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.528,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 27.0,
+      "retrieval acc@1 (pool 1,000)": 0.426,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (of 28)": 0.0,
+      "retrieval acc@1 (pool 1,000)": 0.025,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 1.0,
+      "retrieval acc@1 (pool 1,000)": 0.022,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 2.0,
+      "retrieval acc@1 (pool 1,000)": 0.036,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 3.0,
+      "retrieval acc@1 (pool 1,000)": 0.019,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 4.0,
+      "retrieval acc@1 (pool 1,000)": 0.033,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 5.0,
+      "retrieval acc@1 (pool 1,000)": 0.039,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 6.0,
+      "retrieval acc@1 (pool 1,000)": 0.032,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 7.0,
+      "retrieval acc@1 (pool 1,000)": 0.018,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 8.0,
+      "retrieval acc@1 (pool 1,000)": 0.027,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 9.0,
+      "retrieval acc@1 (pool 1,000)": 0.026,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 10.0,
+      "retrieval acc@1 (pool 1,000)": 0.032,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 11.0,
+      "retrieval acc@1 (pool 1,000)": 0.04,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 12.0,
+      "retrieval acc@1 (pool 1,000)": 0.046,
+      "_kind": "line",
+      "_group": 18
     },
     {
       "layer (of 28)": 13.0,
       "retrieval acc@1 (pool 1,000)": 0.099,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 14.0,
       "retrieval acc@1 (pool 1,000)": 0.169,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 15.0,
       "retrieval acc@1 (pool 1,000)": 0.163,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 16.0,
       "retrieval acc@1 (pool 1,000)": 0.205,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 17.0,
       "retrieval acc@1 (pool 1,000)": 0.221,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 18.0,
       "retrieval acc@1 (pool 1,000)": 0.307,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 19.0,
       "retrieval acc@1 (pool 1,000)": 0.503,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 20.0,
       "retrieval acc@1 (pool 1,000)": 0.502,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 21.0,
       "retrieval acc@1 (pool 1,000)": 0.534,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 22.0,
       "retrieval acc@1 (pool 1,000)": 0.565,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 23.0,
       "retrieval acc@1 (pool 1,000)": 0.563,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 24.0,
       "retrieval acc@1 (pool 1,000)": 0.54,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 25.0,
       "retrieval acc@1 (pool 1,000)": 0.524,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 26.0,
       "retrieval acc@1 (pool 1,000)": 0.517,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
     },
     {
       "layer (of 28)": 27.0,
       "retrieval acc@1 (pool 1,000)": 0.42,
       "_kind": "line",
-      "_group": 13
+      "_group": 18
+    },
+    {
+      "layer (of 28)": 0.0,
+      "retrieval acc@1 (pool 1,000)": 0.154,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 1.0,
+      "retrieval acc@1 (pool 1,000)": 0.169,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 2.0,
+      "retrieval acc@1 (pool 1,000)": 0.239,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 3.0,
+      "retrieval acc@1 (pool 1,000)": 0.251,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 4.0,
+      "retrieval acc@1 (pool 1,000)": 0.307,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 5.0,
+      "retrieval acc@1 (pool 1,000)": 0.302,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 6.0,
+      "retrieval acc@1 (pool 1,000)": 0.313,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 7.0,
+      "retrieval acc@1 (pool 1,000)": 0.315,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 8.0,
+      "retrieval acc@1 (pool 1,000)": 0.355,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 9.0,
+      "retrieval acc@1 (pool 1,000)": 0.274,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 10.0,
+      "retrieval acc@1 (pool 1,000)": 0.337,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 11.0,
+      "retrieval acc@1 (pool 1,000)": 0.356,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 12.0,
+      "retrieval acc@1 (pool 1,000)": 0.409,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 13.0,
+      "retrieval acc@1 (pool 1,000)": 0.469,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 14.0,
+      "retrieval acc@1 (pool 1,000)": 0.526,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 15.0,
+      "retrieval acc@1 (pool 1,000)": 0.531,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 16.0,
+      "retrieval acc@1 (pool 1,000)": 0.531,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 17.0,
+      "retrieval acc@1 (pool 1,000)": 0.537,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 18.0,
+      "retrieval acc@1 (pool 1,000)": 0.589,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 19.0,
+      "retrieval acc@1 (pool 1,000)": 0.688,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 20.0,
+      "retrieval acc@1 (pool 1,000)": 0.648,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 21.0,
+      "retrieval acc@1 (pool 1,000)": 0.624,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 22.0,
+      "retrieval acc@1 (pool 1,000)": 0.617,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 23.0,
+      "retrieval acc@1 (pool 1,000)": 0.543,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 24.0,
+      "retrieval acc@1 (pool 1,000)": 0.512,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 25.0,
+      "retrieval acc@1 (pool 1,000)": 0.455,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 26.0,
+      "retrieval acc@1 (pool 1,000)": 0.421,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (of 28)": 27.0,
+      "retrieval acc@1 (pool 1,000)": 0.421,
+      "_kind": "line",
+      "_group": 19
     },
     {
       "layer (of 28)": 14.0,
       "retrieval acc@1 (pool 1,000)": 0.66,
       "_kind": "line",
-      "_group": 14
+      "_group": 20
     },
     {
       "layer (of 28)": 19.0,
       "retrieval acc@1 (pool 1,000)": 0.805,
       "_kind": "line",
-      "_group": 14
+      "_group": 20
     },
     {
       "layer (of 28)": 26.0,
       "retrieval acc@1 (pool 1,000)": 0.684,
       "_kind": "line",
-      "_group": 14
+      "_group": 20
     },
     {
       "layer (of 28)": 14.0,
       "retrieval acc@1 (pool 1,000)": 0.628,
       "_kind": "line",
-      "_group": 15
+      "_group": 21
     },
     {
       "layer (of 28)": 19.0,
       "retrieval acc@1 (pool 1,000)": 0.777,
       "_kind": "line",
-      "_group": 15
+      "_group": 21
     },
     {
       "layer (of 28)": 26.0,
       "retrieval acc@1 (pool 1,000)": 0.654,
       "_kind": "line",
-      "_group": 15
+      "_group": 21
     },
     {
       "layer (of 28)": 14.0,
       "retrieval acc@1 (pool 1,000)": 0.689,
       "_kind": "line",
-      "_group": 16
+      "_group": 22
     },
     {
       "layer (of 28)": 19.0,
       "retrieval acc@1 (pool 1,000)": 0.83,
       "_kind": "line",
-      "_group": 16
+      "_group": 22
     },
     {
       "layer (of 28)": 26.0,
       "retrieval acc@1 (pool 1,000)": 0.713,
       "_kind": "line",
-      "_group": 16
+      "_group": 22
     }
   ],
-  "n_series": 17,
-  "total_points": 176,
+  "n_series": 23,
+  "total_points": 344,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -1226,8 +2319,11 @@
     ],
     "series": [
       "linear map, base model (n=50)",
+      "linear map (ridge), n=50,000",
       "linear map (ridge), n=3,600",
+      "identity + bias, n=50,000",
       "identity + bias, n=3,600",
+      "neural map (w=8,192), n=3,600",
       "linear map, n=963k",
       "neural map (w=32,768), n=963k"
     ]
