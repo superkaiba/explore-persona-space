@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "median": 100.0,
+  "frac_gt60": 0.9809523809523809,
+  "n_kept": 420,
+  "n_dropped": 0,
+  "thresholds": {
+    "median_min": 80.0,
+    "gt60_frac_min": 0.9,
+    "coherence_threshold": 60.0
+  },
+  "repro": {
+    "git_commit": "7caaecf958269778655a0831a8c1d17ce83468a8",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2329_ladder_judge.py",
+    "script": "scripts/issue2094_judge.py"
+  },
+  "audits": {
+    "kind": "anchors",
+    "n_rows": 420,
+    "thresholds": {
+      "nonlatin_letter_frac": 0.05,
+      "dup_4gram_frac": 0.5
+    },
+    "flag_counts": {
+      "flag_empty": 0,
+      "flag_script_intrusion": 0,
+      "flag_repetition": 2
+    },
+    "path": "eval_results/issue_2329/q35_ladder_decay/judge/audits/anchors.audit.jsonl"
+  }
+}

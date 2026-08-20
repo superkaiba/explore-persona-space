@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "verdict": "PASS",
+  "failures": [],
+  "warnings": [
+    "wave transport UNDECLARED \u2014 pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+  ],
+  "arms": {
+    "anchors": {
+      "n_items": 56,
+      "n_items_zero_valid": 0,
+      "frac_items_complete": 1.0,
+      "n_draws": 56,
+      "n_scored": 56,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 56
+      },
+      "waived": false,
+      "api_refusal_rate": 0.0,
+      "api_refusal_waived": false,
+      "transport": "sync",
+      "n_cached": 0
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "n_total_draws": 56,
+  "parse_fail_threshold": 0.02,
+  "rubric_hash": "60a9b2a63d38ad09",
+  "wave_transport": null,
+  "pilot_transport": "sync",
+  "api_refusal_threshold": 0.1,
+  "wave_routing": null
+}
