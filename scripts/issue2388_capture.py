@@ -538,6 +538,12 @@ def phase_upload(args) -> None:
         if not out:
             raise RuntimeError(f"store tar upload returned empty path for {benchmark}")
         expected.append(dest)
+        # The tar is a pure upload vehicle: retaining all of them alongside the
+        # stores doubles the phase's footprint past the 200G volume (R8 ENOSPC
+        # at leetcode). A re-entry rebuilds any needed tar from the store via
+        # the mtime rule above.
+        tar_path.unlink()
+        print(f"[upload] {benchmark}: local tar removed after upload", flush=True)
         tf_dir = _tf_out_dir(dv_root, benchmark)
         if tf_dir.exists() and any(tf_dir.iterdir()):
             out = hub._upload(
